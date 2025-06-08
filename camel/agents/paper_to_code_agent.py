@@ -11,19 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import re
 import json
 import shutil
 from camel.prompts import TextPrompt
 from pydantic import BaseModel, Field, field_validator, ConfigDict
-from typing import Any, Dict, List, Literal, Optional, Union, ClassVar, Type
+from typing import Any, Dict, List, Literal, Optional, Union, ClassVar, Type, cast
 from camel.logger import get_logger
 from camel.memories import AgentMemory
 from camel.messages import BaseMessage
 from camel.types import OpenAIBackendRole
 from camel.models import BaseModelBackend
 from camel.agents.chat_agent import ChatAgent
-from camel.responses.paper_to_code_agent_response import PaperToCodeAgentResponse
 from camel.responses import ChatAgentResponse
 
 try:
@@ -38,6 +36,7 @@ except (ImportError, AttributeError):
 
 logger = get_logger(__name__)
 
+# ruff: noqa: E501
 _PLANING_SYSTEM_PROMPT: str = """You are an expert researcher and strategic planner with a deep understanding of experimental design and reproducibility in scientific research. 
 You will receive a research paper in {paper_format} format. 
 Your task is to create a detailed and efficient plan to reproduce the experiments and methodologies described in the paper.
@@ -73,7 +72,7 @@ The response should give us a strong roadmap, making it easier to write the code
 {input_message}""",
     """Your goal is to create a concise, usable, and complete software system design for reproducing the paper's method. Use appropriate open-source libraries and keep the overall architecture simple.
              
-Based on the plan for reproducing the paper’s main method, please design a concise, usable, and complete software system. 
+Based on the plan for reproducing the paper's main method, please design a concise, usable, and complete software system. 
 Keep the architecture simple and make effective use of open-source libraries.
 
 
@@ -90,7 +89,7 @@ Follow the instructions for the nodes, generate the output.""",
     """Your goal is break down tasks according to PRD/technical design, generate a task list, and analyze task dependencies. 
 You will break down tasks, analyze dependencies.
              
-You outline a clear PRD/technical design for reproducing the paper’s method and experiments. 
+You outline a clear PRD/technical design for reproducing the paper's method and experiments. 
 
 Now, let's break down tasks according to PRD/technical design, generate a task list, and analyze task dependencies.
 The Logic Analysis should not only consider the dependencies between files but also provide detailed descriptions to assist in writing the code needed to reproduce the paper.
@@ -122,7 +121,7 @@ _ANALYSIS_SYSTEM_PROMPT = """You are an expert researcher, strategic analyzer an
 You will receive a research paper in {paper_format} format, an overview of the plan, a design in JSON format consisting of "Implementation approach", "File list", "Data structures and interfaces", and "Program call flow", followed by a task in JSON format that includes "Required packages", "Required other language third-party packages", "Logic Analysis", and "Task list", along with a configuration file named "config.yaml". 
 
 Your task is to conduct a comprehensive logic analysis to accurately reproduce the experiments and methodologies described in the research paper. 
-This analysis must align precisely with the paper’s methodology, experimental setup, and evaluation criteria.
+This analysis must align precisely with the paper's methodology, experimental setup, and evaluation criteria.
 
 1. Align with the Paper: Your analysis must strictly follow the methods, datasets, model configurations, hyperparameters, and experimental setups described in the paper.
 2. Be Clear and Structured: Present your analysis in a logical, well-organized, and actionable format that is easy to follow and implement.
@@ -263,8 +262,7 @@ class PaperToCodeAgent(ChatAgent):
         model: Optional[BaseModelBackend] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: int = 20,
-        status: Literal['planning', 'analyzing', 'coding',
-                        'done'] = 'planning',
+        status: Literal['planning', 'analyzing', 'coding', 'done'] = 'planning',
     ) -> None:
         self.paper_format: str = paper_format
 
@@ -306,7 +304,7 @@ class PaperToCodeAgent(ChatAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-    ) -> PaperToCodeAgentResponse:
+    ) -> ChatAgentResponse:
         r"""Process the input message and run the full paper-to-code pipeline.
         
         This method coordinates the entire workflow: paper processing, planning,
@@ -316,7 +314,7 @@ class PaperToCodeAgent(ChatAgent):
             input_message (Union[BaseMessage, str]): The input message from the user,
                 can be incorporated into prompts as additional guidance.
         """
-        responses: List[ChatAgentResponse] = []
+        responses: ChatAgentResponse
         if self.status == "planning":
             if self.paper_format == "JSON":
                 self._process()
@@ -333,11 +331,7 @@ class PaperToCodeAgent(ChatAgent):
             responses = self._coding()
             self.status = "done"
 
-        return PaperToCodeAgentResponse(
-            action_phase=self.status,
-            content=responses,
-            terminated=self.status == "done",
-        )
+        return responses
 
     def _remove_spans(self, data: Any):
         r"""Remove unnecessary spans from the paper JSON data.
@@ -373,7 +367,7 @@ class PaperToCodeAgent(ChatAgent):
         with open(self.file_path, 'w') as f:
             json.dump(cleaned_data, f)
 
-    def _planning(self, input_message: str = "") -> List[ChatAgentResponse]:
+    def _planning(self, input_message: str = "") -> ChatAgentResponse:
         r"""Generate a plan for reproducing the paper's methodology and experiments.
         
         This phase creates a detailed roadmap for implementation by analyzing the
@@ -398,6 +392,7 @@ class PaperToCodeAgent(ChatAgent):
             PaperToCodeOverview, PaperToCodeDesign, PaperToCodeTasks,
             PaperToCodeConfig
         ]
+
         result = []
         for index, user_message_template in enumerate(_PLANING_USER_PROMPTS):
             user_message = TextPrompt(user_message_template).format(
@@ -408,10 +403,12 @@ class PaperToCodeAgent(ChatAgent):
             if index < len(planning_formats):
                 format_class = planning_formats[index]
                 completion = super().step(input_message=user_message,
-                                          response_format=format_class)
+                                          response_format=cast(
+                                              Type[BaseModel], format_class))
             else:
                 completion = super().step(input_message=user_message)
-            result.append(completion)
+            result.append(completion.msg)
+
             completion_json = json.loads(completion.model_dump_json())
             responses.append(completion_json)
             message = completion.msg
@@ -420,13 +417,18 @@ class PaperToCodeAgent(ChatAgent):
                 'content': message.content
             })
             logger.info(f'planning response: {message}')
-            result.append(completion)
+
         os.makedirs(self.output_path, exist_ok=True)
         with open(f'{self.output_path}/planning_response.json', 'w') as f:
             json.dump(responses, f)
         with open(f'{self.output_path}/planning_trajectories.json', 'w') as f:
             json.dump(trajectories, f)
-        return result
+
+        return ChatAgentResponse(
+            msgs=result,
+            terminated=self.status == "done",
+            info={"status": self.status},
+        )
 
     def _extract_config(self) -> None:
         r"""Extract configuration information from the planning output.
@@ -443,7 +445,8 @@ class PaperToCodeAgent(ChatAgent):
             config_response = responses[3]
             if 'content' in config_response:
                 yaml_content = config_response['content']
-                with open(f'{self.output_path}/planning_config.yaml', 'w',
+                with open(f'{self.output_path}/planning_config.yaml',
+                          'w',
                           encoding='utf8') as f:
                     f.write(yaml_content)
             else:
@@ -475,15 +478,18 @@ class PaperToCodeAgent(ChatAgent):
         formatted_arch_design = __format(arch_design)
         formatted_logic_design = __format(logic_design)
 
-        with open(f"{artifact_output_dir}/1.1_overall_plan.txt", "w",
+        with open(f"{artifact_output_dir}/1.1_overall_plan.txt",
+                  "w",
                   encoding="utf-8") as f:
             f.write(context_lst[0])
 
-        with open(f"{artifact_output_dir}/1.2_arch_design.txt", "w",
+        with open(f"{artifact_output_dir}/1.2_arch_design.txt",
+                  "w",
                   encoding="utf-8") as f:
             f.write(formatted_arch_design)
 
-        with open(f"{artifact_output_dir}/1.3_logic_design.txt", "w",
+        with open(f"{artifact_output_dir}/1.3_logic_design.txt",
+                  "w",
                   encoding="utf-8") as f:
             f.write(formatted_logic_design)
 
@@ -515,7 +521,7 @@ class PaperToCodeAgent(ChatAgent):
         context_lst = context_lst[:3]
         return context_lst
 
-    def _analyzing(self) -> List[ChatAgentResponse]:
+    def _analyzing(self) -> ChatAgentResponse:
         r"""Analyze the planning output to create detailed implementation logic.
         
         For each file in the task list, generates detailed logic analysis that
@@ -544,13 +550,13 @@ class PaperToCodeAgent(ChatAgent):
             logger.warning(
                 f"No task list found in keys: {list(task_list.keys())}")
 
-        done_file_lst = ['config.yaml']
         logic_analysis_dict = {}
         for desc in task_list['Logic Analysis']:
             logic_analysis_dict[desc[0]] = desc[1]
 
         artifact_output_dir = f'{self.output_path}/analyzing_artifacts'
         os.makedirs(artifact_output_dir, exist_ok=True)
+
         result = []
         for todo_file_name in todo_file_lst:
             responses = []
@@ -576,7 +582,8 @@ class PaperToCodeAgent(ChatAgent):
             instruction_msg = template.format(**context)
             completion = super().step(input_message=instruction_msg,
                                       response_format=PaperToCodeLogicAnalysis)
-            result.append(completion)
+            result.append(completion.msg)
+
             completion_json = json.loads(completion.model_dump_json())
             responses.append(completion_json)
 
@@ -585,13 +592,17 @@ class PaperToCodeAgent(ChatAgent):
                     'w') as f:
                 f.write(completion.msg.content)
 
-            done_file_lst.append(todo_file_name)
             todo_file_name = todo_file_name.replace("/", "_")
             with open(
                     f'{self.output_path}/{todo_file_name}_simple_analysis_response.json',
                     'w') as f:
                 json.dump(responses, f)
-        return result
+
+        return ChatAgentResponse(
+            msgs=result,
+            terminated=self.status == "done",
+            info={"status": self.status},
+        )
 
     def _update_system_prompt(self, prompt: BaseMessage) -> None:
         r"""Update the agent's system prompt and clear the memory.
@@ -602,7 +613,7 @@ class PaperToCodeAgent(ChatAgent):
         self.memory.clear()
         self.update_memory(prompt, OpenAIBackendRole.SYSTEM)
 
-    def _coding(self) -> List[ChatAgentResponse]:
+    def _coding(self) -> ChatAgentResponse:
         r"""Generate code based on the planning and analysis outputs.
         
         This phase uses the planning outputs, analysis, and configuration to
@@ -627,7 +638,8 @@ class PaperToCodeAgent(ChatAgent):
 
         code_files = ""
         for done_file in done_file_lst:
-            if done_file.endswith(".yaml"): continue
+            if done_file.endswith(".yaml"):
+                continue
             code_files += f"""
         ```python
         {done_file_dict[done_file]}
@@ -636,9 +648,9 @@ class PaperToCodeAgent(ChatAgent):
 
         artifact_output_dir = f'{self.output_path}/coding_artifacts'
         os.makedirs(artifact_output_dir, exist_ok=True)
+
         result = []
         for todo_file_name in todo_file_lst:
-            responses = []
             if todo_file_name == "config.yaml":
                 continue
 
@@ -655,22 +667,17 @@ class PaperToCodeAgent(ChatAgent):
             template: TextPrompt = TextPrompt(_CODING_USER_PROMPT)
             instruction_msg = template.format(**context)
 
-            completion = super().step(
-                input_message=instruction_msg,
-                response_format=PaperToCodeImplementation)
-            result.append(completion)
+            completion = super().step(input_message=instruction_msg,
+                                      response_format=PaperToCodeImplementation)
+            result.append(completion.msg)
             logger.info("completion: ", completion.msgs[0].content)
-            completion_json = json.loads(completion.model_dump_json())
-            responses.append(completion_json)
 
             json_string_from_llm = completion.msg.content
             try:
                 parsed_json = json.loads(json_string_from_llm)
                 actual_python_code = parsed_json.get("content", "")
-                if not actual_python_code and isinstance(
-                        parsed_json, str
-                ):  # Fallback if LLM didn't wrap in JSON object but in string
-                    actual_python_code = parsed_json  # This case might happen if LLM output is just a string due to prompt issues
+                if not actual_python_code and isinstance(parsed_json, str):
+                    actual_python_code = parsed_json
                 elif not actual_python_code and not isinstance(
                         parsed_json, str):
                     logger.warning(
@@ -683,15 +690,12 @@ class PaperToCodeAgent(ChatAgent):
                 )
                 actual_python_code = f"# Error: Failed to parse LLM response as JSON.\n# Response was: {json_string_from_llm}"
 
-            done_file_lst.append(todo_file_name)
-
             os.makedirs(f'{self.output_repo_path}', exist_ok=True)
             save_todo_file_name = todo_file_name.replace("/", "_")
 
             # Save the extracted Python code to the artifact file
-            with open(
-                    f'{artifact_output_dir}/{save_todo_file_name}_coding.txt',
-                    'w') as f:
+            with open(f'{artifact_output_dir}/{save_todo_file_name}_coding.txt',
+                      'w') as f:
                 f.write(actual_python_code)
 
             # Store the extracted code in done_file_dict
@@ -703,7 +707,12 @@ class PaperToCodeAgent(ChatAgent):
 
             with open(f"{self.output_repo_path}/{todo_file_name}", 'w') as f:
                 f.write(actual_python_code)
-        return result
+
+        return ChatAgentResponse(
+            msgs=result,
+            terminated=self.status == "done",
+            info={"status": self.status},
+        )
 
 
 class PaperToCodeOverview(BaseModel):
@@ -718,7 +727,7 @@ class PaperToCodeOverview(BaseModel):
         json_schema_extra: ClassVar[Dict[str, Any]] = {
             "example": {
                 "content":
-                "# Comprehensive Plan for Implementing the Transformer Model\n\nBased on the paper..."
+                    "# Comprehensive Plan for Implementing the Transformer Model\n\nBased on the paper..."
             }
         }
 
@@ -733,26 +742,28 @@ class PaperToCodeDesign(BaseModel):
     file_list: List[str] = Field(
         ..., description="List of files required for implementation")
     data_structures_and_interfaces: str = Field(
-        ..., description=
+        ...,
+        description=
         "Description of data structures and interfaces, using mermaid format")
     program_call_flow: str = Field(
         ..., description="Program call flow, using mermaid format")
     unclear_aspects: Optional[str] = Field(
-        default=None, description="Unclear aspects requiring clarification",
+        default=None,
+        description="Unclear aspects requiring clarification",
         alias="Anything UNCLEAR")
 
     class Config:
         json_schema_extra: ClassVar[Dict[str, Any]] = {
             "example": {
                 "implementation_approach":
-                "We will implement the Transformer model using PyTorch...",
+                    "We will implement the Transformer model using PyTorch...",
                 "file_list": ["main.py", "data_loader.py", "transformer.py"],
                 "data_structures_and_interfaces":
-                "\nclassDiagram\n    class Main...",
+                    "\nclassDiagram\n    class Main...",
                 "program_call_flow":
-                "\nsequenceDiagram\n    participant M as Main...",
+                    "\nsequenceDiagram\n    participant M as Main...",
                 "unclear_aspects":
-                "Need clarification on: 1) Exact byte-pair encoding..."
+                    "Need clarification on: 1) Exact byte-pair encoding..."
             }
         }
 
@@ -765,7 +776,8 @@ class PaperToCodeTasks(BaseModel):
     required_packages: List[str] = Field(
         ..., description="Python packages required for implementation")
     required_other_packages: List[str] = Field(
-        ..., description=
+        ...,
+        description=
         "Non-Python third-party packages required for implementation",
         alias="Required Other language third-party packages")
     logic_analysis: List[List[str]] = Field(
@@ -773,16 +785,20 @@ class PaperToCodeTasks(BaseModel):
         description="Analysis for each file, format: [filename, description]",
         alias="Logic Analysis")
     task_list: List[str] = Field(
-        ..., description="List of files to be implemented in order",
+        ...,
+        description="List of files to be implemented in order",
         alias="Task list")
     full_api_spec: str = Field(
-        default="", description="Complete API specification (if relevant)",
+        default="",
+        description="Complete API specification (if relevant)",
         alias="Full API spec")
     shared_knowledge: str = Field(
-        default="", description="Knowledge shared between components",
+        default="",
+        description="Knowledge shared between components",
         alias="Shared Knowledge")
     unclear_aspects: str = Field(
-        default="", description="Unclear aspects requiring clarification",
+        default="",
+        description="Unclear aspects requiring clarification",
         alias="Anything UNCLEAR")
 
     model_config = ConfigDict(
@@ -791,21 +807,22 @@ class PaperToCodeTasks(BaseModel):
         json_schema_extra={  # Moved from the old Config class
             "example": {
                 "required_packages": ["torch==1.13.0", "numpy==1.21.6"],
-                "required_other_packages":
-                ["No third-party dependencies required"],
+                "required_other_packages": [
+                    "No third-party dependencies required"
+                ],
                 "logic_analysis":
-                [["config.py", "Contains all hyperparameters..."],
-                 [
-                     "transformer.py",
-                     "Implements core Transformer architecture..."
-                 ]],
+                    [["config.py", "Contains all hyperparameters..."],
+                     [
+                         "transformer.py",
+                         "Implements core Transformer architecture..."
+                     ]],
                 "task_list": ["config.py", "utils.py", "transformer.py"],
                 "full_api_spec":
-                "",
+                    "",
                 "shared_knowledge":
-                "All modules share configuration through config.py.",
+                    "All modules share configuration through config.py.",
                 "unclear_aspects":
-                "Exact warmup steps for learning rate scheduling not specified."
+                    "Exact warmup steps for learning rate scheduling not specified."
             }
         })
 
@@ -825,7 +842,8 @@ class PaperToCodeConfig(BaseModel):
     Contains the content of multiple YAML configuration files, each including filename and content.
     """
     yaml_files: List[YamlFile] = Field(
-        ..., description=
+        ...,
+        description=
         "Multiple YAML configuration files, each containing filename and content"
     )
 
@@ -833,15 +851,11 @@ class PaperToCodeConfig(BaseModel):
         json_schema_extra: ClassVar[Dict[str, Any]] = {
             "example": {
                 "yaml_files": [{
-                    "filename":
-                    "config.yaml",
-                    "content":
-                    "model:\n  d_model: 512\n  n_layers: 6..."
+                    "filename": "config.yaml",
+                    "content": "model:\n  d_model: 512\n  n_layers: 6..."
                 }, {
-                    "filename":
-                    "data_config.yaml",
-                    "content":
-                    "dataset:\n  batch_size: 64\n  num_workers: 4..."
+                    "filename": "data_config.yaml",
+                    "content": "dataset:\n  batch_size: 64\n  num_workers: 4..."
                 }]
             }
         }
@@ -854,7 +868,8 @@ class PaperToCodeLogicAnalysis(BaseModel):
     based on the structure in the provided logs.
     """
     content: str = Field(
-        ..., description=
+        ...,
+        description=
         "Complete Markdown-formatted logic analysis with sections for Overview, Key Components, etc."
     )
 

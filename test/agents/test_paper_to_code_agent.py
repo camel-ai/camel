@@ -10,7 +10,6 @@ from camel.agents import PaperToCodeAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
-from camel.responses import ChatAgentResponse
 
 # Import Pydantic models from the agent file to construct mock responses
 from camel.agents.paper_to_code_agent import (
@@ -120,6 +119,7 @@ def test_process_removes_spans(agent, mock_paper_file):
     assert "authors" not in processed_data
 
 
+# ruff: noqa: E501
 @patch('camel.agents.chat_agent.ChatAgent.step')
 def test_full_workflow(mock_chat_agent_step, agent, mock_paper_dir):
     # Set logger level to INFO to catch potential warnings
