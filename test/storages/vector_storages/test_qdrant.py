@@ -144,3 +144,40 @@ def test_delete_collection(temp_storage):
     assert not temp_storage.client.collection_exists(
         temp_storage.collection_name
     )
+
+
+def test_search_with_payload_filter(temp_storage):
+    # Add several vector records with different payloads
+    vector1 = VectorRecord(
+        vector=[0.1, 0.1, 0.1, 0.1], payload={"label": "A", "color": "red"}
+    )
+    vector2 = VectorRecord(
+        vector=[-0.1, -0.1, -0.1, -0.1],
+        payload={"label": "B", "color": "blue"},
+    )
+    vector3 = VectorRecord(
+        vector=[0.2, 0.2, 0.2, 0.2], payload={"label": "A", "color": "green"}
+    )
+    temp_storage.add(records=[vector1, vector2, vector3])
+
+    # Import VectorDBSearch from camel.storages
+    from camel.storages import VectorDBSearch
+
+    search_query = VectorDBSearch(payload_filter={"label": "A"}, top_k=2)
+
+    # Call the search method, which performs a pure payload-based filtering
+    search_results = temp_storage.search(search_query)
+
+    # Expect to retrieve two records (vector1 and vector3) with label 'A'
+    assert len(search_results) == 2
+    for result in search_results:
+        assert result.record.payload.get("label") == "A"
+
+    # Further test: filter by a combination of payload conditions
+    search_query_color = VectorDBSearch(
+        payload_filter={"label": "A", "color": "red"}, top_k=1
+    )
+    search_results_color = temp_storage.search(search_query_color)
+    # Only vector1 should match
+    assert len(search_results_color) == 1
+    assert search_results_color[0].record.payload.get("color") == "red"

@@ -128,6 +128,26 @@ def _convert_distance_to_similarity(self, distance: float):
 
 Converts distance to similarity score based on distance metric.
 
+<a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.search"></a>
+
+### search
+
+```python
+def search(self, search: VectorDBSearch, **kwargs: Any):
+```
+
+Searches for similar vectors in the storage based on the
+provided search query.
+
+**Parameters:**
+
+- **search** (VectorDBSearch): The search object containing the search query and the number of top similar vectors to retrieve. **kwargs (Any): Additional keyword arguments.
+
+**Returns:**
+
+  List[VectorDBSearchResult]: A list of vectors retrieved from the
+storage based on similarity to the search query.
+
 <a id="camel.storages.vectordb_storages.oceanbase.OceanBaseStorage.clear"></a>
 
 ### clear

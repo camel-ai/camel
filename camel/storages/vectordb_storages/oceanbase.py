@@ -23,6 +23,8 @@ from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
     VectorDBQueryResult,
+    VectorDBSearch,
+    VectorDBSearchResult,
     VectorDBStatus,
     VectorRecord,
 )
@@ -436,6 +438,28 @@ class OceanBaseStorage(BaseVectorStorage):
             # Default normalization, ensure result is between 0 and 1
             return max(0.0, min(1.0, 1.0 - min(1.0, distance)))
 
+    
+    def  search(
+        self,
+        search: VectorDBSearch,
+        **kwargs: Any,
+    ) -> List[VectorDBSearchResult]:
+        r"""Searches for similar vectors in the storage based on the
+        provided search query.
+        Args:
+            search (VectorDBSearch): The search object containing the search
+                query and the number of top similar vectors to retrieve.
+            **kwargs (Any): Additional keyword arguments.
+        Returns:
+            List[VectorDBSearchResult]: A list of vectors retrieved from the
+                storage based on similarity to the search query.
+        Raises:
+            RuntimeError: If there is an error during the search process.
+            ValueError: If the search query vector dimension does not match the
+                storage dimension.
+        """
+        
+    
     def clear(self) -> None:
         r"""Remove all vectors from the storage."""
         try:

@@ -14,45 +14,36 @@
 import random
 
 from camel.storages.vectordb_storages import (
-    TiDBStorage,
+    MilvusStorage,
     VectorDBQuery,
     VectorDBSearch,
     VectorRecord,
 )
 
 """
-Before the DATABASE_URL, you can setup the a TiDB database cluster first:
+Before the DATABASE_URL, you can setup the a Milvus database cluster first:
 
-(Option 1): TiDB Serverless
+(Option 1): ☁️ Milvus Serverless 
 
-1. Go to [TiDB Cloud](https://tidbcloud.com/console/clusters) to create 
-    a serverless cluster
-2. Click the **Connect** button
-3. Select "SQLAlchemy" > "PyMySQL" for the **Connect With** option, then 
-    you can get the DATABASE_URL like:
+1. Go to [Zilliz Cloud](https://zilliz.com/cloud) and create a Milvus 
+    serverless instance
+2. Click the **Connect** button on your instance dashboard
+3. Go to "Cluster Detail" > "Connect" Copy the **Public 
+    Endpoint** and **Token**  
+4. Pass them as a tuple into MilvusStorage like:
 
-DATABASE_URL="mysql+pymysql://<USERNAME>:<PASSWORD>@<HOST>:4000/test&ssl_verify_cert=true&ssl_verify_identity=true"
-
-(Option 2): TiDB playground cluster on local
-
-1. Install TiUP via command:
-
-```
-curl --proto '=https' --tlsv1.2 -sSf \
-    https://tiup-mirrors.pingcap.com/install.sh | sh
-```
-
-2. Deploy a playground cluster via command: `tiup playground`
-3. The DATABASE_URL should be like: "mysql+pymysql://root:@localhost:4000/test"
+DATABASE_URL = ("https://xxx.api.zillizcloud.com", "your-api-key")
 """
 
-DATABASE_URL = "mysql+pymysql://root:@localhost:4000/test"
+uri = "https://in03-4a0c9f648c49848.serverless.gcp-us-west1.cloud.zilliz.com"
+token = "replace-this-with-your-api-key"
+DATABASE_URL = (uri, token)
 
 
 def main():
-    # Create an instance of TiDBStorage with dimension = 4
-    tidb_storage = TiDBStorage(
-        url_and_api_key=(DATABASE_URL, ""),
+    # Create an instance of MilvusStorage with dimension = 4
+    milvus_storage = MilvusStorage(
+        url_and_api_key=(DATABASE_URL),
         vector_dim=4,
         collection_name="my_collection",
     )
@@ -63,10 +54,12 @@ def main():
         vector = [random.uniform(-1, 1) for _ in range(4)]
         payload = {"group": "A" if i % 2 == 0 else "B", "index": i}
         records.append(VectorRecord(vector=vector, payload=payload))
-    tidb_storage.add(records)
+    milvus_storage.add(records)
+
+    milvus_storage.load()
 
     # Query similar vectors
-    query_results = tidb_storage.query(
+    query_results = milvus_storage.query(
         VectorDBQuery(query_vector=[0.1, 0.2, 0.1, 0.1], top_k=1)
     )
     for result in query_results:
@@ -74,10 +67,10 @@ def main():
 
     """
     Output:
-    {'group': 'A', 'index': 70} 0.972551598645325
+    {'group': 'B', 'index': 59} 0.9667742848396301
     """
 
-    search_results = tidb_storage.search(
+    search_results = milvus_storage.search(
         VectorDBSearch(
             payload_filter={"group": {"$eq": "A"}},
             top_k=2,
@@ -88,11 +81,9 @@ def main():
 
     """
     Output:
-    {'group': 'A', 'index': 98}
-    {'group': 'A', 'index': 26}
+    {'group': 'A', 'index': 64}
+    {'group': 'A', 'index': 76}
     """
-    # Clear all vectors
-    tidb_storage.clear()
 
 
 if __name__ == "__main__":

@@ -198,6 +198,44 @@ query.
   List[VectorDBQueryResult]: A list of vectors retrieved from the
 storage based on similarity to the query vector.
 
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage._convert_filter_dict_to_internal_format"></a>
+
+### _convert_filter_dict_to_internal_format
+
+```python
+def _convert_filter_dict_to_internal_format(self, filter_dict: Dict[str, Any]):
+```
+
+convert filter dict to internal format
+
+**Parameters:**
+
+- **filter_dict** (Dict[str, Any]): The filter dictionary to be converted.
+
+**Returns:**
+
+  Dict[str, Any]: The converted filter dictionary.
+
+<a id="camel.storages.vectordb_storages.tidb.TiDBStorage.search"></a>
+
+### search
+
+```python
+def search(self, search: VectorDBSearch, **kwargs: Any):
+```
+
+Searches for vector records in the storage based solely on payload
+filters,without performing any vector similarity computation.
+
+**Parameters:**
+
+- **search** (VectorDBSearch): The search object containing the payload filter(e.g. payload_filter=`{"label": "A"}`) and optionally a top_k limit. **kwargs (Any): Additional keyword arguments.
+
+**Returns:**
+
+  List[VectorDBSearchResult]: A list of vector records that match the
+specified payload filter.
+
 <a id="camel.storages.vectordb_storages.tidb.TiDBStorage.clear"></a>
 
 ### clear

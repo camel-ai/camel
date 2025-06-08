@@ -24,6 +24,8 @@ from .vectordb_storages.base import (
     BaseVectorStorage,
     VectorDBQuery,
     VectorDBQueryResult,
+    VectorDBSearch,
+    VectorDBSearchResult,
     VectorRecord,
 )
 from .vectordb_storages.faiss import FaissStorage
@@ -37,10 +39,7 @@ __all__ = [
     'InMemoryKeyValueStorage',
     'JsonStorage',
     'RedisStorage',
-    'VectorRecord',
     'BaseVectorStorage',
-    'VectorDBQuery',
-    'VectorDBQueryResult',
     'QdrantStorage',
     'MilvusStorage',
     "TiDBStorage",
@@ -50,4 +49,9 @@ __all__ = [
     'NebulaGraph',
     'Mem0Storage',
     'OceanBaseStorage',
+    "VectorDBQuery",
+    "VectorDBQueryResult",
+    "VectorDBSearch",
+    "VectorDBSearchResult",
+    "VectorRecord",
 ]
