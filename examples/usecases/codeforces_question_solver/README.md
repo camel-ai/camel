@@ -1,20 +1,24 @@
-# 🧠 Codeforces Problem Solver with CAMEL Agents & Firecrawl
+# 🧠 Competitive Programming Problem Solver with CAMEL Agents & Firecrawl
 
-This project enables users to input a Codeforces Problem ID and receive an AI-generated Python solution. It integrates:
+This project enables users to input problems from competitive programming platforms (Codeforces or LeetCode) and receive AI-generated Python solutions. It integrates:
 
 - 🔍 Web scraping via Firecrawl
 - 🤖 Multi-agent reasoning with CAMEL AI
 - 🧪 Code execution and validation against sample tests
 - 🌐 Streamlit interface for user interaction
+- 🔄 Auto-fix functionality for Codeforces problems
 
 ---
 
 ## 🚀 Features
 
-- **Problem Retrieval**: Fetches problem statements from Codeforces using Firecrawl.
-- **Sample Extraction**: Parses and extracts sample inputs and outputs from the problem description.
-- **AI-Powered Solution**: Utilizes CAMEL AI agents to generate Python solutions.
-- **Automated Testing**: Executes the generated code against extracted samples to verify correctness.
+- **Multi-Platform Support**: Solves problems from both Codeforces and LeetCode
+- **Problem Retrieval**: Fetches problem statements using Firecrawl
+- **Sample Extraction**: Parses and extracts sample inputs/outputs from problem descriptions
+- **AI-Powered Solution**: Utilizes CAMEL AI agents to generate Python solutions
+- **Automated Testing**: Executes generated code against extracted samples
+- **Auto-Fix Capability**: Iteratively improves solutions for Codeforces problems
+- **Platform-Specific Handling**: Different solution approaches for Codeforces vs LeetCode
 
 ---
 
@@ -45,11 +49,12 @@ pip install -r requirements.txt
 
 3. **Configure environment variables**:
 
-   Create a `.env` file in the root directory and add your Firecrawl API key and OpenAI API key:
+   Create a `.env` file in the root directory and add your API keys:
 
    ```env
    FIRECRAWL_API_KEY=your_firecrawl_api_key
    OPENAI_API_KEY=your_openai_api_key
+   FIRECRAWL_API_KEY='your_firecrawl_key'
    ```
 
 ---
@@ -79,40 +84,42 @@ Then, open the provided URL in your browser to interact with the app.
 
 ## 🧠 Powered By
 
-- [CAMEL AI](https://github.com/camel-ai/camel): Multi-agent reasoning framework.
-- [Firecrawl](https://github.com/mendableai/firecrawl): Web scraping and data extraction tool.
-- [Streamlit](https://streamlit.io/): Web application framework for Python.
+- [CAMEL AI](https://github.com/camel-ai/camel): Multi-agent reasoning framework
+- [Firecrawl](https://github.com/mendableai/firecrawl): Web scraping and data extraction
+- [Streamlit](https://streamlit.io/): Web application framework
 
 ---
 
 ## 💬 Example Usage
 
-1. **Input**: Enter a Codeforces Problem ID (e.g., `2116B`).
-2. **Process**:
-   - The app fetches the problem statement using Firecrawl.
-   - Extracts sample inputs and outputs.
-   - Generates a Python solution using CAMEL AI agents.
-   - Executes the solution against the samples.
-3. **Output**: Displays the problem statement, generated code, and test results indicating pass/fail status.
+1. **Select Platform**: Choose Codeforces or LeetCode
+2. **Input Problem ID**:
+   - For Codeforces: Enter problem ID (e.g., `2116B`)
+   - For LeetCode: Enter problem slug (e.g., `reverse-integer`)
+3. **Process**:
+   - Fetches problem statement using Firecrawl
+   - Extracts sample inputs/outputs
+   - Generates Python solution using CAMEL AI
+   - For Codeforces: Optionally auto-fixes solution based on test failures
+4. **Output**: Displays generated code, and test results
 
 ---
 
 ## 📌 Notes
 
-- Ensure your Firecrawl API key is valid and has sufficient quota.
-- The accuracy of the generated solutions depends on the complexity of the problem and the capabilities of the CAMEL AI agents.
-- Always review and test the generated code before using it in competitive environments.
-
-
+- Ensure your API keys are valid and have sufficient quota
+- Solution accuracy depends on problem complexity and AI capabilities
+- Always review generated code before using in competitions
+- Auto-fix is currently only available for Codeforces problems
 
 ---
 
 ## 🙌 Acknowledgements
 
-- [CAMEL AI](https://github.com/camel-ai/camel) for the multi-agent reasoning framework.
-- [Firecrawl](https://github.com/mendableai/firecrawl) for the web scraping capabilities.
-- [Streamlit](https://streamlit.io/) for the intuitive web interface.
+- [CAMEL AI](https://github.com/camel-ai/camel) for multi-agent reasoning
+- [Firecrawl](https://github.com/mendableai/firecrawl) for web scraping
+- [Streamlit](https://streamlit.io/) for the web interface
 
 ---
 
-Feel free to contribute to this project by submitting issues or pull requests.
+Feel free to contribute by submitting issues or pull requests!
