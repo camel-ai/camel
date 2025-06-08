@@ -2022,9 +2022,9 @@ class ChatAgent(BaseAgent):
                     tool_call_records,
                     num_tokens,
                     None,
-                    step_token_usage["prompt_tokens"],
-                    step_token_usage["completion_tokens"],
-                    step_token_usage["total_tokens"],
+                    model_response.usage_dict.get("prompt_tokens", 0),
+                    model_response.usage_dict.get("completion_tokens", 0),
+                    model_response.usage_dict.get("total_tokens", 0),
                 )
                 break
 
@@ -2662,9 +2662,9 @@ class ChatAgent(BaseAgent):
                     tool_call_records,
                     num_tokens,
                     None,
-                    step_token_usage["prompt_tokens"],
-                    step_token_usage["completion_tokens"],
-                    step_token_usage["total_tokens"],
+                    model_response.usage_dict.get("prompt_tokens", 0),
+                    model_response.usage_dict.get("completion_tokens", 0),
+                    model_response.usage_dict.get("total_tokens", 0),
                 )
                 break
 
