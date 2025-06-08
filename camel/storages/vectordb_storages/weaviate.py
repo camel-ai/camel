@@ -13,10 +13,19 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import logging
+import math
 import re
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Union,
+    cast,
+)
 
 if TYPE_CHECKING:
     from weaviate import WeaviateClient
@@ -33,13 +42,10 @@ from camel.utils import dependencies_required
 logger = logging.getLogger(__name__)
 
 
-class WeaviateConnectionType(Enum):
-    r"""Supported Weaviate connection types."""
-
-    CLOUD = "cloud"
-    LOCAL = "local"
-    EMBEDDED = "embedded"
-    CUSTOM = "custom"
+# Type definitions for configuration options
+ConnectionType = Literal["local", "cloud", "embedded", "custom"]
+VectorIndexType = Literal["hnsw", "flat"]
+DistanceMetric = Literal["cosine", "dot", "l2-squared", "hamming", "manhattan"]
 
 
 class WeaviateStorage(BaseVectorStorage):
@@ -57,9 +63,9 @@ class WeaviateStorage(BaseVectorStorage):
         collection_name (Optional[str], optional): Name for the collection in
             Weaviate. If not provided, generates a unique name based on current
             timestamp. (default: :obj:`None`)
-        connection_type (WeaviateConnectionType or str, optional): Type of
-            connection to use. Options: 'cloud', 'local', 'embedded', 'custom'.
-            (default: :obj:`WeaviateConnectionType.LOCAL`)
+        connection_type (ConnectionType, optional): Type of connection to use.
+            Supported types: 'local', 'cloud', 'embedded', 'custom'.
+            (default: :obj:`"local"`)
 
         # Weaviate Cloud parameters
         wcd_cluster_url (Optional[str], optional): Weaviate Cloud cluster URL.
@@ -104,6 +110,13 @@ class WeaviateStorage(BaseVectorStorage):
         custom_grpc_secure (Optional[bool], optional): Use secure gRPC.
         custom_auth_credentials (Optional[Any], optional): Custom auth.
 
+        # Vector index configuration parameters
+        vector_index_type (VectorIndexType, optional): Vector index type.
+            Supported types: 'hnsw', 'flat'. (default: :obj:`"hnsw"`)
+        distance_metric (DistanceMetric, optional): Distance metric for vector
+            similarity. Supported metrics: 'cosine', 'dot', 'l2-squared',
+            'hamming', 'manhattan'. (default: :obj:`"cosine"`)
+
         # Common parameters for all connection types
         headers (Optional[Dict[str, str]], optional): Additional headers for
             third-party API keys (e.g., OpenAI, Cohere). (default: :obj:`None`)
@@ -130,9 +143,7 @@ class WeaviateStorage(BaseVectorStorage):
         self,
         vector_dim: int,
         collection_name: Optional[str] = None,
-        connection_type: Union[
-            WeaviateConnectionType, str
-        ] = WeaviateConnectionType.LOCAL,
+        connection_type: ConnectionType = "local",
         # Weaviate Cloud parameters
         wcd_cluster_url: Optional[str] = None,
         wcd_api_key: Optional[str] = None,
@@ -157,6 +168,9 @@ class WeaviateStorage(BaseVectorStorage):
         custom_grpc_port: Optional[int] = None,
         custom_grpc_secure: Optional[bool] = None,
         custom_auth_credentials: Optional[Any] = None,
+        # Vector index configuration parameters
+        vector_index_type: VectorIndexType = "hnsw",
+        distance_metric: DistanceMetric = "cosine",
         # Common parameters
         headers: Optional[Dict[str, str]] = None,
         additional_config: Optional[Any] = None,
@@ -168,81 +182,77 @@ class WeaviateStorage(BaseVectorStorage):
             collection_name or self._generate_collection_name()
         )
 
-        # Handle string connection type
-        if isinstance(connection_type, str):
-            try:
-                connection_type = WeaviateConnectionType(
-                    connection_type.lower()
-                )
-            except ValueError:
-                raise ValueError(
-                    f"Invalid connection_type: {connection_type}. "
-                    f"Must be one of: "
-                    f"{[t.value for t in WeaviateConnectionType]}"
-                )
+        # Store vector index configuration
+        self.vector_index_type: VectorIndexType = vector_index_type
+        self.distance_metric: DistanceMetric = distance_metric
 
-        self.connection_type = connection_type
+        # Store connection type configuration
+        self.connection_type: ConnectionType = connection_type
 
-        # Create client based on connection type
-        self._client = self._create_client(
-            connection_type=connection_type,
-            wcd_cluster_url=wcd_cluster_url,
-            wcd_api_key=wcd_api_key,
-            local_host=local_host,
-            local_port=local_port,
-            local_grpc_port=local_grpc_port,
-            local_auth_credentials=local_auth_credentials,
-            embedded_hostname=embedded_hostname,
-            embedded_port=embedded_port,
-            embedded_grpc_port=embedded_grpc_port,
-            embedded_version=embedded_version,
-            embedded_persistence_data_path=embedded_persistence_data_path,
-            embedded_binary_path=embedded_binary_path,
-            embedded_environment_variables=embedded_environment_variables,
-            custom_http_host=custom_http_host,
-            custom_http_port=custom_http_port,
-            custom_http_secure=custom_http_secure,
-            custom_grpc_host=custom_grpc_host,
-            custom_grpc_port=custom_grpc_port,
-            custom_grpc_secure=custom_grpc_secure,
-            custom_auth_credentials=custom_auth_credentials,
-            headers=headers,
-            additional_config=additional_config,
-            skip_init_checks=skip_init_checks,
+        # Store connection parameters for later use
+        self._connection_params = {
+            'wcd_cluster_url': wcd_cluster_url,
+            'wcd_api_key': wcd_api_key,
+            'local_host': local_host,
+            'local_port': local_port,
+            'local_grpc_port': local_grpc_port,
+            'local_auth_credentials': local_auth_credentials,
+            'embedded_hostname': embedded_hostname,
+            'embedded_port': embedded_port,
+            'embedded_grpc_port': embedded_grpc_port,
+            'embedded_version': embedded_version,
+            'embedded_persistence_data_path': embedded_persistence_data_path,
+            'embedded_binary_path': embedded_binary_path,
+            'embedded_environment_variables': embedded_environment_variables,
+            'custom_http_host': custom_http_host,
+            'custom_http_port': custom_http_port,
+            'custom_http_secure': custom_http_secure,
+            'custom_grpc_host': custom_grpc_host,
+            'custom_grpc_port': custom_grpc_port,
+            'custom_grpc_secure': custom_grpc_secure,
+            'custom_auth_credentials': custom_auth_credentials,
+            'headers': headers,
+            'additional_config': additional_config,
+            'skip_init_checks': skip_init_checks,
             **kwargs,
-        )
+        }
+
+        # Create client using the new unified approach
+        self._client = self._get_connection_client()
         logger.info(
             f"Created Weaviate client with connection type: "
-            f"{connection_type.value}"
+            f"{self.connection_type}"
         )
 
-        self._check_and_create_collection()
+        self._check_and_create_collection(**kwargs)
 
-    def _create_client(
-        self, connection_type: WeaviateConnectionType, **kwargs: Any
-    ) -> "WeaviateClient":
-        r"""Create a Weaviate client based on connection type
-        and parameters."""
-
+    def _get_connection_client(self) -> "WeaviateClient":
+        r"""Get Weaviate client based on connection type and user settings."""
         import weaviate
 
-        if connection_type == WeaviateConnectionType.CLOUD:
-            return self._create_cloud_client(weaviate, **kwargs)
-        elif connection_type == WeaviateConnectionType.LOCAL:
-            return self._create_local_client(weaviate, **kwargs)
-        elif connection_type == WeaviateConnectionType.EMBEDDED:
-            return self._create_embedded_client(weaviate, **kwargs)
-        elif connection_type == WeaviateConnectionType.CUSTOM:
-            return self._create_custom_client(weaviate, **kwargs)
-        else:
-            raise ValueError(f"Unsupported connection type: {connection_type}")
+        # Map connection types to handler methods
+        connection_handlers: Dict[ConnectionType, Any] = {
+            'cloud': self._create_cloud_client,
+            'local': self._create_local_client,
+            'embedded': self._create_embedded_client,
+            'custom': self._create_custom_client,
+        }
 
-    def _create_cloud_client(
-        self, weaviate_module: Any, **kwargs: Any
-    ) -> "WeaviateClient":
+        # Get connection handler
+        handler = connection_handlers[self.connection_type]
+
+        try:
+            return handler(weaviate)
+        except Exception as e:
+            logger.error(
+                f"Failed to create {self.connection_type} client: {e}"
+            )
+            raise
+
+    def _create_cloud_client(self, weaviate_module: Any) -> "WeaviateClient":
         r"""Create a Weaviate Cloud client."""
-        cluster_url = kwargs.get('wcd_cluster_url')
-        api_key = kwargs.get('wcd_api_key')
+        cluster_url = self._connection_params.get('wcd_cluster_url')
+        api_key = self._connection_params.get('wcd_api_key')
 
         if not cluster_url:
             raise ValueError(
@@ -254,56 +264,74 @@ class WeaviateStorage(BaseVectorStorage):
         return weaviate_module.connect_to_weaviate_cloud(
             cluster_url=cluster_url,
             auth_credentials=api_key,
-            headers=kwargs.get('headers'),
-            additional_config=kwargs.get('additional_config'),
-            skip_init_checks=kwargs.get('skip_init_checks', False),
+            headers=self._connection_params.get('headers'),
+            additional_config=self._connection_params.get('additional_config'),
+            skip_init_checks=self._connection_params.get(
+                'skip_init_checks', False
+            ),
         )
 
-    def _create_local_client(
-        self, weaviate_module: Any, **kwargs: Any
-    ) -> "WeaviateClient":
+    def _create_local_client(self, weaviate_module: Any) -> "WeaviateClient":
         r"""Create a local Weaviate client."""
         return weaviate_module.connect_to_local(
-            host=kwargs.get('local_host', 'localhost'),
-            port=kwargs.get('local_port', 8080),
-            grpc_port=kwargs.get('local_grpc_port', 50051),
-            headers=kwargs.get('headers'),
-            additional_config=kwargs.get('additional_config'),
-            skip_init_checks=kwargs.get('skip_init_checks', False),
-            auth_credentials=kwargs.get('local_auth_credentials'),
+            host=self._connection_params.get('local_host', 'localhost'),
+            port=self._connection_params.get('local_port', 8080),
+            grpc_port=self._connection_params.get('local_grpc_port', 50051),
+            headers=self._connection_params.get('headers'),
+            additional_config=self._connection_params.get('additional_config'),
+            skip_init_checks=self._connection_params.get(
+                'skip_init_checks', False
+            ),
+            auth_credentials=self._connection_params.get(
+                'local_auth_credentials'
+            ),
         )
 
     def _create_embedded_client(
-        self, weaviate_module: Any, **kwargs: Any
+        self, weaviate_module: Any
     ) -> "WeaviateClient":
         r"""Create an embedded Weaviate client."""
         embedded_kwargs = {
-            'hostname': kwargs.get('embedded_hostname', '127.0.0.1'),
-            'port': kwargs.get('embedded_port', 8079),
-            'grpc_port': kwargs.get('embedded_grpc_port', 50050),
-            'headers': kwargs.get('headers'),
-            'additional_config': kwargs.get('additional_config'),
+            'hostname': self._connection_params.get(
+                'embedded_hostname', '127.0.0.1'
+            ),
+            'port': self._connection_params.get('embedded_port', 8079),
+            'grpc_port': self._connection_params.get(
+                'embedded_grpc_port', 50050
+            ),
+            'headers': self._connection_params.get('headers'),
+            'additional_config': self._connection_params.get(
+                'additional_config'
+            ),
         }
 
         # Add optional embedded parameters
-        if kwargs.get('embedded_version') is not None:
-            embedded_kwargs['version'] = kwargs['embedded_version']
-        if kwargs.get('embedded_persistence_data_path') is not None:
-            embedded_kwargs['persistence_data_path'] = kwargs[
+        if self._connection_params.get('embedded_version') is not None:
+            embedded_kwargs['version'] = self._connection_params[
+                'embedded_version'
+            ]
+        if (
+            self._connection_params.get('embedded_persistence_data_path')
+            is not None
+        ):
+            embedded_kwargs['persistence_data_path'] = self._connection_params[
                 'embedded_persistence_data_path'
             ]
-        if kwargs.get('embedded_binary_path') is not None:
-            embedded_kwargs['binary_path'] = kwargs['embedded_binary_path']
-        if kwargs.get('embedded_environment_variables') is not None:
-            embedded_kwargs['environment_variables'] = kwargs[
+        if self._connection_params.get('embedded_binary_path') is not None:
+            embedded_kwargs['binary_path'] = self._connection_params[
+                'embedded_binary_path'
+            ]
+        if (
+            self._connection_params.get('embedded_environment_variables')
+            is not None
+        ):
+            embedded_kwargs['environment_variables'] = self._connection_params[
                 'embedded_environment_variables'
             ]
 
         return weaviate_module.connect_to_embedded(**embedded_kwargs)
 
-    def _create_custom_client(
-        self, weaviate_module: Any, **kwargs: Any
-    ) -> "WeaviateClient":
+    def _create_custom_client(self, weaviate_module: Any) -> "WeaviateClient":
         r"""Create a custom Weaviate client."""
         # Validate required custom parameters
         required_params = [
@@ -316,20 +344,24 @@ class WeaviateStorage(BaseVectorStorage):
         ]
 
         for param in required_params:
-            if kwargs.get(param) is None:
+            if self._connection_params.get(param) is None:
                 raise ValueError(f"{param} is required for custom connection")
 
         return weaviate_module.connect_to_custom(
-            http_host=kwargs['custom_http_host'],
-            http_port=kwargs['custom_http_port'],
-            http_secure=kwargs['custom_http_secure'],
-            grpc_host=kwargs['custom_grpc_host'],
-            grpc_port=kwargs['custom_grpc_port'],
-            grpc_secure=kwargs['custom_grpc_secure'],
-            headers=kwargs.get('headers'),
-            additional_config=kwargs.get('additional_config'),
-            auth_credentials=kwargs.get('custom_auth_credentials'),
-            skip_init_checks=kwargs.get('skip_init_checks', False),
+            http_host=self._connection_params['custom_http_host'],
+            http_port=self._connection_params['custom_http_port'],
+            http_secure=self._connection_params['custom_http_secure'],
+            grpc_host=self._connection_params['custom_grpc_host'],
+            grpc_port=self._connection_params['custom_grpc_port'],
+            grpc_secure=self._connection_params['custom_grpc_secure'],
+            headers=self._connection_params.get('headers'),
+            additional_config=self._connection_params.get('additional_config'),
+            auth_credentials=self._connection_params.get(
+                'custom_auth_credentials'
+            ),
+            skip_init_checks=self._connection_params.get(
+                'skip_init_checks', False
+            ),
         )
 
     def __del__(self):
@@ -355,10 +387,10 @@ class WeaviateStorage(BaseVectorStorage):
         valid_name = "Collection_" + re.sub(r'[^a-zA-Z0-9_]', '_', timestamp)
         return valid_name
 
-    def _check_and_create_collection(self) -> None:
+    def _check_and_create_collection(self, **kwargs: Any) -> None:
         r"""Check if collection exists and create if it doesn't."""
         if not self._collection_exists(self.collection_name):
-            self._create_collection()
+            self._create_collection(**kwargs)
 
     def _collection_exists(self, collection_name: str) -> bool:
         r"""Check if the collection exists."""
@@ -369,9 +401,65 @@ class WeaviateStorage(BaseVectorStorage):
         except Exception:
             return False
 
-    def _create_collection(self) -> None:
+    def _get_vector_index_config(self, **kwargs: Any) -> Any:
+        r"""Get vector index configuration based on user settings."""
+        import weaviate.classes.config as wvc
+
+        # Map distance metrics - type safety guaranteed by Literal
+        distance_metric_mapping: Dict[DistanceMetric, Any] = {
+            'cosine': wvc.VectorDistances.COSINE,
+            'dot': wvc.VectorDistances.DOT,
+            'l2-squared': wvc.VectorDistances.L2_SQUARED,
+            'hamming': wvc.VectorDistances.HAMMING,
+            'manhattan': wvc.VectorDistances.MANHATTAN,
+        }
+
+        # Get distance metric - no need for None check due to Literal typing
+        distance_metric = distance_metric_mapping[self.distance_metric]
+
+        # Configure vector index based on type
+        if self.vector_index_type == 'hnsw':
+            return wvc.Configure.VectorIndex.hnsw(
+                distance_metric=distance_metric,
+                **kwargs,
+            )
+        else:  # must be 'flat' due to Literal typing
+            return wvc.Configure.VectorIndex.flat(
+                distance_metric=distance_metric,
+                **kwargs,
+            )
+
+    def _create_collection(self, **kwargs: Any) -> None:
         r"""Create a new collection in Weaviate."""
         import weaviate.classes.config as wvc
+
+        # Separate vector index kwargs from general kwargs to avoid conflicts
+        vector_index_kwargs = {}
+        collection_kwargs = {}
+
+        # Known vector index parameters
+        vector_index_params = {
+            'ef_construction',
+            'max_connections',
+            'ef',
+            'dynamic_ef_min',
+            'dynamic_ef_max',
+            'dynamic_ef_factor',
+            'vector_cache_max_objects',
+            'flat_search_cutoff',
+            'cleanup_interval_seconds',
+            'pq_enabled',
+            'pq_segments',
+            'pq_centroids',
+            'pq_training_limit',
+            'pq_encoder',
+        }
+
+        for key, value in kwargs.items():
+            if key in vector_index_params:
+                vector_index_kwargs[key] = value
+            else:
+                collection_kwargs[key] = value
 
         self._client.collections.create(
             name=self.collection_name,
@@ -379,9 +467,10 @@ class WeaviateStorage(BaseVectorStorage):
             properties=[
                 wvc.Property(name="payload", data_type=wvc.DataType.TEXT),
             ],
-            vector_index_config=wvc.Configure.VectorIndex.hnsw(
-                distance_metric=wvc.VectorDistances.COSINE
+            vector_index_config=self._get_vector_index_config(
+                **vector_index_kwargs
             ),
+            **collection_kwargs,
         )
 
     def add(
@@ -413,6 +502,7 @@ class WeaviateStorage(BaseVectorStorage):
                         properties={"payload": payload_str},
                         vector=record.vector,
                         uuid=record.id,
+                        **kwargs,
                     )
             logger.debug(
                 f"Successfully added vectors to Weaviate collection: "
@@ -444,7 +534,9 @@ class WeaviateStorage(BaseVectorStorage):
             collection = self._client.collections.get(self.collection_name)
             from weaviate.classes.query import Filter
 
-            collection.data.delete_many(where=Filter.by_id().contains_any(ids))
+            collection.data.delete_many(
+                where=Filter.by_id().contains_any(ids), **kwargs
+            )
             logger.debug(
                 f"Successfully deleted vectors in Weaviate: "
                 f"{self.collection_name}"
@@ -452,6 +544,49 @@ class WeaviateStorage(BaseVectorStorage):
 
         except Exception as e:
             raise RuntimeError(f"Failed to delete vectors from Weaviate: {e}")
+
+    def _calculate_similarity_from_distance(
+        self, distance: Optional[float]
+    ) -> float:
+        r"""Calculate similarity score based on distance metric.
+
+        Args:
+            distance (Optional[float]): The distance value from Weaviate.
+
+        Returns:
+            float: Normalized similarity score between 0 and 1.
+        """
+        # Return 0.0 if distance is not available
+        if distance is None:
+            return 0.0
+
+        # Calculate similarity based on distance metric
+        if self.distance_metric == "cosine":
+            # Cosine: 0 (identical) to 2 (opposite)
+            # Convert to similarity: 1 - (distance / 2)
+            return max(0.0, 1.0 - (distance / 2.0))
+
+        elif self.distance_metric == "dot":
+            # Dot product: Weaviate returns -dot,
+            # smaller (more negative) is more similar
+            # Use sigmoid function to normalize to [0,1] range
+            # For dot product, we use: 1 / (1 + exp(distance))
+            return 1.0 / (1.0 + math.exp(distance))
+
+        elif self.distance_metric in ["l2-squared", "manhattan"]:
+            # L2-squared and Manhattan: 0 (identical) to ∞
+            # Convert to similarity using: 1 / (1 + distance)
+            # This provides a smoother decay than exponential
+            return 1.0 / (1.0 + distance)
+
+        elif self.distance_metric == "hamming":
+            # Hamming: 0 (identical) to vector_dim (completely different)
+            # Convert to similarity: 1 - (distance / vector_dim)
+            return max(0.0, 1.0 - (distance / self.vector_dim))
+
+        else:
+            # Unknown metric, return 0.0
+            return 0.0
 
     def status(self) -> VectorDBStatus:
         r"""Returns status of the vector database.
@@ -501,16 +636,15 @@ class WeaviateStorage(BaseVectorStorage):
                 near_vector=query.query_vector,
                 limit=query.top_k,
                 include_vector=True,
-                return_metadata=MetadataQuery(certainty=True),
+                return_metadata=MetadataQuery(distance=True),
+                **kwargs,
             )
 
             results = []
             for obj in response.objects:
-                # calculate similarity score
-                similarity = (
-                    obj.metadata.certainty
-                    if obj.metadata.certainty is not None
-                    else 0.0
+                # Calculate similarity score based on distance metric
+                similarity = self._calculate_similarity_from_distance(
+                    obj.metadata.distance
                 )
 
                 # Handle payload
