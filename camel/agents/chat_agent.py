@@ -1686,7 +1686,9 @@ class ChatAgent(BaseAgent):
                 schema for schema in self._external_tool_schemas.values()
             ],
             response_terminators=self.response_terminators,
-            scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
+            scheduling_strategy=(
+                self.model_backend.scheduling_strategy.__name__
+            ),
             single_iteration=self.single_iteration,
             stop_event=self.stop_event,
         )
@@ -1909,14 +1911,23 @@ class ChatAgent(BaseAgent):
                 functions = request_data.get("functions")
                 tools = request_data.get("tools")
 
-                # Convert OpenAI messages to CAMEL format
-                camel_messages = []
+                # Convert OpenAI messages to CAMEL format and record in memory
+                current_user_message = None
                 for msg in messages:
                     msg_role = msg.get("role", "")
                     msg_content = msg.get("content", "")
 
                     if msg_role == "user":
-                        camel_messages.append(msg_content)
+                        user_msg = BaseMessage.make_user_message(
+                            role_name="User", content=msg_content
+                        )
+                        # Record all but the last user message in memory
+                        # The last user message will be passed to step()
+                        if current_user_message is not None:
+                            self.update_memory(
+                                current_user_message, OpenAIBackendRole.USER
+                            )
+                        current_user_message = user_msg
                     elif msg_role == "assistant":
                         # Record previous assistant messages
                         assistant_msg = BaseMessage.make_assistant_message(
@@ -1940,16 +1951,16 @@ class ChatAgent(BaseAgent):
                                 self.add_external_tool({"function": tool})
 
                 # Get the response from the agent
-                if len(camel_messages) > 0:
-                    last_message = camel_messages[-1]
-
+                if current_user_message is not None:
                     if stream:
                         return StreamingResponse(
-                            _stream_response(last_message, request_data),
+                            _stream_response(
+                                current_user_message, request_data
+                            ),
                             media_type="text/event-stream",
                         )
                     else:
-                        agent_response = self.step(last_message)
+                        agent_response = self.step(current_user_message)
 
                         # Convert CAMEL response to OpenAI format
                         if not agent_response.msgs:
@@ -2012,7 +2023,7 @@ class ChatAgent(BaseAgent):
 
                         return response
                 else:
-                    # No message provided
+                    # No user message provided
                     return JSONResponse(
                         status_code=400,
                         content={"error": "No user message provided"},
@@ -2023,7 +2034,7 @@ class ChatAgent(BaseAgent):
                     content={"error": f"Internal server error: {e!s}"},
                 )
 
-        async def _stream_response(message: str, request_data: dict):
+        async def _stream_response(message: BaseMessage, request_data: dict):
             # Start a separate task for the agent processing
             agent_response = self.step(message)
 
@@ -2034,7 +2045,9 @@ class ChatAgent(BaseAgent):
                 return
 
             content = agent_response.msgs[0].content
-            tokens = content.split(" ")
+            # This provides a good streaming experience without complex
+            # token handling
+            words = content.split()
 
             # Send the first event with model info
             first_chunk = {
@@ -2053,18 +2066,20 @@ class ChatAgent(BaseAgent):
             yield f"data: {json.dumps(first_chunk)}\n\n"
 
             # Stream the content word by word
-            for token in tokens:
-                token_chunk = {
+            for i, word in enumerate(words):
+                # Add space before each word except the first
+                word_content = word if i == 0 else f" {word}"
+                word_chunk = {
                     'choices': [
                         {
                             'index': 0,
-                            'delta': {'content': token + ' '},
+                            'delta': {'content': word_content},
                             'finish_reason': None,
                         }
                     ]
                 }
-                yield f"data: {json.dumps(token_chunk)}\n\n"
-                await asyncio.sleep(0.05)
+                yield f"data: {json.dumps(word_chunk)}\n\n"
+                await asyncio.sleep(0.05)  # Reasonable streaming speed
 
             # Send the final event
             final_chunk = {
