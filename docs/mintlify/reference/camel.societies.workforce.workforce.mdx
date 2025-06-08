@@ -26,6 +26,7 @@ capabilities
 - **coordinator_agent_kwargs** (Optional[Dict], optional): Keyword arguments passed directly to the coordinator :obj:`ChatAgent` constructor. The coordinator manages task assignment and failure handling strategies. See :obj:`ChatAgent` documentation for all available parameters. (default: :obj:`None` - uses ModelPlatformType.DEFAULT, ModelType.DEFAULT)
 - **task_agent_kwargs** (Optional[Dict], optional): Keyword arguments passed directly to the task planning :obj:`ChatAgent` constructor. The task agent handles task decomposition into subtasks and result composition. See :obj:`ChatAgent` documentation for all available parameters. (default: :obj:`None` - uses ModelPlatformType.DEFAULT, ModelType.DEFAULT)
 - **new_worker_agent_kwargs** (Optional[Dict], optional): Default keyword arguments passed to :obj:`ChatAgent` constructor for workers created dynamically at runtime when existing workers cannot handle failed tasks. See :obj:`ChatAgent` documentation for all available parameters. (default: :obj:`None` - creates workers with SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit)
+- **graceful_shutdown_timeout** (float, optional): The timeout in seconds for graceful shutdown when a task fails 3 times. During this period, the workforce remains active for debugging. Set to 0 for immediate shutdown. (default: :obj:`15.0`)
 
 <a id="camel.societies.workforce.workforce.Workforce.__init__"></a>
 
@@ -38,7 +39,8 @@ def __init__(
     children: Optional[List[BaseNode]] = None,
     coordinator_agent_kwargs: Optional[Dict] = None,
     task_agent_kwargs: Optional[Dict] = None,
-    new_worker_agent_kwargs: Optional[Dict] = None
+    new_worker_agent_kwargs: Optional[Dict] = None,
+    graceful_shutdown_timeout: float = 15.0
 ):
 ```
 
