@@ -80,3 +80,11 @@ def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
             if "very_slow" in item.keywords:
                 item.add_marker(skip_full_test)
         return
+
+
+@pytest.fixture
+def openai_mock():
+    """Fixture that provides a mock OpenAI backend."""
+    from test.utils.mock_openai import mock_openai_backend
+
+    return mock_openai_backend()
