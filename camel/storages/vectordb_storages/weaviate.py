@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
-import logging
 import math
 import re
 from datetime import datetime
@@ -30,6 +29,7 @@ from typing import (
 if TYPE_CHECKING:
     from weaviate import WeaviateClient
 
+from camel.logger import get_logger
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
@@ -39,7 +39,7 @@ from camel.storages.vectordb_storages import (
 )
 from camel.utils import dependencies_required
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Type definitions for configuration options
@@ -130,8 +130,6 @@ class WeaviateStorage(BaseVectorStorage):
         ValueError: If connection parameters are invalid or missing.
         RuntimeError: If there's an error setting up the collection.
 
-
-
     Note:
         This implementation supports synchronous operations only.
         The client connection is automatically handled and closed when the
@@ -216,6 +214,9 @@ class WeaviateStorage(BaseVectorStorage):
             'skip_init_checks': skip_init_checks,
             **kwargs,
         }
+
+        # Store original collection creation kwargs for clear() method
+        self._original_collection_kwargs = kwargs.copy()
 
         # Create client using the new unified approach
         self._client = self._get_connection_client()
@@ -697,7 +698,7 @@ class WeaviateStorage(BaseVectorStorage):
         r"""Remove all vectors from the storage."""
         try:
             self._client.collections.delete(self.collection_name)
-            self._create_collection()
+            self._create_collection(**self._original_collection_kwargs)
         except Exception as e:
             raise RuntimeError(f"Failed to clear Weaviate collection: {e}")
 
