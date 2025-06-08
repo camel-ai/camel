@@ -920,7 +920,6 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        stream: Optional[bool] = False,
     ) -> Union[ChatAgentResponse, StreamingChatAgentResponse]:
         r"""Executes a single step in the chat session, generating a response
         to the input message.
@@ -933,10 +932,6 @@ class ChatAgent(BaseAgent):
                 model defining the expected structure of the response. Used to
                 generate a structured response if provided. (default:
                 :obj:`None`)
-            stream (bool, optional): Whether to stream the response. If True,
-                returns a StreamingChatAgentResponse that can be iterated or
-                accessed like a regular ChatAgentResponse. If False, returns a
-                single ChatAgentResponse. (default: :obj:`False`)
 
         Returns:
             Union[ChatAgentResponse, StreamingChatAgentResponse]: If stream is
@@ -944,6 +939,8 @@ class ChatAgent(BaseAgent):
                 a StreamingChatAgentResponse that behaves like ChatAgentResponse
                 but can also be iterated for streaming updates.
         """  # noqa: E501
+
+        stream = self.model_backend.model_config_dict.get("stream", False)
 
         if stream:
             # Return wrapped generator that has ChatAgentResponse interface
@@ -1048,7 +1045,6 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        stream: Optional[bool] = False,
     ) -> Union[Awaitable[ChatAgentResponse], AsyncStreamingChatAgentResponse]:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
@@ -1065,11 +1061,6 @@ class ChatAgent(BaseAgent):
                 used to generate a structured response by LLM. This schema
                 helps in defining the expected output format. (default:
                 :obj:`None`)
-            stream (bool, optional): Whether to stream the response. If True,
-                returns an AsyncStreamingChatAgentResponse that can be awaited
-                for the final result or async iterated for streaming updates.
-                If False, returns an awaitable ChatAgentResponse. (default:
-                :obj:`False`)
         Returns:
             Union[Awaitable[ChatAgentResponse], AsyncStreamingChatAgentResponse]:
                 If stream is False, returns an awaitable ChatAgentResponse.
@@ -1078,6 +1069,7 @@ class ChatAgent(BaseAgent):
                 for streaming updates.
         """  # noqa: E501
 
+        stream = self.model_backend.model_config_dict.get("stream", False)
         if stream:
             # Return wrapped async generator that is awaitable
             async_generator = self._astream(input_message, response_format)

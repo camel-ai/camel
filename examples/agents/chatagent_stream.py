@@ -63,16 +63,15 @@ def test_content_accumulation():
     agent = ChatAgent(
         system_message="You are a helpful assistant.",
         model=streaming_model,
-        tools=[FunctionTool(get_weather)],
     )
 
-    query = "What is the weather like in Beijing?"
+    query = "Say hello to me"
     print(f"Query: {query}")
     print("Checking content accumulation:")
 
     previous_content = ""
 
-    for i, response in enumerate(agent.step(query, stream=True)):
+    for i, response in enumerate(agent.step(query)):
         if response.msgs:
             current_content = response.msgs[0].content
 
@@ -116,7 +115,7 @@ async def test_async_tool_execution():
 
     previous_content = ""
 
-    async for response in agent.astep(query, stream=True):
+    async for response in agent.astep(query):
         if response.msgs:
             current_content = response.msgs[0].content
 
@@ -158,7 +157,7 @@ def test_sync_tool_execution():
 
     previous_content = ""
 
-    for response in agent.step(query, stream=True):
+    for response in agent.step(query):
         if response.msgs:
             current_content = response.msgs[0].content
 
@@ -194,7 +193,7 @@ def test_sync_structured_output():
 
     previous_content = ""
 
-    for response in agent.step(query, stream=True, response_format=Thinking):
+    for response in agent.step(query, response_format=Thinking):
         if response.msgs:
             current_content = response.msgs[0].content
 
@@ -230,9 +229,7 @@ async def test_async_structured_output():
 
     previous_content = ""
 
-    async for response in agent.astep(
-        query, stream=True, response_format=Thinking
-    ):
+    async for response in agent.astep(query, response_format=Thinking):
         if response.msgs:
             current_content = response.msgs[0].content
 
