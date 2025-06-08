@@ -11,7 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from unittest.mock import MagicMock, create_autospec, patch
+import json
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -19,169 +20,311 @@ from camel.storages import VectorDBQuery, VectorRecord, WeaviateStorage
 
 
 @pytest.fixture
-def mock_weaviate_storage():
-    """Create mock WeaviateStorage instances."""
-    with patch('camel.storages.WeaviateStorage') as MockWeaviateStorage:
-        mock_storage1 = create_autospec(WeaviateStorage)
-        mock_storage2 = create_autospec(WeaviateStorage)
-        MockWeaviateStorage.side_effect = [mock_storage1, mock_storage2]
-        yield mock_storage1, mock_storage2
-
-
-def setup_mock_storage(mock_storage, vectors, query_result_id, payload):
-    """Helper function to setup mock storage behavior."""
-    mock_query_result = MagicMock()
-    mock_query_result.id = query_result_id
-    mock_query_result.payload = payload
-    mock_query_result.similarity = 0.95
-
-    mock_storage.query.return_value = [mock_query_result]
-    mock_storage.add(vectors)
-    mock_storage.status.return_value = MagicMock(vector_count=len(vectors))
-
-
-def test_weaviate_storage_initialization():
-    """Test WeaviateStorage initialization."""
-    with patch('camel.storages.WeaviateStorage') as MockWeaviateStorage:
+def mock_weaviate_client():
+    r"""Create a mock Weaviate client with collections interface."""
+    with patch('weaviate.connect_to_local') as mock_connect:
         mock_client = MagicMock()
-        vector_dim = 4
-        collection_name = "test_collection"
+        mock_connect.return_value = mock_client
 
-        # Test normal initialization
-        MockWeaviateStorage(
-            client=mock_client,
-            vector_dim=vector_dim,
-            collection_name=collection_name,
+        # Mock collections interface
+        mock_collection = MagicMock()
+        mock_client.collections.get.return_value = mock_collection
+        mock_client.collections.create = MagicMock()
+        mock_client.collections.delete = MagicMock()
+
+        # Mock collection config
+        mock_collection.config.get.return_value = {}
+
+        # Mock batch interface
+        mock_batch = MagicMock()
+        mock_collection.batch.dynamic.return_value.__enter__.return_value = (
+            mock_batch
         )
 
-        MockWeaviateStorage.assert_called_once_with(
-            client=mock_client,
-            vector_dim=vector_dim,
-            collection_name=collection_name,
+        # Mock aggregate interface for status queries
+        mock_aggregate = MagicMock()
+        mock_aggregate.total_count = 2
+        mock_collection.aggregate.over_all.return_value = mock_aggregate
+
+        yield mock_client, mock_collection
+
+
+def test_weaviate_storage_initialization(mock_weaviate_client):
+    r"""Test WeaviateStorage initialization functionality."""
+    mock_client, _ = mock_weaviate_client
+
+    with (
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._get_connection_client',
+            return_value=mock_client,
+        ),
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._check_and_create_collection'
+        ),
+    ):
+        storage = WeaviateStorage(
+            vector_dim=4,
+            collection_name="test_collection",
+            connection_type="local",
         )
 
+        assert storage.vector_dim == 4
+        assert storage.collection_name == "test_collection"
+        assert storage.connection_type == "local"
+        assert storage.distance_metric == "cosine"
+        assert storage.vector_index_type == "hnsw"
 
-def test_weaviate_storage_initialization_error():
-    """Test WeaviateStorage initialization with None client."""
-    with patch('camel.storages.WeaviateStorage') as MockWeaviateStorage:
-        MockWeaviateStorage.side_effect = ValueError(
-            "Weaviate client cannot be None"
+
+def test_add_vectors(mock_weaviate_client):
+    r"""Test adding vectors to storage."""
+    mock_client, mock_collection = mock_weaviate_client
+
+    with (
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._get_connection_client',
+            return_value=mock_client,
+        ),
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._check_and_create_collection'
+        ),
+    ):
+        storage = WeaviateStorage(
+            vector_dim=4, collection_name="test_collection"
         )
 
-        with pytest.raises(ValueError, match="Weaviate client cannot be None"):
-            MockWeaviateStorage(client=None, vector_dim=4)
-
-
-def test_multiple_weaviate_clients(mock_weaviate_storage):
-    """Test multiple Weaviate storage instances."""
-    mock_storage1, mock_storage2 = mock_weaviate_storage
-
-    # Example vectors for testing
-    vectors1 = [
-        VectorRecord(
-            vector=[0.1, 0.1, 0.1, 0.1],
-            payload={"message": "text1", "type": "document"},
-        ),
-        VectorRecord(
-            vector=[0.1, -0.1, -0.1, 0.1],
-            payload={"message": "text2", "type": "document"},
-        ),
-    ]
-    vectors2 = [
-        VectorRecord(
-            vector=[-0.1, 0.1, -0.1, 0.1],
-            payload={"message": "text3", "type": "query"},
-        ),
-        VectorRecord(
-            vector=[-0.1, 0.1, 0.1, 0.1],
-            payload={"message": "text4", "number": 1, "type": "query"},
-        ),
-    ]
-
-    setup_mock_storage(
-        mock_storage1,
-        vectors1,
-        vectors1[0].id,
-        {"message": "text1", "type": "document"},
-    )
-    setup_mock_storage(
-        mock_storage2,
-        vectors2,
-        vectors2[0].id,
-        {"message": "text3", "type": "query"},
-    )
-
-    # Assert add method was called correctly
-    mock_storage1.add.assert_called_once_with(vectors1)
-    mock_storage2.add.assert_called_once_with(vectors2)
-
-    # Perform and verify queries
-    query1 = VectorDBQuery(query_vector=[0.1, 0.2, 0.1, 0.1], top_k=1)
-    result1 = mock_storage1.query(query1)
-    assert result1[0].id == vectors1[0].id
-    assert result1[0].payload == {"message": "text1", "type": "document"}
-
-    query2 = VectorDBQuery(query_vector=[-0.1, 0.2, -0.1, 0.1], top_k=1)
-    result2 = mock_storage2.query(query2)
-    assert result2[0].id == vectors2[0].id
-    assert result2[0].payload == {"message": "text3", "type": "query"}
-
-    # Test status for each storage
-    status1 = mock_storage1.status()
-    assert status1.vector_count == len(vectors1)
-
-    status2 = mock_storage2.status()
-    assert status2.vector_count == len(vectors2)
-
-
-def test_weaviate_storage_operations():
-    """Test basic Weaviate storage operations."""
-    with patch('camel.storages.WeaviateStorage') as MockWeaviateStorage:
-        mock_storage = create_autospec(WeaviateStorage)
-        MockWeaviateStorage.return_value = mock_storage
-
-        # Test vectors
+        # Prepare test vectors
         vectors = [
             VectorRecord(
+                id="1",
                 vector=[0.1, 0.2, 0.3, 0.4],
-                payload={
-                    "content": "test content",
-                    "metadata": {"source": "test"},
-                },
+                payload={"label": "A", "type": "test"},
             ),
             VectorRecord(
+                id="2",
                 vector=[0.5, 0.6, 0.7, 0.8],
-                payload={
-                    "content": "another test",
-                    "metadata": {"source": "test2"},
-                },
+                payload={"label": "B", "type": "test"},
             ),
         ]
 
-        # Test add operation
-        mock_storage.add(vectors)
-        mock_storage.add.assert_called_once_with(vectors)
+        # Execute add operation
+        storage.add(vectors)
 
-        # Test delete operation
-        ids_to_delete = [vectors[0].id, vectors[1].id]
-        mock_storage.delete(ids_to_delete)
-        mock_storage.delete.assert_called_once_with(ids_to_delete)
+        # Verify batch interface was called
+        mock_collection.batch.dynamic.assert_called_once()
 
-        # Test query operation
-        query = VectorDBQuery(query_vector=[0.1, 0.2, 0.3, 0.4], top_k=2)
-        mock_query_result = MagicMock()
-        mock_query_result.id = vectors[0].id
-        mock_query_result.vector = vectors[0].vector
-        mock_query_result.payload = vectors[0].payload
-        mock_query_result.similarity = 0.98
 
-        mock_storage.query.return_value = [mock_query_result]
-        result = mock_storage.query(query)
+def test_query_vectors(mock_weaviate_client):
+    r"""Test querying vectors functionality."""
+    mock_client, mock_collection = mock_weaviate_client
 
-        assert len(result) == 1
-        assert result[0].id == vectors[0].id
-        assert result[0].similarity == 0.98
+    # Mock query response
+    mock_object = MagicMock()
+    mock_object.uuid = "1111"
+    mock_object.properties = {
+        "payload": json.dumps({"label": "A", "type": "test"})
+    }
+    mock_object.vector = {"default": [0.1, 0.2, 0.3, 0.4]}
+    mock_object.metadata.distance = 0.1
 
-        # Test clear operation
-        mock_storage.clear()
-        mock_storage.clear.assert_called_once()
+    mock_response = MagicMock()
+    mock_response.objects = [mock_object]
+    mock_collection.query.near_vector.return_value = mock_response
+
+    with (
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._get_connection_client',
+            return_value=mock_client,
+        ),
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._check_and_create_collection'
+        ),
+    ):
+        storage = WeaviateStorage(
+            vector_dim=4,
+            collection_name="test_collection",
+            distance_metric="cosine",
+        )
+
+        # Execute query
+        query = VectorDBQuery(query_vector=[0.1, 0.2, 0.3, 0.4], top_k=1)
+        results = storage.query(query)
+
+        # Verify results
+        assert len(results) == 1
+        assert results[0].record.id == "1111"
+        assert results[0].record.payload == {"label": "A", "type": "test"}
+        assert results[0].record.vector == [0.1, 0.2, 0.3, 0.4]
+        assert results[0].similarity > 0  # Similarity should be greater than 0
+
+        # Verify query method was called correctly
+        mock_collection.query.near_vector.assert_called_once()
+
+
+def test_delete_vectors(mock_weaviate_client):
+    r"""Test deleting vectors functionality.
+
+    Verifies that vectors can be deleted by ID and that the
+    delete_many interface is called correctly.
+    """
+    mock_client, mock_collection = mock_weaviate_client
+
+    with (
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._get_connection_client',
+            return_value=mock_client,
+        ),
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._check_and_create_collection'
+        ),
+        patch('weaviate.classes.query.Filter') as mock_filter,
+    ):
+        # Mock filter chain
+        mock_filter.by_id.return_value.contains_any.return_value = MagicMock()
+
+        storage = WeaviateStorage(
+            vector_dim=4, collection_name="test_collection"
+        )
+
+        # Execute delete operation
+        ids_to_delete = ["1111", "222"]
+        storage.delete(ids_to_delete)
+
+        # Verify delete method was called
+        mock_collection.data.delete_many.assert_called_once()
+
+
+def test_status(mock_weaviate_client):
+    r"""Test getting storage status functionality.
+
+    Verifies that storage status information including vector dimension
+    and vector count can be retrieved correctly.
+    """
+    mock_client, mock_collection = mock_weaviate_client
+
+    # Mock aggregate results
+    mock_aggregate = MagicMock()
+    mock_aggregate.total_count = 5
+    mock_collection.aggregate.over_all.return_value = mock_aggregate
+
+    with (
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._get_connection_client',
+            return_value=mock_client,
+        ),
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._check_and_create_collection'
+        ),
+    ):
+        storage = WeaviateStorage(
+            vector_dim=4, collection_name="test_collection"
+        )
+
+        # Get status
+        status = storage.status()
+
+        # Verify status information
+        assert status.vector_dim == 4
+        assert status.vector_count == 5
+
+        # Verify aggregate method was called
+        mock_collection.aggregate.over_all.assert_called_once()
+
+
+def test_clear_collection(mock_weaviate_client):
+    r"""Test clearing collection functionality.
+
+    Verifies that the collection can be cleared by deleting and
+    recreating it properly.
+    """
+    mock_client, mock_collection = mock_weaviate_client
+
+    with (
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._get_connection_client',
+            return_value=mock_client,
+        ),
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._check_and_create_collection'
+        ),
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._create_collection'
+        ) as mock_create,
+    ):
+        storage = WeaviateStorage(
+            vector_dim=4, collection_name="test_collection"
+        )
+
+        # Execute clear operation
+        storage.clear()
+
+        # Verify collection was deleted and recreated
+        mock_client.collections.delete.assert_called_once_with(
+            "test_collection"
+        )
+        mock_create.assert_called_once()
+
+
+def test_empty_operations(mock_weaviate_client):
+    r"""Test handling of empty operations.
+
+    Verifies that empty add and delete operations are handled gracefully
+    without calling the underlying APIs.
+    """
+    mock_client, mock_collection = mock_weaviate_client
+
+    with (
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._get_connection_client',
+            return_value=mock_client,
+        ),
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._check_and_create_collection'
+        ),
+    ):
+        storage = WeaviateStorage(
+            vector_dim=4, collection_name="test_collection"
+        )
+
+        # Test empty add
+        storage.add([])
+        mock_collection.batch.dynamic.assert_not_called()
+
+        # Test empty delete
+        storage.delete([])
+        mock_collection.data.delete_many.assert_not_called()
+
+
+def test_similarity_calculations():
+    r"""Test similarity calculation functionality.
+
+    Verifies that different distance metrics (cosine, L2, hamming) are
+    correctly converted to similarity scores.
+    """
+    with (
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._get_connection_client'
+        ),
+        patch(
+            'camel.storages.vectordb_storages.weaviate.WeaviateStorage._check_and_create_collection'
+        ),
+    ):
+        # Test cosine distance
+        storage_cosine = WeaviateStorage(
+            vector_dim=4, distance_metric="cosine"
+        )
+        similarity = storage_cosine._calculate_similarity_from_distance(0.2)
+        assert similarity == 0.9  # 1 - (0.2 / 2)
+
+        # Test L2 distance
+        storage_l2 = WeaviateStorage(
+            vector_dim=4, distance_metric="l2-squared"
+        )
+        similarity = storage_l2._calculate_similarity_from_distance(1.0)
+        assert similarity == 0.5  # 1 / (1 + 1)
+
+        # Test Hamming distance
+        storage_hamming = WeaviateStorage(
+            vector_dim=4, distance_metric="hamming"
+        )
+        similarity = storage_hamming._calculate_similarity_from_distance(2.0)
+        assert similarity == 0.5  # 1 - (2 / 4)
