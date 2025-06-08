@@ -517,8 +517,6 @@ class Workforce(BaseNode):
                 task=task,
                 workforce_id=self.node_id,
                 workforce_description=self.description,
-                worker_id=assignee.node_id,
-                worker_description=assignee.description,
             )
             await self._post_task(task, assignee.node_id)
         else:
@@ -530,8 +528,6 @@ class Workforce(BaseNode):
                 task=task,
                 workforce_id=self.node_id,
                 workforce_description=self.description,
-                worker_id=self.node_id,
-                worker_description=self.description
             )
             await self._post_ready_tasks()
         return False
