@@ -1,8 +1,7 @@
 import os
 import shutil  # For potential cleanup
+
 from camel.agents import PaperToCodeAgent
-from camel.models import OpenAIModel  # Optional, as it's the default
-from camel.types import ModelType  # For specifying model if not default
 
 # --- Setup Dummy Paper ---
 # Define the directory for example data and create it if it doesn't exist
@@ -98,10 +97,10 @@ try:
                     if 'content' in msg_dict and msg_dict.get(
                             'role') == 'assistant':
                         print(f"  LLM Output for sub-step {i+1}:")
-                        print(f"  ------------------------------------")
+                        print("  ------------------------------------")
                         # The actual plan/design/tasks from the LLM
                         print(msg_dict['content'])
-                        print(f"  ------------------------------------")
+                        print("  ------------------------------------")
             else:
                 print(f"  Raw content item {i+1}: {chat_response_dict}")
     else:

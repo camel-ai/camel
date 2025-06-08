@@ -1,15 +1,13 @@
 # test_paper_to_code_agent.py
 
 import json
-import os
-import pytest
-from unittest.mock import MagicMock, patch
 import logging
+import os
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from camel.agents import PaperToCodeAgent
-from camel.messages import BaseMessage
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
 
 # Import Pydantic models from the agent file to construct mock responses
 from camel.agents.paper_to_code_agent import (
@@ -21,6 +19,9 @@ from camel.agents.paper_to_code_agent import (
     PaperToCodeTasks,
     YamlFile,
 )
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
 
 
 def create_mock_completion(pydantic_model_instance):
@@ -123,8 +124,7 @@ def test_process_removes_spans(agent, mock_paper_file):
 @patch('camel.agents.chat_agent.ChatAgent.step')
 def test_full_workflow(mock_chat_agent_step, agent, mock_paper_dir):
     # Set logger level to INFO to catch potential warnings
-    logging.getLogger("camel.agents.paper_to_code_agent").setLevel(
-        logging.INFO)
+    logging.getLogger("camel.agents.paper_to_code_agent").setLevel(logging.INFO)
     """Tests the full paper-to-code workflow with mocked LLM responses."""
     tmp_path, paper_name = mock_paper_dir
 
@@ -167,8 +167,7 @@ def test_full_workflow(mock_chat_agent_step, agent, mock_paper_dir):
 
     # Coding Phase (2 steps)
     mock_code_utils = PaperToCodeImplementation(
-        content="```python\n# utils.py\ndef helper():\n    return 'Hello'\n```"
-    )
+        content="```python\n# utils.py\ndef helper():\n    return 'Hello'\n```")
     mock_code_main = PaperToCodeImplementation(
         content=
         "```python\n# main.py\nimport utils\n\nif __name__ == '__main__':\n    print(utils.helper())\n```"

@@ -13,16 +13,28 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import shutil
-from camel.prompts import TextPrompt
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-from typing import Any, Dict, List, Literal, Optional, Union, ClassVar, Type, cast
+from typing import (
+    Any,
+    ClassVar,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from camel.agents.chat_agent import ChatAgent
 from camel.logger import get_logger
 from camel.memories import AgentMemory
 from camel.messages import BaseMessage
-from camel.types import OpenAIBackendRole
 from camel.models import BaseModelBackend
-from camel.agents.chat_agent import ChatAgent
+from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
+from camel.types import OpenAIBackendRole
 
 try:
     import os
