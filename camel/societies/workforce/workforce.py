@@ -44,6 +44,7 @@ from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState
 from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
+from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
 
@@ -600,6 +601,7 @@ class Workforce(BaseNode):
 
         return new_instance
 
+    @dependencies_required("mcp")
     def to_mcp(
         self,
         name: str = "CAMEL-Workforce",
@@ -630,13 +632,7 @@ class Workforce(BaseNode):
         Returns:
             FastMCP: An MCP server instance that can be run.
         """
-        try:
-            from mcp.server.fastmcp import FastMCP
-        except ImportError:
-            raise ImportError(
-                "The 'mcp' package is required to use the to_mcp method. "
-                "Install it with 'pip install mcp'."
-            )
+        from mcp.server.fastmcp import FastMCP
 
         # Combine dependencies
         all_dependencies = ["camel-ai[all]"]
@@ -655,7 +651,30 @@ class Workforce(BaseNode):
 
         # Define functions first
         def process_task(task_content, task_id=None, additional_info=None):
-            r"""Process a task using the workforce."""
+            r"""Process a task using the workforce.
+
+            Args:
+                task_content (str): The content of the task to be processed.
+                task_id (str, optional): Unique identifier for the task. If
+                    None, a UUID will be automatically generated.
+                    (default: :obj:`None`)
+                additional_info (str, optional): Additional information or
+                    context for the task. (default: :obj:`None`)
+
+            Returns:
+                Dict[str, Any]: A dictionary containing the processing result
+                    with the following keys:
+                    - status (str): "success" or "error"
+                    - task_id (str): The ID of the processed task
+                    - state (str): Final state of the task
+                    - result (str): Task result content
+                    - subtasks (List[Dict]): List of subtask information
+                    - message (str): Error message if status is "error"
+
+            Example:
+                >>> result = process_task("Analyze market trends", "task_001")
+                >>> print(result["status"])  # "success" or "error"
+            """
             task = Task(
                 content=task_content,
                 id=task_id or str(uuid.uuid4()),
@@ -688,7 +707,20 @@ class Workforce(BaseNode):
 
         # Reset tool
         def reset():
-            r"""Reset the workforce to its initial state."""
+            r"""Reset the workforce to its initial state.
+
+            Clears all pending tasks, resets all child nodes, and returns
+            the workforce to a clean state ready for new task processing.
+
+            Returns:
+                Dict[str, str]: A dictionary containing the reset result with:
+                    - status (str): "success" or "error"
+                    - message (str): Descriptive message about the operation
+
+            Example:
+                >>> result = reset()
+                >>> print(result["message"])  # "Workforce reset successfully"
+            """
             try:
                 workforce_instance.reset()
                 return {
@@ -700,7 +732,27 @@ class Workforce(BaseNode):
 
         # Workforce info resource and tool
         def get_workforce_info():
-            r"""Get information about the workforce."""
+            r"""Get comprehensive information about the workforce.
+
+            Retrieves the current state and configuration of the workforce
+            including its ID, description, running status, and task queue
+            information.
+
+            Returns:
+                Dict[str, Any]: A dictionary containing workforce information:
+                    - node_id (str): Unique identifier of the workforce
+                    - description (str): Workforce description
+                    - mcp_description (str): MCP server description
+                    - children_count (int): Number of child workers
+                    - is_running (bool): Whether the workforce is active
+                    - pending_tasks_count (int): Number of queued tasks
+                    - current_task_id (str or None): ID of the active task
+
+            Example:
+                >>> info = get_workforce_info()
+                >>> print(f"Running: {info['is_running']}")
+                >>> print(f"Children: {info['children_count']}")
+            """
             info = {
                 "node_id": workforce_instance.node_id,
                 "description": workforce_instance.description,
@@ -718,7 +770,38 @@ class Workforce(BaseNode):
 
         # Children info resource and tool
         def get_children_info():
-            r"""Get information about child nodes in the workforce."""
+            r"""Get information about all child nodes in the workforce.
+
+            Retrieves comprehensive information about each child worker
+            including their type, capabilities, and configuration details.
+
+            Returns:
+                List[Dict[str, Any]]: A list of dictionaries, each containing
+                    child node information with common keys:
+                    - node_id (str): Unique identifier of the child
+                    - description (str): Child node description
+                    - type (str): Type of worker (e.g., "SingleAgentWorker")
+
+                    Additional keys depend on worker type:
+
+                    For SingleAgentWorker:
+                    - tools (List[str]): Available tool names
+                    - role_name (str): Agent's role name
+
+                    For RolePlayingWorker:
+                    - assistant_role (str): Assistant agent role
+                    - user_role (str): User agent role
+                    - chat_turn_limit (int): Maximum conversation turns
+
+                    For Workforce:
+                    - children_count (int): Number of nested children
+                    - is_running (bool): Whether the nested workforce is active
+
+            Example:
+                >>> children = get_children_info()
+                >>> for child in children:
+                ...     print(f"{child['type']}: {child['description']}")
+            """
             children_info = []
             for child in workforce_instance._children:
                 child_info = {
@@ -749,7 +832,38 @@ class Workforce(BaseNode):
             role_name="Assistant",
             agent_kwargs=None,
         ):
-            r"""Add a single agent worker to the workforce."""
+            r"""Add a single agent worker to the workforce.
+
+            Creates and adds a new SingleAgentWorker to the workforce with
+            the specified configuration. The worker cannot be added while
+            the workforce is currently running.
+
+            Args:
+                description (str): Description of the worker's role and
+                    capabilities.
+                system_message (str, optional): Custom system message for the
+                    agent. If None, a default message based on role_name is
+                    used. (default: :obj:`None`)
+                role_name (str, optional): Name of the agent's role.
+                    (default: :obj:`"Assistant"`)
+                agent_kwargs (Dict, optional): Additional keyword arguments
+                    to pass to the ChatAgent constructor, such as model
+                    configuration, tools, etc. (default: :obj:`None`)
+
+            Returns:
+                Dict[str, str]: A dictionary containing the operation result:
+                    - status (str): "success" or "error"
+                    - message (str): Descriptive message about the operation
+                    - worker_id (str): ID of the created worker (on success)
+
+            Example:
+                >>> result = add_single_agent_worker(
+                ...     "Data Analyst",
+                ...     "You are a data analysis expert.",
+                ...     "Analyst"
+                ... )
+                >>> print(result["status"])  # "success" or "error"
+            """
             try:
                 if workforce_instance._running:
                     return {
@@ -784,7 +898,47 @@ class Workforce(BaseNode):
             user_agent_kwargs=None,
             summarize_agent_kwargs=None,
         ):
-            r"""Add a role playing worker to the workforce."""
+            r"""Add a role playing worker to the workforce.
+
+            Creates and adds a new RolePlayingWorker to the workforce that
+            uses two agents in a conversational role-playing setup. The
+            worker cannot be added while the workforce is currently running.
+
+            Args:
+                description (str): Description of the role playing worker's
+                    purpose and capabilities.
+                assistant_role_name (str): Name/role of the assistant agent
+                    in the role playing scenario.
+                user_role_name (str): Name/role of the user agent in the
+                    role playing scenario.
+                chat_turn_limit (int, optional): Maximum number of
+                    conversation turns between the two agents.
+                    (default: :obj:`3`)
+                assistant_agent_kwargs (Dict, optional): Keyword arguments
+                    for configuring the assistant ChatAgent, such as model
+                    type, tools, etc. (default: :obj:`None`)
+                user_agent_kwargs (Dict, optional): Keyword arguments for
+                    configuring the user ChatAgent, such as model type,
+                    tools, etc. (default: :obj:`None`)
+                summarize_agent_kwargs (Dict, optional): Keyword arguments
+                    for configuring the summarization agent used to process
+                    the conversation results. (default: :obj:`None`)
+
+            Returns:
+                Dict[str, str]: A dictionary containing the operation result:
+                    - status (str): "success" or "error"
+                    - message (str): Descriptive message about the operation
+                    - worker_id (str): ID of the created worker (on success)
+
+            Example:
+                >>> result = add_role_playing_worker(
+                ...     "Design Review Team",
+                ...     "Design Critic",
+                ...     "Design Presenter",
+                ...     chat_turn_limit=5
+                ... )
+                >>> print(result["status"])  # "success" or "error"
+            """
             try:
                 if workforce_instance._running:
                     return {
