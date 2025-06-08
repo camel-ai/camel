@@ -691,7 +691,7 @@ class MCPClient:
                 # Run in a separate thread to avoid event loop conflicts
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     future = executor.submit(run_in_thread)
-                    return future.result(timeout=30)  # 30 second timeout
+                    return future.result(timeout=self.config.timeout)
 
             except RuntimeError:
                 # No event loop is running, we can safely use run_async

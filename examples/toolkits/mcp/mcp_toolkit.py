@@ -149,6 +149,18 @@ def mcp_toolkit_example_sync():
         print(response.info['tool_calls'])
 
 
+'''
+===============================================================================
+Here are 5 files in the project using relative paths:
+
+1. `.env`
+2. `.gitignore`
+3. `.pre-commit-config.yaml`
+4. `CONTRIBUTING.md`
+5. `README.md`
+===============================================================================
+'''
+
 if __name__ == "__main__":
     # asyncio.run(mcp_client_example())
     asyncio.run(mcp_toolkit_example())
