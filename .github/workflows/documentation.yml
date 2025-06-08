@@ -30,72 +30,39 @@ jobs:
       - name: Convert Cookbooks and Update Mintlify Config
         run: |
           source .venv/bin/activate
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "Push event detected - using incremental mode for cookbooks"
-            python docs/mintlify/convert_notebook2mdx.py \
-              --input docs/cookbooks \
-              --output docs/mintlify \
-              --update-docs-json docs/mintlify/docs.json \
-              --docs-path-prefix "" \
-              --incremental \
-              --use-git \
-              --base-branch origin/master \
-              --verbose
-          else
-            echo "Manual workflow - processing all cookbooks files"
-            python docs/mintlify/convert_notebook2mdx.py \
-              --input docs/cookbooks \
-              --output docs/mintlify \
-              --update-docs-json docs/mintlify/docs.json \
-              --docs-path-prefix "" \
-              --verbose
+          echo "Manual workflow - processing all cookbooks files"
+          
+          python docs/mintlify/convert_notebook2mdx.py \
+            --input docs/cookbooks \
+            --output docs/mintlify \
+            --update-docs-json docs/mintlify/docs.json \
+            --docs-path-prefix "" \
+            --verbose
 
       - name: Convert Get Started docs
         run: |
           source .venv/bin/activate
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "Push event detected - using incremental mode for get_started"
-            python docs/mintlify/convert_notebook2mdx.py \
-              --input docs/get_started \
-              --output docs/mintlify \
-              --update-docs-json docs/mintlify/docs.json \
-              --docs-path-prefix "" \
-              --incremental \
-              --use-git \
-              --base-branch origin/master \
-              --verbose
-          else
-            echo "Manual workflow - processing all get_started files"
-            python docs/mintlify/convert_notebook2mdx.py \
-              --input docs/get_started \
-              --output docs/mintlify \
-              --update-docs-json docs/mintlify/docs.json \
-              --docs-path-prefix "" \
-              --verbose
+          echo "Manual workflow - processing all get_started files"
+
+          python docs/mintlify/convert_notebook2mdx.py \
+            --input docs/get_started \
+            --output docs/mintlify \
+            --update-docs-json docs/mintlify/docs.json \
+            --docs-path-prefix "" \
+            --verbose
 
       - name: Convert Key Modules docs
         run: |
           source .venv/bin/activate
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "Push event detected - using incremental mode for key_modules"
-            python docs/mintlify/convert_notebook2mdx.py \
-              --input docs/key_modules \
-              --output docs/mintlify \
-              --update-docs-json docs/mintlify/docs.json \
-              --docs-path-prefix "" \
-              --incremental \
-              --use-git \
-              --base-branch origin/master \
-              --verbose
-          else
-            echo "Manual workflow - processing all key_modules files"
-            python docs/mintlify/convert_notebook2mdx.py \
-              --input docs/key_modules \
-              --output docs/mintlify \
-              --update-docs-json docs/mintlify/docs.json \
-              --docs-path-prefix "" \
-              --verbose
-
+    
+          echo "Manual workflow - processing all key_modules files"
+          python docs/mintlify/convert_notebook2mdx.py \
+            --input docs/key_modules \
+            --output docs/mintlify \
+            --update-docs-json docs/mintlify/docs.json \
+            --docs-path-prefix "" \
+            --verbose
+          
       - name: Generate API Documentation
         run: |
           source .venv/bin/activate
