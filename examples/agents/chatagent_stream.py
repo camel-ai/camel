@@ -109,7 +109,7 @@ async def test_async_tool_execution():
         ],
     )
 
-    query = ""
+    query = "Calculate the square of 5, look up the word 'sync', and get weather for Shanghai"
     print(f"Query: {query}")
     print("Testing async execution and content accumulation:")
 
