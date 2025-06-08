@@ -2092,4 +2092,5 @@ class ChatAgent(BaseAgent):
             yield f"data: {json.dumps(final_chunk)}\n\n"
             yield "data: [DONE]\n\n"
 
+
         return app
