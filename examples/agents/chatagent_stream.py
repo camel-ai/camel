@@ -91,7 +91,7 @@ def test_content_accumulation():
             previous_content = current_content
 
     print("\n✅ Content accumulation test passed!")
-    print("=" * 50)
+    print("\n" + "=" * 50)
     return True
 
 
@@ -133,7 +133,7 @@ async def test_async_tool_execution():
 
             previous_content = current_content
 
-    print("=" * 50)
+    print("\n" + "=" * 50)
     return True
 
 
@@ -175,7 +175,7 @@ def test_sync_tool_execution():
 
             previous_content = current_content
 
-    print("=" * 50)
+    print("\n" + "=" * 50)
     return True
 
 
@@ -211,7 +211,7 @@ def test_sync_structured_output():
 
             previous_content = current_content
 
-    print("=" * 50)
+    print("\n" + "=" * 50)
     return True
 
 
@@ -247,7 +247,7 @@ async def test_async_structured_output():
 
             previous_content = current_content
 
-    print("=" * 50)
+    print("\n" + "=" * 50)
     return True
 
 
