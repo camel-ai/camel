@@ -73,6 +73,7 @@ rag = [
     "pymilvus>=2.4.0,<3",
     "pytidb-experimental==0.0.1.dev4",
     "faiss-cpu>=1.7.2,<2",
+    "weaviate-client>=4.15.0",      
     "neo4j>=5.18.0,<6",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
@@ -207,6 +208,7 @@ storage = [
     "botocore>=1.35.3,<2",
     "mem0ai>=0.1.73",
     "pyobvector>=0.1.18",
+    "weaviate-client>=4.15.0",
 ]
 owl = [
     "numpy>=1.2,<=2.2",
@@ -377,6 +379,7 @@ all = [
     "aci-sdk>=1.0.0b1",
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50",
+    "weaviate-client>=4.15.0",
     "python-pptx>=1.0.2",
 ]
 

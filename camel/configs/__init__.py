@@ -16,6 +16,7 @@ from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
 from .bedrock_config import BEDROCK_API_PARAMS, BedrockConfig
 from .cohere_config import COHERE_API_PARAMS, CohereConfig
+from .crynux_config import CRYNUX_API_PARAMS, CrynuxConfig
 from .deepseek_config import DEEPSEEK_API_PARAMS, DeepSeekConfig
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
@@ -112,4 +113,6 @@ __all__ = [
     'LMStudioConfig',
     'WatsonXConfig',
     'WATSONX_API_PARAMS',
+    'CrynuxConfig',
+    'CRYNUX_API_PARAMS',
 ]
