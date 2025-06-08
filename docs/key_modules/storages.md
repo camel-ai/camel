@@ -215,15 +215,16 @@ tidb_storage.clear()
 
 ```python
 from camel.storages import WeaviateStorage, VectorDBQuery, VectorRecord
-from camel.storages.vectordb_storages import WeaviateConnectionType
 
 # Create WeaviateStorage instance with dimension = 4 using Weaviate Cloud
 weaviate_storage = WeaviateStorage(
     vector_dim=4,
     collection_name="camel_example_vectors",
-    connection_type=WeaviateConnectionType.CLOUD,
+    connection_type="cloud",
     wcd_cluster_url="your-weaviate-cloud-url",
     wcd_api_key="your-weaviate-api-key",
+    vector_index_type="hnsw",
+    distance_metric="cosine",
 )
 
 # Add vectors records to Weaviate
