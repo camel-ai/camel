@@ -1,0 +1,73 @@
+<a id="camel.toolkits.retrieval_toolkit"></a>
+
+<a id="camel.toolkits.retrieval_toolkit.RetrievalToolkit"></a>
+
+## RetrievalToolkit
+
+```python
+class RetrievalToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for information retrieval.
+
+This class provides methods for retrieving information from a local vector
+storage system based on a specified query.
+
+<a id="camel.toolkits.retrieval_toolkit.RetrievalToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    auto_retriever: Optional[AutoRetriever] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Initializes a new instance of the RetrievalToolkit class.
+
+<a id="camel.toolkits.retrieval_toolkit.RetrievalToolkit.information_retrieval"></a>
+
+### information_retrieval
+
+```python
+def information_retrieval(
+    self,
+    query: str,
+    contents: Union[str, List[str]],
+    top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+    similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD
+):
+```
+
+Retrieves information from a local vector storage based on the
+specified query. This function connects to a local vector storage
+system and retrieves relevant information by processing the input
+query. It is essential to use this function when the answer to a
+question requires external knowledge sources.
+
+**Parameters:**
+
+- **query** (str): The question or query for which an answer is required.
+- **contents** (Union[str, List[str]]): Local file paths, remote URLs or string contents.
+- **top_k** (int, optional): The number of top results to return during retrieve. Must be a positive integer. Defaults to `DEFAULT_TOP_K_RESULTS`.
+- **similarity_threshold** (float, optional): The similarity threshold for filtering results. Defaults to `DEFAULT_SIMILARITY_THRESHOLD`.
+
+**Returns:**
+
+  str: The information retrieved in response to the query, aggregated
+and formatted as a string.
+
+<a id="camel.toolkits.retrieval_toolkit.RetrievalToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

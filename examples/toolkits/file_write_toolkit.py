@@ -48,7 +48,7 @@ camel_agent = ChatAgent(
 )
 
 # Example 1: Write a Python script to a file
-python_query = """Please generate a Python script that creates a simple 
+python_query = """Please generate a Python script that creates a simple
                   web server using Flask and save it to a file."""
 
 camel_agent.reset()
@@ -77,7 +77,7 @@ print("\n")
 '''
 ===============================================================================
 Example 2: Creating a JSON file
-The JSON file containing information about three fictional books has been successfully created. You can find it at the following location: **books.json**. 
+The JSON file containing information about three fictional books has been successfully created. You can find it at the following location: **books.json**.
 
 Here is the content of the file:
 
@@ -184,7 +184,7 @@ Tool calls: [ToolCallingRecord(tool_name='write_to_file', args={'content': 'data
 '''
 
 # Example 6: Create an HTML file
-html_query = """Create a simple HTML webpage with a header, navigation menu, 
+html_query = """Create a simple HTML webpage with a header, navigation menu,
                 main content section, and footer."""
 camel_agent.reset()
 response = camel_agent.step(html_query)
@@ -197,5 +197,117 @@ print("\n")
 Example 6: Creating an HTML file
 I have created a simple HTML webpage with a header, navigation menu, main content section, and footer. You can find the file named `simple_webpage.html` in the specified directory. If you need any modifications or additional features, feel free to ask!
 Tool calls: [ToolCallingRecord(tool_name='write_to_file', args={'content': '<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Simple Webpage</title>\n    <link rel="stylesheet" href="styles.css">\n</head>\n<body>\n    <header>\n        <h1>Welcome to My Simple Webpage</h1>\n    </header>\n    <nav>\n        <ul>\n            <li><a href="#home">Home</a></li>\n            <li><a href="#about">About</a></li>\n            <li><a href="#services">Services</a></li>\n            <li><a href="#contact">Contact</a></li>\n        </ul>\n    </nav>\n    <main>\n        <section id="home">\n            <h2>Home</h2>\n            <p>This is the home section of the webpage.</p>\n        </section>\n        <section id="about">\n            <h2>About</h2>\n            <p>This section contains information about us.</p>\n        </section>\n        <section id="services">\n            <h2>Services</h2>\n            <p>Details about our services can be found here.</p>\n        </section>\n        <section id="contact">\n            <h2>Contact</h2>\n            <p>Get in touch with us through this section.</p>\n        </section>\n    </main>\n    <footer>\n        <p>&copy; 2023 My Simple Webpage. All rights reserved.</p>\n    </footer>\n</body>\n</html>', 'filename': 'simple_webpage.html', 'encoding': 'utf-8'}, result='Content successfully written to file: /Users/enrei/Desktop/camel0209/camel/file_write_outputs/simple_webpage.html', tool_call_id='call_6FUwTx4gSAB8mtN7lety05SP')]
+===============================================================================
+'''
+
+# Example 7: Please give me a pdf file with formulas of advanced mathematics
+latex_pdf_query = (
+    """Please give me a pdf file with formulas of advanced mathematics."""
+)
+
+camel_agent.reset()
+response = camel_agent.step(latex_pdf_query)
+print(f"Example 7: {latex_pdf_query}")
+print(response.msgs[0].content)
+print("Tool calls:", response.info['tool_calls'])
+print("\n")
+'''
+===============================================================================
+......
+Download Advanced Mathematics Formulas
+PDF](sandbox:/Users/yifengwang/project/camel/file_write_outputs/advanced_mathematics_formulas.pdf)
+Tool calls: [ToolCallingRecord(tool_name='write_to_file', args={'content': "#
+Advanced Mathematics Formulas\n\n## 1. Calculus\n### 1.1 Derivatives\n- Power
+Rule:  \\( \\frac{d}{dx} x^n = n x^{n-1} \\)\n- Product Rule:  \\(
+\\frac{d}{dx} [u v] = u' v + u v' \\)\n- Quotient Rule:  \\( \\frac{d}{dx}
+\\left[ \\frac{u}{v} \\right] = \\frac{u' v - u v'}{v^2} \\)\n- Chain Rule:
+\\( \\frac{d}{dx} f(g(x)) = f'(g(x)) g'(x) \\)\n\n### 1.2 Integrals\n-
+Indefinite Integral:  \\( \\int x^n \\, dx = \\frac{x^{n+1}}{n+1} + C \\) (for
+\\( n \\neq -1 \\))\n- Definite Integral:  \\( \\int_a^b f(x) \\, dx = F(b) -
+F(a) \\) where \\( F \\) is the antiderivative of \\( f \\)\n\n## 2. Linear
+Algebra\n### 2.1 Matrices\n- Matrix Addition:  \\( A + B = [a_{ij} + b_{ij}]
+\\)\n- Matrix Multiplication:  \\( C = AB \\) where \\( c_{ij} = \\sum_k a_{ik}
+b_{kj} \\)\n- Determinant of a 2x2 Matrix:  \\( \\text{det}(A) = ad - bc \\)
+for \\( A = \\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix} \\)\n\n## 3.
+Differential Equations\n- First Order Linear DE:  \\( \\frac{dy}{dx} + P(x)y =
+Q(x) \\)\n- Second Order Linear DE:  \\( y'' + p(x)y' + q(x)y = 0 \\)\n\n## 4.
+Complex Numbers\n- Euler's Formula:  \\( e^{ix} = \\cos(x) + i\\sin(x) \\)\n-
+Polar Form:  \\( z = re^{i\\theta} \\) where \\( r = |z| \\) and \\( \\theta =
+\\arg(z) \\)\n\n## 5. Probability and Statistics\n- Mean:  \\( \\mu =
+\\frac{1}{N} \\sum_{i=1}^N x_i \\)\n- Variance:  \\( \\sigma^2 = \\frac{1}{N}
+\\sum_{i=1}^N (x_i - \\mu)^2 \\)\n- Standard Deviation:  \\( \\sigma =
+\\sqrt{\\sigma^2} \\)\n\n## 6. Number Theory\n- Fundamental Theorem of
+Arithmetic: Every integer greater than 1 can be expressed as a product of prime
+numbers.\n- Euclidean Algorithm: To find the GCD of two integers \\( a \\) and
+\\( b \\), repeatedly apply \\( a = bq + r \\) until \\( r = 0 \\).\n\n## 7.
+Set Theory\n- Union:  \\( A \\cup B = \\{ x | x \\in A \\text{ or } x \\in B
+\\} \\)\n- Intersection:  \\( A \\cap B = \\{ x | x \\in A \\text{ and } x \\in
+B \\} \\)\n- Complement:  \\( A' = \\{ x | x \\notin A \\} \\)\n\n##
+Conclusion\nThese formulas cover various branches of advanced mathematics,
+providing a foundation for further study and application.", 'filename':
+'advanced_mathematics_formulas.pdf', 'encoding': None, 'use_latex': True},
+result="Error occurred while writing to file
+/Users/yifengwang/project/camel/file_write_outputs/advanced_mathematics_formulas.pdf:
+Command '['latexmk', '--pdf', '--interaction=nonstopmode',
+'/Users/yifengwang/project/camel/file_write_outputs/advanced_mathematics_formulas.pdf.tex']'
+returned non-zero exit status 12.",
+tool_call_id='call_xBpaH5YPU27mCEwjg4i2LlBC'),
+ToolCallingRecord(tool_name='write_to_file', args={'content': "# Advanced
+Mathematics Formulas\n\n## 1. Calculus\n### 1.1 Derivatives\n- Power Rule:  \\(
+\\frac{d}{dx} x^n = n x^{n-1} \\)\n- Product Rule:  \\( \\frac{d}{dx} [u v] =
+u' v + u v' \\)\n- Quotient Rule:  \\( \\frac{d}{dx} \\left[ \\frac{u}{v}
+\\right] = \\frac{u' v - u v'}{v^2} \\)\n- Chain Rule:  \\( \\frac{d}{dx}
+f(g(x)) = f'(g(x)) g'(x) \\)\n\n### 1.2 Integrals\n- Indefinite Integral:  \\(
+\\int x^n \\, dx = \\frac{x^{n+1}}{n+1} + C \\) (for \\( n \\neq -1 \\))\n-
+Definite Integral:  \\( \\int_a^b f(x) \\, dx = F(b) - F(a) \\) where \\( F \\)
+is the antiderivative of \\( f \\)\n\n## 2. Linear Algebra\n### 2.1 Matrices\n-
+Matrix Addition:  \\( A + B = [a_{ij} + b_{ij}] \\)\n- Matrix Multiplication:
+\\( C = AB \\) where \\( c_{ij} = \\sum_k a_{ik} b_{kj} \\)\n- Determinant of a
+2x2 Matrix:  \\( \\text{det}(A) = ad - bc \\) for \\( A = \\begin{pmatrix} a &
+b \\\\ c & d \\end{pmatrix} \\)\n\n## 3. Differential Equations\n- First Order
+Linear DE:  \\( \\frac{dy}{dx} + P(x)y = Q(x) \\)\n- Second Order Linear DE:
+\\( y'' + p(x)y' + q(x)y = 0 \\)\n\n## 4. Complex Numbers\n- Euler's Formula:
+\\( e^{ix} = \\cos(x) + i\\sin(x) \\)\n- Polar Form:  \\( z = re^{i\\theta} \\)
+where \\( r = |z| \\) and \\( \\theta = \\arg(z) \\)\n\n## 5. Probability and
+Statistics\n- Mean:  \\( \\mu = \\frac{1}{N} \\sum_{i=1}^N x_i \\)\n- Variance:
+\\( \\sigma^2 = \\frac{1}{N} \\sum_{i=1}^N (x_i - \\mu)^2 \\)\n- Standard
+Deviation:  \\( \\sigma = \\sqrt{\\sigma^2} \\)\n\n## 6. Number Theory\n-
+Fundamental Theorem of Arithmetic: Every integer greater than 1 can be
+expressed as a product of prime numbers.\n- Euclidean Algorithm: To find the
+GCD of two integers \\( a \\) and \\( b \\), repeatedly apply \\( a = bq + r
+\\) until \\( r = 0 \\).\n\n## 7. Set Theory\n- Union:  \\( A \\cup B = \\{ x |
+x \\in A \\text{ or } x \\in B \\} \\)\n- Intersection:  \\( A \\cap B = \\{ x
+| x \\in A \\text{ and } x \\in B \\} \\)\n- Complement:  \\( A' = \\{ x | x
+\\notin A \\} \\)\n\n## Conclusion\nThese formulas cover various branches of
+advanced mathematics, providing a foundation for further study and
+application.", 'filename': 'advanced_mathematics_formulas.pdf', 'encoding':
+None, 'use_latex': False}, result='Content successfully written to file:
+/Users/yifengwang/project/camel/file_write_outputs/advanced_mathematics_formulas.pdf',
+tool_call_id='call_uKqOpAl5Wm1O8dUYJc5yZf4U')]
+===============================================================================
+'''
+
+# Example 8: what is multiagent? please export them as pdf file
+pdf_query = """what is multiagent? Please export them as pdf file"""
+
+camel_agent.reset()
+response = camel_agent.step(pdf_query)
+print(f"Example 8: {pdf_query}")
+print(response.msgs[0].content)
+print("Tool calls:", response.info['tool_calls'])
+print("\n")
+
+'''
+===============================================================================
+Example 8: what is multiagent? please export them as pdf file
+The information about multiagent systems has been successfully exported to a PDF file named "multiagent_overview.pdf". If you need any further assistance, feel free to ask!
+Tool calls: [ToolCallingRecord(tool_name='write_to_file', args={'content': '### What is Multiagent?\n\nMultiagent systems (MAS) are systems composed of multiple interacting intelligent agents.
+These agents can be software programs, robots, or any entities that can perceive their environment and act upon it. The key characteristics of multiagent systems include:\n\n
+1. **Autonomy**: Each agent operates independently and makes its own decisions.\n2. **Social Ability**: Agents can communicate and interact with each other to achieve their goals.
+\n3. **Reactivity**: Agents can respond to changes in their environment in real-time.\n4. **Proactiveness**: Agents can take initiative and act in anticipation of future events.\n\n
+### Applications of Multiagent Systems\n\nMultiagent systems are used in various fields, including:\n- **Robotics**: Coordinating multiple robots to perform tasks.\n- **Distributed Control**:
+# Managing resources in smart grids or traffic systems.\n- **Game Theory**: Analyzing strategies in competitive environments.\n- **Simulation**: Modeling complex systems in economics, biology,
+# and social sciences.\n\n### Conclusion\n\nMultiagent systems provide a framework for understanding and designing systems where multiple agents interact, leading to complex behaviors and solutions to problems that are difficult for a single agent to solve alone.',
+#  'filename': 'multiagent_overview.pdf', 'encoding': None, 'use_latex': False}, result='Content successfully written to file: /Users/yifengwang/project/camel/file_write_outputs/multiagent_overview.pdf', tool_call_id='call_btYqjycX4aUfBNJUy8bpnHSV')]
 ===============================================================================
 '''
