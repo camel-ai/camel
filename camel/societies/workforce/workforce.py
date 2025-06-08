@@ -893,7 +893,7 @@ class Workforce(BaseNode):
             description,
             assistant_role_name,
             user_role_name,
-            chat_turn_limit=3,
+            chat_turn_limit=20,
             assistant_agent_kwargs=None,
             user_agent_kwargs=None,
             summarize_agent_kwargs=None,
@@ -913,7 +913,7 @@ class Workforce(BaseNode):
                     role playing scenario.
                 chat_turn_limit (int, optional): Maximum number of
                     conversation turns between the two agents.
-                    (default: :obj:`3`)
+                    (default: :obj:`20`)
                 assistant_agent_kwargs (Dict, optional): Keyword arguments
                     for configuring the assistant ChatAgent, such as model
                     type, tools, etc. (default: :obj:`None`)
