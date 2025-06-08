@@ -16,7 +16,7 @@ import json
 import shutil
 from camel.prompts import TextPrompt
 from pydantic import BaseModel, Field, field_validator, ConfigDict
-from typing import Any, Dict, List, Literal, Optional, Union, ClassVar
+from typing import Any, Dict, List, Literal, Optional, Union, ClassVar, Type
 from camel.logger import get_logger
 from camel.memories import AgentMemory
 from camel.messages import BaseMessage
@@ -263,7 +263,8 @@ class PaperToCodeAgent(ChatAgent):
         model: Optional[BaseModelBackend] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: int = 20,
-        status: Literal['planning', 'analyzing', 'coding'] = 'planning',
+        status: Literal['planning', 'analyzing', 'coding',
+                        'done'] = 'planning',
     ) -> None:
         self.paper_format: str = paper_format
 
@@ -304,6 +305,7 @@ class PaperToCodeAgent(ChatAgent):
     def step(
         self,
         input_message: Union[BaseMessage, str],
+        response_format: Optional[Type[BaseModel]] = None,
     ) -> PaperToCodeAgentResponse:
         r"""Process the input message and run the full paper-to-code pipeline.
         
@@ -314,21 +316,21 @@ class PaperToCodeAgent(ChatAgent):
             input_message (Union[BaseMessage, str]): The input message from the user,
                 can be incorporated into prompts as additional guidance.
         """
+        responses: List[ChatAgentResponse] = []
         if self.status == "planning":
             if self.paper_format == "JSON":
                 self._process()
-            responses: List[ChatAgentResponse] = self._planning(
-                input_message.content if isinstance(input_message, BaseMessage
-                                                    ) else input_message)
+            responses = self._planning(input_message.content if isinstance(
+                input_message, BaseMessage) else input_message)
             self.status = "analyzing"
 
         elif self.status == "analyzing":
             self._extract_config()
-            responses: List[ChatAgentResponse] = self._analyzing()
+            responses = self._analyzing()
             self.status = "coding"
 
         elif self.status == "coding":
-            responses: List[ChatAgentResponse] = self._coding()
+            responses = self._coding()
             self.status = "done"
 
         return PaperToCodeAgentResponse(
@@ -621,7 +623,7 @@ class PaperToCodeAgent(ChatAgent):
 
         todo_file_lst = task_list['Task list']
         done_file_lst = ['config.yaml']
-        done_file_dict = {}
+        done_file_dict: Dict[str, str] = {}
 
         code_files = ""
         for done_file in done_file_lst:
@@ -690,7 +692,7 @@ class PaperToCodeAgent(ChatAgent):
             with open(
                     f'{artifact_output_dir}/{save_todo_file_name}_coding.txt',
                     'w') as f:
-                f.write(actual_python_code)  # Write the extracted code
+                f.write(actual_python_code)
 
             # Store the extracted code in done_file_dict
             done_file_dict[todo_file_name] = actual_python_code

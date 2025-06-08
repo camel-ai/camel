@@ -11,7 +11,7 @@ class PaperToCodeAgentResponse(BaseModel):
         description="The phase of the action producing this response.",
     )
     content: List[ChatAgentResponse] = Field(
-        default=None,
+        default_factory=list,
         description="General textual content of the response.",
     )
     terminated: bool = Field(
