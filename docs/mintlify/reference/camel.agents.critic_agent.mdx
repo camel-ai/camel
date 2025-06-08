@@ -1,0 +1,131 @@
+<a id="camel.agents.critic_agent"></a>
+
+<a id="camel.agents.critic_agent.CriticAgent"></a>
+
+## CriticAgent
+
+```python
+class CriticAgent(ChatAgent):
+```
+
+A class for the critic agent that assists in selecting an option.
+
+**Parameters:**
+
+- **system_message** (Union[BaseMessage, str], optional): The system message for the chat agent. (default: :obj:`None`) model (Union[BaseModelBackend, Tuple[str, str], str, ModelType, Tuple[ModelPlatformType, ModelType], List[BaseModelBackend], List[str], List[ModelType], List[Tuple[str, str]], List[Tuple[ModelPlatformType, ModelType]]], optional): The model backend(s) to use. Can be a single instance, a specification (string, enum, tuple), or a list of instances or specifications to be managed by `ModelManager`. If a list of specifications (not `BaseModelBackend` instances) is provided, they will be instantiated using `ModelFactory`. (default: :obj:`ModelPlatformType.DEFAULT` with `ModelType.DEFAULT`)
+- **message_window_size** (int, optional): The maximum number of previous messages to include in the context window. If `None`, no windowing is performed. (default: :obj:`6`)
+- **retry_attempts** (int, optional): The number of retry attempts if the critic fails to return a valid option. (default: :obj:`2`)
+- **verbose** (bool, optional): Whether to print the critic's messages.
+- **logger_color** (Any): The color of the menu options displayed to the user. (default: :obj:`Fore.MAGENTA`)
+
+<a id="camel.agents.critic_agent.CriticAgent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    system_message: Optional[Union[BaseMessage, str]] = None,
+    model: Optional[Union[BaseModelBackend, Tuple[str, str], str, ModelType, Tuple[ModelPlatformType, ModelType], List[BaseModelBackend], List[str], List[ModelType], List[Tuple[str, str]], List[Tuple[ModelPlatformType, ModelType]]]] = None,
+    memory: Optional[AgentMemory] = None,
+    message_window_size: int = 6,
+    retry_attempts: int = 2,
+    verbose: bool = False,
+    logger_color: Any = Fore.MAGENTA
+):
+```
+
+<a id="camel.agents.critic_agent.CriticAgent.flatten_options"></a>
+
+### flatten_options
+
+```python
+def flatten_options(self, messages: Sequence[BaseMessage]):
+```
+
+Flattens the options to the critic.
+
+**Parameters:**
+
+- **messages** (Sequence[BaseMessage]): A list of `BaseMessage` objects.
+
+**Returns:**
+
+  str: A string containing the flattened options to the critic.
+
+<a id="camel.agents.critic_agent.CriticAgent.get_option"></a>
+
+### get_option
+
+```python
+def get_option(self, input_message: BaseMessage):
+```
+
+Gets the option selected by the critic.
+
+**Parameters:**
+
+- **input_message** (BaseMessage): A `BaseMessage` object representing the input message.
+
+**Returns:**
+
+  str: The option selected by the critic.
+
+<a id="camel.agents.critic_agent.CriticAgent.parse_critic"></a>
+
+### parse_critic
+
+```python
+def parse_critic(self, critic_msg: BaseMessage):
+```
+
+Parses the critic's message and extracts the choice.
+
+**Parameters:**
+
+- **critic_msg** (BaseMessage): A `BaseMessage` object representing the critic's response.
+
+**Returns:**
+
+  Optional[str]: The critic's choice as a string, or None if the
+message could not be parsed.
+
+<a id="camel.agents.critic_agent.CriticAgent.reduce_step"></a>
+
+### reduce_step
+
+```python
+def reduce_step(self, input_messages: Sequence[BaseMessage]):
+```
+
+Performs one step of the conversation by flattening options to the
+critic, getting the option, and parsing the choice.
+
+**Parameters:**
+
+- **input_messages** (Sequence[BaseMessage]): A list of BaseMessage objects.
+
+**Returns:**
+
+  ChatAgentResponse: A `ChatAgentResponse` object includes the
+critic's choice.
+
+<a id="camel.agents.critic_agent.CriticAgent.clone"></a>
+
+### clone
+
+```python
+def clone(self, with_memory: bool = False):
+```
+
+Creates a new instance of :obj:`CriticAgent` with the same
+configuration as the current instance.
+
+**Parameters:**
+
+- **with_memory** (bool): Whether to copy the memory (conversation history) to the new agent. If True, the new agent will have the same conversation history. If False, the new agent will have a fresh memory with only the system message. (default: :obj:`False`)
+
+**Returns:**
+
+  CriticAgent: A new instance of :obj:`CriticAgent` with the same
+configuration.

@@ -14,7 +14,7 @@
 
 from camel.agents.chat_agent import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
-from camel.data_collector import AlpacaDataCollector
+from camel.data_collectors import AlpacaDataCollector
 from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
 from camel.types.enums import ModelPlatformType, ModelType

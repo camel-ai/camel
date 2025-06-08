@@ -36,6 +36,14 @@ camel.storages.vectordb\_storages.tidb module
    :undoc-members:
    :show-inheritance:
 
+camel.storages.vectordb\_storages.faiss module
+-----------------------------------------------
+
+.. automodule:: camel.storages.vectordb_storages.faiss
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

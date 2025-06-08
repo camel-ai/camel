@@ -39,7 +39,8 @@ class SingleAgentWorker(Worker):
         description: str,
         worker: ChatAgent,
     ) -> None:
-        super().__init__(description)
+        node_id = worker.agent_id
+        super().__init__(description, node_id=node_id)
         self.worker = worker
 
     def reset(self) -> Any:

@@ -1,0 +1,19 @@
+<a id="camel.datagen.self_instruct.filter.filter_registry"></a>
+
+<a id="camel.datagen.self_instruct.filter.filter_registry.register_filter"></a>
+
+## register_filter
+
+```python
+def register_filter(
+    name: str,
+    constructor: Callable[[Dict[str, Any]], FilterFunction]
+):
+```
+
+Registers a new filter constructor in FILTER_REGISTRY.
+
+**Parameters:**
+
+- **name** (str): Unique name of the filter.
+- **constructor** (Callable[[Dict[str, Any]], FilterFunction]): Function to create the filter using a dictionary of parameters.
