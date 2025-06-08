@@ -36,7 +36,19 @@ agent = ChatAgent(model=model, tools=[search_tool])
 
 response_1 = agent.step("What is CAMEL-AI?")
 print(response_1.msgs[0].content)
-
+"""
+CAMEL-AI is a platform designed for building and researching
+ intelligent agents and multi-agent systems. This platform
+ is useful for data generation, world simulation, and task
+ automation. It provides tools, projects, and resources for
+ creating agentic applications using large language models
+ and other AI/ML technologies.
+"""
 
 response_2 = agent.step("What is the Github link to CAMEL framework?")
 print(response_2.msgs[0].content)
+"""
+The GitHub link to the CAMEL framework is:
+[https://github.com/camel-ai/camel](https://github.com/
+camel-ai/camel)
+"""
