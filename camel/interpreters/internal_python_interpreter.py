@@ -99,7 +99,7 @@ class InternalPythonInterpreter(BaseInterpreter):
         self.raise_error = raise_error
         self.unsafe_mode = unsafe_mode
 
-    def run(self, code: str, code_type: str) -> str:
+    def run(self, code: str, code_type: str = "python") -> str:
         r"""Executes the given code with specified code type in the
         interpreter.
 
@@ -115,6 +115,7 @@ class InternalPythonInterpreter(BaseInterpreter):
             code (str): The python code to be executed.
             code_type (str): The type of the code, which should be one of the
             supported code types (`python`, `py`, `python3`, `python2`).
+            (default:obj:python)
 
 
         Returns:

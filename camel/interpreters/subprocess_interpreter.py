@@ -87,7 +87,7 @@ class SubprocessInterpreter(BaseInterpreter):
     def run_file(
         self,
         file: Path,
-        code_type: str,
+        code_type: str = "python",
     ) -> str:
         r"""Executes a code file in a subprocess and captures its output.
 
@@ -95,6 +95,7 @@ class SubprocessInterpreter(BaseInterpreter):
             file (Path): The path object of the file to run.
             code_type (str): The type of code to execute (e.g., 'python',
                 'bash').
+                (default:obj:python)
 
         Returns:
             str: A string containing the captured stdout and stderr of the

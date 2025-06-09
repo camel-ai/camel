@@ -76,7 +76,7 @@ class E2BInterpreter(BaseInterpreter):
     def run(
         self,
         code: str,
-        code_type: str,
+        code_type: str = "python",
     ) -> str:
         r"""Executes the given code in the e2b sandbox.
 
@@ -84,6 +84,7 @@ class E2BInterpreter(BaseInterpreter):
             code (str): The code string to execute.
             code_type (str): The type of code to execute (e.g., 'python',
                 'bash').
+                (default:obj:python)
 
         Returns:
             str: The string representation of the output of the executed code.

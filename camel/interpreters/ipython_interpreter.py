@@ -118,13 +118,14 @@ class JupyterKernelInterpreter(BaseInterpreter):
         exec_result = "\n".join(outputs)
         return self._clean_ipython_output(exec_result)
 
-    def run(self, code: str, code_type: str) -> str:
+    def run(self, code: str, code_type: str = "python") -> str:
         r"""Executes the given code in the Jupyter kernel.
 
         Args:
             code (str): The code string to execute.
             code_type (str): The type of code to execute (e.g., 'python',
                 'bash').
+                (default:obj:python)
 
         Returns:
             str: A string containing the captured result of the
