@@ -30,6 +30,13 @@ RUN add-apt-repository ppa:deadsnakes/ppa \
     && apt-get clean \
     && apt-get autoremove -y
 
+# Install R
+RUN apt-get update && apt-get install -y \
+    r-base \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && apt-get autoremove -y
+
 # Install NodeJS 22.x
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs
