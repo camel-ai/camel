@@ -14,7 +14,7 @@
 
 import re
 from enum import Enum
-from typing import Callable, Dict, List, Literal, Optional, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
@@ -69,14 +69,23 @@ class Task(BaseModel):
     r"""Task is specific assignment that can be passed to a agent.
 
     Attributes:
-        content: string content for task.
-        id: An unique string identifier for the task. This should
-        ideally be provided by the provider/model which created the task.
-        state: The state which should be OPEN, RUNNING, DONE or DELETED.
-        type: task type
-        parent: The parent task, None for root task.
-        subtasks: The childrent sub-tasks for the task.
-        result: The answer for the task.
+        content (str): string content for task.
+        id (str): An unique string identifier for the task. This should
+            ideally be provided by the provider/model which created the task.
+            (default: :obj: `""`)
+        state (TaskState): The state which should be OPEN, RUNNING, DONE or
+            DELETED. (default: :obj: `TaskState.OPEN`)
+        type (Optional[str]): task type. (default: :obj: `None`)
+        parent (Optional[Task]): The parent task, None for root task.
+            (default: :obj: `None`)
+        subtasks (List[Task]): The childrent sub-tasks for the task.
+            (default: :obj: `[]`)
+        result (Optional[str]): The answer for the task.
+            (default: :obj: `""`)
+        failure_count (int): The failure count for the task.
+            (default: :obj: `0`)
+        additional_info (Optional[Dict[str, Any]]): Additional information for
+            the task. (default: :obj: `None`)
     """
 
     content: str
@@ -95,7 +104,7 @@ class Task(BaseModel):
 
     failure_count: int = 0
 
-    additional_info: Optional[str] = None
+    additional_info: Optional[Dict[str, Any]] = None
 
     @classmethod
     def from_message(cls, message: BaseMessage) -> "Task":
