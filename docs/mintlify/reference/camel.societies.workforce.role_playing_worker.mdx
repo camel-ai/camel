@@ -18,7 +18,7 @@ A worker node that contains a role playing.
 - **assistant_agent_kwargs** (Optional[Dict]): The keyword arguments to initialize the assistant agent in the role playing, like the model name, etc. (default: :obj:`None`)
 - **user_agent_kwargs** (Optional[Dict]): The keyword arguments to initialize the user agent in the role playing, like the model name, etc. (default: :obj:`None`)
 - **summarize_agent_kwargs** (Optional[Dict]): The keyword arguments to initialize the summarize agent, like the model name, etc. (default: :obj:`None`)
-- **chat_turn_limit** (int): The maximum number of chat turns in the role playing. (default: :obj:`3`)
+- **chat_turn_limit** (int): The maximum number of chat turns in the role playing. (default: :obj:`20`)
 
 <a id="camel.societies.workforce.role_playing_worker.RolePlayingWorker.__init__"></a>
 
@@ -33,6 +33,6 @@ def __init__(
     assistant_agent_kwargs: Optional[Dict] = None,
     user_agent_kwargs: Optional[Dict] = None,
     summarize_agent_kwargs: Optional[Dict] = None,
-    chat_turn_limit: int = 3
+    chat_turn_limit: int = 20
 ):
 ```

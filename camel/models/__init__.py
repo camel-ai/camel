@@ -18,6 +18,7 @@ from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
 from .base_model import BaseModelBackend
 from .cohere_model import CohereModel
+from .crynux_model import CrynuxModel
 from .deepseek_model import DeepSeekModel
 from .fish_audio_model import FishAudioModel
 from .gemini_model import GeminiModel
@@ -96,4 +97,5 @@ __all__ = [
     'VolcanoModel',
     'LMStudioModel',
     'WatsonXModel',
+    'CrynuxModel',
 ]
