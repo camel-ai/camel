@@ -106,11 +106,10 @@ def generate_pptx_json_with_agent(topic: str, slide_count: int, api_key: str):
         message_window_size=5,
         model=ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O,
+            model_type=ModelType.GPT_4_1,
             model_config_dict={"temperature": 0.0},
         )
     )
-   
 
     # 3. Call the agent with our instruction prompt
     try:
@@ -154,7 +153,7 @@ if not openai_key:
     st.stop()
 
 if topic and st.button("Generate Presentation"):
-    st.info("🕒 Generating slide JSON with ChatAgent (GPT-4o)...")
+    st.info("🕒 Generating slide JSON with ChatAgent (GPT-4.1)...")
     slides, error = generate_pptx_json_with_agent(topic, slide_count, openai_key)
     if error:
         st.error(error)
