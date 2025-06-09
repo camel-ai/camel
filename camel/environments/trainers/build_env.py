@@ -98,7 +98,7 @@ def build_single_step_env(dataset_path: str) -> SingleStepEnv:  # noqa: D401
     
     Args:
         dataset_path (str): Path to a seed dataset or StaticDataset depending on implementation.
-        
+
     Returns:
         SingleStepEnv: The initialized SingleStepEnv ready we want to train on.
     """
@@ -113,7 +113,6 @@ def build_single_step_env(dataset_path: str) -> SingleStepEnv:  # noqa: D401
     env = SingleStepEnv(
         dataset=dataset,
         verifier=verifier,
-        n_tasks=n_tasks,
     )
 
 
