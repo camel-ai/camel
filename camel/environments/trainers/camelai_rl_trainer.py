@@ -1,5 +1,4 @@
-# Copyright 2024 Bytedance Ltd. and/or its affiliates
-#
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,6 +10,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 """
 This is intended for usage with camelai_ray_trainer.py
 """
@@ -22,8 +23,8 @@ import ray
 from omegaconf import OmegaConf
 from recipes.camelai.build_env import build_single_step_env
 from recipes.camelai.camel_rl_trainer import CamelEnvTrainer
+from recipes.camelai.env_reward_manager import CamelEnvRewardManager
 from verl.trainer.ppo.ray_trainer import ResourcePoolManager, Role
-from verl.trainer.ppo.reward import load_reward_manager
 
 
 @hydra.main(config_path="config", config_name="ppo_trainer", version_base=None)
@@ -141,13 +142,13 @@ class TaskRunner:
 
         # env setup
         seed_path = config.data.seed_dataset_path
-        env = build_single_step_env(config)
+        env = build_single_step_env(seed_path)
 
         # we should adopt a multi-source reward function here
         # - for rule-based rm, we directly call a reward score
         # - for model-based rm, we call a model
-        # - for code related prompt, we send to a sandbox if there are test cases
-        # - finally, we combine all the rewards together
+        # - for code related prompt, we send to a sandbox if there are test
+        # - cases finally, we combine all the rewards together
         # - The reward type depends on the tag of the data
         if config.reward_model.enable:
             if config.reward_model.strategy in ["fsdp", "fsdp2"]:
@@ -171,13 +172,9 @@ class TaskRunner:
             )
             mapping[Role.RefPolicy] = global_pool_id
 
-        # TODO replace with env.step()
-        reward_fn = load_reward_manager(
-            config,
-            tokenizer,
-            num_examine=0,
-            **config.reward_model.get("reward_kwargs", {}),
-        )
+        # We use our Environments rewards for the training
+        reward_fn = CamelEnvRewardManager(tokenizer=tokenizer, env=env)
+
         resource_pool_manager = ResourcePoolManager(
             resource_pool_spec=resource_pool_spec, mapping=mapping
         )

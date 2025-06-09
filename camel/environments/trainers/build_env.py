@@ -11,21 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# Copyright 2024 Bytedance Ltd. and/or its affiliates
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
-r""" Initializes the SingleStepEnv
+
+r"""Initializes the SingleStepEnv
 
 This function creates a SingleStepEnv that we need in order to get our
 observations for the training run and in order to compute our reward
@@ -33,34 +21,39 @@ observations for the training run and in order to compute our reward
 Returns:
     SingleStepEnv
 """
-from pathlib import Path
-import asyncio
-from dotenv import load_dotenv
-import json
 
+import asyncio
+import json
+from pathlib import Path
+
+from camel_env.single_step_env import SingleStepEnv
+from dotenv import load_dotenv
+
+from camel.configs import ChatGPTConfig
+from camel.datasets import FewShotGenerator, StaticDataset
 from camel.logger import get_logger
-from camel.datasets import StaticDataset, FewShotGenerator
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
-from camel.configs import ChatGPTConfig
-from camel.verifiers import MathVerifier, PythonVerifier
-from camel_env.single_step_env import SingleStepEnv
+from camel.verifiers import MathVerifier
 
 logger = get_logger(__name__)
+
 
 async def _setup_verifier_and_dataset(raw_data: list[dict]):
     r"""
     Internal helper to configure the dataset and the verifier.
     This function should be modified to fit the training purposes.
 
-    Either use a Generator or a StaticDataset for the creation of a SingleStepEnvironment.
+    Either use a Generator or a StaticDataset for the creation of a
+    SingleStepEnvironment.
     Default implementation here will utilize a FewShotGenerator.
 
     Additionally, choose a suitable verifier for your specific task.
     Default implementation here will utilize a PythonVerifier.
 
     Args:
-        raw_data (list[dict]): The input data for either the seed dataset or the StaticDataset.
+        raw_data (list[dict]): The input data for either the seed dataset or
+            the StaticDataset.
 
     Returns:
         tuple[FewShotGenerator, MathVerifier]: A tuple containing the dataset
@@ -92,12 +85,12 @@ async def _setup_verifier_and_dataset(raw_data: list[dict]):
     return dataset, verifier
 
 
-def build_single_step_env(dataset_path: str) -> SingleStepEnv:  # noqa: D401
-
+def build_single_step_env(dataset_path: str) -> SingleStepEnv:
     r"""Initializes a minimal SingleStepEnv
-    
+
     Args:
-        dataset_path (str): Path to a seed dataset or StaticDataset depending on implementation.
+        dataset_path (str): Path to a seed dataset or StaticDataset depending
+            on implementation.
 
     Returns:
         SingleStepEnv: The initialized SingleStepEnv ready we want to train on.
@@ -114,6 +107,5 @@ def build_single_step_env(dataset_path: str) -> SingleStepEnv:  # noqa: D401
         dataset=dataset,
         verifier=verifier,
     )
-
 
     return env
