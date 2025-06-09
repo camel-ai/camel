@@ -521,6 +521,20 @@ wheels = [
 ]
 
 [[package]]
+name = "beir"
+version = "2.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "datasets" },
+    { name = "pytrec-eval-terrier" },
+    { name = "sentence-transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a1/1d/8d49e6ba48c05d5d7df4cc5272438decf03a8f857de33cd75d3f4cb59d63/beir-2.1.0.tar.gz", hash = "sha256:a2f8c6276ca631b08ff44d2d452179de8d783bb6ca9258b50c4588d0e6123a23", size = 58346 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d8/a4/52fc223a373aee68530d61a3c08e92b46a73dd49731ad22d123d361204c9/beir-2.1.0-py3-none-any.whl", hash = "sha256:ea369b7a1c484b8f2628e11435d2887c75d1f9c4f70d672fa88fdd048adcb9e5", size = 70699 },
+]
+
+[[package]]
 name = "bibtexparser"
 version = "1.4.3"
 source = { registry = "https://pypi.org/simple" }
@@ -598,6 +612,7 @@ all = [
     { name = "arxiv2text" },
     { name = "azure-storage-blob" },
     { name = "beautifulsoup4" },
+    { name = "beir" },
     { name = "botocore" },
     { name = "chunkr-ai" },
     { name = "cohere" },
@@ -632,6 +647,7 @@ all = [
     { name = "ibm-watsonx-ai" },
     { name = "imageio", extra = ["pyav"] },
     { name = "ipykernel" },
+    { name = "jsonlines" },
     { name = "jupyter-client" },
     { name = "linkup-sdk" },
     { name = "litellm" },
@@ -709,6 +725,10 @@ all = [
     { name = "wolframalpha" },
     { name = "xls2xlsx" },
     { name = "yt-dlp" },
+]
+coderag-bench = [
+    { name = "beir" },
+    { name = "jsonlines" },
 ]
 communication-tools = [
     { name = "discord-py" },
@@ -961,6 +981,8 @@ requires-dist = [
     { name = "beautifulsoup4", marker = "extra == 'document-tools'", specifier = ">=4,<5" },
     { name = "beautifulsoup4", marker = "extra == 'owl'", specifier = ">=4,<5" },
     { name = "beautifulsoup4", marker = "extra == 'web-tools'", specifier = ">=4,<5" },
+    { name = "beir", marker = "extra == 'all'", specifier = "==2.1.0" },
+    { name = "beir", marker = "extra == 'coderag-bench'", specifier = "==2.1.0" },
     { name = "botocore", marker = "extra == 'all'", specifier = ">=1.35.3,<2" },
     { name = "botocore", marker = "extra == 'storage'", specifier = ">=1.35.3,<2" },
     { name = "chunkr-ai", marker = "extra == 'all'", specifier = ">=0.0.50" },
@@ -1049,6 +1071,8 @@ requires-dist = [
     { name = "imageio", extras = ["pyav"], marker = "extra == 'owl'", specifier = ">=2.34.2,<3" },
     { name = "ipykernel", marker = "extra == 'all'", specifier = ">=6.0.0,<7" },
     { name = "ipykernel", marker = "extra == 'dev-tools'", specifier = ">=6.0.0,<7" },
+    { name = "jsonlines", marker = "extra == 'all'", specifier = ">=3.1.0,<4" },
+    { name = "jsonlines", marker = "extra == 'coderag-bench'", specifier = ">=3.1.0,<4" },
     { name = "jsonschema", specifier = ">=4,<5" },
     { name = "jupyter-client", marker = "extra == 'all'", specifier = ">=8.6.2,<9" },
     { name = "jupyter-client", marker = "extra == 'dev-tools'", specifier = ">=8.6.2,<9" },
@@ -1262,7 +1286,7 @@ requires-dist = [
     { name = "yt-dlp", marker = "extra == 'media-tools'", specifier = ">=2024.11.4,<2025" },
     { name = "yt-dlp", marker = "extra == 'owl'", specifier = ">=2024.11.4,<2025" },
 ]
-provides-extras = ["test", "dev", "docs", "rag", "web-tools", "document-tools", "media-tools", "communication-tools", "data-tools", "research-tools", "dev-tools", "model-platforms", "huggingface", "storage", "owl", "all"]
+provides-extras = ["test", "dev", "docs", "rag", "web-tools", "document-tools", "media-tools", "communication-tools", "data-tools", "research-tools", "dev-tools", "model-platforms", "huggingface", "storage", "owl", "coderag-bench", "all"]
 
 [[package]]
 name = "certifi"
@@ -3340,6 +3364,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/dc/fe/0f5a938c54105553436dbff7a61dc4fed4b1b2c98852f8833beaf4d5968f/joblib-1.5.1.tar.gz", hash = "sha256:f4f86e351f39fe3d0d32a9f2c3d8af1ee4cec285aafcb27003dda5205576b444", size = 330475 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7d/4f/1195bbac8e0c2acc5f740661631d8d750dc38d4a32b23ee5df3cde6f4e0d/joblib-1.5.1-py3-none-any.whl", hash = "sha256:4719a31f054c7d766948dcd83e9613686b27114f190f717cec7eaa2084f8a74a", size = 307746 },
+]
+
+[[package]]
+name = "jsonlines"
+version = "3.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2a/c8/efdb87403dae07cf20faf75449eae41898b71d6a8d4ebaf9c80d5be215f5/jsonlines-3.1.0.tar.gz", hash = "sha256:2579cb488d96f815b0eb81629e3e6b0332da0962a18fa3532958f7ba14a5c37f", size = 8510 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/68/32/290ca20eb3a2b97ffa6ba1791fcafacb3cd2f41f539c96eb54cfc3cfcf47/jsonlines-3.1.0-py3-none-any.whl", hash = "sha256:632f5e38f93dfcb1ac8c4e09780b92af3a55f38f26e7c47ae85109d420b6ad39", size = 8592 },
 ]
 
 [[package]]
@@ -6018,6 +6054,32 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/32/b9/11fdb74a0cf645cb02ccff7a1f163333eedd461e364425caede13dba5d6b/pytidb_experimental-0.0.1.dev4.tar.gz", hash = "sha256:0161b77758af363a6d3f0c16df010effae2cea3b0f98ca08b6d0b9eb07760923", size = 15079 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8b/71/a531e6648455fd8a936530c67c619a33726f55331bacdac74aa6742d0baf/pytidb_experimental-0.0.1.dev4-py3-none-any.whl", hash = "sha256:5ba3f5bb533927b0f82421df4c6f379dafd4f2afe8cfaf15ec0f00833794f1d0", size = 17824 },
+]
+
+[[package]]
+name = "pytrec-eval-terrier"
+version = "0.5.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/dc/61/9003ffdb64f74a91208d69235dbcd380ae1a8d267089348eb8f7aab9819a/pytrec_eval_terrier-0.5.7.tar.gz", hash = "sha256:47e01ef52bfbe2f1df27c43842aa2faae542044e550983cd1a3100a4d9f62b48", size = 16935 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/13/b2/dae5de21544ee77fed7c83dfd9d03dfef22b873f8689daf084fa930f637b/pytrec_eval_terrier-0.5.7-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:ec6242a3123e0115531ec76b183f406a5b1c21bc815e70937d771131d94f89ac", size = 135484 },
+    { url = "https://files.pythonhosted.org/packages/f6/dd/201a9537ddc64afba24179ab39b573718458d3d2e17f77f68a3a2d8d4eb1/pytrec_eval_terrier-0.5.7-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:652bc987f51ae9de44751a3f4789591132e15f98b606ce9b12db9af417daf54d", size = 287548 },
+    { url = "https://files.pythonhosted.org/packages/45/9e/822082591b4f8408a655f411e62ac3828e3c08ae3dd69782904bd66176fb/pytrec_eval_terrier-0.5.7-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:8f91966ed6d299c6b311b946c88bce8d4b3809e301e20eadf50b0db8b2b7831a", size = 280384 },
+    { url = "https://files.pythonhosted.org/packages/b1/e7/779f6fe0a7577921f055af079661cb24e26aadc72564a5fe32d4b013ba69/pytrec_eval_terrier-0.5.7-cp310-cp310-musllinux_1_2_i686.whl", hash = "sha256:37b16373061af87354b3d30161b7f2d87830e96174fbfa72a05aef9b0b18ef69", size = 1424753 },
+    { url = "https://files.pythonhosted.org/packages/af/a6/960d6e81528527053922fe77add14dbf052a6624eea0805718d01f6eef4d/pytrec_eval_terrier-0.5.7-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:c44085dd7a1ffc3b6d99ae61a3bf475421cc4354e76e7a654107b9ce4adbfbe4", size = 1325806 },
+    { url = "https://files.pythonhosted.org/packages/44/dc/741b7eee825e82f32297290eab5e7857c8889081109abca03fd2b3e61a21/pytrec_eval_terrier-0.5.7-cp310-cp310-win_amd64.whl", hash = "sha256:ee8ce530f7726f71e147e3965f866998276b1d90d5eb28812b8106a25eef9328", size = 57419 },
+    { url = "https://files.pythonhosted.org/packages/4d/c0/8b9209bb5073c2071de0ce0bacfe82e0d192eec9a96007fc5338579f7ec6/pytrec_eval_terrier-0.5.7-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:45e2a234e0061cd80adfa14de239393052339e0227bb4b7f13bf7a9dca7cdd33", size = 135464 },
+    { url = "https://files.pythonhosted.org/packages/14/81/7a6b5b4063dc0133bccdc83afdc3a407db801361e1bf044900de651d2e68/pytrec_eval_terrier-0.5.7-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:707cbdde6be31fb68cc3323bb0523ece23a72a91d1eb2d2d61db27a16872daad", size = 287986 },
+    { url = "https://files.pythonhosted.org/packages/75/89/99a7f72f11ceef515090fe2a22352e07d476c3ec70272be61ecbb1d78eab/pytrec_eval_terrier-0.5.7-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:19cdd0daedeae758e8815414c8ea890601ff1e6344f5bc5967c3931fadb1e4a2", size = 280801 },
+    { url = "https://files.pythonhosted.org/packages/c4/1e/becc8155fefd6705bebcabe6dd5ff6f8eaa825d2ffb7ce3124422b297149/pytrec_eval_terrier-0.5.7-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:a3a0b35fbd3b7423122b3be2189a0fcf34e7c9ea92183dfaa76bff24ac8d488d", size = 1425137 },
+    { url = "https://files.pythonhosted.org/packages/fd/87/d9003d988ed37196cc1ac85e417361ac855f4ac4dd39ee047342cf56da47/pytrec_eval_terrier-0.5.7-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:72138fe4d8e1442b4f80b0c71b904612a66ff1efa67428fbb280009960e5c1ac", size = 1326102 },
+    { url = "https://files.pythonhosted.org/packages/b5/b1/d7150e774a0b8eff7bccdf714c5416bdeeb90d24a2977d27561121b584d5/pytrec_eval_terrier-0.5.7-cp311-cp311-win_amd64.whl", hash = "sha256:1e1e26f4b686258c05b7c8a90bebc48d7c37b84dec8d321ab1e6ac14af705d4f", size = 57419 },
+    { url = "https://files.pythonhosted.org/packages/1a/41/d56116972d308ceefff769dc025580e6e43dd088f87ea82bffac66bcdfa6/pytrec_eval_terrier-0.5.7-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:0d5fcabd7c1ddcc6b1d0d191f50b1ea6e6817f9a674c31a06ce530878d21de0f", size = 135782 },
+    { url = "https://files.pythonhosted.org/packages/e4/3d/ec04c49dd2cfd684d046acdf338f5aeaaa4c31b4c6a4648d3f60eef0d56a/pytrec_eval_terrier-0.5.7-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b3f9b5765068f6e98edd560c76d76076a6a61a8a6265c1ef48d48d982d8a733e", size = 288596 },
+    { url = "https://files.pythonhosted.org/packages/31/1d/c345131f866b2642163d2b101f11eeadf903e62f36d919734227074ca5b7/pytrec_eval_terrier-0.5.7-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3a5b1d232bfb770c70c12f80990c314558d77e46cd56861b60188fcd1803c9a7", size = 280897 },
+    { url = "https://files.pythonhosted.org/packages/5d/ac/fd0eb474e0166747c7afde90a7c29f3e66da019b3ccb3ca9dc01bf1a132d/pytrec_eval_terrier-0.5.7-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:b9c086e6ce4303aa0d14dc2a9083d5edec6c949347957c4ddb3b99554e603f7e", size = 1425761 },
+    { url = "https://files.pythonhosted.org/packages/22/1f/20ed725e7aebda09ae64b33a8aad1bb5c67c24e002ac3c965f9616f2b831/pytrec_eval_terrier-0.5.7-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:581f3cfe75bf0474f4da37b471c4ba27a4fd945ed7c0bc71897929243142192b", size = 1326648 },
+    { url = "https://files.pythonhosted.org/packages/3b/30/a50a6e1fe6fb013627098545b6f4b2e030c6637aa5be49f35269fe882284/pytrec_eval_terrier-0.5.7-cp312-cp312-win_amd64.whl", hash = "sha256:fbe7465984cbd3842bc50d557f334dde6c866065cf847fa1c348459b7650d5b3", size = 57491 },
 ]
 
 [[package]]
