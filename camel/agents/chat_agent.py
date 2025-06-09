@@ -1606,22 +1606,11 @@ class ChatAgent(BaseAgent):
             tool_call_id=tool_call_id,
         )
 
-        # Use slightly different timestamps to ensure correct ordering
-        # This ensures the assistant message (tool call) always appears before
-        # the function message (tool result) in the conversation context
-        import time
+        self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
 
-        # Use nanosecond precision for better timestamp accuracy
-        current_time = time.time_ns() / 1e9
-        self.update_memory(
-            assist_msg, OpenAIBackendRole.ASSISTANT, timestamp=current_time
-        )
-        # Use a larger time difference (10ms) to ensure reliable ordering
-        # even on systems with lower timer precision
         self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
-            timestamp=current_time + 0.01,
         )
 
         # Record information about this tool call
