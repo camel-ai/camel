@@ -2,6 +2,9 @@
 
 FROM ubuntu:22.04
 
+# Set environment variable to avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Update and install base utilities
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -12,14 +15,19 @@ RUN apt-get update && apt-get install -y \
     git-lfs \
     netcat \
     sudo \
+    tzdata \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
     && apt-get autoremove -y
 
+# Set timezone to avoid tzdata prompt
+RUN ln -fs /usr/share/zoneinfo/Asia/Kolkata /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata
+
 # Install Python 3.10 and its dependencies
-RUN add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get update \
-    && apt-get install -y \
+RUN add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y \
         python3.10 \
         python3.10-venv \
         python3.10-dev \
@@ -31,29 +39,31 @@ RUN add-apt-repository ppa:deadsnakes/ppa \
     && apt-get autoremove -y
 
 # Install R
-RUN apt-get update && apt-get install -y \
-    r-base \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean \
-    && apt-get autoremove -y
+RUN apt-get update && \
+    apt-get install -y r-base && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get clean && \
+    apt-get autoremove -y
 
 # Install NodeJS 22.x
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get clean && \
+    apt-get autoremove -y
 
 # Install Poetry
-RUN curl -fsSL https://install.python-poetry.org | python3.10 - \
-    && ln -s ~/.local/bin/poetry /usr/local/bin/poetry
+RUN curl -fsSL https://install.python-poetry.org | python3.10 - && \
+    ln -s ~/.local/bin/poetry /usr/local/bin/poetry
 
-# Install Python packages
-RUN python3.10 -m pip install --upgrade pip setuptools wheel 
+# Upgrade pip and install base Python packages
+RUN python3.10 -m pip install --upgrade pip setuptools wheel
 
 # Install uv
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     mv /root/.local/bin/uv /usr/local/bin/uv && \
     mv /root/.local/bin/uvx /usr/local/bin/uvx && \
-    chmod +x /usr/local/bin/uv && \
-    chmod +x /usr/local/bin/uvx
+    chmod +x /usr/local/bin/uv /usr/local/bin/uvx
 
 # Setup working directory
 WORKDIR /workspace
