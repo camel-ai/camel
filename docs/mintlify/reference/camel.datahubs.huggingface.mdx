@@ -1,0 +1,262 @@
+<a id="camel.datahubs.huggingface"></a>
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager"></a>
+
+## HuggingFaceDatasetManager
+
+```python
+class HuggingFaceDatasetManager(BaseDatasetManager):
+```
+
+A dataset manager for Hugging Face datasets. This class provides
+methods to create, add, update, delete, and list records in a dataset on
+the Hugging Face Hub.
+
+**Parameters:**
+
+- **token** (str): The Hugging Face API token. If not provided, the token will be read from the environment variable `HF_TOKEN`.
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, token: Optional[str] = None):
+```
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager.create_dataset_card"></a>
+
+### create_dataset_card
+
+```python
+def create_dataset_card(
+    self,
+    dataset_name: str,
+    description: str,
+    license: Optional[str] = None,
+    version: Optional[str] = None,
+    tags: Optional[List[str]] = None,
+    authors: Optional[List[str]] = None,
+    size_category: Optional[List[str]] = None,
+    language: Optional[List[str]] = None,
+    task_categories: Optional[List[str]] = None,
+    content: Optional[str] = None
+):
+```
+
+Creates and uploads a dataset card to the Hugging Face Hub in YAML
+format.
+
+**Parameters:**
+
+- **dataset_name** (str): The name of the dataset.
+- **description** (str): A description of the dataset.
+- **license** (str): The license of the dataset. (default: :obj:`None`)
+- **version** (str): The version of the dataset. (default: :obj:`None`)
+- **tags** (list): A list of tags for the dataset.(default: :obj:`None`)
+- **authors** (list): A list of authors of the dataset. (default: :obj:`None`)
+- **size_category** (list): A size category for the dataset. (default: :obj:`None`)
+- **language** (list): A list of languages the dataset is in. (default: :obj:`None`)
+- **task_categories** (list): A list of task categories. (default: :obj:`None`)
+- **content** (str): Custom markdown content that the user wants to add to the dataset card. (default: :obj:`None`)
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager.create_dataset"></a>
+
+### create_dataset
+
+```python
+def create_dataset(
+    self,
+    name: str,
+    private: bool = False,
+    **kwargs: Any
+):
+```
+
+Creates a new dataset on the Hugging Face Hub.
+
+**Parameters:**
+
+- **name** (str): The name of the dataset.
+- **private** (bool): Whether the dataset should be private. defaults to False.
+- **kwargs** (Any): Additional keyword arguments.
+
+**Returns:**
+
+  str: The URL of the created dataset.
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager.list_datasets"></a>
+
+### list_datasets
+
+```python
+def list_datasets(
+    self,
+    username: str,
+    limit: int = 100,
+    **kwargs: Any
+):
+```
+
+Lists all datasets for the current user.
+
+**Parameters:**
+
+- **username** (str): The username of the user whose datasets to list.
+- **limit** (int): The maximum number of datasets to list. (default: :obj:`100`)
+- **kwargs** (Any): Additional keyword arguments.
+
+**Returns:**
+
+  List[str]: A list of dataset ids.
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager.delete_dataset"></a>
+
+### delete_dataset
+
+```python
+def delete_dataset(self, dataset_name: str, **kwargs: Any):
+```
+
+Deletes a dataset from the Hugging Face Hub.
+
+**Parameters:**
+
+- **dataset_name** (str): The name of the dataset to delete.
+- **kwargs** (Any): Additional keyword arguments.
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager.add_records"></a>
+
+### add_records
+
+```python
+def add_records(
+    self,
+    dataset_name: str,
+    records: List[Record],
+    filepath: str = 'records/records.json',
+    **kwargs: Any
+):
+```
+
+Adds records to a dataset on the Hugging Face Hub.
+
+**Parameters:**
+
+- **dataset_name** (str): The name of the dataset.
+- **records** (List[Record]): A list of records to add to the dataset.
+- **filepath** (str): The path to the file containing the records.
+- **kwargs** (Any): Additional keyword arguments.
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager.update_records"></a>
+
+### update_records
+
+```python
+def update_records(
+    self,
+    dataset_name: str,
+    records: List[Record],
+    filepath: str = 'records/records.json',
+    **kwargs: Any
+):
+```
+
+Updates records in a dataset on the Hugging Face Hub.
+
+**Parameters:**
+
+- **dataset_name** (str): The name of the dataset.
+- **records** (List[Record]): A list of records to update in the dataset.
+- **filepath** (str): The path to the file containing the records.
+- **kwargs** (Any): Additional keyword arguments.
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager.delete_record"></a>
+
+### delete_record
+
+```python
+def delete_record(
+    self,
+    dataset_name: str,
+    record_id: str,
+    filepath: str = 'records/records.json',
+    **kwargs: Any
+):
+```
+
+Deletes a record from the dataset.
+
+**Parameters:**
+
+- **dataset_name** (str): The name of the dataset.
+- **record_id** (str): The ID of the record to delete.
+- **filepath** (str): The path to the file containing the records.
+- **kwargs** (Any): Additional keyword arguments.
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager.list_records"></a>
+
+### list_records
+
+```python
+def list_records(
+    self,
+    dataset_name: str,
+    filepath: str = 'records/records.json',
+    **kwargs: Any
+):
+```
+
+Lists all records in a dataset.
+
+**Parameters:**
+
+- **dataset_name** (str): The name of the dataset.
+- **filepath** (str): The path to the file containing the records.
+- **kwargs** (Any): Additional keyword arguments.
+
+**Returns:**
+
+  List[Record]: A list of records in the dataset.
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager._download_records"></a>
+
+### _download_records
+
+```python
+def _download_records(
+    self,
+    dataset_name: str,
+    filepath: str,
+    **kwargs: Any
+):
+```
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager._upload_records"></a>
+
+### _upload_records
+
+```python
+def _upload_records(
+    self,
+    records: List[Record],
+    dataset_name: str,
+    filepath: str,
+    **kwargs: Any
+):
+```
+
+<a id="camel.datahubs.huggingface.HuggingFaceDatasetManager._upload_file"></a>
+
+### _upload_file
+
+```python
+def _upload_file(
+    self,
+    file_content: str,
+    dataset_name: str,
+    filepath: str,
+    file_type: str = 'json',
+    **kwargs: Any
+):
+```

@@ -56,6 +56,8 @@ class ModelType(UnifiedModelType, Enum):
     AWS_LLAMA_3_3_70B_INSTRUCT = "us.meta.llama3-3-70b-instruct-v1:0"
     AWS_LLAMA_3_2_90B_INSTRUCT = "us.meta.llama3-2-90b-instruct-v1:0"
     AWS_LLAMA_3_2_11B_INSTRUCT = "us.meta.llama3-2-11b-instruct-v1:0"
+    AWS_CLAUDE_SONNET_4 = "anthropic.claude-sonnet-4-20250514-v1:0"
+    AWS_CLAUDE_OPUS_4 = "anthropic.claude-opus-4-20250514-v1:0"
 
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
@@ -145,13 +147,15 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_2_0 = "claude-2.0"
     CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
 
-    # Claude3 models
+    # Claude models
     CLAUDE_3_OPUS = "claude-3-opus-latest"
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
+    CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
+    CLAUDE_OPUS_4 = "claude-opus-4-20250514"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -181,7 +185,7 @@ class ModelType(UnifiedModelType, Enum):
 
     # Gemini models
     GEMINI_2_5_FLASH_PREVIEW = "gemini-2.5-flash-preview-04-17"
-    GEMINI_2_5_PRO_PREVIEW = "gemini-2.5-pro-preview-05-06"
+    GEMINI_2_5_PRO_PREVIEW = "gemini-2.5-pro-preview-06-05"
     GEMINI_2_0_FLASH = "gemini-2.0-flash"
     GEMINI_2_0_FLASH_EXP = "gemini-2.0-flash-exp"
     GEMINI_2_0_FLASH_THINKING = "gemini-2.0-flash-thinking-exp"
@@ -380,6 +384,25 @@ class ModelType(UnifiedModelType, Enum):
     )
     WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
+    # Crynux models
+    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    )
+    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    )
+    CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+    )
+
+    CRYNUX_QWEN_3_4_B = "Qwen/Qwen3-4B"
+    CRYNUX_QWEN_3_8_B = "Qwen/Qwen3-8B"
+    CRYNUX_QWEN_2_5_7B = "Qwen/Qwen2.5-7B"
+    CRYNUX_QWEN_2_5_7B_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
+
+    CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B = "NousResearch/Hermes-3-Llama-3.1-8B"
+    CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
+
     def __str__(self):
         return self.value
 
@@ -469,6 +492,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
+            ModelType.AWS_CLAUDE_SONNET_4,
+            ModelType.AWS_CLAUDE_OPUS_4,
         }
 
     @property
@@ -530,6 +555,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4,
+            ModelType.CLAUDE_OPUS_4,
         }
 
     @property
@@ -884,6 +911,20 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_crynux(self) -> bool:
+        return self in {
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B,
+            ModelType.CRYNUX_QWEN_3_4_B,
+            ModelType.CRYNUX_QWEN_3_8_B,
+            ModelType.CRYNUX_QWEN_2_5_7B,
+            ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B,
+        }
+
+    @property
     def is_aiml(self) -> bool:
         return self in {
             ModelType.AIML_MIXTRAL_8X7B,
@@ -983,6 +1024,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_GLM_4_32B_0414,
             ModelType.NOVITA_GLM_Z1_RUMINATION_32B_0414,
             ModelType.NOVITA_QWEN_2_5_7B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B,
+            ModelType.CRYNUX_QWEN_3_4_B,
+            ModelType.CRYNUX_QWEN_3_8_B,
+            ModelType.CRYNUX_QWEN_2_5_7B,
+            ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B,
         }:
             return 32_000
         elif self in {
@@ -1162,11 +1212,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4,
+            ModelType.CLAUDE_OPUS_4,
             ModelType.YI_MEDIUM_200K,
             ModelType.AWS_CLAUDE_3_5_SONNET,
             ModelType.AWS_CLAUDE_3_HAIKU,
             ModelType.AWS_CLAUDE_3_SONNET,
             ModelType.AWS_CLAUDE_3_7_SONNET,
+            ModelType.AWS_CLAUDE_SONNET_4,
+            ModelType.AWS_CLAUDE_OPUS_4,
             ModelType.O4_MINI,
             ModelType.O3,
         }:
@@ -1437,6 +1491,7 @@ class ModelPlatformType(Enum):
     NETMIND = "netmind"
     NOVITA = "novita"
     WATSONX = "watsonx"
+    CRYNUX = "crynux"
 
     @classmethod
     def from_name(cls, name):
@@ -1611,6 +1666,11 @@ class ModelPlatformType(Enum):
     def is_watsonx(self) -> bool:
         r"""Returns whether this platform is WatsonX."""
         return self is ModelPlatformType.WATSONX
+
+    @property
+    def is_crynux(self) -> bool:
+        r"""Returns whether this platform is Crynux."""
+        return self is ModelPlatformType.CRYNUX
 
 
 class AudioModelType(Enum):

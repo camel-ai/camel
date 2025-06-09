@@ -1,0 +1,348 @@
+<a id="camel.benchmarks.gaia"></a>
+
+<a id="camel.benchmarks.gaia.RetrieverProtocol"></a>
+
+## RetrieverProtocol
+
+```python
+class RetrieverProtocol(Protocol):
+```
+
+Protocol for the retriever class. Any retriever class implementing
+this protocol can be used in the benchmark class.
+
+<a id="camel.benchmarks.gaia.RetrieverProtocol.retrieve"></a>
+
+### retrieve
+
+```python
+def retrieve(
+    self,
+    query: str,
+    contents: List[str],
+    **kwargs: Dict[str, Any]
+):
+```
+
+Retrieve the relevant content for the query.
+
+**Parameters:**
+
+- **query** (str): The query to retrieve the content for.
+- **contents** (List[str]): The list of contents to search in. **kwargs (Dict[str, Any]): Additional keyword arguments.
+
+**Returns:**
+
+  Dict[str, Any]: The relevant content for the query.
+
+<a id="camel.benchmarks.gaia.RetrieverProtocol.reset"></a>
+
+### reset
+
+```python
+def reset(self, **kwargs):
+```
+
+Reset the retriever.
+Some benchmarks may require resetting the retriever
+after each query.
+
+**Returns:**
+
+  bool: True if the reset was successful, False otherwise.
+
+<a id="camel.benchmarks.gaia.DefaultGAIARetriever"></a>
+
+## DefaultGAIARetriever
+
+```python
+class DefaultGAIARetriever(AutoRetriever):
+```
+
+Default retriever for the GAIA benchmark.
+This retriever uses AutoRetriever in camel to retrieve the content based on
+the query.
+
+<a id="camel.benchmarks.gaia.DefaultGAIARetriever.retrieve"></a>
+
+### retrieve
+
+```python
+def retrieve(
+    self,
+    query: str,
+    contents: List[str],
+    **kwargs: Any
+):
+```
+
+Retrieve the content based on the query.
+
+**Parameters:**
+
+- **query** (str): The query to search for.
+- **contents** (List[str]): The list of contents to search from. **kwargs (Any): The keyword arguments to pass to the retriever.
+
+**Returns:**
+
+  Dict[str, Any]: The retrieved content.
+
+<a id="camel.benchmarks.gaia.DefaultGAIARetriever.reset"></a>
+
+### reset
+
+```python
+def reset(self, **kwargs: Any):
+```
+
+Reset the retriever.
+
+**Returns:**
+
+  bool: Whether the reset was successful.
+
+<a id="camel.benchmarks.gaia.GAIABenchmark"></a>
+
+## GAIABenchmark
+
+```python
+class GAIABenchmark(BaseBenchmark):
+```
+
+GAIA Benchmark adapted from ["GAIA: a benchmark for General AI
+Assistants"](https://huggingface.co/datasets/gaia-benchmark/GAIA).
+
+**Parameters:**
+
+- **data_dir** (str): The directory to save the data.
+- **save_to** (str): The file to save the results.
+- **retriever** (Optional[RetrieverProtocol]): The retriever to use. (default: :obj:`None`)
+- **processes** (int, optional): The number of processes to use. (default: :obj:`1`)
+
+<a id="camel.benchmarks.gaia.GAIABenchmark.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    data_dir: str,
+    save_to: str,
+    retriever: Optional[RetrieverProtocol] = None,
+    processes: int = 1
+):
+```
+
+Initialize the GAIA benchmark.
+
+**Parameters:**
+
+- **data_dir** (str): The directory to save the data.
+- **save_to** (str): The file to save the results.
+- **retriever** (Optional[RetrieverProtocol], optional): The retriever to use. (default: :obj:`None`)
+- **processes** (int, optional): The number of processes to use for parallel processing. (default: :obj:`1`)
+
+<a id="camel.benchmarks.gaia.GAIABenchmark.download"></a>
+
+### download
+
+```python
+def download(self):
+```
+
+Download the GAIA dataset.
+
+<a id="camel.benchmarks.gaia.GAIABenchmark.load"></a>
+
+### load
+
+```python
+def load(self, force_download = False):
+```
+
+Load the GAIA dataset.
+
+**Parameters:**
+
+- **force_download** (bool, optional): Whether to force download the data.
+
+<a id="camel.benchmarks.gaia.GAIABenchmark.train"></a>
+
+### train
+
+```python
+def train(self):
+```
+
+Get the training set.
+
+<a id="camel.benchmarks.gaia.GAIABenchmark.run"></a>
+
+### run
+
+```python
+def run(
+    self,
+    agent: ChatAgent,
+    on: Literal['train', 'valid', 'test'],
+    level: Union[int, List[int], Literal['all']],
+    randomize: bool = False,
+    subset: Optional[int] = None
+):
+```
+
+Run the benchmark.
+
+**Parameters:**
+
+- **agent** (ChatAgent): The agent to run the benchmark.
+- **on** (`Literal["valid", "test"]`): The set to run the benchmark.
+- **level** (`Union[int, List[int], Literal["all"]]`): The level to run the benchmark.
+- **randomize** (bool, optional): Whether to randomize the data. (default: :obj:`False`)
+- **subset** (Optional[int], optional): The subset of data to run. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: The results of the benchmark.
+
+<a id="camel.benchmarks.gaia.GAIABenchmark._prepare_task"></a>
+
+### _prepare_task
+
+```python
+def _prepare_task(self, task: Dict[str, Any]):
+```
+
+Prepare the task by validating and enriching its data.
+
+<a id="camel.benchmarks.gaia.GAIABenchmark._create_user_message"></a>
+
+### _create_user_message
+
+```python
+def _create_user_message(self, task: Dict[str, Any]):
+```
+
+Create a user message from a task.
+
+<a id="camel.benchmarks.gaia.GAIABenchmark._process_result"></a>
+
+### _process_result
+
+```python
+def _process_result(
+    self,
+    agent: ChatAgent,
+    task: Dict[str, Any],
+    result: Any,
+    file_obj: Any
+):
+```
+
+Process and store the result of a task.
+
+<a id="camel.benchmarks.gaia.GAIABenchmark._handle_error"></a>
+
+### _handle_error
+
+```python
+def _handle_error(
+    self,
+    task: Dict[str, Any],
+    error: Exception,
+    file_obj: Any
+):
+```
+
+Handle errors encountered during task processing.
+
+<a id="camel.benchmarks.gaia.GAIABenchmark._generate_summary"></a>
+
+### _generate_summary
+
+```python
+def _generate_summary(self):
+```
+
+Generate and return a summary of the benchmark results.
+
+<a id="camel.benchmarks.gaia.GAIABenchmark.question_scorer"></a>
+
+### question_scorer
+
+```python
+def question_scorer(self, model_answer: str, ground_truth: str):
+```
+
+Scorer for the GAIA benchmark.
+https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/
+scorer.py
+
+**Parameters:**
+
+- **model_answer** (str): The model answer.
+- **ground_truth** (str): The ground truth answer.
+
+**Returns:**
+
+  bool: The score of the model
+
+<a id="camel.benchmarks.gaia.GAIABenchmark.normalize_number_str"></a>
+
+### normalize_number_str
+
+```python
+def normalize_number_str(self, number_str: str):
+```
+
+<a id="camel.benchmarks.gaia.GAIABenchmark.split_string"></a>
+
+### split_string
+
+```python
+def split_string(self, s: str, char_list: Optional[List[str]] = None):
+```
+
+Split a string based on a list of characters.
+
+**Parameters:**
+
+- **s** (str): The string to split.
+- **char_list** (Optional[List[str]], optional): T he list of characters to split on. (default: :obj:`None`)
+
+<a id="camel.benchmarks.gaia.GAIABenchmark.normalize_str"></a>
+
+### normalize_str
+
+```python
+def normalize_str(self, input_str, remove_punct = True):
+```
+
+Normalize a string.
+
+**Parameters:**
+
+- **input_str**: The input string to normalize.
+- **remove_punct**: Whether to remove punctuation.
+
+**Returns:**
+
+  str: The normalized string.
+
+<a id="camel.benchmarks.gaia.GAIABenchmark.get_final_answer"></a>
+
+### get_final_answer
+
+```python
+def get_final_answer(self, content: str):
+```
+
+Get the final answer from the content.
+
+**Parameters:**
+
+- **content** (str): The content to extract the final answer from.
+
+**Returns:**
+
+  str: The final answer.

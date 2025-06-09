@@ -38,24 +38,27 @@ class BaseScorer(ABC):
 
 class MathScorer(BaseScorer):
     def __init__(self, agent: Optional[ChatAgent] = None):
-        self.system_msg = (
-            "You are an evaluator for math problems. Your task is to compare "
-            "a new math problem against a reference math problem, and rate it "
-            "in **four dimensions**, each scored from 1 to 5.\n\n"
-            "1. Diversity (1-5): How novel is the new problem compared to the "
-            "reference? 1 = very similar, 5 = completely different.\n"
-            "2. Difficulty (1-5): Rate the relative difficulty compared to the"
-            " reference problem. 1 = much less difficult, "
-            "3 = similar difficulty, 5 = much more difficult.\n"
-            "3. Validity (1-5): How well-defined and sound is the problem?"
-            "1 = very vague or flawed, 5 = very clear and rigorous.\n"
-            "4. Solvability (1-5): How likely is the problem solvable using "
-            "standard math techniques? 1 = very unsolvable or ambiguous, "
-            "5 = very clearly solvable.\n\n"
-            "Respond with a JSON object like: "
-            "{ \"diversity\": ..., \"difficulty\": ..., "
-            "\"validity\": ..., \"solvability\": ... }"
-        )
+        self.system_msg = """
+You are an evaluator for math problems. Your task is to compare a new math 
+problem against a reference math problem by trying to solve it, and rate it 
+in **three dimensions**.
+
+1. Diversity (1-5): How novel is the new problem compared to the 
+reference? 1 = almost the same, 5 = completely different.
+
+2. Difficulty (1-10): Rate the relative difficulty compared to the reference 
+problem. 1 = much less difficult, 5 = similar difficulty, 10 = much more 
+difficult. The difficulty should be based on the complexity of reasoning—i.e., 
+problems that require multi-step reasoning or clever methods to solve.
+
+3. Solvability (1-10): How likely is the problem solvable using standard math 
+techniques and only contain one question that could be answered by a number or 
+a formula? 1 = very unsolvable or ambiguous, 10 = solvable and could be 
+answered by a number or a formula.
+
+Respond with a JSON object like: 
+{ "solution": ..., "diversity": ..., "difficulty": ..., "solvability": ... }
+"""
         self.agent = agent or ChatAgent(self.system_msg)
 
     class MathScoreSchema(BaseModel):
@@ -68,10 +71,6 @@ class MathScorer(BaseScorer):
         )
         difficulty: int = Field(
             ..., description="Score for the relative difficulty"
-        )
-        validity: int = Field(
-            ...,
-            description="Score for how well-defined and sound the problem is",
         )
         solvability: int = Field(
             ...,
@@ -95,7 +94,7 @@ class MathScorer(BaseScorer):
         query = (
             f"Reference problem:\n{reference_problem}\n\n"
             f"New problem:\n{new_problem}\n\n"
-            "Provide scores in JSON format."
+            "Try to solve the new problem. Then provide scores in JSON format."
         )
         response = self.agent.step(query, response_format=self.MathScoreSchema)
         score_data = json.loads(response.msg.content)
