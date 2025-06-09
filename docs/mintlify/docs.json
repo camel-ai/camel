@@ -7,7 +7,7 @@
     "dark": "images/CAMEL_Icon_White.png",
     "href": "https://camel-ai.org "
   },
-  "favicon": "images/built_with_CAMEL.svg",
+  "favicon": "images/CAMEL_Icon.png",
   "colors": {
     "primary": "#5603fc",
     "light": "#5603fc",
@@ -202,6 +202,7 @@
               "reference/camel.configs.base_config",
               "reference/camel.configs.bedrock_config",
               "reference/camel.configs.cohere_config",
+              "reference/camel.configs.crynux_config",
               "reference/camel.configs.deepseek_config",
               "reference/camel.configs.gemini_config",
               "reference/camel.configs.groq_config",
@@ -280,6 +281,7 @@
               "reference/camel.models.base_audio_model",
               "reference/camel.models.base_model",
               "reference/camel.models.cohere_model",
+              "reference/camel.models.crynux_model",
               "reference/camel.models.deepseek_model",
               "reference/camel.models.fish_audio_model",
               "reference/camel.models.gemini_model",
@@ -422,7 +424,8 @@
               "reference/camel.storages.vectordb_storages.milvus",
               "reference/camel.storages.vectordb_storages.oceanbase",
               "reference/camel.storages.vectordb_storages.qdrant",
-              "reference/camel.storages.vectordb_storages.tidb"
+              "reference/camel.storages.vectordb_storages.tidb",
+              "reference/camel.storages.vectordb_storages.weaviate"
             ]
           },
           {
