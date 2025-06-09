@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio, numpy as np, torch
-from torch.utils.data import IterableDataset
+import asyncio
+
+import numpy as np
+import torch
 from camel_env.single_step_env import SingleStepEnv
+from torch.utils.data import IterableDataset
 
 
 class EnvDataset(IterableDataset):
@@ -28,8 +31,8 @@ class EnvDataset(IterableDataset):
         batch_size: int,
     ):
         super().__init__()
-        self.env        = env
-        self.tokenizer  = tokenizer
+        self.env = env
+        self.tokenizer = tokenizer
         self.max_prompt = max_prompt_len
         self.batch_size = batch_size
 
@@ -38,7 +41,6 @@ class EnvDataset(IterableDataset):
         return 1
 
     def __iter__(self):
-
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
@@ -61,14 +63,18 @@ class EnvDataset(IterableDataset):
             B, L = enc["input_ids"].shape
             yield {
                 # tensors (CPU, long)
-                "input_ids":      enc["input_ids"],
+                "input_ids": enc["input_ids"],
                 "attention_mask": enc["attention_mask"],
-                "position_ids":   torch.arange(L).unsqueeze(0).repeat(B, 1),
-                "prompts":        enc["input_ids"],
+                "position_ids": torch.arange(L).unsqueeze(0).repeat(B, 1),
+                "prompts": enc["input_ids"],
                 # non-tensor extras
                 "raw_prompt": np.array(prompts, dtype=object),
-                "raw_prompt_ids": np.array([ids.tolist() for ids in enc["input_ids"]], # mock values, never consumed by the trainer
-                               dtype=object),
+                "raw_prompt_ids": np.array(
+                    [
+                        ids.tolist() for ids in enc["input_ids"]
+                    ],  # mock values, never consumed by the trainer
+                    dtype=object,
+                ),
                 "data_source": np.array(["env"] * B, dtype=object),
-                "_env_obs":   np.array(obs_list, dtype=object),
+                "_env_obs": np.array(obs_list, dtype=object),
             }

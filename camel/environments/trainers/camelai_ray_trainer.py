@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from torchdata.stateful_dataloader import StatefulDataLoader
-from verl.utils.dataset.rl_dataset import collate_fn
+from camel_env.single_step_env import SingleStepEnv
 from recipes.camelai.env_dataset import EnvDataset
-
+from torchdata.stateful_dataloader import StatefulDataLoader
 from verl.trainer.ppo.ray_trainer import RayPPOTrainer
 
-from camel_env.single_step_env import SingleStepEnv
 
 class CamelEnvTrainer(RayPPOTrainer):
     def __init__(self, *args, env: SingleStepEnv, **kwargs):
@@ -26,31 +24,33 @@ class CamelEnvTrainer(RayPPOTrainer):
         super().__init__(*args, **kwargs)
 
     # Get observations from SingleStepEnv
-    def _create_dataloader(self,
-                           train_dataset=None,   # ignored
-                           val_dataset=None,
-                           collate_fn=None,
-                           train_sampler=None):
+    def _create_dataloader(
+        self,
+        train_dataset=None,  # ignored
+        val_dataset=None,
+        collate_fn=None,
+        train_sampler=None,
+    ):
         if collate_fn is None:
             collate_fn = lambda x: x[0]
 
         self.train_dataset = EnvDataset(
-            env            = self._env,
-            tokenizer      = self.tokenizer,
-            max_prompt_len = self.config.data.max_prompt_length,
-            batch_size     = self.config.data.train_batch_size,
+            env=self._env,
+            tokenizer=self.tokenizer,
+            max_prompt_len=self.config.data.max_prompt_length,
+            batch_size=self.config.data.train_batch_size,
         )
         self.train_dataloader = StatefulDataLoader(
-            dataset     = self.train_dataset,
-            batch_size  = 1,               # each yield is a batch already
-            collate_fn  = collate_fn,
-            drop_last   = False,
-            num_workers = 0,               # TODO update
+            dataset=self.train_dataset,
+            batch_size=1,  # each yield is a batch already
+            collate_fn=collate_fn,
+            drop_last=False,
+            num_workers=0,  # TODO update
         )
         # TODO no initial val
-        self.val_dataset    = []
+        self.val_dataset = []
         self.val_dataloader = []
-        
+
         # TODO rethink step handling
         # Total steps: either user-specified, or one step per epoch
         self.total_training_steps = (
