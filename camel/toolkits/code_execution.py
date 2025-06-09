@@ -100,13 +100,14 @@ class CodeExecutionToolkit(BaseToolkit):
                 f"The sandbox type `{sandbox}` is not supported."
             )
 
-    def execute_code(self, code: str, code_type: str) -> str:
+    def execute_code(self, code: str, code_type: str = "python") -> str:
         r"""Execute a given code snippet.
 
         Args:
             code (str): The input code to the Code Interpreter tool call.
             code_type (str): The type of the code to be executed
                 (e.g. node.js, python, etc).
+                (default:obj:python)
 
         Returns:
             str: The text output from the Code Interpreter tool call.
