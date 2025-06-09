@@ -61,6 +61,8 @@ Main Documentation
    cookbooks/data_generation/index
    cookbooks/applications/index
    cookbooks/data_processing/index
+   cookbooks/loong/index
+   cookbooks/mcp/index
 
 .. toctree::
    :maxdepth: 1

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 from colorama import Fore
 
@@ -33,14 +33,16 @@ class Worker(BaseNode, ABC):
 
     Args:
         description (str): Description of the node.
-
+        node_id (Optional[str]): ID of the node. If not provided, it will
+            be generated automatically. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         description: str,
+        node_id: Optional[str] = None,
     ) -> None:
-        super().__init__(description)
+        super().__init__(description, node_id=node_id)
 
     def __repr__(self):
         return f"Worker node {self.node_id} ({self.description})"

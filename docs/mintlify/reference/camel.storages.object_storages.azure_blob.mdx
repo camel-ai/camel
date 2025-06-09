@@ -1,0 +1,145 @@
+<a id="camel.storages.object_storages.azure_blob"></a>
+
+<a id="camel.storages.object_storages.azure_blob.AzureBlobStorage"></a>
+
+## AzureBlobStorage
+
+```python
+class AzureBlobStorage(BaseObjectStorage):
+```
+
+A class to connect to Azure Blob Storage. It will connect to one
+container in the storage account.
+
+**Parameters:**
+
+- **storage_account_name** (str): The name of the storage account.
+- **container_name** (str): The name of the container.
+- **access_key** (Optional[str], optional): The access key of the storage account. Defaults to None.
+- **References**: 
+- **https**: //azure.microsoft.com/en-us/products/storage/blobs
+
+<a id="camel.storages.object_storages.azure_blob.AzureBlobStorage.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    storage_account_name: str,
+    container_name: str,
+    create_if_not_exists: bool = True,
+    access_key: Optional[str] = None
+):
+```
+
+<a id="camel.storages.object_storages.azure_blob.AzureBlobStorage._prepare_and_check"></a>
+
+### _prepare_and_check
+
+```python
+def _prepare_and_check(self):
+```
+
+Check privileges and existence of the container.
+
+<a id="camel.storages.object_storages.azure_blob.AzureBlobStorage.canonicalize_path"></a>
+
+### canonicalize_path
+
+```python
+def canonicalize_path(file_path: PurePath):
+```
+
+Canonicalize file path for Azure Blob Storage.
+
+**Parameters:**
+
+- **file_path** (PurePath): The path to be canonicalized.
+
+**Returns:**
+
+  Tuple[str, str]: The canonicalized file key and file name.
+
+<a id="camel.storages.object_storages.azure_blob.AzureBlobStorage._put_file"></a>
+
+### _put_file
+
+```python
+def _put_file(self, file_key: str, file: File):
+```
+
+Put a file to the Azure Blob Storage container.
+
+**Parameters:**
+
+- **file_key** (str): The path to the object in the container.
+- **file** (File): The file to be uploaded.
+
+<a id="camel.storages.object_storages.azure_blob.AzureBlobStorage._get_file"></a>
+
+### _get_file
+
+```python
+def _get_file(self, file_key: str, filename: str):
+```
+
+Get a file from the Azure Blob Storage container.
+
+**Parameters:**
+
+- **file_key** (str): The path to the object in the container.
+- **filename** (str): The name of the file.
+
+**Returns:**
+
+  File: The object from the container.
+
+<a id="camel.storages.object_storages.azure_blob.AzureBlobStorage._upload_file"></a>
+
+### _upload_file
+
+```python
+def _upload_file(self, local_file_path: Path, remote_file_key: str):
+```
+
+Upload a local file to the Azure Blob Storage container.
+
+**Parameters:**
+
+- **local_file_path** (Path): The path to the local file to be uploaded.
+- **remote_file_key** (str): The path to the object in the container.
+
+<a id="camel.storages.object_storages.azure_blob.AzureBlobStorage._download_file"></a>
+
+### _download_file
+
+```python
+def _download_file(self, local_file_path: Path, remote_file_key: str):
+```
+
+Download a file from the Azure Blob Storage container to the local
+system.
+
+**Parameters:**
+
+- **local_file_path** (Path): The path to the local file to be saved.
+- **remote_file_key** (str): The key of the object in the container.
+
+<a id="camel.storages.object_storages.azure_blob.AzureBlobStorage._object_exists"></a>
+
+### _object_exists
+
+```python
+def _object_exists(self, file_key: str):
+```
+
+Check if the object exists in the Azure Blob Storage container.
+
+**Parameters:**
+
+- **file_key**: The key of the object in the container.
+
+**Returns:**
+
+  bool: Whether the object exists in the container.

@@ -1,0 +1,63 @@
+<a id="camel.embeddings.gemini_embedding"></a>
+
+<a id="camel.embeddings.gemini_embedding.GeminiEmbedding"></a>
+
+## GeminiEmbedding
+
+```python
+class GeminiEmbedding:
+```
+
+Provides text embedding functionalities using Google's Gemini models.
+
+**Parameters:**
+
+- **model_type** (EmbeddingModelType, optional): The model type to be used for text embeddings. (default: :obj:`GEMINI_EMBEDDING_EXP`)
+- **api_key** (str, optional): The API key for authenticating with the Gemini service. (default: :obj:`None`)
+- **dimensions** (int, optional): The text embedding output dimensions. (default: :obj:`None`)
+- **task_type** (GeminiEmbeddingTaskType, optional): The task type for which to optimize the embeddings. (default: :obj:`None`)
+
+<a id="camel.embeddings.gemini_embedding.GeminiEmbedding.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: EmbeddingModelType = EmbeddingModelType.GEMINI_EMBEDDING_EXP,
+    api_key: Optional[str] = None,
+    dimensions: Optional[int] = None,
+    task_type: Optional[GeminiEmbeddingTaskType] = None
+):
+```
+
+<a id="camel.embeddings.gemini_embedding.GeminiEmbedding.embed_list"></a>
+
+### embed_list
+
+```python
+def embed_list(self, objs: list[str], **kwargs: Any):
+```
+
+Generates embeddings for the given texts.
+
+**Parameters:**
+
+- **objs** (list[str]): The texts for which to generate the embeddings. **kwargs (Any): Extra kwargs passed to the embedding API.
+
+**Returns:**
+
+  list[list[float]]: A list that represents the generated embedding
+as a list of floating-point numbers.
+
+<a id="camel.embeddings.gemini_embedding.GeminiEmbedding.get_output_dim"></a>
+
+### get_output_dim
+
+```python
+def get_output_dim(self):
+```
+
+**Returns:**
+
+  int: The dimensionality of the embedding for the current model.

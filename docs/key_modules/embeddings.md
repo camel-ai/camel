@@ -1,5 +1,3 @@
-# Embeddings
-
 ## 1. Concept
 Creating embeddings for different types of data (text, images, videos) involves transforming these inputs into a numerical form that machines can understand and process efficiently. Each type of embedding focuses on capturing the essential features of its respective data type.
 

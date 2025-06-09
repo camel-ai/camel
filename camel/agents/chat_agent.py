@@ -166,6 +166,7 @@ class ChatAgent(BaseAgent):
         model: Optional[
             Union[
                 BaseModelBackend,
+                ModelManager,
                 Tuple[str, str],
                 str,
                 ModelType,
@@ -191,12 +192,15 @@ class ChatAgent(BaseAgent):
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
     ) -> None:
-        # Resolve model backends and set up model manager
-        resolved_models = self._resolve_models(model)
-        self.model_backend = ModelManager(
-            resolved_models,
-            scheduling_strategy=scheduling_strategy,
-        )
+        if isinstance(model, ModelManager):
+            self.model_backend = model
+        else:
+            # Resolve model backends and set up model manager
+            resolved_models = self._resolve_models(model)
+            self.model_backend = ModelManager(
+                resolved_models,
+                scheduling_strategy=scheduling_strategy,
+            )
         self.model_type = self.model_backend.model_type
 
         # Assign unique ID
@@ -1556,8 +1560,32 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
+        import asyncio
+
         try:
-            result = await tool.async_call(**args)
+            # Try different invocation paths in order of preference
+            if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
+                # Case: FunctionTool wrapping an MCP tool
+                result = await tool.func.async_call(**args)
+
+            elif hasattr(tool, 'async_call') and callable(tool.async_call):
+                # Case: tool itself has async_call
+                result = await tool.async_call(**args)
+
+            elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
+                tool.func
+            ):
+                # Case: tool wraps a direct async function
+                result = await tool.func(**args)
+
+            elif asyncio.iscoroutinefunction(tool):
+                # Case: tool is itself a coroutine function
+                result = await tool(**args)
+
+            else:
+                # Fallback: synchronous call
+                result = tool(**args)
+
         except Exception as e:
             # Capture the error message to prevent framework crash
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
