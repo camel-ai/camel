@@ -31,8 +31,12 @@ class CamelEnvTrainer(RayPPOTrainer):
         collate_fn=None,
         train_sampler=None,
     ):
+        def _first_sample_only(batch):
+            """StatefulDataLoader always wraps a single item in a list."""
+            return batch[0]
+
         if collate_fn is None:
-            collate_fn = lambda x: x[0]
+            collate_fn = _first_sample_only
 
         self.train_dataset = EnvDataset(
             env=self._env,
@@ -47,7 +51,7 @@ class CamelEnvTrainer(RayPPOTrainer):
             drop_last=False,
             num_workers=0,  # TODO update
         )
-        # TODO no initial val
+
         self.val_dataset = []
         self.val_dataloader = []
 

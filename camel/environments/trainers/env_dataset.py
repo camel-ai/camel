@@ -45,10 +45,17 @@ class EnvDataset(IterableDataset):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
+        obs_list = loop.run_until_complete(
+            self.env.reset(batch_size=self.batch_size)
+        )
+
         while True:
-            obs_list = loop.run_until_complete(
-                self.env.reset(batch_size=self.batch_size)
-            )
+            # If the current prompt batch is done, start a new one
+            if self.env._batch_done():
+                obs_list = loop.run_until_complete(
+                    self.env.reset(batch_size=self.batch_size)
+                )
+
             prompts = [o.question for o in obs_list]
 
             enc = self.tokenizer(
