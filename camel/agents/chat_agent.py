@@ -19,7 +19,6 @@ import textwrap
 import threading
 import uuid
 from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -509,7 +508,7 @@ class ChatAgent(BaseAgent):
                 memory record. If None, current timestamp will be used.
                 (default: :obj:`None`)
         """
-        from datetime import timezone
+        import time
 
         self.memory.write_record(
             MemoryRecord(
@@ -517,7 +516,7 @@ class ChatAgent(BaseAgent):
                 role_at_backend=role,
                 timestamp=timestamp
                 if timestamp is not None
-                else datetime.now(timezone.utc).timestamp(),
+                else time.time_ns() / 1_000_000_000,  # Nanosecond precision
                 agent_id=self.agent_id,
             )
         )
@@ -1606,11 +1605,24 @@ class ChatAgent(BaseAgent):
             tool_call_id=tool_call_id,
         )
 
-        self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
+        # Use precise timestamps to ensure correct ordering
+        # This ensures the assistant message (tool call) always appears before
+        # the function message (tool result) in the conversation context
+        # Use time.time_ns() for nanosecond precision to avoid collisions
+        import time
 
+        current_time_ns = time.time_ns()
+        base_timestamp = current_time_ns / 1_000_000_000  # Convert to seconds
+
+        self.update_memory(
+            assist_msg, OpenAIBackendRole.ASSISTANT, timestamp=base_timestamp
+        )
+
+        # Add minimal increment to ensure function message comes after
         self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
+            timestamp=base_timestamp + 1e-9,
         )
 
         # Record information about this tool call
