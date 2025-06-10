@@ -39,7 +39,7 @@ def test_crynux_model(model_type: ModelType):
 
 @pytest.mark.model_backend
 def test_crynux_model_unexpected_argument():
-    model_type = (ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,)
+    model_type = ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT
     model_config_dict = {"model_path": "qwen/qwen_2"}
 
     with pytest.raises(
