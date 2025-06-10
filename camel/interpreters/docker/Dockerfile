@@ -20,10 +20,6 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && apt-get autoremove -y
 
-# Set timezone to avoid tzdata prompt
-RUN ln -fs /usr/share/zoneinfo/Asia/Kolkata /etc/localtime && \
-    dpkg-reconfigure -f noninteractive tzdata
-
 # Install Python 3.10 and its dependencies
 RUN add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
