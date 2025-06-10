@@ -177,11 +177,7 @@ class LiteLLMModel(BaseModelBackend):
         response = self._convert_response_from_litellm_to_openai(response)
 
         update_current_observation(
-            usage_details={
-                "prompt_tokens": response.usage.prompt_tokens,
-                "completion_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens,
-            },
+            usage=response.usage,
         )
         return response
 
