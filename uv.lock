@@ -578,6 +578,7 @@ dependencies = [
     { name = "docstring-parser" },
     { name = "httpx" },
     { name = "jsonschema" },
+    { name = "langfuse" },
     { name = "mcp" },
     { name = "openai" },
     { name = "pillow" },
@@ -1052,6 +1053,7 @@ requires-dist = [
     { name = "jsonschema", specifier = ">=4,<5" },
     { name = "jupyter-client", marker = "extra == 'all'", specifier = ">=8.6.2,<9" },
     { name = "jupyter-client", marker = "extra == 'dev-tools'", specifier = ">=8.6.2,<9" },
+    { name = "langfuse", specifier = ">=2.60.5" },
     { name = "linkup-sdk", marker = "extra == 'all'", specifier = ">=0.2.1,<0.3" },
     { name = "linkup-sdk", marker = "extra == 'web-tools'", specifier = ">=0.2.1,<0.3" },
     { name = "litellm", marker = "extra == 'all'", specifier = ">=1.38.1,<2" },
@@ -3490,6 +3492,25 @@ dependencies = [
     { name = "six" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0e/72/a3add0e4eec4eb9e2569554f7c70f4a3c27712f40e3284d483e88094cc0e/langdetect-1.0.9.tar.gz", hash = "sha256:cbc1fef89f8d062739774bd51eda3da3274006b3661d199c2655f6b3f6d605a0", size = 981474 }
+
+[[package]]
+name = "langfuse"
+version = "2.60.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "backoff" },
+    { name = "httpx" },
+    { name = "idna" },
+    { name = "packaging" },
+    { name = "pydantic" },
+    { name = "requests" },
+    { name = "wrapt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d1/19/475034a497a8a6e1156f62b3121522b753a1dad92a7187462402a9238467/langfuse-2.60.5.tar.gz", hash = "sha256:a33ecddc98cf6d12289372e63071b77b72230e7bc8260ee349f1465d53bf425b", size = 152406 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e9/04/8d69112a6b24431bfdb257a2a394f0ab036e5be5dcf4cb3b15db43b367f6/langfuse-2.60.5-py3-none-any.whl", hash = "sha256:fd27d52017f36d6fa5ca652615213a2535dc93dd88c3375eeb811af26384d285", size = 275379 },
+]
 
 [[package]]
 name = "lark"
