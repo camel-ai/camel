@@ -26,21 +26,29 @@ Note:
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
+from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType
+from camel.utils import get_langfuse_status
+
+math_toolkit = [*MathToolkit().get_tools()]
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4_1_MINI,
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
 )
 
 # Define system message
 sys_msg = "You are a helpful AI assistant, skilled at answering questions."
 
 # Create agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model)
+camel_agent = ChatAgent(
+    system_message=sys_msg, model=model, tools=math_toolkit
+)
 
 # User message
 user_msg = "Calculate the square root after adding 222991 and 1111"
+
+print(get_langfuse_status())
 
 response = camel_agent.step(user_msg)
 print(response.msgs[0].content)

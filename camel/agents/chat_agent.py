@@ -96,6 +96,15 @@ try:
 except (ImportError, AttributeError):
     from camel.utils import track_agent
 
+# Langfuse decorator setting
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
+
 
 SIMPLE_FORMAT_PROMPT = TextPrompt(
     textwrap.dedent(
@@ -731,6 +740,7 @@ class ChatAgent(BaseAgent):
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
 
+    @observe()
     def step(
         self,
         input_message: Union[BaseMessage, str],

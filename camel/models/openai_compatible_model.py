@@ -40,19 +40,9 @@ if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
         from langfuse.decorators import observe
     except ImportError:
-
-        def observe(*args, **kwargs):
-            def decorator(func):
-                return func
-
-            return decorator
+        from camel.utils import observe
 else:
-
-    def observe(*args, **kwargs):
-        def decorator(func):
-            return func
-
-        return decorator
+    from camel.utils import observe
 
 
 logger = get_logger(__name__)
@@ -156,7 +146,7 @@ class OpenAICompatibleModel(BaseModelBackend):
                     "agent_id": agent_session_id,
                     "model_type": str(self.model_type),
                 },
-                tags=["camel", "openai", str(self.model_type)],
+                tags=["CAMEL-AI", str(self.model_type)],
             )
 
         response_format = response_format or self.model_config_dict.get(
@@ -203,7 +193,7 @@ class OpenAICompatibleModel(BaseModelBackend):
                     "agent_id": agent_session_id,
                     "model_type": str(self.model_type),
                 },
-                tags=["camel", "openai", str(self.model_type)],
+                tags=["CAMEL-AI", str(self.model_type)],
             )
 
         response_format = response_format or self.model_config_dict.get(

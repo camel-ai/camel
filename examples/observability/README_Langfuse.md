@@ -14,7 +14,7 @@ Langfuse is an open-source LLM engineering platform that provides tracing, evalu
 ### 1. Install Dependencies
 
 ```bash
-pip install langfuse
+pip install 'camel-ai[all]'
 ```
 
 ### 2. Environment Variables Configuration

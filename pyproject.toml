@@ -379,7 +379,6 @@ all = [
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50",
     "python-pptx>=1.0.2",
-    "bohrium",
     "langfuse>=2.60.5",
 
 ]

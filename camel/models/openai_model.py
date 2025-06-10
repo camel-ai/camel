@@ -39,19 +39,9 @@ if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
         from langfuse.decorators import observe
     except ImportError:
-
-        def observe(*args, **kwargs):
-            def decorator(func):
-                return func
-
-            return decorator
+        from camel.utils import observe
 else:
-
-    def observe(*args, **kwargs):
-        def decorator(func):
-            return func
-
-        return decorator
+    from camel.utils import observe
 
 
 UNSUPPORTED_PARAMS = {
@@ -258,7 +248,7 @@ class OpenAIModel(BaseModelBackend):
                     "agent_type": "camel_chat_agent",
                     "model_type": str(self.model_type),
                 },
-                tags=["camel", "openai", str(self.model_type)],
+                tags=["CAMEL-AI", str(self.model_type)],
             )
 
         messages = self._adapt_messages_for_o1_models(messages)
@@ -308,7 +298,7 @@ class OpenAIModel(BaseModelBackend):
                     "agent_type": "camel_chat_agent",
                     "model_type": str(self.model_type),
                 },
-                tags=["camel", "openai", str(self.model_type)],
+                tags=["CAMEL-AI", str(self.model_type)],
             )
 
         messages = self._adapt_messages_for_o1_models(messages)

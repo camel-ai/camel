@@ -40,19 +40,9 @@ if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
         from langfuse.decorators import observe
     except ImportError:
-
-        def observe(*args, **kwargs):
-            def decorator(func):
-                return func
-
-            return decorator
+        from camel.utils import observe
 else:
-
-    def observe(*args, **kwargs):
-        def decorator(func):
-            return func
-
-        return decorator
+    from camel.utils import observe
 
 
 class AzureOpenAIModel(BaseModelBackend):
@@ -138,16 +128,24 @@ class AzureOpenAIModel(BaseModelBackend):
             from langfuse.openai import AzureOpenAI as LangfuseOpenAI
 
             self._client = LangfuseOpenAI(
+                azure_endpoint=str(self._url),
+                azure_deployment=self._azure_deployment_name,
+                api_version=self.api_version,
+                api_key=self._api_key,
+                azure_ad_token=self._azure_ad_token,
+                azure_ad_token_provider=self.azure_ad_token_provider,
                 timeout=self._timeout,
                 max_retries=3,
-                base_url=self._url,
-                api_key=self._api_key,
             )
             self._async_client = LangfuseAsyncOpenAI(
+                azure_endpoint=str(self._url),
+                azure_deployment=self._azure_deployment_name,
+                api_version=self.api_version,
+                api_key=self._api_key,
+                azure_ad_token=self._azure_ad_token,
+                azure_ad_token_provider=self.azure_ad_token_provider,
                 timeout=self._timeout,
                 max_retries=3,
-                base_url=self._url,
-                api_key=self._api_key,
             )
         else:
             self._client = AzureOpenAI(
@@ -216,7 +214,7 @@ class AzureOpenAIModel(BaseModelBackend):
                     "agent_id": agent_session_id,
                     "model_type": str(self.model_type),
                 },
-                tags=["camel", "openai", str(self.model_type)],
+                tags=["CAMEL-AI", str(self.model_type)],
             )
 
         response_format = response_format or self.model_config_dict.get(
@@ -253,6 +251,18 @@ class AzureOpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
 
         response_format = response_format or self.model_config_dict.get(
             "response_format", None

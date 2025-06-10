@@ -47,7 +47,10 @@ from .filename import sanitize_filename
 from .langfuse import (
     configure_langfuse,
     get_current_agent_session_id,
+    get_langfuse_status,
     is_langfuse_available,
+    observe,
+    update_current_observation,
     update_langfuse_trace,
 )
 from .mcp import MCPServer
@@ -107,4 +110,7 @@ __all__ = [
     "is_langfuse_available",
     "get_current_agent_session_id",
     "update_langfuse_trace",
+    "observe",
+    "update_current_observation",
+    "get_langfuse_status",
 ]
