@@ -279,6 +279,19 @@ class ChatAgentOpenAPIServer:
             )
             return response.model_dump()
 
+        @router.get("/list_agent_ids")
+        def list_agent_ids():
+            r"""Returns a list of all active agent IDs.
+
+            Returns:
+                dict: A dictionary containing all registered agent IDs.
+            """
+            return {"agent_ids": list(self.agents.keys())}
+
+
+
+
+
         @router.post("/step/{agent_id}")
         def step_agent(agent_id: str, request: StepRequest):
             r"""Runs one step of synchronous agent response.
@@ -332,7 +345,8 @@ class ChatAgentOpenAPIServer:
                 list: The list of conversation messages.
             """
             if agent_id not in self.agents:
-                raise HTTPException(status_code=404, detail="Agent not found.")
+                raise HTTPException(status_code=404,
+                                    detail=f"Agent {agent_id} not found.")
             return self.agents[agent_id].chat_history
 
         # Register all routes to the main FastAPI app

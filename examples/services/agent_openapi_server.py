@@ -14,6 +14,8 @@
 from fastapi.testclient import TestClient
 
 from camel.services.agent_openapi_server import ChatAgentOpenAPIServer
+import asyncio
+import httpx
 
 
 def example_init_and_step():
@@ -61,125 +63,342 @@ def example_init_and_step():
     # {'agent_id': 'demo', 'message': 'Agent initialized.'}
 
     r = client.post(
-        "/v1/step/demo",
+        "/v1/step/demo", #
         json={"input_message": "Search: What is machine learning?"},
     )
     print("Step response:", r.json())
-    # Step response:
-    # {'msgs': [{'role_name': 'Assistant',
-    #            'role_type': 'assistant',
-    #            'meta_dict': {},
-    #            'content': 'Machine learning (ML) is a field of study in '
-    #                       'artificial intelligence focused on '
-    #                       'developing statistical algorithms that can '
-    #                       'learn from data and generalize to unseen data, '
-    #                       'allowing them to perform tasks without explicit '
-    #                       'instructions. A notable advancement in this '
-    #                       'area is deep learning, which uses neural '
-    #                       'networks to achieve superior performance over '
-    #                       'traditional machine learning methods. \n\nML is '
-    #                       'applied in various fields such as natural '
-    #                       'language processing, computer vision, speech '
-    #                       'recognition, email filtering, agriculture, and '
-    #                       'medicine. When used to address business '
-    #                       'challenges, it is referred to as predictive '
-    #                       'analytics. The foundations of machine learning '
-    #                       'are built on statistics and mathematical '
-    #                       'optimization methods.',
-    #            'video_bytes': None,
-    #            'image_list': None,
-    #            'image_detail': 'auto',
-    #            'video_detail': 'low',
-    #            'parsed': None}],
-    #  'terminated': False,
-    #  'info': {'id': 'chatcmpl-BW6SV6iEFkVpqcxwJuodhLOSQcmde',
-    #           'usage': {'completion_tokens': 121,
-    #                     'prompt_tokens': 254,
-    #                     'total_tokens': 375,
-    #                     'completion_tokens_details': {
-    #                         'accepted_prediction_tokens': 0,
-    #                         'audio_tokens': 0,
-    #                         'reasoning_tokens': 0,
-    #                         'rejected_prediction_tokens': 0},
-    #                     'prompt_tokens_details': {
-    #                         'audio_tokens': 0,
-    #                         'cached_tokens': 0}},
-    #           'termination_reasons': ['stop'],
-    #           'num_tokens': 201,
-    #           'tool_calls': [{
-    #               'tool_name': 'search_wiki',
-    #               'args': {
-    #                   'entity': 'Machine learning'
-    #               },
-    #               'result': 'Machine learning (ML) is a field of study in '
-    #                         'artificial intelligence concerned with the '
-    #                         'development and study of statistical '
-    #                         'algorithms that can learn from data and '
-    #                         'generalise to unseen data, and thus perform '
-    #                         'tasks without explicit instructions. Within a '
-    #                         'subdiscipline in machine learning, advances in '
-    #                         'the field of deep learning have allowed neural '
-    #                        'networks, a class of statistical algorithms, to '
-    #                         'surpass many previous machine learning '
-    #                         'approaches in performance.\nML finds '
-    #                         'application in many fields, including natural '
-    #                         'language processing, computer vision, speech '
-    #                         'recognition, email filtering, agriculture, and '
-    #                         'medicine. The application of ML to business '
-    #                         'problems is known as predictive analytics.\n'
-    #                         'Statistics and mathematical optimisation '
-    #                         '(mathematical programming) methods comprise '
-    #                         'the foundations of machine learning.',
-    #               'tool_call_id': 'call_lYVcPVKqPNPZi7TsSRRbanZ2'
-    #           }],
+
+    """
+    Step response:
+    {'msgs': [{'role_name': 'Assistant',
+               'role_type': 'assistant',
+               'meta_dict': {},
+               'content': 'Machine learning (ML) is a field of study in '
+                          'artificial intelligence focused on '
+                          'developing statistical algorithms that can '
+                          'learn from data and generalize to unseen data, '
+                          'allowing them to perform tasks without explicit '
+                          'instructions. A notable advancement in this '
+                          'area is deep learning, which uses neural '
+                          'networks to achieve superior performance over '
+                          'traditional machine learning methods. \n\nML is '
+                          'applied in various fields such as natural '
+                          'language processing, computer vision, speech '
+                          'recognition, email filtering, agriculture, and '
+                          'medicine. When used to address business '
+                          'challenges, it is referred to as predictive '
+                          'analytics. The foundations of machine learning '
+                          'are built on statistics and mathematical '
+                          'optimization methods.',
+               'video_bytes': None,
+               'image_list': None,
+               'image_detail': 'auto',
+               'video_detail': 'low',
+               'parsed': None}],
+    'terminated': False,
+    'info': {'id': 'chatcmpl-BW6SV6iEFkVpqcxwJuodhLOSQcmde',
+          'usage': {'completion_tokens': 121,
+                    'prompt_tokens': 254,
+                    'total_tokens': 375,
+                    'completion_tokens_details': {
+                        'accepted_prediction_tokens': 0,
+                        'audio_tokens': 0,
+                        'reasoning_tokens': 0,
+                        'rejected_prediction_tokens': 0},
+                    'prompt_tokens_details': {
+                        'audio_tokens': 0,
+                        'cached_tokens': 0}},
+          'termination_reasons': ['stop'],
+          'num_tokens': 201,
+          'tool_calls': [{
+              'tool_name': 'search_wiki',
+              'args': {
+                  'entity': 'Machine learning'
+              },
+              'result': 'Machine learning (ML) is a field of study in '
+                        'artificial intelligence concerned with the '
+                        'development and study of statistical '
+                        'algorithms that can learn from data and '
+                        'generalise to unseen data, and thus perform '
+                        'tasks without explicit instructions. Within a '
+                        'subdiscipline in machine learning, advances in '
+                        'the field of deep learning have allowed neural '
+                       'networks, a class of statistical algorithms, to '
+                        'surpass many previous machine learning '
+                        'approaches in performance.\nML finds '
+                        'application in many fields, including natural '
+                        'language processing, computer vision, speech '
+                        'recognition, email filtering, agriculture, and '
+                        'medicine. The application of ML to business '
+                        'problems is known as predictive analytics.\n'
+                        'Statistics and mathematical optimisation '
+                        '(mathematical programming) methods comprise '
+                        'the foundations of machine learning.',
+              'tool_call_id': 'call_lYVcPVKqPNPZi7TsSRRbanZ2'
+          }],
+    """
 
     r = client.get("/v1/history/demo")
     print("History:", r.json())
-    # History:
-    # [{'role': 'system',
-    #   'content': 'You are a helpful assistant with access to a wiki search '
-    #              'tool.'},
-    #  {'role': 'user',
-    #   'content': 'Search: What is machine learning?'},
-    #  {'role': 'assistant',
-    #   'content': '',
-    #   'tool_calls': [{'id': 'call_lYVcPVKqPNPZi7TsSRRbanZ2',
-    #                   'type': 'function',
-    #                   'function': {'name': 'search_wiki',
-    #                                'arguments': '{"entity": "Machine '
-    #                                             'learning"}'}}]},
-    #  {'role': 'tool',
-    #   'content': 'Machine learning (ML) is a field of study in artificial '
-    #              'intelligence concerned with the development and study of '
-    #              'statistical algorithms that can learn from data and '
-    #              'generalise to unseen data, and thus perform tasks without '
-    #              'explicit instructions. Within a subdiscipline in machine '
-    #              'learning, advances in the field of deep learning have '
-    #              'allowed neural networks, a class of statistical '
-    #              'algorithms, to surpass many previous machine learning '
-    #              'approaches in performance.\nML finds application in many '
-    #              'fields, including natural language processing, computer '
-    #              'vision, speech recognition, email filtering, agriculture, '
-    #              'and medicine. The application of ML to business problems '
-    #              'is known as predictive analytics.\nStatistics and '
-    #              'mathematical optimisation (mathematical programming) '
-    #              'methods comprise the foundations of machine learning.',
-    #   'tool_call_id': 'call_lYVcPVKqPNPZi7TsSRRbanZ2'},
-    #  {'role': 'assistant',
-    #   'content': 'Machine learning (ML) is a field of study in artificial '
-    #              'intelligence focused on developing statistical algorithms '
-    #              'that can learn from data and generalize to unseen data, '
-    #              'allowing them to perform tasks without explicit '
-    #              'instructions. A notable advancement in this area is deep '
-    #              'learning, which uses neural networks to achieve superior '
-    #              'performance over traditional machine learning methods. '
-    #              '\n\nML is applied in various fields such as natural '
-    #              'language processing, computer vision, speech recognition, '
-    #              'email filtering, agriculture, and medicine. When used to '
-    #              'address business challenges, it is referred to as '
-    #              'predictive analytics. The foundations of machine learning '
-    #              'are built on statistics and mathematical optimization '
-    #              'methods.'}]
+
+    """
+    History:
+    [{'role': 'system',
+    'content': 'You are a helpful assistant with access to a wiki search '
+             'tool.'},
+    {'role': 'user',
+    'content': 'Search: What is machine learning?'},
+    {'role': 'assistant',
+    'content': '',
+    'tool_calls': [{'id': 'call_lYVcPVKqPNPZi7TsSRRbanZ2',
+                  'type': 'function',
+                  'function': {'name': 'search_wiki',
+                               'arguments': '{"entity": "Machine '
+                                            'learning"}'}}]},
+    {'role': 'tool',
+    'content': 'Machine learning (ML) is a field of study in artificial '
+             'intelligence concerned with the development and study of '
+             'statistical algorithms that can learn from data and '
+             'generalise to unseen data, and thus perform tasks without '
+             'explicit instructions. Within a subdiscipline in machine '
+             'learning, advances in the field of deep learning have '
+             'allowed neural networks, a class of statistical '
+             'algorithms, to surpass many previous machine learning '
+             'approaches in performance.\nML finds application in many '
+             'fields, including natural language processing, computer '
+             'vision, speech recognition, email filtering, agriculture, '
+             'and medicine. The application of ML to business problems '
+             'is known as predictive analytics.\nStatistics and '
+             'mathematical optimisation (mathematical programming) '
+             'methods comprise the foundations of machine learning.',
+    'tool_call_id': 'call_lYVcPVKqPNPZi7TsSRRbanZ2'},
+    {'role': 'assistant',
+    'content': 'Machine learning (ML) is a field of study in artificial '
+             'intelligence focused on developing statistical algorithms '
+             'that can learn from data and generalize to unseen data, '
+             'allowing them to perform tasks without explicit '
+             'instructions. A notable advancement in this area is deep '
+             'learning, which uses neural networks to achieve superior '
+             'performance over traditional machine learning methods. '
+             '\n\nML is applied in various fields such as natural '
+             'language processing, computer vision, speech recognition, '
+             'email filtering, agriculture, and medicine. When used to '
+             'address business challenges, it is referred to as '
+             'predictive analytics. The foundations of machine learning '
+             'are built on statistics and mathematical optimization '
+             'methods.'}]
+    """
+
+def example_init_and_astep():
+    r"""Demonstrates a minimal example of initializing a single agent,
+    assigning it a tool from the registry, sending one message, and viewing
+    the agent's memory history.
+
+    This example uses the OpenAPI-compatible FastAPI interface for
+    `ChatAgentOpenAPIServer` and includes:
+
+    - POST /v1/init: Initializes the agent with a system message and a
+      wiki search tool.
+    - POST /v1/step: Sends a user message prompting the agent to call
+      the tool.
+    - GET /v1/history: Retrieves the agent's full conversation history.
+
+    The tool used is `search_wiki`, wrapped with `FunctionTool` and
+    retrieved from the `SearchToolkit`.
+
+    Prints the server response at each step.
+    """
+
+    from camel.toolkits import FunctionTool, SearchToolkit
+
+    wiki_tool = FunctionTool(SearchToolkit().search_wiki)
+
+    tool_registry = {"search_wiki": [wiki_tool]}
+
+    server = ChatAgentOpenAPIServer(tool_registry=tool_registry)
+    client = TestClient(server.get_app())
+
+    r = client.post(
+        "/v1/init",
+        json={
+            "agent_id": "demo",
+            "tools_names": ["search_wiki"],
+            "system_message": (
+                "You are a helpful assistant with access to "
+                "a wiki search tool."
+            ),
+        },
+    )
+    print("Init response:", r.json())
+    # Init response:
+    # {'agent_id': 'demo', 'message': 'Agent initialized.'}
+
+    r = client.post(
+        "/v1/astep/demo", #
+        json={"input_message": "Search: What is machine learning?"},
+    )
+    print("Step response (astep):", r.json())
+
+    """
+    Step response:
+    {'msgs': [{'role_name': 'Assistant',
+               'role_type': 'assistant',
+               'meta_dict': {},
+               'content': 'Machine learning (ML) is a field of study in '
+                          'artificial intelligence focused on '
+                          'developing statistical algorithms that can '
+                          'learn from data and generalize to unseen data, '
+                          'allowing them to perform tasks without explicit '
+                          'instructions. A notable advancement in this '
+                          'area is deep learning, which uses neural '
+                          'networks to achieve superior performance over '
+                          'traditional machine learning methods. \n\nML is '
+                          'applied in various fields such as natural '
+                          'language processing, computer vision, speech '
+                          'recognition, email filtering, agriculture, and '
+                          'medicine. When used to address business '
+                          'challenges, it is referred to as predictive '
+                          'analytics. The foundations of machine learning '
+                          'are built on statistics and mathematical '
+                          'optimization methods.',
+               'video_bytes': None,
+               'image_list': None,
+               'image_detail': 'auto',
+               'video_detail': 'low',
+               'parsed': None}],
+    'terminated': False,
+    'info': {'id': 'chatcmpl-BW6SV6iEFkVpqcxwJuodhLOSQcmde',
+          'usage': {'completion_tokens': 121,
+                    'prompt_tokens': 254,
+                    'total_tokens': 375,
+                    'completion_tokens_details': {
+                        'accepted_prediction_tokens': 0,
+                        'audio_tokens': 0,
+                        'reasoning_tokens': 0,
+                        'rejected_prediction_tokens': 0},
+                    'prompt_tokens_details': {
+                        'audio_tokens': 0,
+                        'cached_tokens': 0}},
+          'termination_reasons': ['stop'],
+          'num_tokens': 201,
+          'tool_calls': [{
+              'tool_name': 'search_wiki',
+              'args': {
+                  'entity': 'Machine learning'
+              },
+              'result': 'Machine learning (ML) is a field of study in '
+                        'artificial intelligence concerned with the '
+                        'development and study of statistical '
+                        'algorithms that can learn from data and '
+                        'generalise to unseen data, and thus perform '
+                        'tasks without explicit instructions. Within a '
+                        'subdiscipline in machine learning, advances in '
+                        'the field of deep learning have allowed neural '
+                       'networks, a class of statistical algorithms, to '
+                        'surpass many previous machine learning '
+                        'approaches in performance.\nML finds '
+                        'application in many fields, including natural '
+                        'language processing, computer vision, speech '
+                        'recognition, email filtering, agriculture, and '
+                        'medicine. The application of ML to business '
+                        'problems is known as predictive analytics.\n'
+                        'Statistics and mathematical optimisation '
+                        '(mathematical programming) methods comprise '
+                        'the foundations of machine learning.',
+              'tool_call_id': 'call_lYVcPVKqPNPZi7TsSRRbanZ2'
+          }],
+    """
+
+    r = client.get("/v1/history/demo")
+    print("History:", r.json())
+
+    """
+    History:
+    [{'role': 'system',
+    'content': 'You are a helpful assistant with access to a wiki search '
+             'tool.'},
+    {'role': 'user',
+    'content': 'Search: What is machine learning?'},
+    {'role': 'assistant',
+    'content': '',
+    'tool_calls': [{'id': 'call_lYVcPVKqPNPZi7TsSRRbanZ2',
+                  'type': 'function',
+                  'function': {'name': 'search_wiki',
+                               'arguments': '{"entity": "Machine '
+                                            'learning"}'}}]},
+    {'role': 'tool',
+    'content': 'Machine learning (ML) is a field of study in artificial '
+             'intelligence concerned with the development and study of '
+             'statistical algorithms that can learn from data and '
+             'generalise to unseen data, and thus perform tasks without '
+             'explicit instructions. Within a subdiscipline in machine '
+             'learning, advances in the field of deep learning have '
+             'allowed neural networks, a class of statistical '
+             'algorithms, to surpass many previous machine learning '
+             'approaches in performance.\nML finds application in many '
+             'fields, including natural language processing, computer '
+             'vision, speech recognition, email filtering, agriculture, '
+             'and medicine. The application of ML to business problems '
+             'is known as predictive analytics.\nStatistics and '
+             'mathematical optimisation (mathematical programming) '
+             'methods comprise the foundations of machine learning.',
+    'tool_call_id': 'call_lYVcPVKqPNPZi7TsSRRbanZ2'},
+    {'role': 'assistant',
+    'content': 'Machine learning (ML) is a field of study in artificial '
+             'intelligence focused on developing statistical algorithms '
+             'that can learn from data and generalize to unseen data, '
+             'allowing them to perform tasks without explicit '
+             'instructions. A notable advancement in this area is deep '
+             'learning, which uses neural networks to achieve superior '
+             'performance over traditional machine learning methods. '
+             '\n\nML is applied in various fields such as natural '
+             'language processing, computer vision, speech recognition, '
+             'email filtering, agriculture, and medicine. When used to '
+             'address business challenges, it is referred to as '
+             'predictive analytics. The foundations of machine learning '
+             'are built on statistics and mathematical optimization '
+             'methods.'}]
+    """
+
+def example_listing_and_delete_agents():
+    r"""Creates multiple agents, lists them, deletes one, and lists again
+    to verify it was removed.
+    """
+    from fastapi.testclient import TestClient
+    from camel.services.agent_openapi_server import ChatAgentOpenAPIServer
+
+    client = TestClient(ChatAgentOpenAPIServer().get_app())
+
+    # Step 1: Create two agents
+    for agent_id in ["agent_1", "agent_2"]:
+        r = client.post(
+            "/v1/init",
+            json={
+                "agent_id": agent_id,
+                "system_message": f"You are {agent_id}, a helpful assistant."
+            },
+        )
+        print(f"Init {agent_id}:", r.json())
+
+    # Step 2: List current agents
+    r = client.get("/v1/list_agent_ids")
+    print("Current agents:", r.json())  # Should contain agent_1 and agent_2
+
+    # Step 3: Delete agent_1 (via reset)
+    r = client.post("/v1/reset/agent_1")
+    print("Reset agent_1:", r.json())
+
+    # Step 4: List agents again
+    r = client.get("/v1/list_agent_ids")
+    print("Remaining agents:", r.json())  # Should contain only agent_2
+
+    """
+    Init agent_1: {'agent_id': 'agent_1', 'message': 'Agent initialized.'}
+    Init agent_2: {'agent_id': 'agent_2', 'message': 'Agent initialized.'}
+    Current agents: {'agent_ids': ['agent_1', 'agent_2']}
+    Reset agent_1: {'message': 'Agent agent_1 reset.'}
+    Remaining agents: {'agent_ids': ['agent_1', 'agent_2']}
+    """
 
 
 def example_multi_agent_turns(num_rounds: int = 10):
@@ -247,11 +466,18 @@ def example_multi_agent_turns(num_rounds: int = 10):
 if __name__ == "__main__":
     import sys
 
-    example = sys.argv[1] if len(sys.argv) > 1 else "basic"
+    example = sys.argv[1] if len(sys.argv) > 1 else "basic_sync"
 
-    if example == "basic":
+    if example == "basic_sync":
         # An example showing how to work with a single agent with our API
-        example_init_and_step()
+        #example_init_and_step()
+        example_listing_and_delete_agents()
+    elif example == "basic_async":
+        # An example showing how to work with a single agent with our API
+        example_init_and_astep()
+    elif example == "multiple_agents_list_and_delete":
+        # An example showing how to work with a single agent with our API
+        example_listing_and_delete_agents()
     elif example == "debate":
         # An example showing how to work with a multiple agents with our API
         # Here we are asking two agents to debate on a topic.
