@@ -384,6 +384,25 @@ class ModelType(UnifiedModelType, Enum):
     )
     WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
+    # Crynux models
+    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    )
+    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    )
+    CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+    )
+
+    CRYNUX_QWEN_3_4_B = "Qwen/Qwen3-4B"
+    CRYNUX_QWEN_3_8_B = "Qwen/Qwen3-8B"
+    CRYNUX_QWEN_2_5_7B = "Qwen/Qwen2.5-7B"
+    CRYNUX_QWEN_2_5_7B_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
+
+    CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B = "NousResearch/Hermes-3-Llama-3.1-8B"
+    CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
+
     def __str__(self):
         return self.value
 
@@ -892,6 +911,20 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_crynux(self) -> bool:
+        return self in {
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B,
+            ModelType.CRYNUX_QWEN_3_4_B,
+            ModelType.CRYNUX_QWEN_3_8_B,
+            ModelType.CRYNUX_QWEN_2_5_7B,
+            ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B,
+        }
+
+    @property
     def is_aiml(self) -> bool:
         return self in {
             ModelType.AIML_MIXTRAL_8X7B,
@@ -991,6 +1024,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_GLM_4_32B_0414,
             ModelType.NOVITA_GLM_Z1_RUMINATION_32B_0414,
             ModelType.NOVITA_QWEN_2_5_7B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B,
+            ModelType.CRYNUX_QWEN_3_4_B,
+            ModelType.CRYNUX_QWEN_3_8_B,
+            ModelType.CRYNUX_QWEN_2_5_7B,
+            ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B,
         }:
             return 32_000
         elif self in {
@@ -1449,6 +1491,7 @@ class ModelPlatformType(Enum):
     NETMIND = "netmind"
     NOVITA = "novita"
     WATSONX = "watsonx"
+    CRYNUX = "crynux"
 
     @classmethod
     def from_name(cls, name):
@@ -1623,6 +1666,11 @@ class ModelPlatformType(Enum):
     def is_watsonx(self) -> bool:
         r"""Returns whether this platform is WatsonX."""
         return self is ModelPlatformType.WATSONX
+
+    @property
+    def is_crynux(self) -> bool:
+        r"""Returns whether this platform is Crynux."""
+        return self is ModelPlatformType.CRYNUX
 
 
 class AudioModelType(Enum):
