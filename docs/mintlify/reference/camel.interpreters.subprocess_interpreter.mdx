@@ -42,7 +42,7 @@ def __init__(
 ### run_file
 
 ```python
-def run_file(self, file: Path, code_type: str):
+def run_file(self, file: Path, code_type: str = 'python'):
 ```
 
 Executes a code file in a subprocess and captures its output.
@@ -50,7 +50,7 @@ Executes a code file in a subprocess and captures its output.
 **Parameters:**
 
 - **file** (Path): The path object of the file to run.
-- **code_type** (str): The type of code to execute (e.g., 'python', 'bash').
+- **code_type** (str): The type of code to execute (e.g., 'python', 'bash'). (default: obj:`python`)
 
 **Returns:**
 
@@ -159,5 +159,5 @@ Executes a shell command in a subprocess and captures its output.
 
 **Returns:**
 
-  str: A string containing the captured stdout and stderr of the
+  tuple: A tuple containing the captured stdout and stderr of the
 executed command.

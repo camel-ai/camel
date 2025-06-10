@@ -89,7 +89,7 @@ to ensure proper cleanup of Docker resources.
 ### run
 
 ```python
-def run(self, code: str, code_type: str):
+def run(self, code: str, code_type: str = 'python'):
 ```
 
 Executes the given code in the container attached to the
@@ -98,7 +98,7 @@ interpreter, and captures the stdout and stderr streams.
 **Parameters:**
 
 - **code** (str): The code string to execute.
-- **code_type** (str): The type of code to execute (e.g., 'python', 'bash').
+- **code_type** (str): The type of code to execute (e.g., 'python', 'bash'). (default: obj:`python`)
 
 **Returns:**
 

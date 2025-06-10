@@ -75,7 +75,7 @@ Execute the code in the Jupyter kernel and return the result.
 ### run
 
 ```python
-def run(self, code: str, code_type: str):
+def run(self, code: str, code_type: str = 'python'):
 ```
 
 Executes the given code in the Jupyter kernel.
@@ -83,7 +83,7 @@ Executes the given code in the Jupyter kernel.
 **Parameters:**
 
 - **code** (str): The code string to execute.
-- **code_type** (str): The type of code to execute (e.g., 'python', 'bash').
+- **code_type** (str): The type of code to execute (e.g., 'python', 'bash'). (default: obj:`python`)
 
 **Returns:**
 
