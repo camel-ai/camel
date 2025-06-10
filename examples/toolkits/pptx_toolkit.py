@@ -212,38 +212,51 @@ def run_pptx_agent():
     print(result)
     print("\n" + "=" * 50 + "\n")
 
+    # Example 3: Add slides to existing presentation
+    print("Example 3: Adding slides to existing presentation")
+
+    # Define additional slides content
+    additional_slides = [
+        {
+            "heading": "Additional Features",
+            "bullet_points": [
+                "**Real-time** collaboration",
+                "*Cloud-based* storage",
+                "**Version control** integration",
+                "Automated backups",
+                "Cross-platform compatibility",
+            ],
+            "img_keywords": "cloud computing technology",
+        },
+        {
+            "heading": "Development Tools Comparison",
+            "table": {
+                "headers": ["Tool", "Purpose", "Benefits"],
+                "rows": [
+                    ["Git", "Version Control", "Track changes, collaborate"],
+                    ["Docker", "Containerization", "Consistent environments"],
+                    ["Jenkins", "CI/CD", "Automated builds and tests"],
+                    [
+                        "Jira",
+                        "Project Management",
+                        "Track progress and issues",
+                    ],
+                ],
+            },
+        },
+    ]
+
+    # Add slides to the existing presentation
+    add_result = pptx_toolkit.add_slides(
+        file_path="modern_development.pptx",
+        content=json.dumps(additional_slides),
+    )
+    print("Adding slides result:")
+    print(add_result)
+    print("\n" + "=" * 50 + "\n")
+
     print("Both presentations have been created successfully!")
     print("Check the './pptx_outputs' directory for the generated PPTX files.")
-
-    # Example 3: Modify a slide
-    print("Example 3: Modify a slide")
-    slide_index = 1
-    slide_content = {
-        "heading": "Modified Slide",
-        "bullet_points": ["New bullet point 1", "New bullet point 2"],
-        # "img_keywords": "bitcoin price stock market",
-    }
-    result = pptx_toolkit.modify_slide(
-        presentation="modern_development.pptx",
-        slide_index=slide_index,
-        slide_json=slide_content,
-    )
-    print("Slide modification result:")
-    print(result)
-
-    # Example 3b: Add a new slide
-    print("Example 3b: Add a new slide")
-    new_slide_content = {
-        "heading": "Added Slide",
-        "bullet_points": ["This is a new slide", "With bullet points"],
-        # "img_keywords": "teamwork collaboration",
-    }
-    add_result = pptx_toolkit.add_slide_to_presentation(
-        presentation="modern_development.pptx",
-        slide_json=new_slide_content,
-    )
-    print("Add slide result:")
-    print(add_result)
 
 
 if __name__ == "__main__":
@@ -291,6 +304,12 @@ Example 2: Direct toolkit usage with advanced features
 Direct toolkit usage:
 PowerPoint presentation successfully created: /Users/enrei/Desktop/camel0508/
 camel/pptx_outputs/modern_development.pptx
+
+==================================================
+
+Example 3: Adding slides to existing presentation
+Adding slides result:
+Successfully added new slides to modern_development.pptx
 
 ==================================================
 

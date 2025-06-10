@@ -771,6 +771,150 @@ class PPTXToolkit(BaseToolkit):
             return placeholders
         return []
 
+    def add_slides(
+        self,
+        file_path: str,
+        content: str,
+    ) -> str:
+        r"""Add one or more slides to an existing PowerPoint presentation.
+
+        Args:
+            file_path (str): The path to the existing PPTX file.
+            content (str): The content to add as a JSON string. Must represent
+            a list of dictionaries with the following structure:
+                - Content slides, which can be one of:
+                    * Bullet/step slides: {
+                        "heading": str,
+                        "bullet_points": list of str or nested lists,
+                        "img_keywords": str (optional)
+                      }
+                        - If any bullet point starts with '>> ', it will be
+                          rendered as a step-by-step process.
+                        - "img_keywords" can be a URL or search keywords for
+                        an image (optional).
+                    * Table slides: {
+                        "heading": str,
+                        "table": {
+                            "headers": list of str,
+                            "rows": list of list of str
+                        }
+                      }
+
+        Returns:
+            str: A success message indicating the slides were added.
+
+        Example:
+        [
+            {
+                "heading": "New Slide Title",
+                "bullet_points": [
+                    "**Bold text** for emphasis",
+                    "*Italic text* for additional emphasis",
+                    "Regular text for normal content"
+                ],
+                "img_keywords": "relevant search terms for images"
+            },
+            {
+                "heading": "New Table Slide",
+                "table": {
+                    "headers": ["Column 1", "Column 2"],
+                    "rows": [
+                        ["Row 1, Col 1", "Row 1, Col 2"],
+                        ["Row 2, Col 1", "Row 2, Col 2"]
+                    ]
+                }
+            }
+        ]
+        """
+        import pptx
+
+        # Resolve file path
+        resolved_path = self._resolve_filepath(file_path)
+
+        if not resolved_path.exists():
+            return f"File not found: {resolved_path}"
+
+        # Parse and validate content format
+        try:
+            import json
+
+            parsed_content = json.loads(content)
+        except json.JSONDecodeError as e:
+            logger.error(f"Content must be valid JSON: {e}")
+            return "Failed to parse content as JSON"
+
+        if not isinstance(parsed_content, list):
+            logger.error(
+                f"PPTX content must be a list of dictionaries, "
+                f"got {type(parsed_content).__name__}"
+            )
+            return "PPTX content must be a list of dictionaries"
+
+        try:
+            # Load existing presentation
+            presentation = pptx.Presentation(str(resolved_path))
+            slide_width_inch, slide_height_inch = (
+                self._get_slide_width_height_inches(presentation)
+            )
+
+            # Process new slides
+            for slide_data in parsed_content:
+                if not isinstance(slide_data, dict):
+                    continue
+
+                # Handle different slide types
+                if 'table' in slide_data:
+                    bullet_slide_layout = presentation.slide_layouts[1]
+                    slide = presentation.slides.add_slide(bullet_slide_layout)
+                    self._handle_table(slide, slide_data)
+                elif 'bullet_points' in slide_data:
+                    if any(
+                        step.startswith(STEP_BY_STEP_PROCESS_MARKER)
+                        for step in slide_data['bullet_points']
+                    ):
+                        bullet_slide_layout = presentation.slide_layouts[1]
+                        slide = presentation.slides.add_slide(
+                            bullet_slide_layout
+                        )
+                        self._handle_step_by_step_process(
+                            slide,
+                            slide_data,
+                            slide_width_inch,
+                            slide_height_inch,
+                        )
+                    else:
+                        status = False
+                        if 'img_keywords' in slide_data:
+                            if random.random() < IMAGE_DISPLAY_PROBABILITY:
+                                status = (
+                                    self._handle_display_image__in_foreground(
+                                        presentation,
+                                        slide_data,
+                                    )
+                                )
+                        if status:
+                            continue
+
+                        bullet_slide_layout = presentation.slide_layouts[1]
+                        slide = presentation.slides.add_slide(
+                            bullet_slide_layout
+                        )
+                        self._handle_default_display(slide, slide_data)
+
+            # Save the presentation
+            presentation.save(str(resolved_path))
+            success_msg = (
+                f"Successfully added {len(parsed_content)} slides to "
+                f"{resolved_path}"
+            )
+            logger.info(success_msg)
+            return success_msg
+
+        except Exception as e:
+            error_msg = f"Failed to add slides to {resolved_path}: {e!s}"
+            logger.error(error_msg)
+            return error_msg
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -779,4 +923,7 @@ class PPTXToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [FunctionTool(self.create_presentation)]
+        return [
+            FunctionTool(self.create_presentation),
+            FunctionTool(self.add_slides),
+        ]
