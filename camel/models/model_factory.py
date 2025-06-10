@@ -20,6 +20,7 @@ from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.cohere_model import CohereModel
+from camel.models.crynux_model import CrynuxModel
 from camel.models.deepseek_model import DeepSeekModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
@@ -96,6 +97,7 @@ class ModelFactory:
         ModelPlatformType.MODELSCOPE: ModelScopeModel,
         ModelPlatformType.NOVITA: NovitaModel,
         ModelPlatformType.WATSONX: WatsonXModel,
+        ModelPlatformType.CRYNUX: CrynuxModel,
     }
 
     @staticmethod
