@@ -865,6 +865,7 @@ class ChatAgent(BaseAgent):
         openai_messages, _ = self.memory.get_context()
         return openai_messages
 
+    @observe()
     async def astep(
         self,
         input_message: Union[BaseMessage, str],
