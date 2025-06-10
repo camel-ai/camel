@@ -5,7 +5,7 @@ This project provides a framework for testing web agents against various mock we
 ## Core Concepts
 
 *   **Dispatcher (`mock_web.py`):** The single entry point for running any benchmark. It handles:
-    *   Downloading necessary web assets (HTML templates, CSS, JS) for a specific project from Hugging Face Hub.
+    *   Downloading necessary web assets (HTML templates, CSS, JS) for a specific project from Hugging Face (https://huggingface.co/datasets/camel-ai/mock_websites).
     *   Reading the task configuration from `task.json`.
     *   Launching the project's dedicated Flask web server as a background process.
     *   Monitoring the server for task completion via API polling.
