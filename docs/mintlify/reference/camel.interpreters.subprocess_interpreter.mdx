@@ -142,3 +142,22 @@ Check if a command is available in the system PATH.
 **Returns:**
 
   bool: True if the command is available, False otherwise.
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Executes a shell command in a subprocess and captures its output.
+
+**Parameters:**
+
+- **command** (str): The shell command to execute.
+
+**Returns:**
+
+  str: A string containing the captured stdout and stderr of the
+executed command.
