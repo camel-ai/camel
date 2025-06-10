@@ -29,11 +29,13 @@ def main():
     rprint("[green]CAMEL AI with ACI Toolkit[/green]")
 
     # get the linked account from env or use default
-    linked_account = os.getenv("LINKED_ACCOUNT_OWNER", "parthshr370")
-    rprint(f"Using account: [cyan]{linked_account}[/cyan]")
+    linked_account_owner_id = os.getenv("LINKED_ACCOUNT_OWNER_ID")
+    if not linked_account_owner_id:
+        raise ValueError("LINKED_ACCOUNT_OWNER_ID environment variable is required")
+    rprint(f"Using account: [cyan]{linked_account_owner_id}[/cyan]")
 
     # setup aci toolkit
-    aci_toolkit = ACIToolkit(linked_account_owner_id=linked_account)
+    aci_toolkit = ACIToolkit(linked_account_owner_id=linked_account_owner_id)
     tools = aci_toolkit.get_tools()
     rprint(f"Loaded [cyan]{len(tools)}[/cyan] tools")
 
@@ -41,8 +43,8 @@ def main():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.GEMINI,
         model_type=ModelType.GEMINI_2_5_PRO_PREVIEW,
-        api_key=os.getenv("GOOGLE_API_KEY"),
-        model_config_dict={"temperature": 0.5, "max_tokens": 4000},
+        api_key=os.getenv("GEMINI_API_KEY"),
+        model_config_dict={"temperature": 0.5, "max_tokens": 40000},
     )
 
     # create agent with tools
