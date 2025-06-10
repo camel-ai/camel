@@ -125,6 +125,7 @@ class MCPAgent(ChatAgent):
         local_config_path: Optional[str] = None,
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
         function_calling_available: bool = True,
+        strict: bool = False,
         **kwargs,
     ):
         if model is None:
@@ -144,6 +145,7 @@ class MCPAgent(ChatAgent):
 
         self.local_config = local_config
         self.function_calling_available = function_calling_available
+        self.strict = strict
 
         if function_calling_available:
             sys_msg_content = "You are a helpful assistant, and you prefer "
@@ -177,7 +179,7 @@ class MCPAgent(ChatAgent):
         if self.local_config:
             config_dict.update(self.local_config)
 
-        return MCPToolkit(config_dict=config_dict)
+        return MCPToolkit(config_dict=config_dict, strict=self.strict)
 
     def add_registry(self, registry_config: BaseMCPRegistryConfig) -> None:
         r"""Add a new registry configuration to the agent.
@@ -191,7 +193,7 @@ class MCPAgent(ChatAgent):
         self.mcp_toolkit = self._initialize_mcp_toolkit()
 
         # If already connected, reconnect to apply changes
-        if self.mcp_toolkit and self.mcp_toolkit.is_connected():
+        if self.mcp_toolkit and self.mcp_toolkit.is_connected:
             try:
                 asyncio.run(self.disconnect())
                 asyncio.run(self.connect())
@@ -211,6 +213,7 @@ class MCPAgent(ChatAgent):
         ] = None,
         model: Optional[BaseModelBackend] = None,
         function_calling_available: bool = False,
+        strict: bool = False,
         **kwargs,
     ) -> "MCPAgent":
         r"""Create and connect an MCPAgent instance.
@@ -276,6 +279,7 @@ class MCPAgent(ChatAgent):
             registry_configs=final_registry_configs,
             model=model,
             function_calling_available=function_calling_available,
+            strict=strict,
             **kwargs,
         )
 
@@ -325,7 +329,7 @@ class MCPAgent(ChatAgent):
         Returns:
             ChatAgentResponse: The response from the agent.
         """
-        if self.mcp_toolkit and not self.mcp_toolkit.is_connected():
+        if self.mcp_toolkit and not self.mcp_toolkit.is_connected:
             await self.connect()
 
         if self.function_calling_available:
@@ -378,14 +382,14 @@ class MCPAgent(ChatAgent):
                         if (
                             not isinstance(server_idx, int)
                             or server_idx < 0
-                            or server_idx >= len(self.mcp_toolkit.servers)
+                            or server_idx >= len(self.mcp_toolkit.clients)
                         ):
                             logger.warning(
                                 f"Invalid server index: {server_idx}"
                             )
                             continue
 
-                        server = self.mcp_toolkit.servers[server_idx]
+                        server = self.mcp_toolkit.clients[server_idx]
                         result = await server.call_tool(tool_name, tool_args)
 
                         # Safely access content
@@ -431,7 +435,7 @@ class MCPAgent(ChatAgent):
             # Use create_task and run with a future
             coro = self.astep(input_message, *args, **kwargs)
             future = asyncio.ensure_future(coro)
-            return asyncio.run_coroutine_threadsafe(future, loop).result()
+            return asyncio.run_coroutine_threadsafe(future, loop).result()  # type: ignore [arg-type]
         else:
             # Safe to run normally
             return asyncio.run(self.astep(input_message, *args, **kwargs))
