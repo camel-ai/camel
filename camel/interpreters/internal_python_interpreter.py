@@ -115,8 +115,7 @@ class InternalPythonInterpreter(BaseInterpreter):
             code (str): The python code to be executed.
             code_type (str): The type of the code, which should be one of the
             supported code types (`python`, `py`, `python3`, `python2`).
-            (default:obj:python)
-
+                (default: obj:`python`)
 
         Returns:
             str: The string representation of the output of the executed code.

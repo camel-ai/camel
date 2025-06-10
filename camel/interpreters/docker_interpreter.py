@@ -215,8 +215,7 @@ class DockerInterpreter(BaseInterpreter):
         Args:
             code (str): The code string to execute.
             code_type (str): The type of code to execute (e.g., 'python',
-                'bash').
-                (default:obj:python)
+                'bash'). (default: obj:`python`)
 
         Returns:
             str: A string containing the captured stdout and stderr of the

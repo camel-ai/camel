@@ -83,8 +83,7 @@ class E2BInterpreter(BaseInterpreter):
         Args:
             code (str): The code string to execute.
             code_type (str): The type of code to execute (e.g., 'python',
-                'bash').
-                (default:obj:python)
+                'bash'). (default: obj:`python`)
 
         Returns:
             str: The string representation of the output of the executed code.
@@ -144,8 +143,8 @@ class E2BInterpreter(BaseInterpreter):
         raise RuntimeError("E2B doesn't support " "`action_space`.")
 
     def execute_command(self, command: str) -> str:
-        r"""
-        Execute a command can be used to resolve the dependency of the code.
+        r"""Execute a command can be used to resolve the dependency of the
+        code.
 
         Args:
             command (str): The command to execute.

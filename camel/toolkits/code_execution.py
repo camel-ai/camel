@@ -106,8 +106,7 @@ class CodeExecutionToolkit(BaseToolkit):
         Args:
             code (str): The input code to the Code Interpreter tool call.
             code_type (str): The type of the code to be executed
-                (e.g. node.js, python, etc).
-                (default:obj:python)
+                (e.g. node.js, python, etc). (default: obj:`python`)
 
         Returns:
             str: The text output from the Code Interpreter tool call.
@@ -118,12 +117,12 @@ class CodeExecutionToolkit(BaseToolkit):
             f"> Executed Results:\n{output}"
         )
         if self.verbose:
-            logger.info(content)
+            print(content)
         return content
 
     def execute_command(self, command: str) -> Union[str, tuple[str, str]]:
-        r"""
-        Execute a command can be used to resolve the dependency of the code.
+        r"""Execute a command can be used to resolve the dependency of the
+        code.
 
         Args:
             command (str): The command to execute.
@@ -137,7 +136,7 @@ class CodeExecutionToolkit(BaseToolkit):
             f"> Executed Results:\n{output}"
         )
         if self.verbose:
-            logger.info(content)
+            print(content)
         return content
 
     def get_tools(self) -> List[FunctionTool]:

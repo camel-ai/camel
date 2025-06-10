@@ -94,8 +94,7 @@ class SubprocessInterpreter(BaseInterpreter):
         Args:
             file (Path): The path object of the file to run.
             code_type (str): The type of code to execute (e.g., 'python',
-                'bash').
-                (default:obj:python)
+                'bash'). (default: obj:`python`)
 
         Returns:
             str: A string containing the captured stdout and stderr of the
