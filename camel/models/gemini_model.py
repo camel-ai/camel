@@ -124,15 +124,47 @@ class GeminiModel(OpenAICompatibleModel):
             "response_format", None
         )
         messages = self._process_messages(messages)
+
         if response_format:
             if tools:
-                raise ValueError(
-                    "Gemini does not support function calling with "
-                    "response format."
-                )
-            return self._request_parse(messages, response_format)
-        else:
-            return self._request_chat_completion(messages, tools)
+                # For tool calls, first get the tool response
+                completion = self._request_chat_completion(messages, tools)
+                if hasattr(completion, 'choices') and completion.choices:
+                    choice = completion.choices[0]
+                    if hasattr(choice, 'message') and (
+                        isinstance(choice.message, dict)
+                        and choice.message.get('tool_calls')
+                        or hasattr(choice.message, 'tool_calls')
+                        and getattr(choice.message, 'tool_calls', None)
+                    ):
+                        # make a new request with response format
+                        tool_messages = messages.copy()
+                        tool_messages.append(
+                            {
+                                'role': 'assistant',
+                                'content': None,
+                                'tool_calls': (
+                                    choice.message['tool_calls']
+                                    if isinstance(choice.message, dict)
+                                    else (
+                                        getattr(
+                                            choice.message, 'tool_calls', None
+                                        )
+                                        or []
+                                    )
+                                ),
+                            }
+                        )
+                        # Now request with response format
+                        return self._request_parse(
+                            tool_messages, response_format
+                        )
+            else:
+                # No tools, directly use response format
+                return self._request_parse(messages, response_format)
+
+        # No response format, just do normal completion
+        return self._request_chat_completion(messages, tools)
 
     async def _arun(
         self,
@@ -161,13 +193,32 @@ class GeminiModel(OpenAICompatibleModel):
         messages = self._process_messages(messages)
         if response_format:
             if tools:
-                raise ValueError(
-                    "Gemini does not support function calling with "
-                    "response format."
-                )
-            return await self._arequest_parse(messages, response_format)
-        else:
-            return await self._arequest_chat_completion(messages, tools)
+                # For tool calls, first get the tool response
+                completion = self._arequest_chat_completion(messages, tools)
+                if hasattr(completion, 'choices') and completion.choices:
+                    choice = completion.choices[0]
+                    if hasattr(choice, 'message') and choice.message.get(
+                        'tool_calls'
+                    ):
+                        # make a new request with response format
+                        tool_messages = messages.copy()
+                        tool_messages.append(
+                            {
+                                'role': 'assistant',
+                                'content': None,
+                                'tool_calls': choice.message['tool_calls'],
+                            }
+                        )
+                        # Now request with response format
+                        return await self._arequest_parse(
+                            tool_messages, response_format
+                        )
+            else:
+                # No tools, directly use response format
+                return await self._arequest_parse(messages, response_format)
+
+        # No response format, just do normal completion
+        return await self._arequest_chat_completion(messages, tools)
 
     def _request_chat_completion(
         self,
@@ -242,6 +293,48 @@ class GeminiModel(OpenAICompatibleModel):
                                     ] = prop_value['description']
 
             request_config["tools"] = tools
+
+        return await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    def _request_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        request_config["response_format"] = {
+            "type": "json_object",
+            "schema": response_format.schema(),
+        }
+        request_config.pop("stream", None)
+
+        return self._client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    async def _arequest_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        request_config["response_format"] = {
+            "type": "json_object",
+            "schema": response_format.schema(),
+        }
+        request_config.pop("stream", None)
 
         return await self._async_client.chat.completions.create(
             messages=messages,
