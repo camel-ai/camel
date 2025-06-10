@@ -17,15 +17,16 @@ import asyncio
 import json
 import uuid
 from collections import deque
-from typing import Deque, Dict, List, Optional
+from typing import Deque, Dict, List, Optional, Union
 
 from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
-from camel.models import ModelFactory
+from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce.base import BaseNode
+from camel.societies.workforce.dynamic_agent import DynamicAgentCreator
 from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
@@ -42,7 +43,11 @@ from camel.societies.workforce.utils import (
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState
 from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
-from camel.types import ModelPlatformType, ModelType
+from camel.types import (
+    BaseMCPRegistryConfig,
+    ModelPlatformType,
+    ModelType,
+)
 from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
@@ -58,7 +63,8 @@ class Workforce(BaseNode):
     - Coordinator Agent: Assigns tasks to workers based on their
       capabilities
     - Task Planner Agent: Decomposes complex tasks and composes results
-    - Dynamic Workers: Created at runtime when tasks fail repeatedly
+    - Dynamic Workers: Created at runtime using DynamicAgentCreator for
+      intelligent tool selection
 
     Args:
         description (str): Description of the workforce.
@@ -84,26 +90,44 @@ class Workforce(BaseNode):
             created dynamically at runtime when existing workers cannot handle
             failed tasks. See :obj:`ChatAgent` documentation for all
             available parameters.
-            (default: :obj:`None` - creates workers with SearchToolkit,
-            CodeExecutionToolkit, and ThinkingToolkit)
+            (default: :obj:`None` - creates workers using DynamicAgentCreator
+            with intelligent tool selection based on task content)
+        dynamic_agent_registry_configs (Optional[Union[
+            List[BaseMCPRegistryConfig], BaseMCPRegistryConfig]], optional):
+            Registry configurations for DynamicAgentCreator tool
+            discovery. If None, will auto-detect from environment variables.
+            (default: :obj:`None`)
+        dynamic_agent_model (Optional['BaseModelBackend'], optional): The model
+            for the dynamic agents. If None, will use the default model.
+            (default: :obj:`None`)
         graceful_shutdown_timeout (float, optional): The timeout in seconds
             for graceful shutdown when a task fails 3 times. During this
             period, the workforce remains active for debugging.
             Set to 0 for immediate shutdown. (default: :obj:`15.0`)
 
     Example:
-        >>> # Configure with custom model
+        >>> # Configure with custom model and registries
+        >>> from camel.types import ACIRegistryConfig, SmitheryRegistryConfig
         >>> model = ModelFactory.create(
         ...     ModelPlatformType.OPENAI, ModelType.GPT_4O
         ... )
+        >>> registries = [
+        ...     ACIRegistryConfig(
+        ...         api_key="...",
+        ...         linked_account_owner_id="..."
+        ...     ),
+        ...     SmitheryRegistryConfig(api_key="...", profile="default")
+        ... ]
         >>> workforce = Workforce(
         ...     "Research Team",
         ...     coordinator_agent_kwargs={"model": model, "token_limit": 4000},
-        ...     task_agent_kwargs={"model": model, "token_limit": 8000}
+        ...     task_agent_kwargs={"model": model, "token_limit": 8000},
+        ...     dynamic_agent_registry_configs=registries
         ... )
         >>>
-        >>> # Process a task
-        >>> task = Task(content="Research AI trends", id="1")
+        >>> # Process a task - workers will be created with tools automatically
+        >>> # selected based on task content from multiple registries
+        >>> task = Task(content="Research AI trends and analyze data", id="1")
         >>> result = workforce.process_task(task)
     """
 
@@ -114,6 +138,10 @@ class Workforce(BaseNode):
         coordinator_agent_kwargs: Optional[Dict] = None,
         task_agent_kwargs: Optional[Dict] = None,
         new_worker_agent_kwargs: Optional[Dict] = None,
+        dynamic_agent_registry_configs: Optional[
+            Union[List[BaseMCPRegistryConfig], BaseMCPRegistryConfig]
+        ] = None,
+        dynamic_agent_model: Optional['BaseModelBackend'] = None,
         graceful_shutdown_timeout: float = 15.0,
     ) -> None:
         super().__init__(description)
@@ -121,6 +149,14 @@ class Workforce(BaseNode):
         self._children = children or []
         self.new_worker_agent_kwargs = new_worker_agent_kwargs
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
+
+        # Initialize DynamicAgentCreator for intelligent worker creation
+        self.dynamic_agent_creator = (
+            DynamicAgentCreator.create_with_registries(
+                registry_configs=dynamic_agent_registry_configs,
+                model=dynamic_agent_model,
+            )
+        )
 
         # Warning messages for default model usage
         if coordinator_agent_kwargs is None:
@@ -144,14 +180,13 @@ class Workforce(BaseNode):
                 "all available options."
             )
         if new_worker_agent_kwargs is None:
-            logger.warning(
+            logger.info(
                 "No new_worker_agent_kwargs provided. Workers created at "
-                "runtime will use default ChatAgent settings with "
-                "SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. "
-                "To customize runtime worker creation, pass a dictionary "
-                "with ChatAgent parameters, e.g.: {'model': your_model, "
-                "'tools': your_tools}. See ChatAgent documentation for all "
-                "available options."
+                "runtime will use DynamicAgentCreator with intelligent tool "
+                "selection based on task content. Registry configurations: "
+                f"{self.dynamic_agent_creator.get_registry_info()}. "
+                "To override this behavior, pass a dictionary with ChatAgent "
+                "parameters."
             )
 
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
@@ -178,6 +213,28 @@ class Workforce(BaseNode):
 
     def __repr__(self):
         return f"Workforce {self.node_id} ({self.description})"
+
+    def add_registry(self, registry_config: BaseMCPRegistryConfig) -> None:
+        r"""Add a new registry configuration to the dynamic agent creator.
+
+        Args:
+            registry_config (BaseMCPRegistryConfig): The registry
+                configuration to add for tool discovery.
+        """
+        self.dynamic_agent_creator.add_registry(registry_config)
+        logger.info(
+            f"Added registry {registry_config.type.name} to workforce "
+            f"{self.node_id}. Updated registry info: "
+            f"{self.dynamic_agent_creator.get_registry_info()}"
+        )
+
+    def get_dynamic_agent_info(self) -> Dict:
+        r"""Get information about the dynamic agent creator configuration.
+
+        Returns:
+            Dict: Information about registry configurations and tool selection.
+        """
+        return self.dynamic_agent_creator.get_registry_info()
 
     def _decompose_task(self, task: Task) -> List[Task]:
         r"""Decompose the task into subtasks. This method will also set the
@@ -376,6 +433,9 @@ class Workforce(BaseNode):
         children list of this node. This is one of the actions that
         the coordinator can take when a task has failed.
 
+        The worker is created using DynamicAgentCreator which intelligently
+        selects tools based on the task content from configured registries.
+
         Args:
             task (Task): The task for which the worker node is created.
 
@@ -393,9 +453,11 @@ class Workforce(BaseNode):
         result_dict = json.loads(response.msg.content)
         new_node_conf = WorkerConf(**result_dict)
 
+        # Use DynamicAgentCreator for intelligent agent creation
         new_agent = self._create_new_agent(
             new_node_conf.role,
             new_node_conf.sys_msg,
+            task.content,  # Pass task content for tool selection
         )
 
         new_node = SingleAgentWorker(
@@ -404,7 +466,7 @@ class Workforce(BaseNode):
         )
         new_node.set_channel(self._channel)
 
-        print(f"{Fore.CYAN}{new_node} created.{Fore.RESET}")
+        logger.info(f"{new_node} created.")
 
         self._children.append(new_node)
         self._child_listening_tasks.append(
@@ -412,29 +474,74 @@ class Workforce(BaseNode):
         )
         return new_node
 
-    def _create_new_agent(self, role: str, sys_msg: str) -> ChatAgent:
-        worker_sys_msg = BaseMessage.make_assistant_message(
-            role_name=role,
-            content=sys_msg,
-        )
+    def _create_new_agent(
+        self, role: str, sys_msg: str, task_content: Optional[str] = None
+    ) -> ChatAgent:
+        r"""Create a new agent using either custom configuration or
+        DynamicAgentCreator.
 
+        Args:
+            role (str): The role of the agent.
+            sys_msg (str): The system message for the agent.
+            task_content (Optional[str]): The task content for intelligent
+                tool selection. If None, will use generic tools.
+
+        Returns:
+            ChatAgent: The created agent.
+        """
+        # If custom agent kwargs are provided, use traditional creation
         if self.new_worker_agent_kwargs is not None:
+            worker_sys_msg = BaseMessage.make_assistant_message(
+                role_name=role,
+                content=sys_msg,
+            )
             return ChatAgent(worker_sys_msg, **self.new_worker_agent_kwargs)
 
-        # Default tools for a new agent
-        function_list = [
-            SearchToolkit().search_duckduckgo,
-            *CodeExecutionToolkit().get_tools(),
-            *ThinkingToolkit().get_tools(),
-        ]
+        # Use DynamicAgentCreator for intelligent tool selection
+        if task_content:
+            # Create agent with task-specific tool selection
+            agent = self.dynamic_agent_creator.create_agent(task_content)
 
-        model = ModelFactory.create(
-            model_platform=ModelPlatformType.DEFAULT,
-            model_type=ModelType.DEFAULT,
-            model_config_dict={"temperature": 0},
-        )
+            # Create new system message to match the coordinator's
+            # specification
+            worker_sys_msg = BaseMessage.make_assistant_message(
+                role_name=role,
+                content=sys_msg,
+            )
 
-        return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
+            # Create a new agent with the specified system message but keep
+            # the selected tools and model from the original agent
+            new_agent = ChatAgent(
+                system_message=worker_sys_msg,
+                model=agent.model_backend,
+                tools=list(agent.tool_dict.values()),
+            )
+
+            # Transfer the dynamic agent info to the new agent
+            if hasattr(agent, '_dynamic_agent_info'):
+                new_agent._dynamic_agent_info = agent._dynamic_agent_info  # type: ignore[attr-defined]
+
+            return new_agent
+        else:
+            # Fallback to default tools if no task content is provided
+            worker_sys_msg = BaseMessage.make_assistant_message(
+                role_name=role,
+                content=sys_msg,
+            )
+
+            function_list = [
+                SearchToolkit().search_duckduckgo,
+                *CodeExecutionToolkit().get_tools(),
+                *ThinkingToolkit().get_tools(),
+            ]
+
+            model = ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+                model_config_dict={"temperature": 0},
+            )
+
+            return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
 
     async def _get_returned_task(self) -> Task:
         r"""Get the task that's published by this node and just get returned
@@ -592,6 +699,12 @@ class Workforce(BaseNode):
             coordinator_agent_kwargs={},
             task_agent_kwargs={},
             new_worker_agent_kwargs=self.new_worker_agent_kwargs,
+            dynamic_agent_registry_configs=getattr(
+                self.dynamic_agent_creator.tool_selector,
+                'registry_configs',
+                None,
+            ),
+            dynamic_agent_model=self.dynamic_agent_creator.model,
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
         )
 
@@ -611,10 +724,10 @@ class Workforce(BaseNode):
                     child.description,
                     child.assistant_role_name,
                     child.user_role_name,
+                    child.chat_turn_limit,
                     child.assistant_agent_kwargs,
                     child.user_agent_kwargs,
                     child.summarize_agent_kwargs,
-                    child.chat_turn_limit,
                 )
             elif isinstance(child, Workforce):
                 new_instance.add_workforce(child.clone(with_memory))
