@@ -57,6 +57,7 @@ dev = [
     "types-requests>=2.31.0,<3",
     "types-setuptools>=69.2.0,<70",
     "uv==0.6.5",
+    "Flask>=2.0",
 ]
 docs = [
     "sphinx>=7,<8",
@@ -194,6 +195,7 @@ huggingface = [
     "soundfile>=0.13,<0.14",
     "sentencepiece>=0.2,<0.3",
     "opencv-python>=4,<5",
+    "huggingface-hub",
 ]
 storage = [
     "qdrant-client>=1.9.0,<2",
@@ -381,7 +383,7 @@ all = [
     "chunkr-ai>=0.0.50",
     "weaviate-client>=4.15.0",
     "python-pptx>=1.0.2",
-    "Flask>=2.0"
+    "Flask>=2.0",
 ]
 
 [project.urls]
