@@ -209,7 +209,6 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_MEDIUM_3 = "mistral-medium-latest"
     MAGISTRAL_MEDIUM = "magistral-medium-2506"
 
-
     # Reka models
     REKA_CORE = "reka-core"
     REKA_FLASH = "reka-flash"
@@ -634,7 +633,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_3B,
             ModelType.MISTRAL_MEDIUM_3,
             ModelType.MAGISTRAL_MEDIUM,
-
         }
 
     @property
@@ -1273,7 +1271,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MAGISTRAL_MEDIUM,
         }:
             return 40_000
-            
+
         else:
             logger.warning(
                 f"Unknown model type {self}, set maximum token limit "

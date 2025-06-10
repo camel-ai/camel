@@ -105,7 +105,7 @@ your work and how I can assist you. How can I help you today?
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.MISTRAL,
-    model_type=ModelType.MAGISTRAL_MEDIUM, 
+    model_type=ModelType.MAGISTRAL_MEDIUM,
     model_config_dict=MistralConfig(temperature=0.0).as_dict(),
 )
 
@@ -128,4 +128,3 @@ study of autonomous and communicative agents. I'm excited to learn more about
 your work and how I can assist you. How can I help you today?
 ===============================================================================
 """
-
