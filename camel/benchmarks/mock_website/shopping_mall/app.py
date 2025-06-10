@@ -17,15 +17,16 @@ import logging
 import os
 import sys  # Import the sys module
 from logging.handlers import RotatingFileHandler
+from typing import Any, Dict, List
 
 app = None
-products = []
-products_by_id = {}
-cart = []
-ACTION_COUNT = 0
+products: List[Dict[str, Any]] = []
+products_by_id: Dict[int, Dict[str, Any]] = {}
+cart: List[Dict[str, Any]] = []
+ACTION_COUNT: int = 0
 
 
-def load_products(file_path='products.json'):
+def load_products(file_path: str = 'products.json') -> None:
     global products, products_by_id
     try:
         # The products.json is expected to be

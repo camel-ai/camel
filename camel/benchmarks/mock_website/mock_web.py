@@ -172,12 +172,12 @@ def run_project(project_name: str, port: int):
     log.info(f"Started {app_path} on port {port} with PID: {process.pid}")
 
     # Non-blocking stream reading for both stdout and stderr
-    q_out = Queue()
+    q_out: Queue[str] = Queue()
     t_out = Thread(target=enqueue_output, args=(process.stdout, q_out))
     t_out.daemon = True
     t_out.start()
 
-    q_err = Queue()
+    q_err: Queue[str] = Queue()
     t_err = Thread(target=enqueue_output, args=(process.stderr, q_err))
     t_err.daemon = True
     t_err.start()
