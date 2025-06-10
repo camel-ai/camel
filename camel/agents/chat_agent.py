@@ -1672,7 +1672,7 @@ class ChatAgent(BaseAgent):
         self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
-            timestamp=base_timestamp + 1e-9,
+            timestamp=base_timestamp + 1e-6,
         )
 
         # Record information about this tool call
