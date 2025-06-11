@@ -70,7 +70,7 @@ def __init__(
 ### run
 
 ```python
-def run(self, code: str, code_type: str):
+def run(self, code: str, code_type: str = 'python'):
 ```
 
 Executes the given code with specified code type in the
@@ -87,7 +87,7 @@ any runtime error occurs during execution.
 **Parameters:**
 
 - **code** (str): The python code to be executed.
-- **code_type** (str): The type of the code, which should be one of the supported code types (`python`, `py`, `python3`, `python2`).
+- **code_type** (str): The type of the code, which should be one of the supported code types (`python`, `py`, `python3`, `python2`). (default: obj:`python`)
 
 **Returns:**
 
@@ -273,3 +273,21 @@ def _execute_unaryop(self, unaryop: ast.UnaryOp):
 ```python
 def _get_value_from_state(self, key: str):
 ```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Execute a command in the internal python interpreter.
+
+**Parameters:**
+
+- **command** (str): The command to execute.
+
+**Returns:**
+
+  tuple: A tuple containing the stdout and stderr of the command.

@@ -20,9 +20,12 @@ from camel.interpreters import (
     JupyterKernelInterpreter,
     SubprocessInterpreter,
 )
+from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer
+
+logger = get_logger(__name__)
 
 
 @MCPServer()
@@ -36,10 +39,10 @@ class CodeExecutionToolkit(BaseToolkit):
             (default: :obj:`False`)
         unsafe_mode (bool):  If `True`, the interpreter runs the code
             by `eval()` without any security check. (default: :obj:`False`)
-        import_white_list ( Optional[List[str]]): A list of allowed imports.
+        import_white_list (Optional[List[str]]): A list of allowed imports.
             (default: :obj:`None`)
-        require_confirm (bool): Whether to require confirmation before executing code.
-            (default: :obj:`False`)
+        require_confirm (bool): Whether to require confirmation before
+            executing code. (default: :obj:`False`)
     """
 
     def __init__(
@@ -97,18 +100,41 @@ class CodeExecutionToolkit(BaseToolkit):
                 f"The sandbox type `{sandbox}` is not supported."
             )
 
-    def execute_code(self, code: str) -> str:
+    def execute_code(self, code: str, code_type: str = "python") -> str:
         r"""Execute a given code snippet.
 
         Args:
             code (str): The input code to the Code Interpreter tool call.
+            code_type (str): The type of the code to be executed
+                (e.g. node.js, python, etc). (default: obj:`python`)
 
         Returns:
             str: The text output from the Code Interpreter tool call.
         """
-        output = self.interpreter.run(code, "python")
-        # ruff: noqa: E501
-        content = f"Executed the code below:\n```py\n{code}\n```\n> Executed Results:\n{output}"
+        output = self.interpreter.run(code, code_type)
+        content = (
+            f"Executed the code below:\n```{code_type}\n{code}\n```\n"
+            f"> Executed Results:\n{output}"
+        )
+        if self.verbose:
+            print(content)
+        return content
+
+    def execute_command(self, command: str) -> Union[str, tuple[str, str]]:
+        r"""Execute a command can be used to resolve the dependency of the
+        code.
+
+        Args:
+            command (str): The command to execute.
+
+        Returns:
+            Union[str, tuple[str, str]]: The output of the command.
+        """
+        output = self.interpreter.execute_command(command)
+        content = (
+            f"Executed the command below:\n```sh\n{command}\n```\n"
+            f"> Executed Results:\n{output}"
+        )
         if self.verbose:
             print(content)
         return content
@@ -121,4 +147,7 @@ class CodeExecutionToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [FunctionTool(self.execute_code)]
+        return [
+            FunctionTool(self.execute_code),
+            FunctionTool(self.execute_command),
+        ]

@@ -547,7 +547,7 @@ class FunctionTool:
         """
         self.openai_tool_schema["function"]["description"] = description
 
-    def get_paramter_description(self, param_name: str) -> str:
+    def get_parameter_description(self, param_name: str) -> str:
         r"""Gets the description of a specific parameter from the function
         schema.
 
@@ -563,7 +563,7 @@ class FunctionTool:
             param_name
         ]["description"]
 
-    def set_paramter_description(
+    def set_parameter_description(
         self,
         param_name: str,
         description: str,
