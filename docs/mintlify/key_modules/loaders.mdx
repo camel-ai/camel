@@ -4,7 +4,7 @@ title: "Loaders"
 
 ## 1. Concept
 CAMEL introduced two IO modules, `Base IO` and `Unstructured IO` which are designed for handling various file types and unstructured data processing.
-Additionally, four new data readers were added, `Apify Reader`,`Chunkr Reader`, `Firecrawl Reader`, and `Jina_url Reader`, which enable retrieval of external data for improved data integration and analysis.
+Additionally, several data readers were added, including `Apify Reader`, `Chunkr Reader`, `Firecrawl Reader`, `Jina_url Reader`, and `Mistral Reader`, which enable retrieval of external data for improved data integration and analysis.
 
 ## 2. Types
 
@@ -29,6 +29,9 @@ JinaURL Reader is a Python client for Jina AI's URL reading service, optimized t
 
 ### 2.7 MarkitDown Reader
 MarkItDown is a lightweight Python utility for converting various files to Markdown for use with LLMs and related text analysis pipelines.
+
+### 2.8 Mistral Reader
+Mistral Reader is a Python client for interacting with Mistral AI's OCR service, which can extract text from PDFs and images. It provides capabilities to process both local files and remote URLs, supporting various file formats.
 
 ## 3. Get Started
 
@@ -323,7 +326,6 @@ print(response)
 
 ```markdown
 >>>Welcome to CAMEL’s documentation! — CAMEL 0.2.61 documentation
-===============
 
 [Skip to main content](https://docs.camel-ai.org/#main-content)
 
@@ -348,4 +350,47 @@ Agents
 Key Modules
 
 *   [Models](https://docs.camel-ai...)
+```
+
+### 3.7. Using `Mistral Reader`
+
+Initialize the Mistral Reader client with your API key (or it will use the MISTRAL_API_KEY environment variable) and extract text from a PDF URL:
+
+```python
+from camel.loaders import MistralReader
+
+mistral_reader = MistralReader()
+
+# Extract text from a PDF URL
+url_ocr_response = mistral_reader.extract_text(
+    file_path="https://arxiv.org/pdf/2201.04234", pages=[5]
+)
+print(url_ocr_response)
+```
+
+Extract text from an image URL by setting `is_image=True`:
+
+```python
+# Extract text from an image URL
+image_ocr_response = mistral_reader.extract_text(
+    file_path="https://raw.githubusercontent.com/mistralai/cookbook/refs/heads/main/mistral/ocr/receipt.png",
+    is_image=True,
+)
+print(image_ocr_response)
+```
+
+Process a local PDF file:
+
+```python
+# Extract text from a local PDF file
+local_ocr_response = mistral_reader.extract_text("path/to/your/document.pdf")
+print(local_ocr_response)
+```
+
+The response contains structured information about the extracted text, including the markdown-formatted content, page dimensions, and usage information:
+
+```markdown
+>>>pages=[OCRPageObject(index=5, markdown='![img-0.jpeg](./images/img-0.jpeg)\n\nFigure 2: Scatter plot of predicted accuracy versus (true) OOD accuracy. Each point denotes a dif...', 
+
+images=[OCRImageObject(id='img-0.jpeg', top_left_x=294, top_left_y=180, bottom_right_x=1387, bottom_right_y=558, image_base64=None, image_annotation=None)], dimensions=OCRPageDimensions(dpi=200, height=2200, width=1700))] model='mistral-ocr-2505-completion' usage_info=OCRUsageInfo(pages_processed=1, doc_size_bytes=3002783) document_annotation=None
 ```
