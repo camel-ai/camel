@@ -351,7 +351,7 @@ async def test_full_game():
 async def test_extraction_timeout():
     r"""Test timeout handling during move extraction in TicTacToeEnv."""
     import asyncio
-    from unittest.mock import AsyncMock, patch
+    from unittest.mock import patch
 
     env = TicTacToeEnv()
     await env.setup()

@@ -18,11 +18,12 @@ from typing import List, Optional
 
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
-from camel.utils import BatchProcessor, with_timeout_async, TIMEOUT_THRESHOLD
+from camel.utils import TIMEOUT_THRESHOLD, BatchProcessor, with_timeout_async
 
 from .models import VerificationOutcome, VerificationResult
 
 logger = get_logger(__name__)
+
 
 class BaseVerifier(ABC):
     r"""Base class for all verifiers.
@@ -203,8 +204,11 @@ class BaseVerifier(ABC):
             logger.warning(
                 f"{self.__class__.__name__} not set up, calling setup()"
             )
-            await with_timeout_async(self.setup(), context="setting \
-                up verifier")
+            await with_timeout_async(
+                self.setup(),
+                context="setting \
+                up verifier",
+            )
 
         attempt = 0
         start_time = time.time()
@@ -358,8 +362,11 @@ class BaseVerifier(ABC):
             logger.warning(
                 f"{self.__class__.__name__} not set up, calling setup()"
             )
-            await with_timeout_async(self.setup(), context="setting\
-                 up verifier")
+            await with_timeout_async(
+                self.setup(),
+                context="setting\
+                 up verifier",
+            )
 
         # Retrieve batch processing settings
         max_workers = getattr(

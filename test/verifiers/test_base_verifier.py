@@ -18,9 +18,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from camel.verifiers.base import BaseVerifier   
-from camel.verifiers.models import VerificationOutcome, VerificationResult
 from camel.utils import with_timeout_async
+from camel.verifiers.base import BaseVerifier
+from camel.verifiers.models import VerificationOutcome, VerificationResult
 
 
 class TestVerifier(BaseVerifier):
@@ -507,7 +507,6 @@ async def test_timeout_in_batch_verification(test_verifier):
         if "timeout" in solution:
             raise asyncio.TimeoutError("Simulated timeout")
         return await original_verify(solution, reference)
-
 
     with patch.object(test_verifier, "verify", side_effect=mock_verify):
         results = await test_verifier.verify_batch(

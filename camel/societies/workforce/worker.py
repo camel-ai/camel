@@ -23,9 +23,10 @@ from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import check_if_running
 from camel.tasks.task import Task, TaskState
-from camel.utils import with_timeout_async, TIMEOUT_THRESHOLD
+from camel.utils import TIMEOUT_THRESHOLD, with_timeout_async
 
 logger = logging.getLogger(__name__)
+
 
 class Worker(BaseNode, ABC):
     r"""A worker node that works on tasks. It is the basic unit of task

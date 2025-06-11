@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .commons import (
+    TIMEOUT_THRESHOLD,
     AgentOpsMeta,
     BatchProcessor,
     agentops_decorator,
@@ -41,7 +42,6 @@ from .commons import (
     track_agent,
     with_timeout,
     with_timeout_async,
-    TIMEOUT_THRESHOLD,
 )
 from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally

@@ -78,10 +78,11 @@ class Packet:
 class TaskChannel:
     r"""An internal class used by Workforce to manage tasks."""
 
-    def __init__(self) -> None:
+    def __init__(self, timeout: float = 180.0) -> None:
         self._task_id_list: List[str] = []
         self._condition = asyncio.Condition()
-        self._task_dict: Dict[str, Packet] = {}
+        self._task_dict: Dict[str, Packet] = ({},)
+        self._timeout = timeout
 
     async def get_returned_task_by_publisher(
         self, publisher_id: str, timeout: float = 180.0
@@ -211,19 +212,18 @@ class TaskChannel:
         async with self._condition:
             return str(self._task_dict) + '\n' + str(self._task_id_list)
 
-    async def _wait_condition(
-        self, timeout: float = 180.0, context: str = "operation"
-    ):
+    async def _wait_condition(self, context: str = "operation"):
         """function to wait for a condition to be met with a timeout.
 
         Args:
-            timeout (float): max wait time (seconds)
             context (str): context information, used for error messages
 
         Raises:
             asyncio.TimeoutError: if wait times out
         """
         try:
-            await asyncio.wait_for(self._condition.wait(), timeout=timeout)
+            await asyncio.wait_for(
+                self._condition.wait(), timeout=self._timeout
+            )
         except asyncio.TimeoutError:
             raise asyncio.TimeoutError(f"Timed out while {context}")

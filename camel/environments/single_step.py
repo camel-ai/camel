@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.datasets import BaseGenerator, DataPoint, StaticDataset
 from camel.logger import get_logger
+from camel.utils import with_timeout_async
 from camel.verifiers.base import (
     BaseVerifier,
     VerificationOutcome,
@@ -25,7 +26,6 @@ from camel.verifiers.base import (
 )
 
 from .models import Action, Observation, StepResult
-from camel.utils import with_timeout_async
 
 logger = get_logger(__name__)
 
@@ -164,7 +164,7 @@ class SingleStepEnv:
             RuntimeError: If called before all previous states are processed.
             ValueError: If batch size exceeds dataset size.
             TypeError: If the dataset is of an unsupported type.
-            asyncio.TimeoutError: If the environment setup times out or 
+            asyncio.TimeoutError: If the environment setup times out or
             dataset sampling times out.
         """
         if batch_size <= 0:
@@ -344,7 +344,7 @@ class SingleStepEnv:
                 timeout=self._timeout,
                 context="step verification",
             )
-        except asyncio.TimeoutError as e:
+        except asyncio.TimeoutError:
             # Return timeout verification results
             verification_results = [
                 VerificationResult(
@@ -373,8 +373,10 @@ class SingleStepEnv:
 
         try:
             # First try to compute all rewards with a timeout
-            computed_rewards, computed_rewards_dicts = await\
-                with_timeout_async(
+            (
+                computed_rewards,
+                computed_rewards_dicts,
+            ) = await with_timeout_async(
                 self._compute_reward_batch(
                     proposed_solutions, verification_results
                 ),
@@ -384,7 +386,7 @@ class SingleStepEnv:
             # If successful, use all the computed values
             total_rewards = computed_rewards
             rewards_dicts = computed_rewards_dicts
-        except asyncio.TimeoutError as e:
+        except asyncio.TimeoutError:
             # Try to compute rewards one by one to identify which ones time out
             for i, (solution, result) in enumerate(
                 zip(proposed_solutions, verification_results)

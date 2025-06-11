@@ -40,7 +40,7 @@ class TestTimeoutWorkforce(Workforce):
 @pytest.mark.asyncio
 async def test_with_timeout_function():
     r"""Test the with_timeout function handles completions and
-     timeouts correctly"""
+    timeouts correctly"""
     # Test normal operation (successful completion)
     mock_coro = AsyncMock()
     mock_coro.return_value = "success"
@@ -83,7 +83,7 @@ async def test_post_task_timeout():
 @pytest.mark.asyncio
 async def test_listen_to_channel_recovers_from_timeout():
     r"""Test that _listen_to_channel method recovers from timeouts when
-     getting returned tasks"""
+    getting returned tasks"""
     workforce = TestTimeoutWorkforce()
 
     # Mock TaskChannel with first call timing out, second call succeeding

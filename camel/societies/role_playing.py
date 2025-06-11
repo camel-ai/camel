@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import asyncio
 import logging
 import threading
 from typing import (
@@ -37,6 +36,7 @@ from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
 from camel.types import RoleType, TaskType
 from camel.utils import with_timeout_async
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 

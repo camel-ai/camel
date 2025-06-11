@@ -18,9 +18,8 @@ import pytest
 
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.worker import Worker
-from camel.utils import with_timeout_async, TIMEOUT_THRESHOLD
-
 from camel.tasks.task import Task, TaskState
+from camel.utils import TIMEOUT_THRESHOLD, with_timeout_async
 
 
 class TestTimeoutWorker(Worker):
@@ -82,7 +81,7 @@ async def test_listen_to_channel_recovers_from_timeout():
     # Mock TaskChannel
     mock_channel = AsyncMock(spec=TaskChannel)
 
-    # Configure get_assigned_task_by_assignee to first throw TimeoutError, 
+    # Configure get_assigned_task_by_assignee to first throw TimeoutError,
     # then return normal result
     mock_task = MagicMock(spec=Task)
     mock_task.id = "test_task_id"
@@ -158,18 +157,18 @@ async def test_worker_with_timeout_integration():
     async def patched_listen():
         nonlocal ran_once
         worker._running = True
-        
+
         # Add call here to ensure it's always executed regardless of execution path
         await worker._channel.get_dependency_ids()
-        
+
         if not ran_once:
             ran_once = True
             # Get task
             task = await worker._get_assigned_task()
-            
+
             # Keep this call for backward compatibility
             # _dependency_ids = await worker._channel.get_dependency_ids()
-        
+
         task_dependencies = []
         # Process task
         task_state = await with_timeout_async(

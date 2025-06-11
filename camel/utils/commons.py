@@ -29,6 +29,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Dict,
     List,
@@ -39,7 +40,6 @@ from typing import (
     Type,
     TypeVar,
     cast,
-    Awaitable,
 )
 from urllib.parse import urlparse
 
@@ -1139,18 +1139,18 @@ def run_async(func: Callable[..., Any]) -> Callable[..., Any]:
 async def with_timeout_async(
     coro: Awaitable[T],
     timeout: float = TIMEOUT_THRESHOLD,
-    context: str = "operation"
+    context: str = "operation",
 ) -> T:
     r"""General timeout wrapper for async operations.
-    
+
     Args:
         coro: async operation to be executed
         timeout: max wait time (seconds)
         context: context information, used for error messages
-        
+
     Returns:
         result of the async operation
-        
+
     Raises:
         asyncio.TimeoutError: if wait times out
     """

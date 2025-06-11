@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from camel.environments.models import Action, Observation, StepResult
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
-from camel.utils import with_timeout_async, TIMEOUT_THRESHOLD
+from camel.utils import with_timeout_async
 
 logger = get_logger(__name__)
 
