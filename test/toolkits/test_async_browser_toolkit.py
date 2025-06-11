@@ -34,8 +34,15 @@ class DummyMessage:
 
 
 class DummyResp:
-    def __init__(self, content):
-        self.msgs = [DummyMessage(content)]
+    def __init__(self, value):
+        self._value = value
+
+    def __str__(self):
+        return self._value
+
+    @property
+    def text(self):
+        return self._value
 
 
 @pytest_asyncio.fixture
@@ -148,11 +155,8 @@ async def test_async_browser_get_screenshot(async_base_browser_fixture):
 @pytest.mark.asyncio
 async def test_async_browser_toolkit_browse_url(async_browser_toolkit_fixture):
     toolkit = async_browser_toolkit_fixture
-
     toolkit.planning_agent.step = AsyncMock(
-        return_value=MagicMock(
-            spec_set=object, text="1. Restate the task\n2. Make a plan"
-        )
+        return_value=DummyResp("1. Restate the task\n2. Make a plan")
     )
 
     toolkit.browser.visit_page = AsyncMock()
