@@ -207,6 +207,7 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
     MISTRAL_MEDIUM_3 = "mistral-medium-latest"
+    MAGISTRAL_MEDIUM = "magistral-medium-2506"
 
     # Reka models
     REKA_CORE = "reka-core"
@@ -631,6 +632,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
             ModelType.MISTRAL_MEDIUM_3,
+            ModelType.MAGISTRAL_MEDIUM,
         }
 
     @property
@@ -1265,6 +1267,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
+        elif self in {
+            ModelType.MAGISTRAL_MEDIUM,
+        }:
+            return 40_000
+
         else:
             logger.warning(
                 f"Unknown model type {self}, set maximum token limit "
