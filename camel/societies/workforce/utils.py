@@ -11,14 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# Add logging import for content validation warnings
-import logging
 from functools import wraps
 from typing import Callable
 
 from pydantic import BaseModel, Field
 
-logger = logging.getLogger(__name__)
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class WorkerConf(BaseModel):
