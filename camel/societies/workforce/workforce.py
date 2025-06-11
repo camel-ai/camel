@@ -21,7 +21,7 @@ from typing import Deque, Dict, List, Optional
 
 from colorama import Fore
 
-from camel.agents import ChatAgent
+from camel.agents import ChatAgent, MCPAgent
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
@@ -41,7 +41,6 @@ from camel.societies.workforce.utils import (
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState
-from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required
 
@@ -58,7 +57,9 @@ class Workforce(BaseNode):
     - Coordinator Agent: Assigns tasks to workers based on their
       capabilities
     - Task Planner Agent: Decomposes complex tasks and composes results
-    - Dynamic Workers: Created at runtime when tasks fail repeatedly
+    - Dynamic Workers: Created at runtime when tasks fail repeatedly.
+      By default, these workers use MCPAgent for dynamic MCP server/tool
+      discovery based on task requirements.
 
     Args:
         description (str): Description of the workforce.
@@ -79,13 +80,11 @@ class Workforce(BaseNode):
             available parameters.
             (default: :obj:`None` - uses ModelPlatformType.DEFAULT,
             ModelType.DEFAULT)
-        new_worker_agent_kwargs (Optional[Dict], optional): Default keyword
-            arguments passed to :obj:`ChatAgent` constructor for workers
-            created dynamically at runtime when existing workers cannot handle
-            failed tasks. See :obj:`ChatAgent` documentation for all
-            available parameters.
-            (default: :obj:`None` - creates workers with SearchToolkit,
-            CodeExecutionToolkit, and ThinkingToolkit)
+        new_worker_agent_kwargs (Optional[Dict], optional): Keyword arguments
+            passed directly to the new worker agent constructor when creating
+            dynamic worker agents. Can include 'registry_configs' and 'model'
+            to override defaults. See :obj:`MCPAgent` documentation for all
+            available parameters. (default: :obj:`None`)
         graceful_shutdown_timeout (float, optional): The timeout in seconds
             for graceful shutdown when a task fails 3 times. During this
             period, the workforce remains active for debugging.
@@ -119,7 +118,7 @@ class Workforce(BaseNode):
         super().__init__(description)
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children or []
-        self.new_worker_agent_kwargs = new_worker_agent_kwargs
+        self.new_worker_agent_kwargs = new_worker_agent_kwargs or {}
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
 
         # Warning messages for default model usage
@@ -142,16 +141,6 @@ class Workforce(BaseNode):
                 "ChatAgent parameters, e.g.: {'model': your_model, "
                 "'token_limit': 16000}. See ChatAgent documentation for "
                 "all available options."
-            )
-        if new_worker_agent_kwargs is None:
-            logger.warning(
-                "No new_worker_agent_kwargs provided. Workers created at "
-                "runtime will use default ChatAgent settings with "
-                "SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. "
-                "To customize runtime worker creation, pass a dictionary "
-                "with ChatAgent parameters, e.g.: {'model': your_model, "
-                "'tools': your_tools}. See ChatAgent documentation for all "
-                "available options."
             )
 
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
@@ -413,28 +402,62 @@ class Workforce(BaseNode):
         return new_node
 
     def _create_new_agent(self, role: str, sys_msg: str) -> ChatAgent:
-        worker_sys_msg = BaseMessage.make_assistant_message(
+        r"""Creates a new agent (MCPAgent by default) for a given task with
+        dynamic MCP server/tool capabilities.
+
+        Args:
+            role (str): The role name for the agent.
+            sys_msg (str): The system message content for the agent.
+
+        Returns:
+            ChatAgent: The created agent (MCPAgent or ChatAgent based on
+                configuration).
+        """
+        # Get model from new_worker_agent_kwargs if provided, otherwise use
+        # default
+        model = self.new_worker_agent_kwargs.get('model')
+        if model is None:
+            # Default: Create MCPAgent with default model configuration for
+            # dynamic tool access
+            model = ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+                model_config_dict={"temperature": 0},
+            )
+
+        # Get registry_configs from new_worker_agent_kwargs if provided
+        registry_configs = self.new_worker_agent_kwargs.get('registry_configs')
+        if registry_configs is None:
+            return ChatAgent(
+                system_message=sys_msg,
+                model=model,
+            )
+
+        # Enhanced system message for MCP agent with task-aware capabilities
+        enhanced_sys_msg = "You have access to dynamic MCP (Model Context "
+        "Protocol) servers and tools that can be automatically discovered "
+        "and utilized based on the specific requirements of your tasks. "
+        "Use these tools effectively to provide comprehensive solutions"
+        f".\n\n{sys_msg}"
+
+        enhanced_worker_sys_msg = BaseMessage.make_assistant_message(
             role_name=role,
-            content=sys_msg,
+            content=enhanced_sys_msg,
         )
 
-        if self.new_worker_agent_kwargs is not None:
-            return ChatAgent(worker_sys_msg, **self.new_worker_agent_kwargs)
-
-        # Default tools for a new agent
-        function_list = [
-            SearchToolkit().search_duckduckgo,
-            *CodeExecutionToolkit().get_tools(),
-            *ThinkingToolkit().get_tools(),
-        ]
-
-        model = ModelFactory.create(
-            model_platform=ModelPlatformType.DEFAULT,
-            model_type=ModelType.DEFAULT,
-            model_config_dict={"temperature": 0},
+        # Create MCPAgent kwargs from new_worker_agent_kwargs
+        agent_kwargs = self.new_worker_agent_kwargs.copy()
+        agent_kwargs.update(
+            {
+                'system_message': enhanced_worker_sys_msg,
+                'registry_configs': registry_configs,
+                'model': model,
+            }
         )
 
-        return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
+        # Use MCPAgent to enable dynamic MCP server/tool discovery based on
+        # tasks
+        return MCPAgent(**agent_kwargs)
 
     async def _get_returned_task(self) -> Task:
         r"""Get the task that's published by this node and just get returned
