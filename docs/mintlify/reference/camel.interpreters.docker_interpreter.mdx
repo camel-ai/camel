@@ -71,12 +71,25 @@ def _create_file_in_container(self, content: str):
 def _run_file_in_container(self, file: Path, code_type: str):
 ```
 
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.cleanup"></a>
+
+### cleanup
+
+```python
+def cleanup(self):
+```
+
+Explicitly stops and removes the Docker container.
+
+This method should be called when you're done with the interpreter
+to ensure proper cleanup of Docker resources.
+
 <a id="camel.interpreters.docker_interpreter.DockerInterpreter.run"></a>
 
 ### run
 
 ```python
-def run(self, code: str, code_type: str):
+def run(self, code: str, code_type: str = 'python'):
 ```
 
 Executes the given code in the container attached to the
@@ -85,7 +98,7 @@ interpreter, and captures the stdout and stderr streams.
 **Parameters:**
 
 - **code** (str): The code string to execute.
-- **code_type** (str): The type of code to execute (e.g., 'python', 'bash').
+- **code_type** (str): The type of code to execute (e.g., 'python', 'bash'). (default: obj:`python`)
 
 **Returns:**
 
@@ -119,3 +132,22 @@ def update_action_space(self, action_space: Dict[str, Any]):
 ```
 
 Updates action space for *python* interpreter
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Executes a command in the Docker container and returns its output.
+
+**Parameters:**
+
+- **command** (str): The command to execute in the container.
+
+**Returns:**
+
+  str: A string containing the captured stdout and stderr of the
+executed command.
