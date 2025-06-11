@@ -31,7 +31,19 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
+    get_current_agent_session_id,
+    is_langfuse_available,
+    update_langfuse_trace,
 )
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
+
 
 logger = get_logger(__name__)
 
@@ -72,20 +84,37 @@ class OpenAICompatibleModel(BaseModelBackend):
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
-        self._client = OpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
-        )
+        if is_langfuse_available():
+            from langfuse.openai import AsyncOpenAI as LangfuseAsyncOpenAI
+            from langfuse.openai import OpenAI as LangfuseOpenAI
 
-        self._async_client = AsyncOpenAI(
-            timeout=self._timeout,
-            max_retries=3,
-            api_key=self._api_key,
-            base_url=self._url,
-        )
+            self._client = LangfuseOpenAI(
+                timeout=self._timeout,
+                max_retries=3,
+                base_url=self._url,
+                api_key=self._api_key,
+            )
+            self._async_client = LangfuseAsyncOpenAI(
+                timeout=self._timeout,
+                max_retries=3,
+                base_url=self._url,
+                api_key=self._api_key,
+            )
+        else:
+            self._client = OpenAI(
+                timeout=self._timeout,
+                max_retries=3,
+                base_url=self._url,
+                api_key=self._api_key,
+            )
+            self._async_client = AsyncOpenAI(
+                timeout=self._timeout,
+                max_retries=3,
+                base_url=self._url,
+                api_key=self._api_key,
+            )
 
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -107,14 +136,32 @@ class OpenAICompatibleModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
         if response_format:
-            return self._request_parse(messages, response_format, tools)
+            result: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
+                self._request_parse(messages, response_format, tools)
+            )
         else:
-            return self._request_chat_completion(messages, tools)
+            result = self._request_chat_completion(messages, tools)
 
+        return result
+
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -136,13 +183,30 @@ class OpenAICompatibleModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
         if response_format:
-            return await self._arequest_parse(messages, response_format, tools)
+            result: Union[
+                ChatCompletion, AsyncStream[ChatCompletionChunk]
+            ] = await self._arequest_parse(messages, response_format, tools)
         else:
-            return await self._arequest_chat_completion(messages, tools)
+            result = await self._arequest_chat_completion(messages, tools)
+
+        return result
 
     def _request_chat_completion(
         self,

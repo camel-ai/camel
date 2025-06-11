@@ -95,6 +95,15 @@ try:
 except (ImportError, AttributeError):
     from camel.utils import track_agent
 
+# Langfuse decorator setting
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
+
 
 SIMPLE_FORMAT_PROMPT = TextPrompt(
     textwrap.dedent(
@@ -730,6 +739,7 @@ class ChatAgent(BaseAgent):
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
 
+    @observe()
     def step(
         self,
         input_message: Union[BaseMessage, str],
@@ -751,6 +761,14 @@ class ChatAgent(BaseAgent):
             ChatAgentResponse: Contains output messages, a termination status
                 flag, and session information.
         """
+
+        # Set Langfuse session_id using agent_id for trace grouping
+        try:
+            from camel.utils.langfuse import set_current_agent_session_id
+
+            set_current_agent_session_id(self.agent_id)
+        except ImportError:
+            pass  # Langfuse not available
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
@@ -846,6 +864,7 @@ class ChatAgent(BaseAgent):
         openai_messages, _ = self.memory.get_context()
         return openai_messages
 
+    @observe()
     async def astep(
         self,
         input_message: Union[BaseMessage, str],
@@ -872,6 +891,13 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
+        try:
+            from camel.utils.langfuse import set_current_agent_session_id
+
+            set_current_agent_session_id(self.agent_id)
+        except ImportError:
+            pass  # Langfuse not available
+
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
                 role_name="User", content=input_message
@@ -1646,7 +1672,7 @@ class ChatAgent(BaseAgent):
         self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
-            timestamp=base_timestamp + 1e-9,
+            timestamp=base_timestamp + 1e-6,
         )
 
         # Record information about this tool call

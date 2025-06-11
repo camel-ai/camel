@@ -541,6 +541,7 @@
               "reference/camel.utils.commons",
               "reference/camel.utils.deduplication",
               "reference/camel.utils.filename",
+              "reference/camel.utils.langfuse",
               "reference/camel.utils.mcp",
               "reference/camel.utils.mcp_client",
               "reference/camel.utils.response_format",
