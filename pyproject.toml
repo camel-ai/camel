@@ -384,7 +384,7 @@ all = [
     "chunkr-ai>=0.0.50",
     "weaviate-client>=4.15.0",
     "python-pptx>=1.0.2",
-    "langfuse>=2.60.5"，
+    "langfuse>=2.60.5",
     "Flask>=2.0",
 ]
 
