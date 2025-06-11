@@ -13,6 +13,14 @@ from camel.messages import BaseMessage
 load_dotenv()
 set_log_level(level="DEBUG")
 
+# Get current script directory
+base_dir = os.path.dirname(os.path.abspath(__file__))
+# Define workspace directory for the toolkit
+workspace_dir = os.path.join(os.path.dirname(os.path.dirname(base_dir)), "workspace")
+
+# Ensure workspace directory exists
+os.makedirs(workspace_dir, exist_ok=True)
+
 # Initialize the language model (using OpenAI's GPT-4o)
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
@@ -20,16 +28,14 @@ model = ModelFactory.create(
     model_config_dict={"temperature": 0.0}
 )
 
-
-
 # Streamlit UI
 st.title("System Performance Monitor")
 
 if st.button("Run System Analysis"):
     with st.spinner("Gathering system metrics..."):
 
-        # Initialize the TerminalToolkit
-        terminal_toolkit = TerminalToolkit()
+        # Initialize the TerminalToolkit with workspace directory
+        terminal_toolkit = TerminalToolkit(working_dir=workspace_dir)
         # Create the System Monitor agent
         monitor_system_msg = BaseMessage.make_assistant_message(
             role_name="System Monitor",
@@ -44,7 +50,7 @@ if st.button("Run System Analysis"):
         # Prepare the user message to instruct the agent to gather system metrics
         monitor_input = BaseMessage.make_user_message(
             role_name="User",
-            content=f"Please gather system performance metrics such as disk usage.If it is not running then try different approach using terminal"
+            content=f"Please gather system performance metrics such as disk usage. If it is not running then try different approach using terminal"
         )
 
         # Run the System Monitor agent
@@ -71,7 +77,7 @@ if st.button("Run System Analysis"):
             content=monitor_output
         )
         analysis_response = analyst_agent.step(analysis_input)
-        analysis_output = analysis_response.msgs[-1].content if analysis_response.msgs else ""
+        analysis_output = analysis_response.msgs[0].content if analysis_response.msgs else ""
 
         st.subheader("System Analysis")
         st.write(analysis_output)
