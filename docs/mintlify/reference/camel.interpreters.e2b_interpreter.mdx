@@ -40,7 +40,7 @@ interpreter is deleted.
 ### run
 
 ```python
-def run(self, code: str, code_type: str):
+def run(self, code: str, code_type: str = 'python'):
 ```
 
 Executes the given code in the e2b sandbox.
@@ -48,7 +48,7 @@ Executes the given code in the e2b sandbox.
 **Parameters:**
 
 - **code** (str): The code string to execute.
-- **code_type** (str): The type of code to execute (e.g., 'python', 'bash').
+- **code_type** (str): The type of code to execute (e.g., 'python', 'bash'). (default: obj:`python`)
 
 **Returns:**
 
@@ -73,3 +73,22 @@ def update_action_space(self, action_space: Dict[str, Any]):
 ```
 
 Updates action space for *python* interpreter
+
+<a id="camel.interpreters.e2b_interpreter.E2BInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Execute a command can be used to resolve the dependency of the
+code.
+
+**Parameters:**
+
+- **command** (str): The command to execute.
+
+**Returns:**
+
+  str: The output of the command.

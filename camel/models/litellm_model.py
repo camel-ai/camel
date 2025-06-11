@@ -24,7 +24,18 @@ from camel.utils import (
     BaseTokenCounter,
     LiteLLMTokenCounter,
     dependencies_required,
+    get_current_agent_session_id,
+    update_current_observation,
+    update_langfuse_trace,
 )
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 
 class LiteLLMModel(BaseModelBackend):
@@ -117,6 +128,7 @@ class LiteLLMModel(BaseModelBackend):
     async def _arun(self) -> None:  # type: ignore[override]
         raise NotImplementedError
 
+    @observe(as_type='generation')
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -132,6 +144,28 @@ class LiteLLMModel(BaseModelBackend):
         Returns:
             ChatCompletion
         """
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "source": "camel",
+                    "agent_id": agent_session_id,
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         response = self.client(
             timeout=self._timeout,
             api_key=self._api_key,
@@ -141,6 +175,10 @@ class LiteLLMModel(BaseModelBackend):
             **self.model_config_dict,
         )
         response = self._convert_response_from_litellm_to_openai(response)
+
+        update_current_observation(
+            usage=response.usage,
+        )
         return response
 
     def check_model_config(self):

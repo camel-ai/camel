@@ -7,7 +7,7 @@
     "dark": "images/CAMEL_Icon_White.png",
     "href": "https://camel-ai.org "
   },
-  "favicon": "images/built_with_CAMEL.svg",
+  "favicon": "images/CAMEL_Icon.png",
   "colors": {
     "primary": "#5603fc",
     "light": "#5603fc",
@@ -202,6 +202,7 @@
               "reference/camel.configs.base_config",
               "reference/camel.configs.bedrock_config",
               "reference/camel.configs.cohere_config",
+              "reference/camel.configs.crynux_config",
               "reference/camel.configs.deepseek_config",
               "reference/camel.configs.gemini_config",
               "reference/camel.configs.groq_config",
@@ -280,6 +281,7 @@
               "reference/camel.models.base_audio_model",
               "reference/camel.models.base_model",
               "reference/camel.models.cohere_model",
+              "reference/camel.models.crynux_model",
               "reference/camel.models.deepseek_model",
               "reference/camel.models.fish_audio_model",
               "reference/camel.models.gemini_model",
@@ -422,7 +424,8 @@
               "reference/camel.storages.vectordb_storages.milvus",
               "reference/camel.storages.vectordb_storages.oceanbase",
               "reference/camel.storages.vectordb_storages.qdrant",
-              "reference/camel.storages.vectordb_storages.tidb"
+              "reference/camel.storages.vectordb_storages.tidb",
+              "reference/camel.storages.vectordb_storages.weaviate"
             ]
           },
           {
@@ -532,26 +535,13 @@
             ]
           },
           {
-            "group": "Runtime",
-            "pages": [
-              "reference/camel.runtime.base",
-              "reference/camel.runtime.configs",
-              "reference/camel.runtime.daytona_runtime",
-              "reference/camel.runtime.docker_runtime",
-              "reference/camel.runtime.llm_guard_runtime",
-              "reference/camel.runtime.remote_http_runtime",
-              "reference/camel.runtime.ubuntu_docker_runtime",
-              "reference/camel.runtime.utils.function_risk_toolkit",
-              "reference/camel.runtime.utils.ignore_risk_toolkit"
-            ]
-          },
-          {
             "group": "Utilities",
             "pages": [
               "reference/camel.utils.async_func",
               "reference/camel.utils.commons",
               "reference/camel.utils.deduplication",
               "reference/camel.utils.filename",
+              "reference/camel.utils.langfuse",
               "reference/camel.utils.mcp",
               "reference/camel.utils.mcp_client",
               "reference/camel.utils.response_format",
@@ -597,11 +587,11 @@
             ]
           },
           {
-            "group": "Data Collector",
+            "group": "Data Collectors",
             "pages": [
-              "reference/camel.data_collector.alpaca_collector",
-              "reference/camel.data_collector.base",
-              "reference/camel.data_collector.sharegpt_collector"
+              "reference/camel.data_collectors.alpaca_collector",
+              "reference/camel.data_collectors.base",
+              "reference/camel.data_collectors.sharegpt_collector"
             ]
           },
           {
@@ -626,6 +616,20 @@
               "reference/camel.loaders.pandas_reader",
               "reference/camel.loaders.scrapegraph_reader",
               "reference/camel.loaders.unstructured_io"
+            ]
+          },
+          {
+            "group": "Runtimes",
+            "pages": [
+              "reference/camel.runtimes.base",
+              "reference/camel.runtimes.configs",
+              "reference/camel.runtimes.daytona_runtime",
+              "reference/camel.runtimes.docker_runtime",
+              "reference/camel.runtimes.llm_guard_runtime",
+              "reference/camel.runtimes.remote_http_runtime",
+              "reference/camel.runtimes.ubuntu_docker_runtime",
+              "reference/camel.runtimes.utils.function_risk_toolkit",
+              "reference/camel.runtimes.utils.ignore_risk_toolkit"
             ]
           },
           {

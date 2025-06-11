@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import check_if_running
@@ -23,10 +23,14 @@ class BaseNode(ABC):
 
     Args:
         description (str): Description of the node.
+        node_id (Optional[str]): ID of the node. If not provided, it will
+            be generated automatically. (default: :obj:`None`)
     """
 
-    def __init__(self, description: str) -> None:
-        self.node_id = str(id(self))
+    def __init__(
+        self, description: str, node_id: Optional[str] = None
+    ) -> None:
+        self.node_id = node_id if node_id is not None else str(id(self))
         self.description = description
         self._channel: TaskChannel = TaskChannel()
         self._running = False
