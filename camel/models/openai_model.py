@@ -142,6 +142,7 @@ class OpenAIModel(BaseModelBackend):
             ModelType.O3_MINI,
             ModelType.O3,
             ModelType.O4_MINI,
+            ModelType.O3_PRO,
         ]:
             warnings.warn(
                 "Warning: You are using an reasoning model (O series), "
