@@ -14,6 +14,7 @@
 import io
 import os
 import shutil
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -148,12 +149,16 @@ async def test_async_browser_get_screenshot(async_base_browser_fixture):
 @pytest.mark.asyncio
 async def test_async_browser_toolkit_browse_url(async_browser_toolkit_fixture):
     toolkit = async_browser_toolkit_fixture
+
+    toolkit.planning_agent = SimpleNamespace()
     toolkit.planning_agent.step = MagicMock(
         return_value=DummyResp("1. Restate the task\n2. Make a plan")
     )
+
     toolkit.browser.visit_page = AsyncMock()
     toolkit.async_observe = AsyncMock(return_value=("obs", "reason", "stop()"))
     toolkit._get_final_answer = MagicMock(return_value="Task completed")
+
     result = await toolkit.browse_url(
         task_prompt="Test task", start_url=TEST_URL, round_limit=1
     )
