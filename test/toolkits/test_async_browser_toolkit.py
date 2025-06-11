@@ -20,6 +20,8 @@ import pytest
 import pytest_asyncio
 from PIL import Image
 
+from camel.messages import BaseMessage
+from camel.responses import ChatAgentResponse
 from camel.toolkits.async_browser_toolkit import (
     AsyncBaseBrowser,
     AsyncBrowserToolkit,
@@ -155,13 +157,35 @@ async def test_async_browser_get_screenshot(async_base_browser_fixture):
 @pytest.mark.asyncio
 async def test_async_browser_toolkit_browse_url(async_browser_toolkit_fixture):
     toolkit = async_browser_toolkit_fixture
-    toolkit.planning_agent.step = AsyncMock(
-        return_value=DummyResp("1. Restate the task\n2. Make a plan")
+    mock_response_plan = ChatAgentResponse(
+        msgs=[
+            BaseMessage(
+                role_name="assistant",
+                role_type="assistant",
+                meta_dict=None,
+                content="1. Restate the task\n2. Make a plan",
+            )
+        ],
+        terminated=False,
+        info={},
     )
-
+    mock_response_final = ChatAgentResponse(
+        msgs=[
+            BaseMessage(
+                role_name="assistant",
+                role_type="assistant",
+                meta_dict=None,
+                content="Task completed",
+            )
+        ],
+        terminated=False,
+        info={},
+    )
+    toolkit.planning_agent.astep = AsyncMock(
+        side_effect=[mock_response_plan, mock_response_final]
+    )
     toolkit.browser.visit_page = AsyncMock()
     toolkit.async_observe = AsyncMock(return_value=("obs", "reason", "stop()"))
-    toolkit._get_final_answer = MagicMock(return_value="Task completed")
 
     result = await toolkit.browse_url(
         task_prompt="Test task", start_url=TEST_URL, round_limit=1

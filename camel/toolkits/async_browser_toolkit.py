@@ -1045,7 +1045,7 @@ class AsyncBrowserToolkit(BaseToolkit):
         os.makedirs(self.browser.cache_dir, exist_ok=True)
 
     def _initialize_agent(self) -> Tuple["ChatAgent", "ChatAgent"]:
-        r"""Initialize the agent."""
+        r"""Initialize the planning and web agents."""
         from camel.agents.chat_agent import ChatAgent
 
         if self.web_agent_model is None:
@@ -1114,7 +1114,7 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         )
         # Reset the history message of web_agent.
         self.web_agent.reset()
-        resp = self.web_agent.step(message)
+        resp = await self.web_agent.astep(message)
 
         resp_content = resp.msgs[0].content
 
@@ -1250,41 +1250,27 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                 f"correct identifier.",
             )
 
-    def _get_final_answer(self, task_prompt: str) -> str:
-        r"""Get the final answer based on the task prompt and current browser
-        state. It is used when the agent thinks that the task can be completed
-        without any further action, and answer can be directly found in the
-        current viewport.
-        """
-
-        prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
-            history=self.history, task_prompt=task_prompt
+    async def _async_get_final_answer(self, task_prompt: str) -> str:
+        r"""Generate the final answer based on the task prompt."""
+        final_answer_prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.render(
+            task=task_prompt, history=self.history
         )
+        response = await self.planning_agent.astep(final_answer_prompt)
+        if response.msgs is None or len(response.msgs) == 0:
+            raise RuntimeError("Got empty final answer from planning agent.")
+        return response.msgs[0].content
 
-        message = BaseMessage.make_user_message(
-            role_name='user',
-            content=prompt,
+    async def _async_task_planning(
+        self, task_prompt: str, start_url: str
+    ) -> str:
+        r"""Generate a detailed plan for the given task."""
+        planning_prompt = TASK_PLANNING_PROMPT_TEMPLATE.render(
+            task=task_prompt, url=start_url
         )
-
-        resp = self.web_agent.step(message)
-        return resp.msgs[0].content
-
-    def _task_planning(self, task_prompt: str, start_url: str) -> str:
-        r"""Plan the task based on the given task prompt."""
-
-        # Here are the available browser functions we can
-        # use: {AVAILABLE_ACTIONS_PROMPT}
-
-        planning_prompt = TASK_PLANNING_PROMPT_TEMPLATE.format(
-            task_prompt=task_prompt, start_url=start_url
-        )
-
-        message = BaseMessage.make_user_message(
-            role_name='user', content=planning_prompt
-        )
-
-        resp = self.planning_agent.step(message)
-        return resp.msgs[0].content
+        response = await self.planning_agent.astep(planning_prompt)
+        if response.msgs is None or len(response.msgs) == 0:
+            raise RuntimeError("Got empty plan from planning agent.")
+        return response.msgs[0].content
 
     def _task_replanning(
         self, task_prompt: str, detailed_plan: str
@@ -1341,7 +1327,7 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         self._reset()
         task_completed = False
-        detailed_plan = self._task_planning(task_prompt, start_url)
+        detailed_plan = await self._async_task_planning(task_prompt, start_url)
         logger.debug(f"Detailed plan: {detailed_plan}")
 
         await self.browser.async_init()
@@ -1401,7 +1387,7 @@ Here is a plan about how to solve the task step-by-step which you must follow:
             """
 
         else:
-            simulation_result = self._get_final_answer(task_prompt)
+            simulation_result = await self._async_get_final_answer(task_prompt)
 
         await self.browser.close()
         return simulation_result
