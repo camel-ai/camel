@@ -38,6 +38,9 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    get_current_agent_session_id,
+    update_current_observation,
+    update_langfuse_trace,
 )
 
 try:
@@ -47,6 +50,14 @@ try:
         raise ImportError
 except (ImportError, AttributeError):
     LLMEvent = None
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 
 class SambaModel(BaseModelBackend):
@@ -161,6 +172,7 @@ class SambaModel(BaseModelBackend):
                 " SambaNova service"
             )
 
+    @observe(as_type="generation")
     async def _arun(  # type: ignore[misc]
         self,
         messages: List[OpenAIMessage],
@@ -178,13 +190,42 @@ class SambaModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "source": "camel",
+                    "agent_id": agent_session_id,
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         if "tools" in self.model_config_dict:
             del self.model_config_dict["tools"]
         if self.model_config_dict.get("stream") is True:
             return await self._arun_streaming(messages)
         else:
-            return await self._arun_non_streaming(messages)
+            response = await self._arun_non_streaming(messages)
+            update_current_observation(
+                usage=response.usage,
+            )
+            return response
 
+    @observe(as_type="generation")
     def _run(  # type: ignore[misc]
         self,
         messages: List[OpenAIMessage],
@@ -202,12 +243,38 @@ class SambaModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "source": "camel",
+                    "agent_id": agent_session_id,
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         if "tools" in self.model_config_dict:
             del self.model_config_dict["tools"]
         if self.model_config_dict.get("stream") is True:
             return self._run_streaming(messages)
         else:
-            return self._run_non_streaming(messages)
+            response = self._run_non_streaming(messages)
+            update_current_observation(
+                usage=response.usage,
+            )
+            return response
 
     def _run_streaming(
         self, messages: List[OpenAIMessage]

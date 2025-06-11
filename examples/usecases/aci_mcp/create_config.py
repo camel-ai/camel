@@ -25,6 +25,10 @@ def create_config():
     if not aci_api_key:
         raise ValueError("ACI_API_KEY environment variable is required")
 
+    linked_account_owner_id = os.getenv("LINKED_ACCOUNT_OWNER_ID")
+    if not linked_account_owner_id:
+        raise ValueError("LINKED_ACCOUNT_OWNER_ID environment variable is required")
+
     config = {
         "mcpServers": {
             "aci_apps": {
@@ -34,7 +38,7 @@ def create_config():
                     "apps-server",
                     "--apps=BRAVE_SEARCH,GITHUB,ARXIV",
                     "--linked-account-owner-id",
-                    "<YOUR_LINKED_ACCOUNT_ID>",
+                    linked_account_owner_id,
                 ],
                 "env": {"ACI_API_KEY": aci_api_key},
             }
