@@ -443,51 +443,7 @@ def _reset(self):
 def _initialize_agent(self):
 ```
 
-Initialize the agent.
-
-<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._get_final_answer"></a>
-
-### _get_final_answer
-
-```python
-def _get_final_answer(self, task_prompt: str):
-```
-
-Get the final answer based on the task prompt and current browser
-state. It is used when the agent thinks that the task can be completed
-without any further action, and answer can be directly found in the
-current viewport.
-
-<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._task_planning"></a>
-
-### _task_planning
-
-```python
-def _task_planning(self, task_prompt: str, start_url: str):
-```
-
-Plan the task based on the given task prompt.
-
-<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._task_replanning"></a>
-
-### _task_replanning
-
-```python
-def _task_replanning(self, task_prompt: str, detailed_plan: str):
-```
-
-Replan the task based on the given task prompt.
-
-**Parameters:**
-
-- **task_prompt** (str): The original task prompt.
-- **detailed_plan** (str): The detailed plan to replan.
-
-**Returns:**
-
-  Tuple[bool, str]: A tuple containing a boolean indicating
-whether the task needs to be replanned, and the replanned
-schema.
+Initialize the planning and web agents.
 
 <a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit.get_tools"></a>
 
