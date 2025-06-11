@@ -46,6 +46,15 @@ from .commons import (
 from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally
 from .filename import sanitize_filename
+from .langfuse import (
+    configure_langfuse,
+    get_current_agent_session_id,
+    get_langfuse_status,
+    is_langfuse_available,
+    observe,
+    update_current_observation,
+    update_langfuse_trace,
+)
 from .mcp import MCPServer
 from .response_format import get_pydantic_model, model_from_json_schema
 from .token_counting import (
@@ -101,4 +110,11 @@ __all__ = [
     "run_async",
     "with_timeout_async",
     "TIMEOUT_THRESHOLD",
+    "configure_langfuse",
+    "is_langfuse_available",
+    "get_current_agent_session_id",
+    "update_langfuse_trace",
+    "observe",
+    "update_current_observation",
+    "get_langfuse_status",
 ]

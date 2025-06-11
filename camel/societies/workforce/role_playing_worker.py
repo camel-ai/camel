@@ -50,7 +50,7 @@ class RolePlayingWorker(Worker):
             initialize the summarize agent, like the model name, etc.
             (default: :obj:`None`)
         chat_turn_limit (int): The maximum number of chat turns in the role
-            playing. (default: :obj:`3`)
+            playing. (default: :obj:`20`)
     """
 
     def __init__(
@@ -61,7 +61,7 @@ class RolePlayingWorker(Worker):
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
         summarize_agent_kwargs: Optional[Dict] = None,
-        chat_turn_limit: int = 3,
+        chat_turn_limit: int = 20,
     ) -> None:
         super().__init__(description)
         self.summarize_agent_kwargs = summarize_agent_kwargs

@@ -39,7 +39,7 @@ def __init__(
 ### execute_code
 
 ```python
-def execute_code(self, code: str):
+def execute_code(self, code: str, code_type: str = 'python'):
 ```
 
 Execute a given code snippet.
@@ -47,10 +47,30 @@ Execute a given code snippet.
 **Parameters:**
 
 - **code** (str): The input code to the Code Interpreter tool call.
+- **code_type** (str): The type of the code to be executed (e.g. node.js, python, etc). (default: obj:`python`)
 
 **Returns:**
 
   str: The text output from the Code Interpreter tool call.
+
+<a id="camel.toolkits.code_execution.CodeExecutionToolkit.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Execute a command can be used to resolve the dependency of the
+code.
+
+**Parameters:**
+
+- **command** (str): The command to execute.
+
+**Returns:**
+
+  Union[str, tuple[str, str]]: The output of the command.
 
 <a id="camel.toolkits.code_execution.CodeExecutionToolkit.get_tools"></a>
 
