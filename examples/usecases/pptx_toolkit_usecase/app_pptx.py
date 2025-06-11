@@ -94,7 +94,6 @@ def pptx_prompt(topic: str, slide_count: int) -> str:
     r"""Create a prompt for structured output generation"""
     return f"""
 Create a presentation about "{topic}" with exactly {slide_count + 1} slides total (1 title slide + {slide_count} content slides).
-
 Requirements:
 1. First slide must be a title slide with appropriate title and subtitle
 2. Include at least one step-by-step slide (bullet points starting with ">>")
@@ -102,7 +101,6 @@ Requirements:
 4. At least TWO content slides must have meaningful img_keywords for visual content
 5. Use Markdown formatting (**bold**, *italic*) in bullet points
 6. Make content clear, concise, and engaging for the topic "{topic}"
-
 The presentation should cover key aspects of {topic}, including practical information, processes, and relevant data.
 """
 
@@ -126,20 +124,20 @@ def generate_pptx_json_with_agent(topic: str, slide_count: int, api_key: str):
     # 3. Call the agent with our instruction prompt
     try:
         response = agent.step(full_prompt,response_format=PresentationSlides)
-        
+
         # Parse JSON string into Pydantic object
         json_content = response.msgs[0].content
         presentation_data = PresentationSlides.model_validate_json(json_content)
-        
+
         # Convert to the expected JSON format
         slides_json = []
-        
+
         # Add title slide
         slides_json.append({
             "title": presentation_data.title_slide.title,
             "subtitle": presentation_data.title_slide.subtitle
         })
-        
+
         # Add content slides
         for slide in presentation_data.content_slides:
             if isinstance(slide, BulletSlide):
@@ -157,9 +155,9 @@ def generate_pptx_json_with_agent(topic: str, slide_count: int, api_key: str):
                     },
                     "img_keywords": slide.img_keywords or ""
                 })
-        
+
         return slides_json, None
-        
+
     except Exception as e:
         return None, f"❌ Structured output generation failed: {e}"
 
