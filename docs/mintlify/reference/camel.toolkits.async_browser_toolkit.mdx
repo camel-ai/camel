@@ -37,7 +37,8 @@ def __init__(
     headless = True,
     cache_dir: Optional[str] = None,
     channel: Literal['chrome', 'msedge', 'chromium'] = 'chromium',
-    cookie_json_path: Optional[str] = None
+    cookie_json_path: Optional[str] = None,
+    user_data_dir: Optional[str] = None
 ):
 ```
 
@@ -48,7 +49,8 @@ Initialize the asynchronous browser core.
 - **headless** (bool): Whether to run the browser in headless mode.
 - **cache_dir** (Union[str, None]): The directory to store cache files.
 - **channel** (`Literal["chrome", "msedge", "chromium"]`): The browser channel to use. Must be one of "chrome", "msedge", or "chromium".
-- **cookie_json_path** (Optional[str]): Path to a JSON file containing authentication cookies and browser storage state. If provided and the file exists, the browser will load this state to maintain authenticated sessions without requiring manual login.
+- **cookie_json_path** (Optional[str]): Path to a JSON file containing authentication cookies and browser storage state. If provided and the file exists, the browser will load this state to maintain authenticated sessions. This is primarily used when `user_data_dir` is not set.
+- **user_data_dir** (Optional[str]): The directory to store user data for persistent context. If None, a fresh browser instance is used without saving data. (default: :obj:`None`)
 
 **Returns:**
 
@@ -406,7 +408,8 @@ def __init__(
     web_agent_model: Optional[BaseModelBackend] = None,
     planning_agent_model: Optional[BaseModelBackend] = None,
     output_language: str = 'en',
-    cookie_json_path: Optional[str] = None
+    cookie_json_path: Optional[str] = None,
+    user_data_dir: Optional[str] = None
 ):
 ```
 
@@ -422,6 +425,7 @@ Initialize the BrowserToolkit instance.
 - **planning_agent_model** (Optional[BaseModelBackend]): The model backend for the planning agent.
 - **output_language** (str): The language to use for output. (default: :obj:`"en`")
 - **cookie_json_path** (Optional[str]): Path to a JSON file containing authentication cookies and browser storage state. If provided and the file exists, the browser will load this state to maintain authenticated sessions without requiring manual login. (default: :obj:`None`)
+- **user_data_dir** (Optional[str]): The directory to store user data for persistent context. (default: :obj:`"user_data_dir/"`)
 
 <a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._reset"></a>
 
