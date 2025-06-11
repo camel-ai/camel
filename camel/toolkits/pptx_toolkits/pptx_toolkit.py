@@ -13,11 +13,20 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
+import glob
 import os
 import random
 import re
+from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+
+import numpy as np
+import pptx
+import requests
+from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE
+from pptx.util import Inches, Pt
+from sentence_transformers import SentenceTransformer
 
 if TYPE_CHECKING:
     from pptx import presentation
@@ -35,10 +44,14 @@ logger = get_logger(__name__)
 EMU_TO_INCH_SCALING_FACTOR = 1.0 / 914400
 
 STEP_BY_STEP_PROCESS_MARKER = '>> '
+ICON_BEGINNING_MARKER = '[['
+ICON_END_MARKER = ']]'
 
-IMAGE_DISPLAY_PROBABILITY = 1 / 3.0
+ICON_SIZE = Inches(0.8)
+ICON_BG_SIZE = Inches(1)
 
 SLIDE_NUMBER_REGEX = re.compile(r"^slide[ ]+\d+:", re.IGNORECASE)
+ICONS_REGEX = re.compile(r"\[\[(.*?)\]\]\s*(.*)")
 BOLD_ITALICS_PATTERN = re.compile(r'(\*\*(.*?)\*\*|\*(.*?)\*)')
 
 
@@ -70,6 +83,52 @@ class PPTXToolkit(BaseToolkit):
         logger.info(
             f"PPTXToolkit initialized with output directory: {self.output_dir}"
         )
+        # For semantic search over local PNG icons
+        self._png_icon_dir = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), './png128')
+        )
+        self._png_icon_index = None  # List of (icon_name, full_path)
+        self._png_icon_embeddings = None
+        self._png_icon_model = None
+
+    def _build_png_icon_index(self):
+        r"""Build index and embeddings for all PNG icons in the icon
+        directory."""
+        if (
+            self._png_icon_index is not None
+            and self._png_icon_embeddings is not None
+        ):
+            return
+        icon_files = glob.glob(os.path.join(self._png_icon_dir, '*.png'))
+        icon_names = [
+            os.path.splitext(os.path.basename(f))[0] for f in icon_files
+        ]
+        self._png_icon_index = list(zip(icon_names, icon_files))
+        # Use a sentence transformer for semantic search
+        if self._png_icon_model is None:
+            self._png_icon_model = SentenceTransformer('all-MiniLM-L6-v2')
+        self._png_icon_embeddings = self._png_icon_model.encode(icon_names)
+
+    def _find_closest_png_icon(
+        self, query: str, threshold: float = 0.5
+    ) -> Optional[str]:
+        r"""Find the closest matching PNG icon using semantic search.
+        Returns the file path or None."""
+        self._build_png_icon_index()
+        if not self._png_icon_index or not self._png_icon_embeddings:
+            return None
+        # Ensure _png_icon_embeddings is a numpy array for mypy
+        png_icon_embeddings = self._png_icon_embeddings  # type: ignore[assignment]
+        icon_names, icon_files = zip(*self._png_icon_index)
+        query_emb = self._png_icon_model.encode([query])[0]
+        similarities = np.dot(png_icon_embeddings, query_emb) / (
+            np.linalg.norm(png_icon_embeddings, axis=1)
+            * np.linalg.norm(query_emb)
+        )
+        best_idx = int(np.argmax(similarities))
+        if similarities[best_idx] >= threshold:
+            return icon_files[best_idx]
+        return None
 
     def _resolve_filepath(self, file_path: str) -> Path:
         r"""Convert the given string path to a Path object.
@@ -316,47 +375,34 @@ class PPTXToolkit(BaseToolkit):
 
                 # Handle different slide types
                 if 'table' in slide_data:
-                    bullet_slide_layout = presentation.slide_layouts[1]
-                    slide = presentation.slides.add_slide(bullet_slide_layout)
                     self._handle_table(
-                        slide,
+                        presentation,
                         slide_data,
                     )
                 elif 'bullet_points' in slide_data:
                     if any(
-                        step.startswith(STEP_BY_STEP_PROCESS_MARKER)
+                        step.startswith(ICON_BEGINNING_MARKER)
                         for step in slide_data['bullet_points']
                     ):
-                        bullet_slide_layout = presentation.slide_layouts[1]
-                        slide = presentation.slides.add_slide(
-                            bullet_slide_layout
-                        )
-                        self._handle_step_by_step_process(
-                            slide,
+                        self._handle_icons_ideas(
+                            presentation,
                             slide_data,
                             slide_width_inch,
                             slide_height_inch,
                         )
-
-                    else:
-                        status = False
-                        if 'img_keywords' in slide_data:
-                            if random.random() < IMAGE_DISPLAY_PROBABILITY:
-                                status = (
-                                    self._handle_display_image__in_foreground(
-                                        presentation,
-                                        slide_data,
-                                    )
-                                )
-                        if status:
-                            return
-
-                        bullet_slide_layout = presentation.slide_layouts[1]
-                        slide = presentation.slides.add_slide(
-                            bullet_slide_layout
+                    elif any(
+                        step.startswith(STEP_BY_STEP_PROCESS_MARKER)
+                        for step in slide_data['bullet_points']
+                    ):
+                        self._handle_step_by_step_process(
+                            presentation,
+                            slide_data,
+                            slide_width_inch,
+                            slide_height_inch,
                         )
+                    else:
                         self._handle_default_display(
-                            slide,
+                            presentation,
                             slide_data,
                         )
 
@@ -473,7 +519,7 @@ class PPTXToolkit(BaseToolkit):
 
     def _handle_default_display(
         self,
-        slide: "Slide",
+        presentation: "presentation.Presentation",
         slide_json: Dict[str, Any],
     ) -> None:
         r"""Display a list of text in a slide.
@@ -482,6 +528,17 @@ class PPTXToolkit(BaseToolkit):
             presentation (presentation.Presentation): The presentation object.
             slide_json (Dict[str, Any]): The content of the slide as JSON data.
         """
+        if 'img_keywords' in slide_json:
+            if self._handle_display_image__in_foreground(
+                presentation,
+                slide_json,
+            ):
+                return
+
+        # Image display failed, so display only text
+        bullet_slide_layout = presentation.slide_layouts[1]
+        slide = presentation.slides.add_slide(bullet_slide_layout)
+
         shapes = slide.shapes
         title_shape = shapes.title
 
@@ -492,10 +549,9 @@ class PPTXToolkit(BaseToolkit):
             placeholders = self._get_slide_placeholders(slide)
             body_shape = shapes.placeholders[placeholders[0][0]]
 
-        if title_shape is not None:
-            title_shape.text = self._remove_slide_number_from_heading(
-                slide_json['heading']
-            )
+        title_shape.text = self._remove_slide_number_from_heading(
+            slide_json['heading']
+        )
         text_frame = body_shape.text_frame
 
         flat_items_list = self._get_flat_list_of_contents(
@@ -523,9 +579,6 @@ class PPTXToolkit(BaseToolkit):
         Returns:
             bool: True if the slide has been processed.
         """
-        from io import BytesIO
-
-        import requests
 
         img_keywords = slide_json.get('img_keywords', '').strip()
         slide = presentation.slide_layouts[8]  # Picture with Caption
@@ -625,7 +678,7 @@ class PPTXToolkit(BaseToolkit):
 
     def _handle_table(
         self,
-        slide: "Slide",
+        presentation: "presentation.Presentation",
         slide_json: Dict[str, Any],
     ) -> None:
         r"""Add a table to a slide.
@@ -636,11 +689,12 @@ class PPTXToolkit(BaseToolkit):
         """
         headers = slide_json['table'].get('headers', [])
         rows = slide_json['table'].get('rows', [])
+        bullet_slide_layout = presentation.slide_layouts[1]
+        slide = presentation.slides.add_slide(bullet_slide_layout)
         shapes = slide.shapes
-        if shapes.title is not None:
-            shapes.title.text = self._remove_slide_number_from_heading(
-                slide_json['heading']
-            )
+        shapes.title.text = self._remove_slide_number_from_heading(
+            slide_json['heading']
+        )
         left = slide.placeholders[1].left
         top = slide.placeholders[1].top
         width = slide.placeholders[1].width
@@ -661,7 +715,7 @@ class PPTXToolkit(BaseToolkit):
 
     def _handle_step_by_step_process(
         self,
-        slide: "Slide",
+        presentation: "presentation.Presentation",
         slide_json: Dict[str, Any],
         slide_width_inch: float,
         slide_height_inch: float,
@@ -675,16 +729,17 @@ class PPTXToolkit(BaseToolkit):
             slide_height_inch (float): The height of the slide in inches.
         """
         import pptx
-        from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE
-        from pptx.util import Inches, Pt
+        from pptx.util import Inches
 
         steps = slide_json['bullet_points']
         n_steps = len(steps)
+
+        bullet_slide_layout = presentation.slide_layouts[1]
+        slide = presentation.slides.add_slide(bullet_slide_layout)
         shapes = slide.shapes
-        if shapes.title is not None:
-            shapes.title.text = self._remove_slide_number_from_heading(
-                slide_json['heading']
-            )
+        shapes.title.text = self._remove_slide_number_from_heading(
+            slide_json['heading']
+        )
 
         if 3 <= n_steps <= 4:
             # Horizontal display
@@ -733,6 +788,117 @@ class PPTXToolkit(BaseToolkit):
                     run.font.size = Pt(14)
                 top = Inches(top.inches + height.inches + Inches(0.3).inches)
                 left = Inches(left.inches + Inches(0.5).inches)
+
+    def _handle_icons_ideas(
+        self,
+        presentation: "presentation.Presentation",
+        slide_json: Dict[str, Any],
+        slide_width_inch: float,
+        slide_height_inch: float,
+    ) -> bool:
+        r"""Add a slide with some icons and text.
+        Uses semantic search to find the closest PNG icon from
+        examples/toolkits/png128. If not found, falls back to first letter.
+        """
+        import os
+
+        from pptx.dml.color import RGBColor
+        from pptx.enum import dml
+        from pptx.util import Inches
+
+        if slide_json.get('bullet_points'):
+            items = slide_json['bullet_points']
+            for step in items:
+                if not isinstance(step, str) or not step.startswith(
+                    ICON_BEGINNING_MARKER
+                ):
+                    return False
+            slide_layout = presentation.slide_layouts[5]
+            slide = presentation.slides.add_slide(slide_layout)
+            slide.shapes.title.text = self._remove_slide_number_from_heading(
+                slide_json['heading']
+            )
+            n_items = len(items)
+            text_box_size = Inches(2)
+            total_width = n_items * ICON_SIZE
+            spacing = (Inches(slide_width_inch) - total_width) / (n_items + 1)
+            top = Inches(3)
+            icons_texts = []
+            for item in items:
+                match = ICONS_REGEX.search(item)
+                if match is not None:
+                    icons_texts.append((match.group(1), match.group(2)))
+                else:
+                    icons_texts.append(("", ""))
+            for idx, item in enumerate(icons_texts):
+                icon_query, accompanying_text = item
+                left = spacing + idx * (ICON_SIZE + spacing)
+                center = left + ICON_SIZE / 2
+                shape = slide.shapes.add_shape(
+                    MSO_AUTO_SHAPE_TYPE.ROUNDED_RECTANGLE,
+                    center - Inches(0.5),
+                    top - (ICON_BG_SIZE - ICON_SIZE) / 2,
+                    ICON_BG_SIZE,
+                    ICON_BG_SIZE,
+                )
+                shape.fill.solid()
+                shape.shadow.inherit = False
+                # Use a random color for each icon background
+                r = random.randint(0, 255)
+                g = random.randint(0, 255)
+                b = random.randint(0, 255)
+                color = RGBColor(r, g, b)
+                shape.fill.fore_color.rgb = shape.line.color.rgb = color
+                # Semantic search for PNG icon
+                icon_path = self._find_closest_png_icon(icon_query)
+                inserted_icon = False
+                if icon_path and os.path.exists(icon_path):
+                    try:
+                        slide.shapes.add_picture(
+                            icon_path, left, top, height=ICON_SIZE
+                        )
+                        inserted_icon = True
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to insert PNG icon '{icon_query}': {e!s}"
+                        )
+                        inserted_icon = False
+                if not inserted_icon:
+                    text_frame = shape.text_frame
+                    text_frame.word_wrap = True
+                    text_frame.paragraphs[
+                        0
+                    ].alignment = pptx.enum.text.PP_ALIGN.CENTER
+                    text_frame.vertical_anchor = (
+                        pptx.enum.text.MSO_ANCHOR.MIDDLE
+                    )
+                    run = text_frame.paragraphs[0].add_run()
+                    run.text = icon_query[0].upper()
+                    run.font.size = Pt(24)
+                    run.font.bold = True
+                    run.font.color.rgb = RGBColor(255, 255, 255)
+                text_box = slide.shapes.add_shape(
+                    MSO_AUTO_SHAPE_TYPE.ROUNDED_RECTANGLE,
+                    left=center - text_box_size / 2,
+                    top=top + ICON_SIZE + Inches(0.2),
+                    width=text_box_size,
+                    height=text_box_size,
+                )
+                text_frame = text_box.text_frame
+                text_frame.word_wrap = True
+                text_frame.paragraphs[
+                    0
+                ].alignment = pptx.enum.text.PP_ALIGN.CENTER
+                self._format_text(text_frame.paragraphs[0], accompanying_text)
+                text_frame.vertical_anchor = pptx.enum.text.MSO_ANCHOR.MIDDLE
+                text_box.fill.background()
+                text_box.line.fill.background()
+                text_box.shadow.inherit = False
+                for paragraph in text_frame.paragraphs:
+                    for run in paragraph.runs:
+                        run.font.color.theme_color = dml.MSO_THEME_COLOR.TEXT_2
+            return True
+        return False
 
     def _remove_slide_number_from_heading(self, header: str) -> str:
         r"""Remove the slide number from a given slide header.
@@ -861,45 +1027,21 @@ class PPTXToolkit(BaseToolkit):
             for slide_data in parsed_content:
                 if not isinstance(slide_data, dict):
                     continue
-
-                # Handle different slide types
                 if 'table' in slide_data:
-                    bullet_slide_layout = presentation.slide_layouts[1]
-                    slide = presentation.slides.add_slide(bullet_slide_layout)
-                    self._handle_table(slide, slide_data)
+                    self._handle_table(presentation, slide_data)
                 elif 'bullet_points' in slide_data:
                     if any(
                         step.startswith(STEP_BY_STEP_PROCESS_MARKER)
                         for step in slide_data['bullet_points']
                     ):
-                        bullet_slide_layout = presentation.slide_layouts[1]
-                        slide = presentation.slides.add_slide(
-                            bullet_slide_layout
-                        )
                         self._handle_step_by_step_process(
-                            slide,
+                            presentation,
                             slide_data,
                             slide_width_inch,
                             slide_height_inch,
                         )
                     else:
-                        status = False
-                        if 'img_keywords' in slide_data:
-                            if random.random() < IMAGE_DISPLAY_PROBABILITY:
-                                status = (
-                                    self._handle_display_image__in_foreground(
-                                        presentation,
-                                        slide_data,
-                                    )
-                                )
-                        if status:
-                            continue
-
-                        bullet_slide_layout = presentation.slide_layouts[1]
-                        slide = presentation.slides.add_slide(
-                            bullet_slide_layout
-                        )
-                        self._handle_default_display(slide, slide_data)
+                        self._handle_default_display(presentation, slide_data)
 
             # Save the presentation
             presentation.save(str(resolved_path))
