@@ -59,6 +59,7 @@ async def dummy_playwright_setup():
     dummy_instance.chromium.launch_persistent_context = AsyncMock(
         return_value=dummy_context
     )
+    dummy_instance.stop = AsyncMock()
 
     dummy_browser.new_context = AsyncMock(return_value=dummy_context)
     dummy_browser.close = AsyncMock()

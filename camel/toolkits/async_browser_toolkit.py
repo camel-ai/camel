@@ -1252,8 +1252,8 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
     async def _async_get_final_answer(self, task_prompt: str) -> str:
         r"""Generate the final answer based on the task prompt."""
-        final_answer_prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.render(
-            task=task_prompt, history=self.history
+        final_answer_prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
+            task_prompt=task_prompt, history=self.history
         )
         response = await self.planning_agent.astep(final_answer_prompt)
         if response.msgs is None or len(response.msgs) == 0:
@@ -1264,15 +1264,15 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         self, task_prompt: str, start_url: str
     ) -> str:
         r"""Generate a detailed plan for the given task."""
-        planning_prompt = TASK_PLANNING_PROMPT_TEMPLATE.render(
-            task=task_prompt, url=start_url
+        planning_prompt = TASK_PLANNING_PROMPT_TEMPLATE.format(
+            task_prompt=task_prompt, start_url=start_url
         )
         response = await self.planning_agent.astep(planning_prompt)
         if response.msgs is None or len(response.msgs) == 0:
             raise RuntimeError("Got empty plan from planning agent.")
         return response.msgs[0].content
 
-    def _task_replanning(
+    async def _async_task_replanning(
         self, task_prompt: str, detailed_plan: str
     ) -> Tuple[bool, str]:
         r"""Replan the task based on the given task prompt.
@@ -1292,12 +1292,11 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         replanning_prompt = TASK_REPLANNING_PROMPT_TEMPLATE.format(
             task_prompt=task_prompt,
             detailed_plan=detailed_plan,
-            history_window=self.history_window,
             history=self.history[-self.history_window :],
         )
         # Reset the history message of planning_agent.
         self.planning_agent.reset()
-        resp = self.planning_agent.step(replanning_prompt)
+        resp = await self.planning_agent.astep(replanning_prompt)
         resp_dict = _parse_json_output(resp.msgs[0].content, logger)
 
         if_need_replan = resp_dict.get("if_need_replan", False)
@@ -1371,7 +1370,11 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                 self.history.append(trajectory_info)
 
                 # replan the task if necessary
-                if_need_replan, replanned_schema = self._task_replanning(
+                (
+                    if_need_replan,
+                    replanned_schema,
+                    # ruff: noqa: E501
+                ) = await self._async_task_replanning(
                     task_prompt, detailed_plan
                 )
                 if if_need_replan:
