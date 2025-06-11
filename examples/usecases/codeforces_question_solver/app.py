@@ -1,18 +1,3 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-
 import os
 import re
 import streamlit as st
@@ -26,17 +11,7 @@ from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.toolkits import CodeExecutionToolkit, MathToolkit
 from camel.types import ModelPlatformType, ModelType
-
-# Try to import Firecrawl
-try:
-    from camel.loaders import Firecrawl
-    FIRECRAWL_AVAILABLE = True
-except ImportError:
-    try:
-        from firecrawl import FirecrawlApp
-        FIRECRAWL_AVAILABLE = True
-    except ImportError:
-        FIRECRAWL_AVAILABLE = False
+from camel.loaders import Firecrawl
 
 load_dotenv()
 
@@ -44,9 +19,6 @@ class ProblemSolver:
     """Main problem solver with CAMEL agents"""
     
     def __init__(self):
-        if not FIRECRAWL_AVAILABLE:
-            raise ImportError("Firecrawl not available")
-        
         # Initialize model
         self.model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
@@ -67,15 +39,7 @@ class ProblemSolver:
         )
         
         # Initialize Firecrawl
-        try:
-            self.firecrawl = Firecrawl()
-            self.use_camel_firecrawl = True
-        except:
-            api_key = os.getenv("FIRECRAWL_API_KEY")
-            if not api_key:
-                raise ValueError("FIRECRAWL_API_KEY required")
-            self.firecrawl = FirecrawlApp(api_key=api_key)
-            self.use_camel_firecrawl = False
+        self.firecrawl = Firecrawl()
     
     def _get_system_message(self):
         return """You are an expert competitive programming solver.
@@ -96,14 +60,10 @@ class ProblemSolver:
     def fetch_content(self, url: str) -> str:
         """Fetch content from URL"""
         try:
-            if self.use_camel_firecrawl:
-                result = self.firecrawl.scrape(url, params={'formats': ['markdown']})
-                if isinstance(result, dict):
-                    return result.get('markdown', result.get('content', ''))
-                return str(result)
-            else:
-                result = self.firecrawl.scrape_url(url, params={'formats': ['markdown']})
-                return result.get("markdown", "")
+            result = self.firecrawl.scrape(url, params={'formats': ['markdown']})
+            if isinstance(result, dict):
+                return result.get('markdown', result.get('content', ''))
+            return str(result)
         except Exception as e:
             raise Exception(f"Failed to fetch content: {str(e)}")
     
