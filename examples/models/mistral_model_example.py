@@ -32,7 +32,7 @@ model = ModelFactory.create(
 sys_msg = "You are a helpful assistant."
 
 # Set agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model)
+camel_agent = ChatAgent(system_message=sys_msg, model=model, max_iteration=None)
 
 user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
     study of autonomous and communicative agents."""
@@ -54,7 +54,7 @@ model = ModelFactory.create(
 )
 
 # Set agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model)
+camel_agent = ChatAgent(system_message=sys_msg, model=model, max_iteration=None)
 
 # URL of the image
 url = "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png"
@@ -87,7 +87,7 @@ model = ModelFactory.create(
 sys_msg = "You are a helpful assistant."
 
 # Set agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model)
+camel_agent = ChatAgent(system_message=sys_msg, model=model, max_iteration=None)
 
 user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
     study of autonomous and communicative agents."""

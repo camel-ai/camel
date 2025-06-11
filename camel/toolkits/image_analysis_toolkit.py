@@ -182,6 +182,7 @@ class ImageAnalysisToolkit(BaseToolkit):
             agent = ChatAgent(
                 system_message=system_message,
                 model=self.model,
+                max_iteration=None,
             )
 
             user_msg = BaseMessage.make_user_message(

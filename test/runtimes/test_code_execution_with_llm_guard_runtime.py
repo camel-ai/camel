@@ -58,6 +58,7 @@ def test_code_execution_with_llm_guard_runtime():
         assistant_sys_msg,
         model,
         tools=tools,
+        max_iteration=None,
     )
     agent.reset()
 
