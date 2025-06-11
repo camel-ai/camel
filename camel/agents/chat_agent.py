@@ -1093,7 +1093,7 @@ class ChatAgent(BaseAgent):
             set_current_agent_session_id(self.agent_id)
         except ImportError:
             pass  # Langfuse not available
-        
+
         stream = self.model_backend.model_config_dict.get("stream", False)
         if stream:
             # Return wrapped async generator that is awaitable
