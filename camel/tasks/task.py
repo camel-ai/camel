@@ -106,6 +106,14 @@ class Task(BaseModel):
 
     additional_info: Optional[Dict[str, Any]] = None
 
+    def __repr__(self) -> str:
+        r"""Return a string representation of the task."""
+        content_preview = self.content
+        return (
+            f"Task(id='{self.id}', content='{content_preview}', "
+            f"state='{self.state.value}')"
+        )
+
     @classmethod
     def from_message(cls, message: BaseMessage) -> "Task":
         r"""Create a task from a message.
