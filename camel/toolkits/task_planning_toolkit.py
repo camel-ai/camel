@@ -40,6 +40,7 @@ class TaskPlanningToolkit(BaseToolkit):
         self,
         original_task_content: str,
         sub_task_contents: List[str],
+        original_task_id: Optional[str] = None,
     ) -> List[Task]:
         r"""Use the tool to decompose an original task into several sub-tasks.
         It creates new Task objects from the provided original task content,
@@ -50,13 +51,17 @@ class TaskPlanningToolkit(BaseToolkit):
                 decomposed.
             sub_task_contents (List[str]): A list of strings, where each
                 string is the content for a new sub-task.
+            original_task_id (Optional[str]): The id of the task to be
+                decomposed. If not provided, a new id will be generated.
+                (default: :obj: `None`)
 
         Returns:
             List[Task]: A list of newly created sub-task objects.
         """
         # Create the original task object from its content
         original_task = Task(
-            content=original_task_content, id=str(uuid.uuid4())
+            content=original_task_content,
+            id=original_task_id if original_task_id else str(uuid.uuid4()),
         )
 
         new_tasks: List[Task] = []
@@ -79,9 +84,9 @@ class TaskPlanningToolkit(BaseToolkit):
 
     def replan_tasks(
         self,
-        original_task_id: str,
         original_task_content: str,
         sub_task_contents: List[str],
+        original_task_id: Optional[str] = None,
     ) -> List[Task]:
         r"""Use the tool to re_decompose a task into several subTasks.
         It creates new Task objects from the provided original task content,
@@ -89,17 +94,19 @@ class TaskPlanningToolkit(BaseToolkit):
         the task.
 
         Args:
-            original_task_id: The id of the task to be decomposed
             original_task_content (str): The content of the task to be
                 decomposed.
             sub_task_contents (List[str]): A list of strings, where each
                 string is the content for a new sub-task.
+            original_task_id (Optional[str]): The id of the task to be
+                decomposed. (default: :obj: `None`)
 
         Returns:
             List[Task]: Reordered or modified tasks.
         """
         original_task = Task(
-            content=original_task_content, id=original_task_id
+            content=original_task_content,
+            id=original_task_id if original_task_id else str(uuid.uuid4()),
         )
 
         new_tasks: List[Task] = []
