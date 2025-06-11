@@ -43,7 +43,7 @@ from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState
 from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.utils import with_timeout_async, dependencies_required
+from camel.utils import dependencies_required, with_timeout_async
 
 logger = get_logger(__name__)
 
