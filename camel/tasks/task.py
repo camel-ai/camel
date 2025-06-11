@@ -118,8 +118,6 @@ class Task(BaseModel):
             f"state='{self.state.value}')"
         )
 
-    assignee_id: Optional[str] = None
-
     @classmethod
     def from_message(cls, message: BaseMessage) -> "Task":
         r"""Create a task from a message.
