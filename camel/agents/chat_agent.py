@@ -78,6 +78,7 @@ from camel.utils import (
     get_model_encoding,
     model_from_json_schema,
 )
+from camel.utils.commons import dependencies_required
 
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
@@ -94,6 +95,15 @@ try:
         raise ImportError
 except (ImportError, AttributeError):
     from camel.utils import track_agent
+
+# Langfuse decorator setting
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 
 SIMPLE_FORMAT_PROMPT = TextPrompt(
@@ -730,6 +740,7 @@ class ChatAgent(BaseAgent):
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
 
+    @observe()
     def step(
         self,
         input_message: Union[BaseMessage, str],
@@ -751,6 +762,14 @@ class ChatAgent(BaseAgent):
             ChatAgentResponse: Contains output messages, a termination status
                 flag, and session information.
         """
+
+        # Set Langfuse session_id using agent_id for trace grouping
+        try:
+            from camel.utils.langfuse import set_current_agent_session_id
+
+            set_current_agent_session_id(self.agent_id)
+        except ImportError:
+            pass  # Langfuse not available
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
@@ -846,6 +865,7 @@ class ChatAgent(BaseAgent):
         openai_messages, _ = self.memory.get_context()
         return openai_messages
 
+    @observe()
     async def astep(
         self,
         input_message: Union[BaseMessage, str],
@@ -872,6 +892,13 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
+        try:
+            from camel.utils.langfuse import set_current_agent_session_id
+
+            set_current_agent_session_id(self.agent_id)
+        except ImportError:
+            pass  # Langfuse not available
+
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
                 role_name="User", content=input_message
@@ -1646,7 +1673,7 @@ class ChatAgent(BaseAgent):
         self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
-            timestamp=base_timestamp + 1e-9,
+            timestamp=base_timestamp + 1e-6,
         )
 
         # Record information about this tool call
@@ -1751,6 +1778,7 @@ class ChatAgent(BaseAgent):
             f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
         )
 
+    @dependencies_required("mcp")
     def to_mcp(
         self,
         name: str = "CAMEL-ChatAgent",
@@ -1777,13 +1805,7 @@ class ChatAgent(BaseAgent):
         Returns:
             FastMCP: An MCP server instance that can be run.
         """
-        try:
-            from mcp.server.fastmcp import FastMCP
-        except ImportError:
-            raise ImportError(
-                "The 'mcp' package is required to use the to_mcp method. "
-                "Install it with 'pip install mcp'."
-            )
+        from mcp.server.fastmcp import FastMCP
 
         # Combine dependencies
         all_dependencies = ["camel-ai[all]"]
@@ -1874,7 +1896,7 @@ class ChatAgent(BaseAgent):
                     "description": tool.get_function_description() or "",
                     "parameters": [
                         {"name": param_name, "type": str(param_type)}
-                        for param_name, param_type in tool.get_parameters().items()  # noqa: E501
+                        for param_name, param_type in tool.parameters.items()
                     ],
                 }
             return tool_info

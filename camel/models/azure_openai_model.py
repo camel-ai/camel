@@ -25,9 +25,24 @@ from camel.types import (
     ChatCompletionChunk,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    get_current_agent_session_id,
+    is_langfuse_available,
+    update_langfuse_trace,
+)
 
 AzureADTokenProvider = Callable[[], str]
+
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 
 class AzureOpenAIModel(BaseModelBackend):
@@ -108,27 +123,52 @@ class AzureOpenAIModel(BaseModelBackend):
                 "or `AZURE_DEPLOYMENT_NAME` environment variable."
             )
 
-        self._client = AzureOpenAI(
-            azure_endpoint=str(self._url),
-            azure_deployment=self._azure_deployment_name,
-            api_version=self.api_version,
-            api_key=self._api_key,
-            azure_ad_token=self._azure_ad_token,
-            azure_ad_token_provider=self.azure_ad_token_provider,
-            timeout=self._timeout,
-            max_retries=3,
-        )
+        if is_langfuse_available():
+            from langfuse.openai import AsyncAzureOpenAI as LangfuseAsyncOpenAI
+            from langfuse.openai import AzureOpenAI as LangfuseOpenAI
 
-        self._async_client = AsyncAzureOpenAI(
-            azure_endpoint=str(self._url),
-            azure_deployment=self._azure_deployment_name,
-            api_version=self.api_version,
-            api_key=self._api_key,
-            azure_ad_token=self._azure_ad_token,
-            azure_ad_token_provider=self.azure_ad_token_provider,
-            timeout=self._timeout,
-            max_retries=3,
-        )
+            self._client = LangfuseOpenAI(
+                azure_endpoint=str(self._url),
+                azure_deployment=self._azure_deployment_name,
+                api_version=self.api_version,
+                api_key=self._api_key,
+                azure_ad_token=self._azure_ad_token,
+                azure_ad_token_provider=self.azure_ad_token_provider,
+                timeout=self._timeout,
+                max_retries=3,
+            )
+            self._async_client = LangfuseAsyncOpenAI(
+                azure_endpoint=str(self._url),
+                azure_deployment=self._azure_deployment_name,
+                api_version=self.api_version,
+                api_key=self._api_key,
+                azure_ad_token=self._azure_ad_token,
+                azure_ad_token_provider=self.azure_ad_token_provider,
+                timeout=self._timeout,
+                max_retries=3,
+            )
+        else:
+            self._client = AzureOpenAI(
+                azure_endpoint=str(self._url),
+                azure_deployment=self._azure_deployment_name,
+                api_version=self.api_version,
+                api_key=self._api_key,
+                azure_ad_token=self._azure_ad_token,
+                azure_ad_token_provider=self.azure_ad_token_provider,
+                timeout=self._timeout,
+                max_retries=3,
+            )
+
+            self._async_client = AsyncAzureOpenAI(
+                azure_endpoint=str(self._url),
+                azure_deployment=self._azure_deployment_name,
+                api_version=self.api_version,
+                api_key=self._api_key,
+                azure_ad_token=self._azure_ad_token,
+                azure_ad_token_provider=self.azure_ad_token_provider,
+                timeout=self._timeout,
+                max_retries=3,
+            )
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -142,6 +182,7 @@ class AzureOpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -163,14 +204,32 @@ class AzureOpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
         if response_format:
-            return self._request_parse(messages, response_format, tools)
+            result: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
+                self._request_parse(messages, response_format, tools)
+            )
         else:
-            return self._request_chat_completion(messages, tools)
+            result = self._request_chat_completion(messages, tools)
 
+        return result
+
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -192,13 +251,30 @@ class AzureOpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
         if response_format:
-            return await self._arequest_parse(messages, response_format, tools)
+            result: Union[
+                ChatCompletion, AsyncStream[ChatCompletionChunk]
+            ] = await self._arequest_parse(messages, response_format, tools)
         else:
-            return await self._arequest_chat_completion(messages, tools)
+            result = await self._arequest_chat_completion(messages, tools)
+
+        return result
 
     def _request_chat_completion(
         self,
