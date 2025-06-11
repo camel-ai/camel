@@ -14,7 +14,7 @@
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.data_collector import ShareGPTDataCollector
+from camel.data_collectors import ShareGPTDataCollector
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import MathToolkit

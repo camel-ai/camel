@@ -7,7 +7,7 @@
     "dark": "images/CAMEL_Icon_White.png",
     "href": "https://camel-ai.org "
   },
-  "favicon": "images/built_with_CAMEL.svg",
+  "favicon": "images/CAMEL_Icon.png",
   "colors": {
     "primary": "#5603fc",
     "light": "#5603fc",
@@ -53,6 +53,11 @@
           {
             "group": "Key Modules",
             "pages": [
+              "key_modules/agents",
+              "key_modules/datagen",
+              "key_modules/interpreters",
+              "key_modules/runtimes",
+              "key_modules/society",
               "key_modules/models",
               "key_modules/messages",
               "key_modules/memory",
@@ -72,8 +77,8 @@
               {
                 "group": "Basic Concepts",
                 "pages": [
-                  "cookbooks/basic_concepts/agents_prompting",
                   "cookbooks/basic_concepts/agents_message",
+                  "cookbooks/basic_concepts/agents_prompting",
                   "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/create_your_first_agents_society",
                   "cookbooks/basic_concepts/model_speed_comparison"
@@ -83,27 +88,29 @@
                 "group": "Advanced Features",
                 "pages": [
                   "cookbooks/advanced_features/agents_tracking",
-                  "cookbooks/advanced_features/agents_with_graph_rag",
+                  "cookbooks/advanced_features/agents_with_MCP",
                   "cookbooks/advanced_features/agents_with_dkg",
+                  "cookbooks/advanced_features/agents_with_graph_rag",
                   "cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval",
                   "cookbooks/advanced_features/agents_with_memory",
                   "cookbooks/advanced_features/agents_with_rag",
                   "cookbooks/advanced_features/agents_with_tools",
+                  "cookbooks/advanced_features/agents_with_tools_from_ACI",
                   "cookbooks/advanced_features/agents_with_tools_from_Composio",
                   "cookbooks/advanced_features/critic_agents_and_tree_search",
-                  "cookbooks/advanced_features/embodied_agents",
-                  "cookbooks/advanced_features/agents_with_MCP"
+                  "cookbooks/advanced_features/embodied_agents"
                 ]
               },
               {
                 "group": "Applications",
                 "pages": [
-                  "cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG",
+                  "cookbooks/applications/customer_service_Discord_bot_using_Cohere_model_with_agentic_RAG",
                   "cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG",
+                  "cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG",
                   "cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG",
                   "cookbooks/applications/dynamic_travel_planner",
-                  "cookbooks/applications/roleplaying_scraper",
-                  "cookbooks/applications/finance_discord_bot"
+                  "cookbooks/applications/finance_discord_bot",
+                  "cookbooks/applications/roleplaying_scraper"
                 ]
               },
               {
@@ -111,13 +118,14 @@
                 "pages": [
                   "cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface",
                   "cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format",
-                  "cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1",
                   "cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen",
+                  "cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1",
                   "cookbooks/data_generation/self_improving_cot_generation",
                   "cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1",
+                  "cookbooks/data_generation/self_instruct_data_generation",
+                  "cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B",
                   "cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct",
                   "cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_tinyllama",
-                  "cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B",
                   "cookbooks/data_generation/synthetic_dataevaluation&filter_with_reward_model"
                 ]
               },
@@ -126,6 +134,7 @@
                 "pages": [
                   "cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing",
                   "cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl",
+                  "cookbooks/data_processing/summarisation_agent_with_mistral_ocr",
                   "cookbooks/data_processing/video_analysis"
                 ]
               },
@@ -133,8 +142,8 @@
                 "group": "Loong",
                 "pages": [
                   "cookbooks/loong/batched_single_step_env",
-                  "cookbooks/loong/single_step_env",
-                  "cookbooks/loong/multi_step_rl"
+                  "cookbooks/loong/multi_step_rl",
+                  "cookbooks/loong/single_step_env"
                 ]
               },
               {
@@ -193,6 +202,7 @@
               "reference/camel.configs.base_config",
               "reference/camel.configs.bedrock_config",
               "reference/camel.configs.cohere_config",
+              "reference/camel.configs.crynux_config",
               "reference/camel.configs.deepseek_config",
               "reference/camel.configs.gemini_config",
               "reference/camel.configs.groq_config",
@@ -271,6 +281,7 @@
               "reference/camel.models.base_audio_model",
               "reference/camel.models.base_model",
               "reference/camel.models.cohere_model",
+              "reference/camel.models.crynux_model",
               "reference/camel.models.deepseek_model",
               "reference/camel.models.fish_audio_model",
               "reference/camel.models.gemini_model",
@@ -413,7 +424,8 @@
               "reference/camel.storages.vectordb_storages.milvus",
               "reference/camel.storages.vectordb_storages.oceanbase",
               "reference/camel.storages.vectordb_storages.qdrant",
-              "reference/camel.storages.vectordb_storages.tidb"
+              "reference/camel.storages.vectordb_storages.tidb",
+              "reference/camel.storages.vectordb_storages.weaviate"
             ]
           },
           {
@@ -441,6 +453,7 @@
               "reference/camel.toolkits.base",
               "reference/camel.toolkits.bohrium_toolkit",
               "reference/camel.toolkits.browser_toolkit",
+              "reference/camel.toolkits.browser_toolkit_commons",
               "reference/camel.toolkits.code_execution",
               "reference/camel.toolkits.dalle_toolkit",
               "reference/camel.toolkits.dappier_toolkit",
@@ -468,6 +481,7 @@
               "reference/camel.toolkits.openai_agent_toolkit",
               "reference/camel.toolkits.openbb_toolkit",
               "reference/camel.toolkits.playwright_mcp_toolkit",
+              "reference/camel.toolkits.pptx_toolkit",
               "reference/camel.toolkits.pubmed_toolkit",
               "reference/camel.toolkits.pulse_mcp_search_toolkit",
               "reference/camel.toolkits.pyautogui_toolkit",
@@ -479,6 +493,7 @@
               "reference/camel.toolkits.slack_toolkit",
               "reference/camel.toolkits.stripe_toolkit",
               "reference/camel.toolkits.sympy_toolkit",
+              "reference/camel.toolkits.task_planning_toolkit",
               "reference/camel.toolkits.terminal_toolkit",
               "reference/camel.toolkits.thinking_toolkit",
               "reference/camel.toolkits.twitter_toolkit",
@@ -521,27 +536,15 @@
             ]
           },
           {
-            "group": "Runtime",
-            "pages": [
-              "reference/camel.runtime.base",
-              "reference/camel.runtime.configs",
-              "reference/camel.runtime.daytona_runtime",
-              "reference/camel.runtime.docker_runtime",
-              "reference/camel.runtime.llm_guard_runtime",
-              "reference/camel.runtime.remote_http_runtime",
-              "reference/camel.runtime.ubuntu_docker_runtime",
-              "reference/camel.runtime.utils.function_risk_toolkit",
-              "reference/camel.runtime.utils.ignore_risk_toolkit"
-            ]
-          },
-          {
             "group": "Utilities",
             "pages": [
               "reference/camel.utils.async_func",
               "reference/camel.utils.commons",
               "reference/camel.utils.deduplication",
               "reference/camel.utils.filename",
+              "reference/camel.utils.langfuse",
               "reference/camel.utils.mcp",
+              "reference/camel.utils.mcp_client",
               "reference/camel.utils.response_format",
               "reference/camel.utils.token_counting",
               "reference/camel.utils.chunker.base",
@@ -570,6 +573,72 @@
             "pages": [
               "reference/camel.personas.persona",
               "reference/camel.personas.persona_hub"
+            ]
+          },
+          {
+            "group": "Benchmarks",
+            "pages": [
+              "reference/camel.benchmarks.apibank",
+              "reference/camel.benchmarks.apibench",
+              "reference/camel.benchmarks.base",
+              "reference/camel.benchmarks.browsecomp",
+              "reference/camel.benchmarks.gaia",
+              "reference/camel.benchmarks.nexus",
+              "reference/camel.benchmarks.ragbench"
+            ]
+          },
+          {
+            "group": "Data Collectors",
+            "pages": [
+              "reference/camel.data_collectors.alpaca_collector",
+              "reference/camel.data_collectors.base",
+              "reference/camel.data_collectors.sharegpt_collector"
+            ]
+          },
+          {
+            "group": "Datahubs",
+            "pages": [
+              "reference/camel.datahubs.base",
+              "reference/camel.datahubs.huggingface"
+            ]
+          },
+          {
+            "group": "Loaders",
+            "pages": [
+              "reference/camel.loaders.apify_reader",
+              "reference/camel.loaders.base_io",
+              "reference/camel.loaders.chunkr_reader",
+              "reference/camel.loaders.crawl4ai_reader",
+              "reference/camel.loaders.firecrawl_reader",
+              "reference/camel.loaders.jina_url_reader",
+              "reference/camel.loaders.markitdown",
+              "reference/camel.loaders.mineru_extractor",
+              "reference/camel.loaders.mistral_reader",
+              "reference/camel.loaders.pandas_reader",
+              "reference/camel.loaders.scrapegraph_reader",
+              "reference/camel.loaders.unstructured_io"
+            ]
+          },
+          {
+            "group": "Runtimes",
+            "pages": [
+              "reference/camel.runtimes.base",
+              "reference/camel.runtimes.configs",
+              "reference/camel.runtimes.daytona_runtime",
+              "reference/camel.runtimes.docker_runtime",
+              "reference/camel.runtimes.llm_guard_runtime",
+              "reference/camel.runtimes.remote_http_runtime",
+              "reference/camel.runtimes.ubuntu_docker_runtime",
+              "reference/camel.runtimes.utils.function_risk_toolkit",
+              "reference/camel.runtimes.utils.ignore_risk_toolkit"
+            ]
+          },
+          {
+            "group": "Schemas",
+            "pages": [
+              "reference/camel.schemas.base",
+              "reference/camel.schemas.openai_converter",
+              "reference/camel.schemas.outlines_converter"
             ]
           }
         ]

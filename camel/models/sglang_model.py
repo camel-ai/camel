@@ -29,7 +29,21 @@ from camel.types import (
     ChatCompletionChunk,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    get_current_agent_session_id,
+    update_current_observation,
+    update_langfuse_trace,
+)
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 
 class SGLangModel(BaseModelBackend):
@@ -195,6 +209,7 @@ class SGLangModel(BaseModelBackend):
                     "input into SGLang model backend."
                 )
 
+    @observe(as_type='generation')
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -213,6 +228,28 @@ class SGLangModel(BaseModelBackend):
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
 
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "source": "camel",
+                    "agent_id": agent_session_id,
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         # Ensure server is running
         self._ensure_server_running()
 
@@ -230,9 +267,16 @@ class SGLangModel(BaseModelBackend):
             model=self.model_type,
             **self.model_config_dict,
         )
-
+        update_current_observation(
+            usage_details={
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens,
+                "total_tokens": response.usage.total_tokens,
+            },
+        )
         return response
 
+    @observe(as_type='generation')
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -250,6 +294,27 @@ class SGLangModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "source": "camel",
+                    "agent_id": agent_session_id,
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
 
         # Ensure server is running
         self._ensure_server_running()
@@ -267,6 +332,13 @@ class SGLangModel(BaseModelBackend):
             messages=messages,
             model=self.model_type,
             **self.model_config_dict,
+        )
+        update_current_observation(
+            usage_details={
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens,
+                "total_tokens": response.usage.total_tokens,
+            },
         )
 
         return response

@@ -57,7 +57,7 @@ def test_execute_code(code_execution_toolkit):
     result = code_execution_toolkit.execute_code(code)
 
     # ruff: noqa: E501
-    expected_result = f"Executed the code below:\n```py\n{code}\n```\n> Executed Results:\n'ab'\n"
+    expected_result = f"Executed the code below:\n```python\n{code}\n```\n> Executed Results:\n'ab'\n"
     assert expected_result == result
 
 
@@ -138,8 +138,9 @@ def test_invalid_sandbox_type():
 
 def test_get_tools(code_execution_toolkit):
     tools = code_execution_toolkit.get_tools()
-    assert len(tools) == 1
+    assert len(tools) == 2
     assert tools[0].get_function_name() == "execute_code"
+    assert tools[1].get_function_name() == "execute_command"
 
 
 def test_verbose_output(code_execution_toolkit):

@@ -30,145 +30,6 @@ def _get_bool(d: Any, k: str):
 
 Safely retrieve a boolean value from a dictionary.
 
-<a id="camel.toolkits.browser_toolkit._parse_json_output"></a>
-
-## _parse_json_output
-
-```python
-def _parse_json_output(text: str):
-```
-
-Extract JSON output from a string.
-
-<a id="camel.toolkits.browser_toolkit._reload_image"></a>
-
-## _reload_image
-
-```python
-def _reload_image(image: Image.Image):
-```
-
-<a id="camel.toolkits.browser_toolkit.dom_rectangle_from_dict"></a>
-
-## dom_rectangle_from_dict
-
-```python
-def dom_rectangle_from_dict(rect: Dict[str, Any]):
-```
-
-Create a DOMRectangle object from a dictionary.
-
-<a id="camel.toolkits.browser_toolkit.interactive_region_from_dict"></a>
-
-## interactive_region_from_dict
-
-```python
-def interactive_region_from_dict(region: Dict[str, Any]):
-```
-
-Create an :class:`InteractiveRegion` object from a dictionary.
-
-<a id="camel.toolkits.browser_toolkit.visual_viewport_from_dict"></a>
-
-## visual_viewport_from_dict
-
-```python
-def visual_viewport_from_dict(viewport: Dict[str, Any]):
-```
-
-Create a :class:`VisualViewport` object from a dictionary.
-
-<a id="camel.toolkits.browser_toolkit.add_set_of_mark"></a>
-
-## add_set_of_mark
-
-```python
-def add_set_of_mark(
-    screenshot: Union[bytes, Image.Image, io.BufferedIOBase],
-    ROIs: Dict[str, InteractiveRegion]
-):
-```
-
-<a id="camel.toolkits.browser_toolkit._add_set_of_mark"></a>
-
-## _add_set_of_mark
-
-```python
-def _add_set_of_mark(screenshot: Image.Image, ROIs: Dict[str, InteractiveRegion]):
-```
-
-Add a set of marks to the screenshot.
-
-**Parameters:**
-
-- **screenshot** (Image.Image): The screenshot to add marks to.
-- **ROIs** (Dict[str, InteractiveRegion]): The regions to add marks to.
-
-**Returns:**
-
-  Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
-containing the screenshot with marked ROIs, ROIs fully within the
-images, ROIs located above the visible area, and ROIs located below
-the visible area.
-
-<a id="camel.toolkits.browser_toolkit._draw_roi"></a>
-
-## _draw_roi
-
-```python
-def _draw_roi(
-    draw: ImageDraw.ImageDraw,
-    idx: int,
-    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
-    rect: DOMRectangle
-):
-```
-
-Draw a ROI on the image.
-
-**Parameters:**
-
-- **draw** (ImageDraw.ImageDraw): The draw object.
-- **idx** (int): The index of the ROI.
-- **font** (ImageFont.FreeTypeFont | ImageFont.ImageFont): The font.
-- **rect** (DOMRectangle): The DOM rectangle.
-
-<a id="camel.toolkits.browser_toolkit._get_text_color"></a>
-
-## _get_text_color
-
-```python
-def _get_text_color(bg_color: Tuple[int, int, int, int]):
-```
-
-Determine the ideal text color (black or white) for contrast.
-
-**Parameters:**
-
-- **bg_color**: The background color (R, G, B, A).
-
-**Returns:**
-
-  A tuple representing black or white color for text.
-
-<a id="camel.toolkits.browser_toolkit._get_random_color"></a>
-
-## _get_random_color
-
-```python
-def _get_random_color(identifier: int):
-```
-
-Generate a consistent random RGBA color based on the identifier.
-
-**Parameters:**
-
-- **identifier**: The ID used as a seed to ensure color consistency.
-
-**Returns:**
-
-  A tuple representing (R, G, B, A) values.
-
 <a id="camel.toolkits.browser_toolkit.BaseBrowser"></a>
 
 ## BaseBrowser
@@ -353,7 +214,8 @@ marked.
 
 **Returns:**
 
-  Tuple[Image.Image, Union[str, None]]: A tuple containing the screenshot image
+  Tuple[Image.Image, Union[str, None]]: A tuple containing the
+screenshot image
 and an optional path to the image file if saved, otherwise
 :obj:`None`.
 
@@ -420,7 +282,6 @@ Download a file with the given selector.
 **Parameters:**
 
 - **identifier** (str): The identifier of the file to download.
-- **file_path** (str): The path to save the downloaded file.
 
 **Returns:**
 
@@ -594,7 +455,11 @@ def _reset(self):
 ### _initialize_agent
 
 ```python
-def _initialize_agent(self):
+def _initialize_agent(
+    self,
+    web_agent_model_backend: Optional[BaseModelBackend],
+    planning_agent_model_backend: Optional[BaseModelBackend]
+):
 ```
 
 Initialize the agent.
@@ -607,7 +472,8 @@ Initialize the agent.
 def _observe(self, task_prompt: str, detailed_plan: Optional[str] = None):
 ```
 
-Let agent observe the current environment, and get the next action.
+Let agent observe the current environment, and get the next
+action.
 
 <a id="camel.toolkits.browser_toolkit.BrowserToolkit._act"></a>
 
@@ -636,8 +502,11 @@ the action was successful, and the information to be returned.
 def _get_final_answer(self, task_prompt: str):
 ```
 
-Get the final answer based on the task prompt and current browser state.
-It is used when the agent thinks that the task can be completed without any further action, and answer can be directly found in the current viewport.
+Get the final answer based on the task prompt and current
+browser state.
+It is used when the agent thinks that the task can be completed
+without any further action, and answer can be directly found in the
+current viewport.
 
 <a id="camel.toolkits.browser_toolkit.BrowserToolkit._task_planning"></a>
 
@@ -666,7 +535,8 @@ Replan the task based on the given task prompt.
 
 **Returns:**
 
-  Tuple[bool, str]: A tuple containing a boolean indicating whether the task needs to be replanned, and the replanned schema.
+  Tuple[bool, str]: A tuple containing a boolean indicating
+whether the task needs to be replanned, and the replanned schema.
 
 <a id="camel.toolkits.browser_toolkit.BrowserToolkit.browse_url"></a>
 
