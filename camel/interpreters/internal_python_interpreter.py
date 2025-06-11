@@ -14,6 +14,8 @@
 import ast
 import difflib
 import importlib
+import os
+import subprocess
 import typing
 from typing import Any, ClassVar, Dict, List, Optional
 
@@ -89,13 +91,15 @@ class InternalPythonInterpreter(BaseInterpreter):
         raise_error: bool = False,
     ) -> None:
         self.action_space = action_space or dict()
+        # Add print to action space
+        self.action_space['print'] = print
         self.state = self.action_space.copy()
         self.fuzz_state: Dict[str, Any] = dict()
         self.import_white_list = import_white_list or list()
         self.raise_error = raise_error
         self.unsafe_mode = unsafe_mode
 
-    def run(self, code: str, code_type: str) -> str:
+    def run(self, code: str, code_type: str = "python") -> str:
         r"""Executes the given code with specified code type in the
         interpreter.
 
@@ -111,7 +115,7 @@ class InternalPythonInterpreter(BaseInterpreter):
             code (str): The python code to be executed.
             code_type (str): The type of the code, which should be one of the
             supported code types (`python`, `py`, `python3`, `python2`).
-
+                (default: obj:`python`)
 
         Returns:
             str: The string representation of the output of the executed code.
@@ -531,3 +535,27 @@ class InternalPythonInterpreter(BaseInterpreter):
                 return self.fuzz_state[close_matches[0]]
             else:
                 raise InterpreterError(f"The variable `{key}` is not defined.")
+
+    def execute_command(self, command: str) -> tuple[str, str]:
+        r"""Execute a command in the internal python interpreter.
+
+        Args:
+            command (str): The command to execute.
+
+        Returns:
+            tuple: A tuple containing the stdout and stderr of the command.
+        """
+        try:
+            proc = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=os.environ,
+                shell=True,
+            )
+            stdout, stderr = proc.communicate()
+
+            return stdout, stderr
+        except Exception as e:
+            raise InterpreterError(f"Error executing command: {e}")

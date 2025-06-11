@@ -6,7 +6,7 @@ title: "Interpreters"
 Interpreters are tools that empower agents to execute given code snippets on the local machine or in isolated environments. CAMEL supports several types of interpreters to cater to different needs and security considerations.
 
 ### 1.1. Internal Python Interpreter
-The Internal Python Interpreter executes Python code directly within the same process as the agent. This is the simplest interpreter and is suitable for trusted code execution. In its default (safe) mode, it evaluates expressions and executes statements in a controlled environment; `print()` is not directly available as a side effect, so code should evaluate to a string for output
+The Internal Python Interpreter executes Python code directly within the same process as the agent. This is the simplest interpreter and is suitable for trusted code execution. In its default (safe) mode, it evaluates expressions and executes statements in a controlled environment; `print()` is not directly available as a side effect, so code should evaluate to a string for output.
 
 **Example Usage:**
 ```python
