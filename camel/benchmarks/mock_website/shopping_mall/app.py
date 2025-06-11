@@ -38,11 +38,11 @@ def load_products(file_path: str = 'products.json') -> None:
             products = json.load(f)
         products_by_id = {product['id']: product for product in products}
     except FileNotFoundError:
-        print(f"Error: {file_path} not found.")
+        sys.stderr.write(f"Error: {file_path} not found.\n")
         products = []
         products_by_id = {}
     except json.JSONDecodeError:
-        print(f"Error: Could not decode JSON from {file_path}.")
+        sys.stderr.write(f"Error: Could not decode JSON from {file_path}.\n")
         products = []
         products_by_id = {}
 
@@ -124,6 +124,23 @@ def check_task_completion(current_cart_raw, ground_truth_spec):
 
 
 # --- End Task Mode Helper ---
+
+
+# --- Task Completion Helper ---
+def _trigger_task_completion_check():
+    r"""Checks for task completion if in task mode and not already signaled."""
+    # Uses global `app` and `cart`
+    if app.config.get('TASK_ACTIVE') and not app.config.get(
+        'TASK_COMPLETION_SIGNALED'
+    ):
+        if check_task_completion(cart, app.config.get('GROUND_TRUTH_CART')):
+            app.config['TASK_COMPLETION_SIGNALED'] = True
+            app.logger.info(
+                "TASK COMPLETED: Ground truth cart state achieved."
+            )
+
+
+# --- End Task Completion Helper ---
 def create_app():
     global app
     try:
@@ -247,17 +264,7 @@ def create_app():
         cart.append(cart_item)
         ACTION_COUNT += 1  # Increment on successful add
 
-        # In task mode, check for completion
-        if app.config.get('TASK_ACTIVE') and not app.config.get(
-            'TASK_COMPLETION_SIGNALED'
-        ):
-            if check_task_completion(
-                cart, app.config.get('GROUND_TRUTH_CART')
-            ):
-                app.config['TASK_COMPLETION_SIGNALED'] = True
-                app.logger.info(
-                    "TASK COMPLETED: Ground truth cart state achieved."
-                )
+        _trigger_task_completion_check()
 
         app.logger.info(f"Added product {product_id} to cart.")
         return jsonify(
@@ -306,17 +313,7 @@ def create_app():
                 {'success': False, 'message': 'Product not in cart'}
             ), 404
 
-        # In task mode, check for completion
-        if app.config.get('TASK_ACTIVE') and not app.config.get(
-            'TASK_COMPLETION_SIGNALED'
-        ):
-            if check_task_completion(
-                cart, app.config.get('GROUND_TRUTH_CART')
-            ):
-                app.config['TASK_COMPLETION_SIGNALED'] = True
-                app.logger.info(
-                    "TASK COMPLETED: Ground truth cart state achieved."
-                )
+        _trigger_task_completion_check()
 
         total_price = sum(
             item['price'] * item.get('quantity', 1) for item in cart
@@ -350,17 +347,7 @@ def create_app():
             ACTION_COUNT += 1  # Increment on successful remove
             app.logger.info(f"Removed product {product_id} from cart.")
 
-            # In task mode, check for completion
-            if app.config.get('TASK_ACTIVE') and not app.config.get(
-                'TASK_COMPLETION_SIGNALED'
-            ):
-                if check_task_completion(
-                    cart, app.config.get('GROUND_TRUTH_CART')
-                ):
-                    app.config['TASK_COMPLETION_SIGNALED'] = True
-                    app.logger.info(
-                        "TASK COMPLETED: Ground truth cart state achieved."
-                    )
+            _trigger_task_completion_check()
 
             total_price = sum(
                 item['price'] * item.get('quantity', 1) for item in cart
