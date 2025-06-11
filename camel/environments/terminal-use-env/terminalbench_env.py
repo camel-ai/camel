@@ -36,6 +36,10 @@ class TerminalBenchEnv(MultiStepEnv):
         super().__init__(extractor=extractor, **kwargs)
 
 
+        # Termination logic
+        self.execution_result = None
+
+
 
     def _get_initial_state(self) -> Dict[str, Any]:
         r"""Draw a task from the Terminal Bench dataset.
@@ -91,14 +95,17 @@ class TerminalBenchEnv(MultiStepEnv):
             A tuple containing the total reward (float) and a dictionary
             with all past rewards.
         """
-        pass
+
 
     def _is_done(self) -> bool:
         r"""Checks for environment-specific termination conditions.
 
+        Max step condition is checked in Parentclass, so here we will
+        check if the correct final solution has been reached.
 
         Returns:
-            True if the episode has reached a terminal state, False otherwise.
+            True if execution result is 0, false otherwise.
         """
-        pass
+        
+        return True if self.execution_result == 0 else False
 
