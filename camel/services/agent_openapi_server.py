@@ -20,12 +20,9 @@ from pydantic import BaseModel
 
 from camel.agents.chat_agent import ChatAgent
 from camel.messages import BaseMessage
+from camel.models import ModelFactory
 from camel.toolkits import FunctionTool
-from camel.types import ModelType, RoleType
-
-from camel.models import (
-    ModelFactory
-)
+from camel.types import RoleType
 
 
 class InitRequest(BaseModel):
@@ -190,11 +187,10 @@ class ChatAgentOpenAPIServer:
             # system message
             system_message = request.system_message
 
-
             agent = ChatAgent(
                 model=model,
                 tools=tools,  # type: ignore[arg-type]
-                external_tools = request.external_tools,
+                external_tools=request.external_tools,
                 system_message=system_message,
                 message_window_size=request.message_window_size,
                 token_limit=request.token_limit,
@@ -288,9 +284,21 @@ class ChatAgentOpenAPIServer:
             """
             return {"agent_ids": list(self.agents.keys())}
 
+        @router.post("/delete/{agent_id}")
+        def delete_agent(agent_id: str):
+            r"""Deletes an agent from the server.
 
+            Args:
+                agent_id (str): The ID of the agent to delete.
 
+            Returns:
+                dict: A confirmation message upon successful deletion.
+            """
+            if agent_id not in self.agents:
+                raise HTTPException(status_code=404, detail="Agent not found.")
 
+            del self.agents[agent_id]
+            return {"message": f"Agent {agent_id} deleted."}
 
         @router.post("/step/{agent_id}")
         def step_agent(agent_id: str, request: StepRequest):
@@ -345,8 +353,9 @@ class ChatAgentOpenAPIServer:
                 list: The list of conversation messages.
             """
             if agent_id not in self.agents:
-                raise HTTPException(status_code=404,
-                                    detail=f"Agent {agent_id} not found.")
+                raise HTTPException(
+                    status_code=404, detail=f"Agent {agent_id} not found."
+                )
             return self.agents[agent_id].chat_history
 
         # Register all routes to the main FastAPI app

@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 from fastapi.testclient import TestClient
 
 from camel.services.agent_openapi_server import ChatAgentOpenAPIServer
-import asyncio
-import httpx
 
 
 def example_init_and_step():
@@ -59,11 +58,13 @@ def example_init_and_step():
         },
     )
     print("Init response:", r.json())
-    # Init response:
-    # {'agent_id': 'demo', 'message': 'Agent initialized.'}
+    """
+    Init response:
+    {'agent_id': 'demo', 'message': 'Agent initialized.'}
+    """
 
     r = client.post(
-        "/v1/step/demo", #
+        "/v1/step/demo",  #
         json={"input_message": "Search: What is machine learning?"},
     )
     print("Step response:", r.json())
@@ -141,6 +142,7 @@ def example_init_and_step():
     r = client.get("/v1/history/demo")
     print("History:", r.json())
 
+
     """
     History:
     [{'role': 'system',
@@ -189,6 +191,23 @@ def example_init_and_step():
              'methods.'}]
     """
 
+    # Reset Agent
+    r = client.post("/v1/reset/demo")
+    print("Reset:", r.json())
+    """
+    Reset: {'message': 'Agent demo reset.'}
+    """
+
+    # Display history again after reset
+    r = client.get("/v1/history/demo")
+    print("History:", r.json())
+    """
+    History: [{'role': 'system',
+     'content': 'You are a helpful assistant 
+     with access to a wiki search tool.'}]
+    """
+
+
 def example_init_and_astep():
     r"""Demonstrates a minimal example of initializing a single agent,
     assigning it a tool from the registry, sending one message, and viewing
@@ -234,7 +253,7 @@ def example_init_and_astep():
     # {'agent_id': 'demo', 'message': 'Agent initialized.'}
 
     r = client.post(
-        "/v1/astep/demo", #
+        "/v1/astep/demo",  #
         json={"input_message": "Search: What is machine learning?"},
     )
     print("Step response (astep):", r.json())
@@ -309,62 +328,13 @@ def example_init_and_astep():
           }],
     """
 
-    r = client.get("/v1/history/demo")
-    print("History:", r.json())
-
-    """
-    History:
-    [{'role': 'system',
-    'content': 'You are a helpful assistant with access to a wiki search '
-             'tool.'},
-    {'role': 'user',
-    'content': 'Search: What is machine learning?'},
-    {'role': 'assistant',
-    'content': '',
-    'tool_calls': [{'id': 'call_lYVcPVKqPNPZi7TsSRRbanZ2',
-                  'type': 'function',
-                  'function': {'name': 'search_wiki',
-                               'arguments': '{"entity": "Machine '
-                                            'learning"}'}}]},
-    {'role': 'tool',
-    'content': 'Machine learning (ML) is a field of study in artificial '
-             'intelligence concerned with the development and study of '
-             'statistical algorithms that can learn from data and '
-             'generalise to unseen data, and thus perform tasks without '
-             'explicit instructions. Within a subdiscipline in machine '
-             'learning, advances in the field of deep learning have '
-             'allowed neural networks, a class of statistical '
-             'algorithms, to surpass many previous machine learning '
-             'approaches in performance.\nML finds application in many '
-             'fields, including natural language processing, computer '
-             'vision, speech recognition, email filtering, agriculture, '
-             'and medicine. The application of ML to business problems '
-             'is known as predictive analytics.\nStatistics and '
-             'mathematical optimisation (mathematical programming) '
-             'methods comprise the foundations of machine learning.',
-    'tool_call_id': 'call_lYVcPVKqPNPZi7TsSRRbanZ2'},
-    {'role': 'assistant',
-    'content': 'Machine learning (ML) is a field of study in artificial '
-             'intelligence focused on developing statistical algorithms '
-             'that can learn from data and generalize to unseen data, '
-             'allowing them to perform tasks without explicit '
-             'instructions. A notable advancement in this area is deep '
-             'learning, which uses neural networks to achieve superior '
-             'performance over traditional machine learning methods. '
-             '\n\nML is applied in various fields such as natural '
-             'language processing, computer vision, speech recognition, '
-             'email filtering, agriculture, and medicine. When used to '
-             'address business challenges, it is referred to as '
-             'predictive analytics. The foundations of machine learning '
-             'are built on statistics and mathematical optimization '
-             'methods.'}]
-    """
 
 def example_listing_and_delete_agents():
     r"""Creates multiple agents, lists them, deletes one, and lists again
     to verify it was removed.
     """
     from fastapi.testclient import TestClient
+
     from camel.services.agent_openapi_server import ChatAgentOpenAPIServer
 
     client = TestClient(ChatAgentOpenAPIServer().get_app())
@@ -375,7 +345,7 @@ def example_listing_and_delete_agents():
             "/v1/init",
             json={
                 "agent_id": agent_id,
-                "system_message": f"You are {agent_id}, a helpful assistant."
+                "system_message": f"You are {agent_id}, a helpful assistant.",
             },
         )
         print(f"Init {agent_id}:", r.json())
@@ -384,8 +354,8 @@ def example_listing_and_delete_agents():
     r = client.get("/v1/list_agent_ids")
     print("Current agents:", r.json())  # Should contain agent_1 and agent_2
 
-    # Step 3: Delete agent_1 (via reset)
-    r = client.post("/v1/reset/agent_1")
+    # Step 3: Delete agent_1
+    r = client.post("/v1/delete/agent_1")
     print("Reset agent_1:", r.json())
 
     # Step 4: List agents again
@@ -470,8 +440,7 @@ if __name__ == "__main__":
 
     if example == "basic_sync":
         # An example showing how to work with a single agent with our API
-        #example_init_and_step()
-        example_listing_and_delete_agents()
+        example_init_and_step()
     elif example == "basic_async":
         # An example showing how to work with a single agent with our API
         example_init_and_astep()
