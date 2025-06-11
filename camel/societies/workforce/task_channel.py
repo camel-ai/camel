@@ -16,6 +16,7 @@ from enum import Enum
 from typing import Dict, List, Optional
 
 from camel.tasks import Task
+from camel.utils import TIMEOUT_THRESHOLD
 
 
 class PacketStatus(Enum):
@@ -78,10 +79,10 @@ class Packet:
 class TaskChannel:
     r"""An internal class used by Workforce to manage tasks."""
 
-    def __init__(self, timeout: float = 180.0) -> None:
+    def __init__(self, timeout: float = TIMEOUT_THRESHOLD) -> None:
         self._task_id_list: List[str] = []
         self._condition = asyncio.Condition()
-        self._task_dict: Dict[str, Packet] = ({},)
+        self._task_dict: Dict[str, Packet] = {}
         self._timeout = timeout
 
     async def get_returned_task_by_publisher(
@@ -109,7 +110,6 @@ class TaskChannel:
 
                 # use wait_condition to wait, including timeout control
                 await self._wait_condition(
-                    timeout=timeout,
                     context=f"waiting for returned task from publisher\
                          {publisher_id}",
                 )
@@ -139,7 +139,6 @@ class TaskChannel:
 
                 # use wait_condition to wait, including timeout control
                 await self._wait_condition(
-                    timeout=timeout,
                     context=f"waiting for assigned task to assignee\
                          {assignee_id}",
                 )

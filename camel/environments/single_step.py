@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.datasets import BaseGenerator, DataPoint, StaticDataset
 from camel.logger import get_logger
-from camel.utils import with_timeout_async
+from camel.utils import TIMEOUT_THRESHOLD, with_timeout_async
 from camel.verifiers.base import (
     BaseVerifier,
     VerificationOutcome,
@@ -174,9 +174,20 @@ class SingleStepEnv:
             logger.warning(
                 "reset() called on un-setup environment. Setting up..."
             )
+            timeout = (
+                self._timeout
+                if self._timeout is not None
+                else TIMEOUT_THRESHOLD
+            )
+            timeout = (
+                self._timeout
+                if self._timeout is not None
+                else TIMEOUT_THRESHOLD
+            )
+
             await with_timeout_async(
                 self.setup(),
-                timeout=self._timeout,
+                timeout=timeout,
                 context="environment setup",
             )
 
@@ -228,9 +239,14 @@ class SingleStepEnv:
             self._states = []
             for _ in range(batch_size):
                 try:
+                    timeout = (
+                        self._timeout
+                        if self._timeout is not None
+                        else TIMEOUT_THRESHOLD
+                    )
                     sample = await with_timeout_async(
                         self.dataset.async_sample(),
-                        timeout=self._timeout,
+                        timeout=timeout,
                         context="dataset sampling",
                     )
                     self._states.append(sample)
@@ -335,13 +351,18 @@ class SingleStepEnv:
         ]
 
         try:
+            timeout = (
+                self._timeout
+                if self._timeout is not None
+                else TIMEOUT_THRESHOLD
+            )
             verification_results = await with_timeout_async(
                 self.verifier.verify_batch(
                     solutions=proposed_solutions,
                     reference_answers=ground_truths,  # type: ignore [arg-type]
                     raise_on_error=True,
                 ),
-                timeout=self._timeout,
+                timeout=timeout,
                 context="step verification",
             )
         except asyncio.TimeoutError:
@@ -372,6 +393,11 @@ class SingleStepEnv:
         rewards_dicts = [{"correctness": 0.0}] * len(proposed_solutions)
 
         try:
+            timeout = (
+                self._timeout
+                if self._timeout is not None
+                else TIMEOUT_THRESHOLD
+            )
             # First try to compute all rewards with a timeout
             (
                 computed_rewards,
@@ -380,7 +406,7 @@ class SingleStepEnv:
                 self._compute_reward_batch(
                     proposed_solutions, verification_results
                 ),
-                timeout=self._timeout,
+                timeout=timeout,
                 context="batch reward computation",
             )
             # If successful, use all the computed values
@@ -392,9 +418,14 @@ class SingleStepEnv:
                 zip(proposed_solutions, verification_results)
             ):
                 try:
+                    timeout = (
+                        self._timeout
+                        if self._timeout is not None
+                        else TIMEOUT_THRESHOLD
+                    )
                     individual_rewards = await with_timeout_async(
                         self._compute_custom_reward(solution, result),
-                        timeout=self._timeout,
+                        timeout=timeout,
                         context=f"reward computation for solution {i}",
                     )
                     # If successful, calculate the reward for this solution

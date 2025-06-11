@@ -21,7 +21,7 @@ from camel.environments.models import Action, Observation
 from camel.environments.multi_step import MultiStepEnv
 from camel.extractors import BaseExtractor, BaseExtractorStrategy
 from camel.logger import get_logger
-from camel.utils import with_timeout_async
+from camel.utils import TIMEOUT_THRESHOLD, with_timeout_async
 
 logger = get_logger(__name__)
 
@@ -267,6 +267,8 @@ class TicTacToeEnv(MultiStepEnv):
 
         # Attempt to parse the agent's chosen move
         try:
+            if self._timeout is None:
+                self._timeout = TIMEOUT_THRESHOLD
             extraction_result = await with_timeout_async(
                 self.extractor.extract(action.llm_response),
                 timeout=self._timeout,

@@ -158,7 +158,8 @@ async def test_worker_with_timeout_integration():
         nonlocal ran_once
         worker._running = True
 
-        # Add call here to ensure it's always executed regardless of execution path
+        # Add call here to ensure it's always executed regardless of execution
+        # path
         await worker._channel.get_dependency_ids()
 
         if not ran_once:

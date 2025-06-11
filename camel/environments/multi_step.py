@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from camel.environments.models import Action, Observation, StepResult
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
-from camel.utils import with_timeout_async
+from camel.utils import TIMEOUT_THRESHOLD, with_timeout_async
 
 logger = get_logger(__name__)
 
@@ -31,7 +31,7 @@ class MultiStepEnv(ABC):
         self,
         extractor: BaseExtractor,
         max_steps: Optional[int] = None,
-        timeout: Optional[float] = 180.0,
+        timeout: Optional[float] = TIMEOUT_THRESHOLD,
         **kwargs,
     ) -> None:
         r"""Initialize the environment.
@@ -121,7 +121,8 @@ class MultiStepEnv(ABC):
             logger.warning(
                 "reset() called on un-setup environment. Setting up..."
             )
-
+            if self._timeout is None:
+                self._timeout = TIMEOUT_THRESHOLD
             await with_timeout_async(
                 self.setup(),
                 timeout=self._timeout,
@@ -190,6 +191,8 @@ class MultiStepEnv(ABC):
 
         # Update the environment state based on the action
         update_timed_out = False
+        if self._timeout is None:
+            self._timeout = TIMEOUT_THRESHOLD
         try:
             await with_timeout_async(
                 self._update_state(action),
@@ -213,6 +216,8 @@ class MultiStepEnv(ABC):
 
         # Compute rewards
         try:
+            if self._timeout is None:
+                self._timeout = TIMEOUT_THRESHOLD
             total_reward, rewards_dict = await with_timeout_async(
                 self.compute_reward(),
                 timeout=self._timeout,
@@ -241,6 +246,8 @@ class MultiStepEnv(ABC):
 
         extraction_result = None
         try:
+            if self._timeout is None:
+                self._timeout = TIMEOUT_THRESHOLD
             extraction_result = await with_timeout_async(
                 self.extractor.extract(action.llm_response),
                 timeout=self._timeout,
@@ -262,8 +269,8 @@ class MultiStepEnv(ABC):
             info["extraction_result"] = extraction_result
 
         # Add step and state info
-        info["step"] = self._current_step
-        info["state"] = self._state  # Updated state
+        info["step"] = str(self._current_step)
+        info["state"] = str(self._state)  # Updated state
 
         return StepResult(
             observation=next_obs,
