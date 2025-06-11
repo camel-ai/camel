@@ -82,6 +82,7 @@ from camel.utils import (
     get_model_encoding,
     model_from_json_schema,
 )
+from camel.utils.commons import dependencies_required
 
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
@@ -3115,6 +3116,7 @@ class ChatAgent(BaseAgent):
             f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
         )
 
+    @dependencies_required("mcp")
     def to_mcp(
         self,
         name: str = "CAMEL-ChatAgent",
@@ -3141,13 +3143,7 @@ class ChatAgent(BaseAgent):
         Returns:
             FastMCP: An MCP server instance that can be run.
         """
-        try:
-            from mcp.server.fastmcp import FastMCP
-        except ImportError:
-            raise ImportError(
-                "The 'mcp' package is required to use the to_mcp method. "
-                "Install it with 'pip install mcp'."
-            )
+        from mcp.server.fastmcp import FastMCP
 
         # Combine dependencies
         all_dependencies = ["camel-ai[all]"]
@@ -3238,7 +3234,7 @@ class ChatAgent(BaseAgent):
                     "description": tool.get_function_description() or "",
                     "parameters": [
                         {"name": param_name, "type": str(param_type)}
-                        for param_name, param_type in tool.get_parameters().items()  # noqa: E501
+                        for param_name, param_type in tool.parameters.items()
                     ],
                 }
             return tool_info
