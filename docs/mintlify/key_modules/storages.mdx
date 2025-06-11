@@ -66,6 +66,13 @@ Reference: [Qdrant](https://qdrant.tech/)
 
 Reference: [OceanBase](https://www.oceanbase.com/)
 
+**`WeaviateStorage`**:
+
+- Description: A concrete implementation of `BaseVectorStorage`, tailored for interacting with Weaviate, a vector search engine.
+
+Reference: [Weaviate](https://weaviate.io/)
+
+
 ### 2.3 Graph Storages
 **`BaseGraphStorage`**:
 
@@ -378,7 +385,47 @@ Vector count after clearing: 0
 
 ```
 
-### 3.7. Using `NebulaGraph`
+### 3.7. Using `WeaviateStorage`
+
+```python
+from camel.storages import WeaviateStorage, VectorDBQuery, VectorRecord
+
+# Create WeaviateStorage instance with dimension = 4 using Weaviate Cloud
+weaviate_storage = WeaviateStorage(
+    vector_dim=4,
+    collection_name="camel_example_vectors",
+    connection_type="cloud",
+    wcd_cluster_url="your-weaviate-cloud-url",
+    wcd_api_key="your-weaviate-api-key",
+    vector_index_type="hnsw",
+    distance_metric="cosine",
+)
+
+# Add vectors records to Weaviate
+weaviate_storage.add([
+    VectorRecord(
+        vector=[-0.1, 0.1, -0.1, 0.1],
+        payload={'key1': 'value1'},
+    ),
+    VectorRecord(
+        vector=[-0.1, 0.1, 0.1, 0.1],
+        payload={'key2': 'value2'},
+    ),
+])
+
+# Query Weaviate for similar vectors
+query_results = weaviate_storage.query(VectorDBQuery(query_vector=[0.1, 0.2, 0.1, 0.1], top_k=1))
+for result in query_results:
+    print(result.record.payload, result.similarity)
+
+# Clear all vectors
+weaviate_storage.clear()
+```
+```markdown
+>>> {'key2': 'value2'} 0.7834733128547668
+```
+
+### 3.8. Using `NebulaGraph`
 
 ```python
 from camel.storages.graph_storages import NebulaGraph
@@ -390,7 +437,7 @@ query = 'SHOW TAGS;'
 print(nebula_graph.query(query))
 ```
 
-### 3.8. Using `Neo4jGraph`
+### 3.9. Using `Neo4jGraph`
 
 ```python
 from camel.storages import Neo4jGraph

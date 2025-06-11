@@ -47,15 +47,15 @@ def run_pptx_agent():
     Available Templates:
     1. Modern Template (modern.pptx)
        - Best for: Technology, Innovation, Digital topics
-       - Path: examples/toolkits/templates/modern.pptx
+       - Path: examples/toolkits/slides_templates/modern.pptx
 
     2. Business Template (ion_boardroom.pptx)
        - Best for: Business, Corporate, Professional topics
-       - Path: examples/toolkits/templates/ion_boardroom.pptx
+       - Path: examples/toolkits/slides_templates/ion_boardroom.pptx
 
     3. Education Template (urban_monochrome.pptx)
        - Best for: Education, Learning, Academic topics
-       - Path: examples/toolkits/templates/urban_monochrome.pptx
+       - Path: examples/toolkits/slides_templates/urban_monochrome.pptx
 
     Special formatting rules:
     1. Use **text** for bold text
@@ -73,8 +73,8 @@ def run_pptx_agent():
 
     Example tool usage:
     create_presentation(content='[{"title": "Example", "subtitle": "Demo"}]', 
-    filename="example.pptx", template="/examples/toolkits/templates/modern.
-    pptx")
+    filename="example.pptx", template="/examples/toolkits/slides_templates/
+    modern.pptx")
     """
 
     camel_agent = ChatAgent(
@@ -206,6 +206,7 @@ def run_pptx_agent():
     result = pptx_toolkit.create_presentation(
         content=json.dumps(presentation_content),
         filename="modern_development.pptx",
+        template="examples/toolkits/slides_templates/ion_boardroom.pptx",
     )
     print("Direct toolkit usage:")
     print(result)
