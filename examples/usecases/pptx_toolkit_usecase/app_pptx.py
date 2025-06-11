@@ -15,11 +15,45 @@ import os
 import streamlit as st
 import json
 import base64
+from typing import List, Optional, Union
+from pydantic import BaseModel, Field
+
 
 from camel.toolkits.pptx_toolkit import PPTXToolkit
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.agents import ChatAgent
+
+# --- Pydantic Models for Structured Output ---
+class TitleSlide(BaseModel):
+    """Title slide model"""
+    title: str = Field(description="Main title of the presentation")
+    subtitle: str = Field(description="Subtitle or description")
+
+class TableData(BaseModel):
+    """Table data model"""
+    headers: List[str] = Field(description="Table column headers")
+    rows: List[List[str]] = Field(description="Table rows data")
+
+class BulletSlide(BaseModel):
+    """Bullet point slide model"""
+    heading: str = Field(description="Slide heading")
+    bullet_points: List[str] = Field(description="List of bullet points, use >> prefix for step-by-step slides")
+    img_keywords: Optional[str] = Field(default="", description="Keywords for image search (not URLs)")
+
+class TableSlide(BaseModel):
+    """Table slide model"""
+    heading: str = Field(description="Slide heading")
+    table: TableData = Field(description="Table data with headers and rows")
+    img_keywords: Optional[str] = Field(default="", description="Keywords for image search (not URLs)")
+
+class PresentationSlides(BaseModel):
+    """Complete presentation model"""
+    title_slide: TitleSlide = Field(description="First slide must be a title slide")
+    content_slides: List[Union[BulletSlide, TableSlide]] = Field(
+        description="Content slides including bullet slides and table slides"
+    )
+
 
 # Load camel logo as base64
 def get_base64_img(path, w=32):
@@ -57,41 +91,17 @@ slide_count = st.slider("Number of slides (excluding title slide)", 3, 10, 5)
 
 # --- Construct the JSON‐generation instructions ---
 def pptx_prompt(topic: str, slide_count: int) -> str:
+    r"""Create a prompt for structured output generation"""
     return f"""
-You are an expert PowerPoint slide generator for CAMEL PPTXToolkit. 
-
-Your job: Output a single JSON array (no markdown, no commentary) for a presentation on "{topic}" with exactly {slide_count + 1} slides (including title). 
-
-CAMEL PPTXToolkit slide types (choose from these only):
-- Title slide:
-  {{"title": ..., "subtitle": ...}}
-- Bullet slide:
-  {{"heading": ..., "bullet_points": ["...", "..."], "img_keywords": "..."}}
-- Step-by-step slide:
-  {{"heading": ..., "bullet_points": [">> Step 1: ...", ">> Step 2: ...", ">> Step 3: ..."], "img_keywords": "..."}}
-  (If a bullet starts with ">>", it's rendered as a pentagon/chevron shape.)
-- Table slide:
-  {{"heading": ..., "table": {{"headers": [...], "rows": [[...],[...],[...]]}}, "img_keywords": "..."}}
-
-REQUIRED FORMAT:
-[
-  {{"title": "Title for {topic}", "subtitle": "Subtitle for this topic"}},
-  {{"heading": "...", "bullet_points": ["...", "..."], "img_keywords": "..."}},
-  {{"heading": "...", "bullet_points": [">> Step 1: ...", ">> Step 2: ..."], "img_keywords": "..."}},
-  {{"heading": "...", "table": {{"headers": ["Col1", "Col2"], "rows": [["A", "B"], ["C", "D"]]}}, "img_keywords": "..."}},
-  ...
-]
-
-MANDATORY RULES:
-1. The first slide is always a title slide.
-2. Include at least one step-by-step slide (with all bullet points starting with ">>").
-3. Include at least one table slide.
-4. At least TWO slides (not counting the title slide) MUST have non-empty, relevant "img_keywords" (search terms, not URLs) for the image field. Use visually interesting or topic-relevant keywords.
-5. For all bullet slides, use Markdown syntax for bold (**text**) and italics (*text*).
-6. Make content clear, concise, and visually engaging.
-7. Do NOT output markdown code fences or commentary—only raw JSON array.
-
-Styling Note: Slides will be rendered with a dark background and white text (no need to mention this, just make sure content is readable).
+Create a presentation about "{topic}" with exactly {slide_count + 1} slides total (1 title slide + {slide_count} content slides).
+Requirements:
+1. First slide must be a title slide with appropriate title and subtitle
+2. Include at least one step-by-step slide (bullet points starting with ">>")
+3. Include at least one table slide with relevant data
+4. At least TWO content slides must have meaningful img_keywords for visual content
+5. Use Markdown formatting (**bold**, *italic*) in bullet points
+6. Make content clear, concise, and engaging for the topic "{topic}"
+The presentation should cover key aspects of {topic}, including practical information, processes, and relevant data.
 """
 
 # --- Generate Slide JSON via ChatAgent ---
@@ -113,25 +123,43 @@ def generate_pptx_json_with_agent(topic: str, slide_count: int, api_key: str):
 
     # 3. Call the agent with our instruction prompt
     try:
-        response = agent.step(full_prompt)
-        content = response.msgs[0].content.strip()
+        response = agent.step(full_prompt,response_format=PresentationSlides)
 
-        # 4. Strip any accidental code fences, then parse JSON
-        json_str = content
-        if json_str.startswith("```"):
-            json_str = json_str.split("```")[1].strip()
-        if not json_str.startswith("["):
-            json_str = json_str[json_str.index("[") :]
-        if json_str.rfind("]") != -1:
-            json_str = json_str[: json_str.rfind("]") + 1]
+        # Parse JSON string into Pydantic object
+        json_content = response.msgs[0].content
+        presentation_data = PresentationSlides.model_validate_json(json_content)
 
-        slides = json.loads(json_str)
-        if not isinstance(slides, list) or not slides or "title" not in slides[0]:
-            raise ValueError("Invalid JSON structure")
-        return slides, None
+        # Convert to the expected JSON format
+        slides_json = []
+
+        # Add title slide
+        slides_json.append({
+            "title": presentation_data.title_slide.title,
+            "subtitle": presentation_data.title_slide.subtitle
+        })
+
+        # Add content slides
+        for slide in presentation_data.content_slides:
+            if isinstance(slide, BulletSlide):
+                slides_json.append({
+                    "heading": slide.heading,
+                    "bullet_points": slide.bullet_points,
+                    "img_keywords": slide.img_keywords or ""
+                })
+            elif isinstance(slide, TableSlide):
+                slides_json.append({
+                    "heading": slide.heading,
+                    "table": {
+                        "headers": slide.table.headers,
+                        "rows": slide.table.rows
+                    },
+                    "img_keywords": slide.img_keywords or ""
+                })
+
+        return slides_json, None
 
     except Exception as e:
-        return None, f"❌ ChatAgent (OpenAI) call failed: {e}"
+        return None, f"❌ Structured output generation failed: {e}"
 
 # --- Build & Return PPTX Bytes ---
 def build_pptx(slides):
