@@ -53,12 +53,14 @@ class DockerInterpreter(BaseInterpreter):
         "python": "python {file_name}",
         "bash": "bash {file_name}",
         "r": "Rscript {file_name}",
+        "node": "node {file_name}",
     }
 
     _CODE_EXTENSION_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "py",
         "bash": "sh",
         "r": "R",
+        "node": "js",
     }
 
     _CODE_TYPE_MAPPING: ClassVar[Dict[str, str]] = {
@@ -71,6 +73,11 @@ class DockerInterpreter(BaseInterpreter):
         "sh": "bash",
         "r": "r",
         "R": "r",
+        "node": "node",
+        "js": "node",
+        "javascript": "node",
+        "typescript": "node",
+        "ts": "node",
     }
 
     def __init__(
@@ -92,8 +99,11 @@ class DockerInterpreter(BaseInterpreter):
         This method ensures that the Docker container is removed when the
         interpreter is deleted.
         """
-        if self._container is not None:
-            self._container.remove(force=True)
+        try:
+            if self._container is not None:
+                self.cleanup()
+        except ImportError as e:
+            logger.warning(f"Error during container cleanup: {e}")
 
     def _initialize_if_needed(self) -> None:
         if self._container is not None:
@@ -180,10 +190,24 @@ class DockerInterpreter(BaseInterpreter):
         exec_result += f"(stderr: {stderr.decode()})" if stderr else ""
         return exec_result
 
+    def cleanup(self) -> None:
+        r"""Explicitly stops and removes the Docker container.
+
+        This method should be called when you're done with the interpreter
+        to ensure proper cleanup of Docker resources.
+        """
+        try:
+            if self._container is not None:
+                self._container.stop()
+                self._container.remove(force=True)
+                self._container = None
+        except Exception as e:
+            logger.error(f"Error during container cleanup: {e}")
+
     def run(
         self,
         code: str,
-        code_type: str,
+        code_type: str = "python",
     ) -> str:
         r"""Executes the given code in the container attached to the
         interpreter, and captures the stdout and stderr streams.
@@ -191,7 +215,7 @@ class DockerInterpreter(BaseInterpreter):
         Args:
             code (str): The code string to execute.
             code_type (str): The type of code to execute (e.g., 'python',
-                'bash').
+                'bash'). (default: obj:`python`)
 
         Returns:
             str: A string containing the captured stdout and stderr of the
@@ -229,13 +253,16 @@ class DockerInterpreter(BaseInterpreter):
         try:
             temp_file_path = self._create_file_in_container(code)
             result = self._run_file_in_container(temp_file_path, code_type)
+            # Clean up after execution
         except docker.errors.APIError as e:
+            self.cleanup()
             raise InterpreterError(
                 f"Execution halted due to docker API error: {e.explanation}. "
                 "This choice stops the current operation and any "
                 "further code execution."
             ) from e
         except docker.errors.DockerException as e:
+            self.cleanup()  # Clean up even if there's an error
             raise InterpreterError(
                 f"Execution halted due to docker exceptoin: {e}. "
                 "This choice stops the current operation and any "
@@ -258,6 +285,37 @@ class DockerInterpreter(BaseInterpreter):
 
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
-        raise RuntimeError(
-            "SubprocessInterpreter doesn't support " "`action_space`."
-        )
+        raise RuntimeError("DockerInterpreter doesn't support `action_space`.")
+
+    def execute_command(self, command: str) -> str:
+        r"""Executes a command in the Docker container and returns its output.
+
+        Args:
+            command (str): The command to execute in the container.
+
+        Returns:
+            str: A string containing the captured stdout and stderr of the
+                executed command.
+
+        Raises:
+            InterpreterError: If the container is not initialized or there is
+                an error executing the command.
+        """
+        self._initialize_if_needed()
+
+        if self._container is None:
+            raise InterpreterError(
+                "Container is not initialized. Try running the command again."
+            )
+
+        try:
+            stdout, stderr = self._container.exec_run(
+                command,
+                demux=True,
+            ).output
+            exec_result = f"{stdout.decode()}" if stdout else ""
+            exec_result += f"(stderr: {stderr.decode()})" if stderr else ""
+            return exec_result
+
+        except Exception as e:
+            raise InterpreterError(f"Failed to execute command: {e!s}") from e
