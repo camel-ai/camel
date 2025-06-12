@@ -15,6 +15,7 @@ Protocol (MCP).
 **Parameters:**
 
 - **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
+- **additional_args** (Optional[List[str]]): Additional command-line arguments to pass to the Playwright MCP server. For example, `["--cdp-endpoint=http://localhost:9222"]`. (default: :obj:`None`)
 
 **Note:**
 
@@ -25,14 +26,19 @@ Currently only supports asynchronous operation mode.
 ### __init__
 
 ```python
-def __init__(self, timeout: Optional[float] = None):
+def __init__(
+    self,
+    timeout: Optional[float] = None,
+    additional_args: Optional[List[str]] = None
+):
 ```
 
-Initializes the PlaywrightMCPToolkit with the specified timeout.
+Initializes the PlaywrightMCPToolkit.
 
 **Parameters:**
 
 - **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
+- **additional_args** (Optional[List[str]]): Additional command-line arguments to pass to the Playwright MCP server. For example, `["--cdp-endpoint=http://localhost:9222"]`. (default: :obj:`None`)
 
 <a id="camel.toolkits.playwright_mcp_toolkit.PlaywrightMCPToolkit.get_tools"></a>
 
