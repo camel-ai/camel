@@ -547,7 +547,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.65"
+version = "0.2.66"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -4103,11 +4103,11 @@ wheels = [
 
 [[package]]
 name = "narwhals"
-version = "1.42.0"
+version = "1.42.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a2/7e/9484c2427453bd0024fd36cf7923de4367d749f0b216b9ca56b9dfc3c516/narwhals-1.42.0.tar.gz", hash = "sha256:a5e554782446d1197593312651352cd39b2025e995053d8e6bdfaa01a70a91d3", size = 490671 }
+sdist = { url = "https://files.pythonhosted.org/packages/df/d6/168a787b7800d6c89846b791e4f5ee6b94998a80c8c2838a019d3d71984d/narwhals-1.42.1.tar.gz", hash = "sha256:50a5635b11aeda98cf9c37e839fd34b0a24159f59a4dfae930290ad698320494", size = 492865 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8d/0f/f9ae7c8c55f9078c852b13ea4a6e92e5f4d6d4c8fc0781ec2882957006bb/narwhals-1.42.0-py3-none-any.whl", hash = "sha256:ef6cedf7700dc22c09d17973b9ede11b53e25331e238b24ac73884a8c5e27c19", size = 359033 },
+    { url = "https://files.pythonhosted.org/packages/79/3f/8d450588206b437dd239a6d44230c63095e71135bd95d5a74347d07adbd5/narwhals-1.42.1-py3-none-any.whl", hash = "sha256:7a270d44b94ccdb277a799ae890c42e8504c537c1849f195eb14717c6184977a", size = 359888 },
 ]
 
 [[package]]
