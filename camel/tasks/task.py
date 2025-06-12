@@ -22,8 +22,8 @@ from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
-# Note: validate_task_content moved here to avoid circular imports
 
+# Note: validate_task_content moved here to avoid circular imports
 from .task_prompt import (
     TASK_COMPOSE_PROMPT,
     TASK_DECOMPOSE_PROMPT,
