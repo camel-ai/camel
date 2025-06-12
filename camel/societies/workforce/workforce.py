@@ -38,10 +38,9 @@ from camel.societies.workforce.utils import (
     TaskAssignResult,
     WorkerConf,
     check_if_running,
-    validate_task_content,
 )
 from camel.societies.workforce.worker import Worker
-from camel.tasks.task import Task, TaskState
+from camel.tasks.task import Task, TaskState, validate_task_content
 from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required
