@@ -386,6 +386,20 @@ class ModelType(UnifiedModelType, Enum):
     )
     WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
+    # Wenxin models
+    ERNIE_X1_TURBO_32K = "ernie-x1-turbo-32k"
+    ERNIE_X1_32K = "ernie-x1-32k"
+    ERNIE_X1_32K_PREVIEW = "ernie-x1-32k-preview"
+    ERNIE_4_5_TURBO_128K = "ernie-4.5-turbo-128k"
+    ERNIE_4_5_TURBO_32K = "ernie-4.5-turbo-32k"
+    ERNIE_4_5_8K_PREVIEW = "ernie-4.5-8k-preview"
+    ERNIE_4_0_8K_LATEST = "ernie-4.0-8k-latest"
+    ERNIE_4_0_TURBO_128K = "ernie-4.0-turbo-128k"
+    ERNIE_4_0_TURBO_8K_LATEST = "ernie-4.0-turbo-8k-latest"
+    DEEPSEEK_V3_250324 = "deepseek-v3-250324"
+    DEEPSEEK_R1_250528 = "deepseek-r1-250528"
+    QWEN3_235B_A22B = "qwen3-235b-a22b"
+
     # Crynux models
     CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
         "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
@@ -865,6 +879,23 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT,
             ModelType.WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT,
             ModelType.WATSONX_MISTRAL_LARGE,
+        }
+
+    @property
+    def is_wenxin(self) -> bool:
+        return self in {
+            ModelType.ERNIE_X1_TURBO_32K,
+            ModelType.ERNIE_X1_32K,
+            ModelType.ERNIE_X1_32K_PREVIEW,
+            ModelType.ERNIE_4_5_TURBO_128K,
+            ModelType.ERNIE_4_5_TURBO_32K,
+            ModelType.ERNIE_4_5_8K_PREVIEW,
+            ModelType.ERNIE_4_0_8K_LATEST,
+            ModelType.ERNIE_4_0_TURBO_128K,
+            ModelType.ERNIE_4_0_TURBO_8K_LATEST,
+            ModelType.DEEPSEEK_V3_250324,
+            ModelType.DEEPSEEK_R1_250528,
+            ModelType.QWEN3_235B_A22B,
         }
 
     @property
@@ -1502,6 +1533,7 @@ class ModelPlatformType(Enum):
     NETMIND = "netmind"
     NOVITA = "novita"
     WATSONX = "watsonx"
+    WENXIN = "wenxin"
     CRYNUX = "crynux"
 
     @classmethod

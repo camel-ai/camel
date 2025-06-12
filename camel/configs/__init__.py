@@ -46,6 +46,7 @@ from .siliconflow_config import SILICONFLOW_API_PARAMS, SiliconFlowConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .watsonx_config import WATSONX_API_PARAMS, WatsonXConfig
+from .wenxin_config import WENXIN_API_PARAMS, WenxinConfig
 from .yi_config import YI_API_PARAMS, YiConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
 
@@ -113,6 +114,8 @@ __all__ = [
     'LMStudioConfig',
     'WatsonXConfig',
     'WATSONX_API_PARAMS',
+    'WenxinConfig',
+    'WENXIN_API_PARAMS',
     'CrynuxConfig',
     'CRYNUX_API_PARAMS',
 ]
