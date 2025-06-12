@@ -25,7 +25,7 @@ from camel.societies.workforce.prompts import (
     ROLEPLAY_PROCESS_TASK_PROMPT,
     ROLEPLAY_SUMMARIZE_PROMPT,
 )
-from camel.societies.workforce.utils import TaskResult
+from camel.societies.workforce.utils import TaskResult, validate_task_content
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState
 
@@ -185,6 +185,14 @@ class RolePlayingWorker(Worker):
         )
         result_dict = json.loads(response.msg.content)
         task_result = TaskResult(**result_dict)
+
+        if not validate_task_content(task_result.content, task.id):
+            print(
+                f"{Fore.RED}Task {task.id}: Content validation failed - "
+                f"task marked as failed{Fore.RESET}"
+            )
+            return TaskState.FAILED
+
         task.result = task_result.content
 
         logger.info(f"Task result: {task.result}")
