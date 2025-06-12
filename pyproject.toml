@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.64"
+version = "0.2.66"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -438,6 +438,7 @@ markers = [
     "asyncio: mark a test as asyncio-based.",
     "very_slow: mark a very slow test to run only in full test mode",
     "model_backend: for tests that require OpenAI API key or a local LLM",
+    "heavy_dependency: mark a test as requiring heavy optional dependencies",
 ]
 
 [tool.coverage.report]
@@ -572,6 +573,10 @@ module = [
     "bohrium.*",
     "chunkr_ai.*",
     "langfuse.*",
+    "outlines.*",
+    "torch.*",
+    "sentence_transformers.*",
+    "cv2",
 ]
 ignore_missing_imports = true
 
