@@ -173,8 +173,6 @@ class MCPClient:
             initialization. (default: :obj:`None`)
         timeout (Optional[float], optional): Timeout for waiting for messages
             from the server in seconds. (default: :obj:`10.0`)
-        strict (Optional[bool], optional): Strict mode for generating
-            FunctionTool objects. (default: :obj:`False`)
 
     Examples:
         STDIO server:
@@ -209,20 +207,6 @@ class MCPClient:
             async with MCPClient({"url": "ws://localhost:8080/mcp"}) as client:
                 tools = client.get_tools()
 
-        With strict mode enabled:
-
-        .. code-block:: python
-
-            async with MCPClient({
-                "command": "npx",
-                "args": [
-                    "-y",
-                    "@modelcontextprotocol/server-filesystem",
-                    "/path"
-                ]
-            }, strict=True) as client:
-                tools = client.get_tools()
-
     Attributes:
         config (ServerConfig): The server configuration object.
         client_info (Optional[types.Implementation]): Client implementation
@@ -235,14 +219,12 @@ class MCPClient:
         config: Union[ServerConfig, Dict[str, Any]],
         client_info: Optional[types.Implementation] = None,
         timeout: Optional[float] = 10.0,
-        strict: Optional[bool] = False,
     ):
         # Convert dict config to ServerConfig if needed
         if isinstance(config, dict):
             config = ServerConfig(**config)
 
         self.config = config
-        self.strict = strict
 
         # Validate transport type early (this will raise ValueError if invalid)
         _ = self.config.transport_type
@@ -766,7 +748,6 @@ class MCPClient:
                 "name": mcp_tool.name,
                 "description": mcp_tool.description
                 or "No description provided.",
-                "strict": self.strict,
                 "parameters": parameters,
             },
         }
@@ -932,8 +913,7 @@ def create_mcp_client(
             dictionary is provided, it will be automatically converted to
             a :obj:`ServerConfig`.
         **kwargs: Additional keyword arguments passed to the :obj:`MCPClient`
-            constructor, such as :obj:`client_info`, :obj:`timeout`, and
-            :obj:`strict`.
+            constructor, such as :obj:`client_info`, :obj:`timeout`.
 
     Returns:
         MCPClient: A configured :obj:`MCPClient` instance ready for use as
@@ -971,20 +951,6 @@ def create_mcp_client(
             async with create_mcp_client({
                 "url": "ws://localhost:8080/mcp"
             }) as client:
-                tools = client.get_tools()
-
-        With strict mode enabled:
-
-        .. code-block:: python
-
-            async with create_mcp_client({
-                "command": "npx",
-                "args": [
-                    "-y",
-                    "@modelcontextprotocol/server-filesystem",
-                    "/path",
-                ],
-            }, strict=True) as client:
                 tools = client.get_tools()
     """
     return MCPClient(config, **kwargs)
