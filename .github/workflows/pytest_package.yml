@@ -81,7 +81,7 @@ jobs:
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
-        pytest --fast-test-mode test/
+        pytest --fast-test-mode -m "not heavy_dependency" test/
 
   pytest_package_llm_test:
     runs-on: ubuntu-latest
