@@ -1,0 +1,142 @@
+<a id="camel.utils.langfuse"></a>
+
+<a id="camel.utils.langfuse.configure_langfuse"></a>
+
+## configure_langfuse
+
+```python
+def configure_langfuse(
+    public_key: Optional[str] = None,
+    secret_key: Optional[str] = None,
+    host: Optional[str] = None,
+    debug: Optional[bool] = None,
+    enabled: Optional[bool] = None
+):
+```
+
+Configure Langfuse for CAMEL models.
+
+**Parameters:**
+
+- **public_key** (Optional[str]): Langfuse public key. Can be set via LANGFUSE_PUBLIC_KEY. (default: :obj:`None`)
+- **secret_key** (Optional[str]): Langfuse secret key. Can be set via LANGFUSE_SECRET_KEY. (default: :obj:`None`)
+- **host** (Optional[str]): Langfuse host URL. Can be set via LANGFUSE_HOST. (default: :obj:`https://cloud.langfuse.com`)
+- **debug** (Optional[bool]): Enable debug mode. Can be set via LANGFUSE_DEBUG. (default: :obj:`None`)
+- **enabled** (Optional[bool]): Enable/disable tracing. Can be set via LANGFUSE_ENABLED. (default: :obj:`None`)
+
+**Note:**
+
+This function configures the native langfuse_context which works with
+@observe() decorators. Set enabled=False to disable all tracing.
+
+<a id="camel.utils.langfuse.is_langfuse_available"></a>
+
+## is_langfuse_available
+
+```python
+def is_langfuse_available():
+```
+
+Check if Langfuse is configured.
+
+<a id="camel.utils.langfuse.set_current_agent_session_id"></a>
+
+## set_current_agent_session_id
+
+```python
+def set_current_agent_session_id(session_id: str):
+```
+
+Set the session ID for the current agent in thread-local storage.
+
+**Parameters:**
+
+- **session_id** (str): The session ID to set for the current agent.
+
+<a id="camel.utils.langfuse.get_current_agent_session_id"></a>
+
+## get_current_agent_session_id
+
+```python
+def get_current_agent_session_id():
+```
+
+**Returns:**
+
+  Optional[str]: The session ID for the current agent.
+
+<a id="camel.utils.langfuse.update_langfuse_trace"></a>
+
+## update_langfuse_trace
+
+```python
+def update_langfuse_trace(
+    session_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    tags: Optional[List[str]] = None
+):
+```
+
+Update the current Langfuse trace with session ID and metadata.
+
+**Parameters:**
+
+- **session_id** (Optional[str]): Optional session ID to use. If :obj:`None` uses the current agent's session ID. (default: :obj:`None`)
+- **user_id** (Optional[str]): Optional user ID for the trace. (default: :obj:`None`)
+- **metadata** (Optional[Dict[str, Any]]): Optional metadata dictionary. (default: :obj:`None`)
+- **tags** (Optional[List[str]]): Optional list of tags. (default: :obj:`None`)
+
+**Returns:**
+
+  bool: True if update was successful, False otherwise.
+
+<a id="camel.utils.langfuse.update_current_observation"></a>
+
+## update_current_observation
+
+```python
+def update_current_observation(
+    input: Optional[Dict[str, Any]] = None,
+    output: Optional[Dict[str, Any]] = None,
+    model: Optional[str] = None,
+    model_parameters: Optional[Dict[str, Any]] = None,
+    usage_details: Optional[Dict[str, Any]] = None,
+    **kwargs
+):
+```
+
+Update the current Langfuse observation with input, output,
+model, model_parameters, and usage_details.
+
+**Parameters:**
+
+- **input** (Optional[Dict[str, Any]]): Optional input dictionary. (default: :obj:`None`)
+- **output** (Optional[Dict[str, Any]]): Optional output dictionary. (default: :obj:`None`)
+- **model** (Optional[str]): Optional model name. (default: :obj:`None`)
+- **model_parameters** (Optional[Dict[str, Any]]): Optional model parameters dictionary. (default: :obj:`None`)
+- **usage_details** (Optional[Dict[str, Any]]): Optional usage details dictionary. (default: :obj:`None`)
+
+**Returns:**
+
+  None
+
+<a id="camel.utils.langfuse.get_langfuse_status"></a>
+
+## get_langfuse_status
+
+```python
+def get_langfuse_status():
+```
+
+**Returns:**
+
+  Dict[str, Any]: Status information including configuration state.
+
+<a id="camel.utils.langfuse.observe"></a>
+
+## observe
+
+```python
+def observe(*args, **kwargs):
+```
