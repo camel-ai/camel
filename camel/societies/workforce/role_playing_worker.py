@@ -187,9 +187,9 @@ class RolePlayingWorker(Worker):
         task_result = TaskResult(**result_dict)
 
         if not validate_task_content(task_result.content, task.id):
-            print(
-                f"{Fore.RED}Task {task.id}: Content validation failed - "
-                f"task marked as failed{Fore.RESET}"
+            logger.error(
+                f"Task {task.id}: Content validation failed - "
+                "task marked as failed"
             )
             return TaskState.FAILED
 
