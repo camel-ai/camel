@@ -13,9 +13,9 @@ Requirements for programmable agent state.
 Defines the possible requirements that can be used to repair the state
 of a programmable agent.
 
-Attributes:
-LAST_MESSAGE_NOT_USER (str): Requires that the last message in the
-conversation was not from the user.
+**Parameters:**
+
+- **LAST_MESSAGE_NOT_USER** (str): Requires that the last message in the conversation was not from the user.
 
 <a id="camel.agents.programmed_agent_instruction.ProgrammedAgentInstructionResult"></a>
 
@@ -30,10 +30,11 @@ Result of a programmable agent instruction execution.
 Contains the messages exchanged during execution and the computed value.
 The value type is specified by the generic type parameter T.
 
-Attributes:
-user_message (BaseMessage): The message sent by the user.
-agent_message (BaseMessage): The message sent by the agent.
-value (T): The computed result value of type T.
+**Parameters:**
+
+- **user_message** (BaseMessage): The message sent by the user.
+- **agent_message** (BaseMessage): The message sent by the agent.
+- **value** (T): The computed result value of type T.
 
 <a id="camel.agents.programmed_agent_instruction.AbstractProgrammableAgent"></a>
 
@@ -135,10 +136,10 @@ Provides a default implementation of atomic execution using threading locks
 and basic state tracking for message roles. Implementing classes need to
 provide specific repair logic for their use cases.
 
-Attributes:
-_operation_lock (threading.Lock): Lock for ensuring atomic operations.
-_last_message_role (Optional[str]): Role of the last message in the
-conversation.
+**Parameters:**
+
+- **_operation_lock** (threading.Lock): Lock for ensuring atomic operations.
+- **_last_message_role** (Optional[str]): Role of the last message in the conversation.
 
 <a id="camel.agents.programmed_agent_instruction.ProgrammableChatAgent.__init__"></a>
 

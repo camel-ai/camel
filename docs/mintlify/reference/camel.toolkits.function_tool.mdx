@@ -60,16 +60,6 @@ This function creates a schema compatible with OpenAI's API specifications,
 based on the provided Python function. It processes the function's
 parameters, types, and docstrings, and constructs a schema accordingly.
 
-Note:
-- Each parameter in `func` must have a type annotation; otherwise, it's
-treated as 'Any'.
-- Variable arguments (*args) and keyword arguments (**kwargs) are not
-supported and will be ignored.
-- A functional description including a brief and detailed explanation
-should be provided in the docstring of `func`.
-- All parameters of `func` must be described in its docstring.
-- Supported docstring styles: ReST, Google, Numpydoc, and Epydoc.
-
 **Parameters:**
 
 - **func** (Callable): The Python function to be converted into an OpenAI JSON schema.
