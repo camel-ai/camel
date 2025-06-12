@@ -207,15 +207,16 @@ class DockerInterpreter(BaseInterpreter):
             logger.error(f"Error during container cleanup: {e}")
 
     def start_container(self):
+        r"""Starts the Docker container and waits for it to reach
+        the running state."""
         self._initialize_if_needed()
 
-        # Wait until the container status is "running"
         try:
             if self._container is None:
                 raise InterpreterError("Container is not initialized.")
 
-            for _ in range(10):  # Retry up to 10 times with delay
-                self._container.reload()  # Refresh status
+            for _ in range(10):
+                self._container.reload()
                 if self._container.status == "running":
                     return
                 time.sleep(0.5)

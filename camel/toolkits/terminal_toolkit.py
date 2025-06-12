@@ -56,6 +56,10 @@ class TerminalToolkit(BaseToolkit):
             environment.(default: :obj:`False`)
         safe_mode (bool): Whether to enable safe mode to restrict operations.
             (default: :obj:`True`)
+        docker (bool): Whether to use docker.
+            (default: :obj:`False`)
+        container_id (Optional[str]): The ID of the docker container.
+            (default: :obj:`None`)
 
     Note:
         Most functions are compatible with Unix-based systems (macOS, Linux).
@@ -330,13 +334,26 @@ class TerminalToolkit(BaseToolkit):
             return None
 
     def _docker_command(self, command: Union[List[str], str]) -> List[str]:
-        """Convert command to docker compatible command.
+        r"""Convert a command to a docker-compatible command format.
+
+        This method takes a command (either as a string or list of strings) and
+        converts it into a format suitable for execution within a Docker
+        container. It prepends the necessary Docker exec command and container
+        ID to the original command.
 
         Args:
-            command (Union[List[str], str]): Command to be executed
+            command (Union[List[str], str]): The command to be executed. Can be
+                provided as either a string (which will be split using shlex)
+                or a list of strings representing the command and its
+                arguments.
 
         Returns:
-            Union[List[str], str]: Docker compatible command
+            List[str]: A list of strings representing the complete Docker
+                command, including 'docker', 'exec', container_id, and the
+                original command parts.
+
+        Raises:
+            ValueError: If container_id is not set (None).
         """
         if isinstance(command, str):
             import shlex
