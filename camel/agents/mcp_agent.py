@@ -125,7 +125,6 @@ class MCPAgent(ChatAgent):
         local_config_path: Optional[str] = None,
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
         function_calling_available: bool = True,
-        strict: bool = False,
         **kwargs,
     ):
         if model is None:
@@ -145,7 +144,6 @@ class MCPAgent(ChatAgent):
 
         self.local_config = local_config
         self.function_calling_available = function_calling_available
-        self.strict = strict
 
         if function_calling_available:
             sys_msg_content = "You are a helpful assistant, and you prefer "
@@ -179,7 +177,7 @@ class MCPAgent(ChatAgent):
         if self.local_config:
             config_dict.update(self.local_config)
 
-        return MCPToolkit(config_dict=config_dict, strict=self.strict)
+        return MCPToolkit(config_dict=config_dict)
 
     def add_registry(self, registry_config: BaseMCPRegistryConfig) -> None:
         r"""Add a new registry configuration to the agent.
@@ -213,7 +211,6 @@ class MCPAgent(ChatAgent):
         ] = None,
         model: Optional[BaseModelBackend] = None,
         function_calling_available: bool = False,
-        strict: bool = False,
         **kwargs,
     ) -> "MCPAgent":
         r"""Create and connect an MCPAgent instance.
@@ -279,7 +276,6 @@ class MCPAgent(ChatAgent):
             registry_configs=final_registry_configs,
             model=model,
             function_calling_available=function_calling_available,
-            strict=strict,
             **kwargs,
         )
 
