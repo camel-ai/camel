@@ -14,23 +14,22 @@
 
 from __future__ import annotations
 
-
-from pathlib import Path
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any, Dict, Tuple
+
+from terminal_bench.terminal.terminal import Terminal, spin_up_terminal
 
 from camel.environments.base import MultiStepEnv
 from camel.environments.models import Action, Observation
 from camel.extractors.base import BaseExtractor
-
 from camel.logger import get_logger
-
-from terminal_bench.terminal.terminal import spin_up_terminal, Terminal
 
 logger = get_logger(__name__)
 
+
 class TerminalBenchEnv(MultiStepEnv):
-    r""" A temporary skeleton
+    r"""A temporary skeleton
 
     Attributes:
         extractor (BaseExtractor): An extractor to process LLM responses.
@@ -54,8 +53,6 @@ class TerminalBenchEnv(MultiStepEnv):
         # Termination logic
         self.execution_result: int | None = None
 
-
-
     def _get_initial_state(self) -> Dict[str, Any]:
         r"""Draw a task from the Terminal Bench dataset.
 
@@ -69,8 +66,8 @@ class TerminalBenchEnv(MultiStepEnv):
 
     async def _setup_docker(self, task: str) -> None:
         r"""Setup tmux sessions and run install script for the specified task.
-        
-        This method reuses the existing setup logic in terminal bench to spinup a tmux 
+
+        This method reuses the existing setup logic in terminal bench to spinup a tmux
         session for a task.
 
         Args:
@@ -78,8 +75,10 @@ class TerminalBenchEnv(MultiStepEnv):
         """
 
         if self._terminal is not None:
-            logger.warning("_setup_docker() called twice - Please teardown the previous session first")
-        
+            logger.warning(
+                "_setup_docker() called twice - Please teardown the previous session first"
+            )
+
         # TODO implement proper task selection depending on StaticDataset structure
         compose_path = Path("tasks") / task / "docker-compose.yml"
         if not compose_path.exists():
@@ -87,7 +86,7 @@ class TerminalBenchEnv(MultiStepEnv):
 
         # Depend on docker-compose.yml
         client_container = f"{task}-client"
-        client_image     = f"{task}-image"
+        client_image = f"{task}-image"
 
         self._terminal_ctx = spin_up_terminal(
             client_container_name=client_container,
@@ -99,11 +98,15 @@ class TerminalBenchEnv(MultiStepEnv):
             livestream=False,
         )
 
-        self._terminal = self._terminal_ctx.__enter__()   # start container
+        self._terminal = self._terminal_ctx.__enter__()  # start container
         self._session = self._terminal.create_session("agent")
         self._container = self._terminal.container
 
-        logger.info("Docker stack for '%s' is ready (container %s)", task, self._container.name)
+        logger.info(
+            "Docker stack for '%s' is ready (container %s)",
+            task,
+            self._container.name,
+        )
 
     async def _update_state(self, action: Action) -> None:
         r"""Updates the environment's state based on an action.
@@ -113,7 +116,7 @@ class TerminalBenchEnv(MultiStepEnv):
 
         Args:
             action: The action taken by the agent.
-        
+
         """
         pass
 
@@ -150,7 +153,6 @@ class TerminalBenchEnv(MultiStepEnv):
             with all past rewards.
         """
 
-
     def _is_done(self) -> bool:
         r"""Checks for environment-specific termination conditions.
 
@@ -160,6 +162,5 @@ class TerminalBenchEnv(MultiStepEnv):
         Returns:
             True if execution result is 0, false otherwise.
         """
-        
-        return True if self.execution_result == 0 else False
 
+        return True if self.execution_result == 0 else False
