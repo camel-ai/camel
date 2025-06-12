@@ -21,7 +21,7 @@ import sys
 import threading
 import venv
 from queue import Queue
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -72,6 +72,8 @@ class TerminalToolkit(BaseToolkit):
         use_shell_mode: bool = True,
         clone_current_env: bool = False,
         safe_mode: bool = True,
+        docker: bool = False,
+        container_id: Optional[str] = None,
     ):
         super().__init__(timeout=timeout)
         self.shell_sessions = shell_sessions or {}
@@ -81,6 +83,11 @@ class TerminalToolkit(BaseToolkit):
         self.terminal_ready = threading.Event()
         self.gui_thread = None
         self.safe_mode = safe_mode
+        self.docker = docker
+        self.container_id = container_id
+
+        if self.docker:
+            self.os_type = "Linux"
 
         self.cloned_env_path = None
         self.use_shell_mode = use_shell_mode
@@ -322,6 +329,26 @@ class TerminalToolkit(BaseToolkit):
             logger.error(f"Failed to copy file: {e}")
             return None
 
+    def _docker_command(self, command: Union[List[str], str]) -> List[str]:
+        """Convert command to docker compatible command.
+
+        Args:
+            command (Union[List[str], str]): Command to be executed
+
+        Returns:
+            Union[List[str], str]: Docker compatible command
+        """
+        if isinstance(command, str):
+            import shlex
+
+            command = shlex.split(command)
+        if self.container_id is None:
+            raise ValueError("Container ID is not set")
+        # Ensure all elements are strings
+        docker_cmd: List[str] = ["docker", "exec", self.container_id]
+
+        return docker_cmd + [str(x) for x in command]
+
     def file_find_in_content(
         self, file: str, regex: str, sudo: bool = False
     ) -> str:
@@ -352,7 +379,10 @@ class TerminalToolkit(BaseToolkit):
             command.extend(["sudo"])
 
         if self.os_type in ['Darwin', 'Linux']:  # macOS or Linux
-            command.extend(["grep", "-E", regex, file])
+            _command = ["grep", "-E", regex, file]
+            if self.docker:
+                _command = self._docker_command(_command)
+            command.extend(_command)
         else:  # Windows
             # For Windows, we could use PowerShell or findstr
             command.extend(["findstr", "/R", regex, file])
@@ -384,7 +414,10 @@ class TerminalToolkit(BaseToolkit):
 
         command = []
         if self.os_type in ['Darwin', 'Linux']:  # macOS or Linux
-            command.extend(["find", path, "-name", glob])
+            _command = ["find", path, "-name", glob]
+            if self.docker:
+                _command = self._docker_command(_command)
+            command.extend(_command)
         else:  # Windows
             # For Windows, we use dir command with /s for recursive search
             # and /b for bare format
@@ -676,7 +709,9 @@ class TerminalToolkit(BaseToolkit):
             # First, log the command to be executed
             self._update_terminal_output(f"\n$ {command}\n")
 
-            if command.startswith('python') or command.startswith('pip'):
+            if (
+                command.startswith('python') or command.startswith('pip')
+            ) and not self.docker:
                 if self.cloned_env_path:
                     if self.os_type == 'Windows':
                         base_path = os.path.join(
@@ -721,9 +756,25 @@ class TerminalToolkit(BaseToolkit):
 
             else:
                 # Non-macOS systems use the Popen method
+                self._update_terminal_output(f"\n$ {command}\n")
+                use_shell = True
+                if self.docker:
+                    if not self.container_id:
+                        raise ValueError("Container id need to be set")
+                    docker_command = [
+                        "docker",
+                        "exec",
+                        "-i",
+                        self.container_id,
+                        "sh",
+                        "-c",
+                        command,
+                    ]
+                    command = "".join(docker_command)
+                    use_shell = False
                 proc = subprocess.Popen(
                     command,
-                    shell=True,
+                    shell=use_shell,
                     cwd=self.working_dir,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
