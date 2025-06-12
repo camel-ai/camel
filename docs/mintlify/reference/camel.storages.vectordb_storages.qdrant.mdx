@@ -22,7 +22,16 @@ The detailed information about Qdrant is available at:
 - **path** (Optional[str], optional): Path to a directory for initializing a local Qdrant client. (default: :obj:`None`)
 - **distance** (VectorDistance, optional): The distance metric for vector comparison (default: :obj:`VectorDistance.COSINE`)
 - **delete_collection_on_del** (bool, optional): Flag to determine if the collection should be deleted upon object destruction. (default: :obj:`False`) **kwargs (Any): Additional keyword arguments for initializing `QdrantClient`.
-- **Notes**: - If `url_and_api_key` is provided, it takes priority and the client will attempt to connect to the remote Qdrant instance using the URL endpoint. - If `url_and_api_key` is not provided and `path` is given, the client will use the local path to initialize Qdrant. - If neither `url_and_api_key` nor `path` is provided, the client will be initialized with an in-memory storage (`":memory:"`).
+
+**Note:**
+
+- If `url_and_api_key` is provided, it takes priority and the client
+will attempt to connect to the remote Qdrant instance using the URL
+endpoint.
+- If `url_and_api_key` is not provided and `path` is given, the client
+will use the local path to initialize Qdrant.
+- If neither `url_and_api_key` nor `path` is provided, the client will
+be initialized with an in-memory storage (`":memory:"`).
 
 <a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.__init__"></a>
 
@@ -222,6 +231,13 @@ filters.
 
 - **ids** (Optional[List[str]], optional): List of unique identifiers for the vectors to be deleted.
 - **payload_filter** (Optional[Dict[str, Any]], optional): A filter for the payload to delete points matching specific conditions. If `ids` is provided, `payload_filter` will be ignored unless both are combined explicitly. **kwargs (Any): Additional keyword arguments pass to `QdrantClient. delete`.
+
+**Note:**
+
+- If `ids` is provided, the points with these IDs will be deleted
+directly, and the `payload_filter` will be ignored.
+- If `ids` is not provided but `payload_filter` is, then points
+matching the `payload_filter` will be deleted.
 
 <a id="camel.storages.vectordb_storages.qdrant.QdrantStorage.status"></a>
 
