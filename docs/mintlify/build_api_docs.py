@@ -412,14 +412,18 @@ def parse_docstring(docstring):
                     )
             current_section = 'examples'
             current_lines = []
-        elif line.lower().startswith(('note:', 'notes:', 'warning:', 'warnings:')):
+        elif line.lower().startswith(
+            ('note:', 'notes:', 'warning:', 'warnings:')
+        ):
             if current_lines:
                 if current_section == 'args':
                     result['args'].extend(parse_args_section(current_lines))
                 elif current_section == 'returns':
                     result['returns'] = '\n'.join(current_lines).strip()
                 elif current_section == 'raises':
-                    result['raises'].extend(parse_raises_section(current_lines))
+                    result['raises'].extend(
+                        parse_raises_section(current_lines)
+                    )
                 elif current_section == 'examples':
                     result['examples'] = current_lines
                 elif current_section == 'description':
@@ -888,7 +892,9 @@ def generate_class_docs(class_node, module_name):
         if doc_info.get('notes'):
             lines.append('**Note:**')
             lines.append("")
-            lines.extend([escape_mdx_content(line) for line in doc_info['notes']])
+            lines.extend(
+                [escape_mdx_content(line) for line in doc_info['notes']]
+            )
             lines.append("")
 
     # Process methods
@@ -971,7 +977,9 @@ def generate_function_docs(func_node, module_name):
         if doc_info.get('notes'):
             lines.append('**Note:**')
             lines.append("")
-            lines.extend([escape_mdx_content(line) for line in doc_info['notes']])
+            lines.extend(
+                [escape_mdx_content(line) for line in doc_info['notes']]
+            )
             lines.append("")
 
     return lines
@@ -1041,7 +1049,9 @@ def generate_method_docs(method_node, class_name, module_name):
         if doc_info.get('notes'):
             lines.append('**Note:**')
             lines.append("")
-            lines.extend([escape_mdx_content(line) for line in doc_info['notes']])
+            lines.extend(
+                [escape_mdx_content(line) for line in doc_info['notes']]
+            )
             lines.append("")
 
     return lines
