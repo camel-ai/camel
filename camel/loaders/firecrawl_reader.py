@@ -68,6 +68,9 @@ class Firecrawl:
         """
 
         try:
+            if params is None:
+                params = {}
+            params['integration'] = 'camelai'
             crawl_response = self.app.crawl_url(
                 url=url,
                 params=params,
@@ -118,6 +121,9 @@ class Firecrawl:
             RuntimeError: If the scrape process fails.
         """
         try:
+            if params is None:
+                params = {}
+            params['integration'] = 'camelai'
             return self.app.scrape_url(url=url, params=params)
         except Exception as e:
             raise RuntimeError(f"Failed to scrape the URL: {e}")
@@ -144,6 +150,7 @@ class Firecrawl:
                 {
                     'formats': ['extract'],
                     'extract': {'schema': response_format.model_json_schema()},
+                    'integration': 'camelai',
                 },
             )
             return data.get("extract", {})
@@ -167,6 +174,9 @@ class Firecrawl:
             RuntimeError: If the mapping process fails.
         """
         try:
+            if params is None:
+                params = {}
+            params['integration'] = 'camelai'
             return self.app.map_url(url=url, params=params)
         except Exception as e:
             raise RuntimeError(f"Failed to map the site: {e}")
