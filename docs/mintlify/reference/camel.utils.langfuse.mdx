@@ -23,7 +23,11 @@ Configure Langfuse for CAMEL models.
 - **host** (Optional[str]): Langfuse host URL. Can be set via LANGFUSE_HOST. (default: :obj:`https://cloud.langfuse.com`)
 - **debug** (Optional[bool]): Enable debug mode. Can be set via LANGFUSE_DEBUG. (default: :obj:`None`)
 - **enabled** (Optional[bool]): Enable/disable tracing. Can be set via LANGFUSE_ENABLED. (default: :obj:`None`)
-- **Note**: This function configures the native langfuse_context which works with @observe() decorators. Set enabled=False to disable all tracing.
+
+**Note:**
+
+This function configures the native langfuse_context which works with
+@observe() decorators. Set enabled=False to disable all tracing.
 
 <a id="camel.utils.langfuse.is_langfuse_available"></a>
 
