@@ -493,6 +493,7 @@
               "reference/camel.toolkits.slack_toolkit",
               "reference/camel.toolkits.stripe_toolkit",
               "reference/camel.toolkits.sympy_toolkit",
+              "reference/camel.toolkits.task_planning_toolkit",
               "reference/camel.toolkits.terminal_toolkit",
               "reference/camel.toolkits.thinking_toolkit",
               "reference/camel.toolkits.twitter_toolkit",
@@ -583,7 +584,9 @@
               "reference/camel.benchmarks.browsecomp",
               "reference/camel.benchmarks.gaia",
               "reference/camel.benchmarks.nexus",
-              "reference/camel.benchmarks.ragbench"
+              "reference/camel.benchmarks.ragbench",
+              "reference/camel.benchmarks.mock_website.app",
+              "reference/camel.benchmarks.mock_website.mock_web"
             ]
           },
           {

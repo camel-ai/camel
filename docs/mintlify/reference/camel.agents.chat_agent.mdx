@@ -20,7 +20,7 @@ Class for managing conversations of CAMEL Chat Agents.
 - **tools** (Optional[List[Union[FunctionTool, Callable]]], optional): List of available :obj:`FunctionTool` or :obj:`Callable`. (default: :obj:`None`) external_tools (Optional[List[Union[FunctionTool, Callable, Dict[str, Any]]]], optional): List of external tools (:obj:`FunctionTool` or :obj:`Callable` or :obj:`Dict[str, Any]`) bind to one chat agent. When these tools are called, the agent will directly return the request instead of processing it. (default: :obj:`None`)
 - **response_terminators** (List[ResponseTerminator], optional): List of :obj:`ResponseTerminator` bind to one chat agent. (default: :obj:`None`)
 - **scheduling_strategy** (str): name of function that defines how to select the next model in ModelManager. (default: :str:`round_robin`)
-- **single_iteration** (bool): Whether to let the agent perform only one model calling at each step. (default: :obj:`False`)
+- **max_iteration** (Optional[int], optional): Maximum number of model calling iterations allowed per step. If `None` (default), there's no explicit limit. If `1`, it performs a single model call. If `N > 1`, it allows up to N model calls. (default: :obj:`None`)
 - **agent_id** (str, optional): The ID of the agent. If not provided, a random UUID will be generated. (default: :obj:`None`)
 - **stop_event** (Optional[threading.Event], optional): Event to signal termination of the agent's operation. When set, the agent will terminate its execution. (default: :obj:`None`)
 
@@ -41,7 +41,7 @@ def __init__(
     external_tools: Optional[List[Union[FunctionTool, Callable, Dict[str, Any]]]] = None,
     response_terminators: Optional[List[ResponseTerminator]] = None,
     scheduling_strategy: str = 'round_robin',
-    single_iteration: bool = False,
+    max_iteration: Optional[int] = None,
     agent_id: Optional[str] = None,
     stop_event: Optional[threading.Event] = None
 ):
