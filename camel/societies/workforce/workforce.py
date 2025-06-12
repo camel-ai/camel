@@ -38,6 +38,7 @@ from camel.societies.workforce.utils import (
     TaskAssignResult,
     WorkerConf,
     check_if_running,
+    validate_task_content,
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState
@@ -211,6 +212,15 @@ class Workforce(BaseNode):
         Returns:
             Task: The updated task.
         """
+        if not validate_task_content(task.content, task.id):
+            task.state = TaskState.FAILED
+            task.result = "Task failed: Invalid or empty content provided"
+            logger.warning(
+                f"Task {task.id} rejected: Invalid or empty content. "
+                f"Content preview: '{task.content[:50]}...'"
+            )
+            return task
+
         self.reset()
         self._task = task
         task.state = TaskState.FAILED

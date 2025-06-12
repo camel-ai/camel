@@ -19,14 +19,18 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
+from camel.societies.workforce.utils import validate_task_content
 
 from .task_prompt import (
     TASK_COMPOSE_PROMPT,
     TASK_DECOMPOSE_PROMPT,
     TASK_EVOLVE_PROMPT,
 )
+
+logger = get_logger(__name__)
 
 
 def parse_response(
@@ -49,7 +53,16 @@ def parse_response(
     if task_id is None:
         task_id = "0"
     for i, content in enumerate(tasks_content):
-        tasks.append(Task(content=content.strip(), id=f"{task_id}.{i}"))
+        stripped_content = content.strip()
+        # validate subtask content before creating the task
+        if validate_task_content(stripped_content, f"{task_id}.{i}"):
+            tasks.append(Task(content=stripped_content, id=f"{task_id}.{i}"))
+        else:
+            logger.warning(
+                f"Skipping invalid subtask {task_id}.{i} "
+                f"during decomposition: "
+                f"Content '{stripped_content[:50]}...' failed validation"
+            )
     return tasks
 
 
