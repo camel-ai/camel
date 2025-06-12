@@ -12,12 +12,22 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from __future__ import annotations
+
+
+from pathlib import Path
+from contextlib import contextmanager
 from typing import Any, Dict, Tuple
 
 from camel.environments.base import MultiStepEnv
 from camel.environments.models import Action, Observation
 from camel.extractors.base import BaseExtractor
 
+from camel.logger import get_logger
+
+from terminal_bench.terminal.terminal import spin_up_terminal, Terminal
+
+logger = get_logger(__name__)
 
 class TerminalBenchEnv(MultiStepEnv):
     r""" A temporary skeleton
@@ -35,9 +45,14 @@ class TerminalBenchEnv(MultiStepEnv):
         """
         super().__init__(extractor=extractor, **kwargs)
 
+        # Docker logic
+        self._terminal_ctx: contextmanager | None = None
+        self._terminal: Terminal | None = None
+        self._container = None
+        self._session = None
 
         # Termination logic
-        self.execution_result = None
+        self.execution_result: int | None = None
 
 
 
@@ -52,6 +67,44 @@ class TerminalBenchEnv(MultiStepEnv):
         """
         pass
 
+    async def _setup_docker(self, task: str) -> None:
+        r"""Setup tmux sessions and run install script for the specified task.
+        
+        This method reuses the existing setup logic in terminal bench to spinup a tmux 
+        session for a task.
+
+        Args:
+            task: The task we want to create a session for
+        """
+
+        if self._terminal is not None:
+            logger.warning("_setup_docker() called twice - Please teardown the previous session first")
+        
+        # TODO implement proper task selection depending on StaticDataset structure
+        compose_path = Path("tasks") / task / "docker-compose.yml"
+        if not compose_path.exists():
+            raise FileNotFoundError(compose_path)
+
+        # Depend on docker-compose.yml
+        client_container = f"{task}-client"
+        client_image     = f"{task}-image"
+
+        self._terminal_ctx = spin_up_terminal(
+            client_container_name=client_container,
+            client_image_name=client_image,
+            docker_compose_path=compose_path,
+            docker_name_prefix="tb",
+            no_rebuild=True,
+            cleanup=False,
+            livestream=False,
+        )
+
+        self._terminal = self._terminal_ctx.__enter__()   # start container
+        self._session = self._terminal.create_session("agent")
+        self._container = self._terminal.container
+
+        logger.info("Docker stack for '%s' is ready (container %s)", task, self._container.name)
+
     async def _update_state(self, action: Action) -> None:
         r"""Updates the environment's state based on an action.
 
@@ -60,6 +113,7 @@ class TerminalBenchEnv(MultiStepEnv):
 
         Args:
             action: The action taken by the agent.
+        
         """
         pass
 
