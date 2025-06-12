@@ -256,7 +256,7 @@ def sanitize_and_enforce_required(parameters_dict):
                 # This field is optional - add null to its type
                 current_type = field_schema.get('type')
                 has_ref = '$ref' in field_schema
-                
+
                 if has_ref:
                     # Fields with $ref shouldn't have additional type field
                     # The $ref itself defines the type structure
@@ -274,7 +274,7 @@ def sanitize_and_enforce_required(parameters_dict):
                 else:
                     # No type specified, add null type
                     field_schema['type'] = ['null']
-                
+
                 # Optional fields are still marked as required in strict mode
                 # but with null type to indicate they can be omitted
                 required_fields.append(field_name)
