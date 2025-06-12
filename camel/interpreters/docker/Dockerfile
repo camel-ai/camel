@@ -61,6 +61,9 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     mv /root/.local/bin/uvx /usr/local/bin/uvx && \
     chmod +x /usr/local/bin/uv /usr/local/bin/uvx
 
+# Expose 3000 port for development service
+EXPOSE 3000
+
 # Setup working directory
 WORKDIR /workspace
 

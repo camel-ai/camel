@@ -15,6 +15,7 @@
 import io
 import shlex
 import tarfile
+import time
 import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
@@ -137,6 +138,7 @@ class DockerInterpreter(BaseInterpreter):
             detach=True,
             name=f"camel-interpreter-{uuid.uuid4()}",
             command="tail -f /dev/null",
+            ports={"3000/tcp": 3000},
         )
 
     def _create_file_in_container(self, content: str) -> Path:
@@ -203,6 +205,28 @@ class DockerInterpreter(BaseInterpreter):
                 self._container = None
         except Exception as e:
             logger.error(f"Error during container cleanup: {e}")
+
+    def start_container(self):
+        self._initialize_if_needed()
+
+        # Wait until the container status is "running"
+        try:
+            if self._container is None:
+                raise InterpreterError("Container is not initialized.")
+
+            for _ in range(10):  # Retry up to 10 times with delay
+                self._container.reload()  # Refresh status
+                if self._container.status == "running":
+                    return
+                time.sleep(0.5)
+
+            raise InterpreterError(
+                "Docker container failed to reach 'running' state."
+            )
+        except Exception as e:
+            raise InterpreterError(
+                f"Error while waiting for container to start: {e}"
+            )
 
     def run(
         self,

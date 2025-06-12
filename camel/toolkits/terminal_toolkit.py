@@ -345,7 +345,7 @@ class TerminalToolkit(BaseToolkit):
         if self.container_id is None:
             raise ValueError("Container ID is not set")
         # Ensure all elements are strings
-        docker_cmd: List[str] = ["docker", "exec", self.container_id]
+        docker_cmd: List[str] = ["docker", "exec", str(self.container_id)]
 
         return docker_cmd + [str(x) for x in command]
 
@@ -709,98 +709,126 @@ class TerminalToolkit(BaseToolkit):
             # First, log the command to be executed
             self._update_terminal_output(f"\n$ {command}\n")
 
-            if (
-                command.startswith('python') or command.startswith('pip')
-            ) and not self.docker:
-                if self.cloned_env_path:
-                    if self.os_type == 'Windows':
-                        base_path = os.path.join(
-                            self.cloned_env_path, "Scripts"
-                        )
-                        python_path = os.path.join(base_path, "python.exe")
-                        pip_path = os.path.join(base_path, "pip.exe")
-                    else:
-                        base_path = os.path.join(self.cloned_env_path, "bin")
-                        python_path = os.path.join(base_path, "python")
-                        pip_path = os.path.join(base_path, "pip")
-                else:
-                    python_path = self.python_executable
-                    pip_path = f'"{python_path}" -m pip'
+            if self.docker:
+                # Properly format Docker command as a list
+                docker_command = [
+                    "docker",
+                    "exec",
+                    str(self.container_id),  # Ensure container_id is string
+                    "/bin/sh",
+                    "-c",
+                    str(command),  # Ensure command is string
+                ]
+                use_shell = False
 
-                if command.startswith('python'):
-                    command = command.replace('python', f'"{python_path}"', 1)
-                elif command.startswith('pip'):
-                    command = command.replace('pip', pip_path, 1)
-
-            if self.is_macos:
-                # Type safe version - macOS uses subprocess.run
-                process = subprocess.run(
-                    command,
-                    shell=True,
-                    cwd=self.working_dir,
-                    capture_output=True,
-                    text=True,
-                    env=os.environ.copy(),
-                )
-
-                # Process the output
-                output = process.stdout or ""
-                if process.stderr:
-                    output += f"\nStderr Output:\n{process.stderr}"
-
-                # Update session information and terminal
-                self.shell_sessions[id]["output"] = output
-                self._update_terminal_output(output + "\n")
-
-                return output
-
-            else:
-                # Non-macOS systems use the Popen method
-                self._update_terminal_output(f"\n$ {command}\n")
-                use_shell = True
-                if self.docker:
-                    if not self.container_id:
-                        raise ValueError("Container id need to be set")
-                    docker_command = [
-                        "docker",
-                        "exec",
-                        "-i",
-                        self.container_id,
-                        "sh",
-                        "-c",
-                        command,
-                    ]
-                    command = "".join(docker_command)
-                    use_shell = False
                 proc = subprocess.Popen(
-                    command,
+                    docker_command,  # Use the list directly
                     shell=use_shell,
                     cwd=self.working_dir,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     stdin=subprocess.PIPE,
                     text=True,
+                    encoding='utf-8',
                     bufsize=1,
                     universal_newlines=True,
                     env=os.environ.copy(),
                 )
 
-                # Store the process and mark it as running
-                self.shell_sessions[id]["process"] = proc
-                self.shell_sessions[id]["running"] = True
-
-                # Get output
                 stdout, stderr = proc.communicate()
-
                 output = stdout or ""
                 if stderr:
                     output += f"\nStderr Output:\n{stderr}"
 
-                # Update session information and terminal
                 self.shell_sessions[id]["output"] = output
                 self._update_terminal_output(output + "\n")
-
                 return output
+            else:
+                if (
+                    command.startswith('python') or command.startswith('pip')
+                ) and not self.docker:
+                    if self.cloned_env_path:
+                        if self.os_type == 'Windows':
+                            base_path = os.path.join(
+                                self.cloned_env_path, "Scripts"
+                            )
+                            python_path = os.path.join(base_path, "python.exe")
+                            pip_path = os.path.join(base_path, "pip.exe")
+                        else:
+                            base_path = os.path.join(
+                                self.cloned_env_path, "bin"
+                            )
+                            python_path = os.path.join(base_path, "python")
+                            pip_path = os.path.join(base_path, "pip")
+                    else:
+                        python_path = self.python_executable
+                        pip_path = f'"{python_path}" -m pip'
+
+                    if command.startswith('python'):
+                        command = command.replace(
+                            'python', f'"{python_path}"', 1
+                        )
+                    elif command.startswith('pip'):
+                        command = command.replace('pip', pip_path, 1)
+
+                if self.is_macos:
+                    # Type safe version - macOS uses subprocess.run
+                    process = subprocess.run(
+                        command,
+                        shell=True,
+                        cwd=self.working_dir,
+                        capture_output=True,
+                        text=True,
+                        env=os.environ.copy(),
+                    )
+
+                    # Process the output
+                    output = process.stdout or ""
+                    if process.stderr:
+                        output += f"\nStderr Output:\n{process.stderr}"
+
+                    # Update session information and terminal
+                    self.shell_sessions[id]["output"] = output
+                    self._update_terminal_output(output + "\n")
+
+                    return output
+
+                else:
+                    # Non-macOS systems use the Popen method
+                    self._update_terminal_output(f"\n$ {command}\n")
+                    use_shell = True
+                    if self.os_type == 'Windows':
+                        command = f'cmd.exe /c "{command}"'
+
+                    proc = subprocess.Popen(
+                        command,
+                        shell=use_shell,
+                        cwd=self.working_dir,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        stdin=subprocess.PIPE,
+                        text=True,
+                        bufsize=1,
+                        universal_newlines=True,
+                        env=os.environ.copy(),
+                    )
+
+                    # Store the process and mark it as running
+                    self.shell_sessions[id]["process"] = proc
+                    self.shell_sessions[id]["running"] = True
+
+                    # Get output
+                    stdout, stderr = proc.communicate()
+
+                    output = stdout or ""
+                    if stderr:
+                        output += f"\nStderr Output:\n{stderr}"
+
+                    # Update session information and terminal
+                    self.shell_sessions[id]["output"] = output
+                    self._update_terminal_output(output + "\n")
+
+                    return output
 
         except Exception as e:
             error_msg = f"Command execution error: {e!s}"
