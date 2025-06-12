@@ -11,10 +11,6 @@ class TaskSpecifyAgent(ChatAgent):
 An agent that specifies a given task prompt by prompting the user to
 provide more details.
 
-Attributes:
-DEFAULT_WORD_LIMIT (int): The default word limit for the task prompt.
-task_specify_prompt (TextPrompt): The prompt for specifying the task.
-
 **Parameters:**
 
 - **model** (BaseModelBackend, optional): The model backend to use for generating responses. (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
@@ -72,10 +68,6 @@ class TaskPlannerAgent(ChatAgent):
 An agent that helps divide a task into subtasks based on the input
 task prompt.
 
-Attributes:
-task_planner_prompt (TextPrompt): A prompt for the agent to divide
-the task into subtasks.
-
 **Parameters:**
 
 - **model** (BaseModelBackend, optional): The model backend to use for generating responses. (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
@@ -124,10 +116,6 @@ and last completed task. Compared to :obj:`TaskPlannerAgent`,
 it's still a task planner, but it has more context information
 like last task and incomplete task list. Modified from
 `BabyAGI <https://github.com/yoheinakajima/babyagi>`_.
-
-Attributes:
-task_creation_prompt (TextPrompt): A prompt for the agent to
-create new tasks.
 
 **Parameters:**
 
@@ -184,10 +172,6 @@ class TaskPrioritizationAgent(ChatAgent):
 An agent that helps re-prioritize the task list and
 returns numbered prioritized list. Modified from
 `BabyAGI <https://github.com/yoheinakajima/babyagi>`_.
-
-Attributes:
-task_prioritization_prompt (TextPrompt): A prompt for the agent to
-prioritize tasks.
 
 **Parameters:**
 

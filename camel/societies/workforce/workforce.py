@@ -681,8 +681,8 @@ class Workforce(BaseNode):
                 task_id (str, optional): Unique identifier for the task. If
                     None, a UUID will be automatically generated.
                     (default: :obj:`None`)
-                additional_info (str, optional): Additional information or
-                    context for the task. (default: :obj:`None`)
+                additional_info (Optional[Dict[str, Any]]): Additional
+                    information or context for the task. (default: :obj:`None`)
 
             Returns:
                 Dict[str, Any]: A dictionary containing the processing result
@@ -701,7 +701,7 @@ class Workforce(BaseNode):
             task = Task(
                 content=task_content,
                 id=task_id or str(uuid.uuid4()),
-                additional_info=additional_info or "",
+                additional_info=additional_info,
             )
 
             try:
