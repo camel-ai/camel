@@ -1947,7 +1947,7 @@ class ChatAgent(BaseAgent):
 
         # Create content accumulator for proper content management
         content_accumulator = StreamContentAccumulator()
-
+        iteration_count = 0
         while True:
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
@@ -1963,6 +1963,7 @@ class ChatAgent(BaseAgent):
                     response_format,
                     self._get_full_tool_schemas() or None,
                 )
+                iteration_count += 1
             except Exception as exc:
                 logger.error(
                     f"Error in streaming model response: {exc}", exc_info=exc
@@ -1990,7 +1991,11 @@ class ChatAgent(BaseAgent):
 
                     # If we executed tools and not in
                     # single iteration mode, continue
-                    if tool_call_records and not self.single_iteration:
+                    if (
+                        tool_call_records
+                        and self.max_iteration
+                        and iteration_count < self.max_iteration
+                    ):
                         # Update messages with tool results for next iteration
                         try:
                             openai_messages, num_tokens = (
@@ -2571,7 +2576,7 @@ class ChatAgent(BaseAgent):
 
         # Create content accumulator for proper content management
         content_accumulator = StreamContentAccumulator()
-
+        iteration_count = 0
         while True:
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
@@ -2587,6 +2592,7 @@ class ChatAgent(BaseAgent):
                     response_format,
                     self._get_full_tool_schemas() or None,
                 )
+                iteration_count += 1
             except Exception as exc:
                 logger.error(
                     f"Error in async streaming model response: {exc}",
@@ -2626,7 +2632,11 @@ class ChatAgent(BaseAgent):
 
                     # If we executed tools and not in
                     # single iteration mode, continue
-                    if tool_call_records and not self.single_iteration:
+                    if (
+                        tool_call_records
+                        and self.max_iteration
+                        and iteration_count < self.max_iteration
+                    ):
                         # Update messages with tool results for next iteration
                         try:
                             openai_messages, num_tokens = (
