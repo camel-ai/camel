@@ -1,0 +1,65 @@
+<a id="camel.societies.workforce.utils"></a>
+
+<a id="camel.societies.workforce.utils.WorkerConf"></a>
+
+## WorkerConf
+
+```python
+class WorkerConf(BaseModel):
+```
+
+The configuration of a worker.
+
+<a id="camel.societies.workforce.utils.TaskResult"></a>
+
+## TaskResult
+
+```python
+class TaskResult(BaseModel):
+```
+
+The result of a task.
+
+<a id="camel.societies.workforce.utils.TaskAssignResult"></a>
+
+## TaskAssignResult
+
+```python
+class TaskAssignResult(BaseModel):
+```
+
+The result of task assignment.
+
+<a id="camel.societies.workforce.utils.check_if_running"></a>
+
+## check_if_running
+
+```python
+def check_if_running(running: bool):
+```
+
+**Raises:**
+
+- **RuntimeError**: If the workforce is not in the expected status.
+
+<a id="camel.societies.workforce.utils.validate_task_content"></a>
+
+## validate_task_content
+
+```python
+def validate_task_content(content: str, task_id: str = 'unknown', min_length: int = 10):
+```
+
+Validates task result content to avoid silent failures.
+It performs basic checks to ensure the content meets minimum
+quality standards.
+
+**Parameters:**
+
+- **content** (str): The task result content to validate.
+- **task_id** (str): Task ID for logging purposes. (default: :obj:`"unknown"`)
+- **min_length** (int): Minimum content length after stripping whitespace. (default: :obj:`10`)
+
+**Returns:**
+
+  bool: True if content passes validation, False otherwise.

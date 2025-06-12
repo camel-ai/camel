@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
+import os
 from typing import ClassVar, Dict, Optional, Type, Union
 
 from camel.models.aiml_model import AIMLModel
@@ -20,6 +21,7 @@ from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.cohere_model import CohereModel
+from camel.models.crynux_model import CrynuxModel
 from camel.models.deepseek_model import DeepSeekModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
@@ -50,7 +52,7 @@ from camel.models.watsonx_model import WatsonXModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
-from camel.utils import BaseTokenCounter
+from camel.utils import BaseTokenCounter, configure_langfuse
 
 
 class ModelFactory:
@@ -96,6 +98,7 @@ class ModelFactory:
         ModelPlatformType.MODELSCOPE: ModelScopeModel,
         ModelPlatformType.NOVITA: NovitaModel,
         ModelPlatformType.WATSONX: WatsonXModel,
+        ModelPlatformType.CRYNUX: CrynuxModel,
     }
 
     @staticmethod
@@ -142,6 +145,12 @@ class ModelFactory:
         Raises:
             ValueError: If there is no backend for the model.
         """
+
+        # Auto-configure Langfuse only if explicitly enabled
+        env_enabled_str = os.environ.get("LANGFUSE_ENABLED")
+        if env_enabled_str and env_enabled_str.lower() == "true":
+            configure_langfuse()
+
         # Convert string to ModelPlatformType enum if needed
         if isinstance(model_platform, str):
             try:
