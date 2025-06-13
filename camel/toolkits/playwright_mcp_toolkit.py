@@ -27,16 +27,28 @@ class PlaywrightMCPToolkit(BaseToolkit):
     Attributes:
         timeout (Optional[float]): Connection timeout in seconds.
             (default: :obj:`None`)
+        additional_args (Optional[List[str]]): Additional command-line
+            arguments to pass to the Playwright MCP server. For example,
+            `["--cdp-endpoint=http://localhost:9222"]`.
+            (default: :obj:`None`)
 
     Note:
         Currently only supports asynchronous operation mode.
     """
 
-    def __init__(self, timeout: Optional[float] = None) -> None:
-        r"""Initializes the PlaywrightMCPToolkit with the specified timeout.
+    def __init__(
+        self,
+        timeout: Optional[float] = None,
+        additional_args: Optional[List[str]] = None,
+    ) -> None:
+        r"""Initializes the PlaywrightMCPToolkit.
 
         Args:
             timeout (Optional[float]): Connection timeout in seconds.
+                (default: :obj:`None`)
+            additional_args (Optional[List[str]]): Additional command-line
+                arguments to pass to the Playwright MCP server. For example,
+                `["--cdp-endpoint=http://localhost:9222"]`.
                 (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
@@ -46,7 +58,8 @@ class PlaywrightMCPToolkit(BaseToolkit):
                 "mcpServers": {
                     "playwright": {
                         "command": "npx",
-                        "args": ["@playwright/mcp@latest"],
+                        "args": ["@playwright/mcp@latest"]
+                        + (additional_args or []),
                     }
                 }
             }

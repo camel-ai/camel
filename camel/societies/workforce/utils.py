@@ -16,10 +16,6 @@ from typing import Callable
 
 from pydantic import BaseModel, Field
 
-from camel.logger import get_logger
-
-logger = get_logger(__name__)
-
 
 class WorkerConf(BaseModel):
     r"""The configuration of a worker."""
@@ -75,50 +71,3 @@ def check_if_running(running: bool) -> Callable:
         return wrapper
 
     return decorator
-
-
-def validate_task_content(
-    content: str, task_id: str = "unknown", min_length: int = 10
-) -> bool:
-    r"""Validates task result content to avoid silent failures.
-    It performs basic checks to ensure the content meets minimum
-    quality standards.
-
-    Args:
-        content (str): The task result content to validate.
-        task_id (str): Task ID for logging purposes.
-            (default: :obj:`"unknown"`)
-        min_length (int): Minimum content length after stripping whitespace.
-            (default: :obj:`10`)
-
-    Returns:
-        bool: True if content passes validation, False otherwise.
-    """
-    # 1: Content must not be None
-    if content is None:
-        logger.warning(f"Task {task_id}: None content rejected")
-        return False
-
-    # 2: Content must not be empty after stripping whitespace
-    stripped_content = content.strip()
-    if not stripped_content:
-        logger.warning(
-            f"Task {task_id}: Empty or whitespace-only content rejected."
-        )
-        return False
-
-    # 3: Content must meet minimum meaningful length
-    if len(stripped_content) < min_length:
-        logger.warning(
-            f"Task {task_id}: Content too short ({len(stripped_content)} "
-            f"chars < {min_length} minimum). Content preview: "
-            f"'{stripped_content[:50]}...'"
-        )
-        return False
-
-    # All validation checks passed
-    logger.debug(
-        f"Task {task_id}: Content validation passed "
-        f"({len(stripped_content)} chars)"
-    )
-    return True
