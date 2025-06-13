@@ -46,7 +46,6 @@
           {
             "group": "Get Started",
             "pages": [
-              "get_started/introduction",
               "get_started/installation",
               "get_started/setup"
             ]
