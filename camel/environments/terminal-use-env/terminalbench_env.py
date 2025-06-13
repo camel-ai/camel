@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import random
 import shutil
 import subprocess
 from contextlib import contextmanager
@@ -32,8 +33,7 @@ from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
-SYS_PROMPT = (
-    r"""
+SYS_PROMPT = r"""
     You are an expert system administrator operating within a terminal environment.
     Your goal is to solve the given task by issuing a sequence of commands.
     You will be provided with the task description and the history of 
@@ -49,7 +49,7 @@ SYS_PROMPT = (
     The task description and the terminal output so far is:
 
     """
-    )
+
 
 class TerminalBenchEnv(MultiStepEnv):
     r"""A temporary skeleton
@@ -80,7 +80,6 @@ class TerminalBenchEnv(MultiStepEnv):
         self._container = None
         self._session = None
 
-
         self._task_sampling = task_sampling
         self._task = None
         self._task_config: Dict[str, Any] = {}
@@ -106,7 +105,7 @@ class TerminalBenchEnv(MultiStepEnv):
             A dictionary representing the initial state.
         """
         # Load task.yml as a dict from the tasks directory
-        task_root = Path(self._cache_dir) / "tasks"
+        tasks_root = Path(self._cache_dir) / "tasks"
         task_directories = [
             task.name for task in tasks_root.iterdir() if task.is_dir()
         ]
@@ -145,7 +144,7 @@ class TerminalBenchEnv(MultiStepEnv):
 
         return state
 
-    def select_task(task: str) -> None:
+    def select_task(self, task: str) -> None:
         self._task = task
 
     def _setup_docker(self, task: str) -> None:
@@ -208,7 +207,7 @@ class TerminalBenchEnv(MultiStepEnv):
             raise RuntimeError(
                 "Tmux session not initialised; call reset() first."
             )
-        
+
         command = await self._extract_command(action)
         self._last_command = command
 
@@ -279,10 +278,16 @@ class TerminalBenchEnv(MultiStepEnv):
         else:
             # If the history is too long, apply something
             # TODO make logs better
-            history_log.append(f"We are at step {self._current_step} and the history is not yet full")
+            history_log.append(
+                f"We are at step {self._current_step} and the history is not yet full"
+            )
             if history_len > self.terminal_context_window:
-                logger.error(f"History exceeded context window, history_length: {history_len}")
-                raise ValueError()
+                history_log.append(
+                    "History exceeded context window, truncating"
+                )
+                terminal_history = terminal_history[
+                    -self.terminal_context_window :
+                ]
 
         prompt_parts = [
             SYS_PROMPT,
@@ -303,7 +308,11 @@ class TerminalBenchEnv(MultiStepEnv):
         Returns:
             A final Observation for the agent.
         """
-        pass
+        obs = (
+            f"The terminal session has ended after {self._step_count} steps. "
+            "The task is over"
+        )
+        return Observation(question=obs, context={}, metadata={})
 
     async def compute_reward(self) -> Tuple[float, Dict[str, float]]:
         r"""Calculates the reward for the current state.
@@ -326,7 +335,7 @@ class TerminalBenchEnv(MultiStepEnv):
             reward = 1.0
         else:
             reward = 0.0
-            
+
         self._reward_dict[self._last_command] = reward
 
         return reward, self._reward_dict
