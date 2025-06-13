@@ -102,6 +102,7 @@ class Workforce(BaseNode):
 
     Example:
         >>> # Configure with custom model and shared memory
+        >>> import asyncio
         >>> model = ModelFactory.create(
         ...     ModelPlatformType.OPENAI, ModelType.GPT_4O
         ... )
@@ -113,8 +114,11 @@ class Workforce(BaseNode):
         ... )
         >>>
         >>> # Process a task
-        >>> task = Task(content="Research AI trends", id="1")
-        >>> result = workforce.process_task(task)
+        >>> async def main():
+        ...     task = Task(content="Research AI trends", id="1")
+        ...     result = await workforce.process_task(task)
+        ...     return result
+        >>> asyncio.run(main())
     """
 
     def __init__(
@@ -347,7 +351,7 @@ class Workforce(BaseNode):
         return subtasks
 
     @check_if_running(False)
-    def process_task(self, task: Task) -> Task:
+    async def process_task(self, task: Task) -> Task:
         r"""The main entry point for the workforce to process a task. It will
         start the workforce and all the child nodes under it, process the
         task provided and return the updated task.
@@ -377,7 +381,7 @@ class Workforce(BaseNode):
         self._pending_tasks.extendleft(reversed(subtasks))
         self.set_channel(TaskChannel())
 
-        asyncio.run(self.start())
+        await self.start()
 
         return task
 
@@ -863,7 +867,9 @@ class Workforce(BaseNode):
         workforce_instance = self
 
         # Define functions first
-        def process_task(task_content, task_id=None, additional_info=None):
+        async def process_task(
+            task_content, task_id=None, additional_info=None
+        ):
             r"""Process a task using the workforce.
 
             Args:
@@ -885,7 +891,8 @@ class Workforce(BaseNode):
                     - message (str): Error message if status is "error"
 
             Example:
-                >>> result = process_task("Analyze market trends", "task_001")
+                >>> result = await process_task("Analyze market trends",
+                "task_001")
                 >>> print(result["status"])  # "success" or "error"
             """
             task = Task(
@@ -895,7 +902,7 @@ class Workforce(BaseNode):
             )
 
             try:
-                result_task = workforce_instance.process_task(task)
+                result_task = await workforce_instance.process_task(task)
                 return {
                     "status": "success",
                     "task_id": result_task.id,
