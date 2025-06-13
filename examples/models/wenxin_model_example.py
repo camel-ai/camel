@@ -18,7 +18,7 @@ from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.WENXIN,
-    model_type=ModelType.ERNIE_X1_TURBO_32K,
+    model_type=ModelType.WENXIN_ERNIE_X1_TURBO_32K,
     model_config_dict=WenxinConfig(temperature=0.2).as_dict(),
 )
 
@@ -35,7 +35,21 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
+The word 'strawberry' is spelled **S-T-R-A-W-B-E-R-R-Y**.  
 
+Breaking it down letter by letter:  
+1. S  
+2. T  
+3. **R**  
+4. A  
+5. W  
+6. B  
+7. E  
+8. **R**  
+9. **R**  
+10. Y  
+
+There are **3 instances of the letter 'r'** in 'strawberry'.
 ===============================================================================
 
 '''

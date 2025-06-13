@@ -68,7 +68,7 @@ class WenxinModel(OpenAICompatibleModel):
         api_key = api_key or os.environ.get("WENXIN_API_KEY")
         url = url or os.environ.get(
             "WENXIN_API_BASE_URL",
-            "https://qianfan.baidubce.com/v2/chat/completions",
+            "https://qianfan.baidubce.com/v2",
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(

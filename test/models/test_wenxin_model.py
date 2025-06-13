@@ -39,7 +39,7 @@ from camel.utils import OpenAITokenCounter
         "qwen3-235b-a22b",
     ],
 )
-def test_netmind_model(model_type: ModelType):
+def test_wenxin_model(model_type: ModelType):
     model = WenxinModel(model_type)
 
     assert model.model_type == model_type
@@ -54,8 +54,8 @@ def test_netmind_model(model_type: ModelType):
 
 
 @pytest.mark.model_backend
-def test_netmind_model_unexpected_argument():
-    model_type = ModelType.ERNIE_X1_TURBO_32K
+def test_wenxin_model_unexpected_argument():
+    model_type = ModelType.WENXIN_ERNIE_X1_TURBO_32K
 
     model_config_dict = {"model_path": "ernie-x1-turbo-32k"}
 
@@ -72,7 +72,7 @@ def test_netmind_model_unexpected_argument():
 
 
 @pytest.mark.model_backend
-def test_netmind_model_stream_property():
-    model = WenxinModel(ModelType.ERNIE_X1_TURBO_32K)
+def test_wenxin_model_stream_property():
+    model = WenxinModel(ModelType.WENXIN_ERNIE_X1_TURBO_32K)
 
     assert model.stream is False
