@@ -244,6 +244,7 @@ async def main():
         workforce = Workforce(
             'A workforce',
             graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
+            share_memory=True,
         )
 
         workforce.add_single_agent_worker(
@@ -260,9 +261,9 @@ async def main():
         human_task = Task(
             content=(
                 """I want to read papers about GUI Agent. Please help me find 
-                ten papers, check the detailed content of the paper and 
-                summarize them into a report, then create a nice slides for 
-                the report."""
+                ten papers, check the detailed content of the papers and help 
+                me write a comparison report, then create a nice slides to 
+                introduce the latest research progress of GUI Agent."""
             ),
             id='0',
         )

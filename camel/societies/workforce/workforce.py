@@ -41,7 +41,12 @@ from camel.societies.workforce.utils import (
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, validate_task_content
-from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
+from camel.toolkits import (
+    CodeExecutionToolkit,
+    SearchToolkit,
+    TaskPlanningToolkit,
+    ThinkingToolkit,
+)
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required
 
@@ -186,7 +191,9 @@ class Workforce(BaseNode):
             "a new worker for a task, etc.",
         )
         self.coordinator_agent = ChatAgent(
-            coord_agent_sys_msg, **(coordinator_agent_kwargs or {})
+            coord_agent_sys_msg,
+            **(coordinator_agent_kwargs or {}),
+            tools=[*TaskPlanningToolkit().get_tools()],
         )
 
         task_sys_msg = BaseMessage.make_assistant_message(
