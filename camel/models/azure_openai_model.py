@@ -16,7 +16,10 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from openai import AsyncAzureOpenAI, AsyncStream, AzureOpenAI, Stream
-from openai.lib.streaming.chat import ChatCompletionStreamManager
+from openai.lib.streaming.chat import (
+    AsyncChatCompletionStreamManager,
+    ChatCompletionStreamManager,
+)
 from pydantic import BaseModel
 
 from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
@@ -253,7 +256,7 @@ class AzureOpenAIModel(BaseModelBackend):
     ) -> Union[
         ChatCompletion,
         AsyncStream[ChatCompletionChunk],
-        ChatCompletionStreamManager[BaseModel],
+        AsyncChatCompletionStreamManager[BaseModel],
     ]:
         r"""Runs inference of Azure OpenAI chat completion.
 
@@ -266,10 +269,11 @@ class AzureOpenAIModel(BaseModelBackend):
                 use for the request.
 
         Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk],
+                  AsyncChatCompletionStreamManager[BaseModel]]:
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
-                `ChatCompletionStreamManager[BaseModel]` for
+                `AsyncChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
 
@@ -412,7 +416,7 @@ class AzureOpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Any:
+    ) -> AsyncChatCompletionStreamManager[BaseModel]:
         r"""Request async streaming structured output parsing.
 
         Note: This uses OpenAI's beta streaming API for structured outputs.

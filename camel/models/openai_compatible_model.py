@@ -17,7 +17,10 @@ from json import JSONDecodeError
 from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import AsyncOpenAI, AsyncStream, BadRequestError, OpenAI, Stream
-from openai.lib.streaming.chat import ChatCompletionStreamManager
+from openai.lib.streaming.chat import (
+    AsyncChatCompletionStreamManager,
+    ChatCompletionStreamManager,
+)
 from pydantic import BaseModel, ValidationError
 
 from camel.logger import get_logger
@@ -189,7 +192,7 @@ class OpenAICompatibleModel(BaseModelBackend):
     ) -> Union[
         ChatCompletion,
         AsyncStream[ChatCompletionChunk],
-        ChatCompletionStreamManager[BaseModel],
+        AsyncChatCompletionStreamManager[BaseModel],
     ]:
         r"""Runs inference of OpenAI chat completion in async mode.
 
@@ -203,10 +206,10 @@ class OpenAICompatibleModel(BaseModelBackend):
 
         Returns:
             Union[ChatCompletion, AsyncStream[ChatCompletionChunk],
-                ChatCompletionStreamManager[BaseModel]]:
+                AsyncChatCompletionStreamManager[BaseModel]]:
                 `ChatCompletion` in the non-stream mode,
                 `AsyncStream[ChatCompletionChunk]` in the stream mode,
-                or `ChatCompletionStreamManager[BaseModel]` for
+                or `AsyncChatCompletionStreamManager[BaseModel]` for
                 structured output streaming.
         """
 
@@ -391,7 +394,7 @@ class OpenAICompatibleModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Any:
+    ) -> AsyncChatCompletionStreamManager[BaseModel]:
         r"""Request async streaming structured output parsing.
 
         Note: This uses OpenAI's beta streaming API for structured outputs.

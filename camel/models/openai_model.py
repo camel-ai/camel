@@ -16,7 +16,10 @@ import warnings
 from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
-from openai.lib.streaming.chat import ChatCompletionStreamManager
+from openai.lib.streaming.chat import (
+    AsyncChatCompletionStreamManager,
+    ChatCompletionStreamManager,
+)
 from pydantic import BaseModel
 
 from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
@@ -291,7 +294,11 @@ class OpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk], Any]:
+    ) -> Union[
+        ChatCompletion,
+        AsyncStream[ChatCompletionChunk],
+        AsyncChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs inference of OpenAI chat completion in async mode.
 
         Args:
@@ -303,7 +310,8 @@ class OpenAIModel(BaseModelBackend):
                 use for the request.
 
         Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk], Any]:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk],
+                  AsyncChatCompletionStreamManager[BaseModel]]:
                 `ChatCompletion` in the non-stream mode,
                 `AsyncStream[ChatCompletionChunk]` in the stream mode, or
                 `AsyncChatCompletionStreamManager[BaseModel]` for
@@ -476,7 +484,7 @@ class OpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Type[BaseModel],
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Any:
+    ) -> AsyncChatCompletionStreamManager[BaseModel]:
         r"""Request async streaming structured output parsing.
 
         Note: This uses OpenAI's beta streaming API for structured outputs.

@@ -19,7 +19,6 @@ import queue
 import textwrap
 import threading
 import uuid
-from collections import defaultdict
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -35,6 +34,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 from openai import (
@@ -131,38 +131,40 @@ class StreamContentAccumulator:
         self.tool_status_messages = []  # Accumulated tool status messages
 
     def set_base_content(self, content: str):
-        """Set the base content (usually empty or pre-tool content)."""
+        r"""Set the base content (usually empty or pre-tool content)."""
         self.base_content = content
 
     def add_streaming_content(self, new_content: str):
-        """Add new streaming content."""
+        r"""Add new streaming content."""
         self.current_content += new_content
 
     def add_tool_status(self, status_message: str):
-        """Add a tool status message."""
+        r"""Add a tool status message."""
         self.tool_status_messages.append(status_message)
 
     def get_full_content(self) -> str:
-        """Get the complete accumulated content."""
+        r"""Get the complete accumulated content."""
         tool_messages = "".join(self.tool_status_messages)
         return self.base_content + tool_messages + self.current_content
 
     def get_content_with_new_status(self, status_message: str) -> str:
-        """Get content with a new status message appended."""
+        r"""Get content with a new status message appended."""
         tool_messages = "".join([*self.tool_status_messages, status_message])
         return self.base_content + tool_messages + self.current_content
 
     def reset_streaming_content(self):
-        """Reset only the streaming content, keep base and tool status."""
+        r"""Reset only the streaming content, keep base and tool status."""
         self.current_content = ""
 
 
 class StreamingChatAgentResponse:
-    r"""A wrapper that makes streaming responses compatible with non-streaming code.
+    r"""A wrapper that makes streaming responses compatible with
+    non-streaming code.
 
     This class wraps a Generator[ChatAgentResponse, None, None] and provides
-    the same interface as ChatAgentResponse, so existing code doesn't need to change.
-    """  # noqa: E501
+    the same interface as ChatAgentResponse, so existing code doesn't need to
+    change.
+    """
 
     def __init__(self, generator: Generator[ChatAgentResponse, None, None]):
         self._generator = generator
@@ -354,6 +356,9 @@ class ChatAgent(BaseAgent):
         stop_event (Optional[threading.Event], optional): Event to signal
             termination of the agent's operation. When set, the agent will
             terminate its execution. (default: :obj:`None`)
+        tool_execution_timeout (Optional[float], optional): Timeout
+            for individual tool execution. If None, wait indefinitely.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -387,6 +392,7 @@ class ChatAgent(BaseAgent):
         max_iteration: Optional[int] = None,
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
+        tool_execution_timeout: Optional[float] = None,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -461,6 +467,7 @@ class ChatAgent(BaseAgent):
         self.response_terminators = response_terminators or []
         self.max_iteration = max_iteration
         self.stop_event = stop_event
+        self.tool_execution_timeout = tool_execution_timeout
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -948,9 +955,10 @@ class ChatAgent(BaseAgent):
         Returns:
             Union[ChatAgentResponse, StreamingChatAgentResponse]: If stream is
                 False, returns a ChatAgentResponse. If stream is True, returns
-                a StreamingChatAgentResponse that behaves like ChatAgentResponse
-                but can also be iterated for streaming updates.
-        """  # noqa: E501
+                a StreamingChatAgentResponse that behaves like
+                ChatAgentResponse but can also be iterated for
+                streaming updates.
+        """
 
         stream = self.model_backend.model_config_dict.get("stream", False)
 
@@ -1088,12 +1096,13 @@ class ChatAgent(BaseAgent):
                 helps in defining the expected output format. (default:
                 :obj:`None`)
         Returns:
-            Union[Awaitable[ChatAgentResponse], AsyncStreamingChatAgentResponse]:
-                If stream is False, returns an awaitable ChatAgentResponse.
-                If stream is True, returns an AsyncStreamingChatAgentResponse
-                that can be awaited for the final result or async iterated
-                for streaming updates.
-        """  # noqa: E501
+            Union[Awaitable[ChatAgentResponse],
+                AsyncStreamingChatAgentResponse]:If stream is False,
+                returns an awaitable ChatAgentResponse.If stream is True,
+                returns an AsyncStreamingChatAgentResponse that can be
+                awaited for the final result or async iterated for
+                streaming updates.
+        """
 
         try:
             from camel.utils.langfuse import set_current_agent_session_id
@@ -1300,11 +1309,8 @@ class ChatAgent(BaseAgent):
             f"index {self.model_backend.current_model_index}, "
             f"processed these messages: {sanitized_messages}"
         )
-
-        if isinstance(response, ChatCompletion):
-            return self._handle_batch_response(response)
-        else:
-            return self._handle_stream_response(response, num_tokens)
+        assert isinstance(response, ChatCompletion)
+        return self._handle_batch_response(response)
 
     async def _aget_model_response(
         self,
@@ -1348,11 +1354,8 @@ class ChatAgent(BaseAgent):
             f"index {self.model_backend.current_model_index}, "
             f"processed these messages: {sanitized_messages}"
         )
-
-        if isinstance(response, ChatCompletion):
-            return self._handle_batch_response(response)
-        else:
-            return await self._ahandle_stream_response(response, num_tokens)
+        assert isinstance(response, ChatCompletion)
+        return self._handle_batch_response(response)
 
     def _sanitize_messages_for_logging(self, messages):
         r"""Sanitize OpenAI messages for logging by replacing base64 image
@@ -1613,116 +1616,6 @@ class ChatAgent(BaseAgent):
             usage_dict=usage,
             response_id=response.id or "",
         )
-
-    def _handle_stream_response(
-        self,
-        response: Stream[ChatCompletionChunk],
-        prompt_tokens: int,
-    ) -> ModelResponse:
-        r"""Process a stream response from the model and extract the necessary
-        information.
-
-        Args:
-            response (dict): Model response.
-            prompt_tokens (int): Number of input prompt tokens.
-
-        Returns:
-            _ModelResponse: a parsed model response.
-        """
-        content_dict: defaultdict = defaultdict(lambda: "")
-        finish_reasons_dict: defaultdict = defaultdict(lambda: "")
-        output_messages: List[BaseMessage] = []
-        response_id: str = ""
-        # All choices in one response share one role
-        for chunk in response:
-            # Some model platforms like siliconflow may return None for the
-            # chunk.id
-            response_id = chunk.id if chunk.id else str(uuid.uuid4())
-            self._handle_chunk(
-                chunk, content_dict, finish_reasons_dict, output_messages
-            )
-        finish_reasons = [
-            finish_reasons_dict[i] for i in range(len(finish_reasons_dict))
-        ]
-        usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
-
-        # TODO: Handle tool calls
-        return ModelResponse(
-            response=response,
-            tool_call_requests=None,
-            output_messages=output_messages,
-            finish_reasons=finish_reasons,
-            usage_dict=usage_dict,
-            response_id=response_id,
-        )
-
-    async def _ahandle_stream_response(
-        self,
-        response: AsyncStream[ChatCompletionChunk],
-        prompt_tokens: int,
-    ) -> ModelResponse:
-        r"""Process a stream response from the model and extract the necessary
-        information.
-
-        Args:
-            response (dict): Model response.
-            prompt_tokens (int): Number of input prompt tokens.
-
-        Returns:
-            _ModelResponse: a parsed model response.
-        """
-        content_dict: defaultdict = defaultdict(lambda: "")
-        finish_reasons_dict: defaultdict = defaultdict(lambda: "")
-        output_messages: List[BaseMessage] = []
-        response_id: str = ""
-        # All choices in one response share one role
-        async for chunk in response:
-            # Some model platforms like siliconflow may return None for the
-            # chunk.id
-            response_id = chunk.id if chunk.id else str(uuid.uuid4())
-            self._handle_chunk(
-                chunk, content_dict, finish_reasons_dict, output_messages
-            )
-        finish_reasons = [
-            finish_reasons_dict[i] for i in range(len(finish_reasons_dict))
-        ]
-        usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
-
-        # TODO: Handle tool calls
-        return ModelResponse(
-            response=response,
-            tool_call_requests=None,
-            output_messages=output_messages,
-            finish_reasons=finish_reasons,
-            usage_dict=usage_dict,
-            response_id=response_id,
-        )
-
-    def _handle_chunk(
-        self,
-        chunk: ChatCompletionChunk,
-        content_dict: defaultdict,
-        finish_reasons_dict: defaultdict,
-        output_messages: List[BaseMessage],
-    ) -> None:
-        r"""Handle a chunk of the model response."""
-        for choice in chunk.choices:
-            index = choice.index
-            delta = choice.delta
-            if delta.content is not None:
-                content_dict[index] += delta.content
-
-            if not choice.finish_reason:
-                continue
-
-            finish_reasons_dict[index] = choice.finish_reason
-            chat_message = BaseMessage(
-                role_name=self.role_name,
-                role_type=self.role_type,
-                meta_dict=dict(),
-                content=content_dict[index],
-            )
-            output_messages.append(chat_message)
 
     def _step_terminate(
         self,
@@ -1991,10 +1884,9 @@ class ChatAgent(BaseAgent):
 
                     # If we executed tools and not in
                     # single iteration mode, continue
-                    if (
-                        tool_call_records
-                        and self.max_iteration
-                        and iteration_count < self.max_iteration
+                    if tool_call_records and (
+                        self.max_iteration is None
+                        or iteration_count < self.max_iteration
                     ):
                         # Update messages with tool results for next iteration
                         try:
@@ -2015,6 +1907,7 @@ class ChatAgent(BaseAgent):
                         break
                 else:
                     # Stream completed without tool calls
+                    accumulated_tool_calls.clear()
                     break
             elif hasattr(response, '__enter__') and hasattr(
                 response, '__exit__'
@@ -2025,25 +1918,27 @@ class ChatAgent(BaseAgent):
 
                     for event in stream:
                         if event.type == "content.delta":
-                            if event.delta:
+                            if getattr(event, "delta", None):
                                 # Use accumulator for proper content management
                                 partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
                                     content_accumulator,
-                                    event.delta,
+                                    getattr(event, "delta", ""),
                                     step_token_usage,
                                     tool_call_records=tool_call_records.copy(),
                                 )
                                 yield partial_response
 
                         elif event.type == "content.done":
-                            parsed_object = event.parsed
+                            parsed_object = getattr(event, "parsed", None)
                             break
                         elif event.type == "error":
                             logger.error(
-                                f"Error in structured stream: {event.error}"
+                                f"Error in structured stream: "
+                                f"{getattr(event, 'error', '')}"
                             )
                             yield self._create_error_response(
-                                str(event.error), tool_call_records
+                                str(getattr(event, 'error', '')),
+                                tool_call_records,
                             )
                             return
 
@@ -2059,7 +1954,10 @@ class ChatAgent(BaseAgent):
                             role_type=self.role_type,
                             meta_dict={},
                             content=final_content,
-                            parsed=parsed_object,
+                            parsed=cast(
+                                "BaseModel | dict[str, Any] | None",
+                                parsed_object,
+                            ),  # type: ignore[arg-type]
                         )
 
                         self.record_message(final_message)
@@ -2107,6 +2005,7 @@ class ChatAgent(BaseAgent):
                     model_response.usage_dict.get("completion_tokens", 0),
                     model_response.usage_dict.get("total_tokens", 0),
                 )
+                accumulated_tool_calls.clear()
                 break
 
     def _process_stream_chunks_with_accumulator(
@@ -2184,7 +2083,7 @@ class ChatAgent(BaseAgent):
                         if tool_call_records:
                             sending_status = self._create_tool_status_response_with_accumulator(  # noqa: E501
                                 content_accumulator,
-                                "\n---------\n\nSending back result to model\n\n",  # noqa: E501
+                                "\n------\n\nSending back result to model\n\n",
                                 "tool_sending",
                                 step_token_usage,
                             )
@@ -2318,7 +2217,7 @@ class ChatAgent(BaseAgent):
             result_queue: queue.Queue[Optional[ToolCallingRecord]] = (
                 queue.Queue()
             )
-            t = threading.Thread(
+            thread = threading.Thread(
                 target=tool_worker,
                 args=(
                     self._internal_tools[function_name],
@@ -2327,7 +2226,7 @@ class ChatAgent(BaseAgent):
                     tool_call_data,
                 ),
             )
-            t.start()
+            thread.start()
 
             status_message = (
                 f"\nCalling function: {function_name} "
@@ -2340,8 +2239,28 @@ class ChatAgent(BaseAgent):
                 step_token_usage,
             )
             yield status_status
-            # wait for tool thread to finish
-            t.join()
+            # wait for tool thread to finish with optional timeout
+            thread.join(self.tool_execution_timeout)
+
+            # If timeout occurred, mark as error and continue
+            if thread.is_alive():
+                timeout_msg = (
+                    f"\nFunction '{function_name}' timed out after "
+                    f"{self.tool_execution_timeout} seconds.\n---------\n"
+                )
+                timeout_status = (
+                    self._create_tool_status_response_with_accumulator(
+                        content_accumulator,
+                        timeout_msg,
+                        "tool_timeout",
+                        step_token_usage,
+                    )
+                )
+                yield timeout_status
+                logger.error(timeout_msg.strip())
+                # Detach thread (it may still finish later). Skip recording.
+                continue
+
             # Tool finished, get result
             tool_call_record = result_queue.get()
             if tool_call_record:
@@ -2632,10 +2551,9 @@ class ChatAgent(BaseAgent):
 
                     # If we executed tools and not in
                     # single iteration mode, continue
-                    if (
-                        tool_call_records
-                        and self.max_iteration
-                        and iteration_count < self.max_iteration
+                    if tool_call_records and (
+                        self.max_iteration is None
+                        or iteration_count < self.max_iteration
                     ):
                         # Update messages with tool results for next iteration
                         try:
@@ -2656,6 +2574,7 @@ class ChatAgent(BaseAgent):
                         break
                 else:
                     # Stream completed without tool calls
+                    accumulated_tool_calls.clear()
                     break
             elif hasattr(response, '__aenter__') and hasattr(
                 response, '__aexit__'
@@ -2667,26 +2586,27 @@ class ChatAgent(BaseAgent):
 
                     async for event in stream:
                         if event.type == "content.delta":
-                            if event.delta:
+                            if getattr(event, "delta", None):
                                 # Use accumulator for proper content management
                                 partial_response = self._create_streaming_response_with_accumulator(  # noqa: E501
                                     content_accumulator,
-                                    event.delta,
+                                    getattr(event, "delta", ""),
                                     step_token_usage,
                                     tool_call_records=tool_call_records.copy(),
                                 )
                                 yield partial_response
 
                         elif event.type == "content.done":
-                            parsed_object = event.parsed
+                            parsed_object = getattr(event, "parsed", None)
                             break
                         elif event.type == "error":
                             logger.error(
                                 f"Error in async structured stream: "
-                                f"{event.error}"
+                                f"{getattr(event, 'error', '')}"
                             )
                             yield self._create_error_response(
-                                str(event.error), tool_call_records
+                                str(getattr(event, 'error', '')),
+                                tool_call_records,
                             )
                             return
 
@@ -2702,7 +2622,10 @@ class ChatAgent(BaseAgent):
                             role_type=self.role_type,
                             meta_dict={},
                             content=final_content,
-                            parsed=parsed_object,
+                            parsed=cast(
+                                "BaseModel | dict[str, Any] | None",
+                                parsed_object,
+                            ),  # type: ignore[arg-type]
                         )
 
                         self.record_message(final_message)
@@ -2752,6 +2675,7 @@ class ChatAgent(BaseAgent):
                     model_response.usage_dict.get("completion_tokens", 0),
                     model_response.usage_dict.get("total_tokens", 0),
                 )
+                accumulated_tool_calls.clear()
                 break
 
     def _record_assistant_tool_calls_message(
@@ -2865,7 +2789,7 @@ class ChatAgent(BaseAgent):
                         if tool_call_records:
                             sending_status = self._create_tool_status_response_with_accumulator(  # noqa: E501
                                 content_accumulator,
-                                "\n---------\n\nSending back result to model\n\n",  # noqa: E501
+                                "\n------\n\nSending back result to model\n\n",
                                 "tool_sending",
                                 step_token_usage,
                             )
@@ -2933,9 +2857,19 @@ class ChatAgent(BaseAgent):
                 yield calling_status
 
                 # Start tool execution asynchronously (non-blocking)
-                task = asyncio.create_task(
-                    self._aexecute_tool_from_stream_data(tool_call_data)
-                )
+                if self.tool_execution_timeout is not None:
+                    task = asyncio.create_task(
+                        asyncio.wait_for(
+                            self._aexecute_tool_from_stream_data(
+                                tool_call_data
+                            ),
+                            timeout=self.tool_execution_timeout,
+                        )
+                    )
+                else:
+                    task = asyncio.create_task(
+                        self._aexecute_tool_from_stream_data(tool_call_data)
+                    )
                 tool_tasks.append((task, tool_call_data))
 
         # Phase 2: Wait for tools to complete and yield results as they finish
@@ -2971,7 +2905,25 @@ class ChatAgent(BaseAgent):
                         yield output_status
 
                 except Exception as e:
-                    logger.error(f"Error in async tool execution: {e}")
+                    if isinstance(e, asyncio.TimeoutError):
+                        timeout_msg = (
+                            f"\nFunction timed out after "
+                            f"{self.tool_execution_timeout} seconds.\n"
+                            f"---------\n"
+                        )
+                        timeout_status = (
+                            self._create_tool_status_response_with_accumulator(
+                                content_accumulator,
+                                timeout_msg,
+                                "tool_timeout",
+                                step_token_usage,
+                            )
+                        )
+                        yield timeout_status
+                        logger.error("Async tool execution timeout")
+                    else:
+                        logger.error(f"Error in async tool execution: {e}")
+                    continue
 
     def _create_tool_status_response_with_accumulator(
         self,
@@ -3116,6 +3068,7 @@ class ChatAgent(BaseAgent):
             scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
             max_iteration=self.max_iteration,
             stop_event=self.stop_event,
+            tool_execution_timeout=self.tool_execution_timeout,
         )
 
         # Copy memory if requested
