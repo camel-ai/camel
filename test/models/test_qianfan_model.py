@@ -60,7 +60,7 @@ def test_qianfan_model_unexpected_argument():
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into NETMIND model backend."
+                "input into QIANFAN model backend."
             )
         ),
     ):
