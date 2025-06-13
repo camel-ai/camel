@@ -34,10 +34,10 @@ from camel.logger import get_logger
 logger = get_logger(__name__)
 
 SYS_PROMPT = r"""
-    You are an expert system administrator operating within a terminal environment.
-    Your goal is to solve the given task by issuing a sequence of commands.
-    You will be provided with the task description and the history of 
-    commands and their outputs.
+    You are an expert system administrator operating within a terminal 
+    environment. Your goal is to solve the given task by issuing a 
+    sequence of commands. You will be provided with the task description 
+    and the history of commands and their outputs.
 
     Its imperative that you end your response with the final solution 
     (the command to be run) wrapped inside of a latex boxed statement.
@@ -98,8 +98,8 @@ class TerminalBenchEnv(MultiStepEnv):
     def _get_initial_state(self) -> Dict[str, Any]:
         r"""Draw a task from the Terminal Bench dataset.
 
-        Currently, terminal bench holds 93 tasks. In this implementation we will simply draw
-        a random sample from this dataset.
+        Currently, terminal bench holds 93 tasks. In this implementation we
+        will simply draw a random sample from this dataset.
 
         Returns:
             A dictionary representing the initial state.
@@ -116,12 +116,12 @@ class TerminalBenchEnv(MultiStepEnv):
         if self._task_sampling:
             self._task = random.choice(task_directories)
         else:
-            if self._task == None:
+            if self._task is None:
                 raise RuntimeError()
 
         # Load the task configuration
         try:
-            with (task_root / self._task / "task.yaml").open() as f:
+            with (tasks_root / self._task / "task.yaml").open() as f:
                 self._task_config = yaml.safe_load(f)
             logger.info(
                 f"Successfully loaded task configuration for {self._task}"
@@ -150,8 +150,8 @@ class TerminalBenchEnv(MultiStepEnv):
     def _setup_docker(self, task: str) -> None:
         r"""Setup tmux sessions and run install script for the specified task.
 
-        This method reuses the existing setup logic in terminal bench to spinup a tmux
-        session for a task.
+        This method reuses the existing setup logic in terminal bench to
+        spinup a tmux session for a task.
 
         Args:
             task: The task we want to create a session for
@@ -159,10 +159,10 @@ class TerminalBenchEnv(MultiStepEnv):
 
         if self._terminal is not None:
             logger.warning(
-                "_setup_docker() called twice - Please teardown the previous session first"
+                "_setup_docker() called twice - Please teardown the previous "
+                "session first"
             )
 
-        # TODO implement proper task selection depending on StaticDataset structure
         compose_path = (
             Path(self._cache_dir) / "tasks" / task / "docker-compose.yml"
         )
@@ -213,7 +213,7 @@ class TerminalBenchEnv(MultiStepEnv):
 
         logger.debug("Executing command: %s", command)
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(
             None,
             lambda: self._session.send_keys([command, "Enter"], block=True),
@@ -224,9 +224,11 @@ class TerminalBenchEnv(MultiStepEnv):
         self._state["TerminalHistory"] = terminal_output
 
     async def _extract_command(self, action: Action) -> str:
-        r"""Helper function to facilitate using different extraction strategies.
+        r"""Helper function to facilitate using different extraction
+        strategies.
 
-        Default implementation will expect a BoxedExtractor with the BoxedStrategy.
+        Default implementation will expect a BoxedExtractor with the
+        BoxedStrategy.
 
         Important: Do not forget to adapt the SYS_PROMPT to the extraction
         strategy used.
@@ -250,7 +252,8 @@ class TerminalBenchEnv(MultiStepEnv):
         first 'head' and last 'tail' interactions to prevent the context from
         growing too large while preserving critical information.
 
-        The questions is composed of the state, task instruction and system prompt.
+        The questions is composed of the state, task instruction and system
+        prompt.
         self._state: TerminalHistory : str
 
         Returns:
@@ -279,7 +282,8 @@ class TerminalBenchEnv(MultiStepEnv):
             # If the history is too long, apply something
             # TODO make logs better
             history_log.append(
-                f"We are at step {self._current_step} and the history is not yet full"
+                f"We are at step {self._current_step} and the history is "
+                "not yet full"
             )
             if history_len > self.terminal_context_window:
                 history_log.append(
@@ -293,7 +297,8 @@ class TerminalBenchEnv(MultiStepEnv):
             SYS_PROMPT,
             task_instruction,
             terminal_history,
-            "Based on the task and the terminal history, what is the next command we should execute?",
+            "Based on the task and the terminal history, what is the next "
+            "command we should execute?",
         ]
         obs = "\n\n".join(prompt_parts)
 
@@ -309,8 +314,8 @@ class TerminalBenchEnv(MultiStepEnv):
             A final Observation for the agent.
         """
         obs = (
-            f"The terminal session has ended after {self._step_count} steps. "
-            "The task is over"
+            f"The terminal session has ended after {self._current_step} "
+            "steps. The task is over"
         )
         return Observation(question=obs, context={}, metadata={})
 
@@ -415,7 +420,8 @@ class TerminalBenchEnv(MultiStepEnv):
                 logger.info(f"Successfully downloaded tasks to {tasks_dir}")
             else:
                 raise FileNotFoundError(
-                    f"Tasks directory not found in the repository at {source_tasks}"
+                    "Tasks directory not found in the repository at "
+                    f"{source_tasks}"
                 )
 
         except subprocess.CalledProcessError as e:
@@ -428,3 +434,7 @@ class TerminalBenchEnv(MultiStepEnv):
             # Clean up temporary directory
             if os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)
+
+    def _close(self) -> None:
+        if self._terminal_ctx is not None:
+            self._terminal_ctx.__exit__(None, None, None)
