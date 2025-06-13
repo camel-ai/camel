@@ -358,39 +358,47 @@ class TerminalBenchEnv(MultiStepEnv):
 
     def _download_dataset(self, cache_dir: str) -> None:
         r"""Downloads the Terminal Bench dataset.
-        whole folder from https://github.com/laude-institute/terminal-bench/tree/main/tasks
-        This method should download the dataset from the official source
-        and prepare it for use in the environment.
 
-        Example folder structure for one task:
-        tasks/
-        ├── build-linux-kernel-qemu/
-            ├── Dockerfile
-            ├── docker-compose.yaml
-            ├── init.sh
-            ├── run-tests.sh
-            ├── solution.sh
-            ├── task.yaml
-            └── tests/
-                ├── run-uv-pytest.sh
-                ├── setup-uv-pytest.sh
-                └── test_outputs.py
+        This method downloads the task folder from the Terminalbench github
+        repository. It uses SVN to avoid cloning the entire repository.
+
+        Args:
+            cache_dir (str): The directory for the tasks to be stored in.
         """
         if cache_dir is None:
             # default to <current script path>/.cache
             cache_dir = f"{Path(__file__).parent}/.cache/"
+
         self._cache_dir = cache_dir
+        cache_path = Path(cache_dir)
+        tasks_dir = cache_path / "tasks"
 
-        # Create cache directory if it doesn't exist
-        os.makedirs(cache_dir, exist_ok=True)
-
-        # Path to the tasks directory
-        tasks_dir = os.path.join(cache_dir, "tasks")
-
-        # Check if tasks directory already exists
-        if os.path.exists(tasks_dir) and os.path.isdir(tasks_dir):
-            logger.info(f"Tasks directory already exists at {tasks_dir}")
+        if tasks_dir.is_dir():
+            logger.info("Tasks directory already present at %s", tasks_dir)
             return
+
+        cache_path.mkdir(parents=True, exist_ok=True)
+
+        svn_cmd = [
+            "svn",
+            "export",
+            "https://github.com/laude-institute/terminal-bench/tree/main/tasks",
+            str(tasks_dir),
+        ]
+
+        logger.info("Attempting SVN export of Terminal-Bench tasks …")
+        svn_ok = subprocess.run(svn_cmd, check=False).returncode == 0
+
+        if svn_ok and tasks_dir.is_dir():
+            logger.info(
+                "SVN export succeeded → dataset cached at %s", tasks_dir
+            )
+            return
+
+        logger.warning(
+            "SVN export failed or `svn` not installed; falling "
+            "back to temporary git clone."
+        )
 
         # Create a temporary directory for cloning
         temp_dir = os.path.join(cache_dir, "temp_repo")
@@ -398,7 +406,7 @@ class TerminalBenchEnv(MultiStepEnv):
             shutil.rmtree(temp_dir)
 
         try:
-            # Clone the repository
+            # Clone the entire repository temporarily
             logger.info("Cloning terminal-bench repository...")
             subprocess.run(
                 [
@@ -412,7 +420,7 @@ class TerminalBenchEnv(MultiStepEnv):
                 check=True,
             )
 
-            # Copy only the tasks folder to cache_dir
+            # Copy only the tasks folder
             source_tasks = os.path.join(temp_dir, "tasks")
             if os.path.exists(source_tasks):
                 shutil.copytree(source_tasks, tasks_dir)
