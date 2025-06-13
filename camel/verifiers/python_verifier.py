@@ -24,7 +24,6 @@ from typing import Any, List, Optional, Tuple
 
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
-from camel.utils import with_timeout_async
 from camel.verifiers import BaseVerifier
 
 from .models import VerificationOutcome, VerificationResult
@@ -50,6 +49,7 @@ class PythonVerifier(BaseVerifier):
     def __init__(
         self,
         extractor: Optional[BaseExtractor] = None,
+        timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
         float_tolerance: Optional[float] = None,
         **kwargs,
@@ -68,7 +68,7 @@ class PythonVerifier(BaseVerifier):
                 floating point comparisons. (default: :obj:`None`)
         """
         # TODO: Use CAMEL's Interpreter to execute the code
-        super().__init__(extractor=extractor, **kwargs)
+        super().__init__(extractor=extractor, timeout=timeout, **kwargs)
         self.venv_path: Optional[str] = None
         self.required_packages = required_packages or []
         self.float_tolerance = float_tolerance
@@ -309,10 +309,8 @@ class PythonVerifier(BaseVerifier):
             )
 
         try:
-            sol_out, sol_err, sol_code = await with_timeout_async(
-                self._run_code_block(solution, venv_python),
-                timeout=self._timeout,
-                context="running Python solution",
+            sol_out, sol_err, sol_code = await self._run_code_block(
+                solution, venv_python
             )
             if sol_code != 0:
                 return VerificationResult(
@@ -418,10 +416,8 @@ class PythonVerifier(BaseVerifier):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await with_timeout_async(
-            proc.communicate(),
-            timeout=self._timeout,
-            context="executing Python code",
+        stdout, stderr = await asyncio.wait_for(
+            proc.communicate(), timeout=self._timeout
         )
         os.remove(tmp_path)
         return (
