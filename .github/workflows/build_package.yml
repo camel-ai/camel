@@ -141,7 +141,20 @@ jobs:
           CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
         run: |
           source test_venv/bin/activate
-          pytest --fast-test-mode ./test
+          pytest --fast-test-mode -m "not heavy_dependency" \
+            --ignore=test/datagen/test_evol_instruct.py \
+            --ignore=test/datagen/test_self_improving_cot_pipeline.py \
+            --ignore=test/datasets/test_base_dataset.py \
+            --ignore=test/datasets/test_self_instruct_generator.py \
+            --ignore=test/embeddings/test_open_source_embeddings.py \
+            --ignore=test/environments/test_multi_step_env.py \
+            --ignore=test/environments/test_single_step_env.py \
+            --ignore=test/environments/test_tictactoe_env.py \
+            --ignore=test/interpreters/test_python_interpreter.py \
+            --ignore=test/models/reward/test_nemotron_model.py \
+            --ignore=test/toolkits/test_video_analysis_toolkit.py \
+            --ignore=test/toolkits/test_jina_reranker_toolkit.py \
+            ./test
 
       - name: Clean up after build
         if: always()

@@ -224,7 +224,7 @@ def main():
         " score accordingly. Finally, list the opinions from each judge while"
         " preserving the judge's unique identity, along with the score and"
         " judge name, and also give a final summary of the opinions.",
-        additional_info=proj_content,
+        additional_info={"proj_content": proj_content},
         id="0",
     )
 
