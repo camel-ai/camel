@@ -43,8 +43,8 @@ class TerminalBenchEnv(MultiStepEnv):
     def __init__(
         self,
         extractor: BaseExtractor,
-        task: str,
         cache_dir: str | None = None,
+        task_sampling: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initializes the terminal bench environment.
@@ -61,25 +61,9 @@ class TerminalBenchEnv(MultiStepEnv):
         self._container = None
         self._session = None
 
-        self._task = task
+        self._task_sampling = task_sampling
+        self._task = None
         self._task_config: Dict[str, Any] = {}
-
-        """Task configuration example:
-                instruction: |-
-                For some reason I can't curl example.com, can you figure out why and what I should do to fix it?
-                author_name: Nicholas Carlini
-                author_email: nicholas@carlini.com
-                difficulty: medium
-                category: system-administration
-                tags:
-                - sys-admin
-                - networking
-                - troubleshooting
-                parser_name: pytest
-                max_agent_timeout_sec: 360.0
-                max_test_timeout_sec: 120.0
-                run_tests_in_same_shell: false
-        """
 
         # Termination logic
         self.execution_result: int | None = None
@@ -102,32 +86,30 @@ class TerminalBenchEnv(MultiStepEnv):
         Currently, terminal bench holds 93 tasks. In this implementation we will simply draw
         a random sample from this dataset.
 
-        get_initial_state() is called at the start of each episode, within reset().
-        it load a task configuration from the dataset _cache_dir/tasks/<task_name>/task.yaml
-
-        it will then setup the docker container for the task and return
-
-        it returns a state dictionary
-        containing the initial state of the environment, including terminal history.
-        TerminalHistory : List[Tuple[Command, Output]] = []
-
         Returns:
             A dictionary representing the initial state.
         """
         # Load task.yml as a dict from the tasks directory
-        task_path = f"{self._cache_dir}/tasks/{self._task}/task.yaml"
-        if not os.path.exists(task_path):
-            logger.error(f"Task configuration file not found: {task_path}")
-            raise FileNotFoundError(
-                f"Task configuration file not found: {task_path}"
-            )
+        task_root = Path(self._cache_dir) / "tasks"
+        task_directories = [
+            task.name for task in tasks_root.iterdir() if task.is_dir()
+        ]
+
+        if not task_directories:
+            raise RuntimeError()
+
+        if self._task_sampling:
+            self._task = random.choice(task_directories)
+        else:
+            if self._task == None:
+                raise RuntimeError()
 
         # Load the task configuration
         try:
-            with open(task_path, 'r') as f:
+            with (task_root / self._task / "task.yaml").open() as f:
                 self._task_config = yaml.safe_load(f)
             logger.info(
-                f"Successfully loaded task configuration from {task_path}"
+                f"Successfully loaded task configuration for {self._task}"
             )
         except yaml.YAMLError as e:
             logger.error(f"Error parsing the task configuration file: {e}")
@@ -142,10 +124,13 @@ class TerminalBenchEnv(MultiStepEnv):
 
         # Initialize the state
         state = {
-            "TerminalHistory": [],
+            "TerminalHistory": "",
         }
 
         return state
+
+    def select_task(task: str) -> None:
+        self._task = task
 
     def _setup_docker(self, task: str) -> None:
         r"""Setup tmux sessions and run install script for the specified task.
