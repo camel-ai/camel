@@ -488,6 +488,7 @@ class TaskManager:
     ) -> Optional[Task]:
         r"""Evolve a task to a new task.
             Evolve is only used for data generation.
+
         Args:
             task (Task): A given task.
             agent (ChatAgent): An agent that used to evolve the task.
