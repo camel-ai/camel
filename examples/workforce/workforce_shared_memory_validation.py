@@ -390,3 +390,187 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+"""
+===============================================================================
+=== Workforce Shared Memory Validation Test ===
+
+1. Setting up test workforce with shared memory...
+✓ Created workforce with 3 agents
+  - Alice knows: secret code BLUE42
+  - Bob knows: meeting room 314
+  - Charlie knows: deadline Friday
+
+2. Having each agent share their unique information...
+   Alice sharing secret code...
+   Alice: Got it! The secret access code for the project is BLUE42. If you 
+   need help docum...
+   Bob sharing meeting room...
+   Bob: Thanks for the update! I actually already know that the team meeting 
+   is in room ...
+   Charlie sharing deadline...
+   Charlie: Thanks for the reminder! I also know the deadline is Friday, so 
+   I'll make sure t...
+
+3. Analyzing memory BEFORE shared memory synchronization...
+   Memory state BEFORE synchronization:
+
+   Alice memory analysis:
+     Token count: 110
+     Context messages: 3
+     Context preview:
+       1. [user] I need to document that the secret access code for the 
+       project is BLUE42....
+       2. [assistant] Got it! The secret access code for the project is 
+       BLUE42. If you need help docum...
+
+   Bob memory analysis:
+     Token count: 114
+     Context messages: 3
+     Context preview:
+       1. [user] Important update: our team meeting will be in room 314 this 
+       week....
+       2. [assistant] Thanks for the update! I actually already know that the 
+       team meeting is in room ...
+
+   Charlie memory analysis:
+     Token count: 108
+     Context messages: 3
+     Context preview:
+       1. [user] Reminder: the project deadline is this Friday, please plan 
+       accordingly....
+       2. [assistant] Thanks for the reminder! I also know the deadline is 
+       Friday, so I'll make sure t...
+
+   TOTAL TOKENS BEFORE SHARING: 332
+
+4. Triggering memory synchronization...
+✓ Memory synchronization completed
+
+5. Analyzing memory AFTER shared memory synchronization...
+   Memory state AFTER synchronization:
+
+   Alice memory analysis:
+     Token count: 409
+     Context messages: 11
+     Context preview:
+       1. [user] Reminder: the project deadline is this Friday, please plan 
+       accordingly....
+       2. [assistant] Thanks for the reminder! I also know the deadline is 
+       Friday, so I'll make sure t...
+
+   Bob memory analysis:
+     Token count: 409
+     Context messages: 11
+     Context preview:
+       1. [user] Reminder: the project deadline is this Friday, please plan 
+       accordingly....
+       2. [assistant] Thanks for the reminder! I also know the deadline is 
+       Friday, so I'll make sure t...
+
+   Charlie memory analysis:
+     Token count: 409
+     Context messages: 11
+     Context preview:
+       1. [user] Reminder: the project deadline is this Friday, please plan 
+       accordingly....
+       2. [assistant] Thanks for the reminder! I also know the deadline is 
+       Friday, so I'll make sure t...
+
+   TOTAL TOKENS AFTER SHARING: 1227
+
+6. Token Analysis Comparison:
+   Alice: 110 → 409 tokens (+299)
+   Bob:   114 → 409 tokens (+295)
+   Charlie: 108 → 409 tokens (+301)
+   TOTAL: 332 → 1227 tokens (+895)
+
+   Average tokens gained per agent: 298.3
+   Memory sharing efficiency: 269.6% increase
+
+7. Analyzing shared memory collection...
+   Total memory records collected: 55
+   Coordinator records: 11
+   Task agent records: 11
+   Worker records: 33
+
+8. Testing cross-agent memory access...
+
+   Testing Alice's knowledge:
+     Knows secret code BLUE42: ✓
+     Knows meeting room 314: ✓
+     Knows deadline Friday: ✓
+     Cross-agent information access: 2/2
+     Response preview: here's what i know so far:
+
+- the secret access code for the project is blue42.
+- the team meeting w...
+
+   Testing Bob's knowledge:
+     Knows secret code BLUE42: ✓
+     Knows meeting room 314: ✓
+     Knows deadline Friday: ✓
+     Cross-agent information access: 2/2
+     Response preview: i know the secret access code for the project is 
+     blue42.  
+i know the team meeting will be in room 3...
+
+   Testing Charlie's knowledge:
+     Knows secret code BLUE42: ✓
+     Knows meeting room 314: ✓
+     Knows deadline Friday: ✓
+     Cross-agent information access: 2/2
+     Response preview: here's what i know so far:
+
+- the secret access code for the project is blue42.
+- the team meeting w...
+
+9. Validation Results:
+   Total cross-agent information access: 6/6
+   Success rate: 100.0%
+   ✅ SHARED MEMORY IS WORKING!
+      Agents can successfully access information from other agents' 
+      conversations.
+
+10. Comparison test: Workforce WITHOUT shared memory...
+
+   Testing agents WITHOUT shared memory:
+
+   Testing Alice's knowledge:
+     Knows secret code BLUE42: ✓
+     Knows meeting room 314: ✗
+     Knows deadline Friday: ✗
+     Cross-agent information access: 0/2
+     Response preview: i know that the secret access code for the project is 
+     blue42. so far, i haven't been given any infor...
+
+   Testing Bob's knowledge:
+     Knows secret code BLUE42: ✗
+     Knows meeting room 314: ✓
+     Knows deadline Friday: ✗
+     Cross-agent information access: 0/2
+     Response preview: i know the meeting room is 314. additionally, you 
+     mentioned that our team meeting this week will be ...
+
+   Testing Charlie's knowledge:
+     Knows secret code BLUE42: ✗
+     Knows meeting room 314: ✗
+     Knows deadline Friday: ✓
+     Cross-agent information access: 0/2
+     Response preview: i know the unique fact that the project deadline is 
+     this friday. additionally, from our conversation...
+
+   Control group cross-agent access: 0/6
+   Control group success rate: 0.0%
+
+11. Final Conclusion:
+   WITH shared memory: 6/6 successful accesses
+   WITHOUT shared memory: 0/6 successful accesses
+   🎉 VALIDATION SUCCESSFUL!
+      Shared memory significantly improves cross-agent information access.
+
+=== Test Complete ===
+===============================================================================
+"""
