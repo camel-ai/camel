@@ -21,7 +21,7 @@ from camel.configs.base_config import BaseConfig
 from camel.types import NotGiven
 
 
-class WenxinConfig(BaseConfig):
+class QianfanConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using OpenAI
     compatibility.
 
@@ -82,4 +82,4 @@ class WenxinConfig(BaseConfig):
     logit_bias: Optional[Dict[str, float]] = Field(default=None)
 
 
-WENXIN_API_PARAMS = {param for param in WenxinConfig.model_fields.keys()}
+QIANFAN_API_PARAMS = {param for param in QianfanConfig.model_fields.keys()}

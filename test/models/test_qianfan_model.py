@@ -15,8 +15,8 @@ import re
 
 import pytest
 
-from camel.configs import WenxinConfig
-from camel.models import WenxinModel
+from camel.configs import QianfanConfig
+from camel.models import QianfanModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
@@ -35,12 +35,12 @@ from camel.utils import OpenAITokenCounter
         "qwen3-235b-a22b",
     ],
 )
-def test_wenxin_model(model_type: ModelType):
-    model = WenxinModel(model_type)
+def test_qianfan_model(model_type: ModelType):
+    model = QianfanModel(model_type)
 
     assert model.model_type == model_type
 
-    assert model.model_config_dict == WenxinConfig().as_dict()
+    assert model.model_config_dict == QianfanConfig().as_dict()
 
     assert isinstance(model.token_counter, OpenAITokenCounter)
 
@@ -50,8 +50,8 @@ def test_wenxin_model(model_type: ModelType):
 
 
 @pytest.mark.model_backend
-def test_wenxin_model_unexpected_argument():
-    model_type = ModelType.WENXIN_ERNIE_X1_TURBO_32K
+def test_qianfan_model_unexpected_argument():
+    model_type = ModelType.QIANFAN_ERNIE_X1_TURBO_32K
 
     model_config_dict = {"model_path": "ernie-x1-turbo-32k"}
 
@@ -64,11 +64,11 @@ def test_wenxin_model_unexpected_argument():
             )
         ),
     ):
-        _ = WenxinModel(model_type, model_config_dict)
+        _ = QianfanModel(model_type, model_config_dict)
 
 
 @pytest.mark.model_backend
-def test_wenxin_model_stream_property():
-    model = WenxinModel(ModelType.WENXIN_ERNIE_X1_TURBO_32K)
+def test_qianfan_model_stream_property():
+    model = QianfanModel(ModelType.QIANFAN_ERNIE_X1_TURBO_32K)
 
     assert model.stream is False

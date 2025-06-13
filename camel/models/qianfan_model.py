@@ -15,7 +15,7 @@
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import WENXIN_API_PARAMS, WenxinConfig
+from camel.configs import QIANFAN_API_PARAMS, QianfanConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
@@ -24,20 +24,20 @@ from camel.utils import (
 )
 
 
-class WenxinModel(OpenAICompatibleModel):
-    r"""Constructor for Wenxin backend with OpenAI compatibility.
+class QianfanModel(OpenAICompatibleModel):
+    r"""Constructor for Qianfan backend with OpenAI compatibility.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
             created, supported model can be found here:
-            https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Wm9cvy6rl
+            https://cloud.baidu.com/doc/QIANFANWORKSHOP/s/Wm9cvy6rl
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`. If
-            :obj:`None`, :obj:`WenxinConfig().as_dict()` will be used.
+            :obj:`None`, :obj:`QianfanConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
-            the Wenxin service. (default: :obj:`None`)
-        url (Optional[str], optional): The url to the Wenxin service.
+            the Qianfan service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the Qianfan service.
             If not provided, "https://qianfan.baidubce.com/v2/chat/completions"
             will be used.(default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
@@ -51,7 +51,7 @@ class WenxinModel(OpenAICompatibleModel):
 
     @api_keys_required(
         [
-            ("api_key", 'WENXIN_API_KEY'),
+            ("api_key", 'QIANFAN_API_KEY'),
         ]
     )
     def __init__(
@@ -64,10 +64,10 @@ class WenxinModel(OpenAICompatibleModel):
         timeout: Optional[float] = None,
     ) -> None:
         if model_config_dict is None:
-            model_config_dict = WenxinConfig().as_dict()
-        api_key = api_key or os.environ.get("WENXIN_API_KEY")
+            model_config_dict = QianfanConfig().as_dict()
+        api_key = api_key or os.environ.get("QIANFAN_API_KEY")
         url = url or os.environ.get(
-            "WENXIN_API_BASE_URL",
+            "QIANFAN_API_BASE_URL",
             "https://qianfan.baidubce.com/v2",
         )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
@@ -82,15 +82,15 @@ class WenxinModel(OpenAICompatibleModel):
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
-        unexpected arguments to Wenxin API.
+        unexpected arguments to Qianfan API.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Wenxin API.
+                unexpected arguments to Qianfan API.
         """
         for param in self.model_config_dict:
-            if param not in WENXIN_API_PARAMS:
+            if param not in QIANFAN_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into WENXIN model backend."
+                    "input into QIANFAN model backend."
                 )

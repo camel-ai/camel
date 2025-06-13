@@ -33,6 +33,7 @@ from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
 from .openrouter_config import OPENROUTER_API_PARAMS, OpenRouterConfig
 from .ppio_config import PPIO_API_PARAMS, PPIOConfig
+from .qianfan_config import QIANFAN_API_PARAMS, QianfanConfig
 from .qwen_config import QWEN_API_PARAMS, QwenConfig
 from .reka_config import REKA_API_PARAMS, RekaConfig
 from .samba_config import (
@@ -46,7 +47,6 @@ from .siliconflow_config import SILICONFLOW_API_PARAMS, SiliconFlowConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .watsonx_config import WATSONX_API_PARAMS, WatsonXConfig
-from .wenxin_config import WENXIN_API_PARAMS, WenxinConfig
 from .yi_config import YI_API_PARAMS, YiConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
 
@@ -114,8 +114,8 @@ __all__ = [
     'LMStudioConfig',
     'WatsonXConfig',
     'WATSONX_API_PARAMS',
-    'WenxinConfig',
-    'WENXIN_API_PARAMS',
+    'QianfanConfig',
+    'QIANFAN_API_PARAMS',
     'CrynuxConfig',
     'CRYNUX_API_PARAMS',
 ]

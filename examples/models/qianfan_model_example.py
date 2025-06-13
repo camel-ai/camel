@@ -12,14 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
-from camel.configs import WenxinConfig
+from camel.configs import QianfanConfig
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.WENXIN,
-    model_type=ModelType.WENXIN_ERNIE_X1_TURBO_32K,
-    model_config_dict=WenxinConfig(temperature=0.2).as_dict(),
+    model_platform=ModelPlatformType.QIANFAN,
+    model_type=ModelType.QIANFAN_ERNIE_X1_TURBO_32K,
+    model_config_dict=QianfanConfig(temperature=0.2).as_dict(),
 )
 
 # Define system message

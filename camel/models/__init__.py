@@ -41,6 +41,7 @@ from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
 from .openrouter_model import OpenRouterModel
 from .ppio_model import PPIOModel
+from .qianfan_model import QianfanModel
 from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
@@ -51,7 +52,6 @@ from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .volcano_model import VolcanoModel
 from .watsonx_model import WatsonXModel
-from .wenxin_model import WenxinModel
 from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
 
@@ -98,6 +98,6 @@ __all__ = [
     'VolcanoModel',
     'LMStudioModel',
     'WatsonXModel',
-    'WenxinModel',
+    'QianfanModel',
     'CrynuxModel',
 ]
