@@ -32,6 +32,24 @@ from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
+SYS_PROMPT = (
+    r"""
+    You are an expert system administrator operating within a terminal environment.
+    Your goal is to solve the given task by issuing a sequence of commands.
+    You will be provided with the task description and the history of 
+    commands and their outputs.
+
+    Its imperative that you end your response with the final solution 
+    (the command to be run) wrapped inside of a latex boxed statement.
+
+    e.g.
+
+    \\boxed{ls -a}
+
+    The task description and the terminal output so far is:
+
+    """
+    )
 
 class TerminalBenchEnv(MultiStepEnv):
     r"""A temporary skeleton
@@ -45,6 +63,7 @@ class TerminalBenchEnv(MultiStepEnv):
         extractor: BaseExtractor,
         cache_dir: str | None = None,
         task_sampling: bool = True,
+        terminal_context_window: int = 4096,
         **kwargs: Any,
     ) -> None:
         """Initializes the terminal bench environment.
@@ -61,10 +80,12 @@ class TerminalBenchEnv(MultiStepEnv):
         self._container = None
         self._session = None
 
+
         self._task_sampling = task_sampling
         self._task = None
         self._task_config: Dict[str, Any] = {}
-
+        self._last_command = ""
+        self._reward_dict = {}
         # Termination logic
         self.execution_result: int | None = None
 
@@ -72,13 +93,8 @@ class TerminalBenchEnv(MultiStepEnv):
         self._cache_dir = cache_dir
         self._download_dataset(cache_dir=cache_dir)
 
-        # setup some parameters for interaction history
-        self.max_history_head = kwargs.get(
-            'max_history_head', 5
-        )  # Number of initial interactions to always keep
-        self.max_history_tail = kwargs.get(
-            'max_history_tail', 10
-        )  # Number of last interactions to always keep
+        # context specific parameters
+        self.terminal_context_window = terminal_context_window
 
     def _get_initial_state(self) -> Dict[str, Any]:
         r"""Draw a task from the Terminal Bench dataset.
@@ -192,8 +208,9 @@ class TerminalBenchEnv(MultiStepEnv):
             raise RuntimeError(
                 "Tmux session not initialised; call reset() first."
             )
-
+        
         command = await self._extract_command(action)
+        self._last_command = command
 
         logger.debug("Executing command: %s", command)
 
@@ -235,24 +252,11 @@ class TerminalBenchEnv(MultiStepEnv):
         growing too large while preserving critical information.
 
         The questions is composed of the state, task instruction and system prompt.
-        self._state: TerminalHistory : List[Tuple[Command, Output]]
-
-        example task instruction:
-            For some reason I can't curl example.com, can you figure out why and what I should do to fix it?
+        self._state: TerminalHistory : str
 
         Returns:
             An Observation object for the agent.
         """
-        # 1. Define a system prompt to instruct the AI on its role and task.
-        system_prompt = (
-            "You are an expert system administrator operating within a terminal environment. "
-            "Your goal is to solve the given task by issuing a sequence of commands. "
-            "You will be provided with the task description and the history of "
-            "commands and their outputs. Your response must be only the raw command to be "
-            "executed, without any explanation, formatting, or additional text."
-        )
-
-        # 2. Retrieve the specific task instruction for the current episode.
         try:
             task_instruction = (
                 f"## Task Goal:\n{self._task_config['instruction']}"
@@ -262,9 +266,9 @@ class TerminalBenchEnv(MultiStepEnv):
             raise ValueError(
                 f"Task configuration is missing the required key: {e}"
             )
-        # 3. Format the terminal history using the sliding window strategy.
+
         history_log = []
-        terminal_history = self._state.get("TerminalHistory", [])
+        terminal_history = self._state.get("TerminalHistory", "")
 
         history_len = len(terminal_history)
 
@@ -273,49 +277,21 @@ class TerminalBenchEnv(MultiStepEnv):
                 "The terminal is ready. No commands have been executed yet."
             )
         else:
-            # If the history is too long, apply the head/tail windowing
-            if history_len > self.max_history_head + self.max_history_tail:
-                # Add the first 'head' interactions
-                head = terminal_history[: self.max_history_head]
-                for command, output in head:
-                    history_log.append(
-                        f"$ Command: {command}\nOutput:{output}"
-                    )
+            # If the history is too long, apply something
+            # TODO make logs better
+            history_log.append(f"We are at step {self._current_step} and the history is not yet full")
+            if history_len > self.terminal_context_window:
+                logger.error(f"History exceeded context window, history_length: {history_len}")
+                raise ValueError()
 
-                # Add a placeholder for the omitted middle part
-                omitted_count = history_len - (
-                    self.max_history_head + self.max_history_tail
-                )
-                history_log.append(
-                    f"\n[... {omitted_count} previous interactions omitted for brevity ...]\n"
-                )
-
-                # Add the last 'tail' interactions
-                tail = terminal_history[-self.max_history_tail :]
-                for command, output in tail:
-                    history_log.append(
-                        f"$ Command: {command}\nOutput:{output}"
-                    )
-            else:
-                # If history is short enough, show all of it
-                for command, output in terminal_history:
-                    history_log.append(
-                        f"$ Command: {command}\nOutput:{output}"
-                    )
-
-        formatted_history = "\n".join(history_log)
-        history_section = f"## Terminal History:\n{formatted_history}"
-
-        # 4. Assemble the complete prompt (question) for the language model.
         prompt_parts = [
-            system_prompt,
+            SYS_PROMPT,
             task_instruction,
-            history_section,
-            "Based on the task and the terminal history, what is the next command you will execute?",
+            terminal_history,
+            "Based on the task and the terminal history, what is the next command we should execute?",
         ]
         obs = "\n\n".join(prompt_parts)
 
-        # 5. Create and return the Observation object.
         observation = Observation(question=obs, context={}, metadata={})
         return observation
 
@@ -350,8 +326,10 @@ class TerminalBenchEnv(MultiStepEnv):
             reward = 1.0
         else:
             reward = 0.0
+            
+        self._reward_dict[self._last_command] = reward
 
-        return reward, {"": reward}
+        return reward, self._reward_dict
 
     def _is_done(self) -> bool:
         r"""Checks for environment-specific termination conditions.
