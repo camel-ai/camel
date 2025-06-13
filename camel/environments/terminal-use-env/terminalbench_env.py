@@ -89,7 +89,6 @@ class TerminalBenchEnv(MultiStepEnv):
         self.execution_result: int | None = None
 
         # Download the dataset
-        self._cache_dir = cache_dir
         self._download_dataset(cache_dir=cache_dir)
 
         # context specific parameters
