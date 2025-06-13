@@ -373,8 +373,12 @@ class Workforce(BaseNode):
         self._pending_tasks.append(task)
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
-        subtasks = self._decompose_task(task)
-        self._pending_tasks.extendleft(reversed(subtasks))
+        if not task.subtasks:
+            subtasks = self._decompose_task(task)
+            self._pending_tasks.extendleft(reversed(subtasks))
+        else:
+            # If the task already has subtasks, we will use them directly
+            self._pending_tasks.extendleft(reversed(task.subtasks))
         self.set_channel(TaskChannel())
 
         asyncio.run(self.start())
@@ -626,7 +630,10 @@ class Workforce(BaseNode):
         else:
             # Directly post the task to the channel if it's a new one
             # Find a node to assign the task
-            assignee_id = self._find_assignee(task=ready_task)
+            if ready_task.assignee_id:
+                assignee_id = ready_task.assignee_id
+            else:
+                assignee_id = self._find_assignee(task=ready_task)
             await self._post_task(ready_task, assignee_id)
 
     async def _handle_failed_task(self, task: Task) -> bool:

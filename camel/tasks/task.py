@@ -142,6 +142,8 @@ class Task(BaseModel):
             (default: :obj: `[]`)
         result (Optional[str]): The answer for the task.
             (default: :obj: `""`)
+        assignee_id (Optional[str]): The id of the node to assign the task to.
+            (default: :obj: `None`)
         failure_count (int): The failure count for the task.
             (default: :obj: `0`)
         additional_info (Optional[Dict[str, Any]]): Additional information for
@@ -163,6 +165,8 @@ class Task(BaseModel):
     result: Optional[str] = ""
 
     failure_count: int = 0
+
+    assignee_id: Optional[str] = None
 
     additional_info: Optional[Dict[str, Any]] = None
 
