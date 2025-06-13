@@ -608,7 +608,12 @@ later to maintain authenticated sessions without requiring manual login.
 - **url** (str): The URL to navigate to for authentication (e.g., a login page).
 - **wait_time** (int): The time in seconds to wait for the user to manually authenticate.
 - **Usage**: 1. The function opens a browser window and navigates to the specified URL 2. User manually logs in during the wait_time wait period 3. Browser storage state (including auth cookies) is saved to the specified file 4. The saved state can be used in subsequent browser sessions to maintain authentication
-- **Note**: The wait_time sleep is intentional to give the user enough time to complete the manual authentication process before the storage state is captured.
+
+**Note:**
+
+The wait_time sleep is intentional to give the user enough time to
+complete the manual authentication process before the storage state
+is captured.
 
 <a id="camel.utils.commons.run_async"></a>
 

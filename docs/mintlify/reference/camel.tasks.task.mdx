@@ -1,5 +1,27 @@
 <a id="camel.tasks.task"></a>
 
+<a id="camel.tasks.task.validate_task_content"></a>
+
+## validate_task_content
+
+```python
+def validate_task_content(content: str, task_id: str = 'unknown', min_length: int = 10):
+```
+
+Validates task result content to avoid silent failures.
+It performs basic checks to ensure the content meets minimum
+quality standards.
+
+**Parameters:**
+
+- **content** (str): The task result content to validate.
+- **task_id** (str): Task ID for logging purposes. (default: :obj:`"unknown"`)
+- **min_length** (int): Minimum content length after stripping whitespace. (default: :obj:`10`)
+
+**Returns:**
+
+  bool: True if content passes validation, False otherwise.
+
 <a id="camel.tasks.task.parse_response"></a>
 
 ## parse_response
@@ -45,24 +67,17 @@ class Task(BaseModel):
 
 Task is specific assignment that can be passed to a agent.
 
-Attributes:
-content (str): string content for task.
-id (str): An unique string identifier for the task. This should
-ideally be provided by the provider/model which created the task.
-(default: :obj: `""`)
-state (TaskState): The state which should be OPEN, RUNNING, DONE or
-DELETED. (default: :obj: `TaskState.OPEN`)
-type (Optional[str]): task type. (default: :obj: `None`)
-parent (Optional[Task]): The parent task, None for root task.
-(default: :obj: `None`)
-subtasks (List[Task]): The childrent sub-tasks for the task.
-(default: :obj: `[]`)
-result (Optional[str]): The answer for the task.
-(default: :obj: `""`)
-failure_count (int): The failure count for the task.
-(default: :obj: `0`)
-additional_info (Optional[Dict[str, Any]]): Additional information for
-the task. (default: :obj: `None`)
+**Parameters:**
+
+- **content** (str): string content for task.
+- **id** (str): An unique string identifier for the task. This should ideally be provided by the provider/model which created the task. (default: :obj: `""`)
+- **state** (TaskState): The state which should be OPEN, RUNNING, DONE or DELETED. (default: :obj: `TaskState.OPEN`)
+- **type** (Optional[str]): task type. (default: :obj: `None`) (default:  None)
+- **parent** (Optional[Task]): The parent task, None for root task. (default: :obj: `None`)
+- **subtasks** (List[Task]): The childrent sub-tasks for the task. (default: :obj: `[]`)
+- **result** (Optional[str]): The answer for the task. (default: :obj: `""`)
+- **failure_count** (int): The failure count for the task. (default: :obj: `0`)
+- **additional_info** (Optional[Dict[str, Any]]): Additional information for the task. (default: :obj: `None`)
 
 <a id="camel.tasks.task.Task.__repr__"></a>
 
@@ -295,12 +310,6 @@ class TaskManager:
 ```
 
 TaskManager is used to manage tasks.
-
-Attributes:
-root_task: The root task.
-tasks: The ordered tasks.
-task_map: A map for task.id to Task.
-current_task_id: The current "RUNNING" task.id.
 
 **Parameters:**
 
