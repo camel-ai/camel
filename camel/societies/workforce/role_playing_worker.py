@@ -17,6 +17,8 @@ import asyncio
 import json
 from typing import Dict, List, Optional
 
+from colorama import Fore
+
 from camel.agents.chat_agent import ChatAgent
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
@@ -28,6 +30,7 @@ from camel.societies.workforce.prompts import (
 from camel.societies.workforce.utils import TaskResult, validate_task_content
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState
+from camel.utils import TIMEOUT_THRESHOLD, print_text_animated
 
 # Set up logging
 logger = get_logger(__name__)
@@ -87,7 +90,7 @@ class RolePlayingWorker(Worker):
         self,
         task: Task,
         dependencies: List[Task],
-        timeout: Optional[float] = 180.0,
+        timeout: Optional[float] = TIMEOUT_THRESHOLD,
     ) -> TaskState:
         r"""Processes a task leveraging its dependencies through role-playing.
 
@@ -109,7 +112,7 @@ class RolePlayingWorker(Worker):
 
         Raises:
             Exception: If an error occurs during role-playing.
-            asyncio.TimeoutError: If the role-playing session times out.
+                asyncio.TimeoutError: If the role-playing session times out.
         """
         dependency_tasks_info = self._get_dep_tasks_info(dependencies)
         prompt = ROLEPLAY_PROCESS_TASK_PROMPT.format(
@@ -146,23 +149,40 @@ class RolePlayingWorker(Worker):
 
             if assistant_response.terminated:
                 reason = assistant_response.info['termination_reasons']
-                logger.info(f"AI Assistant terminated. Reason: {reason}.")
+                print(
+                    f"{Fore.GREEN}AI Assistant terminated. Reason: "
+                    f"{reason}.{Fore.RESET}"
+                )
                 break
 
             if user_response.terminated:
                 reason = user_response.info['termination_reasons']
-                logger.info(f"AI User terminated. Reason: {reason}.")
+                print(
+                    f"{Fore.GREEN}AI User terminated. Reason: {reason}."
+                    f"{Fore.RESET}"
+                )
                 break
 
-            logger.info(f"AI User:\n\n{user_response.msg.content}")
+            print_text_animated(
+                f"{Fore.BLUE}AI User:\n\n{user_response.msg.content}"
+                f"{Fore.RESET}\n",
+                delay=0.005,
+            )
             chat_history.append(f"AI User: {user_response.msg.content}")
 
-            logger.info(f"AI Assistant: {assistant_response.msg.content}")
+            print_text_animated(
+                f"{Fore.GREEN}AI Assistant:{Fore.RESET}", delay=0.005
+            )
 
             for func_record in assistant_response.info['tool_calls']:
-                logger.info(func_record)
+                print(func_record)
 
-            logger.info(f"\n{assistant_response.msg.content}")
+            print_text_animated(
+                f"\n{Fore.GREEN}{assistant_response.msg.content}"
+                f"{Fore.RESET}\n",
+                delay=0.005,
+            )
+
             chat_history.append(
                 f"AI Assistant: {assistant_response.msg.content}"
             )
@@ -187,13 +207,13 @@ class RolePlayingWorker(Worker):
         task_result = TaskResult(**result_dict)
 
         if not validate_task_content(task_result.content, task.id):
-            logger.error(
-                f"Task {task.id}: Content validation failed - "
-                "task marked as failed"
+            print(
+                f"{Fore.RED}Task {task.id}: Content validation failed - "
+                f"task marked as failed{Fore.RESET}"
             )
             return TaskState.FAILED
 
         task.result = task_result.content
 
-        logger.info(f"Task result: {task.result}")
+        print(f"Task result: {task.result}\n")
         return TaskState.DONE

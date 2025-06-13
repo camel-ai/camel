@@ -23,7 +23,7 @@ from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import check_if_running
 from camel.tasks.task import Task, TaskState
-from camel.utils import TIMEOUT_THRESHOLD, with_timeout_async
+from camel.utils import with_timeout_async
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,6 @@ class Worker(BaseNode, ABC):
         r"""Get the task assigned to this node from the channel."""
         return await with_timeout_async(
             self._channel.get_assigned_task_by_assignee(self.node_id),
-            timeout=TIMEOUT_THRESHOLD,
             context=f"getting assigned task for {self.node_id}",
         )
 
@@ -97,7 +96,6 @@ class Worker(BaseNode, ABC):
             # Get the earliest task assigned to this node
             task = await with_timeout_async(
                 self._get_assigned_task(),
-                timeout=TIMEOUT_THRESHOLD,
                 context=f"getting assigned task for {self.node_id}",
             )
 
@@ -122,7 +120,6 @@ class Worker(BaseNode, ABC):
             # Process the task
             task_state = await with_timeout_async(
                 self._process_task(task, task_dependencies),
-                timeout=TIMEOUT_THRESHOLD,
                 context=f"processing task {task.id}",
             )
 
@@ -131,7 +128,6 @@ class Worker(BaseNode, ABC):
 
             await with_timeout_async(
                 self._channel.return_task(task.id),
-                timeout=TIMEOUT_THRESHOLD,
                 context=f"returning task {task.id}",
             )
 
@@ -140,7 +136,6 @@ class Worker(BaseNode, ABC):
         r"""Start the worker."""
         await with_timeout_async(
             self._listen_to_channel(),
-            timeout=TIMEOUT_THRESHOLD,
             context=f"listening to channel for {self.node_id}",
         )
 

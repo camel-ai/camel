@@ -16,7 +16,7 @@ from enum import Enum
 from typing import Dict, List, Optional
 
 from camel.tasks import Task
-from camel.utils import TIMEOUT_THRESHOLD
+from camel.utils import TIMEOUT_THRESHOLD, with_timeout_async
 
 
 class PacketStatus(Enum):
@@ -86,14 +86,15 @@ class TaskChannel:
         self._timeout = timeout
 
     async def get_returned_task_by_publisher(
-        self, publisher_id: str, timeout: float = 180.0
+        self, publisher_id: str, timeout: float = TIMEOUT_THRESHOLD
     ) -> Task:
         r"""Get a task from the channel that has been returned by the
         publisher.
 
         Args:
-            publisher_id: The ID of the publisher
-            timeout: Maximum time to wait in seconds (default: :obj:`180.0`)
+            publisher_id (str): The ID of the publisher
+            timeout (float): Maximum time to wait in seconds
+                (default: :obj:`180.0`)
 
         Raises:
             asyncio.TimeoutError: If waiting times out
@@ -108,21 +109,23 @@ class TaskChannel:
                         continue
                     return packet.task
 
-                # use wait_condition to wait, including timeout control
-                await self._wait_condition(
+                await with_timeout_async(
+                    self._condition.wait(),
+                    timeout=timeout,
                     context=f"waiting for returned task from publisher\
                          {publisher_id}",
                 )
 
     async def get_assigned_task_by_assignee(
-        self, assignee_id: str, timeout: float = 180.0
+        self, assignee_id: str, timeout: float = TIMEOUT_THRESHOLD
     ) -> Task:
         r"""Get a task from the channel that has been assigned to the
         assignee.
 
         Args:
-            assignee_id: The ID of the assignee
-            timeout: Maximum time to wait in seconds (default: :obj:`180.0`)
+            assignee_id (str): The ID of the assignee
+            timeout (float): Maximum time to wait in seconds
+                (default: :obj:`180.0`)
 
         Raises:
             asyncio.TimeoutError: If waiting times out
@@ -137,8 +140,9 @@ class TaskChannel:
                     ):
                         return packet.task
 
-                # use wait_condition to wait, including timeout control
-                await self._wait_condition(
+                await with_timeout_async(
+                    self._condition.wait(),
+                    timeout=timeout,
                     context=f"waiting for assigned task to assignee\
                          {assignee_id}",
                 )
@@ -210,19 +214,3 @@ class TaskChannel:
         r"""Get the debug information of the channel."""
         async with self._condition:
             return str(self._task_dict) + '\n' + str(self._task_id_list)
-
-    async def _wait_condition(self, context: str = "operation"):
-        """function to wait for a condition to be met with a timeout.
-
-        Args:
-            context (str): context information, used for error messages
-
-        Raises:
-            asyncio.TimeoutError: if wait times out
-        """
-        try:
-            await asyncio.wait_for(
-                self._condition.wait(), timeout=self._timeout
-            )
-        except asyncio.TimeoutError:
-            raise asyncio.TimeoutError(f"Timed out while {context}")
