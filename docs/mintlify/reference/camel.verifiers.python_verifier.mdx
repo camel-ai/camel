@@ -29,6 +29,7 @@ environment, minimizing external dependencies and conflicts.
 def __init__(
     self,
     extractor: Optional[BaseExtractor] = None,
+    timeout: Optional[float] = 30.0,
     required_packages: Optional[List[str]] = None,
     float_tolerance: Optional[float] = None,
     **kwargs

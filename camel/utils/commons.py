@@ -29,7 +29,6 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import (
     Any,
-    Awaitable,
     Callable,
     Dict,
     List,
@@ -52,7 +51,6 @@ from camel.types import TaskType
 from .constants import Constants
 
 F = TypeVar('F', bound=Callable[..., Any])
-T = TypeVar('T')
 
 logger = logging.getLogger(__name__)
 
@@ -1132,28 +1130,3 @@ def run_async(func: Callable[..., Any]) -> Callable[..., Any]:
         return loop.run_until_complete(func(*args, **kwargs))
 
     return wrapper
-
-
-async def with_timeout_async(
-    coro: Awaitable[T],
-    timeout: Optional[float] = Constants.TIMEOUT_THRESHOLD,
-    context: str = "operation",
-) -> T:
-    r"""General timeout wrapper for async operations.
-
-    Args:
-        coro: async operation to be executed
-        timeout: max wait time (seconds)
-        context: context information, used for error messages
-
-    Returns:
-        result of the async operation
-
-    Raises:
-        asyncio.TimeoutError: if wait times out
-    """
-    try:
-        return await asyncio.wait_for(coro, timeout=timeout)
-    except asyncio.TimeoutError:
-        logger.error(f"Operation timed out after {timeout}s: {context}")
-        raise asyncio.TimeoutError(f"Timed out while {context}")

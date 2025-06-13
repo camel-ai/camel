@@ -13,14 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-import asyncio
 import json
 from typing import Dict, List, Optional
 
 from colorama import Fore
 
 from camel.agents.chat_agent import ChatAgent
-from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.societies import RolePlaying
 from camel.societies.workforce.prompts import (
@@ -30,10 +28,7 @@ from camel.societies.workforce.prompts import (
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, validate_task_content
-from camel.utils import TIMEOUT_THRESHOLD, print_text_animated
-
-# Set up logging
-logger = get_logger(__name__)
+from camel.utils import print_text_animated
 
 
 class RolePlayingWorker(Worker):
@@ -87,10 +82,7 @@ class RolePlayingWorker(Worker):
         self.user_agent_kwargs = user_agent_kwargs
 
     async def _process_task(
-        self,
-        task: Task,
-        dependencies: List[Task],
-        timeout: Optional[float] = TIMEOUT_THRESHOLD,
+        self, task: Task, dependencies: List[Task]
     ) -> TaskState:
         r"""Processes a task leveraging its dependencies through role-playing.
 
@@ -109,10 +101,6 @@ class RolePlayingWorker(Worker):
         Returns:
             TaskState: `TaskState.DONE` if processed successfully, otherwise
                 `TaskState.FAILED`.
-
-        Raises:
-            Exception: If an error occurs during role-playing.
-                asyncio.TimeoutError: If the role-playing session times out.
         """
         dependency_tasks_info = self._get_dep_tasks_info(dependencies)
         prompt = ROLEPLAY_PROCESS_TASK_PROMPT.format(
@@ -133,19 +121,9 @@ class RolePlayingWorker(Worker):
         chat_history = []
         while n < self.chat_turn_limit:
             n += 1
-            try:
-                # add a timeout control
-                assistant_response, user_response = await asyncio.wait_for(
-                    role_play_session.astep(input_msg), timeout=timeout
-                )
-            except asyncio.TimeoutError:
-                logger.error("Error: Role playing step timed out.")
-                chat_history.append("Error: Role playing step timed out.")
-                break
-            except Exception as e:
-                logger.error(f"Error during role playing step: {e!s}")
-                chat_history.append(f"Error during role playing: {e!s}")
-                break
+            assistant_response, user_response = await role_play_session.astep(
+                input_msg
+            )
 
             if assistant_response.terminated:
                 reason = assistant_response.info['termination_reasons']
@@ -182,7 +160,6 @@ class RolePlayingWorker(Worker):
                 f"{Fore.RESET}\n",
                 delay=0.005,
             )
-
             chat_history.append(
                 f"AI Assistant: {assistant_response.msg.content}"
             )
