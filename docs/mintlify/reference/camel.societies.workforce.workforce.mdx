@@ -27,6 +27,7 @@ capabilities
 - **task_agent_kwargs** (Optional[Dict], optional): Keyword arguments passed directly to the task planning :obj:`ChatAgent` constructor. The task agent handles task decomposition into subtasks and result composition. See :obj:`ChatAgent` documentation for all available parameters. (default: :obj:`None` - uses ModelPlatformType.DEFAULT, ModelType.DEFAULT)
 - **new_worker_agent_kwargs** (Optional[Dict], optional): Default keyword arguments passed to :obj:`ChatAgent` constructor for workers created dynamically at runtime when existing workers cannot handle failed tasks. See :obj:`ChatAgent` documentation for all available parameters. (default: :obj:`None` - creates workers with SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit)
 - **graceful_shutdown_timeout** (float, optional): The timeout in seconds for graceful shutdown when a task fails 3 times. During this period, the workforce remains active for debugging. Set to 0 for immediate shutdown. (default: :obj:`15.0`)
+- **share_memory** (bool, optional): Whether to enable shared memory across SingleAgentWorker instances in the workforce. When enabled, all SingleAgentWorker instances, coordinator agent, and task planning agent will share their complete conversation history and function-calling trajectory, providing better context for task handoffs and continuity. Note: Currently only supports SingleAgentWorker instances; RolePlayingWorker and nested Workforce instances do not participate in memory sharing. (default: :obj:`False`)
 
 <a id="camel.societies.workforce.workforce.Workforce.__init__"></a>
 
@@ -40,7 +41,8 @@ def __init__(
     coordinator_agent_kwargs: Optional[Dict] = None,
     task_agent_kwargs: Optional[Dict] = None,
     new_worker_agent_kwargs: Optional[Dict] = None,
-    graceful_shutdown_timeout: float = 15.0
+    graceful_shutdown_timeout: float = 15.0,
+    share_memory: bool = False
 ):
 ```
 
@@ -51,6 +53,45 @@ def __init__(
 ```python
 def __repr__(self):
 ```
+
+<a id="camel.societies.workforce.workforce.Workforce._collect_shared_memory"></a>
+
+### _collect_shared_memory
+
+```python
+def _collect_shared_memory(self):
+```
+
+**Returns:**
+
+  Dict[str, List]: A dictionary mapping agent types to their memory
+records. Contains entries for 'coordinator', 'task_agent',
+and 'workers'.
+
+<a id="camel.societies.workforce.workforce.Workforce._share_memory_with_agents"></a>
+
+### _share_memory_with_agents
+
+```python
+def _share_memory_with_agents(self, shared_memory: Dict[str, List]):
+```
+
+Share collected memory with coordinator, task agent, and
+SingleAgentWorker instances.
+
+**Parameters:**
+
+- **shared_memory** (Dict[str, List]): Memory records collected from all agents to be shared.
+
+<a id="camel.societies.workforce.workforce.Workforce._sync_shared_memory"></a>
+
+### _sync_shared_memory
+
+```python
+def _sync_shared_memory(self):
+```
+
+Synchronize memory across all agents by collecting and sharing.
 
 <a id="camel.societies.workforce.workforce.Workforce._decompose_task"></a>
 
