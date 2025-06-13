@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .commons import (
-    TIMEOUT_THRESHOLD,
     AgentOpsMeta,
     BatchProcessor,
     agentops_decorator,
@@ -65,6 +64,8 @@ from .token_counting import (
     OpenAITokenCounter,
     get_model_encoding,
 )
+
+TIMEOUT_THRESHOLD = Constants.TIMEOUT_THRESHOLD
 
 __all__ = [
     "print_text_animated",

@@ -121,8 +121,6 @@ class MultiStepEnv(ABC):
             logger.warning(
                 "reset() called on un-setup environment. Setting up..."
             )
-            if self._timeout is None:
-                self._timeout = TIMEOUT_THRESHOLD
             await with_timeout_async(
                 self.setup(),
                 timeout=self._timeout,
@@ -191,8 +189,6 @@ class MultiStepEnv(ABC):
 
         # Update the environment state based on the action
         update_timed_out = False
-        if self._timeout is None:
-            self._timeout = TIMEOUT_THRESHOLD
         try:
             await with_timeout_async(
                 self._update_state(action),
@@ -216,8 +212,6 @@ class MultiStepEnv(ABC):
 
         # Compute rewards
         try:
-            if self._timeout is None:
-                self._timeout = TIMEOUT_THRESHOLD
             total_reward, rewards_dict = await with_timeout_async(
                 self.compute_reward(),
                 timeout=self._timeout,
@@ -246,8 +240,6 @@ class MultiStepEnv(ABC):
 
         extraction_result = None
         try:
-            if self._timeout is None:
-                self._timeout = TIMEOUT_THRESHOLD
             extraction_result = await with_timeout_async(
                 self.extractor.extract(action.llm_response),
                 timeout=self._timeout,

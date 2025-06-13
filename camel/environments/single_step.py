@@ -60,7 +60,7 @@ class SingleStepEnv:
         self,
         dataset: Union[StaticDataset, BaseGenerator],
         verifier: BaseVerifier,
-        timeout: Optional[float] = 180.0,
+        timeout: Optional[float] = TIMEOUT_THRESHOLD,
         **kwargs,
     ) -> None:
         r"""Initialize the SingleStepEnv.
@@ -78,7 +78,7 @@ class SingleStepEnv:
             This class assumes all interactions are single-step: one question,
             one LLM response, one reward.
         """
-        self._timeout = timeout
+        self._timeout: Optional[float] = timeout
         self.dataset = dataset
         self.verifier = verifier
         self._metadata = kwargs
@@ -165,7 +165,7 @@ class SingleStepEnv:
             ValueError: If batch size exceeds dataset size.
             TypeError: If the dataset is of an unsupported type.
             asyncio.TimeoutError: If the environment setup times out or
-            dataset sampling times out.
+                dataset sampling times out.
         """
         if batch_size <= 0:
             raise ValueError("Batch size must be positive")
@@ -174,20 +174,9 @@ class SingleStepEnv:
             logger.warning(
                 "reset() called on un-setup environment. Setting up..."
             )
-            timeout = (
-                self._timeout
-                if self._timeout is not None
-                else TIMEOUT_THRESHOLD
-            )
-            timeout = (
-                self._timeout
-                if self._timeout is not None
-                else TIMEOUT_THRESHOLD
-            )
-
             await with_timeout_async(
                 self.setup(),
-                timeout=timeout,
+                timeout=self._timeout,
                 context="environment setup",
             )
 
@@ -239,14 +228,9 @@ class SingleStepEnv:
             self._states = []
             for _ in range(batch_size):
                 try:
-                    timeout = (
-                        self._timeout
-                        if self._timeout is not None
-                        else TIMEOUT_THRESHOLD
-                    )
                     sample = await with_timeout_async(
                         self.dataset.async_sample(),
-                        timeout=timeout,
+                        timeout=self._timeout,
                         context="dataset sampling",
                     )
                     self._states.append(sample)
@@ -351,18 +335,13 @@ class SingleStepEnv:
         ]
 
         try:
-            timeout = (
-                self._timeout
-                if self._timeout is not None
-                else TIMEOUT_THRESHOLD
-            )
             verification_results = await with_timeout_async(
                 self.verifier.verify_batch(
                     solutions=proposed_solutions,
                     reference_answers=ground_truths,  # type: ignore [arg-type]
                     raise_on_error=True,
                 ),
-                timeout=timeout,
+                timeout=self._timeout,
                 context="step verification",
             )
         except asyncio.TimeoutError:
@@ -393,11 +372,6 @@ class SingleStepEnv:
         rewards_dicts = [{"correctness": 0.0}] * len(proposed_solutions)
 
         try:
-            timeout = (
-                self._timeout
-                if self._timeout is not None
-                else TIMEOUT_THRESHOLD
-            )
             # First try to compute all rewards with a timeout
             (
                 computed_rewards,
@@ -406,7 +380,7 @@ class SingleStepEnv:
                 self._compute_reward_batch(
                     proposed_solutions, verification_results
                 ),
-                timeout=timeout,
+                timeout=self._timeout,
                 context="batch reward computation",
             )
             # If successful, use all the computed values
@@ -418,14 +392,9 @@ class SingleStepEnv:
                 zip(proposed_solutions, verification_results)
             ):
                 try:
-                    timeout = (
-                        self._timeout
-                        if self._timeout is not None
-                        else TIMEOUT_THRESHOLD
-                    )
                     individual_rewards = await with_timeout_async(
                         self._compute_custom_reward(solution, result),
-                        timeout=timeout,
+                        timeout=self._timeout,
                         context=f"reward computation for solution {i}",
                     )
                     # If successful, calculate the reward for this solution
@@ -439,7 +408,9 @@ class SingleStepEnv:
                     total_rewards[i] = sum(rewards_dict.values())
                     rewards_dicts[i] = rewards_dict
                 except asyncio.TimeoutError:
-                    pass
+                    logger.warning(
+                        f"Reward computation for solution {i} timed out"
+                    )
                 except Exception as e:
                     logger.warning(
                         f"Error computing reward for solution {i}: {e}"
@@ -603,9 +574,9 @@ class SingleStepEnv:
 
             try:
                 # add timeout control
-                further_rewards = await asyncio.wait_for(
+                further_rewards = await with_timeout_async(
                     self._compute_custom_reward(solution, verification_result),
-                    timeout=self._timeout,  # use existing timeout parameter
+                    timeout=self._timeout,
                 )
                 rewards = {**rewards, **further_rewards}
             except asyncio.TimeoutError:
