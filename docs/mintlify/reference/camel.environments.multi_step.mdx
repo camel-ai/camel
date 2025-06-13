@@ -19,6 +19,7 @@ def __init__(
     self,
     extractor: BaseExtractor,
     max_steps: Optional[int] = None,
+    timeout: Optional[float] = TIMEOUT_THRESHOLD,
     **kwargs
 ):
 ```
@@ -28,7 +29,8 @@ Initialize the environment.
 **Parameters:**
 
 - **extractor**: Extractor to process LLM responses.
-- **max_steps**: Maximum steps per episode. **kwargs: Additional environment parameters.
+- **max_steps**: Maximum steps per episode.
+- **timeout**: The execution timeout in seconds. **kwargs: Additional environment parameters.
 
 <a id="camel.environments.multi_step.MultiStepEnv._get_initial_state"></a>
 
