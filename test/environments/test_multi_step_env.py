@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
 import re
 from typing import Any, Dict, Tuple
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -166,3 +167,88 @@ async def test_multi_step_env_error_handling():
     assert env_max_steps._current_step == 1, "Current step should be 1"
     assert env_max_steps.max_steps == 1, "Max steps should be 1"
     assert obs.question == "Episode ended", "Should reach terminal observation"
+
+
+@pytest.mark.asyncio
+async def test_multi_step_env_timeout_handling():
+    r"""Test timeout handling in MultiStepEnv using mocks instead of sleep."""
+
+    # Create mock functions that raise TimeoutError
+    async def mock_update_state_timeout(*args, **kwargs):
+        raise asyncio.TimeoutError("Simulated timeout in _update_state")
+
+    async def mock_compute_reward_timeout(*args, **kwargs):
+        raise asyncio.TimeoutError("Simulated timeout in compute_reward")
+
+    async def mock_extract_timeout(*args, **kwargs):
+        raise asyncio.TimeoutError("Simulated timeout in extract")
+
+    # Create mock extractor
+    mock_extractor = MagicMock()
+    mock_extractor.setup = AsyncMock()
+    mock_extractor.cleanup = AsyncMock()
+    mock_extractor.extract = AsyncMock(side_effect=mock_extract_timeout)
+
+    # 1. Test _update_state timeout in step method
+    env = MockMultiStepEnv(extractor=mock_extractor, max_steps=3)
+
+    try:
+        await env.setup()
+        _obs = await env.reset()
+
+        # Replace _update_state with our mocked timeout version
+        with patch.object(
+            MockMultiStepEnv,
+            '_update_state',
+            new=AsyncMock(side_effect=mock_update_state_timeout),
+        ):
+            # The step should not hang - it should handle the timeout
+            # and continue
+            action = Action(llm_response="test action")
+            observation, reward, done, info = await env.step(action)
+
+            # Verify error info is present
+            assert "error" in info
+            assert "timed out" in info["error"].lower()
+    finally:
+        # Ensure environment is closed
+        await env.close()
+
+    # 2. Test compute_reward timeout in step
+    env_reward = MockMultiStepEnv(extractor=mock_extractor, max_steps=3)
+
+    try:
+        await env_reward.setup()
+        _obs = await env_reward.reset()
+
+        # Replace compute_reward with our mocked timeout version
+        with patch.object(
+            MockMultiStepEnv,
+            'compute_reward',
+            new=AsyncMock(side_effect=mock_compute_reward_timeout),
+        ):
+            action = Action(llm_response="test action")
+            observation, reward, done, info = await env_reward.step(action)
+
+            # Verify reward is default value due to timeout
+            assert reward == 0.0
+            assert "error" in info
+            assert "timed out" in info["error"].lower()
+    finally:
+        await env_reward.close()
+
+    # 3. Test setup timeout in reset
+    setup_env = MockMultiStepEnv(extractor=mock_extractor, max_steps=3)
+
+    # Mock setup to raise TimeoutError
+    with patch.object(
+        MockMultiStepEnv,
+        '_setup',
+        side_effect=asyncio.TimeoutError("Simulated timeout in setup"),
+    ):
+        # Reset should propagate the timeout exception
+        with pytest.raises(asyncio.TimeoutError):
+            await setup_env.reset()
+
+    # Clean up
+    await setup_env.close()

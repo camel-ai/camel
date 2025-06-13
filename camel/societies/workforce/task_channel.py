@@ -16,6 +16,7 @@ from enum import Enum
 from typing import Dict, List, Optional
 
 from camel.tasks import Task
+from camel.utils import TIMEOUT_THRESHOLD, with_timeout_async
 
 
 class PacketStatus(Enum):
@@ -78,14 +79,25 @@ class Packet:
 class TaskChannel:
     r"""An internal class used by Workforce to manage tasks."""
 
-    def __init__(self) -> None:
+    def __init__(self, timeout: float = TIMEOUT_THRESHOLD) -> None:
         self._task_id_list: List[str] = []
         self._condition = asyncio.Condition()
         self._task_dict: Dict[str, Packet] = {}
+        self._timeout = timeout
 
-    async def get_returned_task_by_publisher(self, publisher_id: str) -> Task:
+    async def get_returned_task_by_publisher(
+        self, publisher_id: str, timeout: float = TIMEOUT_THRESHOLD
+    ) -> Task:
         r"""Get a task from the channel that has been returned by the
         publisher.
+
+        Args:
+            publisher_id (str): The ID of the publisher
+            timeout (float): Maximum time to wait in seconds
+                (default: :obj:`180.0`)
+
+        Raises:
+            asyncio.TimeoutError: If waiting times out
         """
         async with self._condition:
             while True:
@@ -96,11 +108,27 @@ class TaskChannel:
                     if packet.status != PacketStatus.RETURNED:
                         continue
                     return packet.task
-                await self._condition.wait()
 
-    async def get_assigned_task_by_assignee(self, assignee_id: str) -> Task:
+                await with_timeout_async(
+                    self._condition.wait(),
+                    timeout=timeout,
+                    context=f"waiting for returned task from publisher\
+                         {publisher_id}",
+                )
+
+    async def get_assigned_task_by_assignee(
+        self, assignee_id: str, timeout: float = TIMEOUT_THRESHOLD
+    ) -> Task:
         r"""Get a task from the channel that has been assigned to the
         assignee.
+
+        Args:
+            assignee_id (str): The ID of the assignee
+            timeout (float): Maximum time to wait in seconds
+                (default: :obj:`180.0`)
+
+        Raises:
+            asyncio.TimeoutError: If waiting times out
         """
         async with self._condition:
             while True:
@@ -111,7 +139,13 @@ class TaskChannel:
                         and packet.assignee_id == assignee_id
                     ):
                         return packet.task
-                await self._condition.wait()
+
+                await with_timeout_async(
+                    self._condition.wait(),
+                    timeout=timeout,
+                    context=f"waiting for assigned task to assignee\
+                         {assignee_id}",
+                )
 
     async def post_task(
         self, task: Task, publisher_id: str, assignee_id: str

@@ -13,7 +13,14 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 import threading
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from camel.agents import (
     ChatAgent,
@@ -28,6 +35,7 @@ from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
 from camel.types import RoleType, TaskType
+from camel.utils import with_timeout_async
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -627,7 +635,12 @@ class RolePlaying:
                 user agent terminated the conversation, and any additional user
                 information.
         """
-        user_response = await self.user_agent.astep(assistant_msg)
+        user_response = await with_timeout_async(
+            self.user_agent.astep(assistant_msg),
+            context=f"waiting for user agent \
+                {self.user_agent.role_name} response",
+        )
+
         if user_response.terminated or user_response.msgs is None:
             return (
                 ChatAgentResponse(msgs=[], terminated=False, info={}),
@@ -648,7 +661,12 @@ class RolePlaying:
         ):
             self.user_agent.record_message(user_msg)
 
-        assistant_response = await self.assistant_agent.astep(user_msg)
+        assistant_response = await with_timeout_async(
+            self.assistant_agent.astep(user_msg),
+            context=f"waiting for assistant agent \
+                {self.assistant_agent.role_name} response",
+        )
+
         if assistant_response.terminated or assistant_response.msgs is None:
             return (
                 ChatAgentResponse(
