@@ -25,9 +25,9 @@ from camel.societies.workforce.prompts import (
     ROLEPLAY_PROCESS_TASK_PROMPT,
     ROLEPLAY_SUMMARIZE_PROMPT,
 )
-from camel.societies.workforce.utils import TaskResult, validate_task_content
+from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
-from camel.tasks.task import Task, TaskState
+from camel.tasks.task import Task, TaskState, validate_task_content
 from camel.utils import print_text_animated
 
 
