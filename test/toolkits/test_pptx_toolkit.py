@@ -17,7 +17,7 @@ import tempfile
 
 import pytest
 
-from camel.toolkits.pptx_toolkit import PPTXToolkit
+from camel.toolkits import PPTXToolkit
 
 
 @pytest.fixture

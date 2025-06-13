@@ -61,8 +61,11 @@ def run_pptx_agent():
     1. Use **text** for bold text
     2. Use *text* for italic text
     3. Use >> at the start of bullet points for step-by-step processes
-    4. Use proper JSON formatting with double quotes for all strings
-    5. Add img_keywords field to include relevant images from Pexels
+    4. Use [[icon_name]] at the start of bullet points for icon slides
+       - The icon_name will be used to find the closest matching PNG icon
+       - Example: [[cloud]] will find the closest matching cloud-related icon
+       - The semantic search will match based on icon names and keywords
+    5. Use proper JSON formatting with double quotes for all strings
 
     IMPORTANT: 
     1. First, analyze the presentation topic and select the most appropriate 
@@ -85,7 +88,7 @@ def run_pptx_agent():
 
     print("=== PPTXToolkit Example Usage ===\n")
 
-    # Example 1: Presentation with various slide types
+    # Example 1: Presentation with various slide types including icons
     print("Example 1: Creating a presentation with various slide types")
     presentation_query = """Create a PowerPoint presentation about 
     \"CAMEL-AI\" based on the content below: 
@@ -125,7 +128,7 @@ def run_pptx_agent():
     print(f"Tool calls: {response.info['tool_calls']}")
     print("\n" + "=" * 50 + "\n")
 
-    # Example 2: Direct toolkit usage with advanced features
+    # Example 2: Direct toolkit usage with advanced features including icons
     print("Example 2: Direct toolkit usage with advanced features")
 
     # Define presentation content as JSON string
@@ -146,6 +149,16 @@ def run_pptx_agent():
                 "Documentation and knowledge sharing",
             ],
             "img_keywords": "software development team collaboration",
+        },
+        {
+            "heading": "Development Tools Overview",
+            "bullet_points": [
+                "[[git]] Version control and collaboration",
+                "[[docker]] Containerization and deployment",
+                "[[cloud]] Cloud services and infrastructure",
+                "[[code]] IDE and development environments",
+                "[[test]] Testing and quality assurance",
+            ],
         },
         {
             "heading": "Step-by-Step: Development Workflow",
@@ -224,7 +237,7 @@ if __name__ == "__main__":
 ===============================================================================
 === PPTXToolkit Example Usage ===
 
-Example 1: Creating a presentation with various slide types
+Example 1: Creating a presentation with various slide types including icons
 The PowerPoint presentation titled "CAMEL-AI: The First Multi-Agent Framework" 
 has been successfully created. You can download it using the link below:
 
@@ -257,7 +270,7 @@ tool_call_id='call_DwygLSSBGGG9c6kXgQt3sFO5')]
 
 ==================================================
 
-Example 2: Direct toolkit usage with advanced features
+Example 2: Direct toolkit usage with advanced features including icons
 Direct toolkit usage:
 PowerPoint presentation successfully created: /Users/enrei/Desktop/camel0508/
 camel/pptx_outputs/modern_development.pptx
