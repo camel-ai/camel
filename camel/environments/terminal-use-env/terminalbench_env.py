@@ -15,15 +15,14 @@
 from __future__ import annotations
 
 import asyncio
+import os
+import shutil
+import subprocess
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
-import subprocess
-import os
-import shutil
-import yaml  # Add this import for YAML parsing
-
+import yaml
 from terminal_bench.terminal.terminal import Terminal, spin_up_terminal
 
 from camel.environments.base import MultiStepEnv
@@ -41,7 +40,13 @@ class TerminalBenchEnv(MultiStepEnv):
         extractor (BaseExtractor): An extractor to process LLM responses.
     """
 
-    def __init__(self, extractor: BaseExtractor, task: str, cache_dir: str==None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        extractor: BaseExtractor,
+        task: str,
+        cache_dir: str | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Initializes the terminal bench environment.
 
         Args:
@@ -78,14 +83,18 @@ class TerminalBenchEnv(MultiStepEnv):
 
         # Termination logic
         self.execution_result: int | None = None
-        
+
         # Download the dataset
         self._cache_dir = cache_dir
         self._download_dataset(cache_dir=cache_dir)
 
         # setup some parameters for interaction history
-        self.max_history_head = kwargs.get('max_history_head', 5)  # Number of initial interactions to always keep
-        self.max_history_tail = kwargs.get('max_history_tail', 10)  # Number of last interactions to always keep
+        self.max_history_head = kwargs.get(
+            'max_history_head', 5
+        )  # Number of initial interactions to always keep
+        self.max_history_tail = kwargs.get(
+            'max_history_tail', 10
+        )  # Number of last interactions to always keep
 
     def _get_initial_state(self) -> Dict[str, Any]:
         r"""Draw a task from the Terminal Bench dataset.
@@ -109,13 +118,17 @@ class TerminalBenchEnv(MultiStepEnv):
         task_path = f"{self._cache_dir}/tasks/{self._task}/task.yaml"
         if not os.path.exists(task_path):
             logger.error(f"Task configuration file not found: {task_path}")
-            raise FileNotFoundError(f"Task configuration file not found: {task_path}")
-        
+            raise FileNotFoundError(
+                f"Task configuration file not found: {task_path}"
+            )
+
         # Load the task configuration
         try:
             with open(task_path, 'r') as f:
                 self._task_config = yaml.safe_load(f)
-            logger.info(f"Successfully loaded task configuration from {task_path}")
+            logger.info(
+                f"Successfully loaded task configuration from {task_path}"
+            )
         except yaml.YAMLError as e:
             logger.error(f"Error parsing the task configuration file: {e}")
             raise
@@ -134,7 +147,7 @@ class TerminalBenchEnv(MultiStepEnv):
 
         return state
 
-    async def _setup_docker(self, task: str) -> None:
+    def _setup_docker(self, task: str) -> None:
         r"""Setup tmux sessions and run install script for the specified task.
 
         This method reuses the existing setup logic in terminal bench to spinup a tmux
@@ -150,7 +163,9 @@ class TerminalBenchEnv(MultiStepEnv):
             )
 
         # TODO implement proper task selection depending on StaticDataset structure
-        compose_path = Path("tasks") / task / "docker-compose.yml"
+        compose_path = (
+            Path(self._cache_dir) / "tasks" / task / "docker-compose.yml"
+        )
         if not compose_path.exists():
             raise FileNotFoundError(compose_path)
 
@@ -163,7 +178,7 @@ class TerminalBenchEnv(MultiStepEnv):
             client_image_name=client_image,
             docker_compose_path=compose_path,
             docker_name_prefix="tb",
-            no_rebuild=True,
+            no_rebuild=False,
             cleanup=False,
             livestream=False,
         )
@@ -228,7 +243,7 @@ class TerminalBenchEnv(MultiStepEnv):
 
     def _get_next_observation(self) -> Observation:
         r"""Generates the observation for the next step.
-        
+
         This method returns the next question for the environment. It uses a
         sliding window approach to manage the terminal history, keeping the
         first 'head' and last 'tail' interactions to prevent the context from
@@ -254,7 +269,9 @@ class TerminalBenchEnv(MultiStepEnv):
 
         # 2. Retrieve the specific task instruction for the current episode.
         try:
-            task_instruction = f"## Task Goal:\n{self._task_config['instruction']}"
+            task_instruction = (
+                f"## Task Goal:\n{self._task_config['instruction']}"
+            )
         except KeyError as e:
             logger.error(f"Task configuration missing key: {e}")
             raise ValueError(
@@ -263,31 +280,43 @@ class TerminalBenchEnv(MultiStepEnv):
         # 3. Format the terminal history using the sliding window strategy.
         history_log = []
         terminal_history = self._state.get("TerminalHistory", [])
-        
+
         history_len = len(terminal_history)
-        
+
         if history_len == 0:
-            history_log.append("The terminal is ready. No commands have been executed yet.")
+            history_log.append(
+                "The terminal is ready. No commands have been executed yet."
+            )
         else:
             # If the history is too long, apply the head/tail windowing
             if history_len > self.max_history_head + self.max_history_tail:
                 # Add the first 'head' interactions
-                head = terminal_history[:self.max_history_head]
+                head = terminal_history[: self.max_history_head]
                 for command, output in head:
-                    history_log.append(f"$ Command: {command}\nOutput:{output}")
-                
+                    history_log.append(
+                        f"$ Command: {command}\nOutput:{output}"
+                    )
+
                 # Add a placeholder for the omitted middle part
-                omitted_count = history_len - (self.max_history_head + self.max_history_tail)
-                history_log.append(f"\n[... {omitted_count} previous interactions omitted for brevity ...]\n")
-                
+                omitted_count = history_len - (
+                    self.max_history_head + self.max_history_tail
+                )
+                history_log.append(
+                    f"\n[... {omitted_count} previous interactions omitted for brevity ...]\n"
+                )
+
                 # Add the last 'tail' interactions
-                tail = terminal_history[-self.max_history_tail:]
+                tail = terminal_history[-self.max_history_tail :]
                 for command, output in tail:
-                    history_log.append(f"$ Command: {command}\nOutput:{output}")
+                    history_log.append(
+                        f"$ Command: {command}\nOutput:{output}"
+                    )
             else:
                 # If history is short enough, show all of it
                 for command, output in terminal_history:
-                    history_log.append(f"$ Command: {command}\nOutput:{output}")
+                    history_log.append(
+                        f"$ Command: {command}\nOutput:{output}"
+                    )
 
         formatted_history = "\n".join(history_log)
         history_section = f"## Terminal History:\n{formatted_history}"
@@ -327,6 +356,18 @@ class TerminalBenchEnv(MultiStepEnv):
             with all past rewards.
         """
 
+        self.execution_result = self._container.exec_run(
+            ["bash", "/tests/run-tests.sh"],
+            workdir="/tests",
+        )
+
+        if self.execution_result.exit_code == 0:
+            reward = 1.0
+        else:
+            reward = 0.0
+
+        return reward, {"": reward}
+
     def _is_done(self) -> bool:
         r"""Checks for environment-specific termination conditions.
 
@@ -337,10 +378,9 @@ class TerminalBenchEnv(MultiStepEnv):
             True if execution result is 0, false otherwise.
         """
 
-        return True if self.execution_result == 0 else False
+        return bool(self.execution_result.exit_code == 0)
 
-
-    async def _download_dataset(self, cache_dir=None) -> None:
+    def _download_dataset(self, cache_dir: str) -> None:
         r"""Downloads the Terminal Bench dataset.
         whole folder from https://github.com/laude-institute/terminal-bench/tree/main/tasks
         This method should download the dataset from the official source
@@ -364,39 +404,48 @@ class TerminalBenchEnv(MultiStepEnv):
             # default to <current script path>/.cache
             cache_dir = f"{Path(__file__).parent}/.cache/"
         self._cache_dir = cache_dir
-        
+
         # Create cache directory if it doesn't exist
         os.makedirs(cache_dir, exist_ok=True)
-        
+
         # Path to the tasks directory
         tasks_dir = os.path.join(cache_dir, "tasks")
-        
+
         # Check if tasks directory already exists
         if os.path.exists(tasks_dir) and os.path.isdir(tasks_dir):
             logger.info(f"Tasks directory already exists at {tasks_dir}")
             return
-        
+
         # Create a temporary directory for cloning
         temp_dir = os.path.join(cache_dir, "temp_repo")
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
-        
+
         try:
             # Clone the repository
             logger.info("Cloning terminal-bench repository...")
-            await subprocess.run(
-                ["git", "clone", "--depth", "1", "https://github.com/laude-institute/terminal-bench.git", temp_dir],
-                check=True
+            subprocess.run(
+                [
+                    "git",
+                    "clone",
+                    "--depth",
+                    "1",
+                    "https://github.com/laude-institute/terminal-bench.git",
+                    temp_dir,
+                ],
+                check=True,
             )
-            
+
             # Copy only the tasks folder to cache_dir
             source_tasks = os.path.join(temp_dir, "tasks")
             if os.path.exists(source_tasks):
                 shutil.copytree(source_tasks, tasks_dir)
                 logger.info(f"Successfully downloaded tasks to {tasks_dir}")
             else:
-                raise FileNotFoundError(f"Tasks directory not found in the repository at {source_tasks}")
-        
+                raise FileNotFoundError(
+                    f"Tasks directory not found in the repository at {source_tasks}"
+                )
+
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to clone repository: {e}")
             raise
