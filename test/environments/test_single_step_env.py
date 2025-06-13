@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
 import re
 from typing import Dict, List
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -1012,3 +1013,71 @@ async def test_single_step_env_all_input_types():
         await env.step([Action(index=2, llm_response="4")])
 
     await env.close()
+
+
+@pytest.mark.asyncio
+async def test_single_step_env_timeout_handling():
+    r"""Test timeout handling in SingleStepEnv."""
+    # Define a valid dataset
+    data = [
+        {
+            "question": "What is 2 + 2?",
+            "final_answer": "4",
+            "rationale": "Adding 2 and 2 gives 4.",
+            "metadata": {"difficulty": "easy"},
+        },
+    ]
+    dataset = StaticDataset(data)
+
+    # **1. Test Custom Reward Timeout**
+    # Create a specialized SingleStepEnv that simulates timeout
+    class TimeoutCustomRewardEnv(SingleStepEnv):
+        async def _compute_custom_reward(self, *args, **kwargs):
+            return {"custom_reward": 5.0}
+
+    # Create a patched asyncio.wait_for that raises TimeoutError
+    # for _compute_custom_reward
+    original_wait_for = asyncio.wait_for
+
+    async def mock_wait_for(coro, timeout, *args, **kwargs):
+        # Check if this is the _compute_custom_reward coroutine
+        if "_compute_custom_reward" in str(coro):
+            raise asyncio.TimeoutError("Simulated timeout")
+        # Otherwise, pass through to the original function
+        return await original_wait_for(coro, timeout, *args, **kwargs)
+
+    # Create environment with mock verifier
+    mock_verifier = create_mock_verifier()
+    env = TimeoutCustomRewardEnv(dataset=dataset, verifier=mock_verifier)
+
+    # Setup and reset environment
+    await env.setup()
+    _obs = await env.reset(batch_size=1)
+
+    # Test step with patched wait_for
+    with patch('asyncio.wait_for', side_effect=mock_wait_for):
+        action = Action(llm_response="The answer is 4")
+        observation, reward, done, info = await env.step(action)
+
+        # Verify that only correctness reward is present
+        # (custom reward timed out)
+        rewards_dict = info["rewards_dict"]
+        assert "correctness" in rewards_dict
+        assert "custom_reward" not in rewards_dict
+        assert reward == env.ACCURACY_REWARD  # Only accuracy reward applied
+
+    # Test cleanup
+    await env.close()
+    assert env._is_setup is False
+    mock_verifier.cleanup.assert_awaited_once()
+
+    # **2. Test Reset Timeout**
+    # Create a new environment for reset timeout testing
+    reset_env = SingleStepEnv(dataset=dataset, verifier=create_mock_verifier())
+
+    # Patch setup method to raise TimeoutError when called from reset
+    with patch.object(
+        SingleStepEnv, 'setup', side_effect=asyncio.TimeoutError
+    ):
+        with pytest.raises(asyncio.TimeoutError):
+            await reset_env.reset()

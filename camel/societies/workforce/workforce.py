@@ -43,7 +43,7 @@ from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, validate_task_content
 from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.utils import dependencies_required
+from camel.utils import dependencies_required, with_timeout_async
 
 logger = get_logger(__name__)
 
@@ -375,10 +375,16 @@ class Workforce(BaseNode):
         return task_assign_result.assignee_id
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
-        await self._channel.post_task(task, self.node_id, assignee_id)
+        await with_timeout_async(
+            self._channel.post_task(task, self.node_id, assignee_id),
+            context=f"posting task {task.id} to assignee {assignee_id}",
+        )
 
     async def _post_dependency(self, dependency: Task) -> None:
-        await self._channel.post_dependency(dependency, self.node_id)
+        await with_timeout_async(
+            self._channel.post_dependency(dependency, self.node_id),
+            context=f"posting dependency {dependency.id}",
+        )
 
     def _create_worker_node_for_task(self, task: Task) -> Worker:
         r"""Creates a new worker node for a given task and add it to the
@@ -449,7 +455,10 @@ class Workforce(BaseNode):
         r"""Get the task that's published by this node and just get returned
         from the assignee.
         """
-        return await self._channel.get_returned_task_by_publisher(self.node_id)
+        return await with_timeout_async(
+            self._channel.get_returned_task_by_publisher(self.node_id),
+            context=f"getting returned task for publisher {self.node_id}",
+        )
 
     async def _post_ready_tasks(self) -> None:
         r"""Send all the pending tasks that have all the dependencies met to
@@ -470,40 +479,68 @@ class Workforce(BaseNode):
             ready_task.compose(self.task_agent)
             # Remove the subtasks from the channel
             for subtask in ready_task.subtasks:
-                await self._channel.remove_task(subtask.id)
+                await with_timeout_async(
+                    self._channel.remove_task(subtask.id),
+                    context=f"removing subtask {subtask.id} from channel",
+                )
             # Send the task to the channel as a dependency
-            await self._post_dependency(ready_task)
+            await with_timeout_async(
+                self._post_dependency(ready_task),
+                context=f"posting dependency task {ready_task.id}",
+            )
             self._pending_tasks.popleft()
             # Try to send the next task in the pending list
-            await self._post_ready_tasks()
+            await with_timeout_async(
+                self._post_ready_tasks(), context="posting next ready task"
+            )
         else:
             # Directly post the task to the channel if it's a new one
             # Find a node to assign the task
             assignee_id = self._find_assignee(task=ready_task)
-            await self._post_task(ready_task, assignee_id)
+            await with_timeout_async(
+                self._post_task(ready_task, assignee_id),
+                context=f"posting task {ready_task.id} \
+                    to assignee {assignee_id}",
+            )
 
     async def _handle_failed_task(self, task: Task) -> bool:
         if task.failure_count >= 3:
             return True
         task.failure_count += 1
         # Remove the failed task from the channel
-        await self._channel.remove_task(task.id)
+        await with_timeout_async(
+            self._channel.remove_task(task.id),
+            context=f"removing failed task {task.id} from channel",
+        )
         if task.get_depth() >= 3:
             # Create a new worker node and reassign
             assignee = self._create_worker_node_for_task(task)
-            await self._post_task(task, assignee.node_id)
+            await with_timeout_async(
+                self._post_task(task, assignee.node_id),
+                context=f"posting task {task.id} to new worker\
+                     {assignee.node_id}",
+            )
         else:
             subtasks = self._decompose_task(task)
             # Insert packets at the head of the queue
             self._pending_tasks.extendleft(reversed(subtasks))
-            await self._post_ready_tasks()
+            await with_timeout_async(
+                self._post_ready_tasks(),
+                context="posting ready tasks after task failure",
+            )
         return False
 
     async def _handle_completed_task(self, task: Task) -> None:
         # archive the packet, making it into a dependency
         self._pending_tasks.popleft()
-        await self._channel.archive_task(task.id)
-        await self._post_ready_tasks()
+        await with_timeout_async(
+            self._channel.archive_task(task.id),
+            context=f"archiving task {task.id}",
+        )
+        await with_timeout_async(
+            self._post_ready_tasks(),
+            context="posting ready tasks after task completion",
+        )
 
     async def _graceful_shutdown(self, failed_task: Task) -> None:
         r"""Handle graceful shutdown with configurable timeout. This is used to
@@ -534,14 +571,25 @@ class Workforce(BaseNode):
         self._running = True
         logger.info(f"Workforce {self.node_id} started.")
 
-        await self._post_ready_tasks()
+        await with_timeout_async(
+            self._post_ready_tasks(),
+            context="posting ready tasks at the start",
+        )
 
         while self._task is None or self._pending_tasks:
-            returned_task = await self._get_returned_task()
+            returned_task = await with_timeout_async(
+                self._get_returned_task(), context="getting returned task"
+            )
             if returned_task.state == TaskState.DONE:
-                await self._handle_completed_task(returned_task)
+                await with_timeout_async(
+                    self._handle_completed_task(returned_task),
+                    context="handling completed task",
+                )
             elif returned_task.state == TaskState.FAILED:
-                halt = await self._handle_failed_task(returned_task)
+                halt = await with_timeout_async(
+                    self._handle_failed_task(returned_task),
+                    context="handling failed task",
+                )
                 if not halt:
                     continue
                 print(
@@ -568,7 +616,9 @@ class Workforce(BaseNode):
         for child in self._children:
             child_listening_task = asyncio.create_task(child.start())
             self._child_listening_tasks.append(child_listening_task)
-        await self._listen_to_channel()
+        await with_timeout_async(
+            self._listen_to_channel(), context="listening to channel"
+        )
 
     @check_if_running(True)
     def stop(self) -> None:
