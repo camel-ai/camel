@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, Tuple
@@ -187,7 +188,43 @@ class TerminalBenchEnv(MultiStepEnv):
             action: The action taken by the agent.
 
         """
-        pass
+        if self._session is None:
+            raise RuntimeError(
+                "Tmux session not initialised; call reset() first."
+            )
+
+        command = await self._extract_command(action)
+
+        logger.debug("Executing command: %s", command)
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None,
+            lambda: self._session.send_keys([command, "Enter"], block=True),
+        )
+
+        terminal_output = self._session.capture_pane(capture_entire=True)
+
+        self._state["TerminalHistory"] = terminal_output
+
+    async def _extract_command(self, action: Action) -> str:
+        r"""Helper function to facilitate using different extraction strategies.
+
+        Default implementation will expect a BoxedExtractor with the BoxedStrategy.
+
+        Important: Do not forget to adapt the SYS_PROMPT to the extraction
+        strategy used.
+
+        Args:
+            action: The action taken by the agent.
+
+        Returns:
+            str: The extracted command to be run in the tmux session
+        """
+
+        command: str = await self.extractor.extract(action.llm_response)
+
+        return command.strip()
 
     def _get_next_observation(self) -> Observation:
         r"""Generates the observation for the next step.
