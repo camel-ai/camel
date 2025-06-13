@@ -678,7 +678,6 @@ class Workforce(BaseNode):
 
         await self._post_ready_tasks()
 
-
     async def _graceful_shutdown(self, failed_task: Task) -> None:
         r"""Handle graceful shutdown with configurable timeout. This is used to
         keep the workforce running for a while to debug the failed task.
