@@ -392,10 +392,6 @@ class ModelType(UnifiedModelType, Enum):
     WENXIN_ERNIE_X1_32K_PREVIEW = "ernie-x1-32k-preview"
     WENXIN_ERNIE_4_5_TURBO_128K = "ernie-4.5-turbo-128k"
     WENXIN_ERNIE_4_5_TURBO_32K = "ernie-4.5-turbo-32k"
-    WENXIN_ERNIE_4_5_8K_PREVIEW = "ernie-4.5-8k-preview"
-    WENXIN_ERNIE_4_0_8K_LATEST = "ernie-4.0-8k-latest"
-    WENXIN_ERNIE_4_0_TURBO_128K = "ernie-4.0-turbo-128k"
-    WENXIN_ERNIE_4_0_TURBO_8K_LATEST = "ernie-4.0-turbo-8k-latest"
     WENXIN_DEEPSEEK_V3 = "deepseek-v3"
     WENXIN_DEEPSEEK_R1 = "deepseek-r1"
     WENXIN_QWEN3_235B_A22B = "qwen3-235b-a22b"
@@ -889,10 +885,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.WENXIN_ERNIE_X1_32K_PREVIEW,
             ModelType.WENXIN_ERNIE_4_5_TURBO_128K,
             ModelType.WENXIN_ERNIE_4_5_TURBO_32K,
-            ModelType.WENXIN_ERNIE_4_5_8K_PREVIEW,
-            ModelType.WENXIN_ERNIE_4_0_8K_LATEST,
-            ModelType.WENXIN_ERNIE_4_0_TURBO_128K,
-            ModelType.WENXIN_ERNIE_4_0_TURBO_8K_LATEST,
             ModelType.WENXIN_DEEPSEEK_V3,
             ModelType.WENXIN_DEEPSEEK_R1,
             ModelType.WENXIN_QWEN3_235B_A22B,
@@ -1069,6 +1061,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
             ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B,
             ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B,
+            ModelType.WENXIN_ERNIE_X1_TURBO_32K,
+            ModelType.WENXIN_ERNIE_X1_32K,
+            ModelType.WENXIN_ERNIE_X1_32K_PREVIEW,
+            ModelType.WENXIN_ERNIE_4_5_TURBO_32K,
+            ModelType.WENXIN_QWEN3_235B_A22B,
         }:
             return 32_000
         elif self in {
@@ -1149,6 +1146,7 @@ class ModelType(UnifiedModelType, Enum):
             return 65_535
         elif self in {
             ModelType.NOVITA_QWEN_2_5_V1_72B,
+            ModelType.WENXIN_DEEPSEEK_R1,
         }:
             return 96_000
         elif self in {
@@ -1202,6 +1200,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
             ModelType.MISTRAL_MEDIUM_3,
+            ModelType.WENXIN_ERNIE_4_5_TURBO_128K,
+            ModelType.WENXIN_DEEPSEEK_V3,
         }:
             return 128_000
         elif self in {
