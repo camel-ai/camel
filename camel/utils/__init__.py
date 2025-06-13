@@ -40,6 +40,7 @@ from .commons import (
     to_pascal,
     track_agent,
     with_timeout,
+    with_timeout_async,
 )
 from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally
@@ -63,6 +64,8 @@ from .token_counting import (
     OpenAITokenCounter,
     get_model_encoding,
 )
+
+TIMEOUT_THRESHOLD = Constants.TIMEOUT_THRESHOLD
 
 __all__ = [
     "print_text_animated",
@@ -106,6 +109,8 @@ __all__ = [
     "sanitize_filename",
     "browser_toolkit_save_auth_cookie",
     "run_async",
+    "with_timeout_async",
+    "TIMEOUT_THRESHOLD",
     "configure_langfuse",
     "is_langfuse_available",
     "get_current_agent_session_id",
