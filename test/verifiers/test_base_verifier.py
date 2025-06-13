@@ -69,7 +69,7 @@ def test_verifier_init():
     r"""Test BaseVerifier initialization with various parameters."""
     verifier = TestVerifier()
     assert verifier._max_parallel is None
-    assert verifier._timeout is None
+    assert verifier._timeout == 180.0
     assert verifier._max_retries == 3
     assert verifier._retry_delay == 1.0
     assert verifier._is_setup is False

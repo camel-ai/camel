@@ -47,7 +47,7 @@ class BaseVerifier(ABC):
         self,
         extractor: Optional[BaseExtractor] = None,
         max_parallel: Optional[int] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = TIMEOUT_THRESHOLD,
         max_retries: int = 3,
         retry_delay: float = 1.0,
         initial_batch_size: Optional[int] = None,
@@ -250,9 +250,7 @@ class BaseVerifier(ABC):
                     self._verify_implementation(
                         verifiable_solution, reference_answer
                     ),
-                    timeout=self._timeout
-                    if self._timeout
-                    else TIMEOUT_THRESHOLD,
+                    timeout=self._timeout,
                     context="verifying solution",
                 )
 
@@ -385,9 +383,7 @@ class BaseVerifier(ABC):
                 async with semaphore:
                     verification_result = await with_timeout_async(
                         self.verify(solution, reference_answer),
-                        timeout=self._timeout
-                        if self._timeout
-                        else TIMEOUT_THRESHOLD,
+                        timeout=self._timeout,
                         context="verifying solution",
                     )
                 processing_time = time.time() - start_time
@@ -424,9 +420,7 @@ class BaseVerifier(ABC):
             try:
                 batch_results = await with_timeout_async(
                     asyncio.gather(*verification_tasks),
-                    timeout=self._timeout
-                    if self._timeout
-                    else TIMEOUT_THRESHOLD,
+                    timeout=self._timeout,
                     context="verifying solutions",
                 )
                 all_results.extend(batch_results)
