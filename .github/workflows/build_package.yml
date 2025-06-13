@@ -136,6 +136,7 @@ jobs:
           NOVITA_API_KEY: "${{ secrets.NOVITA_API_KEY }}"
           WATSONX_API_KEY: "${{ secrets.WATSONX_API_KEY }}"
           WATSONX_PROJECT_ID: "${{ secrets.WATSONX_PROJECT_ID }}"
+          QIANFAN_API_KEY: "${{ secrets.QIANFAN_API_KEY }}"
           ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
           BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
           CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"

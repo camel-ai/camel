@@ -164,6 +164,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_qianfan(self) -> bool:
+        r"""Returns whether the model is a Qianfan served model."""
+        return True
+
+    @property
     def is_crynux(self) -> bool:
         r"""Returns whether the model is a Crynux served model."""
         return True
