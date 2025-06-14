@@ -76,6 +76,7 @@ from .klavis_toolkit import KlavisToolkit
 from .aci_toolkit import ACIToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
+from .task_planning_toolkit import TaskPlanningToolkit
 
 
 __all__ = [
@@ -140,4 +141,5 @@ __all__ = [
     'PlaywrightMCPToolkit',
     'WolframAlphaToolkit',
     'BohriumToolkit',
+    'TaskPlanningToolkit',
 ]

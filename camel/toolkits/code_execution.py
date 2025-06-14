@@ -122,7 +122,7 @@ class CodeExecutionToolkit(BaseToolkit):
 
     def execute_command(self, command: str) -> Union[str, tuple[str, str]]:
         r"""Execute a command can be used to resolve the dependency of the
-        code.
+        code. Useful if there's dependency issues when you try to execute code.
 
         Args:
             command (str): The command to execute.

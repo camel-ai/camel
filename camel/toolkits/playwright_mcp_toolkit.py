@@ -62,7 +62,8 @@ class PlaywrightMCPToolkit(BaseToolkit):
                         + (additional_args or []),
                     }
                 }
-            }
+            },
+            timeout=timeout,
         )
 
     async def connect(self):
