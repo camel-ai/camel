@@ -174,8 +174,12 @@ Now you should summarize the scenario and return the result of the task.
 """
 )
 
-WF_TASK_DECOMPOSE_PROMPT = r"""You need to split the given task into 
-subtasks according to the workers available in the group.
+WF_TASK_DECOMPOSE_PROMPT = r"""You need to decompose the given task into subtasks according to the workers available in the group, following these important principles:
+
+1. Keep tasks that are sequential and require the same type of worker together in one subtask
+2. Only decompose tasks that can be handled in parallel and require different types of workers
+3. This ensures efficient execution by minimizing context switching between workers
+
 The content of the task is:
 
 ==============================
@@ -202,5 +206,9 @@ You must return the subtasks in the format of a numbered list within <tasks> tag
 <task>Subtask 2</task>
 </tasks>
 
-Though it's not a must, you should try your best effort to make each subtask achievable for a worker. The tasks should be clear and concise.
+Each subtask should be:
+- Clear and concise
+- Achievable by a single worker
+- Contain all sequential steps that should be performed by the same worker type
+- Only separated from other subtasks when parallel execution by different worker types is beneficial
 """

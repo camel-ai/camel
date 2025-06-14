@@ -193,14 +193,22 @@ class Workforce(BaseNode):
         self.coordinator_agent = ChatAgent(
             coord_agent_sys_msg,
             **(coordinator_agent_kwargs or {}),
-            tools=[*TaskPlanningToolkit().get_tools()],
         )
 
         task_sys_msg = BaseMessage.make_assistant_message(
             role_name="Task Planner",
-            content="You are going to compose and decompose tasks.",
+            content="You are going to compose and decompose tasks. Keep "
+            "tasks that are sequential and require the same type of "
+            "agent together in one agent process. Only decompose tasks "
+            "that can be handled in parallel and require different types "
+            "of agents. This ensures efficient execution by minimizing "
+            "context switching between agents.",
         )
-        self.task_agent = ChatAgent(task_sys_msg, **(task_agent_kwargs or {}))
+        self.task_agent = ChatAgent(
+            task_sys_msg,
+            **(task_agent_kwargs or {}),
+            tools=[*TaskPlanningToolkit().get_tools()],
+        )
 
         # If there is one, will set by the workforce class wrapping this
         self._task: Optional[Task] = None

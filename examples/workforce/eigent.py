@@ -96,7 +96,9 @@ async def search_agent_factory(
     - Do not be overly confident in your own knowledge. Searching can provide 
     a broader perspective and help validate existing knowledge.  
     - If one way fails to provide an answer, try other ways or methods. The 
-    answer does exists.
+    answer does exist.
+    - When encountering verification challenges (like login, CAPTCHAs or robot 
+    checks), you MUST request help using the human toolkit.
     - If the search snippet is unhelpful but the URL comes from an 
     authoritative source, try visit the website for more details.  
     - For the page you have visited, you should check the subpages of the page 
@@ -104,9 +106,9 @@ async def search_agent_factory(
     - When looking for specific numerical values (e.g., dollar amounts), 
     prioritize reliable sources and avoid relying only on search snippets.  
     - When solving tasks that require web searches, check Wikipedia first 
-    before 'exploring other websites.  
+    before exploring other websites.  
     - You can also simulate browser actions to get more information or verify 
-    the 'information you have found'.
+    the information you have found.
     - Browser simulation is also helpful for finding target URLs. Browser 
     simulation operations do not necessarily need to find specific answers, 
     but can also help find web page URLs that contain answers (usually 
@@ -119,8 +121,6 @@ async def search_agent_factory(
     browser simulation to get, or some content is rendered by javascript.
     - In your response, you should mention the urls you have visited and 
     processed.
-    - If you need assistant from human to pass some check, you should ask for 
-    assistant from human by using human toolkit.
 
 Here are some tips that help you perform web search:
 - Never add too many keywords in your search query! Some detailed results need 
