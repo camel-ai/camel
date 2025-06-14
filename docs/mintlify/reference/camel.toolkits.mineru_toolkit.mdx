@@ -15,7 +15,8 @@ Provides comprehensive document processing capabilities including content
 extraction from URLs and files, with support for OCR, formula recognition,
 and table detection through the MinerU API service.
 
-Note:
+**Note:**
+
 - Maximum file size: 200MB per file
 - Maximum pages: 600 pages per file
 - Daily quota: 2000 pages for high-priority parsing
@@ -93,7 +94,8 @@ Retrieve current status of an individual extraction task.
   Dict: Status information and results (if task is completed) for
 the specified task.
 
-Note:
+**Note:**
+
 This is a low-level status checking method. For most use cases,
 prefer using extract_from_url with wait=True for automatic
 completion handling.
@@ -117,7 +119,8 @@ Retrieve current status of a batch extraction task.
   Dict: Comprehensive status information and results for all files
 in the batch task.
 
-Note:
+**Note:**
+
 This is a low-level status checking method. For most use cases,
 prefer using batch_extract_from_urls with wait=True for automatic
 completion handling.

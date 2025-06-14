@@ -14,12 +14,11 @@ embedding model.
 This class facilitates the retriever of relevant information using a
 query-based approach, backed by vector embeddings.
 
-Attributes:
-embedding_model (BaseEmbedding): Embedding model used to generate
-vector embeddings.
-storage (BaseVectorStorage): Vector storage to query.
-unstructured_modules (UnstructuredIO): A module for parsing files and
-URLs and chunking content based on specified parameters.
+**Parameters:**
+
+- **embedding_model** (BaseEmbedding): Embedding model used to generate vector embeddings.
+- **storage** (BaseVectorStorage): Vector storage to query.
+- **unstructured_modules** (UnstructuredIO): A module for parsing files and URLs and chunking content based on specified parameters.
 
 <a id="camel.retrievers.vector_retriever.VectorRetriever.__init__"></a>
 
