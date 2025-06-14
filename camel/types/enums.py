@@ -30,7 +30,7 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
-    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4o-mini")
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4.1-mini-2025-04-14")
 
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
@@ -47,6 +47,7 @@ class ModelType(UnifiedModelType, Enum):
     GPT_4_1_NANO = "gpt-4.1-nano-2025-04-14"
     O4_MINI = "o4-mini"
     O3 = "o3"
+    O3_PRO = "o3-pro"
 
     AWS_CLAUDE_3_7_SONNET = "anthropic.claude-3-7-sonnet-20250219-v1:0"
     AWS_CLAUDE_3_5_SONNET = "anthropic.claude-3-5-sonnet-20241022-v2:0"
@@ -185,7 +186,7 @@ class ModelType(UnifiedModelType, Enum):
 
     # Gemini models
     GEMINI_2_5_FLASH_PREVIEW = "gemini-2.5-flash-preview-04-17"
-    GEMINI_2_5_PRO_PREVIEW = "gemini-2.5-pro-preview-05-06"
+    GEMINI_2_5_PRO_PREVIEW = "gemini-2.5-pro-preview-06-05"
     GEMINI_2_0_FLASH = "gemini-2.0-flash"
     GEMINI_2_0_FLASH_EXP = "gemini-2.0-flash-exp"
     GEMINI_2_0_FLASH_THINKING = "gemini-2.0-flash-thinking-exp"
@@ -207,6 +208,7 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
     MISTRAL_MEDIUM_3 = "mistral-medium-latest"
+    MAGISTRAL_MEDIUM = "magistral-medium-2506"
 
     # Reka models
     REKA_CORE = "reka-core"
@@ -384,6 +386,25 @@ class ModelType(UnifiedModelType, Enum):
     )
     WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
+    # Crynux models
+    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    )
+    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    )
+    CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+    )
+
+    CRYNUX_QWEN_3_4_B = "Qwen/Qwen3-4B"
+    CRYNUX_QWEN_3_8_B = "Qwen/Qwen3-8B"
+    CRYNUX_QWEN_2_5_7B = "Qwen/Qwen2.5-7B"
+    CRYNUX_QWEN_2_5_7B_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
+
+    CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B = "NousResearch/Hermes-3-Llama-3.1-8B"
+    CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
+
     def __str__(self):
         return self.value
 
@@ -452,6 +473,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1,
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
+            ModelType.O3_PRO,
             ModelType.O3_MINI,
             ModelType.GPT_4_5_PREVIEW,
             ModelType.GPT_4_1,
@@ -492,6 +514,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
             ModelType.O3_MINI,
+            ModelType.O3_PRO,
             ModelType.GPT_4_5_PREVIEW,
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
@@ -612,6 +635,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
             ModelType.MISTRAL_MEDIUM_3,
+            ModelType.MAGISTRAL_MEDIUM,
         }
 
     @property
@@ -892,6 +916,20 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_crynux(self) -> bool:
+        return self in {
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B,
+            ModelType.CRYNUX_QWEN_3_4_B,
+            ModelType.CRYNUX_QWEN_3_8_B,
+            ModelType.CRYNUX_QWEN_2_5_7B,
+            ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B,
+        }
+
+    @property
     def is_aiml(self) -> bool:
         return self in {
             ModelType.AIML_MIXTRAL_8X7B,
@@ -991,6 +1029,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_GLM_4_32B_0414,
             ModelType.NOVITA_GLM_Z1_RUMINATION_32B_0414,
             ModelType.NOVITA_QWEN_2_5_7B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B,
+            ModelType.CRYNUX_QWEN_3_4_B,
+            ModelType.CRYNUX_QWEN_3_8_B,
+            ModelType.CRYNUX_QWEN_2_5_7B,
+            ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B,
         }:
             return 32_000
         elif self in {
@@ -1163,6 +1210,7 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.O1,
             ModelType.O3_MINI,
+            ModelType.O3_PRO,
             ModelType.CLAUDE_2_1,
             ModelType.CLAUDE_3_OPUS,
             ModelType.CLAUDE_3_SONNET,
@@ -1223,6 +1271,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
+        elif self in {
+            ModelType.MAGISTRAL_MEDIUM,
+        }:
+            return 40_000
+
         else:
             logger.warning(
                 f"Unknown model type {self}, set maximum token limit "
@@ -1449,6 +1502,7 @@ class ModelPlatformType(Enum):
     NETMIND = "netmind"
     NOVITA = "novita"
     WATSONX = "watsonx"
+    CRYNUX = "crynux"
 
     @classmethod
     def from_name(cls, name):
@@ -1623,6 +1677,11 @@ class ModelPlatformType(Enum):
     def is_watsonx(self) -> bool:
         r"""Returns whether this platform is WatsonX."""
         return self is ModelPlatformType.WATSONX
+
+    @property
+    def is_crynux(self) -> bool:
+        r"""Returns whether this platform is Crynux."""
+        return self is ModelPlatformType.CRYNUX
 
 
 class AudioModelType(Enum):
