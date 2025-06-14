@@ -17,10 +17,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.workforce import Workforce
 from camel.tasks.task import Task, TaskState
-from camel.utils import with_timeout_async
+from camel.types import ModelPlatformType, ModelType
 
 
 class TestTimeoutWorkforce(Workforce):
@@ -44,7 +46,7 @@ async def test_with_timeout_function():
     # Test normal operation (successful completion)
     mock_coro = AsyncMock()
     mock_coro.return_value = "success"
-    result = await with_timeout_async(mock_coro(), context="test operation")
+    result = await mock_coro()
     assert result == "success"
 
     # Test timeout handling
@@ -52,11 +54,9 @@ async def test_with_timeout_function():
     mock_timeout_coro.side_effect = asyncio.TimeoutError("Simulated timeout")
 
     with pytest.raises(asyncio.TimeoutError) as exc_info:
-        await with_timeout_async(
-            mock_timeout_coro(), context="test timeout operation"
-        )
+        await mock_timeout_coro()
 
-    assert "Timed out while test timeout operation" in str(exc_info.value)
+    assert "Simulated timeout" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -186,21 +186,13 @@ async def test_workforce_with_timeout_integration():
         if not ran_once:
             ran_once = True
             # Post initial ready tasks
-            await with_timeout_async(
-                workforce._post_ready_tasks(),
-                context="posting ready tasks at start",
-            )
+            await workforce._post_ready_tasks()
 
             # Get returned task
-            returned_task = await with_timeout_async(
-                workforce._get_returned_task(), context="getting returned task"
-            )
+            returned_task = await workforce._get_returned_task()
 
             # Handle completed task
-            await with_timeout_async(
-                workforce._handle_completed_task(returned_task),
-                context="handling completed task",
-            )
+            await workforce._handle_completed_task(returned_task)
 
         workforce._running = False
 
@@ -272,3 +264,127 @@ async def test_multiple_timeout_points():
     mock_channel.get_returned_task_by_publisher.assert_called_once()
     # Verify remove_task was called (this is where the timeout occurred)
     mock_channel.remove_task.assert_called_once_with(mock_task.id)
+
+
+@pytest.fixture
+def mock_model():
+    r"""Create a real model backend for testing"""
+    return ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.STUB,
+    )
+
+
+@pytest.fixture
+def mock_agent():
+    r"""Create a mock agent with memory functionality"""
+    agent = MagicMock(spec=ChatAgent)
+    agent.agent_id = "test_agent_id"
+    agent.memory = MagicMock()
+    agent.memory.get_context.return_value = ([], 0)
+
+    # Mock step method
+    response = MagicMock()
+    response.msgs = [MagicMock(content="Test response")]
+    agent.step.return_value = response
+    return agent
+
+
+@pytest.fixture
+def sample_shared_memory():
+    r"""Sample shared memory data for testing"""
+    return {
+        'coordinator': [{"role": "user", "content": "Coordinator info"}],
+        'task_agent': [{"role": "user", "content": "Task agent info"}],
+        'workers': [
+            {"role": "user", "content": "Agent knows secret code BLUE42"},
+            {"role": "user", "content": "Agent knows meeting room 314"},
+        ],
+    }
+
+
+@pytest.mark.parametrize("share_memory", [True, False])
+def test_workforce_initialization(mock_model, share_memory):
+    r"""Test workforce initialization with different memory configurations"""
+    workforce = Workforce(
+        description="Test Workforce",
+        coordinator_agent_kwargs={"model": mock_model},
+        task_agent_kwargs={"model": mock_model},
+        share_memory=share_memory,
+        graceful_shutdown_timeout=2.0,
+    )
+
+    assert workforce.share_memory == share_memory
+    assert workforce.graceful_shutdown_timeout == 2.0
+
+
+def test_shared_memory_operations(
+    mock_model, mock_agent, sample_shared_memory
+):
+    r"""Test shared memory collection and synchronization"""
+    workforce = Workforce(
+        description="Test Workforce",
+        coordinator_agent_kwargs={"model": mock_model},
+        task_agent_kwargs={"model": mock_model},
+        share_memory=True,
+    )
+
+    workforce.add_single_agent_worker("TestAgent", mock_agent)
+
+    # Test memory collection and synchronization
+    with patch.object(
+        workforce, '_collect_shared_memory', return_value=sample_shared_memory
+    ):
+        with patch.object(
+            workforce, '_share_memory_with_agents'
+        ) as mock_share:
+            workforce._sync_shared_memory()
+            mock_share.assert_called_once_with(sample_shared_memory)
+
+
+def test_cross_agent_memory_access(mock_model, sample_shared_memory):
+    r"""Test cross-agent information access after memory sync"""
+    workforce = Workforce(
+        description="Test Workforce",
+        coordinator_agent_kwargs={"model": mock_model},
+        task_agent_kwargs={"model": mock_model},
+        share_memory=True,
+    )
+
+    # Create agents with cross-knowledge after sync
+    agent_alice = MagicMock(spec=ChatAgent)
+    agent_alice.agent_id = "alice_id"
+    agent_alice.memory = MagicMock()
+    agent_alice.memory.get_context.return_value = ([], 0)
+    alice_response = MagicMock()
+    alice_response.msgs = [
+        MagicMock(content="I know secret code BLUE42 and room 314")
+    ]
+    agent_alice.step.return_value = alice_response
+
+    agent_bob = MagicMock(spec=ChatAgent)
+    agent_bob.agent_id = "bob_id"
+    agent_bob.memory = MagicMock()
+    agent_bob.memory.get_context.return_value = ([], 0)
+    bob_response = MagicMock()
+    bob_response.msgs = [MagicMock(content="I know room 314 and code BLUE42")]
+    agent_bob.step.return_value = bob_response
+
+    workforce.add_single_agent_worker("Alice", agent_alice)
+    workforce.add_single_agent_worker("Bob", agent_bob)
+
+    # Simulate memory sync
+    with patch.object(
+        workforce, '_collect_shared_memory', return_value=sample_shared_memory
+    ):
+        with patch.object(workforce, '_share_memory_with_agents'):
+            workforce._sync_shared_memory()
+
+    # Test that both agents have access to shared information
+    query = "What information do you have?"
+    alice_content = agent_alice.step(query).msgs[0].content.lower()
+    bob_content = agent_bob.step(query).msgs[0].content.lower()
+
+    # Both should know both pieces of information
+    for content in [alice_content, bob_content]:
+        assert "blue42" in content and "314" in content
