@@ -24,7 +24,6 @@ from camel.toolkits import (
     CodeExecutionToolkit,
     DalleToolkit,
     FileWriteToolkit,
-    FunctionTool,
     HumanToolkit,
     ImageAnalysisToolkit,
     LinkedInToolkit,
@@ -32,7 +31,6 @@ from camel.toolkits import (
     PlaywrightMCPToolkit,
     PPTXToolkit,
     RedditToolkit,
-    SearchToolkit,
     SlackToolkit,
     TerminalToolkit,
     TwitterToolkit,
@@ -43,7 +41,7 @@ from camel.types import ModelPlatformType, ModelType
 
 
 def developer_agent_factory(model: BaseModelBackend, task_id: str):
-    """Factory for creating a developer agent."""
+    r"""Factory for creating a developer agent."""
     tools = [
         *TerminalToolkit().get_tools(),
         *HumanToolkit().get_tools(),
@@ -74,18 +72,18 @@ async def search_agent_factory(
     task_id: str,
     playwright_toolkit: PlaywrightMCPToolkit,
 ):
-    """Factory for creating a search agent, based on user-provided code
+    r"""Factory for creating a search agent, based on user-provided code
     structure."""
-    search_toolkits = SearchToolkit()
+    # search_toolkits = SearchToolkit()
     # browser_toolkits = AsyncBrowserToolkit()
     terminal_toolkits = TerminalToolkit()
     human_toolkits = HumanToolkit()
     tools = [
-        FunctionTool(search_toolkits.search_wiki),
-        # FunctionTool(search_toolkits.search_duckduckgo),
-        # FunctionTool(search_toolkits.search_bing),
-        # FunctionTool(search_toolkits.search_baidu),
-        *playwright_toolkit.get_tools(),  # Use passed toolkit
+        # FunctionTool(search_toolkits.search_wiki),
+        # # FunctionTool(search_toolkits.search_duckduckgo),
+        # # FunctionTool(search_toolkits.search_bing),
+        # # FunctionTool(search_toolkits.search_baidu),
+        *playwright_toolkit.get_tools(),
         # *browser_toolkits.get_tools(),
         *terminal_toolkits.get_tools(),
         *human_toolkits.get_tools(),
@@ -101,6 +99,8 @@ async def search_agent_factory(
     answer does exists.
     - If the search snippet is unhelpful but the URL comes from an 
     authoritative source, try visit the website for more details.  
+    - For the page you have visited, you should check the subpages of the page 
+    to see if it can provide more information to solve the task. 
     - When looking for specific numerical values (e.g., dollar amounts), 
     prioritize reliable sources and avoid relying only on search snippets.  
     - When solving tasks that require web searches, check Wikipedia first 
@@ -119,6 +119,8 @@ async def search_agent_factory(
     browser simulation to get, or some content is rendered by javascript.
     - In your response, you should mention the urls you have visited and 
     processed.
+    - If you need assistant from human to pass some check, you should ask for 
+    assistant from human by using human toolkit.
 
 Here are some tips that help you perform web search:
 - Never add too many keywords in your search query! Some detailed results need 
@@ -134,7 +136,9 @@ Here are some tips that help you perform web search:
     find the youtube website first, and then try other fine-grained search 
     terms step-by-step to find more urls.
 - The results you return do not have to directly answer the original question, 
-    you only need to collect relevant information."""
+    you only need to collect relevant information.
+    
+    """
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -147,7 +151,7 @@ Here are some tips that help you perform web search:
 
 
 def document_agent_factory(model: BaseModelBackend, task_id: str):
-    """Factory for creating a document agent, based on user-provided code
+    r"""Factory for creating a document agent, based on user-provided code
     structure."""
     tools = [
         *FileWriteToolkit().get_tools(),
@@ -156,9 +160,41 @@ def document_agent_factory(model: BaseModelBackend, task_id: str):
         *HumanToolkit().get_tools(),
     ]
 
-    system_message = """You are a helpful assistant that can process documents 
-    and multi modal data, such as images, audio, and video, you could also 
-    generate documents including pptx, pdf, md, etc."""
+    system_message = """You are a Document Processing Assistant specialized in 
+    creating, modifying, and managing various document formats. Your 
+    capabilities include:
+
+    1. Document Creation & Editing:
+       - Create and write to various file formats including Markdown (.md), 
+       Word documents (.docx), PDFs, CSV files, JSON, YAML, and HTML
+       - Apply formatting options including custom encoding, font styles, and 
+       layout settings
+       - Modify existing files with automatic backup functionality
+       - Support for mathematical expressions in PDF documents through LaTeX 
+       rendering
+
+    2. PowerPoint Presentation Creation:
+       - Create professional PowerPoint presentations with title slides and 
+       content slides
+       - Format text with bold and italic styling
+       - Create bullet point lists with proper hierarchical structure
+       - Support for step-by-step process slides with visual indicators
+       - Create tables with headers and rows of data
+       - Support for custom templates and slide layouts
+
+    3. Human Interaction:
+       - Ask questions to users and receive their responses
+       - Send informative messages to users without requiring responses
+
+    When working with documents, you should:
+    - Suggest appropriate file formats based on content requirements
+    - Maintain proper formatting and structure in all created documents
+    - Provide clear feedback about document creation and modification processes
+    - Ask clarifying questions when user requirements are ambiguous
+    - Recommend best practices for document organization and presentation
+
+    Your goal is to help users efficiently create, modify, and manage their 
+    documents with professional quality and appropriate formatting."""
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -171,7 +207,7 @@ def document_agent_factory(model: BaseModelBackend, task_id: str):
 
 
 def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
-    """Factory for creating a multi modal agent, based on user-provided code
+    r"""Factory for creating a multi modal agent, based on user-provided code
     structure."""
     tools = [
         *VideoDownloaderToolkit().get_tools(),
@@ -181,8 +217,40 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *HumanToolkit().get_tools(),
     ]
 
-    system_message = """You are a helpful assistant that can process multi 
-    modal data, such as images, audio, and video."""
+    system_message = """You are a Multi-Modal Processing Assistant specialized 
+    in analyzing and generating various types of media content. Your 
+    capabilities include:
+
+    1. Audio Analysis & Processing:
+       - Transcribe speech from audio files to text with high accuracy
+       - Answer specific questions about audio content
+       - Process audio from both local files and URLs
+       - Handle various audio formats including MP3, WAV, and OGG
+
+    2. Image Analysis & Understanding:
+       - Generate detailed descriptions of image content
+       - Answer specific questions about images
+       - Identify objects, text, people, and scenes in images
+       - Process images from both local files and URLs
+
+    3. Image Generation:
+       - Create high-quality images based on detailed text prompts using DALL-E
+       - Generate images in 1024x1792 resolution
+       - Save generated images to specified directories
+
+    4. Human Interaction:
+       - Ask questions to users and receive their responses
+       - Send informative messages to users without requiring responses
+
+    When working with multi-modal content, you should:
+    - Provide detailed and accurate descriptions of media content
+    - Extract relevant information based on user queries
+    - Generate appropriate media when requested
+    - Explain your analysis process and reasoning
+    - Ask clarifying questions when user requirements are ambiguous
+
+    Your goal is to help users effectively process, understand, and create 
+    multi-modal content across audio and visual domains."""
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -195,15 +263,56 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
 
 
 def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
-    """Factory for creating a social medium agent."""
+    r"""Factory for creating a social medium agent."""
     return ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Social Medium Agent",
-            content="""You are a helpful assistant specializing in social 
-            media management, content creation, and interaction across various 
-            platforms. You can assist with tasks on WhatsApp, Twitter, 
-            LinkedIn, Reddit, Notion, Slack, Discord, and leverage Google 
-            Suite tools for productivity.""",
+            content="""You are a Social Media Management Assistant with 
+            comprehensive capabilities across multiple platforms. Your 
+            integrated toolkits enable you to:
+
+1. WhatsApp Business Management (WhatsAppToolkit):
+   - Send text messages to customers via the WhatsApp Business API
+   - Send template messages for standardized communications
+   - Retrieve business profile information
+
+2. Twitter Account Management (TwitterToolkit):
+   - Create tweets with text content (respecting character limits)
+   - Create tweets with polls or as quote tweets
+   - Delete existing tweets
+   - Retrieve user profile information
+
+3. LinkedIn Professional Networking (LinkedInToolkit):
+   - Create posts on LinkedIn (respecting character limits)
+   - Delete existing posts (with user confirmation)
+   - Retrieve authenticated user's profile information
+
+4. Reddit Content Analysis (RedditToolkit):
+   - Collect top posts and comments from specified subreddits
+   - Perform sentiment analysis on Reddit comments
+   - Track keyword discussions across multiple subreddits
+
+5. Notion Workspace Management (NotionToolkit):
+   - List all pages in a Notion workspace
+   - List all users with access to the workspace
+   - Retrieve and extract text content from Notion blocks
+
+6. Slack Workspace Interaction (SlackToolkit):
+   - Create new Slack channels (public or private)
+   - Join or leave existing channels
+   - Send and delete messages in channels
+   - Retrieve channel information and message history
+
+7. Human Interaction (HumanToolkit):
+   - Ask questions to users via console
+   - Send messages to users via console
+
+When assisting users, always:
+1. Identify which platform's functionality is needed for the task
+2. Check if required API credentials are available before attempting operations
+3. Provide clear explanations of what actions you're taking
+4. Handle rate limits and API restrictions appropriately
+5. Ask clarifying questions when user requests are ambiguous""",
         ),
         model=model,
         tools=[
@@ -244,26 +353,30 @@ async def main():
         workforce = Workforce(
             'A workforce',
             graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
-            share_memory=True,
+            share_memory=False,
         )
 
         workforce.add_single_agent_worker(
-            "A search agent", worker=search_agent
+            "Search & Information Retrieval Agent", worker=search_agent
         ).add_single_agent_worker(
-            "A developer agent", worker=developer_agent
+            "Software Development & Code Generation Agent",
+            worker=developer_agent,
         ).add_single_agent_worker(
-            "A document agent", worker=document_agent
+            "Document Creation & Management Agent", worker=document_agent
         ).add_single_agent_worker(
-            "A multi modal agent", worker=multi_modal_agent
+            "Multi-Modal Content Analysis & Generation Agent",
+            worker=multi_modal_agent,
         )
 
         # specify the task to be solved
         human_task = Task(
             content=(
-                """I want to read papers about GUI Agent. Please help me find 
+                """
+                I want to read papers about GUI Agent. Please help me find 
                 ten papers, check the detailed content of the papers and help 
-                me write a comparison report, then create a nice slides to 
-                introduce the latest research progress of GUI Agent."""
+                me write a comparison report, then create a nice slides(pptx) 
+                to introduce the latest research progress of GUI Agent.
+                """
             ),
             id='0',
         )

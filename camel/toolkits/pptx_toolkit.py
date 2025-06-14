@@ -260,7 +260,7 @@ class PPTXToolkit(BaseToolkit):
                 provided, the default template will be used. (default: :obj:
                 `None`)
         """
-        import pptx
+        from pptx import Presentation
 
         # Use template if provided, otherwise create new presentation
         if template is not None:
@@ -270,9 +270,9 @@ class PPTXToolkit(BaseToolkit):
                     f"Template file not found: {template_path}, using "
                     "default template"
                 )
-                presentation = pptx.Presentation()
+                presentation = Presentation()
             else:
-                presentation = pptx.Presentation(str(template_path))
+                presentation = Presentation(str(template_path))
                 # Clear all existing slides by removing them from the slide
                 # list
                 while len(presentation.slides) > 0:
@@ -280,7 +280,7 @@ class PPTXToolkit(BaseToolkit):
                     presentation.part.drop_rel(rId)
                     del presentation.slides._sldIdLst[-1]
         else:
-            presentation = pptx.Presentation()
+            presentation = Presentation()
 
         slide_width_inch, slide_height_inch = (
             self._get_slide_width_height_inches(presentation)
