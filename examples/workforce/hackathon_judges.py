@@ -253,6 +253,20 @@ def main():
 
     task = workforce.process_task(task)
 
+    # Test WorkforceLogger features
+    print("\n--- Workforce Log Tree ---")
+    print(workforce.get_workforce_log_tree())
+
+    print("\n--- Workforce KPIs ---")
+    kpis = workforce.get_workforce_kpis()
+    for key, value in kpis.items():
+        print(f"{key}: {value}")
+
+    log_file_path = "hackathon_judges_logs.json"
+    print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
+    workforce.dump_workforce_logs(log_file_path)
+    print(f"Logs dumped. Please check the file: {log_file_path}")
+
 
 if __name__ == "__main__":
     main()
