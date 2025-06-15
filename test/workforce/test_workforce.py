@@ -23,7 +23,6 @@ from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.workforce import Workforce
 from camel.tasks.task import Task, TaskState
 from camel.types import ModelPlatformType, ModelType
-from camel.utils import with_timeout_async
 
 
 class TestTimeoutWorkforce(Workforce):
@@ -47,7 +46,7 @@ async def test_with_timeout_function():
     # Test normal operation (successful completion)
     mock_coro = AsyncMock()
     mock_coro.return_value = "success"
-    result = await with_timeout_async(mock_coro(), context="test operation")
+    result = await mock_coro()
     assert result == "success"
 
     # Test timeout handling
@@ -55,11 +54,9 @@ async def test_with_timeout_function():
     mock_timeout_coro.side_effect = asyncio.TimeoutError("Simulated timeout")
 
     with pytest.raises(asyncio.TimeoutError) as exc_info:
-        await with_timeout_async(
-            mock_timeout_coro(), context="test timeout operation"
-        )
+        await mock_timeout_coro()
 
-    assert "Timed out while test timeout operation" in str(exc_info.value)
+    assert "Simulated timeout" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -189,21 +186,13 @@ async def test_workforce_with_timeout_integration():
         if not ran_once:
             ran_once = True
             # Post initial ready tasks
-            await with_timeout_async(
-                workforce._post_ready_tasks(),
-                context="posting ready tasks at start",
-            )
+            await workforce._post_ready_tasks()
 
             # Get returned task
-            returned_task = await with_timeout_async(
-                workforce._get_returned_task(), context="getting returned task"
-            )
+            returned_task = await workforce._get_returned_task()
 
             # Handle completed task
-            await with_timeout_async(
-                workforce._handle_completed_task(returned_task),
-                context="handling completed task",
-            )
+            await workforce._handle_completed_task(returned_task)
 
         workforce._running = False
 

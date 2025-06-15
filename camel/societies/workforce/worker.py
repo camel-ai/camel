@@ -23,7 +23,6 @@ from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import check_if_running
 from camel.tasks.task import Task, TaskState
-from camel.utils import with_timeout_async
 
 logger = logging.getLogger(__name__)
 
@@ -62,10 +61,7 @@ class Worker(BaseNode, ABC):
 
     async def _get_assigned_task(self) -> Task:
         r"""Get the task assigned to this node from the channel."""
-        return await with_timeout_async(
-            self._channel.get_assigned_task_by_assignee(self.node_id),
-            context=f"getting assigned task for {self.node_id}",
-        )
+        return await self._channel.get_assigned_task_by_assignee(self.node_id)
 
     @staticmethod
     def _get_dep_tasks_info(dependencies: List[Task]) -> str:
@@ -94,50 +90,30 @@ class Worker(BaseNode, ABC):
 
         while True:
             # Get the earliest task assigned to this node
-            task = await with_timeout_async(
-                self._get_assigned_task(),
-                context=f"getting assigned task for {self.node_id}",
-            )
-
+            task = await self._get_assigned_task()
             print(
                 f"{Fore.YELLOW}{self} get task {task.id}: {task.content}"
                 f"{Fore.RESET}"
             )
-
             # Get the Task instance of dependencies
-            dependency_ids = await with_timeout_async(
-                self._channel.get_dependency_ids(),
-                context=f"getting dependency IDs for task {task.id}",
-            )
-            task_dependencies = []
-            for dep_id in dependency_ids:
-                dep_task = await with_timeout_async(
-                    self._channel.get_task_by_id(dep_id),
-                    context=f"getting dependency task {dep_id}",
-                )
-                task_dependencies.append(dep_task)
+            dependency_ids = await self._channel.get_dependency_ids()
+            task_dependencies = [
+                await self._channel.get_task_by_id(dep_id)
+                for dep_id in dependency_ids
+            ]
 
             # Process the task
-            task_state = await with_timeout_async(
-                self._process_task(task, task_dependencies),
-                context=f"processing task {task.id}",
-            )
+            task_state = await self._process_task(task, task_dependencies)
 
             # Update the result and status of the task
             task.set_state(task_state)
 
-            await with_timeout_async(
-                self._channel.return_task(task.id),
-                context=f"returning task {task.id}",
-            )
+            await self._channel.return_task(task.id)
 
     @check_if_running(False)
     async def start(self):
         r"""Start the worker."""
-        await with_timeout_async(
-            self._listen_to_channel(),
-            context=f"listening to channel for {self.node_id}",
-        )
+        await self._listen_to_channel()
 
     @check_if_running(True)
     def stop(self):
