@@ -40,6 +40,8 @@ from camel.societies.workforce.utils import (
     check_if_running,
 )
 from camel.societies.workforce.worker import Worker
+from camel.societies.workforce.WorkforceEventLogger import WorkforceEventLogger
+from camel.societies.workforce.WorkforceEventType import TaskEventType
 from camel.tasks.task import Task, TaskState, validate_task_content
 from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -131,6 +133,7 @@ class Workforce(BaseNode):
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children or []
         self.new_worker_agent_kwargs = new_worker_agent_kwargs
+        self.event_logger = WorkforceEventLogger()
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
         self.share_memory = share_memory
 
@@ -344,6 +347,13 @@ class Workforce(BaseNode):
         for subtask in subtasks:
             subtask.parent = task
 
+        self.event_logger.log_task_event(
+            event_type=TaskEventType.TASK_DECOMPOSED,
+            task=task,
+            workforce_id=self.node_id,
+            workforce_description=self.description,
+            details={"subtasks_count": len(subtasks),  "subtasks": subtasks},
+        )
         return subtasks
 
     @check_if_running(False)
@@ -370,6 +380,12 @@ class Workforce(BaseNode):
         self.reset()
         self._task = task
         task.state = TaskState.FAILED
+        self.event_logger.log_task_event(
+            event_type=TaskEventType.TASK_CREATED,
+            task=task,
+            workforce_id=self.node_id,
+            workforce_description=self.description,
+        )
         self._pending_tasks.append(task)
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
@@ -519,6 +535,15 @@ class Workforce(BaseNode):
         )
         result_dict = json.loads(response.msg.content, parse_int=str)
         task_assign_result = TaskAssignResult(**result_dict)
+        self.event_logger.log_task_event(
+            TaskEventType.TASK_ASSIGNED,
+            task,
+            workforce_id=self.node_id,
+            workforce_description=self.description,
+            details={
+                "assignee_id": task_assign_result.assignee_id,
+            },
+        )
         return task_assign_result.assignee_id
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
@@ -630,6 +655,13 @@ class Workforce(BaseNode):
             await self._post_task(ready_task, assignee_id)
 
     async def _handle_failed_task(self, task: Task) -> bool:
+        self.event_logger.log_task_event(
+            event_type=TaskEventType.TASK_FAILED,
+            task=task,
+            workforce_id=self.node_id,
+            workforce_description=self.description,
+            details={"failure_count": task.failure_count},
+        )
         if task.failure_count >= 3:
             return True
         task.failure_count += 1
@@ -638,6 +670,12 @@ class Workforce(BaseNode):
         if task.get_depth() >= 3:
             # Create a new worker node and reassign
             assignee = self._create_worker_node_for_task(task)
+            self.event_logger.log_task_event(
+                event_type=TaskEventType.TASK_REASSIGNED,
+                task=task,
+                workforce_id=self.node_id,
+                workforce_description=self.description,
+            )
 
             # Sync shared memory after creating new worker to provide context
             if self.share_memory:
@@ -652,6 +690,12 @@ class Workforce(BaseNode):
             subtasks = self._decompose_task(task)
             # Insert packets at the head of the queue
             self._pending_tasks.extendleft(reversed(subtasks))
+            self.event_logger.log_task_event(
+                event_type=TaskEventType.TASK_REASSIGNED,
+                task=task,
+                workforce_id=self.node_id,
+                workforce_description=self.description,
+            )
 
             # Sync shared memory after task decomposition
             if self.share_memory:
@@ -677,6 +721,12 @@ class Workforce(BaseNode):
             self._sync_shared_memory()
 
         await self._post_ready_tasks()
+        self.event_logger.log_task_event(
+            TaskEventType.TASK_COMPLETED,
+            task,
+            workforce_id=self.node_id,
+            worker_id=task.assignee_id,
+        )
 
     async def _graceful_shutdown(self, failed_task: Task) -> None:
         r"""Handle graceful shutdown with configurable timeout. This is used to
