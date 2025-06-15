@@ -17,7 +17,7 @@ import asyncio
 import json
 import uuid
 from collections import deque
-from typing import Deque, Dict, List, Optional
+from typing import Deque, Dict, List, Optional, Set
 
 from colorama import Fore
 
@@ -194,6 +194,10 @@ class Workforce(BaseNode):
         # If there is one, will set by the workforce class wrapping this
         self._task: Optional[Task] = None
         self._pending_tasks: Deque[Task] = deque()
+        self._completed_tasks: Set[str] = set()
+        self._task_dependencies: Dict[str, List[str]] = {}
+        self._assignees: Dict[str, str] = {}
+        self._in_flight_tasks: int = 0
 
     def __repr__(self):
         return f"Workforce {self.node_id} ({self.description})"
@@ -370,14 +374,28 @@ class Workforce(BaseNode):
         self.reset()
         self._task = task
         task.state = TaskState.FAILED
-        self._pending_tasks.append(task)
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
         subtasks = self._decompose_task(task)
-        self._pending_tasks.extendleft(reversed(subtasks))
+        if subtasks:
+            # If decomposition happened, the original task becomes a container.
+            # We only execute its subtasks.
+            self._pending_tasks.extendleft(reversed(subtasks))
+        else:
+            # If no decomposition, execute the original task.
+            self._pending_tasks.append(task)
+
         self.set_channel(TaskChannel())
 
         asyncio.run(self.start())
+
+        if subtasks:
+            task.result = "\n\n".join(
+                f"--- Subtask {sub.id} Result ---\n{sub.result}"
+                for sub in task.subtasks
+                if sub.result
+            )
+            task.state = TaskState.DONE
 
         return task
 
@@ -463,6 +481,11 @@ class Workforce(BaseNode):
         self._task = None
         self._pending_tasks.clear()
         self._child_listening_tasks.clear()
+        # Clear dependency tracking
+        self._task_dependencies.clear()
+        self._completed_tasks.clear()
+        self._assignees.clear()
+        self._in_flight_tasks = 0
         self.coordinator_agent.reset()
         self.task_agent.reset()
         for child in self._children:
@@ -497,21 +520,36 @@ class Workforce(BaseNode):
 
     def _find_assignee(
         self,
-        task: Task,
-    ) -> str:
-        r"""Assigns a task to a worker node with the best capability.
+        tasks: List[Task],
+    ) -> TaskAssignResult:
+        r"""Assigns multiple tasks to worker nodes with the best capabilities.
 
         Parameters:
-            task (Task): The task to be assigned.
+            tasks (List[Task]): The tasks to be assigned.
 
         Returns:
-            str: ID of the worker node to be assigned.
+            TaskAssignResult: Assignment result containing task assignments
+                with their dependencies.
         """
         self.coordinator_agent.reset()
+
+        # Format tasks information for the prompt
+        tasks_info = ""
+        for task in tasks:
+            tasks_info += f"Task ID: {task.id}\n"
+            tasks_info += f"Content: {task.content}\n"
+            if task.additional_info:
+                tasks_info += f"Additional Info: {task.additional_info}\n"
+            tasks_info += "---\n"
+
         prompt = ASSIGN_TASK_PROMPT.format(
-            content=task.content,
+            tasks_info=tasks_info,
             child_nodes_info=self._get_child_nodes_info(),
-            additional_info=task.additional_info,
+        )
+
+        logger.debug(
+            f"Sending batch assignment request to coordinator "
+            f"for {len(tasks)} tasks."
         )
 
         response = self.coordinator_agent.step(
@@ -519,9 +557,10 @@ class Workforce(BaseNode):
         )
         result_dict = json.loads(response.msg.content, parse_int=str)
         task_assign_result = TaskAssignResult(**result_dict)
-        return task_assign_result.assignee_id
+        return task_assign_result
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
+        self._in_flight_tasks += 1
         await self._channel.post_task(task, self.node_id, assignee_id)
 
     async def _post_dependency(self, dependency: Task) -> None:
@@ -599,42 +638,65 @@ class Workforce(BaseNode):
         return await self._channel.get_returned_task_by_publisher(self.node_id)
 
     async def _post_ready_tasks(self) -> None:
-        r"""Send all the pending tasks that have all the dependencies met to
-        the channel, or directly return if there is none. For now, we will
-        directly send the first task in the pending list because all the tasks
-        are linearly dependent."""
+        r"""Checks for unassigned tasks, assigns them, and then posts any
+        tasks whose dependencies have been met."""
 
-        if not self._pending_tasks:
-            return
+        # Step 1: Identify and assign any new tasks in the pending queue
+        tasks_to_assign = [
+            task
+            for task in self._pending_tasks
+            if task.id not in self._task_dependencies
+        ]
+        if tasks_to_assign:
+            logger.debug(
+                f"Found {len(tasks_to_assign)} new tasks. "
+                f"Requesting assignment..."
+            )
+            batch_result = self._find_assignee(tasks_to_assign)
+            logger.debug(
+                f"Coordinator returned assignments:\n"
+                f"{json.dumps(batch_result.dict(), indent=2)}"
+            )
+            for assignment in batch_result.assignments:
+                self._task_dependencies[assignment.task_id] = (
+                    assignment.dependencies
+                )
+                self._assignees[assignment.task_id] = assignment.assignee_id
 
-        ready_task = self._pending_tasks[0]
+        # Step 2: Iterate through all pending tasks and post those that are
+        # ready
+        posted_tasks = []
+        for task in self._pending_tasks:
+            # A task must be assigned to be considered for posting
+            if task.id in self._task_dependencies:
+                dependencies = self._task_dependencies[task.id]
+                # Check if all dependencies for this task are in the completed
+                # set
+                if all(
+                    dep_id in self._completed_tasks for dep_id in dependencies
+                ):
+                    assignee_id = self._assignees[task.id]
+                    logger.debug(
+                        f"Posting task {task.id} to assignee {assignee_id}. "
+                        f"Dependencies met."
+                    )
+                    await self._post_task(task, assignee_id)
+                    posted_tasks.append(task)
 
-        # If the task has failed previously, just compose and send the task
-        # to the channel as a dependency
-        if ready_task.state == TaskState.FAILED:
-            # TODO: the composing of tasks seems not work very well
-            self.task_agent.reset()
-            ready_task.compose(self.task_agent)
-            # Remove the subtasks from the channel
-            for subtask in ready_task.subtasks:
-                await self._channel.remove_task(subtask.id)
-            # Send the task to the channel as a dependency
-            await self._post_dependency(ready_task)
-            self._pending_tasks.popleft()
-            # Try to send the next task in the pending list
-            await self._post_ready_tasks()
-        else:
-            # Directly post the task to the channel if it's a new one
-            # Find a node to assign the task
-            assignee_id = self._find_assignee(task=ready_task)
-            await self._post_task(ready_task, assignee_id)
+        # Step 3: Remove the posted tasks from the pending list
+        for task in posted_tasks:
+            try:
+                self._pending_tasks.remove(task)
+            except ValueError:
+                # Task might have been removed by another process, which is
+                # fine
+                pass
 
     async def _handle_failed_task(self, task: Task) -> bool:
         if task.failure_count >= 3:
             return True
         task.failure_count += 1
-        # Remove the failed task from the channel
-        await self._channel.remove_task(task.id)
+        action_taken = ""
         if task.get_depth() >= 3:
             # Create a new worker node and reassign
             assignee = self._create_worker_node_for_task(task)
@@ -648,6 +710,7 @@ class Workforce(BaseNode):
                 self._sync_shared_memory()
 
             await self._post_task(task, assignee.node_id)
+            action_taken = f"reassigned to new worker {assignee.node_id}"
         else:
             subtasks = self._decompose_task(task)
             # Insert packets at the head of the queue
@@ -662,12 +725,16 @@ class Workforce(BaseNode):
                 self._sync_shared_memory()
 
             await self._post_ready_tasks()
-        return False
+            action_taken = f"decomposed into {len(subtasks)} subtasks"
+        if task.id in self._assignees:
+            await self._channel.archive_task(task.id)
 
-    async def _handle_completed_task(self, task: Task) -> None:
-        # archive the packet, making it into a dependency
-        self._pending_tasks.popleft()
-        await self._channel.archive_task(task.id)
+        logger.debug(
+            f"Task {task.id} failed and was {action_taken}. "
+            f"Updating dependency state."
+        )
+        # Mark task as completed for dependency tracking
+        self._completed_tasks.add(task.id)
 
         # Sync shared memory after task completion to share knowledge
         if self.share_memory:
@@ -676,6 +743,44 @@ class Workforce(BaseNode):
             )
             self._sync_shared_memory()
 
+        # Check if any pending tasks are now ready to execute
+        await self._post_ready_tasks()
+        return False
+
+    async def _handle_completed_task(self, task: Task) -> None:
+        if task.id in self._assignees:
+            await self._channel.archive_task(task.id)
+
+        logger.debug(f"Task {task.id} completed. Updating dependency state.")
+        # Mark task as completed for dependency tracking
+        self._completed_tasks.add(task.id)
+
+        # are now completed.
+        parent = task.parent
+        if parent and parent.id not in self._completed_tasks:
+            all_subtasks_done = all(
+                sub.id in self._completed_tasks for sub in parent.subtasks
+            )
+            if all_subtasks_done:
+                # Set the parent task state to done
+                parent.state = TaskState.DONE
+                logger.debug(
+                    f"All subtasks of {parent.id} are done. "
+                    f"Marking parent as complete."
+                )
+                # Treat the parent task as a completed task to unblock
+                # its dependents. Since it was never sent to a worker,
+                # we call this method recursively.
+                await self._handle_completed_task(parent)
+
+        # Sync shared memory after task completion to share knowledge
+        if self.share_memory:
+            logger.info(
+                f"Syncing shared memory after task {task.id} completion"
+            )
+            self._sync_shared_memory()
+
+        # Check if any pending tasks are now ready to execute
         await self._post_ready_tasks()
 
     async def _graceful_shutdown(self, failed_task: Task) -> None:
@@ -709,8 +814,13 @@ class Workforce(BaseNode):
 
         await self._post_ready_tasks()
 
-        while self._task is None or self._pending_tasks:
+        while (
+            self._task is None
+            or self._pending_tasks
+            or self._in_flight_tasks > 0
+        ):
             returned_task = await self._get_returned_task()
+            self._in_flight_tasks -= 1
             if returned_task.state == TaskState.DONE:
                 await self._handle_completed_task(returned_task)
             elif returned_task.state == TaskState.FAILED:
@@ -756,7 +866,8 @@ class Workforce(BaseNode):
         by its parent node.
         """
         for child in self._children:
-            child.stop()
+            if child._running:
+                child.stop()
         for child_task in self._child_listening_tasks:
             child_task.cancel()
         self._running = False

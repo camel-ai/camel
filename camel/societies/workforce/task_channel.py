@@ -79,7 +79,6 @@ class TaskChannel:
     r"""An internal class used by Workforce to manage tasks."""
 
     def __init__(self) -> None:
-        self._task_id_list: List[str] = []
         self._condition = asyncio.Condition()
         self._task_dict: Dict[str, Packet] = {}
 
@@ -89,8 +88,7 @@ class TaskChannel:
         """
         async with self._condition:
             while True:
-                for task_id in self._task_id_list:
-                    packet = self._task_dict[task_id]
+                for packet in self._task_dict.values():
                     if packet.publisher_id != publisher_id:
                         continue
                     if packet.status != PacketStatus.RETURNED:
@@ -104,8 +102,7 @@ class TaskChannel:
         """
         async with self._condition:
             while True:
-                for task_id in self._task_id_list:
-                    packet = self._task_dict[task_id]
+                for packet in self._task_dict.values():
                     if (
                         packet.status == PacketStatus.SENT
                         and packet.assignee_id == assignee_id
@@ -119,7 +116,6 @@ class TaskChannel:
         r"""Send a task to the channel with specified publisher and assignee,
         along with the dependency of the task."""
         async with self._condition:
-            self._task_id_list.append(task.id)
             packet = Packet(task, publisher_id, assignee_id)
             self._task_dict[packet.task.id] = packet
             self._condition.notify_all()
@@ -130,7 +126,6 @@ class TaskChannel:
         r"""Post a dependency to the channel. A dependency is a task that is
         archived, and will be referenced by other tasks."""
         async with self._condition:
-            self._task_id_list.append(dependency.id)
             packet = Packet(
                 dependency, publisher_id, status=PacketStatus.ARCHIVED
             )
@@ -141,30 +136,32 @@ class TaskChannel:
         r"""Return a task to the sender, indicating that the task has been
         processed by the worker."""
         async with self._condition:
-            packet = self._task_dict[task_id]
-            packet.status = PacketStatus.RETURNED
+            if task_id in self._task_dict:
+                packet = self._task_dict[task_id]
+                packet.status = PacketStatus.RETURNED
             self._condition.notify_all()
 
     async def archive_task(self, task_id: str) -> None:
         r"""Archive a task in channel, making it to become a dependency."""
         async with self._condition:
-            packet = self._task_dict[task_id]
-            packet.status = PacketStatus.ARCHIVED
+            if task_id in self._task_dict:
+                packet = self._task_dict[task_id]
+                packet.status = PacketStatus.ARCHIVED
             self._condition.notify_all()
 
     async def remove_task(self, task_id: str) -> None:
         r"""Remove a task from the channel."""
         async with self._condition:
-            self._task_id_list.remove(task_id)
-            self._task_dict.pop(task_id)
+            # Check if task ID exists before removing
+            if task_id in self._task_dict:
+                del self._task_dict[task_id]
             self._condition.notify_all()
 
     async def get_dependency_ids(self) -> List[str]:
         r"""Get the IDs of all dependencies in the channel."""
         async with self._condition:
             dependency_ids = []
-            for task_id in self._task_id_list:
-                packet = self._task_dict[task_id]
+            for task_id, packet in self._task_dict.items():
                 if packet.status == PacketStatus.ARCHIVED:
                     dependency_ids.append(task_id)
             return dependency_ids
@@ -172,11 +169,12 @@ class TaskChannel:
     async def get_task_by_id(self, task_id: str) -> Task:
         r"""Get a task from the channel by its ID."""
         async with self._condition:
-            if task_id not in self._task_id_list:
+            packet = self._task_dict.get(task_id)
+            if packet is None:
                 raise ValueError(f"Task {task_id} not found.")
-            return self._task_dict[task_id].task
+            return packet.task
 
     async def get_channel_debug_info(self) -> str:
         r"""Get the debug information of the channel."""
         async with self._condition:
-            return str(self._task_dict) + '\n' + str(self._task_id_list)
+            return str(self._task_dict)

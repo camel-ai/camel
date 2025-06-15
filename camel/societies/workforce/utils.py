@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from functools import wraps
-from typing import Callable
+from typing import Callable, List
 
 from pydantic import BaseModel, Field
 
@@ -41,11 +41,24 @@ class TaskResult(BaseModel):
     )
 
 
-class TaskAssignResult(BaseModel):
-    r"""The result of task assignment."""
+class TaskAssignment(BaseModel):
+    r"""An individual task assignment within a batch."""
 
+    task_id: str = Field(description="The ID of the task to be assigned.")
     assignee_id: str = Field(
-        description="The ID of the workforce that is assigned to the task."
+        description="The ID of the worker/workforce to assign the task to."
+    )
+    dependencies: List[str] = Field(
+        default_factory=list,
+        description="List of task IDs that must complete before this task.",
+    )
+
+
+class TaskAssignResult(BaseModel):
+    r"""The result of task assignment for both single and batch assignments."""
+
+    assignments: List[TaskAssignment] = Field(
+        description="List of task assignments."
     )
 
 

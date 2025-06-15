@@ -252,7 +252,6 @@ def main():
     )
 
     task = workforce.process_task(task)
-    print(task.result)
 
 
 if __name__ == "__main__":
