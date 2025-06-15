@@ -726,8 +726,6 @@ class Workforce(BaseNode):
             f"Updating dependency state."
         )
         # Mark task as completed for dependency tracking
-        if not hasattr(self, '_completed_tasks'):
-            self._completed_tasks = set()
         self._completed_tasks.add(task.id)
 
         # Sync shared memory after task completion to share knowledge
@@ -747,8 +745,6 @@ class Workforce(BaseNode):
 
         logger.debug(f"Task {task.id} completed. Updating dependency state.")
         # Mark task as completed for dependency tracking
-        if not hasattr(self, '_completed_tasks'):
-            self._completed_tasks = set()
         self._completed_tasks.add(task.id)
 
         # are now completed.
