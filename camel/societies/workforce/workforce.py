@@ -389,6 +389,14 @@ class Workforce(BaseNode):
 
         asyncio.run(self.start())
 
+        if subtasks:
+            task.result = "\n\n".join(
+                f"--- Subtask {sub.id} Result ---\n{sub.result}"
+                for sub in task.subtasks
+                if sub.result
+            )
+            task.state = TaskState.DONE
+
         return task
 
     @check_if_running(False)
@@ -754,23 +762,16 @@ class Workforce(BaseNode):
                 sub.id in self._completed_tasks for sub in parent.subtasks
             )
             if all_subtasks_done:
-                # Compose the result from all subtasks
-                composed_result = "\n\n".join(
-                    f"--- Subtask {sub.id} Result ---\n{sub.result}"
-                    for sub in parent.subtasks
-                    if sub.result
-                )
-                parent.result = composed_result
+                # Set the parent task state to done
                 parent.state = TaskState.DONE
                 logger.debug(
                     f"All subtasks of {parent.id} are done. "
-                    f"Composed result and marking parent as complete."
+                    f"Marking parent as complete."
                 )
                 # Treat the parent task as a completed task to unblock
                 # its dependents. Since it was never sent to a worker,
                 # we call this method recursively.
                 await self._handle_completed_task(parent)
-                return  # Return to avoid redundant post_ready_tasks call
 
         # Sync shared memory after task completion to share knowledge
         if self.share_memory:
