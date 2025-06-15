@@ -63,7 +63,7 @@ CAMEL-AI supports multiple installation methods to suit different development wo
 
       - To verify that `camel-ai` is installed, run:
         ```shell
-        python -c "import camel; print(camel.__version__)"
+        pip show camel-ai
         ```
 
       <Check>Installation successful! You're ready to create your first multi-agent system! 🎉</Check>
@@ -84,15 +84,6 @@ We recommend starting with a simple role-playing scenario to understand CAMEL's 
   </Step>
 
   <Step title="Configure Your Environment">
-    - Your project will contain these essential files:
-      | File | Purpose |
-      | --- | --- |
-      | `.env` | Store API keys and environment variables |
-      | `main.py` | Project entry point and execution flow |
-      | `agents/` | Directory for custom agent definitions |
-      | `tools/` | Directory for custom agent tools |
-      | `examples/` | Sample implementations and use cases |
-
     - Create a `.env` file with your API keys:
       ```bash
       OPENAI_API_KEY=<your_openai_api_key>
@@ -124,6 +115,14 @@ We recommend starting with a simple role-playing scenario to understand CAMEL's 
       ```bash
       python examples/role_playing.py
       ```
+
+      
+<Tip>
+Want to see multi-agent collaboration at scale?
+Try running the <a href="https://github.com/camel-ai/camel/tree/master/examples/workforce" target="_blank">workforce example</a>:
+
+<code>python examples/workforce/multiple_single_agents.py</code>
+</Tip>
   </Step>
 </Steps>
 
