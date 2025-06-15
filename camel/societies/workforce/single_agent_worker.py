@@ -24,7 +24,6 @@ from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, validate_task_content
-from camel.utils import print_text_animated
 
 
 class SingleAgentWorker(Worker):
@@ -112,9 +111,8 @@ class SingleAgentWorker(Worker):
         task_result = TaskResult(**result_dict)
 
         color = Fore.RED if task_result.failed else Fore.GREEN
-        print_text_animated(
+        print(
             f"\n{color}{task_result.content}{Fore.RESET}\n======",
-            delay=0.005,
         )
 
         if task_result.failed:

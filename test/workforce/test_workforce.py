@@ -218,6 +218,7 @@ async def test_multiple_timeout_points():
     mock_task.state = TaskState.FAILED
     mock_task.content = "Test task content"
     mock_task.additional_info = {}
+    mock_task.result = "Mock task failed"
 
     mock_task.failure_count = 0
     mock_task.get_depth.return_value = 0
