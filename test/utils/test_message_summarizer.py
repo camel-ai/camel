@@ -55,7 +55,7 @@ class TestMessageSummarizer(unittest.TestCase):
         ]
 
         # Initialize summarizer
-        summarizer = MessageSummarizer(model=ModelType.DEFAULT)
+        summarizer = MessageSummarizer()
 
         # Generate summary
         summary = summarizer.summarize(messages)
@@ -108,7 +108,7 @@ class TestMessageSummarizer(unittest.TestCase):
         ]
 
         # Initialize summarizer
-        summarizer = MessageSummarizer(model=ModelType.DEFAULT)
+        summarizer = MessageSummarizer()
 
         # Verify that invalid response raises ValueError
         with self.assertRaises(ValueError):

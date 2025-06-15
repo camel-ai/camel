@@ -37,7 +37,7 @@ class MessageSummarizer:
         self,
         model: Optional[Union[str, ModelType]] = None,
     ):
-        self.model = model or ModelType.DEFAULT
+        self.model = model or ModelType.GPT_3_5_TURBO
         self.agent = ChatAgent(
             system_message="""You are a skilled conversation summarizer. 
             Your task is to analyze chat messages and create structured summaries that capture:
@@ -99,7 +99,7 @@ class MessageSummarizer:
 
         # Construct prompt from messages
         message_text = "\n".join(
-            f"{msg.role}: {msg.content}" for msg in messages
+            f"{msg.role_name}: {msg.content}" for msg in messages
         )
         prompt = f"""Please analyze these messages and provide a structured summary:
 
