@@ -347,4 +347,4 @@ total_workers_created: 5
 
 --- Dumping Workforce Logs to hackathon_judges_logs.json ---
 ===============================================================================
-'''
+'''  # noqa: RUF001

@@ -539,7 +539,6 @@ class WorkforceLogger:
                             'completion_time_seconds'
                         ] = completion_time
 
-
             elif event_type == 'task_failed':
                 kpis['total_tasks_failed'] += 1
                 # Count tasks handled by worker (also for failed tasks)
