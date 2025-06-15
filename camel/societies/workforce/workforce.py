@@ -522,13 +522,19 @@ class Workforce(BaseNode):
     @check_if_running(False)
     def reset(self) -> None:
         r"""Reset the workforce and all the child nodes under it. Can only
-        be called when the workforce is not running."""
+        be called when the workforce is not running.
+        """
+        super().reset()
         self._task = None
         self._pending_tasks.clear()
-        self._completed_tasks.clear()
+        self._child_listening_tasks.clear()
+        # Clear dependency tracking
         self._task_dependencies.clear()
+        self._completed_tasks.clear()
         self._assignees.clear()
         self._in_flight_tasks = 0
+        self.coordinator_agent.reset()
+        self.task_agent.reset()
         self._task_start_times.clear()
         for child in self._children:
             child.reset()
@@ -899,6 +905,7 @@ class Workforce(BaseNode):
             await self._channel.archive_task(task.id)
 
         logger.debug(f"Task {task.id} completed. Updating dependency state.")
+        # Mark task as completed for dependency tracking
         self._completed_tasks.add(task.id)
 
         # are now completed.
@@ -945,6 +952,8 @@ class Workforce(BaseNode):
             f"seconds due to failure. You can use this time to inspect the "
             f"current state of the workforce."
         )
+        # Wait for the full timeout period
+        await asyncio.sleep(self.graceful_shutdown_timeout)
 
     def get_workforce_log_tree(self) -> str:
         r"""Returns an ASCII tree representation of the task hierarchy and

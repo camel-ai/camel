@@ -95,8 +95,7 @@ class WorkforceLogger:
             metadata=metadata or {},
         )
         if parent_task_id in self._task_hierarchy:
-            self._task_hierarchy[parent_task_id]['status'] = 'decomposed'
-            # Children are added via log_task_created for each subtask
+            self._task_hierarchy[parent_task_id]['status'] = "decomposed"
 
     def log_task_assigned(
         self,
@@ -338,9 +337,7 @@ class WorkforceLogger:
             return ""
 
         task_info = self._task_hierarchy[task_id]
-        description = task_info.get('description', '')[:50] + (
-            '...' if len(task_info.get('description', '')) > 50 else ''
-        )
+        description = task_info.get('description', '')
         status = task_info.get('status', 'unknown')
         assignee = task_info.get('assigned_to')
         assignee_str = f" [assigned to: {assignee}]" if assignee else ""
@@ -349,12 +346,12 @@ class WorkforceLogger:
             dep for dep in dependencies if dep in self._task_hierarchy
         ]
         dependencies_str = (
-            f" (deps: {', '.join(dependencies_list)})"
+            f" (dependencies: {', '.join(dependencies_list)})"
             if dependencies_list
             else ""
         )
         error_str = (
-            f" [ERROR: {task_info.get('error', '')[:30]}]"
+            f" [ERROR: {task_info.get('error', '')}]"
             if status == 'failed'
             else ""
         )
@@ -488,7 +485,6 @@ class WorkforceLogger:
             'total_tasks_completed': 0,
             'total_tasks_failed': 0,
             'error_types_count': {},
-            'total_tokens_consumed': {},
             'worker_utilization': {},
             'current_pending_tasks': 0,
             'total_workforce_running_time_seconds': 0.0,
@@ -543,13 +539,6 @@ class WorkforceLogger:
                             'completion_time_seconds'
                         ] = completion_time
 
-                if entry.get('token_usage'):
-                    # Aggregate total token usage
-                    for token_type, count in entry['token_usage'].items():
-                        kpis['total_tokens_consumed'][token_type] = (
-                            kpis['total_tokens_consumed'].get(token_type, 0)
-                            + count
-                        )
 
             elif event_type == 'task_failed':
                 kpis['total_tasks_failed'] += 1
