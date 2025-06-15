@@ -374,7 +374,6 @@ class Workforce(BaseNode):
         self.reset()
         self._task = task
         task.state = TaskState.FAILED
-        # self._pending_tasks.append(task)
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
         subtasks = self._decompose_task(task)
