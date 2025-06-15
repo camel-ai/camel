@@ -155,8 +155,11 @@ class TaskChannel:
     async def remove_task(self, task_id: str) -> None:
         r"""Remove a task from the channel."""
         async with self._condition:
-            self._task_id_list.remove(task_id)
-            self._task_dict.pop(task_id)
+            # Check if task ID exists before removing to prevent ValueError
+            if task_id in self._task_id_list:
+                self._task_id_list.remove(task_id)
+            if task_id in self._task_dict:
+                del self._task_dict[task_id]
             self._condition.notify_all()
 
     async def get_dependency_ids(self) -> List[str]:
