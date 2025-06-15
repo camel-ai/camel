@@ -444,17 +444,68 @@ class MCPToolkit(BaseToolkit):
             error_msg = f"Failed to create client for server '{name}': {e}"
             raise ValueError(error_msg) from e
 
+    def _ensure_strict_tool_schema(self, tool: FunctionTool) -> FunctionTool:
+        r"""Ensure a tool has a strict schema compatible with OpenAI's
+        requirements.
+
+        Args:
+            tool (FunctionTool): The tool to check and update if necessary.
+
+        Returns:
+            FunctionTool: The tool with a strict schema.
+        """
+        try:
+            schema = tool.get_openai_tool_schema()
+
+            # Check if the tool already has strict mode enabled
+            if schema.get("function", {}).get("strict") is True:
+                return tool
+
+            # Update the schema to be strict
+            if "function" in schema:
+                schema["function"]["strict"] = True
+
+                # Ensure parameters have proper strict mode configuration
+                parameters = schema["function"].get("parameters", {})
+                if parameters:
+                    # Ensure additionalProperties is false
+                    parameters["additionalProperties"] = False
+
+                    # Process properties to handle optional fields
+                    properties = parameters.get("properties", {})
+                    parameters["required"] = list(properties.keys())
+
+                    # Apply the sanitization function from function_tool
+                    from camel.toolkits.function_tool import (
+                        sanitize_and_enforce_required,
+                    )
+
+                    schema = sanitize_and_enforce_required(schema)
+
+            tool.set_openai_tool_schema(schema)
+            logger.debug(
+                f"Updated tool '{tool.get_function_name()}' to strict mode"
+            )
+
+        except Exception as e:
+            logger.warning(f"Failed to ensure strict schema for tool: {e}")
+
+        return tool
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Aggregates all tools from the managed MCP client instances.
 
         Collects and combines tools from all connected MCP clients into a
         single unified list. Each tool is converted to a CAMEL-compatible
-        :obj:`FunctionTool` that can be used with CAMEL agents.
+        :obj:`FunctionTool` that can be used with CAMEL agents. All tools
+        are ensured to have strict schemas compatible with OpenAI's
+        requirements.
 
         Returns:
             List[FunctionTool]: Combined list of all available function tools
-                from all connected MCP servers. Returns an empty list if no
-                clients are connected or if no tools are available.
+                from all connected MCP servers with strict schemas. Returns an
+                empty list if no clients are connected or if no tools are
+                available.
 
         Note:
             This method can be called even when the toolkit is not connected,
@@ -481,14 +532,25 @@ class MCPToolkit(BaseToolkit):
         for i, client in enumerate(self.clients):
             try:
                 client_tools = client.get_tools()
-                all_tools.extend(client_tools)
+
+                # Ensure all tools have strict schemas
+                strict_tools = []
+                for tool in client_tools:
+                    strict_tool = self._ensure_strict_tool_schema(tool)
+                    strict_tools.append(strict_tool)
+
+                all_tools.extend(strict_tools)
                 logger.debug(
-                    f"Client {i+1} contributed {len(client_tools)} tools"
+                    f"Client {i+1} contributed {len(strict_tools)} "
+                    f"tools (strict mode enabled)"
                 )
             except Exception as e:
                 logger.error(f"Failed to get tools from client {i+1}: {e}")
 
-        logger.info(f"Total tools available: {len(all_tools)}")
+        logger.info(
+            f"Total tools available: {len(all_tools)} (all with strict "
+            f"schemas)"
+        )
         return all_tools
 
     def get_text_tools(self) -> str:

@@ -152,6 +152,8 @@ Step 3: Submit one task.
 # Importing the ChunkrReader class from the camel.loaders module
 # This class handles document processing using Chunkr's capabilities
 from camel.loaders import ChunkrReader
+import nest_asyncio
+nest_asyncio.apply() 
 
 # Initializing an instance of ChunkrReader
 # This object will be used to submit tasks and manage document processing
@@ -159,7 +161,7 @@ chunkr_reader = ChunkrReader()
 
 # Submitting a document processing task
 # Replace "local_data/example.pdf" with the path to your target document
-chunkr_reader.submit_task(file_path="local_data/camel_paper.pdf")
+await chunkr_reader.submit_task(file_path="local_data/camel_paper.pdf")
 ```
 
 Step 4: Input the task id above and then we can obtain the task output.
@@ -177,8 +179,7 @@ The output of Chunkr is structured text and metadata from documents, including:
 
 ```python
 # Retrieving the output of a previously submitted task
-# The "max_retries" parameter determines the number of times to retry if the task output is not immediately available
-chunkr_output = chunkr_reader.get_task_output(task_id="902e686a-d6f5-413d-8a8d-241a3f43d35b", max_retries=10)
+chunkr_output = await chunkr_reader.get_task_output(task_id="902e686a-d6f5-413d-8a8d-241a3f43d35b")
 print(chunkr_output)
 ```
 

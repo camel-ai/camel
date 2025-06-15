@@ -85,7 +85,8 @@ def sample(self):
 
   DataPoint: The next DataPoint.
 
-Note:
+**Note:**
+
 This method is intended for synchronous contexts.
 Use 'async_sample' in asynchronous contexts to
 avoid blocking or runtime errors.
@@ -106,6 +107,12 @@ Each datapoint is stored as a separate JSON object on a new line.
 
 - **file_path** (Union[str, Path]): Path to save the JSONL file.
 
+**Note:**
+
+- Uses `self._data`, which contains the generated datapoints.
+- Appends to the file if it already exists.
+- Ensures compatibility with large datasets by using JSONL format.
+
 <a id="camel.datasets.base_generator.BaseGenerator.flush"></a>
 
 ### flush
@@ -119,7 +126,10 @@ Flush the current data to a JSONL file and clear the data.
 **Parameters:**
 
 - **file_path** (Union[str, Path]): Path to save the JSONL file.
-- **Notes**: - Uses `save_to_jsonl` to save `self._data`.
+
+**Note:**
+
+- Uses `save_to_jsonl` to save `self._data`.
 
 <a id="camel.datasets.base_generator.BaseGenerator._init_from_jsonl"></a>
 

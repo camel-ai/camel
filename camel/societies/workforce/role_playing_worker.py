@@ -27,7 +27,7 @@ from camel.societies.workforce.prompts import (
 )
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
-from camel.tasks.task import Task, TaskState
+from camel.tasks.task import Task, TaskState, validate_task_content
 from camel.utils import print_text_animated
 
 
@@ -48,7 +48,7 @@ class RolePlayingWorker(Worker):
             initialize the summarize agent, like the model name, etc.
             (default: :obj:`None`)
         chat_turn_limit (int): The maximum number of chat turns in the role
-            playing. (default: :obj:`3`)
+            playing. (default: :obj:`20`)
     """
 
     def __init__(
@@ -59,7 +59,7 @@ class RolePlayingWorker(Worker):
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
         summarize_agent_kwargs: Optional[Dict] = None,
-        chat_turn_limit: int = 3,
+        chat_turn_limit: int = 20,
     ) -> None:
         super().__init__(description)
         self.summarize_agent_kwargs = summarize_agent_kwargs
@@ -182,6 +182,14 @@ class RolePlayingWorker(Worker):
         )
         result_dict = json.loads(response.msg.content)
         task_result = TaskResult(**result_dict)
+
+        if not validate_task_content(task_result.content, task.id):
+            print(
+                f"{Fore.RED}Task {task.id}: Content validation failed - "
+                f"task marked as failed{Fore.RESET}"
+            )
+            return TaskState.FAILED
+
         task.result = task_result.content
 
         print(f"Task result: {task.result}\n")
