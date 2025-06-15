@@ -160,8 +160,10 @@ class ChatAgent(BaseAgent):
             (default: :obj:`None`)
         scheduling_strategy (str): name of function that defines how to select
             the next model in ModelManager. (default: :str:`round_robin`)
-        single_iteration (bool): Whether to let the agent perform only one
-            model calling at each step. (default: :obj:`False`)
+        max_iteration (Optional[int], optional): Maximum number of model
+            calling iterations allowed per step. If `None` (default), there's
+            no explicit limit. If `1`, it performs a single model call. If `N
+            > 1`, it allows up to N model calls. (default: :obj:`None`)
         agent_id (str, optional): The ID of the agent. If not provided, a
             random UUID will be generated. (default: :obj:`None`)
         stop_event (Optional[threading.Event], optional): Event to signal
@@ -197,7 +199,7 @@ class ChatAgent(BaseAgent):
         ] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
         scheduling_strategy: str = "round_robin",
-        single_iteration: bool = False,
+        max_iteration: Optional[int] = None,
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
     ) -> None:
@@ -272,7 +274,7 @@ class ChatAgent(BaseAgent):
         # Set up other properties
         self.terminated = False
         self.response_terminators = response_terminators or []
-        self.single_iteration = single_iteration
+        self.max_iteration = max_iteration
         self.stop_event = stop_event
 
     def reset(self):
@@ -789,6 +791,7 @@ class ChatAgent(BaseAgent):
 
         # Initialize token usage tracker
         step_token_usage = self._create_token_usage_tracker()
+        iteration_count = 0
 
         while True:
             try:
@@ -805,6 +808,7 @@ class ChatAgent(BaseAgent):
                 response_format,
                 self._get_full_tool_schemas(),
             )
+            iteration_count += 1
 
             # Accumulate API token usage
             self._update_token_usage_tracker(
@@ -839,7 +843,10 @@ class ChatAgent(BaseAgent):
                 if external_tool_call_requests:
                     break
 
-                if self.single_iteration:
+                if (
+                    self.max_iteration is not None
+                    and iteration_count >= self.max_iteration
+                ):
                     break
 
                 # If we're still here, continue the loop
@@ -914,6 +921,7 @@ class ChatAgent(BaseAgent):
 
         # Initialize token usage tracker
         step_token_usage = self._create_token_usage_tracker()
+        iteration_count = 0
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -929,6 +937,7 @@ class ChatAgent(BaseAgent):
                 response_format,
                 self._get_full_tool_schemas(),
             )
+            iteration_count += 1
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
@@ -959,7 +968,10 @@ class ChatAgent(BaseAgent):
                 if external_tool_call_requests:
                     break
 
-                if self.single_iteration:
+                if (
+                    self.max_iteration is not None
+                    and iteration_count >= self.max_iteration
+                ):
                     break
 
                 # If we're still here, continue the loop
@@ -1754,7 +1766,7 @@ class ChatAgent(BaseAgent):
             ],
             response_terminators=self.response_terminators,
             scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
-            single_iteration=self.single_iteration,
+            max_iteration=self.max_iteration,
             stop_event=self.stop_event,
         )
 
