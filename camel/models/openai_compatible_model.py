@@ -90,7 +90,13 @@ class OpenAICompatibleModel(BaseModelBackend):
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
 
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
+            model_type,
+            model_config_dict,
+            api_key,
+            url,
+            token_counter,
+            timeout,
+            max_retries,
         )
         if is_langfuse_available():
             from langfuse.openai import AsyncOpenAI as LangfuseAsyncOpenAI

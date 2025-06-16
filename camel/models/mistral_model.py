@@ -98,6 +98,7 @@ class MistralModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         from mistralai import Mistral
@@ -115,6 +116,7 @@ class MistralModel(BaseModelBackend):
             url,
             token_counter,
             timeout,
+            max_retries,
             **kwargs,
         )
         self._client = Mistral(
