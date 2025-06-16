@@ -39,15 +39,19 @@ class MessageSummarizer:
     ):
         self.model = model or ModelType.GPT_4O_MINI
         self.agent = ChatAgent(
-            system_message="""You are a skilled conversation summarizer. 
-            Your task is to analyze chat messages and create structured summaries that capture:
-            - The key roles involved
-            - Important entities and concepts discussed
-            - Key decisions or conclusions reached
-            - Progress made on the main task
-            - Relevant contextual information
-            
-            Provide summaries that are concise while preserving critical information.""",
+            system_message=(
+                "You are a skilled conversation summarizer. "
+                "Your task is to analyze chat messages and "
+                "create structured summaries that "
+                "capture:\n"
+                "- The key roles involved\n"
+                "- Important entities and concepts discussed\n"
+                "- Key decisions or conclusions reached\n"
+                "- Progress made on the main task\n"
+                "- Relevant contextual information\n\n"
+                "Provide summaries that are concise while "
+                "preserving critical information."
+            ),
             model=self.model
         )
 
@@ -76,32 +80,43 @@ class MessageSummarizer:
         # Define the expected response schema
         response_schema = {
             "type": "object",
-            "required": ["roles", "key_entities", "decisions", "task_progress", "context"],
+            "required": [
+                "roles",
+                "key_entities",
+                "decisions",
+                "task_progress",
+                "context",
+            ],
             "properties": {
                 "roles": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "List of roles involved in the conversation"
+                    "description": "List of roles involved\
+in the conversation",
                 },
                 "key_entities": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "List of important entities/concepts discussed"
+                    "description": "List of important \
+entities/concepts discussed",
                 },
                 "decisions": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "List of key decisions or conclusions reached"
+                    "description": "List of key decisions or \
+conclusions reached",
                 },
                 "task_progress": {
                     "type": "string",
-                    "description": "Summary of progress made on the main task"
+                    "description": "Summary of progress made on the \
+main task",
                 },
                 "context": {
-                    "type": "string",
-                    "description": "Additional relevant contextual information"
-                }
-            }
+                    "type": "string", 
+                    "description": "Additional relevant \
+contextual information",
+                },
+            },
         }
         
         # Create a Pydantic model from the schema
@@ -111,16 +126,16 @@ class MessageSummarizer:
         message_text = "\n".join(
             f"{msg.role_name}: {msg.content}" for msg in messages
         )
-        prompt = f"""Please analyze these messages and provide a structured summary:
-
-{message_text}
-
-Your response must be a JSON object with these fields:
-- roles: list of roles involved
-- key_entities: list of important entities/concepts
-- decisions: list of key decisions made
-- task_progress: summary of progress on main task
-- context: additional relevant context"""
+        prompt = (
+"Please analyze these messages and provide a structured summary:\n"
++ message_text +
+"\n\nYour response must be a JSON object with these fields:\n"
+"- roles: list of roles involved\n"
+"- key_entities: list of important entities/concepts\n"
+"- decisions: list of key decisions made\n"
+"- task_progress: summary of progress on main task\n"
+"- context: additional relevant context"
+        )
 
         # Get structured summary from model with forced JSON response
         response = self.agent.step(
@@ -129,11 +144,12 @@ Your response must be a JSON object with these fields:
         )
         try:
             # The response should already be validated by the model
-            # return SummarySchema(**response.msg.content)
             content = response.msg.content
             if isinstance(content, str):
                 content = json.loads(content)
             return SummarySchema(**content)
         except Exception as e:
-            raise ValueError(f"Response validation failed: {str(e)}")
+            raise ValueError(
+                f"Response validation failed: {str(e)}"
+            )
 

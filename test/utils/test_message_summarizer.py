@@ -12,11 +12,15 @@ def sample_messages() -> List[BaseMessage]:
     return [
         BaseMessage.make_user_message(
             role_name="User",
-            content="I want to build a web application using Python and Flask.",
+            content="I want to build a web application"
+            " using Python and Flask.",
         ),
         BaseMessage.make_assistant_message(
             role_name="Assistant",
-            content="Great choice! Flask is a lightweight web framework. Let's start by setting up the basic project structure.",
+            content=(
+                "Great choice! Flask is a lightweight web framework. "
+                "Let's start by setting up the basic project structure."
+            ),
         ),
         BaseMessage.make_user_message(
             role_name="User",
@@ -24,7 +28,12 @@ def sample_messages() -> List[BaseMessage]:
         ),
         BaseMessage.make_assistant_message(
             role_name="Assistant",
-            content="We'll need: 1) Flask for the web framework, 2) SQLAlchemy for database ORM, 3) HTML templates, and 4) CSS for styling.",
+            content=(
+                "We'll need: 1) Flask for the web framework,"
+                " 2) SQLAlchemy for database ORM,"
+                " 3) HTML templates, and"
+                " 4) CSS for styling."
+            ),
         ),
     ]
 
@@ -45,7 +54,7 @@ def test_summarize_messages(sample_messages: List[BaseMessage]):
     """Test the summarize method with sample messages."""
     summarizer = MessageSummarizer()
     summary = summarizer.summarize(sample_messages)
-    print(f"\n~~Summary1: {summary}")
+    print(f"\n~~Summary for test_summarize_messages: {summary}")
 
     # Verify the summary structure
     assert isinstance(summary, SummarySchema)
@@ -65,7 +74,9 @@ def test_summarize_messages(sample_messages: List[BaseMessage]):
     # Verify specific content based on sample messages
     assert "User" in summary.roles
     assert "Assistant" in summary.roles
-    assert any("Flask" in entity for entity in summary.key_entities)
+    assert any(
+        "Flask" in entity for entity in summary.key_entities
+    )
 
 
 def test_summarize_empty_messages():
@@ -94,8 +105,13 @@ def test_summarize_single_message():
     
     assert isinstance(summary, SummarySchema)
     assert "User" in summary.roles
-    assert any("Python" in entity for entity in summary.key_entities)
-    assert any("web application" in entity.lower() for entity in summary.key_entities)
+    assert any(
+        "Python" in entity for entity in summary.key_entities
+    )
+    assert any(
+        "web application" in entity.lower() \
+            for entity in summary.key_entities
+    )
 
 
 def test_summarize_with_special_characters():
@@ -103,11 +119,17 @@ def test_summarize_with_special_characters():
     messages = [
         BaseMessage.make_user_message(
             role_name="User",
-            content="Let's discuss the project's API endpoints: /api/v1/users and /api/v1/posts",
+            content=(
+                "Let's discuss the project's API endpoints"
+                ": /api/v1/users and /api/v1/posts"
+            ),
         ),
         BaseMessage.make_assistant_message(
             role_name="Assistant",
-            content="We'll implement these endpoints using Flask's @app.route decorator.",
+            content=(
+                "We'll implement these endpoints using"
+                " Flask's @app.route decorator."
+            ),
         ),
     ]
     summarizer = MessageSummarizer()
@@ -117,8 +139,13 @@ def test_summarize_with_special_characters():
     assert isinstance(summary, SummarySchema)
     assert "User" in summary.roles
     assert "Assistant" in summary.roles
-    assert any("API" in entity for entity in summary.key_entities)
-    assert any("endpoints" in entity.lower() for entity in summary.key_entities)
+    assert any(
+        "API" in entity for entity in summary.key_entities
+    )
+    assert any(
+        "endpoints" in entity.lower() \
+            for entity in summary.key_entities
+    )
 
 
 if __name__ == "__main__":
