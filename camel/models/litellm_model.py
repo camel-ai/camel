@@ -59,8 +59,6 @@ class LiteLLMModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
-        max_retries (int, optional): Maximum number of retries for API calls.
-            (default: :obj:`3`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
     """
@@ -76,7 +74,6 @@ class LiteLLMModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
-        max_retries: int = 3,
         **kwargs: Any,
     ) -> None:
         from litellm import completion
@@ -88,6 +85,7 @@ class LiteLLMModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
         self.client = completion
+        self.kwargs = kwargs
 
     def _convert_response_from_litellm_to_openai(
         self, response
@@ -179,6 +177,7 @@ class LiteLLMModel(BaseModelBackend):
             model=self.model_type,
             messages=messages,
             **self.model_config_dict,
+            **self.kwargs,
         )
         response = self._convert_response_from_litellm_to_openai(response)
 
