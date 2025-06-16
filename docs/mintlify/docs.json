@@ -7,7 +7,7 @@
     "dark": "images/CAMEL_Icon_White.png",
     "href": "https://camel-ai.org "
   },
-  "favicon": "images/built_with_CAMEL.svg",
+  "favicon": "images/CAMEL_Icon.png",
   "colors": {
     "primary": "#5603fc",
     "light": "#5603fc",
@@ -202,6 +202,7 @@
               "reference/camel.configs.base_config",
               "reference/camel.configs.bedrock_config",
               "reference/camel.configs.cohere_config",
+              "reference/camel.configs.crynux_config",
               "reference/camel.configs.deepseek_config",
               "reference/camel.configs.gemini_config",
               "reference/camel.configs.groq_config",
@@ -218,6 +219,7 @@
               "reference/camel.configs.openai_config",
               "reference/camel.configs.openrouter_config",
               "reference/camel.configs.ppio_config",
+              "reference/camel.configs.qianfan_config",
               "reference/camel.configs.qwen_config",
               "reference/camel.configs.reka_config",
               "reference/camel.configs.samba_config",
@@ -280,6 +282,7 @@
               "reference/camel.models.base_audio_model",
               "reference/camel.models.base_model",
               "reference/camel.models.cohere_model",
+              "reference/camel.models.crynux_model",
               "reference/camel.models.deepseek_model",
               "reference/camel.models.fish_audio_model",
               "reference/camel.models.gemini_model",
@@ -302,6 +305,7 @@
               "reference/camel.models.openai_model",
               "reference/camel.models.openrouter_model",
               "reference/camel.models.ppio_model",
+              "reference/camel.models.qianfan_model",
               "reference/camel.models.qwen_model",
               "reference/camel.models.reka_model",
               "reference/camel.models.samba_model",
@@ -422,7 +426,8 @@
               "reference/camel.storages.vectordb_storages.milvus",
               "reference/camel.storages.vectordb_storages.oceanbase",
               "reference/camel.storages.vectordb_storages.qdrant",
-              "reference/camel.storages.vectordb_storages.tidb"
+              "reference/camel.storages.vectordb_storages.tidb",
+              "reference/camel.storages.vectordb_storages.weaviate"
             ]
           },
           {
@@ -490,6 +495,7 @@
               "reference/camel.toolkits.slack_toolkit",
               "reference/camel.toolkits.stripe_toolkit",
               "reference/camel.toolkits.sympy_toolkit",
+              "reference/camel.toolkits.task_planning_toolkit",
               "reference/camel.toolkits.terminal_toolkit",
               "reference/camel.toolkits.thinking_toolkit",
               "reference/camel.toolkits.twitter_toolkit",
@@ -538,6 +544,7 @@
               "reference/camel.utils.commons",
               "reference/camel.utils.deduplication",
               "reference/camel.utils.filename",
+              "reference/camel.utils.langfuse",
               "reference/camel.utils.mcp",
               "reference/camel.utils.mcp_client",
               "reference/camel.utils.response_format",
@@ -579,7 +586,9 @@
               "reference/camel.benchmarks.browsecomp",
               "reference/camel.benchmarks.gaia",
               "reference/camel.benchmarks.nexus",
-              "reference/camel.benchmarks.ragbench"
+              "reference/camel.benchmarks.ragbench",
+              "reference/camel.benchmarks.mock_website.app",
+              "reference/camel.benchmarks.mock_website.mock_web"
             ]
           },
           {

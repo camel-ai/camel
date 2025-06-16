@@ -16,6 +16,7 @@ from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
 from .bedrock_config import BEDROCK_API_PARAMS, BedrockConfig
 from .cohere_config import COHERE_API_PARAMS, CohereConfig
+from .crynux_config import CRYNUX_API_PARAMS, CrynuxConfig
 from .deepseek_config import DEEPSEEK_API_PARAMS, DeepSeekConfig
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
@@ -32,6 +33,7 @@ from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
 from .openrouter_config import OPENROUTER_API_PARAMS, OpenRouterConfig
 from .ppio_config import PPIO_API_PARAMS, PPIOConfig
+from .qianfan_config import QIANFAN_API_PARAMS, QianfanConfig
 from .qwen_config import QWEN_API_PARAMS, QwenConfig
 from .reka_config import REKA_API_PARAMS, RekaConfig
 from .samba_config import (
@@ -112,4 +114,8 @@ __all__ = [
     'LMStudioConfig',
     'WatsonXConfig',
     'WATSONX_API_PARAMS',
+    'QianfanConfig',
+    'QIANFAN_API_PARAMS',
+    'CrynuxConfig',
+    'CRYNUX_API_PARAMS',
 ]

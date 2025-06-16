@@ -173,8 +173,6 @@ class MCPClient:
             initialization. (default: :obj:`None`)
         timeout (Optional[float], optional): Timeout for waiting for messages
             from the server in seconds. (default: :obj:`10.0`)
-        strict (Optional[bool], optional): Strict mode for generating
-            FunctionTool objects. (default: :obj:`False`)
 
     Examples:
         STDIO server:
@@ -209,20 +207,6 @@ class MCPClient:
             async with MCPClient({"url": "ws://localhost:8080/mcp"}) as client:
                 tools = client.get_tools()
 
-        With strict mode enabled:
-
-        .. code-block:: python
-
-            async with MCPClient({
-                "command": "npx",
-                "args": [
-                    "-y",
-                    "@modelcontextprotocol/server-filesystem",
-                    "/path"
-                ]
-            }, strict=True) as client:
-                tools = client.get_tools()
-
     Attributes:
         config (ServerConfig): The server configuration object.
         client_info (Optional[types.Implementation]): Client implementation
@@ -235,14 +219,12 @@ class MCPClient:
         config: Union[ServerConfig, Dict[str, Any]],
         client_info: Optional[types.Implementation] = None,
         timeout: Optional[float] = 10.0,
-        strict: Optional[bool] = False,
     ):
         # Convert dict config to ServerConfig if needed
         if isinstance(config, dict):
             config = ServerConfig(**config)
 
         self.config = config
-        self.strict = strict
 
         # Validate transport type early (this will raise ValueError if invalid)
         _ = self.config.transport_type
@@ -559,8 +541,8 @@ class MCPClient:
                 MCP server.
 
         Returns:
-            Callable: A dynamically created async Python function that wraps
-                the MCP tool.
+            Callable: A dynamically created Python function that wraps
+                the MCP tool and works in both sync and async contexts.
         """
         func_name = mcp_tool.name
         func_desc = mcp_tool.description or "No description provided."
@@ -589,16 +571,9 @@ class MCPClient:
 
             func_params.append(param_name)
 
-        async def dynamic_function(**kwargs) -> str:
-            r"""Auto-generated function for MCP Tool interaction.
-
-            Args:
-                kwargs: Keyword arguments corresponding to MCP tool parameters.
-
-            Returns:
-                str: The textual result returned by the MCP tool.
-            """
-
+        # Create the async version of the function
+        async def async_mcp_call(**kwargs) -> str:
+            r"""Async version of MCP tool call."""
             missing_params: Set[str] = set(required_params) - set(
                 kwargs.keys()
             )
@@ -661,9 +636,83 @@ class MCPClient:
                 )
                 raise e
 
-        dynamic_function.__name__ = func_name
-        dynamic_function.__doc__ = func_desc
-        dynamic_function.__annotations__ = annotations
+        def adaptive_dynamic_function(**kwargs) -> str:
+            r"""Adaptive function that works in both sync and async contexts.
+
+            This function detects if it's being called from an async context
+            and behaves accordingly.
+
+            Args:
+                kwargs: Keyword arguments corresponding to MCP tool parameters.
+
+            Returns:
+                str: The textual result returned by the MCP tool.
+
+            Raises:
+                TimeoutError: If the operation times out.
+                RuntimeError: If there are issues with async execution.
+            """
+            import asyncio
+            import concurrent.futures
+
+            try:
+                # Check if we're in an async context with a running loop
+                loop = asyncio.get_running_loop()  # noqa: F841
+                # If we get here, we're in an async context with a running loop
+                # We need to run the async function in a separate thread with
+                # a new loop
+
+                def run_in_thread():
+                    # Create a new event loop for this thread
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        return new_loop.run_until_complete(
+                            async_mcp_call(**kwargs)
+                        )
+                    except Exception as e:
+                        # Preserve the original exception context
+                        raise RuntimeError(
+                            f"MCP call failed in thread: {e}"
+                        ) from e
+                    finally:
+                        new_loop.close()
+
+                # Run in a separate thread to avoid event loop conflicts
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(run_in_thread)
+                    try:
+                        return future.result(
+                            timeout=self.read_timeout_seconds.total_seconds()
+                        )
+                    except concurrent.futures.TimeoutError:
+                        raise TimeoutError(
+                            f"MCP call timed out after "
+                            f"{self.read_timeout_seconds.total_seconds()}"
+                            f" seconds"
+                        )
+
+            except RuntimeError as e:
+                # Only handle the specific "no running event loop" case
+                if (
+                    "no running event loop" in str(e).lower()
+                    or "no current event loop" in str(e).lower()
+                ):
+                    # No event loop is running, we can safely use run_async
+                    from camel.utils.commons import run_async
+
+                    run_async_func = run_async(async_mcp_call)
+                    return run_async_func(**kwargs)
+                else:
+                    # Re-raise other RuntimeErrors
+                    raise
+
+        # Add an async_call method to the function for explicit async usage
+        adaptive_dynamic_function.async_call = async_mcp_call  # type: ignore[attr-defined]
+
+        adaptive_dynamic_function.__name__ = func_name
+        adaptive_dynamic_function.__doc__ = func_desc
+        adaptive_dynamic_function.__annotations__ = annotations
 
         sig = inspect.Signature(
             parameters=[
@@ -676,9 +725,9 @@ class MCPClient:
                 for param in func_params
             ]
         )
-        dynamic_function.__signature__ = sig  # type: ignore[attr-defined]
+        adaptive_dynamic_function.__signature__ = sig  # type: ignore[attr-defined]
 
-        return dynamic_function
+        return adaptive_dynamic_function
 
     def _build_tool_schema(self, mcp_tool: types.Tool) -> Dict[str, Any]:
         r"""Build tool schema for OpenAI function calling format."""
@@ -699,7 +748,6 @@ class MCPClient:
                 "name": mcp_tool.name,
                 "description": mcp_tool.description
                 or "No description provided.",
-                "strict": self.strict,
                 "parameters": parameters,
             },
         }
@@ -865,8 +913,7 @@ def create_mcp_client(
             dictionary is provided, it will be automatically converted to
             a :obj:`ServerConfig`.
         **kwargs: Additional keyword arguments passed to the :obj:`MCPClient`
-            constructor, such as :obj:`client_info`, :obj:`timeout`, and
-            :obj:`strict`.
+            constructor, such as :obj:`client_info`, :obj:`timeout`.
 
     Returns:
         MCPClient: A configured :obj:`MCPClient` instance ready for use as
@@ -904,20 +951,6 @@ def create_mcp_client(
             async with create_mcp_client({
                 "url": "ws://localhost:8080/mcp"
             }) as client:
-                tools = client.get_tools()
-
-        With strict mode enabled:
-
-        .. code-block:: python
-
-            async with create_mcp_client({
-                "command": "npx",
-                "args": [
-                    "-y",
-                    "@modelcontextprotocol/server-filesystem",
-                    "/path",
-                ],
-            }, strict=True) as client:
                 tools = client.get_tools()
     """
     return MCPClient(config, **kwargs)

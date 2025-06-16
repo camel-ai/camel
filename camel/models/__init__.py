@@ -18,6 +18,7 @@ from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
 from .base_model import BaseModelBackend
 from .cohere_model import CohereModel
+from .crynux_model import CrynuxModel
 from .deepseek_model import DeepSeekModel
 from .fish_audio_model import FishAudioModel
 from .gemini_model import GeminiModel
@@ -40,6 +41,7 @@ from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
 from .openrouter_model import OpenRouterModel
 from .ppio_model import PPIOModel
+from .qianfan_model import QianfanModel
 from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
@@ -96,4 +98,6 @@ __all__ = [
     'VolcanoModel',
     'LMStudioModel',
     'WatsonXModel',
+    'QianfanModel',
+    'CrynuxModel',
 ]

@@ -72,11 +72,10 @@ Subclasses should implement the :obj:`token_counter`,:obj: `token_limit`,
 and :obj:`create_context` methods to provide specific context creation
 logic.
 
-Attributes:
-token_counter (BaseTokenCounter): A token counter instance responsible
-for counting tokens in a message.
-token_limit (int): The maximum number of tokens allowed in the
-generated context.
+**Parameters:**
+
+- **token_counter** (BaseTokenCounter): A token counter instance responsible for counting tokens in a message.
+- **token_limit** (int): The maximum number of tokens allowed in the generated context.
 
 <a id="camel.memories.base.BaseContextCreator.token_counter"></a>
 

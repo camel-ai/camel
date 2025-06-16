@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
+import datetime
 import json
 from typing import Any, List
 
@@ -22,7 +23,7 @@ from camel.agents import ChatAgent
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
-from camel.tasks.task import Task, TaskState
+from camel.tasks.task import Task, TaskState, validate_task_content
 from camel.utils import print_text_animated
 
 
@@ -83,6 +84,28 @@ class SingleAgentWorker(Worker):
             )
             return TaskState.FAILED
 
+        # Populate additional_info with worker attempt details
+        if task.additional_info is None:
+            task.additional_info = {}
+
+        # Create worker attempt details with descriptive keys
+        worker_attempt_details = {
+            "agent_id": getattr(
+                self.worker, "agent_id", self.worker.role_name
+            ),
+            "timestamp": str(datetime.datetime.now()),
+            "description": f"Attempt by "
+            f"{getattr(self.worker, 'agent_id', self.worker.role_name)} "
+            f"to process task {task.content}",
+            "response_content": response.msg.content,
+            "tool_calls": response.info["tool_calls"],
+        }
+
+        # Store the worker attempt in additional_info
+        if "worker_attempts" not in task.additional_info:
+            task.additional_info["worker_attempts"] = []
+        task.additional_info["worker_attempts"].append(worker_attempt_details)
+
         print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
 
         result_dict = json.loads(response.msg.content)
@@ -95,6 +118,13 @@ class SingleAgentWorker(Worker):
         )
 
         if task_result.failed:
+            return TaskState.FAILED
+
+        if not validate_task_content(task_result.content, task.id):
+            print(
+                f"{Fore.RED}Task {task.id}: Content validation failed - "
+                f"task marked as failed{Fore.RESET}"
+            )
             return TaskState.FAILED
 
         task.result = task_result.content
