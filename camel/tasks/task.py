@@ -14,11 +14,21 @@
 
 import re
 from enum import Enum
-from typing import Any, Callable, Dict, List, Literal, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Union,
+)
 
 from pydantic import BaseModel
 
-from camel.agents import ChatAgent
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -288,7 +298,7 @@ class Task(BaseModel):
 
     def decompose(
         self,
-        agent: ChatAgent,
+        agent: "ChatAgent",
         prompt: Optional[str] = None,
         task_parser: Callable[[str, str], List["Task"]] = parse_response,
     ) -> List["Task"]:
@@ -323,7 +333,7 @@ class Task(BaseModel):
 
     def compose(
         self,
-        agent: ChatAgent,
+        agent: "ChatAgent",
         template: TextPrompt = TASK_COMPOSE_PROMPT,
         result_parser: Optional[Callable[[str], str]] = None,
     ):
@@ -472,12 +482,13 @@ class TaskManager:
     def evolve(
         self,
         task: Task,
-        agent: ChatAgent,
+        agent: "ChatAgent",
         template: Optional[TextPrompt] = None,
         task_parser: Optional[Callable[[str, str], List[Task]]] = None,
     ) -> Optional[Task]:
         r"""Evolve a task to a new task.
             Evolve is only used for data generation.
+
         Args:
             task (Task): A given task.
             agent (ChatAgent): An agent that used to evolve the task.
