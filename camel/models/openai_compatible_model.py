@@ -67,6 +67,11 @@ class OpenAICompatibleModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the
+            OpenAI client initialization. These can include parameters like
+            'organization', 'default_headers', 'http_client', etc.
     """
 
     def __init__(
@@ -77,12 +82,21 @@ class OpenAICompatibleModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         api_key = api_key or os.environ.get("OPENAI_COMPATIBILITY_API_KEY")
         url = url or os.environ.get("OPENAI_COMPATIBILITY_API_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
+
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
+            model_type,
+            model_config_dict,
+            api_key,
+            url,
+            token_counter,
+            timeout,
+            max_retries,
         )
         if is_langfuse_available():
             from langfuse.openai import AsyncOpenAI as LangfuseAsyncOpenAI
@@ -90,28 +104,32 @@ class OpenAICompatibleModel(BaseModelBackend):
 
             self._client = LangfuseOpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=max_retries,
                 base_url=self._url,
                 api_key=self._api_key,
+                **kwargs,
             )
             self._async_client = LangfuseAsyncOpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=max_retries,
                 base_url=self._url,
                 api_key=self._api_key,
+                **kwargs,
             )
         else:
             self._client = OpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=max_retries,
                 base_url=self._url,
                 api_key=self._api_key,
+                **kwargs,
             )
             self._async_client = AsyncOpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=max_retries,
                 base_url=self._url,
                 api_key=self._api_key,
+                **kwargs,
             )
 
     @observe()

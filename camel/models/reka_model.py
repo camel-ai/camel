@@ -72,6 +72,8 @@ class RekaModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -88,6 +90,7 @@ class RekaModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        **kwargs: Any,
     ) -> None:
         from reka.client import AsyncReka, Reka
 
@@ -97,13 +100,25 @@ class RekaModel(BaseModelBackend):
         url = url or os.environ.get("REKA_API_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
+            model_type,
+            model_config_dict,
+            api_key,
+            url,
+            token_counter,
+            timeout,
+            **kwargs,
         )
         self._client = Reka(
-            api_key=self._api_key, base_url=self._url, timeout=self._timeout
+            api_key=self._api_key,
+            base_url=self._url,
+            timeout=self._timeout,
+            **kwargs,
         )
         self._async_client = AsyncReka(
-            api_key=self._api_key, base_url=self._url, timeout=self._timeout
+            api_key=self._api_key,
+            base_url=self._url,
+            timeout=self._timeout,
+            **kwargs,
         )
 
     def _convert_reka_to_openai_response(

@@ -158,7 +158,8 @@
               {
                 "group": "MCP",
                 "pages": [
-                  "cookbooks/mcp/agents_with_sql_mcp"
+                  "cookbooks/mcp/agents_with_sql_mcp",
+                  "cookbooks/mcp/camel_aci_mcp_cookbook"
                 ]
               }
             ]
