@@ -39,6 +39,7 @@ from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.openrouter_model import OpenRouterModel
 from camel.models.ppio_model import PPIOModel
+from camel.models.qianfan_model import QianfanModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
@@ -98,6 +99,7 @@ class ModelFactory:
         ModelPlatformType.MODELSCOPE: ModelScopeModel,
         ModelPlatformType.NOVITA: NovitaModel,
         ModelPlatformType.WATSONX: WatsonXModel,
+        ModelPlatformType.QIANFAN: QianfanModel,
         ModelPlatformType.CRYNUX: CrynuxModel,
     }
 
