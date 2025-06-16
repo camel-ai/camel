@@ -43,8 +43,8 @@ tool_list = [
 ]
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4_1,
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
 )
 
 agent = CodeActAgent(
@@ -54,10 +54,10 @@ agent = CodeActAgent(
     verbose=True,
 )
 
-math_task = (
+purchase_task = (
     "I want to buy a iphone16 pro max with RMB "
     "and see which country is the cheapest: China, the USA, Japan, or Germany."
 )
 
-response = agent.step(math_task)
+response = agent.step(purchase_task)
 print(response)
