@@ -401,6 +401,42 @@ class Workforce(BaseNode):
             logger.info(f"Workforce {self.node_id} resumed.")
             print(f"{Fore.GREEN}Workforce resumed.{Fore.RESET}")
 
+            # When resuming, it's possible that new tasks were added or the
+            # pending task queue was modified during the pause window. In
+            # such cases no tasks may currently be in flight, which would
+            # cause the listening coroutine to block forever waiting for a
+            # result that can never arrive. To mitigate this we proactively
+            # (re)post any ready tasks to the channel right after resuming.
+            if self._pending_tasks:
+                try:
+                    # Prefer the workforce's stored loop (created in
+                    # process_task_with_intervention). Fallback to the
+                    # currently running loop if accessible.
+                    loop = self._loop or asyncio.get_running_loop()
+                except RuntimeError:
+                    loop = None
+
+                if loop is not None and not loop.is_closed():
+                    try:
+                        # If we're already in the same thread as the event
+                        # loop, use create_task; otherwise, use the
+                        # thread-safe submission utility.
+                        running_loop = asyncio.get_running_loop()
+                        if running_loop is loop:
+                            running_loop.create_task(self._post_ready_tasks())
+                        else:
+                            asyncio.run_coroutine_threadsafe(
+                                self._post_ready_tasks(),
+                                loop,
+                            )
+                    except RuntimeError:
+                        # Not inside any running loop – safe to submit in a
+                        # thread-safe manner.
+                        asyncio.run_coroutine_threadsafe(
+                            self._post_ready_tasks(),
+                            loop,
+                        )
+
     def stop_gracefully(self) -> None:
         """Request graceful stop of the workforce."""
         self._stop_requested = True
