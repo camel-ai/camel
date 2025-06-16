@@ -21,7 +21,7 @@ import sys
 import threading
 import venv
 from queue import Queue
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -56,6 +56,10 @@ class TerminalToolkit(BaseToolkit):
             environment.(default: :obj:`False`)
         safe_mode (bool): Whether to enable safe mode to restrict operations.
             (default: :obj:`True`)
+        docker (bool): Whether to use docker.
+            (default: :obj:`False`)
+        container_id (Optional[str]): The ID of the docker container.
+            (default: :obj:`None`)
 
     Note:
         Most functions are compatible with Unix-based systems (macOS, Linux).
@@ -72,6 +76,8 @@ class TerminalToolkit(BaseToolkit):
         use_shell_mode: bool = True,
         clone_current_env: bool = False,
         safe_mode: bool = True,
+        docker: bool = False,
+        container_id: Optional[str] = None,
     ):
         super().__init__(timeout=timeout)
         self.shell_sessions = shell_sessions or {}
@@ -81,6 +87,11 @@ class TerminalToolkit(BaseToolkit):
         self.terminal_ready = threading.Event()
         self.gui_thread = None
         self.safe_mode = safe_mode
+        self.docker = docker
+        self.container_id = container_id
+
+        if self.docker:
+            self.os_type = "Linux"
 
         self.cloned_env_path = None
         self.use_shell_mode = use_shell_mode
@@ -322,6 +333,39 @@ class TerminalToolkit(BaseToolkit):
             logger.error(f"Failed to copy file: {e}")
             return None
 
+    def _docker_command(self, command: Union[List[str], str]) -> List[str]:
+        r"""Convert a command to a docker-compatible command format.
+
+        This method takes a command (either as a string or list of strings) and
+        converts it into a format suitable for execution within a Docker
+        container. It prepends the necessary Docker exec command and container
+        ID to the original command.
+
+        Args:
+            command (Union[List[str], str]): The command to be executed. Can be
+                provided as either a string (which will be split using shlex)
+                or a list of strings representing the command and its
+                arguments.
+
+        Returns:
+            List[str]: A list of strings representing the complete Docker
+                command, including 'docker', 'exec', container_id, and the
+                original command parts.
+
+        Raises:
+            ValueError: If container_id is not set (None).
+        """
+        if isinstance(command, str):
+            import shlex
+
+            command = shlex.split(command)
+        if self.container_id is None:
+            raise ValueError("Container ID is not set")
+        # Ensure all elements are strings
+        docker_cmd: List[str] = ["docker", "exec", str(self.container_id)]
+
+        return docker_cmd + [str(x) for x in command]
+
     def file_find_in_content(
         self, file: str, regex: str, sudo: bool = False
     ) -> str:
@@ -352,7 +396,10 @@ class TerminalToolkit(BaseToolkit):
             command.extend(["sudo"])
 
         if self.os_type in ['Darwin', 'Linux']:  # macOS or Linux
-            command.extend(["grep", "-E", regex, file])
+            _command = ["grep", "-E", regex, file]
+            if self.docker:
+                _command = self._docker_command(_command)
+            command.extend(_command)
         else:  # Windows
             # For Windows, we could use PowerShell or findstr
             command.extend(["findstr", "/R", regex, file])
@@ -384,7 +431,10 @@ class TerminalToolkit(BaseToolkit):
 
         command = []
         if self.os_type in ['Darwin', 'Linux']:  # macOS or Linux
-            command.extend(["find", path, "-name", glob])
+            _command = ["find", path, "-name", glob]
+            if self.docker:
+                _command = self._docker_command(_command)
+            command.extend(_command)
         else:  # Windows
             # For Windows, we use dir command with /s for recursive search
             # and /b for bare format
@@ -676,80 +726,126 @@ class TerminalToolkit(BaseToolkit):
             # First, log the command to be executed
             self._update_terminal_output(f"\n$ {command}\n")
 
-            if command.startswith('python') or command.startswith('pip'):
-                if self.cloned_env_path:
-                    if self.os_type == 'Windows':
-                        base_path = os.path.join(
-                            self.cloned_env_path, "Scripts"
-                        )
-                        python_path = os.path.join(base_path, "python.exe")
-                        pip_path = os.path.join(base_path, "pip.exe")
-                    else:
-                        base_path = os.path.join(self.cloned_env_path, "bin")
-                        python_path = os.path.join(base_path, "python")
-                        pip_path = os.path.join(base_path, "pip")
-                else:
-                    python_path = self.python_executable
-                    pip_path = f'"{python_path}" -m pip'
+            if self.docker:
+                # Properly format Docker command as a list
+                docker_command = [
+                    "docker",
+                    "exec",
+                    str(self.container_id),  # Ensure container_id is string
+                    "/bin/sh",
+                    "-c",
+                    str(command),  # Ensure command is string
+                ]
+                use_shell = False
 
-                if command.startswith('python'):
-                    command = command.replace('python', f'"{python_path}"', 1)
-                elif command.startswith('pip'):
-                    command = command.replace('pip', pip_path, 1)
-
-            if self.is_macos:
-                # Type safe version - macOS uses subprocess.run
-                process = subprocess.run(
-                    command,
-                    shell=True,
-                    cwd=self.working_dir,
-                    capture_output=True,
-                    text=True,
-                    env=os.environ.copy(),
-                )
-
-                # Process the output
-                output = process.stdout or ""
-                if process.stderr:
-                    output += f"\nStderr Output:\n{process.stderr}"
-
-                # Update session information and terminal
-                self.shell_sessions[id]["output"] = output
-                self._update_terminal_output(output + "\n")
-
-                return output
-
-            else:
-                # Non-macOS systems use the Popen method
                 proc = subprocess.Popen(
-                    command,
-                    shell=True,
+                    docker_command,  # Use the list directly
+                    shell=use_shell,
                     cwd=self.working_dir,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     stdin=subprocess.PIPE,
                     text=True,
+                    encoding='utf-8',
                     bufsize=1,
                     universal_newlines=True,
                     env=os.environ.copy(),
                 )
 
-                # Store the process and mark it as running
-                self.shell_sessions[id]["process"] = proc
-                self.shell_sessions[id]["running"] = True
-
-                # Get output
                 stdout, stderr = proc.communicate()
-
                 output = stdout or ""
                 if stderr:
                     output += f"\nStderr Output:\n{stderr}"
 
-                # Update session information and terminal
                 self.shell_sessions[id]["output"] = output
                 self._update_terminal_output(output + "\n")
-
                 return output
+            else:
+                if (
+                    command.startswith('python') or command.startswith('pip')
+                ) and not self.docker:
+                    if self.cloned_env_path:
+                        if self.os_type == 'Windows':
+                            base_path = os.path.join(
+                                self.cloned_env_path, "Scripts"
+                            )
+                            python_path = os.path.join(base_path, "python.exe")
+                            pip_path = os.path.join(base_path, "pip.exe")
+                        else:
+                            base_path = os.path.join(
+                                self.cloned_env_path, "bin"
+                            )
+                            python_path = os.path.join(base_path, "python")
+                            pip_path = os.path.join(base_path, "pip")
+                    else:
+                        python_path = self.python_executable
+                        pip_path = f'"{python_path}" -m pip'
+
+                    if command.startswith('python'):
+                        command = command.replace(
+                            'python', f'"{python_path}"', 1
+                        )
+                    elif command.startswith('pip'):
+                        command = command.replace('pip', pip_path, 1)
+
+                if self.is_macos:
+                    # Type safe version - macOS uses subprocess.run
+                    process = subprocess.run(
+                        command,
+                        shell=True,
+                        cwd=self.working_dir,
+                        capture_output=True,
+                        text=True,
+                        env=os.environ.copy(),
+                    )
+
+                    # Process the output
+                    output = process.stdout or ""
+                    if process.stderr:
+                        output += f"\nStderr Output:\n{process.stderr}"
+
+                    # Update session information and terminal
+                    self.shell_sessions[id]["output"] = output
+                    self._update_terminal_output(output + "\n")
+
+                    return output
+
+                else:
+                    # Non-macOS systems use the Popen method
+                    self._update_terminal_output(f"\n$ {command}\n")
+                    use_shell = True
+                    if self.os_type == 'Windows':
+                        command = f'cmd.exe /c "{command}"'
+
+                    proc = subprocess.Popen(
+                        command,
+                        shell=use_shell,
+                        cwd=self.working_dir,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        stdin=subprocess.PIPE,
+                        text=True,
+                        bufsize=1,
+                        universal_newlines=True,
+                        env=os.environ.copy(),
+                    )
+
+                    # Store the process and mark it as running
+                    self.shell_sessions[id]["process"] = proc
+                    self.shell_sessions[id]["running"] = True
+
+                    # Get output
+                    stdout, stderr = proc.communicate()
+
+                    output = stdout or ""
+                    if stderr:
+                        output += f"\nStderr Output:\n{stderr}"
+
+                    # Update session information and terminal
+                    self.shell_sessions[id]["output"] = output
+                    self._update_terminal_output(output + "\n")
+
+                    return output
 
         except Exception as e:
             error_msg = f"Command execution error: {e!s}"
