@@ -37,5 +37,5 @@ camel_agent = ChatAgent(
 usr_msg = "Generate an image of a cat."
 
 # Get response information
-response = camel_agent.step(usr_msg) # TODO: test this, now no permission
-print(response.info['tool_calls']) 
+response = camel_agent.step(usr_msg)  # TODO: test this, now no permission
+print(response.info['tool_calls'])
