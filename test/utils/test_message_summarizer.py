@@ -1,8 +1,22 @@
-import pytest
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List
 
+import pytest
+
 from camel.messages import BaseMessage
-from camel.types import ModelType, RoleType
+from camel.types import ModelType
 from camel.utils.message_summarizer import MessageSummarizer, SummarySchema
 
 
@@ -74,9 +88,7 @@ def test_summarize_messages(sample_messages: List[BaseMessage]):
     # Verify specific content based on sample messages
     assert "User" in summary.roles
     assert "Assistant" in summary.roles
-    assert any(
-        "Flask" in entity for entity in summary.key_entities
-    )
+    assert any("Flask" in entity for entity in summary.key_entities)
 
 
 def test_summarize_empty_messages():
@@ -102,15 +114,12 @@ def test_summarize_single_message():
     summarizer = MessageSummarizer()
     summary = summarizer.summarize([message])
     print(f"\n~~Summary3: {summary}")
-    
+
     assert isinstance(summary, SummarySchema)
     assert "User" in summary.roles
+    assert any("Python" in entity for entity in summary.key_entities)
     assert any(
-        "Python" in entity for entity in summary.key_entities
-    )
-    assert any(
-        "web application" in entity.lower() \
-            for entity in summary.key_entities
+        "web application" in entity.lower() for entity in summary.key_entities
     )
 
 
@@ -139,15 +148,11 @@ def test_summarize_with_special_characters():
     assert isinstance(summary, SummarySchema)
     assert "User" in summary.roles
     assert "Assistant" in summary.roles
+    assert any("API" in entity for entity in summary.key_entities)
     assert any(
-        "API" in entity for entity in summary.key_entities
-    )
-    assert any(
-        "endpoints" in entity.lower() \
-            for entity in summary.key_entities
+        "endpoints" in entity.lower() for entity in summary.key_entities
     )
 
 
 if __name__ == "__main__":
     pytest.main([__file__])
-
