@@ -379,10 +379,7 @@ class SGLangModel(BaseModelBackend):
                 _terminate_process(self.server_process)
                 self.server_process = None
                 self._client = None
-                logging.info(
-                    "Server process terminated during cleanup.",
-                    timeout=self._timeout,
-                )
+                logging.info("Server process terminated during cleanup.")
 
 
 # Below are helper functions from sglang.utils
