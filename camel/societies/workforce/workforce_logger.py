@@ -577,12 +577,12 @@ class WorkforceLogger:
                 )
         else:
             for worker_id_key in (
-                tasks_handled_by_worker.keys()
+                tasks_handled_by_worker
             ):  # Ensure all workers who handled tasks are listed, even if 0%
                 kpis['worker_utilization'][worker_id_key] = "0.00%"
             # If no tasks were processed, but workers exist (e.g. from
             # _initial_worker_logs), list them with 0%
-            for worker_id_key in self._worker_information.keys():
+            for worker_id_key in self._worker_information:
                 if worker_id_key not in kpis['worker_utilization']:
                     kpis['worker_utilization'][worker_id_key] = "0.00%"
 
