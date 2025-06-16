@@ -14,68 +14,52 @@
 
 import threading
 import time
+
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
-from camel.toolkits import SearchToolkit, FunctionTool
+from camel.toolkits import FileWriteToolkit, MathToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
 def create_simple_workforce():
     """Create a simple workforce for demonstration."""
-    search_toolkit = SearchToolkit()
-    
+    math_toolkit = MathToolkit()
+    file_write_toolkit = FileWriteToolkit()
+
     # Create a simple search agent
-    search_agent = ChatAgent(
+    math_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
-            role_name="Research Agent",
-            content="You are a research agent that can search for information online.",
+            role_name="Math Agent",
+            content="You are a math doctor.",
         ),
         model=ModelFactory.create(
             model_platform=ModelPlatformType.DEFAULT,
             model_type=ModelType.DEFAULT,
         ),
-        tools=[FunctionTool(search_toolkit.search_wiki)],
+        tools=[*math_toolkit.get_tools()],
     )
-    
-    # Create a planning agent
-    planning_agent = ChatAgent(
+
+    # Create a file write agent
+    file_write_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
-            role_name="Planning Agent",
-            content="You are a planning agent that creates detailed plans and itineraries.",
+            role_name="File Write Agent",
+            content="You are a file write agent.",
         ),
         model=ModelFactory.create(
             model_platform=ModelPlatformType.DEFAULT,
             model_type=ModelType.DEFAULT,
         ),
+        tools=[*file_write_toolkit.get_tools()],
     )
-    
+
     workforce = Workforce('Simple Demo Workforce')
-    workforce.add_single_agent_worker("Research Agent", search_agent)
-    workforce.add_single_agent_worker("Planning Agent", planning_agent)
-    
+    workforce.add_single_agent_worker("Math Agent", math_agent)
+    workforce.add_single_agent_worker("File Write Agent", file_write_agent)
+
     return workforce
-
-
-def print_instructions():
-    """Print usage instructions."""
-    print("🎯 SIMPLE HOTKEY INTERVENTION DEMO")
-    print("=" * 50)
-    print("📖 Instructions:")
-    print("  1. The workforce will start automatically")
-    print("  2. Press 'h' + Enter anytime to intervene")
-    print("  3. In intervention mode, select options with numbers:")
-    print("     1 - View current tasks")
-    print("     2 - Modify tasks")
-    print("     3 - Add new tasks")
-    print("     4 - Save snapshots")
-    print("     5 - Continue execution")
-    print("     6 - Stop workforce")
-    print("  4. Press Ctrl+C anytime to force stop")
-    print("=" * 50)
-    print()
 
 
 def simple_intervention_menu(workforce):
@@ -88,10 +72,10 @@ def simple_intervention_menu(workforce):
         print("  3. Add a new task")
         print("  4. Resume execution")
         print("  5. Stop workforce")
-        
+
         try:
             choice = input("\nEnter choice (1-5): ").strip()
-            
+
             if choice == "1":
                 pending = workforce.get_pending_tasks()
                 completed = workforce.get_completed_tasks()
@@ -101,11 +85,15 @@ def simple_intervention_menu(workforce):
                 print(f"\n✅ Completed ({len(completed)}):")
                 for i, task in enumerate(completed, 1):
                     print(f"  {i}. [{task.id}] {task.content}")
-                    
+
                 # Show current workforce status
                 status = workforce.get_workforce_status()
-                print(f"\n📊 Status: {status['state']} | Pending: {status['pending_tasks_count']} | Completed: {status['completed_tasks_count']}")
-                    
+                print(
+                    f"\n📊 Status: {status['state']} | Pending: "
+                    f"{status['pending_tasks_count']} | Completed: "
+                    f"{status['completed_tasks_count']}"
+                )
+
             elif choice == "2":
                 pending = workforce.get_pending_tasks()
                 if not pending:
@@ -124,100 +112,114 @@ def simple_intervention_menu(workforce):
                             print("✅ Modified!")
                 except ValueError:
                     print("❌ Invalid number")
-                    
+
             elif choice == "3":
                 content = input("New task content: ")
                 if content.strip():
                     task = workforce.add_task(content)
                     print(f"✅ Added task: {task.id}")
-                
+
             elif choice == "4":
                 print("▶️ Resuming...")
                 return True
-                
+
             elif choice == "5":
                 print("🛑 Stopping...")
                 return False
-                
+
             else:
                 print("❌ Invalid choice. Please enter 1-6.")
-                
+
         except (KeyboardInterrupt, EOFError):
             print("\n🔄 Enter 5 to resume or 6 to stop")
 
 
 def main():
-    """Main demo function."""
-    print_instructions()
-    
+    r"""Main demo function."""
+
     # Create workforce and task
     workforce = create_simple_workforce()
     task = Task(
-        content="Research the top 5 tourist attractions in Tokyo and create a 2-day itinerary",
-        id="tokyo_itinerary"
+        content=(
+            "calculate the sum of 1 to 100,then write "
+            "the md file to describe the process"
+        ),
+        id="sum_1_to_100",
     )
-    
+
     print(f"📋 Task: {task.content}")
     print()
-    
+
     # Start workforce in background
     def run_workforce():
         try:
-            result = workforce.process_task_with_intervention(task)
-            print(f"\n🎉 Task completed!")
+            result = workforce.process_task(task, interactive=True)
+            print("\n🎉 Task completed!")
             print(f"Result: {result.result}")
         except Exception as e:
             print(f"\n❌ Error: {e}")
-    
+
     workforce_thread = threading.Thread(target=run_workforce)
     workforce_thread.daemon = True
     workforce_thread.start()
-    
+
     print("⏳ Waiting for initial task decomposition...")
-    time.sleep(2)
-    
+    # Wait until workforce enters RUNNING state or timeout
+    start_wait = time.time()
+    while True:
+        status = workforce.get_workforce_status()
+        if status["state"] != "idle":
+            break
+        if time.time() - start_wait > 10:
+            print("⚠️  Timed out waiting for workforce to start.")
+            break
+        time.sleep(0.2)
+
     print("🔄 Workforce is running... Press 'h' + Enter to intervene!")
-    
+
     # Input monitoring
     intervention_active = False
-    
+
     while workforce_thread.is_alive():
         try:
             user_input = input().strip().lower()
-            
+
             if user_input == 'h' and not intervention_active:
                 intervention_active = True
                 print("\n⏸️ Pausing workforce...")
                 workforce.pause()
                 time.sleep(0.5)
-                
+
                 should_continue = simple_intervention_menu(workforce)
-                
+
                 if should_continue:
                     workforce.resume()
                     intervention_active = False
-                    print("🔄 Workforce resumed! Press 'h' + Enter to intervene again.")
+                    print(
+                        "🔄 Workforce resumed! Press 'h' + Enter to "
+                        "intervene again."
+                    )
                 else:
                     workforce.stop_gracefully()
                     break
-                    
+
         except KeyboardInterrupt:
             print("\n🛑 Force stopping...")
             workforce.stop_gracefully()
             break
         except EOFError:
             break
-    
+
     workforce_thread.join(timeout=5)
-    
+
     # Final status
     print("\n📊 Final Status:")
     status = workforce.get_workforce_status()
     for key, value in status.items():
         print(f"  {key}: {value}")
-    
+
     print("\n👋 Demo finished!")
 
 
 if __name__ == "__main__":
-    main() 
+    main()
