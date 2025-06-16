@@ -49,9 +49,8 @@ class OllamaModel(OpenAICompatibleModel):
             (default: :obj:`None`)
         max_retries (int, optional): Maximum number of retries for API calls.
             (default: :obj:`3`)
-        **kwargs (Any): Additional arguments to pass to the
-            OpenAI client initialization. These can include parameters like
-            'organization', 'default_headers', 'http_client', etc.
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
 
     References:
         https://github.com/ollama/ollama/blob/main/docs/openai.md

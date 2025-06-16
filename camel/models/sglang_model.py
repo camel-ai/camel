@@ -72,11 +72,11 @@ class SGLangModel(BaseModelBackend):
             (default: :obj:`None`)
         max_retries (int, optional): Maximum number of retries for API calls.
             (default: :obj:`3`)
-        **kwargs (Any): Additional arguments to pass to the
-            client initialization. These can include parameters like
-            'organization', 'default_headers', 'http_client', etc.
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
 
-    Reference: https://sgl-project.github.io/backend/openai_api_completions.html
+    Reference: https://sgl-project.github.io/backend/openai_api_completions.
+    html
     """
 
     def __init__(
@@ -187,8 +187,7 @@ class SGLangModel(BaseModelBackend):
                         self.server_process = None
                         self._client = None  # Invalidate the client
                         logging.info(
-                            "Server process terminated due to inactivity.",
-                            timeout=self._timeout,
+                            "Server process terminated due to inactivity."
                         )
                     break
 

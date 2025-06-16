@@ -66,7 +66,7 @@ class QianfanModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
-        max_retries: Optional[int] = None,
+        max_retries: int = 3,
         **kwargs,
     ) -> None:
         if model_config_dict is None:

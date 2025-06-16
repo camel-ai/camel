@@ -80,8 +80,6 @@ class MistralModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
-        max_retries (int, optional): Maximum number of retries for API calls.
-            (default: :obj:`3`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
     """
