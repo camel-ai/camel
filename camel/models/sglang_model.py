@@ -102,7 +102,13 @@ class SGLangModel(BaseModelBackend):
 
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
+            model_type,
+            model_config_dict,
+            api_key,
+            url,
+            token_counter,
+            timeout,
+            max_retries,
         )
 
         self._client = None
@@ -111,14 +117,14 @@ class SGLangModel(BaseModelBackend):
             # Initialize the client if an existing URL is provided
             self._client = OpenAI(
                 timeout=self._timeout,
-                max_retries=max_retries,
+                max_retries=self._max_retries,
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,
                 **kwargs,
             )
             self._async_client = AsyncOpenAI(
                 timeout=self._timeout,
-                max_retries=max_retries,
+                max_retries=self._max_retries,
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,
                 **kwargs,
@@ -156,7 +162,7 @@ class SGLangModel(BaseModelBackend):
             # Initialize the client after the server starts
             self._client = OpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=self._max_retries,
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,
             )
