@@ -1,4 +1,3 @@
-# Storages
 ## 1. Concept
 The Storage module is a comprehensive framework designed for handling various types of data storage mechanisms. It is composed of abstract base classes and concrete implementations, catering to both key-value storage and vector storage systems.
 
@@ -62,6 +61,13 @@ Reference: [Qdrant](https://qdrant.tech/)
 - Description: A concrete implementation of `BaseVectorStorage`, tailored for interacting with OceanBase vector engine.
 
 Reference: [OceanBase](https://www.oceanbase.com/)
+
+**`WeaviateStorage`**:
+
+- Description: A concrete implementation of `BaseVectorStorage`, tailored for interacting with Weaviate, a vector search engine.
+
+Reference: [Weaviate](https://weaviate.io/)
+
 
 ### 2.3 Graph Storages
 **`BaseGraphStorage`**:
@@ -255,7 +261,7 @@ from camel.storages.vectordb_storages import (
 Before running this example, you need to setup an OceanBase instance:
 (Option 1): OceanBase Community Edition (OCE):
 1. Download and install OCE from the official website:
-   https://www.oceanbase.com/docs/oceanbase-database-cn
+   https://www.oceanbase.com/docs/oceanbase-database
 2. Start the OceanBase server and create a database user
 3. Install PyOBVector package:
    pip install pyobvector
@@ -349,7 +355,7 @@ Adding vectors in batches...
 Vector count after adding batch: 1000
 Querying similar vectors...
 Result 1:
-  ID: f33f008d-688a-468a-9a2d-e005d27ad9d8
+  ID: f33f008d-688a-468a-9a2d-e005d27ad9d9
   Payload: {'idx': 496, 'batch': 'example'}
   Similarity: 0.9847431876706196
 Result 2:
@@ -361,7 +367,7 @@ Result 3:
   Payload: {'idx': 654, 'batch': 'example'}
   Similarity: 0.9548076959468635
 Result 4:
-  ID: 8d6359ff-49fd-4fb7-99fd-bf4ca0a0cdcc
+  ID: 8d6359ff-49fd-4fb7-99fd-bf4ca0a0cdcx
   Payload: {'idx': 914, 'batch': 'example'}
   Similarity: 0.9496165658207311
 Result 5:
@@ -375,7 +381,47 @@ Vector count after clearing: 0
 
 ```
 
-### 3.7. Using `NebulaGraph`
+### 3.7. Using `WeaviateStorage`
+
+```python
+from camel.storages import WeaviateStorage, VectorDBQuery, VectorRecord
+
+# Create WeaviateStorage instance with dimension = 4 using Weaviate Cloud
+weaviate_storage = WeaviateStorage(
+    vector_dim=4,
+    collection_name="camel_example_vectors",
+    connection_type="cloud",
+    wcd_cluster_url="your-weaviate-cloud-url",
+    wcd_api_key="your-weaviate-api-key",
+    vector_index_type="hnsw",
+    distance_metric="cosine",
+)
+
+# Add vectors records to Weaviate
+weaviate_storage.add([
+    VectorRecord(
+        vector=[-0.1, 0.1, -0.1, 0.1],
+        payload={'key1': 'value1'},
+    ),
+    VectorRecord(
+        vector=[-0.1, 0.1, 0.1, 0.1],
+        payload={'key2': 'value2'},
+    ),
+])
+
+# Query Weaviate for similar vectors
+query_results = weaviate_storage.query(VectorDBQuery(query_vector=[0.1, 0.2, 0.1, 0.1], top_k=1))
+for result in query_results:
+    print(result.record.payload, result.similarity)
+
+# Clear all vectors
+weaviate_storage.clear()
+```
+```markdown
+>>> {'key2': 'value2'} 0.7834733128547668
+```
+
+### 3.8. Using `NebulaGraph`
 
 ```python
 from camel.storages.graph_storages import NebulaGraph
@@ -387,7 +433,7 @@ query = 'SHOW TAGS;'
 print(nebula_graph.query(query))
 ```
 
-### 3.8. Using `Neo4jGraph`
+### 3.9. Using `Neo4jGraph`
 
 ```python
 from camel.storages import Neo4jGraph

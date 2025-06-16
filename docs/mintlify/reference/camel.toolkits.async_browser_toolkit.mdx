@@ -13,180 +13,11 @@ parentheses)
 
 **Parameters:**
 
-- **s** (str): Input string, e.g., `1.`**`click_id(14)`**, `scroll_up()`, `'visit_page(url)'`, etc.
+- **s** (str): Input string, e.g., `1.`**`click_id(14)`**, `scroll_up()`, `\'visit_page(url)\'`, etc.
 
 **Returns:**
 
   str: Pure function name (e.g., `click_id`, `scroll_up`, `visit_page`)
-
-<a id="camel.toolkits.async_browser_toolkit._get_str"></a>
-
-## _get_str
-
-```python
-def _get_str(d: Any, k: str):
-```
-
-Safely retrieve a string value from a dictionary.
-
-<a id="camel.toolkits.async_browser_toolkit._get_number"></a>
-
-## _get_number
-
-```python
-def _get_number(d: Any, k: str):
-```
-
-Safely retrieve a number (int or float) from a dictionary
-
-<a id="camel.toolkits.async_browser_toolkit._get_bool"></a>
-
-## _get_bool
-
-```python
-def _get_bool(d: Any, k: str):
-```
-
-Safely retrieve a boolean value from a dictionary.
-
-<a id="camel.toolkits.async_browser_toolkit._parse_json_output"></a>
-
-## _parse_json_output
-
-```python
-def _parse_json_output(text: str):
-```
-
-Extract JSON output from a string.
-
-<a id="camel.toolkits.async_browser_toolkit._reload_image"></a>
-
-## _reload_image
-
-```python
-def _reload_image(image: Image.Image):
-```
-
-<a id="camel.toolkits.async_browser_toolkit.dom_rectangle_from_dict"></a>
-
-## dom_rectangle_from_dict
-
-```python
-def dom_rectangle_from_dict(rect: Dict[str, Any]):
-```
-
-Create a DOMRectangle object from a dictionary.
-
-<a id="camel.toolkits.async_browser_toolkit.interactive_region_from_dict"></a>
-
-## interactive_region_from_dict
-
-```python
-def interactive_region_from_dict(region: Dict[str, Any]):
-```
-
-Create an :class:`InteractiveRegion` object from a dictionary.
-
-<a id="camel.toolkits.async_browser_toolkit.visual_viewport_from_dict"></a>
-
-## visual_viewport_from_dict
-
-```python
-def visual_viewport_from_dict(viewport: Dict[str, Any]):
-```
-
-Create a :class:`VisualViewport` object from a dictionary.
-
-<a id="camel.toolkits.async_browser_toolkit.add_set_of_mark"></a>
-
-## add_set_of_mark
-
-```python
-def add_set_of_mark(
-    screenshot: Union[bytes, Image.Image, io.BufferedIOBase],
-    ROIs: Dict[str, InteractiveRegion]
-):
-```
-
-<a id="camel.toolkits.async_browser_toolkit._add_set_of_mark"></a>
-
-## _add_set_of_mark
-
-```python
-def _add_set_of_mark(screenshot: Image.Image, ROIs: Dict[str, InteractiveRegion]):
-```
-
-Add a set of marks to the screenshot.
-
-**Parameters:**
-
-- **screenshot** (Image.Image): The screenshot to add marks to.
-- **ROIs** (Dict[str, InteractiveRegion]): The regions to add marks to.
-
-**Returns:**
-
-  Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
-containing the screenshot with marked ROIs, ROIs fully within the
-images, ROIs located above the visible area, and ROIs located below
-the visible area.
-
-<a id="camel.toolkits.async_browser_toolkit._draw_roi"></a>
-
-## _draw_roi
-
-```python
-def _draw_roi(
-    draw: ImageDraw.ImageDraw,
-    idx: int,
-    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
-    rect: DOMRectangle
-):
-```
-
-Draw a ROI on the image.
-
-**Parameters:**
-
-- **draw** (ImageDraw.ImageDraw): The draw object.
-- **idx** (int): The index of the ROI.
-- **font** (ImageFont.FreeTypeFont | ImageFont.ImageFont): The font.
-- **rect** (DOMRectangle): The DOM rectangle.
-
-<a id="camel.toolkits.async_browser_toolkit._get_text_color"></a>
-
-## _get_text_color
-
-```python
-def _get_text_color(bg_color: Tuple[int, int, int, int]):
-```
-
-Determine the ideal text color (black or white) for contrast.
-
-**Parameters:**
-
-- **bg_color**: The background color (R, G, B, A).
-
-**Returns:**
-
-  A tuple representing black or white color for text.
-
-<a id="camel.toolkits.async_browser_toolkit._get_random_color"></a>
-
-## _get_random_color
-
-```python
-def _get_random_color(identifier: int):
-```
-
-Generate a consistent random RGBA color based on the identifier.
-
-**Parameters:**
-
-- **identifier**: The ID used as a seed to ensure color consistency.
-
-**Returns:**
-
-  A tuple representing (R, G, B, A) values.
 
 <a id="camel.toolkits.async_browser_toolkit.AsyncBaseBrowser"></a>
 
@@ -206,7 +37,8 @@ def __init__(
     headless = True,
     cache_dir: Optional[str] = None,
     channel: Literal['chrome', 'msedge', 'chromium'] = 'chromium',
-    cookie_json_path: Optional[str] = None
+    cookie_json_path: Optional[str] = None,
+    user_data_dir: Optional[str] = None
 ):
 ```
 
@@ -217,7 +49,8 @@ Initialize the asynchronous browser core.
 - **headless** (bool): Whether to run the browser in headless mode.
 - **cache_dir** (Union[str, None]): The directory to store cache files.
 - **channel** (`Literal["chrome", "msedge", "chromium"]`): The browser channel to use. Must be one of "chrome", "msedge", or "chromium".
-- **cookie_json_path** (Optional[str]): Path to a JSON file containing authentication cookies and browser storage state. If provided and the file exists, the browser will load this state to maintain authenticated sessions without requiring manual login.
+- **cookie_json_path** (Optional[str]): Path to a JSON file containing authentication cookies and browser storage state. If provided and the file exists, the browser will load this state to maintain authenticated sessions. This is primarily used when `user_data_dir` is not set.
+- **user_data_dir** (Optional[str]): The directory to store user data for persistent context. If None, a fresh browser instance is used without saving data. (default: :obj:`None`)
 
 **Returns:**
 
@@ -575,7 +408,8 @@ def __init__(
     web_agent_model: Optional[BaseModelBackend] = None,
     planning_agent_model: Optional[BaseModelBackend] = None,
     output_language: str = 'en',
-    cookie_json_path: Optional[str] = None
+    cookie_json_path: Optional[str] = None,
+    user_data_dir: Optional[str] = None
 ):
 ```
 
@@ -591,6 +425,7 @@ Initialize the BrowserToolkit instance.
 - **planning_agent_model** (Optional[BaseModelBackend]): The model backend for the planning agent.
 - **output_language** (str): The language to use for output. (default: :obj:`"en`")
 - **cookie_json_path** (Optional[str]): Path to a JSON file containing authentication cookies and browser storage state. If provided and the file exists, the browser will load this state to maintain authenticated sessions without requiring manual login. (default: :obj:`None`)
+- **user_data_dir** (Optional[str]): The directory to store user data for persistent context. (default: :obj:`"user_data_dir/"`)
 
 <a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._reset"></a>
 
@@ -608,51 +443,7 @@ def _reset(self):
 def _initialize_agent(self):
 ```
 
-Initialize the agent.
-
-<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._get_final_answer"></a>
-
-### _get_final_answer
-
-```python
-def _get_final_answer(self, task_prompt: str):
-```
-
-Get the final answer based on the task prompt and current browser
-state. It is used when the agent thinks that the task can be completed
-without any further action, and answer can be directly found in the
-current viewport.
-
-<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._task_planning"></a>
-
-### _task_planning
-
-```python
-def _task_planning(self, task_prompt: str, start_url: str):
-```
-
-Plan the task based on the given task prompt.
-
-<a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit._task_replanning"></a>
-
-### _task_replanning
-
-```python
-def _task_replanning(self, task_prompt: str, detailed_plan: str):
-```
-
-Replan the task based on the given task prompt.
-
-**Parameters:**
-
-- **task_prompt** (str): The original task prompt.
-- **detailed_plan** (str): The detailed plan to replan.
-
-**Returns:**
-
-  Tuple[bool, str]: A tuple containing a boolean indicating
-whether the task needs to be replanned, and the replanned
-schema.
+Initialize the planning and web agents.
 
 <a id="camel.toolkits.async_browser_toolkit.AsyncBrowserToolkit.get_tools"></a>
 

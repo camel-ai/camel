@@ -358,6 +358,7 @@ def parse_docstring(docstring):
             'returns': '',
             'raises': [],
             'examples': [],
+            'notes': [],
         }
 
     lines = docstring.strip().split('\n')
@@ -367,6 +368,7 @@ def parse_docstring(docstring):
         'returns': '',
         'raises': [],
         'examples': [],
+        'notes': [],
     }
 
     current_section = 'description'
@@ -377,7 +379,7 @@ def parse_docstring(docstring):
 
         # Check for section headers
         if line.lower().startswith(
-            ('args:', 'arguments:', 'parameters:', 'param:')
+            ('args:', 'arguments:', 'parameters:', 'param:', 'attributes:')
         ):
             if current_lines and current_section == 'description':
                 result['description'] = '\n'.join(current_lines).strip()
@@ -410,6 +412,24 @@ def parse_docstring(docstring):
                     )
             current_section = 'examples'
             current_lines = []
+        elif line.lower().startswith(
+            ('note:', 'notes:', 'warning:', 'warnings:')
+        ):
+            if current_lines:
+                if current_section == 'args':
+                    result['args'].extend(parse_args_section(current_lines))
+                elif current_section == 'returns':
+                    result['returns'] = '\n'.join(current_lines).strip()
+                elif current_section == 'raises':
+                    result['raises'].extend(
+                        parse_raises_section(current_lines)
+                    )
+                elif current_section == 'examples':
+                    result['examples'] = current_lines
+                elif current_section == 'description':
+                    result['description'] = '\n'.join(current_lines).strip()
+            current_section = 'notes'
+            current_lines = []
         else:
             current_lines.append(line)
 
@@ -425,6 +445,8 @@ def parse_docstring(docstring):
             result['raises'].extend(parse_raises_section(current_lines))
         elif current_section == 'examples':
             result['examples'] = current_lines
+        elif current_section == 'notes':
+            result['notes'] = current_lines
 
     return result
 
@@ -867,6 +889,14 @@ def generate_class_docs(class_node, module_name):
                 )
             lines.append("")
 
+        if doc_info.get('notes'):
+            lines.append('**Note:**')
+            lines.append("")
+            lines.extend(
+                [escape_mdx_content(line) for line in doc_info['notes']]
+            )
+            lines.append("")
+
     # Process methods
     for node in class_node.body:
         if isinstance(node, ast.FunctionDef):
@@ -944,6 +974,14 @@ def generate_function_docs(func_node, module_name):
                 )
             lines.append("")
 
+        if doc_info.get('notes'):
+            lines.append('**Note:**')
+            lines.append("")
+            lines.extend(
+                [escape_mdx_content(line) for line in doc_info['notes']]
+            )
+            lines.append("")
+
     return lines
 
 
@@ -1006,6 +1044,14 @@ def generate_method_docs(method_node, class_name, module_name):
             lines.append("")
             escaped_returns = escape_mdx_content(doc_info['returns'])
             lines.append(f"  {escaped_returns}")
+            lines.append("")
+
+        if doc_info.get('notes'):
+            lines.append('**Note:**')
+            lines.append("")
+            lines.extend(
+                [escape_mdx_content(line) for line in doc_info['notes']]
+            )
             lines.append("")
 
     return lines

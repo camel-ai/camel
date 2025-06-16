@@ -14,19 +14,70 @@
 
 import re
 from enum import Enum
-from typing import Callable, Dict, List, Literal, Optional, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 
+# Note: validate_task_content moved here to avoid circular imports
 from .task_prompt import (
     TASK_COMPOSE_PROMPT,
     TASK_DECOMPOSE_PROMPT,
     TASK_EVOLVE_PROMPT,
 )
+
+logger = get_logger(__name__)
+
+
+def validate_task_content(
+    content: str, task_id: str = "unknown", min_length: int = 10
+) -> bool:
+    r"""Validates task result content to avoid silent failures.
+    It performs basic checks to ensure the content meets minimum
+    quality standards.
+
+    Args:
+        content (str): The task result content to validate.
+        task_id (str): Task ID for logging purposes.
+            (default: :obj:`"unknown"`)
+        min_length (int): Minimum content length after stripping whitespace.
+            (default: :obj:`10`)
+
+    Returns:
+        bool: True if content passes validation, False otherwise.
+    """
+    # 1: Content must not be None
+    if content is None:
+        logger.warning(f"Task {task_id}: None content rejected")
+        return False
+
+    # 2: Content must not be empty after stripping whitespace
+    stripped_content = content.strip()
+    if not stripped_content:
+        logger.warning(
+            f"Task {task_id}: Empty or whitespace-only content rejected."
+        )
+        return False
+
+    # 3: Content must meet minimum meaningful length
+    if len(stripped_content) < min_length:
+        logger.warning(
+            f"Task {task_id}: Content too short ({len(stripped_content)} "
+            f"chars < {min_length} minimum). Content preview: "
+            f"'{stripped_content[:50]}...'"
+        )
+        return False
+
+    # All validation checks passed
+    logger.debug(
+        f"Task {task_id}: Content validation passed "
+        f"({len(stripped_content)} chars)"
+    )
+    return True
 
 
 def parse_response(
@@ -49,7 +100,16 @@ def parse_response(
     if task_id is None:
         task_id = "0"
     for i, content in enumerate(tasks_content):
-        tasks.append(Task(content=content.strip(), id=f"{task_id}.{i}"))
+        stripped_content = content.strip()
+        # validate subtask content before creating the task
+        if validate_task_content(stripped_content, f"{task_id}.{i}"):
+            tasks.append(Task(content=stripped_content, id=f"{task_id}.{i}"))
+        else:
+            logger.warning(
+                f"Skipping invalid subtask {task_id}.{i} "
+                f"during decomposition: "
+                f"Content '{stripped_content[:50]}...' failed validation"
+            )
     return tasks
 
 
@@ -69,14 +129,23 @@ class Task(BaseModel):
     r"""Task is specific assignment that can be passed to a agent.
 
     Attributes:
-        content: string content for task.
-        id: An unique string identifier for the task. This should
-        ideally be provided by the provider/model which created the task.
-        state: The state which should be OPEN, RUNNING, DONE or DELETED.
-        type: task type
-        parent: The parent task, None for root task.
-        subtasks: The childrent sub-tasks for the task.
-        result: The answer for the task.
+        content (str): string content for task.
+        id (str): An unique string identifier for the task. This should
+            ideally be provided by the provider/model which created the task.
+            (default: :obj: `""`)
+        state (TaskState): The state which should be OPEN, RUNNING, DONE or
+            DELETED. (default: :obj: `TaskState.OPEN`)
+        type (Optional[str]): task type. (default: :obj: `None`)
+        parent (Optional[Task]): The parent task, None for root task.
+            (default: :obj: `None`)
+        subtasks (List[Task]): The childrent sub-tasks for the task.
+            (default: :obj: `[]`)
+        result (Optional[str]): The answer for the task.
+            (default: :obj: `""`)
+        failure_count (int): The failure count for the task.
+            (default: :obj: `0`)
+        additional_info (Optional[Dict[str, Any]]): Additional information for
+            the task. (default: :obj: `None`)
     """
 
     content: str
@@ -95,7 +164,15 @@ class Task(BaseModel):
 
     failure_count: int = 0
 
-    additional_info: Optional[str] = None
+    additional_info: Optional[Dict[str, Any]] = None
+
+    def __repr__(self) -> str:
+        r"""Return a string representation of the task."""
+        content_preview = self.content
+        return (
+            f"Task(id='{self.id}', content='{content_preview}', "
+            f"state='{self.state.value}')"
+        )
 
     @classmethod
     def from_message(cls, message: BaseMessage) -> "Task":

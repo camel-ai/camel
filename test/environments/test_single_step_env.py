@@ -25,6 +25,8 @@ from camel.environments import (
 from camel.environments.single_step import SingleStepEnv
 from camel.verifiers.models import VerificationOutcome, VerificationResult
 
+pytestmark = pytest.mark.heavy_dependency
+
 
 class MockSingleStepEnv(SingleStepEnv):
     async def _compute_custom_reward(

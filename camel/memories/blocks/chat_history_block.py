@@ -73,7 +73,6 @@ class ChatHistoryBlock(MemoryBlock):
             warnings.warn("The `ChatHistoryMemory` is empty.")
             return list()
 
-        chat_records: List[MemoryRecord] = []
         if window_size is not None and window_size >= 0:
             # Initial preserved index: Keep first message
             # if it's SYSTEM/DEVELOPER (index 0)
@@ -117,7 +116,7 @@ class ChatHistoryBlock(MemoryBlock):
             # Return full records when no window restriction
             final_records = record_dicts
 
-        chat_records = [
+        chat_records: List[MemoryRecord] = [
             MemoryRecord.from_dict(record) for record in final_records
         ]
 
