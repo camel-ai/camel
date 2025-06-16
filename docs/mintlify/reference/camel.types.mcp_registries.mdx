@@ -20,12 +20,11 @@ class BaseMCPRegistryConfig(BaseModel):
 
 Base configuration for an MCP registry.
 
-Attributes:
-type (MCPRegistryType): The type of the registry.
-os (Literal["darwin", "linux", "windows"]): The operating system. It
-is automatically set to "darwin" for MacOS, "linux" for Linux, and
-"windows" for Windows.
-api_key (Optional[str]): API key for the registry.
+**Parameters:**
+
+- **type** (MCPRegistryType): The type of the registry.
+- **os** (`Literal["darwin", "linux", "windows"]`): The operating system. It is automatically set to "darwin" for MacOS, "linux" for Linux, and "windows" for Windows.
+- **api_key** (Optional[str]): API key for the registry.
 
 <a id="camel.types.mcp_registries.BaseMCPRegistryConfig.get_config"></a>
 

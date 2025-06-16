@@ -35,6 +35,7 @@ from camel.utils import OpenAITokenCounter
         ModelType.O1_MINI,
         ModelType.GPT_4_5_PREVIEW,
         ModelType.O3,
+        ModelType.O3_PRO,
         ModelType.O3_MINI,
         ModelType.O4_MINI,
         ModelType.GPT_4_1,

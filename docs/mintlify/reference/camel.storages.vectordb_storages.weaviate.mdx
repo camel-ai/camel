@@ -48,6 +48,12 @@ This class provides multiple ways to connect to Weaviate instances:
 - **additional_config** (Optional[Any], optional): Advanced configuration options like timeouts. (default: :obj:`None`)
 - **skip_init_checks** (bool, optional): Skip initialization checks. (default: :obj:`False`)
 
+**Note:**
+
+This implementation supports synchronous operations only.
+The client connection is automatically handled and closed when the
+storage instance is destroyed.
+
 <a id="camel.storages.vectordb_storages.weaviate.WeaviateStorage.__init__"></a>
 
 ### __init__
