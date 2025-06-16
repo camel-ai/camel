@@ -29,7 +29,8 @@ class MessageSummarizer:
     """Utility class for generating structured summaries of chat messages.
     
     Args:
-        model (Union[str, ModelType], optional): The model to use for summarization.
+        model (Union[str, ModelType], optional): 
+            The model to use for summarization.
             Defaults to ModelType.DEFAULT.
     """
     
@@ -120,7 +121,10 @@ contextual information",
         }
         
         # Create a Pydantic model from the schema
-        ResponseModel = model_from_json_schema("ResponseModel", response_schema)
+        ResponseModel = model_from_json_schema(
+            "ResponseModel",
+            response_schema
+        )
 
         # Construct prompt from messages
         message_text = "\n".join(
