@@ -14,16 +14,13 @@ This class facilitates the retriever of relevant information using a
 query-based approach, it ranks documents based on the occurrence and
 frequency of the query terms.
 
-Attributes:
-bm25 (BM25Okapi): An instance of the BM25Okapi class used for
-calculating document scores.
-content_input_path (str): The path to the content that has been
-processed and stored.
-unstructured_modules (UnstructuredIO): A module for parsing files and
-URLs and chunking content based on specified parameters.
+**Parameters:**
 
-References:
-https://github.com/dorianbrown/rank_bm25
+- **bm25** (BM25Okapi): An instance of the BM25Okapi class used for calculating document scores.
+- **content_input_path** (str): The path to the content that has been processed and stored.
+- **unstructured_modules** (UnstructuredIO): A module for parsing files and URLs and chunking content based on specified parameters.
+- **References**: 
+- **https**: //github.com/dorianbrown/rank_bm25
 
 <a id="camel.retrievers.bm25_retriever.BM25Retriever.__init__"></a>
 

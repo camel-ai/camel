@@ -69,7 +69,9 @@ connectionmanagement.
 - **config** (Union[ServerConfig, Dict[str, Any]]): Server configuration as either a :obj:`ServerConfig` object or a dictionary that will be converted to a :obj:`ServerConfig`. The configuration determines the transport type and connection parameters.
 - **client_info** (Optional[types.Implementation], optional): Client implementation information to send to the server during initialization. (default: :obj:`None`)
 - **timeout** (Optional[float], optional): Timeout for waiting for messages from the server in seconds. (default: :obj:`10.0`)
-- **strict** (Optional[bool], optional): Strict mode for generating FunctionTool objects. (default: :obj:`False`)
+- **config** (ServerConfig): The server configuration object.
+- **client_info** (Optional[types.Implementation]): Client implementation information.
+- **read_timeout_seconds** (timedelta): Timeout for reading from the server.
 
 <a id="camel.utils.mcp_client.MCPClient.__init__"></a>
 
@@ -80,8 +82,7 @@ def __init__(
     self,
     config: Union[ServerConfig, Dict[str, Any]],
     client_info: Optional[types.Implementation] = None,
-    timeout: Optional[float] = 10.0,
-    strict: Optional[bool] = False
+    timeout: Optional[float] = 10.0
 ):
 ```
 
@@ -182,7 +183,8 @@ def get_tools(self):
 representing the available tools from the MCP server. Returns
 an empty list if the client is not connected.
 
-Note:
+**Note:**
+
 This method requires an active connection to the MCP server.
 If the client is not connected, an empty list will be returned.
 
@@ -234,7 +236,7 @@ as it handles configuration validation and type conversion automatically.
 **Parameters:**
 
 - **config** (Union[Dict[str, Any], ServerConfig]): Server configuration as either a dictionary or a :obj:`ServerConfig` object. If a dictionary is provided, it will be automatically converted to
-- **a**: obj:`ServerConfig`. **kwargs: Additional keyword arguments passed to the :obj:`MCPClient` constructor, such as :obj:`client_info`, :obj:`timeout`, and :obj:`strict`.
+- **a**: obj:`ServerConfig`. **kwargs: Additional keyword arguments passed to the :obj:`MCPClient` constructor, such as :obj:`client_info`, :obj:`timeout`.
 
 **Returns:**
 
