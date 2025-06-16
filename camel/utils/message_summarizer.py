@@ -37,7 +37,7 @@ class MessageSummarizer:
         self,
         model: Optional[Union[str, ModelType]] = None,
     ):
-        self.model = model or ModelType.GPT_3_5_TURBO
+        self.model = model or ModelType.GPT_4O_MINI
         self.agent = ChatAgent(
             system_message="""You are a skilled conversation summarizer. 
             Your task is to analyze chat messages and create structured summaries that capture:
@@ -63,6 +63,16 @@ class MessageSummarizer:
         Raises:
             ValueError: If the model's response cannot be parsed as valid JSON
         """
+        # When messages is empty
+        if len(messages) == 0:
+            return SummarySchema(
+                roles=[],
+                key_entities=[],
+                decisions=[],
+                task_progress="",
+                context=""
+            )
+        
         # Define the expected response schema
         response_schema = {
             "type": "object",
@@ -119,6 +129,10 @@ Your response must be a JSON object with these fields:
         )
         try:
             # The response should already be validated by the model
-            return SummarySchema(**response.content)
+            # return SummarySchema(**response.msg.content)
+            content = response.msg.content
+            if isinstance(content, str):
+                content = json.loads(content)
+            return SummarySchema(**content)
         except Exception as e:
             raise ValueError(f"Response validation failed: {str(e)}")

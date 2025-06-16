@@ -1,119 +1,125 @@
-"""Test cases for the MessageSummarizer class."""
+import pytest
+from typing import List
 
-import unittest
-from unittest.mock import Mock, patch
 from camel.messages import BaseMessage
-from camel.types import RoleType, ModelType
+from camel.types import ModelType, RoleType
 from camel.utils.message_summarizer import MessageSummarizer, SummarySchema
 
 
-class TestMessageSummarizer(unittest.TestCase):
-    """Test cases for MessageSummarizer."""
-
-    @patch('camel.agents.ChatAgent')
-    def test_summarize(self, mock_chat_agent_class):
-        """Test the summarize method."""
-        # Mock the ChatAgent response
-        mock_response = Mock()
-        mock_response.content = {
-            "roles": ["USER", "ASSISTANT"],
-            "key_entities": ["web application", "React", "Node.js", "task management", "Create React App"],
-            "decisions": ["Use React for frontend", "Use Node.js for backend"],
-            "task_progress": "Setting up the initial project structure",
-            "context": "Planning a web application development project"
-        }
-        mock_agent = Mock()
-        mock_agent.step.return_value = mock_response
-        mock_chat_agent_class.return_value = mock_agent
-
-        # Create test messages
-        messages = [
-            BaseMessage(
-                role_name="USER",
-                role_type=RoleType.USER,
-                meta_dict={},
-                content="I want to build a web application for task management."
-            ),
-            BaseMessage(
-                role_name="ASSISTANT",
-                role_type=RoleType.ASSISTANT,
-                meta_dict={},
-                content="I'll help you create a task management web app. We should use React for the frontend and Node.js for the backend."
-            ),
-            BaseMessage(
-                role_name="USER",
-                role_type=RoleType.USER,
-                meta_dict={},
-                content="Great! Let's start with setting up the React project."
-            ),
-            BaseMessage(
-                role_name="ASSISTANT",
-                role_type=RoleType.ASSISTANT,
-                meta_dict={},
-                content="We can use Create React App to set up the project. First, we'll need to install Node.js and npm."
-            )
-        ]
-
-        # Initialize summarizer
-        summarizer = MessageSummarizer()
-
-        # Generate summary
-        summary = summarizer.summarize(messages)
-
-        # Verify ChatAgent was called correctly
-        mock_agent.step.assert_called_once()
-        call_args = mock_agent.step.call_args[0]
-        self.assertIn("Please analyze these messages", call_args[0])  # Check prompt
-        self.assertIn("task management", call_args[0])  # Check message content
-        
-        # Verify summary structure
-        self.assertIsInstance(summary, SummarySchema)
-        self.assertIsInstance(summary.roles, list)
-        self.assertIsInstance(summary.key_entities, list)
-        self.assertIsInstance(summary.decisions, list)
-        self.assertIsInstance(summary.task_progress, str)
-        self.assertIsInstance(summary.context, str)
-
-        # Verify content
-        self.assertIn("USER", summary.roles)
-        self.assertIn("ASSISTANT", summary.roles)
-        self.assertIn("web application", summary.key_entities)
-        self.assertIn("React", summary.key_entities)
-        self.assertIn("Node.js", summary.key_entities)
-        self.assertIn("task management", summary.key_entities)
-        self.assertIn("Create React App", summary.key_entities)
-        self.assertIn("setting up", summary.task_progress.lower())
-        self.assertGreater(len(summary.decisions), 0)
-
-    @patch('camel.agents.ChatAgent')
-    def test_summarize_invalid_response(self, mock_chat_agent_class):
-        """Test the summarize method with invalid response."""
-        # Mock the ChatAgent with invalid response
-        mock_response = Mock()
-        mock_response.content = {
-            "invalid": "response"
-        }
-        mock_agent = Mock()
-        mock_agent.step.return_value = mock_response
-        mock_chat_agent_class.return_value = mock_agent
-
-        # Create test message
-        messages = [
-            BaseMessage(
-                role_name="USER",
-                role_type=RoleType.USER,
-                meta_dict={},
-                content="Test message"
-            )
-        ]
-
-        # Initialize summarizer
-        summarizer = MessageSummarizer()
-
-        # Verify that invalid response raises ValueError
-        with self.assertRaises(ValueError):
-            summarizer.summarize(messages)
+@pytest.fixture
+def sample_messages() -> List[BaseMessage]:
+    """Create a list of sample messages for testing."""
+    return [
+        BaseMessage.make_user_message(
+            role_name="User",
+            content="I want to build a web application using Python and Flask.",
+        ),
+        BaseMessage.make_assistant_message(
+            role_name="Assistant",
+            content="Great choice! Flask is a lightweight web framework. Let's start by setting up the basic project structure.",
+        ),
+        BaseMessage.make_user_message(
+            role_name="User",
+            content="What are the key components we need?",
+        ),
+        BaseMessage.make_assistant_message(
+            role_name="Assistant",
+            content="We'll need: 1) Flask for the web framework, 2) SQLAlchemy for database ORM, 3) HTML templates, and 4) CSS for styling.",
+        ),
+    ]
 
 
-if __name__ == '__main__':
-    unittest.main()
+def test_message_summarizer_initialization():
+    """Test the initialization of MessageSummarizer."""
+    # Test with default model
+    summarizer = MessageSummarizer()
+    assert summarizer.model == ModelType.GPT_4O_MINI
+
+    # Test with custom model
+    custom_model = ModelType.GPT_4_1_MINI
+    summarizer = MessageSummarizer(model=custom_model)
+    assert summarizer.model == custom_model
+
+
+def test_summarize_messages(sample_messages: List[BaseMessage]):
+    """Test the summarize method with sample messages."""
+    summarizer = MessageSummarizer()
+    summary = summarizer.summarize(sample_messages)
+    print(f"\n~~Summary1: {summary}")
+
+    # Verify the summary structure
+    assert isinstance(summary, SummarySchema)
+    assert isinstance(summary.roles, list)
+    assert isinstance(summary.key_entities, list)
+    assert isinstance(summary.decisions, list)
+    assert isinstance(summary.task_progress, str)
+    assert isinstance(summary.context, str)
+
+    # Verify content
+    assert len(summary.roles) > 0
+    assert len(summary.key_entities) > 0
+    assert len(summary.decisions) > 0
+    assert len(summary.task_progress) > 0
+    assert len(summary.context) > 0
+
+    # Verify specific content based on sample messages
+    assert "User" in summary.roles
+    assert "Assistant" in summary.roles
+    assert any("Flask" in entity for entity in summary.key_entities)
+
+
+def test_summarize_empty_messages():
+    """Test summarizing an empty list of messages."""
+    summarizer = MessageSummarizer()
+    summary = summarizer.summarize([])
+    print(f"\n~~Summary2: {summary}")
+
+    assert isinstance(summary, SummarySchema)
+    assert len(summary.roles) == 0
+    assert len(summary.key_entities) == 0
+    assert len(summary.decisions) == 0
+    assert len(summary.task_progress) == 0
+    assert len(summary.context) == 0
+
+
+def test_summarize_single_message():
+    """Test summarizing a single message."""
+    message = BaseMessage.make_user_message(
+        role_name="User",
+        content="Let's build a Python web application.",
+    )
+    summarizer = MessageSummarizer()
+    summary = summarizer.summarize([message])
+    print(f"\n~~Summary3: {summary}")
+    
+    assert isinstance(summary, SummarySchema)
+    assert "User" in summary.roles
+    assert any("Python" in entity for entity in summary.key_entities)
+    assert any("web application" in entity.lower() for entity in summary.key_entities)
+
+
+def test_summarize_with_special_characters():
+    """Test summarizing messages with special characters."""
+    messages = [
+        BaseMessage.make_user_message(
+            role_name="User",
+            content="Let's discuss the project's API endpoints: /api/v1/users and /api/v1/posts",
+        ),
+        BaseMessage.make_assistant_message(
+            role_name="Assistant",
+            content="We'll implement these endpoints using Flask's @app.route decorator.",
+        ),
+    ]
+    summarizer = MessageSummarizer()
+    summary = summarizer.summarize(messages)
+    print(f"\n~~Summary4: {summary}")
+
+    assert isinstance(summary, SummarySchema)
+    assert "User" in summary.roles
+    assert "Assistant" in summary.roles
+    assert any("API" in entity for entity in summary.key_entities)
+    assert any("endpoints" in entity.lower() for entity in summary.key_entities)
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])
