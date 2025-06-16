@@ -70,6 +70,11 @@ class SGLangModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the
+            client initialization. These can include parameters like
+            'organization', 'default_headers', 'http_client', etc.
 
     Reference: https://sgl-project.github.io/backend/openai_api_completions.html
     """
@@ -82,6 +87,8 @@ class SGLangModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = SGLangConfig().as_dict()
@@ -104,15 +111,17 @@ class SGLangModel(BaseModelBackend):
             # Initialize the client if an existing URL is provided
             self._client = OpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=max_retries,
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,
+                **kwargs,
             )
             self._async_client = AsyncOpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=max_retries,
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,
+                **kwargs,
             )
 
     def _start_server(self) -> None:
@@ -178,7 +187,8 @@ class SGLangModel(BaseModelBackend):
                         self.server_process = None
                         self._client = None  # Invalidate the client
                         logging.info(
-                            "Server process terminated due to inactivity."
+                            "Server process terminated due to inactivity.",
+                            timeout=self._timeout,
                         )
                     break
 
@@ -364,7 +374,10 @@ class SGLangModel(BaseModelBackend):
                 _terminate_process(self.server_process)
                 self.server_process = None
                 self._client = None
-                logging.info("Server process terminated during cleanup.")
+                logging.info(
+                    "Server process terminated during cleanup.",
+                    timeout=self._timeout,
+                )
 
 
 # Below are helper functions from sglang.utils

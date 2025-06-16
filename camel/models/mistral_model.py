@@ -80,6 +80,10 @@ class MistralModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -96,6 +100,7 @@ class MistralModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        **kwargs: Any,
     ) -> None:
         from mistralai import Mistral
 
@@ -106,7 +111,13 @@ class MistralModel(BaseModelBackend):
         url = url or os.environ.get("MISTRAL_API_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
+            model_type,
+            model_config_dict,
+            api_key,
+            url,
+            token_counter,
+            timeout,
+            **kwargs,
         )
         self._client = Mistral(
             timeout_ms=int(self._timeout * 1000)
@@ -114,6 +125,7 @@ class MistralModel(BaseModelBackend):
             else None,
             api_key=self._api_key,
             server_url=self._url,
+            **kwargs,
         )
 
     def _to_openai_response(

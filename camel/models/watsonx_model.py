@@ -66,6 +66,8 @@ class WatsonXModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -83,6 +85,7 @@ class WatsonXModel(BaseModelBackend):
         project_id: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        **kwargs: Any,
     ):
         from ibm_watsonx_ai import APIClient, Credentials
         from ibm_watsonx_ai.foundation_models import ModelInference
@@ -103,7 +106,7 @@ class WatsonXModel(BaseModelBackend):
 
         self._project_id = project_id
         credentials = Credentials(api_key=self._api_key, url=self._url)
-        client = APIClient(credentials, project_id=self._project_id)
+        client = APIClient(credentials, project_id=self._project_id, **kwargs)
 
         self._model = ModelInference(
             model_id=self.model_type,
