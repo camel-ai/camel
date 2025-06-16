@@ -357,13 +357,13 @@ class TerminalBenchEnv(MultiStepEnv):
         return bool(self.execution_result.exit_code == 0)
 
     def _download_dataset(self, cache_dir: str) -> None:
-        r"""Downloads the Terminal Bench dataset.
-
-        This method downloads the task folder from the Terminalbench github
-        repository. It uses SVN to avoid cloning the entire repository.
+        r"""Download dataset from terminal bench github repository to cache_dir.
 
         Args:
-            cache_dir (str): The directory for the tasks to be stored in.
+            cache_dir: Directory where the dataset will be cached.
+
+        Returns:
+            None: This method should not return anything.
         """
         if cache_dir is None:
             # default to <current script path>/.cache
