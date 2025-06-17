@@ -17,56 +17,46 @@ from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
-from camel.toolkits import (
-    FunctionTool,
-    GoogleMapsToolkit,
-    SearchToolkit,
-    WeatherToolkit,
-)
+from camel.toolkits import SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
 def main():
-    search_toolkit = SearchToolkit()
-    search_tools = [
-        FunctionTool(search_toolkit.search_google),
-        FunctionTool(search_toolkit.search_duckduckgo),
-    ]
-
-    # Set up web searching agent
-    search_agent_model = ModelFactory.create(
-        model_platform=ModelPlatformType.DEFAULT,
-        model_type=ModelType.DEFAULT,
-    )
+    # 1. Set up a Research agent with search tools
     search_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
-            role_name="Web searching agent",
-            content="You can search online for information",
+            role_name="Research Specialist",
+            content="You are a research specialist who excels at finding and "
+            "gathering information from the web.",
         ),
-        model=search_agent_model,
-        tools=[*search_tools, *WeatherToolkit().get_tools()],
-    )
-
-    # Set up tour guide agent
-    tour_guide_agent_model = ModelFactory.create(
-        model_platform=ModelPlatformType.DEFAULT,
-        model_type=ModelType.DEFAULT,
-    )
-
-    tour_guide_agent = ChatAgent(
-        BaseMessage.make_assistant_message(
-            role_name="Tour guide",
-            content="You are a tour guide",
+        model=ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
         ),
-        model=tour_guide_agent_model,
-        tools=GoogleMapsToolkit().get_tools(),
+        tools=[SearchToolkit().search_wiki],
     )
 
-    # Set up traveler agent
-    traveler_agent = ChatAgent(
-        BaseMessage.make_assistant_message(
-            role_name="Traveler",
-            content="You can ask questions about your travel plans",
+    # 2. Set up an Analyst agent
+    analyst_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Business Analyst",
+            content="You are an expert business analyst. Your job is "
+            "to analyze research findings, identify key insights, "
+            "opportunities, and challenges.",
+        ),
+        model=ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        ),
+    )
+
+    # 3. Set up a Writer agent
+    writer_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Report Writer",
+            content="You are a professional report writer. You take "
+            "analytical insights and synthesize them into a clear, "
+            "concise, and well-structured final report.",
         ),
         model=ModelFactory.create(
             model_platform=ModelPlatformType.DEFAULT,
@@ -75,24 +65,29 @@ def main():
     )
 
     workforce = Workforce(
-        'A travel group',
-        graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
+        'Business Analysis Team',
+        graceful_shutdown_timeout=30.0,
     )
 
     workforce.add_single_agent_worker(
-        "A tour guide",
-        worker=tour_guide_agent,
+        "A researcher who can search online for information.",
+        worker=search_agent,
     ).add_single_agent_worker(
-        "A traveler", worker=traveler_agent
+        "An analyst who can process research findings.", worker=analyst_agent
     ).add_single_agent_worker(
-        "An agent who can do online searches", worker=search_agent
+        "A writer who can create a final report from the analysis.",
+        worker=writer_agent,
     )
 
     # specify the task to be solved
     human_task = Task(
         content=(
-            "Plan a one-week trip to Paris, considering some historical places"
-            " to visit and weather conditions."
+            "Conduct a comprehensive market analysis for launching a new "
+            "electric scooter in Berlin. The analysis should cover: "
+            "1. Current market size and key competitors. "
+            "2. Target audience and their preferences. "
+            "3. Local regulations and potential challenges. "
+            "Finally, synthesize all findings into a summary report."
         ),
         id='0',
     )
