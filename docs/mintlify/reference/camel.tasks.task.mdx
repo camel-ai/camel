@@ -251,7 +251,7 @@ Get task result to a string.
 ```python
 def decompose(
     self,
-    agent: ChatAgent,
+    agent: 'ChatAgent',
     prompt: Optional[str] = None,
     task_parser: Callable[[str, str], List['Task']] = parse_response
 ):
@@ -277,7 +277,7 @@ generation and planner of agent.
 ```python
 def compose(
     self,
-    agent: ChatAgent,
+    agent: 'ChatAgent',
     template: TextPrompt = TASK_COMPOSE_PROMPT,
     result_parser: Optional[Callable[[str], str]] = None
 ):
@@ -412,7 +412,7 @@ self.tasks and self.task_map will be updated by the input tasks.
 def evolve(
     self,
     task: Task,
-    agent: ChatAgent,
+    agent: 'ChatAgent',
     template: Optional[TextPrompt] = None,
     task_parser: Optional[Callable[[str, str], List[Task]]] = None
 ):

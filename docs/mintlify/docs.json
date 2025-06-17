@@ -157,7 +157,8 @@
               {
                 "group": "MCP",
                 "pages": [
-                  "cookbooks/mcp/agents_with_sql_mcp"
+                  "cookbooks/mcp/agents_with_sql_mcp",
+                  "cookbooks/mcp/camel_aci_mcp_cookbook"
                 ]
               }
             ]
@@ -402,7 +403,8 @@
               "reference/camel.societies.workforce.task_channel",
               "reference/camel.societies.workforce.utils",
               "reference/camel.societies.workforce.worker",
-              "reference/camel.societies.workforce.workforce"
+              "reference/camel.societies.workforce.workforce",
+              "reference/camel.societies.workforce.workforce_logger"
             ]
           },
           {
