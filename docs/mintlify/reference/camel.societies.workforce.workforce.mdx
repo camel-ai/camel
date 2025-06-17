@@ -231,18 +231,19 @@ Get the information of all the child nodes under this node.
 ### _find_assignee
 
 ```python
-def _find_assignee(self, task: Task):
+def _find_assignee(self, tasks: List[Task]):
 ```
 
-Assigns a task to a worker node with the best capability.
+Assigns multiple tasks to worker nodes with the best capabilities.
 
 **Parameters:**
 
-- **task** (Task): The task to be assigned.
+- **tasks** (List[Task]): The tasks to be assigned.
 
 **Returns:**
 
-  str: ID of the worker node to be assigned.
+  TaskAssignResult: Assignment result containing task assignments
+with their dependencies.
 
 <a id="camel.societies.workforce.workforce.Workforce._create_worker_node_for_task"></a>
 
