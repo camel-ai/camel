@@ -30,6 +30,8 @@ def __init__(
     main_task: Optional[Task] = None,
     pending_tasks: Optional[Deque[Task]] = None,
     completed_tasks: Optional[List[Task]] = None,
+    task_dependencies: Optional[Dict[str, List[str]]] = None,
+    assignees: Optional[Dict[str, str]] = None,
     current_task_index: int = 0,
     description: str = ''
 ):
@@ -149,6 +151,11 @@ def pause(self):
 ```
 
 Pause the workforce execution.
+If the internal event-loop is already running we schedule the
+asynchronous pause coroutine onto it.  When the loop has not yet
+been created (e.g. the caller presses the hot-key immediately after
+workforce start-up) we fall back to a synchronous state change so
+that no tasks will be scheduled until the loop is ready.
 
 <a id="camel.societies.workforce.workforce.Workforce.resume"></a>
 
@@ -158,7 +165,7 @@ Pause the workforce execution.
 def resume(self):
 ```
 
-Resume the paused workforce execution.
+Resume execution after a manual pause.
 
 <a id="camel.societies.workforce.workforce.Workforce.stop_gracefully"></a>
 
@@ -168,7 +175,12 @@ Resume the paused workforce execution.
 def stop_gracefully(self):
 ```
 
-Request graceful stop of the workforce.
+Request workforce to finish current in-flight work then halt.
+
+Works both when the internal event-loop is alive and when it has not
+yet been started.  In the latter case we simply mark the stop flag so
+that the loop (when it eventually starts) will exit immediately after
+initialisation.
 
 <a id="camel.societies.workforce.workforce.Workforce.save_snapshot"></a>
 
@@ -229,7 +241,7 @@ def add_task(
     self,
     content: str,
     task_id: Optional[str] = None,
-    additional_info: str = '',
+    additional_info: Optional[Dict[str, Any]] = None,
     insert_position: int = -1
 ):
 ```
@@ -294,9 +306,8 @@ Get current workforce status for human review.
 def process_task(self, task: Task):
 ```
 
-The main entry point for the workforce to process a task. It will
-start the workforce and all the child nodes under it, process the
-task provided and return the updated task.
+Synchronous wrapper for process_task that handles async operations
+internally.
 
 **Parameters:**
 
@@ -306,16 +317,16 @@ task provided and return the updated task.
 
   Task: The updated task.
 
-<a id="camel.societies.workforce.workforce.Workforce.process_task_with_intervention"></a>
+<a id="camel.societies.workforce.workforce.Workforce._process_task_with_intervention"></a>
 
-### process_task_with_intervention
+### _process_task_with_intervention
 
 ```python
-def process_task_with_intervention(self, task: Task):
+def _process_task_with_intervention(self, task: Task):
 ```
 
-Process task with human intervention support. This creates and manages
-its own event loop to allow for pausing/resuming functionality.
+Process task with human intervention support. This creates and
+manages its own event loop to allow for pausing/resuming functionality.
 
 **Parameters:**
 
@@ -335,7 +346,8 @@ def continue_from_pause(self):
 
 **Returns:**
 
-  Optional[Task]: The completed task if execution finishes, None if still running/paused.
+  Optional[Task]: The completed task if execution finishes, None if
+still running/paused.
 
 <a id="camel.societies.workforce.workforce.Workforce.add_single_agent_worker"></a>
 
@@ -519,6 +531,16 @@ Dumps all collected logs to a JSON file.
 **Parameters:**
 
 - **file_path** (str): The path to the JSON file.
+
+<a id="camel.societies.workforce.workforce.Workforce._submit_coro_to_loop"></a>
+
+### _submit_coro_to_loop
+
+```python
+def _submit_coro_to_loop(self, coro: 'Coroutine'):
+```
+
+Thread-safe submission of coroutine to the workforce loop.
 
 <a id="camel.societies.workforce.workforce.Workforce.stop"></a>
 
