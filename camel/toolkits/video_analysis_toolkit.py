@@ -58,7 +58,6 @@ class LazyLoader(types.ModuleType):
     def __dir__(self):
         return dir(self._load())
 
-# 仅替换主要模块名，避免别名冲突
 sys.modules["cv2"] = LazyLoader("cv2", "cv2")
 sys.modules["numpy"] = LazyLoader("numpy", "numpy")
 
@@ -312,14 +311,10 @@ class VideoAnalysisToolkit(BaseToolkit):
         Returns:
             str: Extracted text from the frame.
         """
-        if not self._check_ocr_dependencies():
-            return ""
-            
         import cv2
         import numpy as np
         import pytesseract
         try:
-            import pytesseract
             
             # Convert to OpenCV format for preprocessing
             cv_image = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
