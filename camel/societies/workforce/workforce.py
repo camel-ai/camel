@@ -41,7 +41,12 @@ from camel.societies.workforce.utils import (
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, validate_task_content
-from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
+from camel.toolkits import (
+    CodeExecutionToolkit,
+    SearchToolkit,
+    TaskPlanningToolkit,
+    ThinkingToolkit,
+)
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required
 
@@ -102,6 +107,7 @@ class Workforce(BaseNode):
 
     Example:
         >>> # Configure with custom model and shared memory
+        >>> import asyncio
         >>> model = ModelFactory.create(
         ...     ModelPlatformType.OPENAI, ModelType.GPT_4O
         ... )
@@ -113,8 +119,11 @@ class Workforce(BaseNode):
         ... )
         >>>
         >>> # Process a task
-        >>> task = Task(content="Research AI trends", id="1")
-        >>> result = workforce.process_task(task)
+        >>> async def main():
+        ...     task = Task(content="Research AI trends", id="1")
+        ...     result = await workforce.process_task(task)
+        ...     return result
+        >>> asyncio.run(main())
     """
 
     def __init__(
@@ -182,14 +191,23 @@ class Workforce(BaseNode):
             "a new worker for a task, etc.",
         )
         self.coordinator_agent = ChatAgent(
-            coord_agent_sys_msg, **(coordinator_agent_kwargs or {})
+            coord_agent_sys_msg,
+            **(coordinator_agent_kwargs or {}),
         )
 
         task_sys_msg = BaseMessage.make_assistant_message(
             role_name="Task Planner",
-            content="You are going to compose and decompose tasks.",
+            content="You are going to compose and decompose tasks. Keep "
+            "tasks that are sequential and require the same type of "
+            "agent together in one agent process. Only decompose tasks "
+            "that can be handled in parallel and require different types "
+            "of agents. This ensures efficient execution by minimizing "
+            "context switching between agents.",
         )
-        self.task_agent = ChatAgent(task_sys_msg, **(task_agent_kwargs or {}))
+        _kwargs = dict(task_agent_kwargs or {})
+        extra_tools = TaskPlanningToolkit().get_tools()
+        _kwargs["tools"] = [*_kwargs.get("tools", []), *extra_tools]
+        self.task_agent = ChatAgent(task_sys_msg, **_kwargs)
 
         # If there is one, will set by the workforce class wrapping this
         self._task: Optional[Task] = None
@@ -351,7 +369,7 @@ class Workforce(BaseNode):
         return subtasks
 
     @check_if_running(False)
-    def process_task(self, task: Task) -> Task:
+    async def process_task(self, task: Task) -> Task:
         r"""The main entry point for the workforce to process a task. It will
         start the workforce and all the child nodes under it, process the
         task provided and return the updated task.
@@ -387,7 +405,7 @@ class Workforce(BaseNode):
 
         self.set_channel(TaskChannel())
 
-        asyncio.run(self.start())
+        await self.start()
 
         if subtasks:
             task.result = "\n\n".join(
@@ -974,7 +992,9 @@ class Workforce(BaseNode):
         workforce_instance = self
 
         # Define functions first
-        def process_task(task_content, task_id=None, additional_info=None):
+        async def process_task(
+            task_content, task_id=None, additional_info=None
+        ):
             r"""Process a task using the workforce.
 
             Args:
@@ -996,7 +1016,8 @@ class Workforce(BaseNode):
                     - message (str): Error message if status is "error"
 
             Example:
-                >>> result = process_task("Analyze market trends", "task_001")
+                >>> result = await process_task("Analyze market trends",
+                "task_001")
                 >>> print(result["status"])  # "success" or "error"
             """
             task = Task(
@@ -1006,7 +1027,7 @@ class Workforce(BaseNode):
             )
 
             try:
-                result_task = workforce_instance.process_task(task)
+                result_task = await workforce_instance.process_task(task)
                 return {
                     "status": "success",
                     "task_id": result_task.id,
