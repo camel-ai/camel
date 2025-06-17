@@ -135,7 +135,7 @@ media_tools = [
     "yt-dlp>=2024.11.4,<2025",
     "ffmpeg-python>=0.2.0,<0.3",
     "scenedetect>=0.6.5.2",
-    "cv2>=4.5",
+    "opencv-python-headless >=4.9.0.80",
 ]
 
 communication_tools = [
