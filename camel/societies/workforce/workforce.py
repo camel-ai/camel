@@ -204,11 +204,10 @@ class Workforce(BaseNode):
             "of agents. This ensures efficient execution by minimizing "
             "context switching between agents.",
         )
-        self.task_agent = ChatAgent(
-            task_sys_msg,
-            **(task_agent_kwargs or {}),
-            tools=[*TaskPlanningToolkit().get_tools()],
-        )
+        _kwargs = dict(task_agent_kwargs or {})
+        extra_tools = TaskPlanningToolkit().get_tools()
+        _kwargs["tools"] = [*_kwargs.get("tools", []), *extra_tools]
+        self.task_agent = ChatAgent(task_sys_msg, **_kwargs)
 
         # If there is one, will set by the workforce class wrapping this
         self._task: Optional[Task] = None
