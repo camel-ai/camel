@@ -435,8 +435,25 @@ class Workforce(BaseNode):
             logger.info(f"Workforce {self.node_id} paused.")
 
     def pause(self) -> None:
-        r"""Pause the workforce execution in a thread-safe manner."""
-        self._submit_coro_to_loop(self._async_pause())
+        r"""Pause the workforce execution.
+        If the internal event-loop is already running we schedule the
+        asynchronous pause coroutine onto it.  When the loop has not yet
+        been created (e.g. the caller presses the hot-key immediately after
+        workforce start-up) we fall back to a synchronous state change so
+        that no tasks will be scheduled until the loop is ready.
+        """
+
+        if self._loop and not self._loop.is_closed():
+            self._submit_coro_to_loop(self._async_pause())
+        else:
+            # Loop not yet created – just mark state so when loop starts it
+            # will proceed.
+            if self._state == WorkforceState.RUNNING:
+                self._state = WorkforceState.PAUSED
+                self._pause_event.clear()
+                logger.info(
+                    f"Workforce {self.node_id} paused (event-loop not yet started)."
+                )
 
     async def _async_resume(self) -> None:
         r"""Async implementation of resume to run on the event loop."""
@@ -450,8 +467,19 @@ class Workforce(BaseNode):
                 await self._post_ready_tasks()
 
     def resume(self) -> None:
-        r"""Resume the paused workforce execution in a thread-safe manner."""
-        self._submit_coro_to_loop(self._async_resume())
+        r"""Resume execution after a manual pause."""
+
+        if self._loop and not self._loop.is_closed():
+            self._submit_coro_to_loop(self._async_resume())
+        else:
+            # Loop not running yet – just mark state so when loop starts it
+            # will proceed.
+            if self._state == WorkforceState.PAUSED:
+                self._state = WorkforceState.RUNNING
+                self._pause_event.set()
+                logger.info(
+                    f"Workforce {self.node_id} resumed (event-loop not yet started)."
+                )
 
     async def _async_stop_gracefully(self) -> None:
         r"""Async implementation of stop_gracefully to run on the event
@@ -463,8 +491,26 @@ class Workforce(BaseNode):
         logger.info(f"Workforce {self.node_id} stop requested.")
 
     def stop_gracefully(self) -> None:
-        r"""Request graceful stop of the workforce in a thread-safe manner."""
-        self._submit_coro_to_loop(self._async_stop_gracefully())
+        r"""Request workforce to finish current in-flight work then halt.
+
+        Works both when the internal event-loop is alive and when it has not
+        yet been started.  In the latter case we simply mark the stop flag so
+        that the loop (when it eventually starts) will exit immediately after
+        initialisation.
+        """
+
+        if self._loop and not self._loop.is_closed():
+            self._submit_coro_to_loop(self._async_stop_gracefully())
+        else:
+            # Loop not yet created – set the flag synchronously so later
+            # startup will respect it.
+            self._stop_requested = True
+            # Ensure any pending pause is released so that when the loop does
+            # start it can see the stop request and exit.
+            self._pause_event.set()
+            logger.info(
+                f"Workforce {self.node_id} stop requested (event-loop not yet started)."
+            )
 
     def save_snapshot(self, description: str = "") -> None:
         r"""Save current state as a snapshot."""
@@ -678,8 +724,7 @@ class Workforce(BaseNode):
         # Delegate to intervention pipeline when requested to keep
         # backward-compat.
         if interactive:
-            # Internally reuse existing advanced pipeline
-            return self._process_task_with_intervention(task)
+            return await self._process_task_with_snapshot(task)
 
         if not validate_task_content(task.content, task.id):
             task.state = TaskState.FAILED
@@ -1000,8 +1045,11 @@ class Workforce(BaseNode):
                 self._async_reset(), self._loop
             ).result()
         else:
-            # If no loop is available, create a new one temporarily
-            asyncio.run(self._async_reset())
+            try:
+                running_loop = asyncio.get_running_loop()
+                running_loop.create_task(self._async_reset())
+            except RuntimeError:
+                asyncio.run(self._async_reset())
 
         if hasattr(self, 'logger') and self.metrics_logger is not None:
             self.metrics_logger.reset_task_data()
@@ -1397,10 +1445,12 @@ class Workforce(BaseNode):
                 break
 
         if not found_and_removed:
-            # If not found in pending, just log it
-            logger.warning(
-                f"{Fore.YELLOW}⚠️ Completed task {task.id} was not in "
-                f"pending queue.{Fore.RESET}"
+            # Task was already removed from pending queue (expected case when
+            # it had been popped immediately after posting).  No need to
+            # draw user attention with a warning; record at debug level.
+            logger.debug(
+                f"Completed task {task.id} was already removed from pending "
+                "queue."
             )
 
         # Archive the task and update dependency tracking
@@ -1671,10 +1721,10 @@ class Workforce(BaseNode):
                     child.description,
                     child.assistant_role_name,
                     child.user_role_name,
+                    child.chat_turn_limit,
                     child.assistant_agent_kwargs,
                     child.user_agent_kwargs,
                     child.summarize_agent_kwargs,
-                    child.chat_turn_limit,
                 )
             elif isinstance(child, Workforce):
                 new_instance.add_workforce(child.clone(with_memory))

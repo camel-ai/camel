@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import threading
 import time
 
@@ -20,26 +21,26 @@ from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
-from camel.toolkits import FileWriteToolkit, MathToolkit
+from camel.toolkits import ThinkingToolkit,FileWriteToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
 def create_simple_workforce():
     """Create a simple workforce for demonstration."""
-    math_toolkit = MathToolkit()
+    thinking_toolkit = ThinkingToolkit()
     file_write_toolkit = FileWriteToolkit()
 
     # Create a simple search agent
-    math_agent = ChatAgent(
+    poet_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
-            role_name="Math Agent",
-            content="You are a math doctor.",
+            role_name="Poet Agent",
+            content="You are a poet.Before you write the poem, you need to think about the poem and the content.",
         ),
         model=ModelFactory.create(
             model_platform=ModelPlatformType.DEFAULT,
             model_type=ModelType.DEFAULT,
         ),
-        tools=[*math_toolkit.get_tools()],
+        tools=[*thinking_toolkit.get_tools()],
     )
 
     # Create a file write agent
@@ -49,14 +50,14 @@ def create_simple_workforce():
             content="You are a file write agent.",
         ),
         model=ModelFactory.create(
-            model_platform=ModelPlatformType.DEFAULT,
-            model_type=ModelType.DEFAULT,
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4O,
         ),
         tools=[*file_write_toolkit.get_tools()],
     )
 
     workforce = Workforce('Simple Demo Workforce')
-    workforce.add_single_agent_worker("Math Agent", math_agent)
+    workforce.add_single_agent_worker("Poet Agent", poet_agent)
     workforce.add_single_agent_worker("File Write Agent", file_write_agent)
 
     return workforce
@@ -141,10 +142,10 @@ def main():
     workforce = create_simple_workforce()
     task = Task(
         content=(
-            "calculate the sum of 1 to 100,then write "
-            "the md file to describe the process"
+            "write a poem about the sun and the moon"
+            "then write the md file"
         ),
-        id="sum_1_to_100",
+        id="sun_and_moon",
     )
 
     print(f"📋 Task: {task.content}")
@@ -153,9 +154,8 @@ def main():
     # Start workforce in background
     def run_workforce():
         try:
-            result = workforce.process_task(task, interactive=True)
+            result = asyncio.run(workforce.process_task(task,interactive=True))
             print("\n🎉 Task completed!")
-            print(f"Result: {result.result}")
         except Exception as e:
             print(f"\n❌ Error: {e}")
 
@@ -168,7 +168,7 @@ def main():
     start_wait = time.time()
     while True:
         status = workforce.get_workforce_status()
-        if status["state"] != "idle":
+        if status["state"] != "idle" or status["pending_tasks_count"] > 0:
             break
         if time.time() - start_wait > 10:
             print("⚠️  Timed out waiting for workforce to start.")
