@@ -8031,3 +8031,27 @@ sdist = { url = "https://files.pythonhosted.org/packages/e3/02/0f2892c661036d50e
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2e/54/647ade08bf0db230bfea292f893923872fd20be6ac6f53b2b936ba839d75/zipp-3.23.0-py3-none-any.whl", hash = "sha256:071652d6115ed432f5ce1d34c336c0adfd6a884660d1e9712a256d3d3bd4b14e", size = 10276 },
 ]
+
+[[package]]
+name = "opencv-python-headless"
+version = "4.9.0.80"
+description = "Wheel package for OpenCV with headless libraries"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "opencv_python_headless-4.9.0.80-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:a1d4c0d8ebf6d6c6a1a7c5a8d3f8d9c1e8f3e3d9e8b1e8e9f1a8b3c7d8e9f1a8b"},
+    {file = "opencv_python_headless-4.9.0.80-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:b3d4c0d8ebf6d6c6a1a7c5a8d3f8d9c1e8f3e3d9e8b1e8e9f1a8b3c7d8e9f1a8b"},
+    {file = "opencv_python_headless-4.9.0.80-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c4d4c0d8ebf6d6c6a1a7c5a8d3f8d9c1e8f3e3d9e8b1e8e9f1a8b3c7d8e9f1a8b"},
+    {file = "opencv_python_headless-4.9.0.80-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:d5d4c0d8ebf6d6c6a1a7c5a8d3f8d9c1e8f3e3d9e8b1e8e9f1a8b3c7d8e9f1a8b"},
+    {file = "opencv_python_headless-4.9.0.80-cp38-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:e6d4c0d8ebf6d6c6a1a7c5a8d3f8d9c1e8f3e3d9e8b1e8e9f1a8b3c7d8e9f1a8b"},
+    {file = "opencv_python_headless-4.9.0.80-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f7d4c0d8ebf6d6c6a1a7c5a8d3f8d9c1e8f3e3d9e8b1e8e9f1a8b3c7d8e9f1a8b"},
+    {file = "opencv_python_headless-4.9.0.80-cp38-abi3-win_amd64.whl", hash = "sha256:084d4c0d8ebf6d6c6a1a7c5a8d3f8d9c1e8f3e3d9e8b1e8e9f1a8b3c7d8e9f1a8b"},
+]
+dependencies = [
+    "numpy >=1.19.3,<2.0.0",
+    "pytest >=7.0.0",
+    "pytest-cov >=4.0.0",
+    "pytest-flake8 >=1.0.0",
+    "pytest-mypy >=0.9.0",
+]
