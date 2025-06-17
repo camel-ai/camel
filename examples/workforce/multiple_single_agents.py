@@ -11,9 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-import asyncio
-
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
@@ -23,7 +20,7 @@ from camel.toolkits import SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
-async def main():
+def main():
     # 1. Set up a Research agent with search tools
     search_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -94,7 +91,7 @@ async def main():
         id='0',
     )
 
-    await workforce.process_task(human_task)
+    workforce.process_task(human_task)
 
     # Test WorkforceLogger features
     print("\n--- Workforce Log Tree ---")
@@ -105,11 +102,11 @@ async def main():
     for key, value in kpis.items():
         print(f"{key}: {value}")
 
-    log_file_path = "hackathon_judges_logs.json"
+    log_file_path = "multiple_single_agents_logs.json"
     print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
     workforce.dump_workforce_logs(log_file_path)
     print(f"Logs dumped. Please check the file: {log_file_path}")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

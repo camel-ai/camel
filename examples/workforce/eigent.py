@@ -387,8 +387,22 @@ async def main():
             id='0',
         )
 
-        task = await workforce.process_task(human_task)
-        print('Final Result of Original task:\n', task.result)
+        workforce.process_task(human_task)
+
+        # Test WorkforceLogger features
+        print("\n--- Workforce Log Tree ---")
+        print(workforce.get_workforce_log_tree())
+
+        print("\n--- Workforce KPIs ---")
+        kpis = workforce.get_workforce_kpis()
+        for key, value in kpis.items():
+            print(f"{key}: {value}")
+
+        log_file_path = "eigent_logs.json"
+        print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
+        workforce.dump_workforce_logs(log_file_path)
+        print(f"Logs dumped. Please check the file: {log_file_path}")
+
     finally:
         await playwright_toolkit.disconnect()  # Disconnect the same instance
 
