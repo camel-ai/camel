@@ -41,7 +41,7 @@ from .video_download_toolkit import (
 logger = get_logger(__name__)
 
 VIDEO_QA_PROMPT = """
-Analyze the provided video frames and corresponding transcriptions to \
+Analyze the provided video frames and corresponding audio transcription to \
 answer the given question(s) thoroughly and accurately.
 
 The transcriptions may come from two sources:
