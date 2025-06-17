@@ -1,0 +1,657 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+from __future__ import annotations
+
+import asyncio
+import hashlib
+import traceback
+import zipfile
+import mimetypes
+import os
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Set
+from urllib.parse import urlparse
+
+import requests
+
+from camel.logger import get_logger
+from camel.toolkits.base import BaseToolkit
+from camel.toolkits.function_tool import FunctionTool
+from camel.toolkits import ImageAnalysisToolkit, ExcelToolkit
+from camel.utils import retry_on_error, MCPServer
+
+try:
+    from camel.loaders import MarkItDownLoader
+except Exception:
+    try:
+        from markitdown import MarkItDownLoader
+    except Exception:
+        MarkItDownLoader = None
+
+try:
+    from camel.loaders import UnstructuredIO
+except ImportError:
+    UnstructuredIO = None
+
+# Optional FireCrawl for webpage processing
+try:
+    from firecrawl import FirecrawlApp
+except ImportError:
+    FirecrawlApp = None
+
+logger = get_logger(__name__)
+
+
+_TEXT_EXTS: Set[str] = {".txt", ".md", ".rtf"}
+_DOC_EXTS: Set[str] = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".odt"}
+_IMAGE_EXTS: Set[str] = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp"}
+_EXCEL_EXTS: Set[str] = {".xls", ".xlsx"}
+_ARCHIVE_EXTS: Set[str] = {".zip"}
+_WEB_EXTS: Set[str] = {".html", ".htm", ".xml"}
+_CODE_EXTS: Set[str] = {".py", ".js", ".java", ".cpp", ".c", ".go", ".rs"}
+_DATA_EXTS: Set[str] = {".json", ".jsonl", ".jsonld", ".xml"}
+
+
+class _LoaderWrapper:
+    r"""Uniform interface wrapper for different document loaders.
+
+    Every loader exposes convert_file(path) -> str method for consistent usage.
+    """
+
+    def __init__(self, loader: object):
+        r"""Initialize the loader wrapper.
+
+        Args:
+            loader (object): The underlying loader instance.
+        """
+        self._loader = loader
+
+    def convert_file(self, path: str) -> str:
+        r"""Convert a file to plain text using the wrapped loader.
+
+        Args:
+            path (str): Path to the file to be converted.
+
+        Returns:
+            str: The extracted plain text content.
+
+        Raises:
+            AttributeError: If the loader doesn't support required methods.
+            RuntimeError: If the loader fails to parse the file.
+        """
+        if hasattr(self._loader, "convert_file"):
+            return self._loader.convert_file(path)  # type: ignore[attr-defined]
+        if hasattr(self._loader, "parse_file_or_url"):
+            elements = self._loader.parse_file_or_url(path)  # type: ignore[attr-defined]
+            if elements is None:
+                raise RuntimeError(f"UnstructuredIO failed to parse {path}")
+            return "\n".join(str(e) for e in elements)
+        raise AttributeError("Loader must expose convert_file or parse_file_or_url")
+
+
+def _init_loader(loader_type: str, loader_kwargs: Optional[dict] | None) -> _LoaderWrapper:
+    r"""Initialize a document loader based on the specified type.
+
+    Args:
+        loader_type (str): Type of loader to initialize ('markitdown' or 'unstructured').
+        loader_kwargs (Optional[dict]): Additional keyword arguments for the loader.
+
+    Returns:
+        _LoaderWrapper: Wrapped loader instance.
+
+    Raises:
+        ImportError: If the required loader is not available.
+        ValueError: If the loader type is not supported.
+    """
+    loader_type = loader_type.lower()
+    loader_kwargs = loader_kwargs or {}
+
+    if loader_type == "markitdown":
+        if MarkItDownLoader is None:
+            raise ImportError(
+                "MarkItDownLoader unavailable – install `camel-ai[docs]` or `markitdown`."
+            )
+        return _LoaderWrapper(MarkItDownLoader(**loader_kwargs))
+
+    if loader_type == "unstructured":
+        if UnstructuredIO is None:
+            raise ImportError("UnstructuredIO loader not available – `pip install unstructured`.")
+        return _LoaderWrapper(UnstructuredIO())
+
+    raise ValueError("Unsupported loader_type. Choose 'markitdown', 'unstructured', or supply custom loader.")
+
+
+@MCPServer()
+class DocumentToolkit(BaseToolkit):
+    r"""A comprehensive toolkit for processing various document formats.
+
+    This toolkit can extract plain-text content from local files, remote URLs,
+    ZIP archives, and webpages. It supports images, Office documents, PDFs,
+    Excel files, code files, and more.
+    """
+
+    def __init__(
+            self,
+            *,
+            cache_dir: str | Path | None = None,
+            model: Optional[object] = None,
+            loader_type: str = "markitdown",
+            loader_kwargs: Optional[dict] = None,
+            enable_cache: bool = True,
+    ) -> None:
+        r"""Initialize the DocumentToolkit.
+
+        Args:
+            cache_dir (str | Path | None): Directory for caching processed documents.
+                Defaults to ~/.cache/camel/documents.
+            model (Optional[object]): Model backend for image analysis.
+            loader_type (str): Primary document loader type ('markitdown' or 'unstructured').
+            loader_kwargs (Optional[dict]): Additional arguments for the primary loader.
+            enable_cache (bool): Whether to enable disk and memory caching.
+        """
+        super().__init__()
+
+        # Initialize paths and cache settings
+        self.cache_dir: Path = Path(cache_dir or "~/.cache/camel/documents").expanduser()
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.enable_cache = enable_cache
+
+        # Initialize specialized toolkits for specific file types
+        self.image_tool = ImageAnalysisToolkit(model=model)
+        self.excel_tool = ExcelToolkit()
+
+        # Initialize primary document loader
+        self._loader = _init_loader(loader_type, loader_kwargs)
+        logger.info("DocumentProcessingToolkit initialised with %s loader", loader_type)
+
+        # Initialize optional MarkItDown loader for improved Office/PDF support
+        if MarkItDownLoader is not None:
+            try:
+                self.mid_loader = MarkItDownLoader()
+            except Exception as e:  # pragma: no cover
+                logger.debug("Falling back – MarkItDown initialisation failed: %s", e)
+                self.mid_loader = None
+        else:
+            self.mid_loader = None
+
+        # Initialize optional UnstructuredIO for fallback parsing
+        self.uio = UnstructuredIO() if UnstructuredIO is not None else None
+
+        # Initialize in-memory cache (keyed by SHA-256 of path + mtime)
+        self._cache: Dict[str, str] = {}
+
+
+    # Public API methods
+    @retry_on_error()
+    def extract_document_content(self, document_path: str) -> Tuple[bool, str]:
+        r"""Extract the content of a given document (or URL) and return the processed text.
+
+        It may filter out some information, resulting in inaccurate content.
+
+        Args:
+            document_path (str): The path of the document to be processed, either a local path
+                or a URL. It can process image, audio files, zip files and webpages, etc.
+
+        Returns:
+            Tuple[bool, str]: A tuple containing a boolean indicating whether the document
+                was processed successfully, and the content of the document (if success).
+        """
+        try:
+            cache_key = self._hash_key(document_path)
+            if self.enable_cache and cache_key in self._cache:
+                logger.debug("Cache hit: %s", document_path)
+                return True, self._cache[cache_key]
+
+            # Check if the input is a webpage URL first
+            if self._is_webpage(document_path):
+                ok, txt = self._handle_webpage(document_path)
+                return self._cache_and_return(cache_key, ok, txt)
+
+            # Determine file type by extension for efficient dispatch
+            suffix = f".{document_path.lower().rsplit('.', 1)[-1]}" if "." in document_path else ""
+
+            # Process different file types with specialized handlers
+            if suffix in _IMAGE_EXTS:
+                ok, txt = self._handle_image(document_path)
+                return self._cache_and_return(cache_key, ok, txt)
+
+            if suffix in _EXCEL_EXTS:
+                ok, txt = self._handle_excel(document_path)
+                return self._cache_and_return(cache_key, ok, txt)
+
+            if suffix in _ARCHIVE_EXTS:
+                ok, txt = self._handle_zip(document_path)
+                return self._cache_and_return(cache_key, ok, txt)
+
+            if suffix in _DATA_EXTS:
+                ok, txt = self._handle_data_file(document_path)
+                return self._cache_and_return(cache_key, ok, txt)
+
+            if suffix in _CODE_EXTS:
+                ok, txt = self._handle_code_file(document_path)
+                return self._cache_and_return(cache_key, ok, txt)
+
+            if suffix in _TEXT_EXTS:
+                ok, txt = self._handle_text_file(document_path)
+                return self._cache_and_return(cache_key, ok, txt)
+
+            if suffix in _WEB_EXTS:
+                ok, txt = self._handle_html_file(document_path)
+                return self._cache_and_return(cache_key, ok, txt)
+
+            # Handle Office/PDF documents with preferred loader
+            if suffix in _DOC_EXTS:
+                if getattr(self, "mid_loader", None) is not None:
+                    txt = self.mid_loader.convert_file(document_path)  # type: ignore[attr-defined]
+                    return self._cache_and_return(cache_key, True, txt)
+                elif self.uio is not None:
+                    elements = self.uio.parse_file_or_url(document_path)  # type: ignore[attr-defined]
+                    txt = "\n".join(map(str, elements)) if elements else ""
+                    return self._cache_and_return(cache_key, True, txt)
+                else:
+                    logger.warning("No suitable loader for DOC/PDF – falling back to generic loader")
+
+            # Fallback to generic loader for other formats
+            txt = self._loader.convert_file(document_path)
+            return self._cache_and_return(cache_key, True, txt)
+
+        except Exception as exc:  # pragma: no cover
+            logger.error("Failed to extract %s: %s", document_path, exc)
+            logger.debug(traceback.format_exc())
+            return False, f"Error extracting document {document_path}: {exc}"
+
+
+    # Webpage processing methods (ported from original code)
+    def _is_webpage(self, url: str) -> bool:
+        r"""Determine whether the given URL points to a webpage.
+
+        Args:
+            url (str): The URL to check.
+
+        Returns:
+            bool: True if the URL is a webpage, False otherwise.
+        """
+        try:
+            parsed_url = urlparse(url)
+            is_url = all([parsed_url.scheme, parsed_url.netloc])
+            if not is_url:
+                return False
+
+            path = parsed_url.path
+            file_type, _ = mimetypes.guess_type(path)
+            if file_type is not None and "text/html" in file_type:
+                return True
+
+            response = requests.head(url, allow_redirects=True, timeout=10)
+            content_type = response.headers.get("Content-Type", "").lower()
+
+            if "text/html" in content_type:
+                return True
+            else:
+                return False
+
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Error while checking the URL: {e}")
+            return False
+        except TypeError:
+            return True
+
+    def _handle_webpage(self, url: str) -> Tuple[bool, str]:
+        r"""Extract content from a webpage URL.
+
+        Args:
+            url (str): The URL of the webpage to process.
+
+        Returns:
+            Tuple[bool, str]: Success status and extracted content.
+        """
+        try:
+            extracted_text = self._extract_webpage_content(url)
+            return True, extracted_text
+        except Exception as e:
+            logger.warning(f"FireCrawl failed for {url}: {e}, falling back to UnstructuredIO")
+            try:
+                if self.uio is not None:
+                    elements = self.uio.parse_file_or_url(url)
+                    if elements is None:
+                        logger.error(f"Failed to parse the webpage: {url}.")
+                        return False, f"Failed to parse the webpage: {url}."
+                    else:
+                        elements_str = "\n".join(str(element) for element in elements)
+                        return True, elements_str
+                else:
+                    return False, "No suitable loader for webpage processing."
+            except Exception as e2:
+                logger.error(f"All webpage processing methods failed for {url}: {e2}")
+                return False, f"Failed to extract content from the webpage: {e2}"
+
+    @retry_on_error()
+    def _extract_webpage_content(self, url: str) -> str:
+        r"""Extract webpage content using the FireCrawl API.
+
+        Args:
+            url (str): The URL of the webpage to extract content from.
+
+        Returns:
+            str: The extracted webpage content in markdown format.
+
+        Raises:
+            ValueError: If FIRECRAWL_API_KEY environment variable is not set.
+            ImportError: If FireCrawl library is not available.
+        """
+        api_key = os.getenv("FIRECRAWL_API_KEY")
+        if not api_key:
+            raise ValueError("FIRECRAWL_API_KEY environment variable not set")
+
+        if FirecrawlApp is None:
+            raise ImportError("FireCrawl not available – install `firecrawl-py`")
+
+        # Initialize FireCrawl application with API key
+        app = FirecrawlApp(api_key=api_key)
+
+        data = app.crawl_url(
+            url, params={"limit": 1, "scrapeOptions": {"formats": ["markdown"]}}
+        )
+        logger.debug(f"Extracted data from {url}: {data}")
+
+        if len(data["data"]) == 0:
+            if data["success"]:
+                return "No content found on the webpage."
+            else:
+                return "Error while crawling the webpage."
+
+        return str(data["data"][0]["markdown"])
+
+
+    # Specialized file type handlers
+    def _handle_image(self, path: str) -> Tuple[bool, str]:
+        r"""Process image files using the image analysis toolkit.
+
+        Args:
+            path (str): Path to the image file.
+
+        Returns:
+            Tuple[bool, str]: Success status and image description.
+        """
+        try:
+            res = self.image_tool.ask_question_about_image(
+                path, "Please make a detailed caption about the image."
+            )
+            return True, res
+        except Exception as e:
+            return False, f"Error processing image {path}: {e}"
+
+    def _handle_excel(self, path: str) -> Tuple[bool, str]:
+        r"""Process Excel files using the Excel toolkit.
+
+        Args:
+            path (str): Path to the Excel file.
+
+        Returns:
+            Tuple[bool, str]: Success status and Excel content.
+        """
+        try:
+            res = self.excel_tool.extract_excel_content(path)
+            return True, res
+        except Exception as e:
+            return False, f"Error processing Excel file {path}: {e}"
+
+    def _handle_data_file(self, path: str) -> Tuple[bool, str]:
+        r"""Process structured data files (JSON, XML).
+
+        Args:
+            path (str): Path to the data file.
+
+        Returns:
+            Tuple[bool, str]: Success status and parsed data content.
+        """
+        try:
+            import json
+            import xmltodict
+
+            suffix = Path(path).suffix.lower()
+
+            if suffix in [".json", ".jsonl", ".jsonld"]:
+                with open(path, "r", encoding="utf-8") as f:
+                    if suffix == ".jsonl":
+                        # Handle JSON Lines format
+                        lines = []
+                        for line in f:
+                            lines.append(json.loads(line.strip()))
+                        content = lines
+                    else:
+                        content = json.load(f)
+                return True, str(content)
+
+            elif suffix == ".xml":
+                with open(path, "r", encoding="utf-8") as f:
+                    content = f.read()
+
+                try:
+                    data = xmltodict.parse(content)
+                    logger.debug(f"The extracted xml data is: {data}")
+                    return True, str(data)
+                except Exception:
+                    logger.debug(f"The raw xml data is: {content}")
+                    return True, content
+
+            return False, f"Unsupported data file format: {suffix}"
+        except Exception as e:
+            return False, f"Error processing data file {path}: {e}"
+
+    def _handle_code_file(self, path: str) -> Tuple[bool, str]:
+        r"""Process source code files by reading them as plain text.
+
+        Args:
+            path (str): Path to the code file.
+
+        Returns:
+            Tuple[bool, str]: Success status and code content.
+        """
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            return True, content
+        except Exception as e:
+            return False, f"Error processing code file {path}: {e}"
+
+    def _handle_text_file(self, path: str) -> Tuple[bool, str]:
+        r"""Process plain text files by reading them directly.
+
+        Args:
+            path (str): Path to the text file.
+
+        Returns:
+            Tuple[bool, str]: Success status and text content.
+        """
+        try:
+            text = Path(path).expanduser().read_text(encoding="utf-8")
+            return True, text
+        except Exception as e:
+            return False, f"Error reading text file {path}: {e}"
+
+    def _handle_html_file(self, path: str) -> Tuple[bool, str]:
+        r"""Process local HTML/XML files.
+
+        Args:
+            path (str): Path to the HTML/XML file.
+
+        Returns:
+            Tuple[bool, str]: Success status and processed content.
+        """
+        try:
+            # Try using the generic loader first
+            txt = self._loader.convert_file(path)
+            return True, txt
+        except Exception as e:
+            # Fallback to raw text reading
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                return True, content
+            except Exception as e2:
+                return False, f"Error processing HTML file {path}: {e2}"
+
+    # ZIP archive processing methods
+    def _handle_zip(self, path_or_url: str) -> Tuple[bool, str]:
+        r"""Process ZIP archive files by extracting and processing all contained files.
+
+        Args:
+            path_or_url (str): Path or URL to the ZIP file.
+
+        Returns:
+            Tuple[bool, str]: Success status and combined content of all files.
+        """
+        try:
+            zip_path = self._ensure_local_zip(path_or_url)
+            extract_dir = self.cache_dir / f"unzip_{self._short_hash(zip_path)}"
+            extract_dir.mkdir(parents=True, exist_ok=True)
+
+            with zipfile.ZipFile(zip_path, "r") as zf:
+                zf.extractall(extract_dir)
+
+            parts: List[str] = []
+            for file in extract_dir.rglob("*"):
+                if file.is_file():
+                    ok, text = self.extract_document_content(str(file))
+                    if ok:
+                        parts.append(text)
+            return True, "\n\n".join(parts) if parts else ""
+        except Exception as exc:
+            logger.error("ZIP processing failed for %s: %s", path_or_url, exc)
+            logger.debug(traceback.format_exc())
+            return False, f"Error processing ZIP {path_or_url}: {exc}"
+
+    def _ensure_local_zip(self, path_or_url: str) -> Path:
+        r"""Ensure ZIP file is available locally, downloading if necessary.
+
+        Args:
+            path_or_url (str): Path or URL to the ZIP file.
+
+        Returns:
+            Path: Local path to the ZIP file.
+        """
+        parsed = urlparse(path_or_url)
+        if parsed.scheme in {"http", "https"}:
+            return self._download_file(path_or_url)
+        return Path(path_or_url).expanduser().resolve()
+
+    def _download_file(self, url: str) -> Path:
+        r"""Download a file from URL to the local cache directory.
+
+        Args:
+            url (str): URL of the file to download.
+
+        Returns:
+            Path: Local path where the file was saved.
+        """
+        filename = Path(urlparse(url).path).name or "downloaded.zip"
+        local_path = self.cache_dir / filename
+        logger.info("Downloading %s → %s", url, local_path)
+        resp = requests.get(url, stream=True, timeout=60)
+        resp.raise_for_status()
+        with open(local_path, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=8192):
+                f.write(chunk)
+        return local_path
+
+    # Cache management methods
+    def _cache_and_return(self, key: str, ok: bool, value: str) -> Tuple[bool, str]:
+        r"""Store successful results in cache and return the result tuple.
+
+        Args:
+            key (str): Cache key for storing the result.
+            ok (bool): Success status of the operation.
+            value (str): The processed content.
+
+        Returns:
+            Tuple[bool, str]: The input success status and value.
+        """
+        if ok and self.enable_cache:
+            self._cache[key] = value
+            try:
+                (self.cache_dir / f"{key}.txt").write_text(value, encoding="utf-8")
+            except Exception as e:  # pragma: no cover
+                logger.debug("Cache write failed: %s", e)
+        return ok, value
+
+    # Hash generation utilities
+    def _hash_key(self, path: str) -> str:
+        r"""Generate a stable cache key using SHA-256 hash of path and modification time.
+
+        Args:
+            path (str): File path or URL to generate key for.
+
+        Returns:
+            str: SHA-256 hash string to use as cache key.
+        """
+        if self._is_webpage(path):
+            # For URLs, use the URL itself as the key component
+            return hashlib.sha256(f"{path}:url".encode()).hexdigest()
+
+        p = Path(path)
+        mtime = p.stat().st_mtime if p.exists() else 0
+        return hashlib.sha256(f"{path}:{mtime}".encode()).hexdigest()
+
+    @staticmethod
+    def _short_hash(path: Path) -> str:
+        r"""Generate a short hash for directory naming.
+
+        Args:
+            path (Path): Path to generate hash for.
+
+        Returns:
+            str: Short (8-character) hash string.
+        """
+        return hashlib.sha256(str(path).encode()).hexdigest()[:8]
+
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the functions
+        in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects representing
+                the functions in the toolkit.
+        """
+        return [FunctionTool(self.extract_document_content)]
+
+
+    async def _extract_async(self, document_path: str) -> str:
+        r"""Asynchronous wrapper for document extraction (rarely used).
+
+        Args:
+            document_path (str): Path to the document to extract.
+
+        Returns:
+            str: Extracted document content.
+        """
+        return self._loader.convert_file(document_path)
+
+    def extract_document_content_sync(self, document_path: str) -> Tuple[bool, str]:
+        r"""Synchronous wrapper for environments without asyncio support.
+
+        Args:
+            document_path (str): Path to the document to extract.
+
+        Returns:
+            Tuple[bool, str]: Success status and extracted content.
+        """
+        loop = (
+            asyncio.get_event_loop()
+            if asyncio.get_event_loop().is_running()
+            else asyncio.new_event_loop()
+        )
+        return loop.run_until_complete(self.extract_document_content(document_path))
