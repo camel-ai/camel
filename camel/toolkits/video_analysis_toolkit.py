@@ -45,18 +45,17 @@ class LazyLoader(types.ModuleType):
         self._name = name
         self._module_name = module_name
         self._mod = None
-
-    def _load(self):
+    def __load__(self):
         if self._mod is None:
             self._mod = __import__(self._module_name, fromlist=[""])
             sys.modules[self._name] = self._mod
         return self._mod
-
+        
     def __getattr__(self, name):
-        return getattr(self._load(), name)
-
+        return getattr(self.__load__(), name)
+        
     def __dir__(self):
-        return dir(self._load())
+        return dir(self.__load__())
 
 sys.modules["cv2"] = LazyLoader("cv2", "cv2")
 sys.modules["numpy"] = LazyLoader("numpy", "numpy")
