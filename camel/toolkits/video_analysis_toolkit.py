@@ -19,11 +19,12 @@ import io
 import os
 import re
 import tempfile
+import sys
+import types
+
 from pathlib import Path
 from typing import List, Optional
 
-import sys
-import types
 from PIL import Image
 
 from camel.logger import get_logger
@@ -37,6 +38,29 @@ from .video_download_toolkit import (
     VideoDownloaderToolkit,
     _capture_screenshot,
 )
+
+class LazyLoader(types.ModuleType):
+    def __init__(self, name, module_name):
+        super().__init__(name)
+        self._name = name
+        self._module_name = module_name
+        self._mod = None
+
+    def _load(self):
+        if self._mod is None:
+            self._mod = __import__(self._module_name, fromlist=[""])
+            sys.modules[self._name] = self._mod
+        return self._mod
+
+    def __getattr__(self, name):
+        return getattr(self._load(), name)
+
+    def __dir__(self):
+        return dir(self._load())
+
+# 仅替换主要模块名，避免别名冲突
+sys.modules["cv2"] = LazyLoader("cv2", "cv2")
+sys.modules["numpy"] = LazyLoader("numpy", "numpy")
 
 logger = get_logger(__name__)
 
@@ -92,30 +116,6 @@ similar-looking species or objects
 **Question:**
 {question}
 """
-
-class LazyLoader(types.ModuleType):
-    def __init__(self, name, module_name):
-        super().__init__(name)
-        self._name = name
-        self._module_name = module_name
-        self._mod = None
-
-    def _load(self):
-        if self._mod is None:
-            self._mod = __import__(self._module_name, fromlist=[""])
-            sys.modules[self._name] = self._mod
-        return self._mod
-
-    def __getattr__(self, name):
-        return getattr(self._load(), name)
-
-    def __dir__(self):
-        return dir(self._load())
-
-sys.modules["cv2"] = LazyLoader("cv2", "cv2")
-sys.modules["np"] = LazyLoader("np", "numpy")
-sys.modules["numpy"] = sys.modules["np"] 
-
 
 @MCPServer()
 class VideoAnalysisToolkit(BaseToolkit):
@@ -230,7 +230,7 @@ class VideoAnalysisToolkit(BaseToolkit):
                     "Install Tesseract: https://github.com/tesseract-ocr/tesseract"
                 )
                 self._use_ocr = False
-
+    
     def __del__(self):
         r"""Clean up temporary directories and files when the object is
         destroyed.
@@ -266,10 +266,44 @@ class VideoAnalysisToolkit(BaseToolkit):
                     f"Failed to remove temporary directory "
                     f"{self._download_directory}: {e}"
                 )
+    def _create_vl_agent(self):
+        from camel.agents import ChatAgent
+        
+        if self.vl_model:
+            return ChatAgent(
+                model=self.vl_model, output_language=self.output_language
+            )
+        else:
+            logger.warning(
+                "No vision-language model provided. Using default model in "
+                "ChatAgent."
+            )
+            return ChatAgent(output_language=self.output_language)
 
+    def _check_ocr_dependencies(self):
+        if not self._use_ocr:
+            return False
+            
+        try:
+            import pytesseract
+            pytesseract.get_tesseract_version()
+            return True
+        except ImportError:
+            logger.error(
+                "pytesseract not installed. OCR will be disabled. "
+                "Install with: pip install pytesseract"
+            )
+            self._use_ocr = False
+            return False
+        except EnvironmentError:
+            logger.error(
+                "Tesseract OCR not found in PATH. OCR will be disabled. "
+                "Install Tesseract: https://github.com/tesseract-ocr/tesseract"
+            )
+            self._use_ocr = False
+            return False
+            
     def _extract_text_from_frame(self, frame: Image.Image) -> str:
-        import cv2
-        import numpy as np
         r"""Extract text from a video frame using OCR.
 
         Args:
@@ -278,6 +312,12 @@ class VideoAnalysisToolkit(BaseToolkit):
         Returns:
             str: Extracted text from the frame.
         """
+        if not self._check_ocr_dependencies():
+            return ""
+            
+        import cv2
+        import numpy as np
+        import pytesseract
         try:
             import pytesseract
             
