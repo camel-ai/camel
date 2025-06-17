@@ -51,7 +51,7 @@ logger = get_logger(__name__)
 
 
 class WorkforceState(Enum):
-    """Workforce execution state for human intervention support."""
+    r"""Workforce execution state for human intervention support."""
 
     IDLE = "idle"
     RUNNING = "running"
@@ -60,7 +60,7 @@ class WorkforceState(Enum):
 
 
 class WorkforceSnapshot:
-    """Snapshot of workforce state for resuming execution."""
+    r"""Snapshot of workforce state for resuming execution."""
 
     def __init__(
         self,
@@ -396,30 +396,44 @@ class Workforce(BaseNode):
         return subtasks
 
     # Human intervention methods
-    def pause(self) -> None:
-        r"""Pause the workforce execution."""
+    async def _async_pause(self) -> None:
+        r"""Async implementation of pause to run on the event loop."""
         if self._state == WorkforceState.RUNNING:
             self._state = WorkforceState.PAUSED
             self._pause_event.clear()
             logger.info(f"Workforce {self.node_id} paused.")
 
-    def resume(self) -> None:
-        r"""Resume the paused workforce execution."""
+    def pause(self) -> None:
+        r"""Pause the workforce execution in a thread-safe manner."""
+        self._submit_coro_to_loop(self._async_pause())
+
+    async def _async_resume(self) -> None:
+        r"""Async implementation of resume to run on the event loop."""
         if self._state == WorkforceState.PAUSED:
             self._state = WorkforceState.RUNNING
             self._pause_event.set()
             logger.info(f"Workforce {self.node_id} resumed.")
 
-            # Re-post ready tasks (if any) in a loop-safe way
+            # Re-post ready tasks (if any)
             if self._pending_tasks:
-                self._submit_coro_to_loop(self._post_ready_tasks())
+                await self._post_ready_tasks()
 
-    def stop_gracefully(self) -> None:
-        r"""Request graceful stop of the workforce."""
+    def resume(self) -> None:
+        r"""Resume the paused workforce execution in a thread-safe manner."""
+        self._submit_coro_to_loop(self._async_resume())
+
+    async def _async_stop_gracefully(self) -> None:
+        r"""Async implementation of stop_gracefully to run on the event
+        loop.
+        """
         self._stop_requested = True
         if self._pause_event.is_set() is False:
             self._pause_event.set()  # Resume if paused to process stop
         logger.info(f"Workforce {self.node_id} stop requested.")
+
+    def stop_gracefully(self) -> None:
+        r"""Request graceful stop of the workforce in a thread-safe manner."""
+        self._submit_coro_to_loop(self._async_stop_gracefully())
 
     def save_snapshot(self, description: str = "") -> None:
         r"""Save current state as a snapshot."""
@@ -457,6 +471,14 @@ class Workforce(BaseNode):
 
     def modify_task_content(self, task_id: str, new_content: str) -> bool:
         r"""Modify the content of a pending task."""
+        # Validate the new content first
+        if not validate_task_content(new_content, task_id):
+            logger.warning(
+                f"Task {task_id} content modification rejected: "
+                f"Invalid content. Content preview: '{new_content[:50]}...'"
+            )
+            return False
+
         for task in self._pending_tasks:
             if task.id == task_id:
                 task.content = new_content
@@ -555,8 +577,18 @@ class Workforce(BaseNode):
         self._pending_tasks = deque(remaining_tasks)
 
         # Move previously "completed" tasks that are after target back to
-        # pending
+        # pending and reset their state
         if tasks_to_move_back:
+            # Reset state for tasks being moved back to pending
+            for task in tasks_to_move_back:
+                # Handle all possible task states
+                if task.state in [TaskState.DONE, TaskState.FAILED]:
+                    task.state = TaskState.OPEN
+                    # Clear result to avoid confusion
+                    task.result = None
+                    # Reset failure count to give task a fresh start
+                    task.failure_count = 0
+
             logger.info(
                 f"Moving {len(tasks_to_move_back)} tasks back to pending "
                 f"state."
@@ -627,7 +659,7 @@ class Workforce(BaseNode):
 
         self.reset()
         self._task = task
-        task.state = TaskState.FAILED
+        task.state = TaskState.OPEN
         self._pending_tasks.append(task)
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
@@ -662,7 +694,7 @@ class Workforce(BaseNode):
         self.reset()
         self._task = task
         self._state = WorkforceState.RUNNING
-        task.state = TaskState.FAILED
+        task.state = TaskState.OPEN
         self._pending_tasks.append(task)
 
         # Decompose the task into subtasks first
@@ -848,6 +880,10 @@ class Workforce(BaseNode):
         self._children.append(workforce)
         return self
 
+    async def _async_reset(self) -> None:
+        r"""Async implementation of reset to run on the event loop."""
+        self._pause_event.set()
+
     @check_if_running(False)
     def reset(self) -> None:
         r"""Reset the workforce and all the child nodes under it. Can only
@@ -859,7 +895,17 @@ class Workforce(BaseNode):
         # Reset intervention state
         self._state = WorkforceState.IDLE
         self._stop_requested = False
-        self._pause_event.set()
+
+        # Handle asyncio.Event in a thread-safe way
+        if self._loop and not self._loop.is_closed():
+            # If we have a loop, use it to set the event safely
+            asyncio.run_coroutine_threadsafe(
+                self._async_reset(), self._loop
+            ).result()
+        else:
+            # If no loop is available, create a new one temporarily
+            asyncio.run(self._async_reset())
+
         self._completed_tasks.clear()
         # Don't clear snapshots - they should persist across resets
 
@@ -994,9 +1040,21 @@ class Workforce(BaseNode):
 
     async def _get_returned_task(self) -> Task:
         r"""Get the task that's published by this node and just get returned
-        from the assignee.
+        from the assignee. Includes timeout handling to prevent indefinite
+        waiting.
         """
-        return await self._channel.get_returned_task_by_publisher(self.node_id)
+        try:
+            # Add timeout to prevent indefinite waiting
+            return await asyncio.wait_for(
+                self._channel.get_returned_task_by_publisher(self.node_id),
+                timeout=300.0,  # 5 minute timeout
+            )
+        except asyncio.TimeoutError:
+            logger.warning(
+                f"Timeout waiting for returned task in "
+                f"workforce {self.node_id}"
+            )
+            raise ValueError("Timeout waiting for task to be returned")
 
     async def _post_ready_tasks(self) -> None:
         r"""Send all the pending tasks that have all the dependencies met to
@@ -1012,9 +1070,19 @@ class Workforce(BaseNode):
         # If the task has failed previously, just compose and send the task
         # to the channel as a dependency
         if ready_task.state == TaskState.FAILED:
-            # TODO: the composing of tasks seems not work very well
+            # Improved task composition functionality
             self.task_agent.reset()
-            ready_task.compose(self.task_agent)
+            # Sync shared memory before composition to provide better context
+            if self.share_memory:
+                self._sync_shared_memory()
+            # Use a more robust approach for task composition
+            try:
+                ready_task.compose(self.task_agent)
+            except Exception as e:
+                logger.warning(
+                    f"Task composition failed: {e}. Using original "
+                    f"task content."
+                )
             # Remove the subtasks from the channel
             for subtask in ready_task.subtasks:
                 await self._channel.remove_task(subtask.id)
@@ -1222,6 +1290,7 @@ class Workforce(BaseNode):
 
         loop = self._loop
         if loop is None or loop.is_closed():
+            logger.warning("Cannot submit coroutine - no active event loop")
             return
         try:
             running_loop = asyncio.get_running_loop()
@@ -1274,11 +1343,19 @@ class Workforce(BaseNode):
         """
 
         # Create a new instance with the same configuration
+        # Extract the original kwargs from the agents to properly clone them
+        coordinator_kwargs = (
+            getattr(self.coordinator_agent, 'init_kwargs', {}) or {}
+        )
+        task_kwargs = getattr(self.task_agent, 'init_kwargs', {}) or {}
+
         new_instance = Workforce(
             description=self.description,
-            coordinator_agent_kwargs={},
-            task_agent_kwargs={},
-            new_worker_agent_kwargs=self.new_worker_agent_kwargs,
+            coordinator_agent_kwargs=coordinator_kwargs.copy(),
+            task_agent_kwargs=task_kwargs.copy(),
+            new_worker_agent_kwargs=self.new_worker_agent_kwargs.copy()
+            if self.new_worker_agent_kwargs
+            else None,
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
         )
