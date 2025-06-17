@@ -48,6 +48,7 @@ It may be OpenAI API, a local LLM, a stub for unit tests, etc.
 - **url** (Optional[str], optional): The url to the model service. (default: :obj:`None`)
 - **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
 - **timeout** (Optional[float], optional): The timeout value in seconds for API calls. (default: :obj:`None`)
+- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`)
 
 <a id="camel.models.base_model.BaseModelBackend.__init__"></a>
 
@@ -61,7 +62,8 @@ def __init__(
     api_key: Optional[str] = None,
     url: Optional[str] = None,
     token_counter: Optional[BaseTokenCounter] = None,
-    timeout: Optional[float] = None
+    timeout: Optional[float] = None,
+    max_retries: int = 3
 ):
 ```
 

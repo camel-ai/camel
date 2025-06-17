@@ -90,16 +90,26 @@ class Workforce(BaseNode):
             for graceful shutdown when a task fails 3 times. During this
             period, the workforce remains active for debugging.
             Set to 0 for immediate shutdown. (default: :obj:`15.0`)
+        share_memory (bool, optional): Whether to enable shared memory across
+            SingleAgentWorker instances in the workforce. When enabled, all
+            SingleAgentWorker instances, coordinator agent, and task planning
+            agent will share their complete conversation history and
+            function-calling trajectory, providing better context for task
+            handoffs and continuity. Note: Currently only supports
+            SingleAgentWorker instances; RolePlayingWorker and nested
+            Workforce instances do not participate in memory sharing.
+            (default: :obj:`False`)
 
     Example:
-        >>> # Configure with custom model
+        >>> # Configure with custom model and shared memory
         >>> model = ModelFactory.create(
         ...     ModelPlatformType.OPENAI, ModelType.GPT_4O
         ... )
         >>> workforce = Workforce(
         ...     "Research Team",
         ...     coordinator_agent_kwargs={"model": model, "token_limit": 4000},
-        ...     task_agent_kwargs={"model": model, "token_limit": 8000}
+        ...     task_agent_kwargs={"model": model, "token_limit": 8000},
+        ...     share_memory=True  # Enable shared memory
         ... )
         >>>
         >>> # Process a task
@@ -115,12 +125,14 @@ class Workforce(BaseNode):
         task_agent_kwargs: Optional[Dict] = None,
         new_worker_agent_kwargs: Optional[Dict] = None,
         graceful_shutdown_timeout: float = 15.0,
+        share_memory: bool = False,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children or []
         self.new_worker_agent_kwargs = new_worker_agent_kwargs
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
+        self.share_memory = share_memory
 
         # Warning messages for default model usage
         if coordinator_agent_kwargs is None:
@@ -154,6 +166,13 @@ class Workforce(BaseNode):
                 "available options."
             )
 
+        if self.share_memory:
+            logger.info(
+                "Shared memory enabled. All agents will share their complete "
+                "conversation history and function-calling trajectory for "
+                "better context continuity during task handoffs."
+            )
+
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
             role_name="Workforce Manager",
             content="You are coordinating a group of workers. A worker can be "
@@ -178,6 +197,134 @@ class Workforce(BaseNode):
 
     def __repr__(self):
         return f"Workforce {self.node_id} ({self.description})"
+
+    def _collect_shared_memory(self) -> Dict[str, List]:
+        r"""Collect memory from all SingleAgentWorker instances for sharing.
+
+        Returns:
+            Dict[str, List]: A dictionary mapping agent types to their memory
+                records. Contains entries for 'coordinator', 'task_agent',
+                and 'workers'.
+        """
+        # TODO: add memory collection for RolePlayingWorker and nested
+        # Workforce instances
+        if not self.share_memory:
+            return {}
+
+        shared_memory: Dict[str, List] = {
+            'coordinator': [],
+            'task_agent': [],
+            'workers': [],
+        }
+
+        try:
+            # Collect coordinator agent memory
+            coord_records = self.coordinator_agent.memory.retrieve()
+            shared_memory['coordinator'] = [
+                record.memory_record.to_dict() for record in coord_records
+            ]
+
+            # Collect task agent memory
+            task_records = self.task_agent.memory.retrieve()
+            shared_memory['task_agent'] = [
+                record.memory_record.to_dict() for record in task_records
+            ]
+
+            # Collect worker memory only from SingleAgentWorker instances
+            for child in self._children:
+                if isinstance(child, SingleAgentWorker):
+                    worker_records = child.worker.memory.retrieve()
+                    worker_memory = [
+                        record.memory_record.to_dict()
+                        for record in worker_records
+                    ]
+                    shared_memory['workers'].extend(worker_memory)
+
+        except Exception as e:
+            logger.warning(f"Error collecting shared memory: {e}")
+
+        return shared_memory
+
+    def _share_memory_with_agents(
+        self, shared_memory: Dict[str, List]
+    ) -> None:
+        r"""Share collected memory with coordinator, task agent, and
+        SingleAgentWorker instances.
+
+        Args:
+            shared_memory (Dict[str, List]): Memory records collected from
+                all agents to be shared.
+        """
+        if not self.share_memory or not shared_memory:
+            return
+
+        try:
+            # Create a consolidated memory from all collected records
+            all_records = []
+            for _memory_type, records in shared_memory.items():
+                all_records.extend(records)
+
+            if not all_records:
+                return
+
+            # Import necessary classes for memory record reconstruction
+            from camel.memories.records import MemoryRecord
+
+            # Create consolidated memory objects from records
+            memory_records = []
+            for record_dict in all_records:
+                try:
+                    memory_record = MemoryRecord.from_dict(record_dict)
+                    memory_records.append(memory_record)
+                except Exception as e:
+                    logger.warning(f"Failed to reconstruct memory record: {e}")
+                    continue
+
+            if not memory_records:
+                return
+
+            # Share with coordinator agent
+            for record in memory_records:
+                # Only add records from other agents to avoid duplication
+                if record.agent_id != self.coordinator_agent.agent_id:
+                    self.coordinator_agent.memory.write_record(record)
+
+            # Share with task agent
+            for record in memory_records:
+                if record.agent_id != self.task_agent.agent_id:
+                    self.task_agent.memory.write_record(record)
+
+            # Share with SingleAgentWorker instances only
+            single_agent_workers = [
+                child
+                for child in self._children
+                if isinstance(child, SingleAgentWorker)
+            ]
+
+            for worker in single_agent_workers:
+                for record in memory_records:
+                    if record.agent_id != worker.worker.agent_id:
+                        worker.worker.memory.write_record(record)
+
+            logger.info(
+                f"Shared {len(memory_records)} memory records across "
+                f"{len(single_agent_workers) + 2} agents in workforce "
+                f"{self.node_id}"
+            )
+
+        except Exception as e:
+            logger.warning(f"Error sharing memory with agents: {e}")
+
+    def _sync_shared_memory(self) -> None:
+        r"""Synchronize memory across all agents by collecting and sharing."""
+        if not self.share_memory:
+            return
+
+        try:
+            shared_memory = self._collect_shared_memory()
+            self._share_memory_with_agents(shared_memory)
+        except Exception as e:
+            logger.warning(f"Error synchronizing shared memory: {e}")
 
     def _decompose_task(self, task: Task) -> List[Task]:
         r"""Decompose the task into subtasks. This method will also set the
@@ -491,11 +638,29 @@ class Workforce(BaseNode):
         if task.get_depth() >= 3:
             # Create a new worker node and reassign
             assignee = self._create_worker_node_for_task(task)
+
+            # Sync shared memory after creating new worker to provide context
+            if self.share_memory:
+                logger.info(
+                    f"Syncing shared memory after creating new worker "
+                    f"{assignee.node_id} for failed task {task.id}"
+                )
+                self._sync_shared_memory()
+
             await self._post_task(task, assignee.node_id)
         else:
             subtasks = self._decompose_task(task)
             # Insert packets at the head of the queue
             self._pending_tasks.extendleft(reversed(subtasks))
+
+            # Sync shared memory after task decomposition
+            if self.share_memory:
+                logger.info(
+                    f"Syncing shared memory after decomposing failed "
+                    f"task {task.id}"
+                )
+                self._sync_shared_memory()
+
             await self._post_ready_tasks()
         return False
 
@@ -503,6 +668,14 @@ class Workforce(BaseNode):
         # archive the packet, making it into a dependency
         self._pending_tasks.popleft()
         await self._channel.archive_task(task.id)
+
+        # Sync shared memory after task completion to share knowledge
+        if self.share_memory:
+            logger.info(
+                f"Syncing shared memory after task {task.id} completion"
+            )
+            self._sync_shared_memory()
+
         await self._post_ready_tasks()
 
     async def _graceful_shutdown(self, failed_task: Task) -> None:
@@ -565,6 +738,13 @@ class Workforce(BaseNode):
     @check_if_running(False)
     async def start(self) -> None:
         r"""Start itself and all the child nodes under it."""
+        # Sync shared memory at the start to ensure all agents have context
+        if self.share_memory:
+            logger.info(
+                f"Syncing shared memory at workforce {self.node_id} startup"
+            )
+            self._sync_shared_memory()
+
         for child in self._children:
             child_listening_task = asyncio.create_task(child.start())
             self._child_listening_tasks.append(child_listening_task)
@@ -602,6 +782,7 @@ class Workforce(BaseNode):
             task_agent_kwargs={},
             new_worker_agent_kwargs=self.new_worker_agent_kwargs,
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
+            share_memory=self.share_memory,
         )
 
         new_instance.task_agent = self.task_agent.clone(with_memory)
