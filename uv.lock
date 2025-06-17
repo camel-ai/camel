@@ -8032,22 +8032,3 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/2e/54/647ade08bf0db230bfea292f893923872fd20be6ac6f53b2b936ba839d75/zipp-3.23.0-py3-none-any.whl", hash = "sha256:071652d6115ed432f5ce1d34c336c0adfd6a884660d1e9712a256d3d3bd4b14e", size = 10276 },
 ]
 
-[[package]]
-name = "opencv-python"
-version = "4.9.0.80"
-description = "Wrapper package for OpenCV python bindings"
-category = "main"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "opencv_python-4.9.0.80-cp38-abi3-macosx_10_15_x86_64.whl", hash = "sha256:08c2b1d7a5c1b4b0a8d3f4d5e6d7e8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4"},
-    {file = "opencv_python-4.9.0.80-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:19d3e4f5a6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f"},
-    {file = "opencv_python-4.9.0.80-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2af4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b"},
-    {file = "opencv_python-4.9.0.80-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:3bf5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c"},
-    {file = "opencv_python-4.9.0.80-cp38-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:4cf5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3d"},
-    {file = "opencv_python-4.9.0.80-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5df5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3e"},
-    {file = "opencv_python-4.9.0.80-cp38-abi3-win_amd64.whl", hash = "sha256:6ef5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3f"},
-]
-dependencies = [
-    "numpy >=1.19.3,<2.0.0",
-]
