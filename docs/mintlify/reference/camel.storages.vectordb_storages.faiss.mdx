@@ -1,0 +1,305 @@
+<a id="camel.storages.vectordb_storages.faiss"></a>
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage"></a>
+
+## FaissStorage
+
+```python
+class FaissStorage(BaseVectorStorage):
+```
+
+An implementation of the `BaseVectorStorage` using FAISS,
+Facebook AI's Similarity Search library for efficient vector search.
+
+The detailed information about FAISS is available at:
+`FAISS <https://github.com/facebookresearch/faiss>`_
+
+**Parameters:**
+
+- **vector_dim** (int): The dimension of storing vectors.
+- **index_type** (str, optional): Type of FAISS index to create. Options include 'Flat', 'IVF', 'HNSW', etc. (default: :obj:`'Flat'`)
+- **collection_name** (Optional[str], optional): Name for the collection. If not provided, set it to the current time with iso format. (default: :obj:`None`)
+- **storage_path** (Optional[str], optional): Path to directory where the index will be stored. If None, index will only exist in memory. (default: :obj:`None`)
+- **distance** (VectorDistance, optional): The distance metric for vector comparison (default: :obj:`VectorDistance.COSINE`)
+- **nlist** (int, optional): Number of cluster centroids for IVF indexes. Only used if index_type includes 'IVF'. (default: :obj:`100`)
+- **m** (int, optional): HNSW parameter. Number of connections per node. Only used if index_type includes 'HNSW'. (default: :obj:`16`) **kwargs (Any): Additional keyword arguments.
+
+**Note:**
+
+- FAISS offers various index types optimized for different use cases:
+- 'Flat': Exact search, but slowest for large datasets
+- 'IVF': Inverted file index, good balance of speed and recall
+- 'HNSW': Hierarchical Navigable Small World, fast with high recall
+- 'PQ': Product Quantization for memory-efficient storage
+- The choice of index should be based on your specific requirements
+for search speed, memory usage, and accuracy.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    vector_dim: int,
+    index_type: str = 'Flat',
+    collection_name: Optional[str] = None,
+    storage_path: Optional[str] = None,
+    distance: VectorDistance = VectorDistance.COSINE,
+    nlist: int = 100,
+    m: int = 16,
+    **kwargs: Any
+):
+```
+
+Initialize the FAISS vector storage.
+
+**Parameters:**
+
+- **vector_dim**: Dimension of vectors to be stored
+- **index_type**: FAISS index type ('Flat', 'IVF', 'HNSW', etc.)
+- **collection_name**: Name of the collection (defaults to timestamp) (default: timestamp)
+- **storage_path**: Directory to save the index (None for in-memory only)
+- **distance**: Vector distance metric
+- **nlist**: Number of clusters for IVF indexes
+- **m**: HNSW parameter for connections per node **kwargs: Additional parameters
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage._generate_collection_name"></a>
+
+### _generate_collection_name
+
+```python
+def _generate_collection_name(self):
+```
+
+Generates a collection name if user doesn't provide
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage._get_index_path"></a>
+
+### _get_index_path
+
+```python
+def _get_index_path(self):
+```
+
+Returns the path to the index file
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage._get_metadata_path"></a>
+
+### _get_metadata_path
+
+```python
+def _get_metadata_path(self):
+```
+
+Returns the path to the metadata file
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage._create_index"></a>
+
+### _create_index
+
+```python
+def _create_index(self):
+```
+
+**Returns:**
+
+  A FAISS index object configured according to the parameters.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage._save_to_disk"></a>
+
+### _save_to_disk
+
+```python
+def _save_to_disk(self):
+```
+
+Save the index and metadata to disk if storage_path is provided.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage._load_from_disk"></a>
+
+### _load_from_disk
+
+```python
+def _load_from_disk(self):
+```
+
+Loads the index and metadata from disk if they exist.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.add"></a>
+
+### add
+
+```python
+def add(self, records: List[VectorRecord], **kwargs):
+```
+
+Adds a list of vectors to the index.
+
+**Parameters:**
+
+- **records** (List[VectorRecord]): List of vector records to be added. **kwargs (Any): Additional keyword arguments.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.update_payload"></a>
+
+### update_payload
+
+```python
+def update_payload(
+    self,
+    ids: List[str],
+    payload: Dict[str, Any],
+    **kwargs: Any
+):
+```
+
+Updates the payload of the vectors identified by their IDs.
+
+**Parameters:**
+
+- **ids** (List[str]): List of unique identifiers for the vectors to be updated.
+- **payload** (Dict[str, Any]): Payload to be updated for all specified IDs. **kwargs (Any): Additional keyword arguments.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.delete_collection"></a>
+
+### delete_collection
+
+```python
+def delete_collection(self):
+```
+
+Deletes the entire collection (index and metadata).
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.delete"></a>
+
+### delete
+
+```python
+def delete(
+    self,
+    ids: Optional[List[str]] = None,
+    payload_filter: Optional[Dict[str, Any]] = None,
+    **kwargs: Any
+):
+```
+
+Deletes vectors from the index based on either IDs or payload
+filters.
+
+**Parameters:**
+
+- **ids** (Optional[List[str]], optional): List of unique identifiers for the vectors to be deleted.
+- **payload_filter** (Optional[Dict[str, Any]], optional): A filter for the payload to delete points matching specific conditions. **kwargs (Any): Additional keyword arguments.
+
+**Note:**
+
+- FAISS does not support efficient single vector removal for most
+index types. This implementation recreates the index without the
+deleted vectors, which can be inefficient for large datasets.
+- If both `ids` and `payload_filter` are provided, both filters
+will be applied (vectors matching either will be deleted).
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.status"></a>
+
+### status
+
+```python
+def status(self):
+```
+
+**Returns:**
+
+  VectorDBStatus: Current status of the vector database.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.query"></a>
+
+### query
+
+```python
+def query(
+    self,
+    query: VectorDBQuery,
+    filter_conditions: Optional[Dict[str, Any]] = None,
+    **kwargs: Any
+):
+```
+
+Searches for similar vectors in the storage based on the provided
+query.
+
+**Parameters:**
+
+- **query** (VectorDBQuery): The query object containing the search vector and the number of top similar vectors to retrieve.
+- **filter_conditions** (Optional[Dict[str, Any]], optional): A dictionary specifying conditions to filter the query results. **kwargs (Any): Additional keyword arguments.
+
+**Returns:**
+
+  List[VectorDBQueryResult]: A list of query results ordered by
+similarity.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Remove all vectors from the storage.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.load"></a>
+
+### load
+
+```python
+def load(self):
+```
+
+Load the index from disk if storage_path is provided.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage.client"></a>
+
+### client
+
+```python
+def client(self):
+```
+
+Provides access to the underlying FAISS client.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage._matches_filter"></a>
+
+### _matches_filter
+
+```python
+def _matches_filter(self, vector_id: str, filter_conditions: Dict[str, Any]):
+```
+
+Checks if a vector's payload matches the filter conditions.
+
+**Parameters:**
+
+- **vector_id** (str): ID of the vector to check.
+- **filter_conditions** (Dict[str, Any]): Conditions to match against.
+
+**Returns:**
+
+  bool: True if the payload matches all conditions, False otherwise.
+
+<a id="camel.storages.vectordb_storages.faiss.FaissStorage._normalize_vector"></a>
+
+### _normalize_vector
+
+```python
+def _normalize_vector(self, vector: 'ndarray'):
+```
+
+Normalizes a vector to unit length for cosine similarity.
+
+**Parameters:**
+
+- **vector** (ndarray): Vector to normalize, either 1D or 2D array.
+
+**Returns:**
+
+  ndarray: Normalized vector with the same shape as input.

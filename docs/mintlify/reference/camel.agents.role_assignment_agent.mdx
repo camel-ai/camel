@@ -1,0 +1,43 @@
+<a id="camel.agents.role_assignment_agent"></a>
+
+<a id="camel.agents.role_assignment_agent.RoleAssignmentAgent"></a>
+
+## RoleAssignmentAgent
+
+```python
+class RoleAssignmentAgent(ChatAgent):
+```
+
+An agent that generates role names based on the task prompt.
+
+**Parameters:**
+
+- **role_assignment_prompt** (TextPrompt): A prompt for the agent to generate role names.
+
+<a id="camel.agents.role_assignment_agent.RoleAssignmentAgent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, model: Optional[BaseModelBackend] = None):
+```
+
+<a id="camel.agents.role_assignment_agent.RoleAssignmentAgent.run"></a>
+
+### run
+
+```python
+def run(self, task_prompt: Union[str, TextPrompt], num_roles: int = 2):
+```
+
+Generate role names based on the input task prompt.
+
+**Parameters:**
+
+- **task_prompt** (Union[str, TextPrompt]): The prompt for the task based on which the roles are to be generated.
+- **num_roles** (int, optional): The number of roles to generate. (default: :obj:`2`)
+
+**Returns:**
+
+  Dict[str, str]: A dictionary mapping role names to their
+descriptions.

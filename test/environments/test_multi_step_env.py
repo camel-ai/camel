@@ -23,6 +23,8 @@ from camel.environments import (
 )
 from camel.environments.multi_step import MultiStepEnv
 
+pytestmark = pytest.mark.heavy_dependency
+
 
 class MockMultiStepEnv(MultiStepEnv):
     def _get_initial_state(self) -> Dict[str, Any]:

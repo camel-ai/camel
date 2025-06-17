@@ -1,0 +1,207 @@
+<a id="camel.toolkits.stripe_toolkit"></a>
+
+<a id="camel.toolkits.stripe_toolkit.StripeToolkit"></a>
+
+## StripeToolkit
+
+```python
+class StripeToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for Stripe operations.
+
+This toolkit provides methods to interact with the Stripe API,
+allowing users to operate stripe core resources, including Customer,
+Balance, BalanceTransaction, Payment, Refund
+
+Use the Developers Dashboard https://dashboard.stripe.com/test/apikeys to
+create an API keys as STRIPE_API_KEY.
+
+**Parameters:**
+
+- **logger** (Logger): a logger to write logs.
+
+<a id="camel.toolkits.stripe_toolkit.StripeToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, retries: int = 3, timeout: Optional[float] = None):
+```
+
+<a id="camel.toolkits.stripe_toolkit.StripeToolkit.customer_get"></a>
+
+### customer_get
+
+```python
+def customer_get(self, customer_id: str):
+```
+
+Retrieve a customer by ID.
+
+**Parameters:**
+
+- **customer_id** (str): The ID of the customer to retrieve.
+
+**Returns:**
+
+  str: The customer data as a str.
+
+<a id="camel.toolkits.stripe_toolkit.StripeToolkit.customer_list"></a>
+
+### customer_list
+
+```python
+def customer_list(self, limit: int = 100):
+```
+
+List customers.
+
+**Parameters:**
+
+- **limit** (int, optional): Number of customers to retrieve. (default: :obj:`100`)
+
+**Returns:**
+
+  str: An output str if successful, or an error message string if
+failed.
+
+<a id="camel.toolkits.stripe_toolkit.StripeToolkit.balance_get"></a>
+
+### balance_get
+
+```python
+def balance_get(self):
+```
+
+**Returns:**
+
+  str: A str containing the account balance if successful, or an
+error message string if failed.
+
+<a id="camel.toolkits.stripe_toolkit.StripeToolkit.balance_transaction_list"></a>
+
+### balance_transaction_list
+
+```python
+def balance_transaction_list(self, limit: int = 100):
+```
+
+List your balance transactions.
+
+**Parameters:**
+
+- **limit** (int, optional): Number of balance transactions to retrieve. (default::obj:`100`)
+
+**Returns:**
+
+  str: A list of balance transaction data if successful, or an error
+message string if failed.
+
+<a id="camel.toolkits.stripe_toolkit.StripeToolkit.payment_get"></a>
+
+### payment_get
+
+```python
+def payment_get(self, payment_id: str):
+```
+
+Retrieve a payment by ID.
+
+**Parameters:**
+
+- **payment_id** (str): The ID of the payment to retrieve.
+
+**Returns:**
+
+  str:The payment data as a str if successful, or an error message
+string if failed.
+
+<a id="camel.toolkits.stripe_toolkit.StripeToolkit.payment_list"></a>
+
+### payment_list
+
+```python
+def payment_list(self, limit: int = 100):
+```
+
+List payments.
+
+**Parameters:**
+
+- **limit** (int, optional): Number of payments to retrieve. (default::obj:`100`)
+
+**Returns:**
+
+  str: A list of payment data if successful, or an error message
+string if failed.
+
+<a id="camel.toolkits.stripe_toolkit.StripeToolkit.refund_get"></a>
+
+### refund_get
+
+```python
+def refund_get(self, refund_id: str):
+```
+
+Retrieve a refund by ID.
+
+**Parameters:**
+
+- **refund_id** (str): The ID of the refund to retrieve.
+
+**Returns:**
+
+  str: The refund data as a str if successful, or an error message
+string if failed.
+
+<a id="camel.toolkits.stripe_toolkit.StripeToolkit.refund_list"></a>
+
+### refund_list
+
+```python
+def refund_list(self, limit: int = 100):
+```
+
+List refunds.
+
+**Parameters:**
+
+- **limit** (int, optional): Number of refunds to retrieve. (default::obj:`100`)
+
+**Returns:**
+
+  str: A list of refund data as a str if successful, or an error
+message string if failed.
+
+<a id="camel.toolkits.stripe_toolkit.StripeToolkit.handle_exception"></a>
+
+### handle_exception
+
+```python
+def handle_exception(self, func_name: str, error: Exception):
+```
+
+Handle exceptions by logging and returning an error message.
+
+**Parameters:**
+
+- **func_name** (str): The name of the function where the exception occurred.
+- **error** (Exception): The exception instance.
+
+**Returns:**
+
+  str: An error message string.
+
+<a id="camel.toolkits.stripe_toolkit.StripeToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects for the
+toolkit methods.

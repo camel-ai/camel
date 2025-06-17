@@ -28,7 +28,17 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
+    get_current_agent_session_id,
+    update_langfuse_trace,
 )
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 
 class GeminiModel(OpenAICompatibleModel):
@@ -54,6 +64,10 @@ class GeminiModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -69,6 +83,8 @@ class GeminiModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = GeminiConfig().as_dict()
@@ -85,6 +101,8 @@ class GeminiModel(OpenAICompatibleModel):
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
 
     def _process_messages(self, messages) -> List[OpenAIMessage]:
@@ -99,6 +117,7 @@ class GeminiModel(OpenAICompatibleModel):
             processed_messages.append(msg_copy)
         return processed_messages
 
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -120,15 +139,38 @@ class GeminiModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
         messages = self._process_messages(messages)
         if response_format:
-            return self._request_parse(messages, response_format)
+            if tools:
+                raise ValueError(
+                    "Gemini does not support function calling with "
+                    "response format."
+                )
+            result: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
+                self._request_parse(messages, response_format)
+            )
         else:
-            return self._request_chat_completion(messages, tools)
+            result = self._request_chat_completion(messages, tools)
 
+        return result
+
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -150,14 +192,36 @@ class GeminiModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
         messages = self._process_messages(messages)
         if response_format:
-            return await self._arequest_parse(messages, response_format)
+            if tools:
+                raise ValueError(
+                    "Gemini does not support function calling with "
+                    "response format."
+                )
+            result: Union[
+                ChatCompletion, AsyncStream[ChatCompletionChunk]
+            ] = await self._arequest_parse(messages, response_format)
         else:
-            return await self._arequest_chat_completion(messages, tools)
+            result = await self._arequest_chat_completion(messages, tools)
+
+        return result
 
     def _request_chat_completion(
         self,

@@ -19,8 +19,13 @@ import pytest
 
 from camel.embeddings import OpenAIEmbedding
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.personas import Persona, PersonaHub
-from camel.types import EmbeddingModelType, RoleType
+from camel.types import (
+    EmbeddingModelType,
+    ModelType,
+    RoleType,
+)
 
 # Mock responses
 MOCK_TEXT_TO_PERSONA_RESPONSE = """
@@ -43,6 +48,26 @@ persona_description: A professional who designs and maintains the data infrastru
 @pytest.fixture
 def persona_generator():
     return PersonaHub(model=MagicMock())
+
+
+@pytest.fixture(autouse=True)
+def mock_model_factory():
+    r"""Mock ModelFactory"""
+    # Create a mock that is recognized as a BaseModelBackend instance
+    mock_backend = MagicMock(spec=BaseModelBackend)
+    # Set necessary attributes that might be accessed
+    mock_backend.model_type = ModelType.DEFAULT
+    mock_backend.token_limit = 4096
+    mock_backend.token_counter = MagicMock()
+
+    # Patch both ModelFactory.create and the _resolve_models method
+    with (
+        patch('camel.models.ModelFactory.create', return_value=mock_backend),
+        patch(
+            'camel.agents.ChatAgent._resolve_models', return_value=mock_backend
+        ),
+    ):
+        yield
 
 
 def test_init(persona_generator: PersonaHub):

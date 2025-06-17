@@ -1,0 +1,54 @@
+<a id="camel.societies.workforce.base"></a>
+
+<a id="camel.societies.workforce.base.BaseNode"></a>
+
+## BaseNode
+
+```python
+class BaseNode(ABC):
+```
+
+Base class for all nodes in the workforce.
+
+**Parameters:**
+
+- **description** (str): Description of the node.
+- **node_id** (Optional[str]): ID of the node. If not provided, it will be generated automatically. (default: :obj:`None`)
+
+<a id="camel.societies.workforce.base.BaseNode.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, description: str, node_id: Optional[str] = None):
+```
+
+<a id="camel.societies.workforce.base.BaseNode.reset"></a>
+
+### reset
+
+```python
+def reset(self, *args: Any, **kwargs: Any):
+```
+
+Resets the node to its initial state.
+
+<a id="camel.societies.workforce.base.BaseNode.set_channel"></a>
+
+### set_channel
+
+```python
+def set_channel(self, channel: TaskChannel):
+```
+
+Sets the channel for the node.
+
+<a id="camel.societies.workforce.base.BaseNode.stop"></a>
+
+### stop
+
+```python
+def stop(self):
+```
+
+Stop the node.

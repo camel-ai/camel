@@ -1,0 +1,116 @@
+<a id="camel.environments.single_step"></a>
+
+<a id="camel.environments.single_step.SingleStepEnv"></a>
+
+## SingleStepEnv
+
+```python
+class SingleStepEnv:
+```
+
+A lightweight environment for single-step RL with LLMs as policy.
+
+This environment models a single interaction between an LLM-based agent
+and a problem drawn from a dataset—such as a question-answering or
+math problem—where the agent produces one response and receives feedback.
+
+Core Flow:
+- A question is sampled from a (possibly infinitely long) dataset.
+- The LLM generates a single-step response (the action).
+- The response is verified against the ground truth.
+- A reward is computed based on correctness and optional custom logic.
+
+Key Features:
+- Batched evaluation with per-sample state tracking.
+- Async setup and teardown for verifiers and related resources.
+- Supports deterministic sampling via local RNG (optional seed).
+- Extensible reward computation via subclassing.
+
+<a id="camel.environments.single_step.SingleStepEnv.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    dataset: Union[StaticDataset, BaseGenerator],
+    verifier: BaseVerifier,
+    timeout: Optional[float] = 180.0,
+    **kwargs
+):
+```
+
+Initialize the SingleStepEnv.
+
+**Parameters:**
+
+- **dataset** (Union[StaticDataset, BaseGenerator]): Dataset to sample problems from.
+- **verifier** (BaseVerifier): Verifier used to evaluate LLM responses against ground-truth answers.
+- **timeout** (Optional[float], optional): The execution timeout in seconds. (default: :obj:`180.0`) **kwargs: Optional metadata or configuration values.
+
+**Note:**
+
+This class assumes all interactions are single-step: one question,
+one LLM response, one reward.
+
+<a id="camel.environments.single_step.SingleStepEnv._normalize_actions"></a>
+
+### _normalize_actions
+
+```python
+def _normalize_actions(self, action: Union[Action, List[Action], str, Dict[int, str]]):
+```
+
+Normalize the user-provided action(s) into a validated list
+of `Action` objects.
+
+This method handles flexibility in input format by converting
+raw strings (only allowed when batch size is 1) and dictionaries,
+ensuring all necessary structure and integrity checks on
+actions (e.g., index bounds, duplicates).
+
+**Parameters:**
+
+- **action** (Union[Action, List[Action], str]): The raw input action(s) provided by the agent. Can be: - A single `Action` object. - A list of `Action` objects. - A raw string (if `batch_size == 1`), auto-wrapped in an `Action`. - A dict mapping int indices to str responses
+
+**Returns:**
+
+  List[Action]: A list of validated `Action` instances
+ready for evaluation.
+
+<a id="camel.environments.single_step.SingleStepEnv._batch_done"></a>
+
+### _batch_done
+
+```python
+def _batch_done(self):
+```
+
+**Returns:**
+
+  bool: True if all states are marked as done, False otherwise.
+
+<a id="camel.environments.single_step.SingleStepEnv._batch_started"></a>
+
+### _batch_started
+
+```python
+def _batch_started(self):
+```
+
+**Returns:**
+
+  bool: True if at least one state is marked as done, False
+otherwise.
+
+<a id="camel.environments.single_step.SingleStepEnv.metadata"></a>
+
+### metadata
+
+```python
+def metadata(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: A copy of the environment's metadata.

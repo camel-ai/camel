@@ -1,0 +1,203 @@
+<a id="camel.toolkits.twitter_toolkit"></a>
+
+<a id="camel.toolkits.twitter_toolkit.create_tweet"></a>
+
+## create_tweet
+
+```python
+def create_tweet(
+    text: str,
+    poll_options: Optional[List[str]] = None,
+    poll_duration_minutes: Optional[int] = None,
+    quote_tweet_id: Optional[Union[int, str]] = None
+):
+```
+
+Creates a new tweet, optionally including a poll or a quote tweet,
+or simply a text-only tweet.
+
+This function sends a POST request to the Twitter API to create a new
+tweet. The tweet can be a text-only tweet, or optionally include a poll
+or be a quote tweet. A confirmation prompt is presented to the user
+before the tweet is created.
+
+**Parameters:**
+
+- **text** (str): The text of the tweet. The Twitter character limit for a single tweet is 280 characters.
+- **poll_options** (Optional[List[str]]): A list of poll options for a tweet with a poll.
+- **poll_duration_minutes** (Optional[int]): Duration of the poll in minutes for a tweet with a poll. This is only required if the request includes poll_options.
+- **quote_tweet_id** (Optional[Union[int, str]]): Link to the tweet being quoted.
+
+**Returns:**
+
+  str: A message indicating the success of the tweet creation,
+including the tweet ID and text. If the request to the
+Twitter API is not successful, the return is an error message.
+
+**Note:**
+
+You can only provide either the `quote_tweet_id` parameter or
+the pair of `poll_duration_minutes` and `poll_options` parameters,
+not both.
+
+Reference:
+https://developer.x.com/en/docs/x-api/tweets/manage-tweets/api-reference/post-tweets
+
+<a id="camel.toolkits.twitter_toolkit.delete_tweet"></a>
+
+## delete_tweet
+
+```python
+def delete_tweet(tweet_id: str):
+```
+
+Deletes a tweet with the specified ID for an authorized user.
+
+This function sends a DELETE request to the Twitter API to delete
+a tweet with the specified ID. Before sending the request, it
+prompts the user to confirm the deletion.
+
+**Parameters:**
+
+- **tweet_id** (str): The ID of the tweet to delete.
+
+**Returns:**
+
+  str: A message indicating the result of the deletion. If the
+deletion was successful, the message includes the ID of the
+deleted tweet. If the deletion was not successful, the message
+includes an error message.
+
+Reference:
+https://developer.x.com/en/docs/x-api/tweets/manage-tweets/api-reference/delete-tweets-id
+
+<a id="camel.toolkits.twitter_toolkit.get_my_user_profile"></a>
+
+## get_my_user_profile
+
+```python
+def get_my_user_profile():
+```
+
+**Returns:**
+
+  str: A formatted report of the authenticated user's Twitter profile
+information. This includes their ID, name, username,
+description, location, most recent tweet ID, profile image URL,
+account creation date, protection status, verification type,
+public metrics, and pinned tweet information. If the request to
+the Twitter API is not successful, the return is an error message.
+
+Reference:
+https://developer.x.com/en/docs/x-api/users/lookup/api-reference/get-users-me
+
+<a id="camel.toolkits.twitter_toolkit.get_user_by_username"></a>
+
+## get_user_by_username
+
+```python
+def get_user_by_username(username: str):
+```
+
+Retrieves one user's Twitter profile info by username (handle).
+
+This function sends a GET request to the Twitter API to retrieve the
+user's profile information, including their pinned tweet.
+It then formats this information into a readable report.
+
+**Parameters:**
+
+- **username** (str): The username (handle) of the user to retrieve.
+
+**Returns:**
+
+  str: A formatted report of the user's Twitter profile information.
+This includes their ID, name, username, description, location,
+most recent tweet ID, profile image URL, account creation date,
+protection status, verification type, public metrics, and
+pinned tweet information. If the request to the Twitter API is
+not successful, the return is an error message.
+
+Reference:
+https://developer.x.com/en/docs/x-api/users/lookup/api-reference/get-users-by-username-username
+
+<a id="camel.toolkits.twitter_toolkit._get_user_info"></a>
+
+## _get_user_info
+
+```python
+def _get_user_info(username: Optional[str] = None):
+```
+
+Generates a formatted report of the user information from the
+JSON response.
+
+**Parameters:**
+
+- **username** (Optional[str], optional): The username of the user to retrieve. If None, the function retrieves the authenticated user's profile information. (default: :obj:`None`)
+
+**Returns:**
+
+  str: A formatted report of the user's Twitter profile information.
+
+<a id="camel.toolkits.twitter_toolkit._handle_http_error"></a>
+
+## _handle_http_error
+
+```python
+def _handle_http_error(response: requests.Response):
+```
+
+Handles the HTTP response by checking the status code and
+returning an appropriate message if there is an error.
+
+**Parameters:**
+
+- **response** (requests.Response): The HTTP response to handle.
+
+**Returns:**
+
+  str: A string describing the error, if any. If there is no error,
+the function returns an "Unexpected Exception" message.
+
+Reference:
+https://github.com/tweepy/tweepy/blob/master/tweepy/client.py#L64
+
+<a id="camel.toolkits.twitter_toolkit.TwitterToolkit"></a>
+
+## TwitterToolkit
+
+```python
+class TwitterToolkit(BaseToolkit):
+```
+
+A class representing a toolkit for Twitter operations.
+
+This class provides methods for creating a tweet, deleting a tweet, and
+getting the authenticated user's profile information.
+
+References:
+https://developer.x.com/en/portal/dashboard
+
+**Note:**
+
+To use this toolkit, you need to set the following environment
+variables:
+- TWITTER_CONSUMER_KEY: The consumer key for the Twitter API.
+- TWITTER_CONSUMER_SECRET: The consumer secret for the Twitter API.
+- TWITTER_ACCESS_TOKEN: The access token for the Twitter API.
+- TWITTER_ACCESS_TOKEN_SECRET: The access token secret for the Twitter
+API.
+
+<a id="camel.toolkits.twitter_toolkit.TwitterToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

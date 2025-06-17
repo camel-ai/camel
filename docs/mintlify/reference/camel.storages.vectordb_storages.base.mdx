@@ -1,0 +1,223 @@
+<a id="camel.storages.vectordb_storages.base"></a>
+
+<a id="camel.storages.vectordb_storages.base.VectorRecord"></a>
+
+## VectorRecord
+
+```python
+class VectorRecord(BaseModel):
+```
+
+Encapsulates information about a vector's unique identifier and its
+payload, which is primarily used as a data transfer object when saving
+to vector storage.
+
+**Parameters:**
+
+- **vector** (List[float]): The numerical representation of the vector.
+- **id** (str, optional): A unique identifier for the vector. If not provided, an random uuid will be assigned.
+- **payload** (Optional[Dict[str, Any]], optional): Any additional metadata or information related to the vector. (default: :obj:`None`)
+
+<a id="camel.storages.vectordb_storages.base.VectorDBQuery"></a>
+
+## VectorDBQuery
+
+```python
+class VectorDBQuery(BaseModel):
+```
+
+Represents a query to a vector database.
+
+**Parameters:**
+
+- **query_vector** (List[float]): The numerical representation of the query vector.
+- **top_k** (int, optional): The number of top similar vectors to retrieve from the database. (default: :obj:`1`)
+
+<a id="camel.storages.vectordb_storages.base.VectorDBQuery.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    query_vector: List[float],
+    top_k: int,
+    **kwargs: Any
+):
+```
+
+Pass in query_vector and tok_k as positional arg.
+
+**Parameters:**
+
+- **query_vector** (List[float]): The numerical representation of the query vector.
+- **top_k** (int, optional): The number of top similar vectors to retrieve from the database. (default: :obj:`1`)
+
+<a id="camel.storages.vectordb_storages.base.VectorDBQueryResult"></a>
+
+## VectorDBQueryResult
+
+```python
+class VectorDBQueryResult(BaseModel):
+```
+
+Encapsulates the result of a query against a vector database.
+
+**Parameters:**
+
+- **record** (VectorRecord): The target vector record.
+- **similarity** (float): The similarity score between the query vector and the record.
+
+<a id="camel.storages.vectordb_storages.base.VectorDBQueryResult.create"></a>
+
+### create
+
+```python
+def create(
+    cls,
+    similarity: float,
+    vector: List[float],
+    id: str,
+    payload: Optional[Dict[str, Any]] = None
+):
+```
+
+A class method to construct a `VectorDBQueryResult` instance.
+
+<a id="camel.storages.vectordb_storages.base.VectorDBStatus"></a>
+
+## VectorDBStatus
+
+```python
+class VectorDBStatus(BaseModel):
+```
+
+Vector database status.
+
+**Parameters:**
+
+- **vector_dim** (int): The dimension of stored vectors.
+- **vector_count** (int): The number of stored vectors.
+
+<a id="camel.storages.vectordb_storages.base.BaseVectorStorage"></a>
+
+## BaseVectorStorage
+
+```python
+class BaseVectorStorage(ABC):
+```
+
+An abstract base class for vector storage systems.
+
+<a id="camel.storages.vectordb_storages.base.BaseVectorStorage.add"></a>
+
+### add
+
+```python
+def add(self, records: List[VectorRecord], **kwargs: Any):
+```
+
+Saves a list of vector records to the storage.
+
+**Parameters:**
+
+- **records** (List[VectorRecord]): List of vector records to be saved. **kwargs (Any): Additional keyword arguments.
+
+<a id="camel.storages.vectordb_storages.base.BaseVectorStorage.delete"></a>
+
+### delete
+
+```python
+def delete(self, ids: List[str], **kwargs: Any):
+```
+
+Deletes a list of vectors identified by their IDs from the storage.
+
+**Parameters:**
+
+- **ids** (List[str]): List of unique identifiers for the vectors to be deleted. **kwargs (Any): Additional keyword arguments.
+
+<a id="camel.storages.vectordb_storages.base.BaseVectorStorage.status"></a>
+
+### status
+
+```python
+def status(self):
+```
+
+**Returns:**
+
+  VectorDBStatus: The vector database status.
+
+<a id="camel.storages.vectordb_storages.base.BaseVectorStorage.query"></a>
+
+### query
+
+```python
+def query(self, query: VectorDBQuery, **kwargs: Any):
+```
+
+Searches for similar vectors in the storage based on the provided
+query.
+
+**Parameters:**
+
+- **query** (VectorDBQuery): The query object containing the search vector and the number of top similar vectors to retrieve. **kwargs (Any): Additional keyword arguments.
+
+**Returns:**
+
+  List[VectorDBQueryResult]: A list of vectors retrieved from the
+storage based on similarity to the query vector.
+
+<a id="camel.storages.vectordb_storages.base.BaseVectorStorage.clear"></a>
+
+### clear
+
+```python
+def clear(self):
+```
+
+Remove all vectors from the storage.
+
+<a id="camel.storages.vectordb_storages.base.BaseVectorStorage.load"></a>
+
+### load
+
+```python
+def load(self):
+```
+
+Load the collection hosted on cloud service.
+
+<a id="camel.storages.vectordb_storages.base.BaseVectorStorage.client"></a>
+
+### client
+
+```python
+def client(self):
+```
+
+Provides access to the underlying vector database client.
+
+<a id="camel.storages.vectordb_storages.base.BaseVectorStorage.get_payloads_by_vector"></a>
+
+### get_payloads_by_vector
+
+```python
+def get_payloads_by_vector(self, vector: List[float], top_k: int):
+```
+
+Returns payloads of top k vector records that closest to the given
+vector.
+
+This function is a wrapper of `BaseVectorStorage.query`.
+
+**Parameters:**
+
+- **vector** (List[float]): The search vector.
+- **top_k** (int): The number of top similar vectors.
+
+**Returns:**
+
+  List[List[Dict[str, Any]]]: A list of vector payloads retrieved
+from the storage based on similarity to the query vector.

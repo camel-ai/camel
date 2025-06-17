@@ -1,0 +1,377 @@
+<a id="camel.verifiers.physics_verifier"></a>
+
+<a id="camel.verifiers.physics_verifier.UnitParser"></a>
+
+## UnitParser
+
+```python
+class UnitParser:
+```
+
+Class for handling unit parsing and manipulation operations.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+<a id="camel.verifiers.physics_verifier.UnitParser._load_sympy_units"></a>
+
+### _load_sympy_units
+
+```python
+def _load_sympy_units():
+```
+
+**Returns:**
+
+  Dict[str, Any]: Dictionary mapping unit names to their
+corresponding sympy Quantity objects.
+
+<a id="camel.verifiers.physics_verifier.UnitParser._add_si_prefixes"></a>
+
+### _add_si_prefixes
+
+```python
+def _add_si_prefixes(self):
+```
+
+Add SI prefixed units (like km, MHz, etc.) to the allowed units.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.parse_unit"></a>
+
+### parse_unit
+
+```python
+def parse_unit(self, unit_str: str):
+```
+
+Parse a unit string into a SymPy expression using the appropriate
+method.
+
+**Parameters:**
+
+- **unit_str** (str): The unit string to parse.
+
+**Returns:**
+
+  Optional[Any]: SymPy expression representing the unit, or None
+if parsing fails or the unit is dimensionless.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.parse_unit_with_latex"></a>
+
+### parse_unit_with_latex
+
+```python
+def parse_unit_with_latex(self, unit_str: str):
+```
+
+Parse a unit string using SymPy's LaTeX parser.
+
+**Parameters:**
+
+- **unit_str** (str): The unit string in LaTeX format.
+
+**Returns:**
+
+  Any: SymPy expression representing the unit, or the
+original string if parsing fails.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.detect_scaling_factor"></a>
+
+### detect_scaling_factor
+
+```python
+def detect_scaling_factor(self, unit_expr: Any):
+```
+
+Detect a scaling factor in the unit expression.
+
+**Parameters:**
+
+- **unit_expr** (Any): The unit expression.
+
+**Returns:**
+
+  Tuple[Union[int, float, Any], Any]: Tuple of scale
+factor and base unit.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.preprocess_unit_string"></a>
+
+### preprocess_unit_string
+
+```python
+def preprocess_unit_string(unit_str: str):
+```
+
+Preprocess a unit string to replace '^' with '**' for
+exponentiation.
+
+**Parameters:**
+
+- **unit_str** (str): The unit string to preprocess.
+
+**Returns:**
+
+  str: Preprocessed unit string.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.unit_is_none"></a>
+
+### unit_is_none
+
+```python
+def unit_is_none(unit_str: Optional[str]):
+```
+
+Check if a unit string represents 'no unit' or is empty.
+
+**Parameters:**
+
+- **unit_str** (Optional[str]): The unit string to check.
+
+**Returns:**
+
+  bool: True if the unit is None or represents 'no unit'.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.extract_value_and_unit"></a>
+
+### extract_value_and_unit
+
+```python
+def extract_value_and_unit(expr: Any):
+```
+
+Extract numerical value and unit components from a SymPy
+expression.
+
+**Parameters:**
+
+- **expr** (Any): SymPy expression with units.
+
+**Returns:**
+
+  Tuple[Union[int, float, Any], Any]: Numerical
+value and unit expression.
+
+<a id="camel.verifiers.physics_verifier.UnitParser.detect_unit_args"></a>
+
+### detect_unit_args
+
+```python
+def detect_unit_args(unit_expr: Any):
+```
+
+Extract the base units from a composite SymPy unit expression.
+
+**Parameters:**
+
+- **unit_expr** (Any): SymPy expression representing a composite unit.
+
+**Returns:**
+
+  List[Any]: List of SymPy base unit components.
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator"></a>
+
+## PhysicsSolutionComparator
+
+```python
+class PhysicsSolutionComparator:
+```
+
+Class for compare solutions and reference answers that contains value
+and units.
+
+**Parameters:**
+
+- **solution** (str): The output from running the solution code.
+- **reference_answer** (str): The reference answer to compare against.
+- **float_tolerance** (Optional[float], optional): The tolerance for floating point comparisons. (default: :obj:`None`)
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    solution: str,
+    reference_answer: str,
+    float_tolerance: Optional[float] = None
+):
+```
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator._split_value_unit"></a>
+
+### _split_value_unit
+
+```python
+def _split_value_unit(s: str):
+```
+
+Split a string into value and unit components.
+Handles LaTeX-style units enclosed in dollar signs.
+
+**Parameters:**
+
+- **s** (str): The input string.
+
+**Returns:**
+
+  Tuple[str, str]: Tuple of (value, unit) as strings.
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator._clean_answer"></a>
+
+### _clean_answer
+
+```python
+def _clean_answer(raw_answer: str):
+```
+
+Clean a raw answer string by removing LaTeX formatting.
+
+**Parameters:**
+
+- **raw_answer** (str): The raw answer string potentially containing LaTeX formatting.
+
+**Returns:**
+
+  str: The cleaned answer string without LaTeX formatting.
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator._parse_expression"></a>
+
+### _parse_expression
+
+```python
+def _parse_expression(expr: Any):
+```
+
+Parse an expression into a SymPy expression.
+
+**Parameters:**
+
+- **expr** (Any): Expression to parse, can be a string, number, or other type.
+
+**Returns:**
+
+  Any: Parsed SymPy expression.
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator._is_number"></a>
+
+### _is_number
+
+```python
+def _is_number(s: Any):
+```
+
+Check if a value can be converted to a number.
+
+**Parameters:**
+
+- **s** (Any): Value to check.
+
+**Returns:**
+
+  bool: True if the value can be converted to a number.
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator._detect_tolerance"></a>
+
+### _detect_tolerance
+
+```python
+def _detect_tolerance(default_tolerance: float, value: str):
+```
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator._convert_units"></a>
+
+### _convert_units
+
+```python
+def _convert_units(self):
+```
+
+Convert the solution units to match gt units
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator.verify_unit"></a>
+
+### verify_unit
+
+```python
+def verify_unit(sol_unit_expr: Any, gt_unit_expr: Any):
+```
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator.compare_solution_to_reference"></a>
+
+### compare_solution_to_reference
+
+```python
+def compare_solution_to_reference(self):
+```
+
+**Returns:**
+
+  VerificationResult with comparison status.
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator._get_value_unit_pairs"></a>
+
+### _get_value_unit_pairs
+
+```python
+def _get_value_unit_pairs(self):
+```
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator._compare_numeric_values"></a>
+
+### _compare_numeric_values
+
+```python
+def _compare_numeric_values(self):
+```
+
+Compare numerical values, with unit conversion if needed.
+
+<a id="camel.verifiers.physics_verifier.PhysicsSolutionComparator._compare_symbolic_values"></a>
+
+### _compare_symbolic_values
+
+```python
+def _compare_symbolic_values(self):
+```
+
+Compare symbolic expressions for equivalence.
+
+<a id="camel.verifiers.physics_verifier.PhysicsVerifier"></a>
+
+## PhysicsVerifier
+
+```python
+class PhysicsVerifier(PythonVerifier):
+```
+
+The PhysicsVerifier inherits PythonVerifier and makes it able to
+compare and convert units.
+
+**Parameters:**
+
+- **extractor** (Optional[BaseExtractor]): The extractor to use for extracting code from messages. (default: :obj:`None`)
+- **timeout** (Optional[float]): The timeout for code execution in seconds. (default: :obj:`30.0`)
+- **required_packages** (Optional[List[str]]): The required packages for code execution. (default: :obj:`None`)
+- **float_tolerance** (Optional[float]): The relative tolerance used to compare numerical values. (default: :obj:`None`) **kwargs: Additional keyword arguments to pass to the parent class.
+
+<a id="camel.verifiers.physics_verifier.PhysicsVerifier.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    extractor: Optional[BaseExtractor] = None,
+    timeout: Optional[float] = 30.0,
+    required_packages: Optional[List[str]] = None,
+    float_tolerance: Optional[float] = None,
+    **kwargs
+):
+```

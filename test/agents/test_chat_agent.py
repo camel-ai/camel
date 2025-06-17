@@ -16,7 +16,7 @@ import json
 from copy import deepcopy
 from io import BytesIO
 from typing import List
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from openai.types.chat.chat_completion import Choice
@@ -83,7 +83,7 @@ parametrize = pytest.mark.parametrize(
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
+            model_type=ModelType.GPT_4_1_MINI,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -103,11 +103,11 @@ def test_chat_agent(model, step_call_count=3):
     assistant_without_sys_msg = ChatAgent(model=model)
 
     assert str(assistant_with_sys_msg) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_4O_MINI})"
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_4_1_MINI})"
     )
     assert str(assistant_without_sys_msg) == (
         "ChatAgent(assistant, "
-        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_4O_MINI)})"
+        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_4_1_MINI)})"
     )
 
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
@@ -696,15 +696,7 @@ def test_chat_agent_multiple_return_message_error(n, step_call_count=3):
     )
     for _ in range(step_call_count):
         assistant_response = assistant.step(user_msg)
-
-        with pytest.raises(
-            RuntimeError,
-            match=(
-                "Property msg is only available "
-                "for a single message in msgs."
-            ),
-        ):
-            _ = assistant_response.msg
+        assert assistant_response.msg is None
 
 
 @pytest.mark.model_backend
@@ -1084,7 +1076,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         ),
     )
 
-    model.run = MagicMock(
+    model.arun = AsyncMock(
         side_effect=[
             model_backend_rsp_tool,
             model_backend_rsp_tool1,

@@ -1,0 +1,163 @@
+<a id="camel.interpreters.subprocess_interpreter"></a>
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter"></a>
+
+## SubprocessInterpreter
+
+```python
+class SubprocessInterpreter(BaseInterpreter):
+```
+
+SubprocessInterpreter is a class for executing code files or code
+strings in a subprocess.
+
+This class handles the execution of code in different scripting languages
+(currently Python and Bash) within a subprocess, capturing their
+stdout and stderr streams, and allowing user checking before executing code
+strings.
+
+**Parameters:**
+
+- **require_confirm** (bool, optional): If True, prompt user before running code strings for security. (default: :obj:`True`)
+- **print_stdout** (bool, optional): If True, print the standard output of the executed code. (default: :obj:`False`)
+- **print_stderr** (bool, optional): If True, print the standard error of the executed code. (default: :obj:`True`)
+- **execution_timeout** (int, optional): Maximum time in seconds to wait for code execution to complete. (default: :obj:`60`)
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    require_confirm: bool = True,
+    print_stdout: bool = False,
+    print_stderr: bool = True,
+    execution_timeout: int = 60
+):
+```
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter.run_file"></a>
+
+### run_file
+
+```python
+def run_file(self, file: Path, code_type: str = 'python'):
+```
+
+Executes a code file in a subprocess and captures its output.
+
+**Parameters:**
+
+- **file** (Path): The path object of the file to run.
+- **code_type** (str): The type of code to execute (e.g., 'python', 'bash'). (default: obj:`python`)
+
+**Returns:**
+
+  str: A string containing the captured stdout and stderr of the
+executed code.
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter.run"></a>
+
+### run
+
+```python
+def run(self, code: str, code_type: str):
+```
+
+Generates a temporary file with the given code, executes it, and
+deletes the file afterward.
+
+**Parameters:**
+
+- **code** (str): The code string to execute.
+- **code_type** (str): The type of code to execute (e.g., 'python', 'bash').
+
+**Returns:**
+
+  str: A string containing the captured stdout and stderr of the
+executed code.
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter._create_temp_file"></a>
+
+### _create_temp_file
+
+```python
+def _create_temp_file(self, code: str, extension: str):
+```
+
+Creates a temporary file with the given code and extension.
+
+**Parameters:**
+
+- **code** (str): The code to write to the temporary file.
+- **extension** (str): The file extension to use.
+
+**Returns:**
+
+  Path: The path to the created temporary file.
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter._check_code_type"></a>
+
+### _check_code_type
+
+```python
+def _check_code_type(self, code_type: str):
+```
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter.supported_code_types"></a>
+
+### supported_code_types
+
+```python
+def supported_code_types(self):
+```
+
+Provides supported code types by the interpreter.
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter.update_action_space"></a>
+
+### update_action_space
+
+```python
+def update_action_space(self, action_space: Dict[str, Any]):
+```
+
+Updates action space for *python* interpreter
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter._is_command_available"></a>
+
+### _is_command_available
+
+```python
+def _is_command_available(self, command: str):
+```
+
+Check if a command is available in the system PATH.
+
+**Parameters:**
+
+- **command** (str): The command to check.
+
+**Returns:**
+
+  bool: True if the command is available, False otherwise.
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Executes a shell command in a subprocess and captures its output.
+
+**Parameters:**
+
+- **command** (str): The shell command to execute.
+
+**Returns:**
+
+  tuple: A tuple containing the captured stdout and stderr of the
+executed command.

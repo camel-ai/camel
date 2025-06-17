@@ -1,5 +1,3 @@
-# Task
-
 For more detailed usage information, please refer to our cookbook: [Task Generation Cookbook](../cookbooks/multi_agent_society/task_generation.ipynb)
 
 ## 1. Concept
@@ -115,7 +113,7 @@ task = Task(
 )
 
 
-new_tasks = task.decompose(agent=agent, template=TASK_DECOMPOSE_PROMPT)
+new_tasks = task.decompose(agent=agent)
 for t in new_tasks:
     print(t.to_string())
 ```

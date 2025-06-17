@@ -1,0 +1,88 @@
+<a id="camel.agents.mcp_agent"></a>
+
+<a id="camel.agents.mcp_agent.MCPAgent"></a>
+
+## MCPAgent
+
+```python
+class MCPAgent(ChatAgent):
+```
+
+A specialized agent designed to interact with MCP registries.
+The MCPAgent enhances a base ChatAgent by integrating MCP tools from
+various registries for search capabilities.
+
+**Parameters:**
+
+- **system_message** (Optional[str]): The system message for the chat agent. (default: :str:`"You are an assistant with search capabilities using MCP tools."`)
+- **model** (BaseModelBackend): The model backend to use for generating responses. (default: :obj:`ModelPlatformType.DEFAULT` with `ModelType.DEFAULT`)
+- **registry_configs** (List[BaseMCPRegistryConfig]): List of registry configurations (default: :obj:`None`)
+- **local_config** (Optional[Dict[str, Any]]): The local configuration for the MCP agent. (default: :obj:`None`)
+- **local_config_path** (Optional[str]): The path to the local configuration file for the MCP agent. (default: :obj:`None`)
+- **function_calling_available** (bool): Flag indicating whether the model is equipped with the function calling ability. (default: :obj:`True`) **kwargs: Inherited from ChatAgent
+
+<a id="camel.agents.mcp_agent.MCPAgent.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    system_message: Optional[Union[str, BaseMessage]] = 'You are an assistant with search capabilities using MCP tools.',
+    model: Optional[BaseModelBackend] = None,
+    registry_configs: Optional[Union[List[BaseMCPRegistryConfig], BaseMCPRegistryConfig]] = None,
+    local_config: Optional[Dict[str, Any]] = None,
+    local_config_path: Optional[str] = None,
+    tools: Optional[List[Union[FunctionTool, Callable]]] = None,
+    function_calling_available: bool = True,
+    **kwargs
+):
+```
+
+<a id="camel.agents.mcp_agent.MCPAgent._initialize_mcp_toolkit"></a>
+
+### _initialize_mcp_toolkit
+
+```python
+def _initialize_mcp_toolkit(self):
+```
+
+Initialize the MCP toolkit from the provided configuration.
+
+<a id="camel.agents.mcp_agent.MCPAgent.add_registry"></a>
+
+### add_registry
+
+```python
+def add_registry(self, registry_config: BaseMCPRegistryConfig):
+```
+
+Add a new registry configuration to the agent.
+
+**Parameters:**
+
+- **registry_config** (BaseMCPRegistryConfig): The registry configuration to add.
+
+<a id="camel.agents.mcp_agent.MCPAgent.step"></a>
+
+### step
+
+```python
+def step(
+    self,
+    input_message: Union[BaseMessage, str],
+    *args,
+    **kwargs
+):
+```
+
+Synchronous step function. Make sure MCP toolkit is connected
+before proceeding.
+
+**Parameters:**
+
+- **input_message** (Union[BaseMessage, str]): The input message. *args: Additional arguments. **kwargs: Additional keyword arguments.
+
+**Returns:**
+
+  ChatAgentResponse: The response from the agent.
