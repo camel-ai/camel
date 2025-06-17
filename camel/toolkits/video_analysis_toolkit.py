@@ -22,6 +22,32 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional
 
+import sys
+import types
+
+class LazyLoader(types.ModuleType):
+    def __init__(self, name, module_name):
+        super().__init__(name)
+        self._name = name
+        self._module_name = module_name
+        self._mod = None
+
+    def _load(self):
+        if self._mod is None:
+            self._mod = __import__(self._module_name, fromlist=[""])
+            sys.modules[self._name] = self._mod
+        return self._mod
+
+    def __getattr__(self, name):
+        return getattr(self._load(), name)
+
+    def __dir__(self):
+        return dir(self._load())
+
+sys.modules["cv2"] = LazyLoader("cv2", "cv2")
+sys.modules["np"] = LazyLoader("np", "numpy")
+sys.modules["numpy"] = sys.modules["np"] 
+
 import cv2
 import numpy as np
 from PIL import Image
