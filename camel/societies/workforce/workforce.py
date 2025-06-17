@@ -1049,9 +1049,7 @@ class Workforce(BaseNode):
             ).result()
         else:
             try:
-                running_loop = asyncio.get_running_loop()
-                reset_task = running_loop.create_task(self._async_reset())
-                del reset_task  # Satisfy linter about unused variable
+                self._reset_task = asyncio.create_task(self._async_reset())
             except RuntimeError:
                 asyncio.run(self._async_reset())
 
