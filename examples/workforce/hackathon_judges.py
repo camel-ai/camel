@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import asyncio
 import textwrap
 
 from camel.agents import ChatAgent
@@ -58,7 +57,7 @@ def make_judge(
     return agent
 
 
-async def main():
+def main():
     proj_content = textwrap.dedent(
         """\
         Project name: CAMEL-Powered Adaptive Learning Assistant
@@ -252,7 +251,7 @@ async def main():
         worker=researcher_agent,
     )
 
-    await workforce.process_task(task)
+    workforce.process_task(task)
 
     # Test WorkforceLogger features
     print("\n--- Workforce Log Tree ---")
@@ -270,7 +269,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
 
 '''
 ===============================================================================

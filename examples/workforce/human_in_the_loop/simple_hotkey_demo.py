@@ -26,7 +26,7 @@ from camel.types import ModelPlatformType, ModelType
 
 
 def create_simple_workforce():
-    """Create a simple workforce for demonstration."""
+    r"""Create a simple workforce for demonstration."""
     thinking_toolkit = ThinkingToolkit()
     file_write_toolkit = FileWriteToolkit()
 
@@ -53,8 +53,8 @@ def create_simple_workforce():
             content="You are a file write agent.",
         ),
         model=ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O,
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
         ),
         tools=[*file_write_toolkit.get_tools()],
     )
@@ -66,7 +66,7 @@ def create_simple_workforce():
     return workforce
 
 
-def simple_intervention_menu(workforce):
+def simple_intervention_menu(workforce: Workforce):
     """Simple intervention menu for quick operations."""
     while True:
         print("\n🎮 INTERVENTION MODE")
@@ -156,7 +156,7 @@ def main():
     # Start workforce in background
     def run_workforce():
         try:
-            asyncio.run(workforce.process_task(task, interactive=True))
+            asyncio.run(workforce.process_task_async(task, interactive=True))
             print("\n🎉 Task completed!")
         except Exception as e:
             print(f"\n❌ Error: {e}")

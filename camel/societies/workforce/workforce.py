@@ -74,6 +74,8 @@ class WorkforceSnapshot:
         main_task: Optional[Task] = None,
         pending_tasks: Optional[Deque[Task]] = None,
         completed_tasks: Optional[List[Task]] = None,
+        task_dependencies: Optional[Dict[str, List[str]]] = None,
+        assignees: Optional[Dict[str, str]] = None,
         current_task_index: int = 0,
         description: str = "",
     ):
@@ -82,6 +84,11 @@ class WorkforceSnapshot:
         self.completed_tasks = (
             completed_tasks.copy() if completed_tasks else []
         )
+        self.task_dependencies = (
+            task_dependencies.copy() if task_dependencies else {}
+        )
+        self.assignees = assignees.copy() if assignees else {}
+        self.current_task_index = current_task_index
         self.description = description
         self.timestamp = time.time()
 
@@ -154,7 +161,7 @@ class Workforce(BaseNode):
         >>> # Process a task
         >>> async def main():
         ...     task = Task(content="Research AI trends", id="1")
-        ...     result = await workforce.process_task(task)
+        ...     result = workforce.process_task(task)
         ...     return result
         >>> asyncio.run(main())
     """
@@ -351,7 +358,7 @@ class Workforce(BaseNode):
             from camel.memories.records import MemoryRecord
 
             # Create consolidated memory objects from records
-            memory_records = []
+            memory_records: List[MemoryRecord] = []
             for record_dict in all_records:
                 try:
                     memory_record = MemoryRecord.from_dict(record_dict)
@@ -521,8 +528,10 @@ class Workforce(BaseNode):
             main_task=self._task,
             pending_tasks=self._pending_tasks,
             completed_tasks=self._completed_tasks,
+            task_dependencies=self._task_dependencies,
+            assignees=self._assignees,
             current_task_index=len(self._completed_tasks),
-            description=description,
+            description=description or f"Snapshot at {time.time()}",
         )
         self._snapshots.append(snapshot)
         logger.info(f"Snapshot saved: {description}")
@@ -694,6 +703,8 @@ class Workforce(BaseNode):
         self._task = snapshot.main_task
         self._pending_tasks = snapshot.pending_tasks.copy()
         self._completed_tasks = snapshot.completed_tasks.copy()
+        self._task_dependencies = snapshot.task_dependencies.copy()
+        self._assignees = snapshot.assignees.copy()
 
         logger.info(f"Workforce state restored from snapshot {snapshot_index}")
         return True
@@ -710,10 +721,10 @@ class Workforce(BaseNode):
         }
 
     @check_if_running(False)
-    async def process_task(
+    async def process_task_async(
         self, task: Task, interactive: bool = False
     ) -> Task:
-        r"""Main entry point to process a task.
+        r"""Main entry point to process a task asynchronously.
 
         Args:
             task (Task): The task to be processed.
@@ -781,17 +792,58 @@ class Workforce(BaseNode):
                 for sub in task.subtasks
                 if sub.result
             )
-            task.state = TaskState.DONE
-
-        if subtasks:
-            task.result = "\n\n".join(
-                f"--- Subtask {sub.id} Result ---\n{sub.result}"
-                for sub in task.subtasks
-                if sub.result
-            )
-            task.state = TaskState.DONE
+            if task.subtasks and all(
+                sub.state == TaskState.DONE for sub in task.subtasks
+            ):
+                task.state = TaskState.DONE
+            else:
+                task.state = TaskState.FAILED
 
         return task
+
+    def process_task(self, task: Task) -> Task:
+        r"""Synchronous wrapper for process_task that handles async operations
+        internally.
+
+        Args:
+            task (Task): The task to be processed.
+
+        Returns:
+            Task: The updated task.
+
+        Example:
+            >>> workforce = Workforce("My Team")
+            >>> task = Task(content="Analyze data", id="1")
+            >>> result = workforce.process_task(task)  # No async/await
+            needed
+            >>> print(result.result)
+        """
+        import asyncio
+        import concurrent.futures
+
+        # Check if we're already in an event loop
+        try:
+            asyncio.get_running_loop()
+
+            # If we're in an event loop, we need to run in a thread
+            def run_in_thread():
+                # Create new event loop for this thread
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    return new_loop.run_until_complete(
+                        self.process_task_async(task)
+                    )
+                finally:
+                    new_loop.close()
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(run_in_thread)
+                return future.result()
+
+        except RuntimeError:
+            # No event loop running, we can create one
+            return asyncio.run(self.process_task_async(task))
 
     async def _process_task_with_snapshot(self, task: Task) -> Task:
         r"""Async version of process_task that supports human intervention.
@@ -1029,7 +1081,7 @@ class Workforce(BaseNode):
         self._child_listening_tasks.clear()
         # Clear dependency tracking
         self._task_dependencies.clear()
-        self._completed_tasks.clear()
+        self._completed_tasks = []
         self._assignees.clear()
         self._in_flight_tasks = 0
         self.coordinator_agent.reset()
@@ -1128,8 +1180,6 @@ class Workforce(BaseNode):
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
         # Record the start time when a task is posted
-        import time
-
         self._task_start_times[task.id] = time.time()
 
         if self.metrics_logger:
@@ -1334,13 +1384,13 @@ class Workforce(BaseNode):
                     parent_task_id=task.id,
                     subtask_ids=[st.id for st in subtasks],
                 )
-                for subtask_item in subtasks:
+                for subtask in subtasks:
                     self.metrics_logger.log_task_created(
-                        task_id=subtask_item.id,
-                        description=subtask_item.content,
+                        task_id=subtask.id,
+                        description=subtask.content,
                         parent_task_id=task.id,
-                        task_type=subtask_item.type,
-                        metadata=subtask_item.additional_info,
+                        task_type=subtask.type,
+                        metadata=subtask.additional_info,
                     )
             # Insert packets at the head of the queue
             self._pending_tasks.extendleft(reversed(subtasks))
@@ -1385,8 +1435,6 @@ class Workforce(BaseNode):
             token_usage = None
 
             # Get processing time from task start time or additional info
-            import time
-
             if task.id in self._task_start_times:
                 processing_time_seconds = (
                     time.time() - self._task_start_times[task.id]
@@ -1940,9 +1988,9 @@ class Workforce(BaseNode):
                 >>> for child in children:
                 ...     print(f"{child['type']}: {child['description']}")
             """
-            children_info = []
+            children_info: List[Dict[str, Any]] = []
             for child in workforce_instance._children:
-                child_info = {
+                child_info: Dict[str, Any] = {
                     "node_id": child.node_id,
                     "description": child.description,
                     "type": type(child).__name__,
