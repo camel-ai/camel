@@ -12,6 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
+
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
@@ -21,7 +23,7 @@ from camel.toolkits import GoogleMapsToolkit, SearchToolkit, WeatherToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
-def main():
+async def main():
     guide_sysmsg = BaseMessage.make_assistant_message(
         role_name="tour guide",
         content="You have to lead everyone to have fun",
@@ -76,10 +78,22 @@ def main():
         content="research history of Paris and plan a tour.",
         id='0',
     )
-    task = workforce.process_task(human_task)
+    await workforce.process_task(human_task)
 
-    print('Final result of original task:\n', task.result)
+    # Test WorkforceLogger features
+    print("\n--- Workforce Log Tree ---")
+    print(workforce.get_workforce_log_tree())
+
+    print("\n--- Workforce KPIs ---")
+    kpis = workforce.get_workforce_kpis()
+    for key, value in kpis.items():
+        print(f"{key}: {value}")
+
+    log_file_path = "hackathon_judges_logs.json"
+    print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
+    workforce.dump_workforce_logs(log_file_path)
+    print(f"Logs dumped. Please check the file: {log_file_path}")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
