@@ -18,7 +18,8 @@ from pydantic import BaseModel
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from camel.types import ModelType
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
 from camel.utils.response_format import model_from_json_schema
 
 
@@ -53,10 +54,14 @@ class MessageSummarizer:
         self,
         model: Optional[Union[str, ModelType]] = None,
     ):
-        self.model = model or ModelType.GPT_4O_MINI
+        self.model_backend = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=model or ModelType.GPT_4O_MINI,
+        )
         self.agent = ChatAgent(
-            system_message=(
-                "You are a skilled conversation summarizer. "
+            BaseMessage.make_assistant_message(
+                role_name="Message Summarizer",
+                content="You are a skilled conversation summarizer. "
                 "Your task is to analyze chat messages and "
                 "create structured summaries that "
                 "capture:\n"
@@ -66,9 +71,9 @@ class MessageSummarizer:
                 "- Progress made on the main task\n"
                 "- Relevant contextual information\n\n"
                 "Provide summaries that are concise while "
-                "preserving critical information."
+                "preserving critical information.",
             ),
-            model=self.model,
+            model=self.model_backend,
         )
 
     def summarize(self, messages: List[BaseMessage]) -> SummarySchema:

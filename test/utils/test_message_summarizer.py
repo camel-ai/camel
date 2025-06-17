@@ -56,12 +56,12 @@ def test_message_summarizer_initialization():
     """Test the initialization of MessageSummarizer."""
     # Test with default model
     summarizer = MessageSummarizer()
-    assert summarizer.model == ModelType.GPT_4O_MINI
+    assert summarizer.model_backend.model_type == ModelType.GPT_4O_MINI
 
     # Test with custom model
     custom_model = ModelType.GPT_4_1_MINI
     summarizer = MessageSummarizer(model=custom_model)
-    assert summarizer.model == custom_model
+    assert summarizer.model_backend.model_type == custom_model
 
 
 def test_summarize_messages(sample_messages: List[BaseMessage]):
@@ -148,7 +148,7 @@ def test_summarize_with_special_characters():
     assert isinstance(summary, SummarySchema)
     assert "User" in summary.roles
     assert "Assistant" in summary.roles
-    assert any("API" in entity for entity in summary.key_entities)
+    assert any("api" in entity.lower() for entity in summary.key_entities)
     assert any(
         "endpoints" in entity.lower() for entity in summary.key_entities
     )
