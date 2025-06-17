@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any, Dict, Tuple
 
 import yaml
-from terminal_bench.terminal.terminal import Terminal, spin_up_terminal
+from camel.environments.terminal_use_env.docker_terminal.terminal import Terminal, spin_up_terminal
 
 from camel.environments.base import MultiStepEnv
 from camel.environments.models import Action, Observation
