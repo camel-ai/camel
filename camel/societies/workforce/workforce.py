@@ -446,13 +446,14 @@ class Workforce(BaseNode):
         if self._loop and not self._loop.is_closed():
             self._submit_coro_to_loop(self._async_pause())
         else:
-            # Loop not yet created – just mark state so when loop starts it
+            # Loop not yet created, just mark state so when loop starts it
             # will proceed.
             if self._state == WorkforceState.RUNNING:
                 self._state = WorkforceState.PAUSED
                 self._pause_event.clear()
                 logger.info(
-                    f"Workforce {self.node_id} paused (event-loop not yet started)."
+                    f"Workforce {self.node_id} paused "
+                    f"(event-loop not yet started)."
                 )
 
     async def _async_resume(self) -> None:
@@ -472,13 +473,14 @@ class Workforce(BaseNode):
         if self._loop and not self._loop.is_closed():
             self._submit_coro_to_loop(self._async_resume())
         else:
-            # Loop not running yet – just mark state so when loop starts it
+            # Loop not running yet, just mark state so when loop starts it
             # will proceed.
             if self._state == WorkforceState.PAUSED:
                 self._state = WorkforceState.RUNNING
                 self._pause_event.set()
                 logger.info(
-                    f"Workforce {self.node_id} resumed (event-loop not yet started)."
+                    f"Workforce {self.node_id} resumed "
+                    f"(event-loop not yet started)."
                 )
 
     async def _async_stop_gracefully(self) -> None:
@@ -502,14 +504,15 @@ class Workforce(BaseNode):
         if self._loop and not self._loop.is_closed():
             self._submit_coro_to_loop(self._async_stop_gracefully())
         else:
-            # Loop not yet created – set the flag synchronously so later
+            # Loop not yet created, set the flag synchronously so later
             # startup will respect it.
             self._stop_requested = True
             # Ensure any pending pause is released so that when the loop does
             # start it can see the stop request and exit.
             self._pause_event.set()
             logger.info(
-                f"Workforce {self.node_id} stop requested (event-loop not yet started)."
+                f"Workforce {self.node_id} stop requested "
+                f"(event-loop not yet started)."
             )
 
     def save_snapshot(self, description: str = "") -> None:
@@ -1047,7 +1050,8 @@ class Workforce(BaseNode):
         else:
             try:
                 running_loop = asyncio.get_running_loop()
-                running_loop.create_task(self._async_reset())
+                reset_task = running_loop.create_task(self._async_reset())
+                del reset_task  # Satisfy linter about unused variable
             except RuntimeError:
                 asyncio.run(self._async_reset())
 

@@ -21,7 +21,7 @@ from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
-from camel.toolkits import ThinkingToolkit,FileWriteToolkit
+from camel.toolkits import FileWriteToolkit, ThinkingToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
@@ -34,7 +34,10 @@ def create_simple_workforce():
     poet_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
             role_name="Poet Agent",
-            content="You are a poet.Before you write the poem, you need to think about the poem and the content.",
+            content=(
+                "You are a poet.Before you write the poem, you need "
+                "to think about the poem and the content."
+            ),
         ),
         model=ModelFactory.create(
             model_platform=ModelPlatformType.DEFAULT,
@@ -142,8 +145,7 @@ def main():
     workforce = create_simple_workforce()
     task = Task(
         content=(
-            "write a poem about the sun and the moon"
-            "then write the md file"
+            "write a poem about the sun and the moon" "then write the md file"
         ),
         id="sun_and_moon",
     )
@@ -154,7 +156,7 @@ def main():
     # Start workforce in background
     def run_workforce():
         try:
-            result = asyncio.run(workforce.process_task(task,interactive=True))
+            asyncio.run(workforce.process_task(task, interactive=True))
             print("\n🎉 Task completed!")
         except Exception as e:
             print(f"\n❌ Error: {e}")
