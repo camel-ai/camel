@@ -105,26 +105,6 @@ def _decompose_task(self, task: Task):
 
   List[Task]: The subtasks.
 
-<a id="camel.societies.workforce.workforce.Workforce.process_task"></a>
-
-### process_task
-
-```python
-def process_task(self, task: Task):
-```
-
-The main entry point for the workforce to process a task. It will
-start the workforce and all the child nodes under it, process the
-task provided and return the updated task.
-
-**Parameters:**
-
-- **task** (Task): The task to be processed.
-
-**Returns:**
-
-  Task: The updated task.
-
 <a id="camel.societies.workforce.workforce.Workforce.add_single_agent_worker"></a>
 
 ### add_single_agent_worker
@@ -231,18 +211,19 @@ Get the information of all the child nodes under this node.
 ### _find_assignee
 
 ```python
-def _find_assignee(self, task: Task):
+def _find_assignee(self, tasks: List[Task]):
 ```
 
-Assigns a task to a worker node with the best capability.
+Assigns multiple tasks to worker nodes with the best capabilities.
 
 **Parameters:**
 
-- **task** (Task): The task to be assigned.
+- **tasks** (List[Task]): The tasks to be assigned.
 
 **Returns:**
 
-  str: ID of the worker node to be assigned.
+  TaskAssignResult: Assignment result containing task assignments
+with their dependencies.
 
 <a id="camel.societies.workforce.workforce.Workforce._create_worker_node_for_task"></a>
 
