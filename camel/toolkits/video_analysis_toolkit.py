@@ -46,7 +46,8 @@ answer the given question(s) thoroughly and accurately.
 
 The transcriptions may come from two sources:
   1. **Audio Transcription**: The spoken words in the video.
-  2. **Visual Text (OCR)**: Text extracted from the video frames (like captions, on-screen text, etc.).
+  2. **Visual Text (OCR)**: Text extracted from the video frames (like \
+  captions, on-screen text, etc.).
 
 Instructions:
     1. Visual Analysis:
