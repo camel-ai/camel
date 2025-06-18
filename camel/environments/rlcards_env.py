@@ -14,17 +14,11 @@
 
 import re
 from abc import abstractmethod
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
-
-try:
-    import rlcard
-    from rlcard.envs import Env as RLCardEnv
-except ImportError:
-    raise ImportError(
-        "RLCard is not installed. Please install it with 'pip install rlcard'."
-    )
+# rlcard doesn't come with type hints
+import rlcard  # type: ignore[import-untyped]
+from rlcard.agents import RandomAgent  # type: ignore[import-untyped]
 
 from camel.environments.models import Action, Observation
 from camel.environments.multi_step import MultiStepEnv
@@ -56,8 +50,8 @@ class ActionExtractor(BaseExtractorStrategy):
             text (str): The text to extract the action from.
 
         Returns:
-            Optional[str]: The extracted action as a string, or None if no valid
-                action is found.
+            Optional[str]: The extracted action as a string, or None
+                if no valid action is found.
         """
         match = re.search(self.action_pattern, text)
         if match:
@@ -104,7 +98,7 @@ class RLCardsEnv(MultiStepEnv):
         self.num_players = num_players
         self.rlcard_env = None
         self.current_player_id = None
-        self.agents = None
+        self.agents: Optional[List[Optional['RandomAgent']]] = None
 
     async def _setup(self) -> None:
         r"""Set up the RLCard environment.
@@ -123,17 +117,20 @@ class RLCardsEnv(MultiStepEnv):
                 },
             )
 
-            # 导入随机代理类
             from rlcard.agents import RandomAgent
 
             # Initialize random agents for opponents
             self.agents = [None] * self.num_players
+            assert self.rlcard_env is not None
 
             for i in range(1, self.num_players):  # Skip player 0 (LLM agent)
-                self.agents[i] = RandomAgent(num_actions=self.rlcard_env.num_actions)
+                self.agents[i] = RandomAgent(
+                    num_actions=self.rlcard_env.num_actions
+                )
 
             logger.info(
-                f"RLCard environment for {self.game_name} initialized successfully"
+                f"RLCard environment for {self.game_name} initialized "
+                f"successfully"
             )
         except Exception as e:
             logger.error(f"Failed to initialize RLCard environment: {e}")
@@ -172,6 +169,8 @@ class RLCardsEnv(MultiStepEnv):
             action (Action): The action containing the LLM's response with the
                 chosen move.
         """
+        assert self.rlcard_env is not None
+
         if self._state["game_over"]:
             return
 
@@ -179,14 +178,21 @@ class RLCardsEnv(MultiStepEnv):
         extraction_result = await self.extractor.extract(action.llm_response)
         if not extraction_result:
             self._state["last_action_illegal"] = True
-            self._state["extraction_error"] = "Could not extract a valid action"
+            self._state["extraction_error"] = (
+                "Could not extract a valid action"
+            )
             return
 
         # Convert extracted action to RLCard action format
         rlcard_action = self._convert_to_rlcard_action(extraction_result)
-        if rlcard_action is None or rlcard_action not in self._state["legal_actions"]:
+        if (
+            rlcard_action is None
+            or rlcard_action not in self._state["legal_actions"]
+        ):
             self._state["last_action_illegal"] = True
-            self._state["extraction_error"] = f"'{extraction_result}' is not a valid action"
+            self._state["extraction_error"] = (
+                f"'{extraction_result}' is not a valid action"
+            )
             return
 
         # Reset illegal action flag
@@ -195,11 +201,15 @@ class RLCardsEnv(MultiStepEnv):
         self._state["last_action"] = extraction_result
 
         # Take the action in the environment
-        next_state, self.current_player_id = self.rlcard_env.step(rlcard_action)
+        next_state, self.current_player_id = self.rlcard_env.step(
+            rlcard_action
+        )
 
         # Update state with new information
         self._state["rlcard_state"] = next_state
-        self._state["legal_actions"] = next_state['legal_actions'][self.current_player_id]
+        self._state["legal_actions"] = next_state['legal_actions'][
+            self.current_player_id
+        ]
 
         # Check if game is over
         if self.rlcard_env.is_over():
@@ -218,9 +228,13 @@ class RLCardsEnv(MultiStepEnv):
         # If next player is not the LLM agent (player 0), let opponents play
         while self.current_player_id != 0 and not self._state["game_over"]:
             # Get action from the corresponding agent
-            agent_action = self.agents[self.current_player_id].eval_step(next_state)
+            agent_action = self.agents[self.current_player_id].eval_step(
+                next_state
+            )
             # Take the action
-            next_state, self.current_player_id = self.rlcard_env.step(agent_action)
+            next_state, self.current_player_id = self.rlcard_env.step(
+                agent_action
+            )
 
             # Update state
             self._state["rlcard_state"] = next_state
@@ -250,37 +264,60 @@ class RLCardsEnv(MultiStepEnv):
             Observation: An Observation object containing the game state
                 description.
         """
+        assert self.rlcard_env is not None
+
         if self._state["rlcard_state"] is None:
             # Initial observation before the game starts
             state, self.current_player_id = self.rlcard_env.reset()
             self._state["rlcard_state"] = state
-            # Safely get legal actions, default to empty list if key is missing or value is None
+            # Safely get legal actions, default to empty list if key
+            # is missing or value is None
             legal_actions_dict = state.get('legal_actions', {})
-            player_legal_actions = legal_actions_dict.get(self.current_player_id)
-            self._state["legal_actions"] = player_legal_actions if player_legal_actions is not None else []
+            player_legal_actions = legal_actions_dict.get(
+                self.current_player_id
+            )
+            self._state["legal_actions"] = (
+                player_legal_actions
+                if player_legal_actions is not None
+                else []
+            )
 
         # Generate observation text
         if self._state["last_action_illegal"]:
-            # 安全获取last_action，防止None值
+            # Safely retrieve last_action to prevent None value
             last_action = self._state.get("last_action", "None")
             error_msg = self._state.get("extraction_error", "Unknown error")
-            
+
+            inter_state_space = self._format_state_for_observation(
+                self._state['rlcard_state']
+            )
+            inter_action_space = self._format_legal_actions(
+                self._state['legal_actions']
+            )
             obs_text = (
                 f"You are playing {self.game_name}.\n"
                 f"Your last action '{last_action}' was illegal.\n"
                 f"Error: {error_msg}\n"
                 f"Current game state:\n"
-                f"{self._format_state_for_observation(self._state['rlcard_state'])}\n"
-                f"Legal actions: {self._format_legal_actions(self._state['legal_actions'])}\n"
-                f"Please choose a valid action and end your response with <Action> [your action]"
+                f"{inter_state_space}\n"
+                f"Legal actions: {inter_action_space}\n"
+                f"Please choose an action and end your response with "
+                f"<Action> [your action]"
             )
         else:
+            inter_state_space = self._format_state_for_observation(
+                self._state['rlcard_state']
+            )
+            inter_action_space = self._format_legal_actions(
+                self._state['legal_actions']
+            )
             obs_text = (
                 f"You are playing {self.game_name}.\n"
                 f"Current game state:\n"
-                f"{self._format_state_for_observation(self._state['rlcard_state'])}\n"
-                f"Legal actions: {self._format_legal_actions(self._state['legal_actions'])}\n"
-                f"Please choose an action and end your response with <Action> [your action]"
+                f"{inter_state_space}\n"
+                f"Legal actions: {inter_action_space}\n"
+                f"Please choose an action and end your response with "
+                f"<Action> [your action]"
             )
 
         return Observation(
@@ -311,9 +348,11 @@ class RLCardsEnv(MultiStepEnv):
         else:
             result_message = "It's a draw!"
 
-        # 安全处理payoffs，防止None类型导致的错误
+        # Safely handle errors to prevent errors caused by None type
         payoffs = self._state.get("payoffs", [])
-        payoffs_str = ", ".join([f"{p:.2f}" for p in payoffs]) if payoffs else "N/A"
+        payoffs_str = (
+            ", ".join([f"{p:.2f}" for p in payoffs]) if payoffs else "N/A"
+        )
 
         obs_text = (
             f"Game Over. {result_message}\n"
@@ -437,7 +476,9 @@ class BlackjackEnv(RLCardsEnv):
                 (default: :obj:`None`)
             **kwargs: Additional environment parameters.
         """
-        super().__init__("blackjack", extractor, max_steps, num_players=1, **kwargs)
+        super().__init__(
+            "blackjack", extractor, max_steps, num_players=1, **kwargs
+        )
 
     def _convert_to_rlcard_action(self, action_str: str) -> int:
         r"""Convert a string action to the format expected by RLCard Blackjack.
@@ -454,7 +495,7 @@ class BlackjackEnv(RLCardsEnv):
             return 0
         elif action_str == "stand":
             return 1
-        return None
+        raise ValueError()
 
     def _format_state_for_observation(self, state: Dict[str, Any]) -> str:
         r"""Format the Blackjack state for human-readable observation.
@@ -474,7 +515,7 @@ class BlackjackEnv(RLCardsEnv):
             raw_obs = {}
         player_hand = raw_obs.get('player', [])
         dealer_hand = raw_obs.get('dealer', [])
-        
+
         # 确保player_hand和dealer_hand是列表
         if player_hand is None:
             player_hand = []
@@ -505,7 +546,7 @@ class BlackjackEnv(RLCardsEnv):
         """
         if not legal_actions:
             return "No legal actions available"
-            
+
         action_map = {0: "hit", 1: "stand"}
         return ", ".join([action_map.get(a, str(a)) for a in legal_actions])
 
@@ -578,11 +619,16 @@ class LeducHoldemEnv(RLCardsEnv):
             **kwargs: Additional environment parameters.
         """
         super().__init__(
-            "leduc-holdem", extractor, max_steps, num_players=num_players, **kwargs
+            "leduc-holdem",
+            extractor,
+            max_steps,
+            num_players=num_players,
+            **kwargs,
         )
 
     def _convert_to_rlcard_action(self, action_str: str) -> int:
-        r"""Convert a string action to the format expected by RLCard Leduc Hold'em.
+        r"""Convert a string action to the format expected by RLCard
+        Leduc Hold'em.
 
         Args:
             action_str (str): The string representation of the action.
@@ -598,7 +644,8 @@ class LeducHoldemEnv(RLCardsEnv):
             return 1
         elif action_str == "raise":
             return 2
-        return None
+        else:
+            raise ValueError()
 
     def _format_state_for_observation(self, state: Dict[str, Any]) -> str:
         r"""Format the Leduc Hold'em state for human-readable observation.
@@ -612,17 +659,16 @@ class LeducHoldemEnv(RLCardsEnv):
         if state is None:
             return "Game not started yet."
 
-        # 安全地提取状态信息
         raw_obs = state.get('raw_obs', {})
         if raw_obs is None:
             raw_obs = {}
-            
+
         hand = raw_obs.get('hand', [])
         public_card = raw_obs.get('public_card', None)
         all_chips = raw_obs.get('all_chips', [])
         my_chips = all_chips[0] if all_chips else 0
         opponent_chips = all_chips[1:] if len(all_chips) > 1 else []
-        stage = raw_obs.get('stage', 0)  # 默认为0，表示初始阶段
+        stage = raw_obs.get('stage', 0)
         current_round = "pre-flop" if stage == 0 else "flop"
 
         # Format the observation
@@ -651,6 +697,7 @@ class LeducHoldemEnv(RLCardsEnv):
         action_map = {0: "fold", 1: "check/call", 2: "raise"}
         return ", ".join([action_map[a] for a in legal_actions])
 
+
 class DoudizhuEnv(RLCardsEnv):
     r"""A Doudizhu environment for reinforcement learning with LLMs.
 
@@ -674,7 +721,9 @@ class DoudizhuEnv(RLCardsEnv):
                 (default: :obj:`None`)
             **kwargs: Additional environment parameters.
         """
-        super().__init__("doudizhu", extractor, max_steps, num_players=3, **kwargs)
+        super().__init__(
+            "doudizhu", extractor, max_steps, num_players=3, **kwargs
+        )
 
     def _convert_to_rlcard_action(self, action_str: str) -> Any:
         r"""Convert a string action to the format expected by RLCard Doudizhu.
@@ -689,18 +738,18 @@ class DoudizhuEnv(RLCardsEnv):
         action_str = action_str.lower().strip()
         if action_str == "pass":
             return "pass"
-        
+
         # For card combinations, we need to convert them to the RLCard format
         # This is a simplified implementation and might need to be adjusted
         # based on the exact format expected by RLCard
-        
+
         # Remove spaces and convert to uppercase for consistency
         action_str = action_str.replace(" ", "").upper()
-        
+
         # Check if the action is in the legal actions
         if action_str in self._state["legal_actions"]:
             return action_str
-        
+
         return None
 
     def _format_state_for_observation(self, state: Dict[str, Any]) -> str:
@@ -718,43 +767,61 @@ class DoudizhuEnv(RLCardsEnv):
         # Extract state information
         raw_obs = state['raw_obs']
         current_hand = raw_obs['current_hand']
-        played_cards = raw_obs['played_cards']
+        # potentially useful for debugging
+        # played_cards = raw_obs['played_cards']
         landlord = raw_obs['landlord']
         landlord_up_played_cards = raw_obs['landlord_up_played_cards']
         landlord_down_played_cards = raw_obs['landlord_down_played_cards']
         landlord_played_cards = raw_obs['landlord_played_cards']
         bomb_num = raw_obs['bomb_num']
-        
+
         # Format the observation
         obs_text = ""
-        
+
         # Player role
         if landlord == 0:
             obs_text += "You are the Landlord.\n"
         else:
-            obs_text += f"You are a Peasant. Player {landlord} is the Landlord.\n"
-        
+            obs_text += (
+                f"You are a Peasant. Player {landlord} is the Landlord.\n"
+            )
+
         # Current hand
         obs_text += f"Your hand: {self._format_cards(current_hand)}\n"
-        
+
         # Last played cards by each player
         obs_text += "Last played cards:\n"
         if landlord == 0:
-            obs_text += f"  You (Landlord): {self._format_cards(landlord_played_cards)}\n"
-            obs_text += f"  Peasant 1: {self._format_cards(landlord_up_played_cards)}\n"
-            obs_text += f"  Peasant 2: {self._format_cards(landlord_down_played_cards)}\n"
+            inter_text = self._format_cards(landlord_played_cards)
+            obs_text += f"  You (Landlord): {inter_text}\n"
+            inter_text = self._format_cards(landlord_up_played_cards)
+            obs_text += f"  Peasant 1: {inter_text}\n"
+            inter_text = self._format_cards(landlord_down_played_cards)
+            obs_text += f"  Peasant 2: {inter_text}\n"
         elif landlord == 1:
-            obs_text += f"  You: {self._format_cards(landlord_down_played_cards if landlord == 2 else landlord_up_played_cards)}\n"
-            obs_text += f"  Landlord: {self._format_cards(landlord_played_cards)}\n"
-            obs_text += f"  Other Peasant: {self._format_cards(landlord_up_played_cards if landlord == 2 else landlord_down_played_cards)}\n"
+            obs_text += (
+                f"  You: {self._format_cards(landlord_up_played_cards)}\n"
+            )
+            obs_text += (
+                f"  Landlord: {self._format_cards(landlord_played_cards)}\n"
+            )
+
+            inter_text = self._format_cards(landlord_down_played_cards)
+            obs_text += f"  Other Peasant: {inter_text}\n"
         else:  # landlord == 2
-            obs_text += f"  You: {self._format_cards(landlord_up_played_cards if landlord == 1 else landlord_down_played_cards)}\n"
-            obs_text += f"  Landlord: {self._format_cards(landlord_played_cards)}\n"
-            obs_text += f"  Other Peasant: {self._format_cards(landlord_down_played_cards if landlord == 1 else landlord_up_played_cards)}\n"
-        
+            obs_text += (
+                f"  You: {self._format_cards(landlord_down_played_cards)}\n"
+            )
+            obs_text += (
+                f"  Landlord: {self._format_cards(landlord_played_cards)}\n"
+            )
+
+            inter_text = self._format_cards(landlord_up_played_cards)
+            obs_text += f"  Other Peasant: {inter_text}\n"
+
         # Bomb count
         obs_text += f"Number of bombs played: {bomb_num}\n"
-        
+
         return obs_text
 
     def _format_legal_actions(self, legal_actions: List[str]) -> str:
@@ -766,12 +833,16 @@ class DoudizhuEnv(RLCardsEnv):
         Returns:
             str: A human-readable representation of the legal actions.
         """
-        # For simplicity, we'll just list the first few legal actions if there are many
+        # For simplicity, we'll just list the first few legal
+        # actions if there are many
         if len(legal_actions) > 10:
-            action_str = ", ".join(legal_actions[:10]) + f" and {len(legal_actions) - 10} more options"
+            action_str = (
+                ", ".join(legal_actions[:10])
+                + f" and {len(legal_actions) - 10} more options"
+            )
         else:
             action_str = ", ".join(legal_actions)
-        
+
         return action_str
 
     def _format_cards(self, cards: List[str]) -> str:

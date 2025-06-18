@@ -559,6 +559,7 @@ dependencies = [
     { name = "pillow" },
     { name = "psutil" },
     { name = "pydantic" },
+    { name = "rlcard" },
     { name = "tiktoken" },
 ]
 
@@ -1144,6 +1145,7 @@ requires-dist = [
     { name = "requests-oauthlib", marker = "extra == 'all'", specifier = ">=1.3.1,<2" },
     { name = "requests-oauthlib", marker = "extra == 'owl'", specifier = ">=1.3.1,<2" },
     { name = "requests-oauthlib", marker = "extra == 'web-tools'", specifier = ">=1.3.1,<2" },
+    { name = "rlcard", specifier = ">=1.0.0,<1.3.0" },
     { name = "rouge", marker = "extra == 'all'", specifier = ">=1.0.1,<2" },
     { name = "rouge", marker = "extra == 'data-tools'", specifier = ">=1.0.1,<2" },
     { name = "rouge", marker = "extra == 'owl'", specifier = ">=1.0.1,<2" },
@@ -6183,6 +6185,16 @@ sdist = { url = "https://files.pythonhosted.org/packages/a1/53/830aa4c3066a8ab0a
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0d/9b/63f4c7ebc259242c89b3acafdb37b41d1185c07ff0011164674e9076b491/rich-14.0.0-py3-none-any.whl", hash = "sha256:1c9491e1951aac09caffd42f448ee3d04e58923ffe14993f6e83068dc395d7e0", size = 243229 },
 ]
+
+[[package]]
+name = "rlcard"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "termcolor" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d4/d2/6bb5b8d6743c7846a03187cf7d5d7cb73cee94aa129a57f449310bdf33be/rlcard-1.2.0.tar.gz", hash = "sha256:d8e74211cecb44e9b1ee37c18a9014fa5c5549af5f4fc25cd643eb591e15520b", size = 269029 }
 
 [[package]]
 name = "rouge"
