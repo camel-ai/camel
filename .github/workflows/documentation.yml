@@ -79,6 +79,20 @@ jobs:
             --incremental --use-git --base-branch "$BASE_SHA" \
             --verbose
 
+      - name: Sync modified MDX files back to source docs
+        run: |
+          source .venv/bin/activate
+          BASE_SHA="${{ steps.diff.outputs.BASE_SHA }}"
+          echo "Reverse sync - processing changed MDX files since $BASE_SHA"
+
+          python docs/mintlify/convert_notebook2mdx.py \
+            --input docs/mintlify \
+            --output docs/mintlify \
+            --update-docs-json docs/mintlify/docs.json \
+            --docs-path-prefix "" \
+            --incremental --use-git --base-branch "$BASE_SHA" \
+            --verbose
+
       - name: Generate API Documentation
         run: |
           source .venv/bin/activate
@@ -98,6 +112,7 @@ jobs:
           git config --global user.email "camel-docs-bot@users.noreply.github.com"
 
           git add docs/mintlify/ docs/mintlify/get_started/ docs/mintlify/key_modules/ docs/mintlify/reference/ docs/mintlify/docs.json
+          git add docs/
 
           if git diff --staged --quiet; then
             echo "No changes to commit"
