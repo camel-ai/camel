@@ -1,63 +1,55 @@
-# API Setup
-Our agents can be deployed with either OpenAI API or your local models.
+---
+title: "Setup"
+icon: gear
+description: "Configure API credentials and select a model provider"
+---
 
-## [Option 1] Using OpenAI API
-Accessing the OpenAI API requires the API key, which you could get from [here](https://platform.openai.com/account/api-keys). We here provide instructions for different OS.
+CAMEL-AI supports multiple model backends. Choose one below and configure your environment variables.
 
-### Unix-like System (Linux / MacOS)
-```bash
-echo 'export OPENAI_API_KEY="your_api_key"' >> ~/.zshrc
+## 1. OpenAI API
 
-# # If you are using other proxy services like Azure [TODO]
-# echo 'export OPENAI_API_BASE_URL="your_base_url"' >> ~/.zshrc # (Optional)
+Obtain your `OPENAI_API_KEY` from [OpenAI Dashboard](https://platform.openai.com/account/api-keys).
 
-# Let the change take place
-source ~/.zshrc
-```
+<Steps>
+  <Step title="Unix (macOS/Linux)">
+    ```bash
+    echo 'export OPENAI_API_KEY="<YOUR_KEY>"' >> ~/.zshrc
+    source ~/.zshrc
+    ```
+    _Replace `~/.zshrc` with `~/.bashrc` if using bash._
+  </Step>
+  <Step title="Windows (Permanent)">
+    ```powershell
+    setx OPENAI_API_KEY "<YOUR_KEY>" /M
+    ```
+    _You may need to restart your terminal for changes to apply._
+  </Step>
+  <Step title=".env File (Project-specific)">
+    Create a `.env` file in your project root:
+    ```dotenv
+    OPENAI_API_KEY=<YOUR_KEY>
+    ```
+    Load in Python:
+    ```python
+    from dotenv import load_dotenv
+    load_dotenv()
+    import os
+    print(os.getenv("OPENAI_API_KEY"))
+    ```
+  </Step>
+</Steps>
 
-Replace `~/.zshrc` with `~/.bashrc` if you are using bash.
+<Note>
+  To configure an `API_BASE_URL` (e.g., Azure), also set:
+  ```bash
+  export OPENAI_API_BASE_URL="<YOUR_BASE_URL>"
+  ```
+</Note>
 
-### Windows
-If you are using Command Prompt:
-```bash
-set OPENAI_API_KEY="your_api_key"
+## 2. Other Hosted APIs
 
-# If you are using other proxy services
-# set OPENAI_API_BASE_URL="your_base_url" # (Optional)
-```
-Or if you are using PowerShell:
-```powershell
-$env:OPENAI_API_KEY="your_api_key"
+For non-OpenAI providers, see [Using Models by API Calling](../key_modules/models).
 
-# If you are using other proxy services
-$env:OPENAI_API_BASE_URL="your_base_url" # (Optional)
-```
-These commands on Windows will set the environment variable for the duration of that particular Command Prompt or PowerShell session only. You may use `setx` or change the system properties dialog for the change to take place in all the new sessions.
+## 3. Local Models
 
-### General method
-
-Create a file named `.env` in your project directory, with the following setting.
-
-```bash
-OPENAI_API_KEY=<your-openai-api-key>
-```
-
-Then, load the environment variables in your python script:
-
-```python
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-```
-
-
-## [Option 2] Using other APIs
-
-If you are using other APIs that are not provided by OpenAI, you can refer to [Models/Using Models by API calling](../key_modules/models.md#using-models-by-api-calling)
-
-## [Option 3] Using Local Models
-If you are using local models, you can refer to [Models/Using Local Models](../key_modules/models.md#using-on-device-open-source-models)
-
+To run fully on-device with open-source models, refer to [Local Models Guide](../key_modules/models)
