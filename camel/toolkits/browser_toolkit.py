@@ -525,7 +525,7 @@ class BaseBrowser:
         assert self.page is not None
         if isinstance(identifier, int):
             identifier = str(identifier)
-        target = self.page.locator(f"[__elementId='{identifier}']")
+        target = self.page.locator(f"[aria-ref='{identifier}']")
 
         try:
             target.wait_for(timeout=5000)
@@ -582,7 +582,7 @@ class BaseBrowser:
         if isinstance(identifier, int):
             identifier = str(identifier)
         try:
-            target = self.page.locator(f"[__elementId='{identifier}']")
+            target = self.page.locator(f"[aria-ref='{identifier}']")
         except Exception as e:  # Consider using playwright specific
             # TimeoutError
             logger.debug(f"Error during download operation: {e}")
@@ -627,7 +627,7 @@ class BaseBrowser:
             identifier = str(identifier)
 
         try:
-            target = self.page.locator(f"[__elementId='{identifier}']")
+            target = self.page.locator(f"[aria-ref='{identifier}']")
         except Exception as e:  # Consider using playwright specific
             # TimeoutError
             logger.debug(f"Error during fill operation: {e}")
@@ -677,7 +677,7 @@ class BaseBrowser:
         if isinstance(identifier, int):
             identifier = str(identifier)
         try:
-            target = self.page.locator(f"[__elementId='{identifier}']")
+            target = self.page.locator(f"[aria-ref='{identifier}']")
         except Exception as e:  # Consider using playwright specific
             # TimeoutError
             logger.debug(f"Error during hover operation: {e}")
@@ -970,12 +970,15 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         if self.use_visual_mode:
             # Visual mode: use screenshots
+            history_str = '\n'.join(
+                str(item) for item in self.history[-self.history_window :]
+            )
             observe_prompt = OBSERVE_PROMPT_TEMPLATE.format(
                 task_prompt=task_prompt,
                 detailed_plan_prompt=detailed_plan_prompt_str,
                 AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
                 history_window=self.history_window,
-                history=self.history[-self.history_window :],
+                history=history_str,
             )
 
             # get current state
@@ -1052,6 +1055,11 @@ Here is a plan about how to solve the task step-by-step which you must follow:
             Tuple[bool, str]: A tuple containing a boolean indicating whether
                 the action was successful, and the information to be returned.
         """
+        if not action_code or not action_code.strip():
+            return False, "Error: No action code was provided."
+
+        if '(' not in action_code or ')' not in action_code:
+            return False, f"Error: Invalid action code format: '{action_code}'"
 
         def _check_if_with_feedback(action_code: str) -> bool:
             r"""Check if the action code needs feedback."""

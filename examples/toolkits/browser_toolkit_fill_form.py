@@ -52,22 +52,14 @@ web_agent_model = ModelFactory.create(
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 
-planning_agent_model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig().as_dict(),
-)
 
 # Create the BrowserToolkit with DOM mode enabled
 print("Initializing BrowserToolkit with DOM mode...")
 web_toolkit = BrowserToolkit(
     headless=False,  # Can run headless since we don't need visual feedback
     web_agent_model=web_agent_model,
-    planning_agent_model=planning_agent_model,
     channel="chromium",
-    use_visual_mode=False,  # Enable DOM mode for faster, text-based analysis
-    # DOM mode uses structured text representation of interactive elements
-    # instead of screenshots, making it more efficient for many tasks
+    use_visual_mode=False,  # Enable DOM mode
 )
 print(
     f"BrowserToolkit initialized: use_visual_mode="
@@ -81,43 +73,17 @@ agent = ChatAgent(
     model=model,
     tools=[*web_toolkit.get_tools()],
 )
-print("ChatAgent created successfully")
 
-# Example task that works well with DOM mode:
-# Searching and extracting structured information from Wikipedia
 print("Starting web automation task...")
-print("Task: Extract Python programming language information from Wikipedia")
-print("Mode: DOM-based (non-visual) analysis")
 print("-" * 60)
 
 response = agent.step(
-    "Navigate to Wikipedia.org and search for 'Python programming language'. "
-    "Extract the following information from the main article: "
-    "1. The year Python was first released "
-    "2. Who created Python "
-    "3. The current stable version mentioned "
-    "Please provide this information in a structured format."
+    "to https://httpbin.org/forms/post fill out the form with test data: "
+    "- Customer name: 'John Doe' "
+    "- Telephone: '+1-555-0123' "
+    "- Email: 'john.doe@example.com' "
+    "- Small pizza size "
+    "- Add Choose Onion and mushroom toppings "
+    "Then submit the form and report the response."
 )
-
-print("Task execution completed!")
-
-print(
-    "Task: Navigate to Wikipedia and extract Python programming language info"
-)
-print("Mode: DOM mode (non-visual, structure-based)")
-print("\nResponse from agent:")
 print(response.msgs[0].content)
-
-# Example of expected output structure:
-# """
-# ==========================================================================
-# Python Programming Language Information:
-#
-# 1. **First Release Year:** 1991
-# 2. **Creator:** Guido van Rossum
-# 3. **Current Stable Version:** Python 3.12.1 (as of latest update)
-#
-# This information was extracted from the Wikipedia article on Python
-# programming language using DOM-based analysis.
-# ==========================================================================
-# """

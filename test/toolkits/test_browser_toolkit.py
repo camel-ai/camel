@@ -327,6 +327,60 @@ def test_browser_back_navigation(base_browser_fixture):
     browser.page.wait_for_load_state.assert_called_once()
 
 
+def test_browser_click_id_uses_aria_ref(base_browser_fixture):
+    """Verify click_id uses the correct aria-ref locator."""
+    browser = base_browser_fixture
+    browser.init()
+
+    mock_target = MagicMock()
+    mock_target.bounding_box.return_value = {
+        'x': 0,
+        'y': 0,
+        'width': 10,
+        'height': 10,
+    }
+    browser.page.locator = MagicMock(return_value=mock_target)
+    browser.page.expect_event = MagicMock()
+
+    browser.click_id('test_id')
+    browser.page.locator.assert_called_once_with("[aria-ref='test_id']")
+
+
+def test_browser_fill_input_id_uses_aria_ref(base_browser_fixture):
+    """Verify fill_input_id uses the correct aria-ref locator."""
+    browser = base_browser_fixture
+    browser.init()
+    mock_target = MagicMock()
+    browser.page.locator = MagicMock(return_value=mock_target)
+
+    browser.fill_input_id('test_id', 'test text')
+    browser.page.locator.assert_called_once_with("[aria-ref='test_id']")
+
+
+def test_browser_download_file_id_uses_aria_ref(base_browser_fixture):
+    """Verify download_file_id uses the correct aria-ref locator."""
+    browser = base_browser_fixture
+    browser.init()
+
+    mock_target = MagicMock()
+    browser.page.locator = MagicMock(return_value=mock_target)
+    browser.page.expect_download = MagicMock()
+
+    browser.download_file_id('test_id')
+    browser.page.locator.assert_called_once_with("[aria-ref='test_id']")
+
+
+def test_browser_hover_id_uses_aria_ref(base_browser_fixture):
+    """Verify hover_id uses the correct aria-ref locator."""
+    browser = base_browser_fixture
+    browser.init()
+    mock_target = MagicMock()
+    browser.page.locator = MagicMock(return_value=mock_target)
+
+    browser.hover_id('test_id')
+    browser.page.locator.assert_called_once_with("[aria-ref='test_id']")
+
+
 def test_dom_rectangle_from_dict():
     rect_dict = {
         "x": 10,
