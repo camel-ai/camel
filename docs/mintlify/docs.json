@@ -403,7 +403,8 @@
               "reference/camel.societies.workforce.task_channel",
               "reference/camel.societies.workforce.utils",
               "reference/camel.societies.workforce.worker",
-              "reference/camel.societies.workforce.workforce"
+              "reference/camel.societies.workforce.workforce",
+              "reference/camel.societies.workforce.workforce_logger"
             ]
           },
           {
