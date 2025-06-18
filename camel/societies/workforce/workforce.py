@@ -1296,7 +1296,7 @@ class Workforce(BaseNode):
                 f"Current pending tasks: {len(self._pending_tasks)}, "
                 f"In-flight tasks: {self._in_flight_tasks}"
             )
-            raise ValueError("Timeout waiting for task to be returned")
+            raise
 
     async def _post_ready_tasks(self) -> None:
         r"""Checks for unassigned tasks, assigns them, and then posts any
