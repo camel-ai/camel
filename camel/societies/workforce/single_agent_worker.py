@@ -32,15 +32,22 @@ class SingleAgentWorker(Worker):
     Args:
         description (str): Description of the node.
         worker (ChatAgent): Worker of the node. A single agent.
+        max_concurrent_tasks (int): Maximum number of tasks this worker can
+            process concurrently. (default: :obj:`10`)
     """
 
     def __init__(
         self,
         description: str,
         worker: ChatAgent,
+        max_concurrent_tasks: int = 10,
     ) -> None:
         node_id = worker.agent_id
-        super().__init__(description, node_id=node_id)
+        super().__init__(
+            description,
+            node_id=node_id,
+            max_concurrent_tasks=max_concurrent_tasks,
+        )
         self.worker = worker
 
     def reset(self) -> Any:
@@ -51,11 +58,12 @@ class SingleAgentWorker(Worker):
     async def _process_task(
         self, task: Task, dependencies: List[Task]
     ) -> TaskState:
-        r"""Processes a task with its dependencies.
+        r"""Processes a task with its dependencies using a cloned agent.
 
         This method asynchronously processes a given task, considering its
-        dependencies, by sending a generated prompt to a worker. It updates
-        the task's result based on the agent's response.
+        dependencies, by sending a generated prompt to a cloned worker agent.
+        Using a cloned agent ensures that concurrent tasks don't interfere
+        with each other's state.
 
         Args:
             task (Task): The task to process, which includes necessary details
@@ -66,6 +74,10 @@ class SingleAgentWorker(Worker):
             TaskState: `TaskState.DONE` if processed successfully, otherwise
                 `TaskState.FAILED`.
         """
+        # Clone the agent for this specific task to avoid state conflicts
+        # when processing multiple tasks concurrently
+        worker_agent = self.worker.clone(with_memory=False)
+
         dependency_tasks_info = self._get_dep_tasks_info(dependencies)
         prompt = PROCESS_TASK_PROMPT.format(
             content=task.content,
@@ -73,7 +85,7 @@ class SingleAgentWorker(Worker):
             additional_info=task.additional_info,
         )
         try:
-            response = await self.worker.astep(
+            response = await worker_agent.astep(
                 prompt, response_format=TaskResult
             )
         except Exception as e:
@@ -83,6 +95,13 @@ class SingleAgentWorker(Worker):
             )
             return TaskState.FAILED
 
+        # Get actual token usage from the cloned agent that processed this task
+        try:
+            _, total_token_count = worker_agent.memory.get_context()
+        except Exception:
+            # Fallback if memory context unavailable
+            total_token_count = 0
+
         # Populate additional_info with worker attempt details
         if task.additional_info is None:
             task.additional_info = {}
@@ -90,20 +109,31 @@ class SingleAgentWorker(Worker):
         # Create worker attempt details with descriptive keys
         worker_attempt_details = {
             "agent_id": getattr(
+                worker_agent, "agent_id", worker_agent.role_name
+            ),
+            "original_worker_id": getattr(
                 self.worker, "agent_id", self.worker.role_name
             ),
             "timestamp": str(datetime.datetime.now()),
             "description": f"Attempt by "
-            f"{getattr(self.worker, 'agent_id', self.worker.role_name)} "
+            f"{getattr(worker_agent, 'agent_id', worker_agent.role_name)} "
+            f"(cloned from "
+            f"{getattr(self.worker, 'agent_id', self.worker.role_name)}) "
             f"to process task {task.content}",
             "response_content": response.msg.content,
             "tool_calls": response.info["tool_calls"],
+            "total_token_count": total_token_count,
         }
 
         # Store the worker attempt in additional_info
         if "worker_attempts" not in task.additional_info:
             task.additional_info["worker_attempts"] = []
         task.additional_info["worker_attempts"].append(worker_attempt_details)
+
+        # Store the actual token usage for this specific task
+        task.additional_info["token_usage"] = {
+            "total_tokens": total_token_count
+        }
 
         print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
 

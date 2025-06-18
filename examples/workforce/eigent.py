@@ -344,8 +344,8 @@ async def main():
 
         # Create a single model backend for all agents
         model_backend = ModelFactory.create(
-            model_platform=ModelPlatformType.ANTHROPIC,
-            model_type=ModelType.CLAUDE_SONNET_4,
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4_1_MINI,
             # model_config_dict={
             #     "max_tokens": 64000,
             # }
@@ -353,7 +353,7 @@ async def main():
 
         model_backend_reason = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.O3_MINI,
+            model_type=ModelType.GPT_4_1_MINI,
             # model_config_dict={
             #     "max_tokens": 64000,
             # }
@@ -404,7 +404,9 @@ async def main():
                 I want to read papers about GUI Agent. Please help me find 
                 ten papers, check the detailed content of the papers and help 
                 me write a comparison report, then create a nice slides(pptx) 
-                to introduce the latest research progress of GUI Agent.
+                to introduce the latest research progress of GUI Agent. The 
+                slides should be very comprehensive and 
+                professional.
                 """
             ),
             id='0',
@@ -426,7 +428,6 @@ async def main():
         print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
         workforce.dump_workforce_logs(log_file_path)
         print(f"Logs dumped. Please check the file: {log_file_path}")
-
     finally:
         await playwright_toolkit.disconnect()  # Disconnect the same instance
 

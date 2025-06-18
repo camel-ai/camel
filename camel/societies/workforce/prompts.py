@@ -183,11 +183,39 @@ Now you should summarize the scenario and return the result of the task.
 """
 )
 
-WF_TASK_DECOMPOSE_PROMPT = r"""You need to decompose the given task into subtasks according to the workers available in the group, following these important principles:
+WF_TASK_DECOMPOSE_PROMPT = r"""You need to decompose the given task into subtasks according to the workers available in the group, following these important principles to maximize efficiency and parallelism:
 
-1. Keep tasks that are sequential and require the same type of worker together in one subtask
-2. Only decompose tasks that can be handled in parallel and require different types of workers
-3. This ensures efficient execution by minimizing context switching between workers
+1.  **Strategic Grouping for Sequential Work**:
+    *   If a series of steps must be done in order *and* can be handled by the same worker type, group them into a single subtask to maintain flow and minimize handoffs.
+
+2.  **Aggressive Parallelization**:
+    *   **Across Different Worker Specializations**: If distinct phases of the overall task require different types of workers (e.g., research by a 'SearchAgent', then content creation by a 'DocumentAgent'), define these as separate subtasks.
+    *   **Within a Single Phase (Data/Task Parallelism)**: If a phase involves repetitive operations on multiple items (e.g., processing 10 documents, fetching 5 web pages, analyzing 3 datasets):
+        *   Decompose this into parallel subtasks, one for each item or a small batch of items.
+        *   This applies even if the same type of worker handles these parallel subtasks. The goal is to leverage multiple available workers or allow concurrent processing.
+
+3.  **Subtask Design for Efficiency**:
+    *   **Actionable and Well-Defined**: Each subtask should have a clear, achievable goal.
+    *   **Balanced Granularity**: Make subtasks large enough to be meaningful but small enough to enable parallelism and quick feedback. Avoid overly large subtasks that hide parallel opportunities.
+    *   **Consider Dependencies**: While you list tasks sequentially, think about the true dependencies. The workforce manager will handle execution based on these implied dependencies and worker availability.
+
+These principles aim to reduce overall completion time by maximizing concurrent work and effectively utilizing all available worker capabilities.
+
+For example, if the task is "Find 10 relevant papers on AI ethics, summarize each, and then write a comparative report", and you must return the subtasks in the `<tasks>...</tasks>` format:
+
+*   A poor decomposition (not following the output format or parallelism principles) might be:
+    `<tasks><task>Find 10 papers on AI ethics, summarize them, and write a report.</task></tasks>`
+
+*   A better, more parallel decomposition, adhering to the output format, would be:
+    `<tasks>`
+    `<task>Subtask 1 (SearchAgent): Identify 10 relevant academic papers on AI ethics and collect their links or full texts.</task>`
+    `<task>Subtask 2.1 (InfoExtractionAgent): For Paper 1 (provide title/link if available from Subtask 1), retrieve and review its detailed content, then provide a thorough summary highlighting its research focus and key findings.</task>`
+    `<task>Subtask 2.2 (InfoExtractionAgent): For Paper 2 (provide title/link if available from Subtask 1), retrieve and review its detailed content, then provide a thorough summary highlighting its research focus and key findings.</task>`
+    `<!-- ... (repeat for papers 3 through 9) ... -->`
+    `<task>Subtask 2.10 (InfoExtractionAgent): For Paper 10 (provide title/link if available from Subtask 1), retrieve and review its detailed content, then provide a thorough summary highlighting its research focus and key findings.</task>`
+    `<task>Subtask 3 (WritingAgent): Based on the 10 summaries from Subtasks 2.1-2.10, write a comprehensive comparative report highlighting contributions and differences.</task>`
+    `</tasks>`
+    (Note: Subtasks 2.1 through 2.10 are designed to be parallelizable and will be assigned to available InfoExtractionAgent workers.)
 
 The content of the task is:
 
@@ -208,7 +236,7 @@ Following are the available workers, given in the format <ID>: <description>.
 {child_nodes_info}
 ==============================
 
-You must return the subtasks in the format of a numbered list within <tasks> tags, as shown below:
+You must return the subtasks as a list of individual subtasks within <tasks> tags. If your decomposition, following the principles and detailed example above (e.g., for summarizing multiple papers), results in several parallelizable actions, EACH of those actions must be represented as a separate <task> entry. For instance, the general format is:
 
 <tasks>
 <task>Subtask 1</task>
