@@ -56,7 +56,6 @@ from camel.utils import (
 from .browser_toolkit_commons import (
     ACTION_WITH_FEEDBACK_LIST,
     AVAILABLE_ACTIONS_PROMPT,
-    AsyncPageSnapshot,
     GET_FINAL_ANSWER_PROMPT_TEMPLATE,
     NON_VISUAL_OBSERVE_PROMPT_TEMPLATE,
     NON_VISUAL_WEB_AGENT_SYSTEM_PROMPT,
@@ -65,6 +64,7 @@ from .browser_toolkit_commons import (
     TASK_PLANNING_PROMPT_TEMPLATE,
     TASK_REPLANNING_PROMPT_TEMPLATE,
     WEB_AGENT_SYSTEM_PROMPT,
+    AsyncPageSnapshot,
     InteractiveRegion,
     VisualViewport,
     _parse_json_output,
@@ -249,13 +249,13 @@ class AsyncBaseBrowser:
 
         assert self.context is not None
         assert self.page is not None
-        
+
         # Initialize DOM snapshot capability
         self.dom_snapshot = AsyncPageSnapshot(self.page)
 
     async def async_get_dom_snapshot(self) -> str:
         r"""Asynchronously get the DOM snapshot of the current page.
-        
+
         Returns:
             str: The DOM snapshot as structured text.
         """
@@ -265,7 +265,7 @@ class AsyncBaseBrowser:
 
     def get_dom_snapshot(self) -> Coroutine[Any, Any, str]:
         r"""Get the DOM snapshot of the current page.
-        
+
         Returns:
             str: The DOM snapshot as structured text.
         """
@@ -1155,13 +1155,17 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         else:
             # Non-visual mode: use DOM snapshot
             dom_snapshot = await self.browser.get_dom_snapshot()
+            # Convert history list to string for template formatting
+            history_str = '\n'.join(
+                str(item) for item in self.history[-self.history_window :]
+            )
             observe_prompt = NON_VISUAL_OBSERVE_PROMPT_TEMPLATE.format(
                 task_prompt=task_prompt,
                 detailed_plan_prompt=detailed_plan_prompt_str,
                 dom_snapshot=dom_snapshot,
                 AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
                 history_window=self.history_window,
-                history=self.history[-self.history_window :],
+                history=history_str,
             )
             message = BaseMessage.make_user_message(
                 role_name='user', content=observe_prompt
@@ -1306,8 +1310,10 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
     async def _async_get_final_answer(self, task_prompt: str) -> str:
         r"""Generate the final answer based on the task prompt."""
+        # Convert history list to string for template formatting
+        history_str = '\n'.join(str(item) for item in self.history)
         final_answer_prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
-            task_prompt=task_prompt, history=self.history
+            task_prompt=task_prompt, history=history_str
         )
         response = await self.planning_agent.astep(final_answer_prompt)
         if response.msgs is None or len(response.msgs) == 0:
@@ -1343,10 +1349,14 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         # Here are the available browser functions we can
         # use: {AVAILABLE_ACTIONS_PROMPT}
+        # Convert history list to string for template formatting
+        history_str = '\n'.join(
+            str(item) for item in self.history[-self.history_window :]
+        )
         replanning_prompt = TASK_REPLANNING_PROMPT_TEMPLATE.format(
             task_prompt=task_prompt,
             detailed_plan=detailed_plan,
-            history=self.history[-self.history_window :],
+            history=history_str,
         )
         # Reset the history message of planning_agent.
         self.planning_agent.reset()
@@ -1436,11 +1446,15 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                     logger.debug(f"Replanned schema: {replanned_schema}")
 
         if not task_completed:
+            # Convert history list to string for template formatting
+            history_str = '\n'.join(
+                str(item) for item in self.history[-self.history_window :]
+            )
             simulation_result = f"""
                 The task is not completed within the round limit. Please check 
                 the last round {self.history_window} information to see if 
                 there is any useful information:
-                <history>{self.history[-self.history_window:]}</history>
+                <history>{history_str}</history>
             """
 
         else:

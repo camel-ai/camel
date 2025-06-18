@@ -88,8 +88,10 @@ Here is two example of the output:
 }}
 
 {{
-    "observation":  "The current page is a CAPTCHA verification page on Amazon. It asks the user to ..",
-    "reasoning": "To proceed with the task of searching for products, I need to complete..",
+    "observation":  "The current page is a CAPTCHA verification page on 
+    Amazon. It asks the user to ..",
+    "reasoning": "To proceed with the task of searching for products, 
+    I need to complete..",
     "action_code": "fill_input_id(3, 'AUXPMR')"
 }}
 
@@ -128,41 +130,60 @@ the text you want to find and skip massive amount of useless information.
 - Flexibly use interactive elements like slide down selection bar to filter
 out the information you need. Sometimes they are extremely useful.
 ```
-"""  # noqa: E501
+"""
 
 GET_FINAL_ANSWER_PROMPT_TEMPLATE = """
-We are solving a complex web task which needs multi-step browser interaction. After the multi-step observation, reasoning and acting with web browser, we think that the task is currently solved.
+We are solving a complex web task which needs multi-step browser 
+interaction. After the multi-step observation, reasoning and acting with web 
+browser, we think that the task is currently solved.
 Here are all trajectory we have taken:
 <history>{history}</history>
-Please find the final answer, or give valuable insights and founds (e.g. if previous actions contain downloading files, your output should include the path of the downloaded file) about the overall task: <task>{task_prompt}</task>
-        """  # noqa: E501
+Please find the final answer, or give valuable insights and founds (e.g. if 
+previous actions contain downloading files, your output should include the 
+path of the downloaded file) about the overall task: <task>{task_prompt}</task>
+        """
 
 TASK_PLANNING_PROMPT_TEMPLATE = """
 <task>{task_prompt}</task>
-According to the problem above, if we use browser interaction, what is the general process of the interaction after visiting the webpage `{start_url}`? 
+According to the problem above, if we use browser interaction, what is the 
+general process of the interaction after visiting the webpage `{start_url}`? 
 
-Please note that it can be viewed as Partially Observable MDP. Do not over-confident about your plan.
-Please first restate the task in detail, and then provide a detailed plan to solve the task.
-"""  # noqa: E501
+Please note that it can be viewed as Partially Observable MDP. Do not 
+over-confident about your plan.
+Please first restate the task in detail, and then provide a detailed plan to 
+solve the task.
+"""
 
 TASK_REPLANNING_PROMPT_TEMPLATE = """
-We are using browser interaction to solve a complex task which needs multi-step actions.
+We are using browser interaction to solve a complex task which needs 
+multi-step actions.
 Here are the overall task:
 <overall_task>{task_prompt}</overall_task>
 
-In order to solve the task, we made a detailed plan previously. Here is the detailed plan:
+In order to solve the task, we made a detailed plan previously. Here is the 
+detailed plan:
 <detailed plan>{detailed_plan}</detailed plan>
 
-According to the task above, we have made a series of observations, reasonings, and actions. Here are the latest {history_window} trajectory (at most) we have taken:
+According to the task above, we have made a series of observations, 
+reasonings, and actions. Here are the latest {history_window} trajectory (at 
+most) we have taken:
 <history>{history}</history>
 
-However, the task is not completed yet. As the task is partially observable, we may need to replan the task based on the current state of the browser if necessary.
-Now please carefully examine the current task planning schema, and our history actions, and then judge whether the task needs to be fundamentally replanned. If so, please provide a detailed replanned schema (including the restated overall task).
+However, the task is not completed yet. As the task is partially observable, 
+we may need to replan the task based on the current state of the browser if 
+necessary.
+Now please carefully examine the current task planning schema, and our 
+history actions, and then judge whether the task needs to be fundamentally 
+replanned. If so, please provide a detailed replanned schema (including the 
+restated overall task).
 
 Your output should be in json format, including the following fields:
-- `if_need_replan`: bool, A boolean value indicating whether the task needs to be fundamentally replanned.
-- `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string. 
-"""  # noqa: E501
+- `if_need_replan`: bool, A boolean value indicating whether the task needs 
+to be fundamentally replanned.
+- `replanned_schema`: str, The replanned schema for the task, which should 
+not be changed too much compared with the original one. If the task does not 
+need to be replanned, the value should be an empty string. 
+"""
 
 AVAILABLE_ACTIONS_PROMPT = """
 1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
@@ -207,7 +228,8 @@ ACTION_WITH_FEEDBACK_LIST = [
 
 # Add new prompts for non-visual mode
 NON_VISUAL_OBSERVE_PROMPT_TEMPLATE = """
-You are a web automation agent. Your task is to analyze the current DOM snapshot and determine the next action to accomplish the user's goal.
+You are a web automation agent. Your task is to analyze the current DOM 
+snapshot and determine the next action to accomplish the user's goal.
 
 **Current Task**: {task_prompt}
 
@@ -223,20 +245,25 @@ You are a web automation agent. Your task is to analyze the current DOM snapshot
 {AVAILABLE_ACTIONS_PROMPT}
 
 **Important**: 
-- When using actions like click_id(), fill_input_id(), etc., use the 'ref' value from the DOM snapshot (e.g., if ref=e23, use click_id('e23'))
-- Analyze the DOM structure to understand the page layout and interactive elements
+- When using actions like click_id(), fill_input_id(), etc., use the 'ref' 
+value from the DOM snapshot (e.g., if ref=e23, use click_id('e23'))
+- Analyze the DOM structure to understand the page layout and interactive 
+elements
 - Focus on elements that are visible and interactable
 
 Provide your response in the following JSON format:
 {{
-    "observation": "Your analysis of the current page state and what you can see",
+    "observation": "Your analysis of the current page state and what you can 
+    see",
     "reasoning": "Your step-by-step thinking about what action to take next",
-    "action_code": "The specific action to execute (e.g., click_id('e23'), fill_input_id('e5', 'search text'), etc.)"
+    "action_code": "The specific action to execute (e.g., click_id('e23'), 
+    fill_input_id('e5', 'search text'), etc.)"
 }}
 """
 
 NON_VISUAL_WEB_AGENT_SYSTEM_PROMPT = """
-You are an expert web automation agent that analyzes DOM snapshots to navigate and interact with web pages. 
+You are an expert web automation agent that analyzes DOM snapshots to 
+navigate and interact with web pages. 
 
 You have access to these key capabilities:
 1. Analyze DOM snapshots containing interactive elements with ref attributes
@@ -244,31 +271,37 @@ You have access to these key capabilities:
 3. Understand page structure and user interface patterns
 
 Key Guidelines:
-- Use element 'ref' values for all interactions (e.g., ref=e23 means use 'e23' in actions)
+- Use element 'ref' values for all interactions (e.g., ref=e23 means use 
+'e23' in actions)
 - Prioritize elements that are visible and in the current viewport
-- Consider element roles, text content, and attributes to make informed decisions
+- Consider element roles, text content, and attributes to make informed 
+decisions
 - Be methodical and patient - complex tasks may require multiple steps
 - If an action fails, analyze the new DOM state and try alternative approaches
 
-You should provide clear observations, logical reasoning, and precise action codes in your responses.
+You should provide clear observations, logical reasoning, and precise action 
+codes in your responses.
 """
 
 
 class PageSnapshot:
-    """Class for capturing and managing DOM snapshots without visual recognition."""
-    
+    """Class for capturing and managing DOM snapshots without visual
+    recognition."""
+
     def __init__(self, page):
         self.page = page
         self.snapshot_data = None
         self.element_map = {}  # Store mapping from ref to actual elements
-        
+
+    # ruff: noqa
     def capture(self) -> str:
-        """Capture accessibility snapshot of the current page using DOM analysis"""
+        """Capture accessibility snapshot of the current page using DOM
+        analysis"""
         try:
             # Wait for page to be stable
             self.page.wait_for_load_state('domcontentloaded', timeout=10000)
             time.sleep(1)  # Additional wait to ensure page stability
-            
+
             # Optimized DOM analysis method
             snapshot = self.page.evaluate("""() => {
                 function getOptimizedAccessibilityTree() {
@@ -296,7 +329,8 @@ class PageSnapshot:
                                             style.display !== 'none' &&
                                             style.visibility !== 'hidden' &&
                                             style.opacity !== '0' &&
-                                            rect.top < window.innerHeight && rect.bottom > 0;
+                                            rect.top < window.innerHeight && 
+                                            rect.bottom > 0;
                             
                             if (!isVisible) return;
                             
@@ -379,82 +413,107 @@ class PageSnapshot:
                 
                 return getOptimizedAccessibilityTree();
             }""")
-            
+
             # Filter and optimize snapshot data
             filtered_snapshot = self._filter_snapshot(snapshot)
-            
+
             # Convert to simplified format
-            formatted_output = self._format_as_structured_text(filtered_snapshot)
+            formatted_output = self._format_as_structured_text(
+                filtered_snapshot
+            )
             self.snapshot_data = formatted_output
             return formatted_output
-            
+
         except Exception as e:
             logger.warning(f"Error capturing DOM snapshot: {e}")
             return "Error: Could not capture page DOM snapshot"
-    
+
     def _filter_snapshot(self, snapshot):
         """Filter snapshot data, remove unimportant information"""
         filtered = []
         for item in snapshot:
-            # Skip items without meaningful content and not interactive elements
-            if (not item['name'] and 
-                item['tag'] not in ['input', 'button', 'select', 'textarea', 'a'] and
-                not item['attributes'].get('type')):
+            # Skip items without meaningful content and not interactive
+            # elements
+            if (
+                not item['name']
+                and item['tag']
+                not in ['input', 'button', 'select', 'textarea', 'a']
+                and not item['attributes'].get('type')
+            ):
                 continue
-            
+
             # Clean attributes, keep only important ones
             important_attrs = {}
             for key, value in item['attributes'].items():
-                if key in ['aria-label', 'placeholder', 'type', 'href', 'id', 'name', 'title', 'class'] and value:
+                if (
+                    key
+                    in [
+                        'aria-label',
+                        'placeholder',
+                        'type',
+                        'href',
+                        'id',
+                        'name',
+                        'title',
+                        'class',
+                    ]
+                    and value
+                ):
                     important_attrs[key] = value
-            
-            filtered.append({
-                'role': item['role'],
-                'name': item['name'],
-                'ref': item['ref'],
-                'tag': item['tag'],
-                'attributes': important_attrs,
-                'inViewport': item['position']['inViewport'],
-                'position': item['position']
-            })
-        
+
+            filtered.append(
+                {
+                    'role': item['role'],
+                    'name': item['name'],
+                    'ref': item['ref'],
+                    'tag': item['tag'],
+                    'attributes': important_attrs,
+                    'inViewport': item['position']['inViewport'],
+                    'position': item['position'],
+                }
+            )
+
         return filtered
-    
+
     def _format_as_structured_text(self, snapshot_data):
         """Format snapshot data as structured text for LLM analysis"""
         lines = ["=== DOM Snapshot (Interactive Elements) ==="]
-        
-        viewport_elements = [item for item in snapshot_data if item['inViewport']]
-        other_elements = [item for item in snapshot_data if not item['inViewport']]
-        
+
+        viewport_elements = [
+            item for item in snapshot_data if item['inViewport']
+        ]
+        other_elements = [
+            item for item in snapshot_data if not item['inViewport']
+        ]
+
         if viewport_elements:
             lines.append("\n--- Current Viewport Elements ---")
             for item in viewport_elements[:25]:  # Limit viewport element count
                 lines.append(self._format_element_line(item))
-        
+
         if other_elements and len(viewport_elements) < 25:
             lines.append("\n--- Other Interactive Elements ---")
             remaining_slots = 35 - len(viewport_elements)
             for item in other_elements[:remaining_slots]:
                 lines.append(self._format_element_line(item))
-        
+
         lines.append("\n=== End DOM Snapshot ===")
         return '\n'.join(lines)
-    
+
     def _format_element_line(self, item):
         """Format single element as a descriptive line"""
         parts = [f"[{item['ref']}]"]
-        
+
         # Element type and role
         if item['role'] != item['tag']:
             parts.append(f"{item['role']} ({item['tag']})")
         else:
             parts.append(f"{item['tag']}")
-        
+
         # Element text content
         if item['name']:
             parts.append(f'"{item["name"]}"')
-        
+
         # Important attributes
         attrs = []
         for key, value in item['attributes'].items():
@@ -465,34 +524,45 @@ class PageSnapshot:
             elif key == 'aria-label' and value:
                 attrs.append(f"label='{value}'")
             elif key == 'href' and value:
-                attrs.append(f"href='{value[:50]}{'...' if len(value) > 50 else ''}'")
+                attrs.append(
+                    f"href='{value[:50]}{'...' if len(value) > 50 else ''}'"
+                )
             elif key == 'id' and value:
                 attrs.append(f"id={value}")
-        
+
         if attrs:
             parts.append(f"[{', '.join(attrs)}]")
-        
+
         # Position info
         if item['inViewport']:
             parts.append("(visible)")
         else:
             parts.append("(below fold)")
-        
+
         return '  ' + ' '.join(parts)
 
 
 # For async support
-class AsyncPageSnapshot(PageSnapshot):
+class AsyncPageSnapshot:
     """Async version of PageSnapshot for use with async browsers."""
-    
+
+    def __init__(self, page):
+        self.page = page
+        self.snapshot_data = None
+        self.element_map = {}  # Store mapping from ref to actual elements
+
+    # ruff: noqa
     async def capture(self) -> str:
         """Async version of capture method"""
         try:
             # Wait for page to be stable
-            await self.page.wait_for_load_state('domcontentloaded', timeout=10000)
+            await self.page.wait_for_load_state(
+                'domcontentloaded', timeout=10000
+            )
             import asyncio
+
             await asyncio.sleep(1)  # Additional wait to ensure page stability
-            
+
             # Same JavaScript code as sync version
             snapshot = await self.page.evaluate("""() => {
                 function getOptimizedAccessibilityTree() {
@@ -520,7 +590,8 @@ class AsyncPageSnapshot(PageSnapshot):
                                             style.display !== 'none' &&
                                             style.visibility !== 'hidden' &&
                                             style.opacity !== '0' &&
-                                            rect.top < window.innerHeight && rect.bottom > 0;
+                                            rect.top < window.innerHeight && 
+                                            rect.bottom > 0;
                             
                             if (!isVisible) return;
                             
@@ -603,18 +674,135 @@ class AsyncPageSnapshot(PageSnapshot):
                 
                 return getOptimizedAccessibilityTree();
             }""")
-            
+
             # Filter and optimize snapshot data
             filtered_snapshot = self._filter_snapshot(snapshot)
-            
+
             # Convert to simplified format
-            formatted_output = self._format_as_structured_text(filtered_snapshot)
+            formatted_output = self._format_as_structured_text(
+                filtered_snapshot
+            )
             self.snapshot_data = formatted_output
             return formatted_output
-            
+
         except Exception as e:
             logger.warning(f"Error capturing DOM snapshot: {e}")
             return "Error: Could not capture page DOM snapshot"
+
+    def _filter_snapshot(self, snapshot):
+        """Filter snapshot data, remove unimportant information"""
+        filtered = []
+        for item in snapshot:
+            # Skip items without meaningful content and not interactive
+            # elements
+            if (
+                not item['name']
+                and item['tag']
+                not in ['input', 'button', 'select', 'textarea', 'a']
+                and not item['attributes'].get('type')
+            ):
+                continue
+
+            # Clean attributes, keep only important ones
+            important_attrs = {}
+            for key, value in item['attributes'].items():
+                if (
+                    key
+                    in [
+                        'aria-label',
+                        'placeholder',
+                        'type',
+                        'href',
+                        'id',
+                        'name',
+                        'title',
+                        'class',
+                    ]
+                    and value
+                ):
+                    important_attrs[key] = value
+
+            filtered.append(
+                {
+                    'role': item['role'],
+                    'name': item['name'],
+                    'ref': item['ref'],
+                    'tag': item['tag'],
+                    'attributes': important_attrs,
+                    'inViewport': item['position']['inViewport'],
+                    'position': item['position'],
+                }
+            )
+
+        return filtered
+
+    def _format_as_structured_text(self, snapshot_data):
+        """Format snapshot data as structured text for LLM analysis"""
+        lines = ["=== DOM Snapshot (Interactive Elements) ==="]
+
+        viewport_elements = [
+            item for item in snapshot_data if item['inViewport']
+        ]
+        other_elements = [
+            item for item in snapshot_data if not item['inViewport']
+        ]
+
+        if viewport_elements:
+            lines.append("\n--- Current Viewport Elements ---")
+            for item in viewport_elements[:25]:
+                # Limit viewport element count
+                lines.append(self._format_element_line(item))
+
+        if other_elements and len(viewport_elements) < 25:
+            lines.append("\n--- Other Interactive Elements ---")
+            remaining_slots = 35 - len(viewport_elements)
+            for item in other_elements[:remaining_slots]:
+                lines.append(self._format_element_line(item))
+
+        lines.append("\n=== End DOM Snapshot ===")
+        return '\n'.join(lines)
+
+    def _format_element_line(self, item):
+        """Format single element as a descriptive line"""
+        parts = [f"[{item['ref']}]"]
+
+        # Element type and role
+        if item['role'] != item['tag']:
+            parts.append(f"{item['role']} ({item['tag']})")
+        else:
+            parts.append(f"{item['tag']}")
+
+        # Element text content
+        if item['name']:
+            parts.append(f'"{item["name"]}"')
+
+        # Important attributes
+        attrs = []
+        for key, value in item['attributes'].items():
+            if key == 'type' and value:
+                attrs.append(f"type={value}")
+            elif key == 'placeholder' and value:
+                attrs.append(f"placeholder='{value}'")
+            elif key == 'aria-label' and value:
+                attrs.append(f"label='{value}'")
+            elif key == 'href' and value:
+                attrs.append(
+                    # ruff: noqa: E501
+                    f"href='{value[:50]}{'...' if len(value) > 50 else ''}'"
+                )
+            elif key == 'id' and value:
+                attrs.append(f"id={value}")
+
+        if attrs:
+            parts.append(f"[{', '.join(attrs)}]")
+
+        # Position info
+        if item['inViewport']:
+            parts.append("(visible)")
+        else:
+            parts.append("(below fold)")
+
+        return '  ' + ' '.join(parts)
 
 
 # TypedDicts
@@ -685,6 +873,7 @@ def _get_bool(d: Any, k: str) -> bool:
     )
 
 
+# ruff: noqa
 def _parse_json_output(
     text: str, logger: Any
 ) -> Dict[str, Any]:  # Added logger argument
@@ -854,8 +1043,10 @@ def _add_set_of_mark(
 
     Returns:
         Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
-            containing the screenshot with marked ROIs, ROIs fully within the
-            images, ROIs located above the visible area, and ROIs located below
+            containing the screenshot with marked ROIs,
+            ROIs fully within the
+            images, ROIs located above the visible area,
+            and ROIs located below
             the visible area.
     """
     visible_rects: List[str] = list()

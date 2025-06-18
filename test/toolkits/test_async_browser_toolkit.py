@@ -238,14 +238,19 @@ async def test_async_browser_back_navigation(async_base_browser_fixture):
 
 @pytest.mark.asyncio
 async def test_async_browser_toolkit_init_with_visual_mode():
-    """Test AsyncBrowserToolkit initialization with use_visual_mode parameter."""
+    """Test AsyncBrowserToolkit initialization
+    with use_visual_mode parameter."""
     with patch('playwright.async_api.async_playwright'):
         # Test visual mode (default)
-        toolkit_visual = AsyncBrowserToolkit(headless=True, use_visual_mode=True)
+        toolkit_visual = AsyncBrowserToolkit(
+            headless=True, use_visual_mode=True
+        )
         assert toolkit_visual.use_visual_mode is True
-        
+
         # Test non-visual mode
-        toolkit_non_visual = AsyncBrowserToolkit(headless=True, use_visual_mode=False)
+        toolkit_non_visual = AsyncBrowserToolkit(
+            headless=True, use_visual_mode=False
+        )
         assert toolkit_non_visual.use_visual_mode is False
 
 
@@ -254,10 +259,12 @@ async def test_async_base_browser_dom_snapshot(async_base_browser_fixture):
     """Test async DOM snapshot functionality."""
     browser = async_base_browser_fixture
     await browser.async_init()
-    
+
     # Mock DOM snapshot functionality
-    browser.dom_snapshot.capture = AsyncMock(return_value="=== DOM Snapshot ===\nTest elements")
-    
+    browser.dom_snapshot.capture = AsyncMock(
+        return_value="=== DOM Snapshot ===\nTest elements"
+    )
+
     result = await browser.get_dom_snapshot()
     assert "DOM Snapshot" in result
     browser.dom_snapshot.capture.assert_called_once()
@@ -268,19 +275,24 @@ async def test_async_browser_toolkit_observe_non_visual_mode():
     """Test async non-visual mode observation."""
     with patch('playwright.async_api.async_playwright'):
         toolkit = AsyncBrowserToolkit(headless=True, use_visual_mode=False)
-        
+
         # Mock necessary components
-        toolkit.browser.get_dom_snapshot = AsyncMock(return_value="=== DOM Snapshot ===\nTest elements")
+        toolkit.browser.get_dom_snapshot = AsyncMock(
+            return_value="=== DOM Snapshot ===\nTest elements"
+        )
         toolkit.web_agent.astep = AsyncMock()
-        
+
         # Mock response with proper structure
         mock_response = MagicMock()
         mock_response.msgs = [MagicMock()]
-        mock_response.msgs[0].content = '{"observation": "test obs", "reasoning": "test reason", "action_code": "click_id(1)"}'
+        mock_response.msgs[
+            0
+            # ruff: noqa: E501
+        ].content = '{"observation": "test obs", "reasoning": "test reason", "action_code": "click_id(1)"}'
         toolkit.web_agent.astep.return_value = mock_response
-        
+
         obs, reason, action = await toolkit.async_observe("test task")
-        
+
         assert obs == "test obs"
         assert reason == "test reason"
         assert action == "click_id(1)"

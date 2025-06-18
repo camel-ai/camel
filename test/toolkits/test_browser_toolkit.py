@@ -228,9 +228,11 @@ def test_browser_toolkit_init_with_visual_mode():
         # Test visual mode (default)
         toolkit_visual = BrowserToolkit(headless=True, use_visual_mode=True)
         assert toolkit_visual.use_visual_mode is True
-        
+
         # Test non-visual mode
-        toolkit_non_visual = BrowserToolkit(headless=True, use_visual_mode=False)
+        toolkit_non_visual = BrowserToolkit(
+            headless=True, use_visual_mode=False
+        )
         assert toolkit_non_visual.use_visual_mode is False
 
 
@@ -238,10 +240,12 @@ def test_base_browser_dom_snapshot(base_browser_fixture):
     """Test DOM snapshot functionality."""
     browser = base_browser_fixture
     browser.init()
-    
+
     # Mock DOM snapshot functionality
-    browser.dom_snapshot.capture = MagicMock(return_value="=== DOM Snapshot ===\nTest elements")
-    
+    browser.dom_snapshot.capture = MagicMock(
+        return_value="=== DOM Snapshot ===\nTest elements"
+    )
+
     result = browser.get_dom_snapshot()
     assert "DOM Snapshot" in result
     browser.dom_snapshot.capture.assert_called_once()
@@ -251,19 +255,24 @@ def test_browser_toolkit_observe_non_visual_mode():
     """Test non-visual mode observation."""
     with patch('playwright.sync_api.sync_playwright'):
         toolkit = BrowserToolkit(headless=True, use_visual_mode=False)
-        
+
         # Mock necessary components
-        toolkit.browser.get_dom_snapshot = MagicMock(return_value="=== DOM Snapshot ===\nTest elements")
+        toolkit.browser.get_dom_snapshot = MagicMock(
+            return_value="=== DOM Snapshot ===\nTest elements"
+        )
         toolkit.web_agent.step = MagicMock()
-        
+
         # Mock response with proper structure
         mock_response = MagicMock()
         mock_response.msgs = [MagicMock()]
-        mock_response.msgs[0].content = '{"observation": "test obs", "reasoning": "test reason", "action_code": "click_id(1)"}'
+        mock_response.msgs[
+            0
+            # ruff: noqa: E501
+        ].content = '{"observation": "test obs", "reasoning": "test reason", "action_code": "click_id(1)"}'
         toolkit.web_agent.step.return_value = mock_response
-        
+
         obs, reason, action = toolkit._observe("test task")
-        
+
         assert obs == "test obs"
         assert reason == "test reason"
         assert action == "click_id(1)"

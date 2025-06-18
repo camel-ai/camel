@@ -58,12 +58,12 @@ from .browser_toolkit_commons import (
     NON_VISUAL_OBSERVE_PROMPT_TEMPLATE,
     NON_VISUAL_WEB_AGENT_SYSTEM_PROMPT,
     OBSERVE_PROMPT_TEMPLATE,
-    PageSnapshot,
     PLANNING_AGENT_SYSTEM_PROMPT,
     TASK_PLANNING_PROMPT_TEMPLATE,
     TASK_REPLANNING_PROMPT_TEMPLATE,
     WEB_AGENT_SYSTEM_PROMPT,
     InteractiveRegion,
+    PageSnapshot,
     VisualViewport,
     _add_set_of_mark,
     _parse_json_output,
@@ -192,7 +192,7 @@ class BaseBrowser:
         self.web_agent_model: Optional[BaseModelBackend] = (
             None  # Added for type hinting
         )
-        
+
         # Add DOM snapshot capability
         self.dom_snapshot: Optional[PageSnapshot] = None
 
@@ -248,13 +248,13 @@ class BaseBrowser:
 
         assert self.context is not None
         assert self.page is not None
-        
+
         # Initialize DOM snapshot capability
         self.dom_snapshot = PageSnapshot(self.page)
 
     def get_dom_snapshot(self) -> str:
         r"""Get the DOM snapshot of the current page.
-        
+
         Returns:
             str: The DOM snapshot as structured text.
         """
@@ -979,7 +979,9 @@ Here is a plan about how to solve the task step-by-step which you must follow:
             )
 
             # get current state
-            som_screenshot, _ = self.browser.get_som_screenshot(save_image=True)
+            som_screenshot, _ = self.browser.get_som_screenshot(
+                save_image=True
+            )
             img = _reload_image(som_screenshot)
             message = BaseMessage.make_user_message(
                 role_name='user', content=observe_prompt, image_list=[img]
@@ -987,13 +989,17 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         else:
             # Non-visual mode: use DOM snapshot
             dom_snapshot = self.browser.get_dom_snapshot()
+            # Convert history list to string for template formatting
+            history_str = '\n'.join(
+                str(item) for item in self.history[-self.history_window :]
+            )
             observe_prompt = NON_VISUAL_OBSERVE_PROMPT_TEMPLATE.format(
                 task_prompt=task_prompt,
                 detailed_plan_prompt=detailed_plan_prompt_str,
                 dom_snapshot=dom_snapshot,
                 AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
                 history_window=self.history_window,
-                history=self.history[-self.history_window :],
+                history=history_str,
             )
 
             message = BaseMessage.make_user_message(
@@ -1140,8 +1146,10 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         current viewport.
         """
 
+        # Convert history list to string for template formatting
+        history_str = '\n'.join(str(item) for item in self.history)
         prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
-            history=self.history, task_prompt=task_prompt
+            history=history_str, task_prompt=task_prompt
         )
 
         message = BaseMessage.make_user_message(
@@ -1180,11 +1188,15 @@ Here is a plan about how to solve the task step-by-step which you must follow:
             whether the task needs to be replanned, and the replanned schema.
         """
 
+        # Convert history list to string for template formatting
+        history_str = '\n'.join(
+            str(item) for item in self.history[-self.history_window :]
+        )
         replanning_prompt = TASK_REPLANNING_PROMPT_TEMPLATE.format(
             task_prompt=task_prompt,
             detailed_plan=detailed_plan,
             history_window=self.history_window,
-            history=self.history[-self.history_window :],
+            history=history_str,
         )
         # Reset the history message of planning_agent.
         self.planning_agent.reset()
@@ -1275,11 +1287,15 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         simulation_result: str
         if not task_completed:
+            # Convert history list to string for template formatting
+            history_str = '\n'.join(
+                str(item) for item in self.history[-self.history_window :]
+            )
             simulation_result = f"""
                 The task is not completed within the round limit. Please 
                 check the last round {self.history_window} information to 
                 see if there is any useful information:
-                <history>{self.history[-self.history_window :]}</history>
+                <history>{history_str}</history>
             """
 
         else:
