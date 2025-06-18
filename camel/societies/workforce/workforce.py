@@ -506,6 +506,10 @@ class Workforce(BaseNode):
 
         Returns:
             str: ID of the worker node to be assigned.
+
+        Raises:
+            ValueError: If the coordinator assigns task to a
+            non-existent worker.
         """
         self.coordinator_agent.reset()
         prompt = ASSIGN_TASK_PROMPT.format(
@@ -519,9 +523,34 @@ class Workforce(BaseNode):
         )
         result_dict = json.loads(response.msg.content, parse_int=str)
         task_assign_result = TaskAssignResult(**result_dict)
-        return task_assign_result.assignee_id
+        assignee_id = task_assign_result.assignee_id
+
+        # Validate that the assigned worker actually exists
+        valid_worker_ids = [child.node_id for child in self._children]
+        if assignee_id not in valid_worker_ids:
+            logger.error(
+                f"CRITICAL: Task {task.id} assignment failed - Coordinator "
+                f"assigned task to non-existent worker '{assignee_id}'. "
+                f"This is a critical security issue that can cause task loss. "
+                f"Available workers: {valid_worker_ids}. "
+                f"Task content: '{task.content[:100]}...'"
+            )
+            raise ValueError(
+                f"Coordinator assigned task {task.id} to non-existent worker "
+                f"'{assignee_id}'. Valid worker IDs are: {valid_worker_ids}"
+            )
+
+        logger.info(
+            f"Task {task.id} successfully assigned to worker '{assignee_id}' "
+            f"by coordinator"
+        )
+        return assignee_id
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
+        logger.info(
+            f"Posting task {task.id} to worker '{assignee_id}' "
+            f"from workforce {self.node_id}"
+        )
         await self._channel.post_task(task, self.node_id, assignee_id)
 
     async def _post_dependency(self, dependency: Task) -> None:
@@ -626,6 +655,8 @@ class Workforce(BaseNode):
         else:
             # Directly post the task to the channel if it's a new one
             # Find a node to assign the task
+            # TODO: Add graceful error handling for when _find_assignee()
+            # raises ValueError due to invalid worker assignments
             assignee_id = self._find_assignee(task=ready_task)
             await self._post_task(ready_task, assignee_id)
 
