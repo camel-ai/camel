@@ -12,7 +12,7 @@ An intelligent project planning tool powered by Mistral AI and CAMEL-AI that hel
 
 ## 🛠️ Prerequisites
 
-- Python 3.7+
+- Python 3.10+
 - Mistral AI API key (Get it from [Mistral AI Console](https://console.mistral.ai/home))
 
 ## 📦 Installation
