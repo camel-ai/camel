@@ -293,6 +293,19 @@ class PageSnapshot:
         self.snapshot_data = None
         self._last_url = None  # Cache for URL-based optimization
         self._last_snapshot_hash = None  # Cache for content-based optimization
+        self.snapshot_script = self._load_snapshot_script()
+
+    def _load_snapshot_script(self) -> str:
+        """Load the snapshot JavaScript from file"""
+        script_path = os.path.join(
+            os.path.dirname(__file__), 'js', 'browser_snapshot.js'
+        )
+        try:
+            with open(script_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except FileNotFoundError:
+            logger.error(f"Snapshot script not found at {script_path}")
+            return ""
 
     def capture(self, force_refresh=False) -> str:
         """Capture accessibility snapshot of the current page using optimized method"""
@@ -332,77 +345,9 @@ class PageSnapshot:
 
     def _get_snapshot_direct(self) -> Optional[str]:
         """Try to get snapshot directly using page.evaluate (fastest method)"""
-
-        return self.page.evaluate("""() => {
-            function getVisibleElements() {
-                const elements = [];
-
-                function isVisible(node) {
-                    const rect = node.getBoundingClientRect();
-                    if (rect.width === 0 || rect.height === 0) return false;
-
-                    const style = window.getComputedStyle(node);
-                    if (style.display === 'none' || style.visibility === 'hidden') return false;
-
-                    return true;
-                }
-
-                function getRole(node) {
-                    const tag = node.tagName.toLowerCase();
-                    const type = node.getAttribute('type');
-
-                    if (node.getAttribute('role')) return node.getAttribute('role');
-
-                    if (tag === 'input') {
-                        if (type === 'checkbox') return 'checkbox';
-                        if (type === 'radio') return 'radio';
-                        return 'input';
-                    }
-
-                    if (tag === 'button') return 'button';
-                    if (tag === 'a') return 'link';
-                    if (tag === 'select') return 'select';
-                    if (tag === 'textarea') return 'textarea';
-                    if (tag === 'p') return 'paragraph';
-                    if (tag === 'span') return 'text';
-
-                    return 'generic';
-                }
-
-                let refCounter = 1;
-
-                function traverse(node, depth) {
-                    if (node.nodeType !== Node.ELEMENT_NODE) return;
-
-                    if (!isVisible(node)) return;
-
-                    const tagName = node.tagName.toLowerCase();
-                    const text = node.textContent?.trim().slice(0, 50) || '';
-
-                    const hasRoleOrText = ['button', 'a', 'input', 'select', 'textarea', 'p', 'span'].includes(tagName) || 
-                                          node.getAttribute('role') || text;
-
-                    if (hasRoleOrText) {
-                        const role = getRole(node);
-                        const ref = `e${refCounter++}`;
-                        const label = text ? `"${text}"` : '';
-                        const indent = '\\t'.repeat(depth);
-
-                        elements.push(`${indent}- ${role} ${label} [ref=${ref}]`);
-                        node.setAttribute('aria-ref', ref);
-                    }
-
-                    for (let child of node.children) {
-                        traverse(child, depth + 1);
-                    }
-                }
-
-                traverse(document.body, 0);
-                return elements.join('\\n');
-            }
-
-            return getVisibleElements();
-        }""")
+        if not self.snapshot_script:
+            return None
+        return self.page.evaluate(self.snapshot_script)
 
     def _format_snapshot(self, snapshot_text: str) -> str:
         """Format snapshot text consistently"""
@@ -461,259 +406,98 @@ class AsyncPageSnapshot:
     def __init__(self, page):
         self.page = page
         self.snapshot_data = None
-        self.element_map = {}  # Store mapping from ref to actual elements
+        self._last_url = None
+        self._last_snapshot_hash = None
+        self.snapshot_script = self._load_snapshot_script()
 
-    # ruff: noqa
-    async def capture(self) -> str:
+    def _load_snapshot_script(self) -> str:
+        """Load the snapshot JavaScript from file"""
+        script_path = os.path.join(
+            os.path.dirname(__file__), 'js', 'browser_snapshot.js'
+        )
+        try:
+            with open(script_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except FileNotFoundError:
+            logger.error(f"Snapshot script not found at {script_path}")
+            return ""
+
+    async def capture(self, force_refresh=False) -> str:
         """Async version of capture method"""
         try:
-            # Wait for page to be stable
+            current_url = await self.page.evaluate(
+                "() => window.location.href"
+            )
+
+            if (
+                not force_refresh
+                and current_url == self._last_url
+                and self.snapshot_data
+            ):
+                logger.debug("Using cached snapshot (same URL)")
+                return self.snapshot_data
+
             await self.page.wait_for_load_state(
-                'domcontentloaded', timeout=10000
+                'domcontentloaded', timeout=5000
             )
-            import asyncio
 
-            await asyncio.sleep(1)  # Additional wait to ensure page stability
+            snapshot_text = await self._get_snapshot_direct()
+            if snapshot_text:
+                formatted_snapshot = self._format_snapshot(snapshot_text)
+                self._update_cache(current_url, formatted_snapshot)
+                return formatted_snapshot
 
-            # Same JavaScript code as sync version
-            snapshot = await self.page.evaluate("""() => {
-                function getOptimizedAccessibilityTree() {
-                    const elements = [];
-                    let refIndex = 0;
-                    
-                    // Priority interactive element selectors
-                    const interactiveSelectors = [
-                        'input', 'button', 'a', 'select', 'textarea', 
-                        '[role="button"]', '[role="link"]', '[role="textbox"]',
-                        '[role="searchbox"]', '[role="combobox"]', '[role="tab"]',
-                        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'form', 'div[onclick]',
-                        '[contenteditable="true"]', '[tabindex]:not([tabindex="-1"])'
-                    ];
-                    
-                    // Collect all interactive elements
-                    interactiveSelectors.forEach(selector => {
-                        const els = document.querySelectorAll(selector);
-                        els.forEach(element => {
-                            if (elements.some(e => e.element === element)) return; // Avoid duplicates
-                            
-                            const rect = element.getBoundingClientRect();
-                            const style = window.getComputedStyle(element);
-                            const isVisible = rect.width > 0 && rect.height > 0 && 
-                                            style.display !== 'none' &&
-                                            style.visibility !== 'hidden' &&
-                                            style.opacity !== '0' &&
-                                            rect.top < window.innerHeight && 
-                                            rect.bottom > 0;
-                            
-                            if (!isVisible) return;
-                            
-                            const role = element.getAttribute('role') || element.tagName.toLowerCase();
-                            const text = element.textContent?.trim() || '';
-                            const ref = `e${refIndex++}`;
-                            
-                            // Add ref attribute to element for later interaction
-                            element.setAttribute('data-ref', ref);
-                            element.setAttribute('__elementId', ref);
-                            
-                            // Filter out overly long text and meaningless elements
-                            const filteredText = text.length > 150 ? text.substring(0, 150) + '...' : text;
-                            
-                            // Only include useful elements
-                            if (filteredText.length > 0 || 
-                                ['input', 'button', 'select', 'textarea', 'a'].includes(element.tagName.toLowerCase()) ||
-                                element.hasAttribute('onclick') ||
-                                element.hasAttribute('href') ||
-                                element.getAttribute('type') === 'submit' ||
-                                element.getAttribute('type') === 'button') {
-                                
-                                elements.push({
-                                    element: element,
-                                    role: role,
-                                    name: filteredText,
-                                    ref: ref,
-                                    tag: element.tagName.toLowerCase(),
-                                    attributes: {
-                                        'aria-label': element.getAttribute('aria-label'),
-                                        'placeholder': element.getAttribute('placeholder'),
-                                        'type': element.getAttribute('type'),
-                                        'value': element.value || element.getAttribute('value'),
-                                        'href': element.getAttribute('href'),
-                                        'id': element.getAttribute('id'),
-                                        'class': element.getAttribute('class')?.split(' ').slice(0, 3).join(' '), // Limit class length
-                                        'name': element.getAttribute('name'),
-                                        'title': element.getAttribute('title')
-                                    },
-                                    position: {
-                                        x: Math.round(rect.x),
-                                        y: Math.round(rect.y),
-                                        width: Math.round(rect.width),
-                                        height: Math.round(rect.height),
-                                        inViewport: rect.top >= 0 && rect.bottom <= window.innerHeight
-                                    }
-                                });
-                            }
-                        });
-                    });
-                    
-                    // Sort by importance and position
-                    elements.sort((a, b) => {
-                        // Prioritize elements in viewport
-                        if (a.position.inViewport !== b.position.inViewport) {
-                            return b.position.inViewport ? 1 : -1;
-                        }
-                        // Sort by Y coordinate, then X coordinate
-                        if (a.position.y !== b.position.y) {
-                            return a.position.y - b.position.y;
-                        }
-                        return a.position.x - b.position.x;
-                    });
-                    
-                    // Limit element count to reduce token usage
-                    const maxElements = 50;
-                    const limitedElements = elements.slice(0, maxElements);
-                    
-                    return limitedElements.map(item => ({
-                        role: item.role,
-                        name: item.name,
-                        ref: item.ref,
-                        tag: item.tag,
-                        attributes: Object.fromEntries(
-                            Object.entries(item.attributes).filter(([k, v]) => v !== null && v !== '')
-                        ),
-                        position: item.position
-                    }));
-                }
-                
-                return getOptimizedAccessibilityTree();
-            }""")
-
-            # Filter and optimize snapshot data
-            filtered_snapshot = self._filter_snapshot(snapshot)
-
-            # Convert to simplified format
-            formatted_output = self._format_as_structured_text(
-                filtered_snapshot
-            )
-            self.snapshot_data = formatted_output
-            return formatted_output
+            return await self._fallback_snapshot()
 
         except Exception as e:
-            logger.warning(f"Error capturing DOM snapshot: {e}")
-            return "Error: Could not capture page DOM snapshot"
+            logger.error(f"Error capturing async snapshot: {e}")
+            return "Error: Could not capture page snapshot"
 
-    def _filter_snapshot(self, snapshot):
-        """Filter snapshot data, remove unimportant information"""
-        filtered = []
-        for item in snapshot:
-            # Skip items without meaningful content and not interactive
-            # elements
-            if (
-                not item['name']
-                and item['tag']
-                not in ['input', 'button', 'select', 'textarea', 'a']
-                and not item['attributes'].get('type')
-            ):
-                continue
+    async def _get_snapshot_direct(self) -> Optional[str]:
+        """Try to get snapshot directly using page.evaluate (fastest method)"""
+        if not self.snapshot_script:
+            return None
+        return await self.page.evaluate(self.snapshot_script)
 
-            # Clean attributes, keep only important ones
-            important_attrs = {}
-            for key, value in item['attributes'].items():
-                if (
-                    key
-                    in [
-                        'aria-label',
-                        'placeholder',
-                        'type',
-                        'href',
-                        'id',
-                        'name',
-                        'title',
-                        'class',
-                    ]
-                    and value
-                ):
-                    important_attrs[key] = value
-
-            filtered.append(
-                {
-                    'role': item['role'],
-                    'name': item['name'],
-                    'ref': item['ref'],
-                    'tag': item['tag'],
-                    'attributes': important_attrs,
-                    'inViewport': item['position']['inViewport'],
-                    'position': item['position'],
-                }
-            )
-
-        return filtered
-
-    def _format_as_structured_text(self, snapshot_data):
-        """Format snapshot data as structured text for LLM analysis"""
-        lines = ["=== DOM Snapshot (Interactive Elements) ==="]
-
-        viewport_elements = [
-            item for item in snapshot_data if item['inViewport']
+    def _format_snapshot(self, snapshot_text: str) -> str:
+        """Format snapshot text consistently"""
+        formatted_snapshot = [
+            "- Page Snapshot",
+            "```yaml",
+            snapshot_text,
+            "```",
         ]
-        other_elements = [
-            item for item in snapshot_data if not item['inViewport']
-        ]
+        return '\\n'.join(formatted_snapshot)
 
-        if viewport_elements:
-            lines.append("\n--- Current Viewport Elements ---")
-            for item in viewport_elements[:25]:  # Limit viewport element count
-                lines.append(self._format_element_line(item))
+    def _update_cache(self, url: str, snapshot: str):
+        """Update cache with new snapshot data"""
+        self._last_url = url
+        self.snapshot_data = snapshot
+        self._last_snapshot_hash = hash(snapshot)
 
-        if other_elements and len(viewport_elements) < 25:
-            lines.append("\n--- Other Interactive Elements ---")
-            remaining_slots = 35 - len(viewport_elements)
-            for item in other_elements[:remaining_slots]:
-                lines.append(self._format_element_line(item))
+    async def _fallback_snapshot(self) -> str:
+        """Fallback method when _snapshotForAI is not available"""
+        try:
+            body_text = await self.page.evaluate("""() => {
+                const body = document.body;
+                if (!body) return '';
+                const text = body.textContent || '';
+                return text.trim().slice(0, 500);
+            }""")
 
-        lines.append("\n=== End DOM Snapshot ===")
-        return '\n'.join(lines)
+            fallback_snapshot = [
+                "- Page Snapshot",
+                "```yaml",
+                f"- generic [ref=e1]: {body_text}"
+                if body_text
+                else "- generic [ref=e1]: (no content)",
+                "```",
+            ]
+            return '\\n'.join(fallback_snapshot)
 
-    def _format_element_line(self, item):
-        """Format single element as a descriptive line"""
-        parts = [f"[{item['ref']}]"]
-
-        # Element type and role
-        if item['role'] != item['tag']:
-            parts.append(f"{item['role']} ({item['tag']})")
-        else:
-            parts.append(f"{item['tag']}")
-
-        # Element text content
-        if item['name']:
-            parts.append(f'"{item["name"]}"')
-
-        # Important attributes
-        attrs = []
-        for key, value in item['attributes'].items():
-            if key == 'type' and value:
-                attrs.append(f"type={value}")
-            elif key == 'placeholder' and value:
-                attrs.append(f"placeholder='{value}'")
-            elif key == 'aria-label' and value:
-                attrs.append(f"label='{value}'")
-            elif key == 'href' and value:
-                attrs.append(
-                    # ruff: noqa: E501
-                    f"href='{value[:50]}{'...' if len(value) > 50 else ''}'"
-                )
-            elif key == 'id' and value:
-                attrs.append(f"id={value}")
-
-        if attrs:
-            parts.append(f"[{', '.join(attrs)}]")
-
-        # Position info
-        if item['inViewport']:
-            parts.append("(visible)")
-        else:
-            parts.append("(below fold)")
-
-        return '  ' + ' '.join(parts)
+        except Exception as e:
+            logger.warning(f"Error in async fallback snapshot: {e}")
+            return "Error: Could not capture page snapshot"
 
 
 # TypedDicts
