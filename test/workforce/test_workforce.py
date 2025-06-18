@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+from collections import deque
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -122,18 +123,25 @@ async def test_listen_to_channel_recovers_from_timeout():
             # Post initial ready tasks
             await workforce._post_ready_tasks()
 
-            # First try to get returned task - should timeout
-            try:
-                returned_task = await workforce._get_returned_task()
-                raise asyncio.TimeoutError("Simulated timeout")
-            except asyncio.TimeoutError:
-                # This is expected
-                pass
+            # try to get returned task - should raise TimeoutError
+            with pytest.raises(
+                asyncio.TimeoutError, match="Simulated timeout"
+            ):
+                await workforce._get_returned_task()
+
+            # Ensure the mock was called for the first attempt
+            assert mock_channel.get_returned_task_by_publisher.call_count == 1
 
             # Second try should succeed
-            returned_task = await workforce._get_returned_task()
+            returned_task_after_timeout = await workforce._get_returned_task()
+            assert returned_task_after_timeout is mock_task
+
+            # Ensure the mock was called for the second attempt
+            assert mock_channel.get_returned_task_by_publisher.call_count == 2
+
             # Process the task
-            await workforce._handle_completed_task(returned_task)
+            await workforce._handle_completed_task(returned_task_after_timeout)
+            workforce._handle_completed_task.assert_called_once_with(mock_task)
 
         finally:
             workforce._running = False
@@ -215,17 +223,22 @@ async def test_multiple_timeout_points():
     mock_task = MagicMock(spec=Task)
     mock_task.id = "test_task_id"
     mock_task.state = TaskState.FAILED
+    mock_task.content = "Test task content"
+    mock_task.additional_info = {}
+    mock_task.result = "Mock task failed"
 
     mock_task.failure_count = 0
+    mock_task.get_depth.return_value = 0
 
     mock_channel.get_returned_task_by_publisher.return_value = mock_task
 
-    # Make _handle_failed_task timeout
-    mock_channel.remove_task.side_effect = asyncio.TimeoutError()
+    # Make _handle_failed_task timeout on channel operation
+    mock_channel.archive_task.side_effect = asyncio.TimeoutError()
 
     workforce._channel = mock_channel
     workforce._task = mock_task
-    workforce._pending_tasks = [mock_task]
+    workforce._pending_tasks = deque([mock_task])
+    workforce._assignees = {mock_task.id: "test_worker_id"}
 
     # Patch _listen_to_channel to handle one task with the timeout
     async def patched_listen():
@@ -262,8 +275,8 @@ async def test_multiple_timeout_points():
 
     # Verify get_returned_task_by_publisher was called
     mock_channel.get_returned_task_by_publisher.assert_called_once()
-    # Verify remove_task was called (this is where the timeout occurred)
-    mock_channel.remove_task.assert_called_once_with(mock_task.id)
+    # Verify archive_task was called (this is where the timeout occurred)
+    mock_channel.archive_task.assert_called_once_with(mock_task.id)
 
 
 @pytest.fixture
