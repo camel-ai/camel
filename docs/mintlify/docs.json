@@ -46,6 +46,7 @@
           {
             "group": "Get Started",
             "pages": [
+              "get_started/introduction",
               "get_started/installation",
               "get_started/setup"
             ]
@@ -157,7 +158,8 @@
               {
                 "group": "MCP",
                 "pages": [
-                  "cookbooks/mcp/agents_with_sql_mcp"
+                  "cookbooks/mcp/agents_with_sql_mcp",
+                  "cookbooks/mcp/camel_aci_mcp_cookbook"
                 ]
               }
             ]
@@ -219,6 +221,7 @@
               "reference/camel.configs.openai_config",
               "reference/camel.configs.openrouter_config",
               "reference/camel.configs.ppio_config",
+              "reference/camel.configs.qianfan_config",
               "reference/camel.configs.qwen_config",
               "reference/camel.configs.reka_config",
               "reference/camel.configs.samba_config",
@@ -304,6 +307,7 @@
               "reference/camel.models.openai_model",
               "reference/camel.models.openrouter_model",
               "reference/camel.models.ppio_model",
+              "reference/camel.models.qianfan_model",
               "reference/camel.models.qwen_model",
               "reference/camel.models.reka_model",
               "reference/camel.models.samba_model",
@@ -400,7 +404,8 @@
               "reference/camel.societies.workforce.task_channel",
               "reference/camel.societies.workforce.utils",
               "reference/camel.societies.workforce.worker",
-              "reference/camel.societies.workforce.workforce"
+              "reference/camel.societies.workforce.workforce",
+              "reference/camel.societies.workforce.workforce_logger"
             ]
           },
           {
@@ -557,6 +562,7 @@
             "pages": [
               "reference/camel.environments.models",
               "reference/camel.environments.multi_step",
+              "reference/camel.environments.rlcards_env",
               "reference/camel.environments.single_step",
               "reference/camel.environments.tic_tac_toe"
             ]
