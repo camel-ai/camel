@@ -214,13 +214,14 @@ class DocumentToolkit(BaseToolkit):
                 logger.debug("Cache hit: %s", document_path)
                 return True, self._cache[cache_key]
 
-            # Check if the input is a webpage URL first
-            if self._is_webpage(document_path):
-                ok, txt = self._handle_webpage(document_path)
-                return self._cache_and_return(cache_key, ok, txt)
-
-            # Determine file type by extension for efficient dispatch
+            # Get file extension first
             suffix = f".{document_path.lower().rsplit('.', 1)[-1]}" if "." in document_path else ""
+            is_url = self._is_url(document_path)  # Helper to check if it's a URL
+
+            # For URLs with file extensions, download first then process
+            if is_url and suffix and suffix not in _WEB_EXTS:
+                local_path = self._download_file(document_path)
+                document_path = str(local_path)
 
             # Process different file types with specialized handlers
             if suffix in _IMAGE_EXTS:
@@ -263,7 +264,11 @@ class DocumentToolkit(BaseToolkit):
                 else:
                     logger.warning("No suitable loader for DOC/PDF – falling back to generic loader")
 
-            # Fallback to generic loader for other formats
+            if self._is_webpage(document_path):
+                ok, txt = self._handle_webpage(document_path)
+                return self._cache_and_return(cache_key, ok, txt)
+
+                # Fallback to generic loader
             txt = self._loader.convert_file(document_path)
             return self._cache_and_return(cache_key, True, txt)
 
@@ -272,6 +277,10 @@ class DocumentToolkit(BaseToolkit):
             logger.debug(traceback.format_exc())
             return False, f"Error extracting document {document_path}: {exc}"
 
+    def _is_url(self, path: str) -> bool:
+        """Check if the path is a URL."""
+        parsed = urlparse(path)
+        return bool(parsed.scheme and parsed.netloc)
 
     # Webpage processing methods (ported from original code)
     def _is_webpage(self, url: str) -> bool:
@@ -549,22 +558,66 @@ class DocumentToolkit(BaseToolkit):
         return Path(path_or_url).expanduser().resolve()
 
     def _download_file(self, url: str) -> Path:
-        r"""Download a file from URL to the local cache directory.
+        r"""Download a file from URL to the local cache directory."""
+        import re
 
-        Args:
-            url (str): URL of the file to download.
+        try:
+            resp = requests.get(url, stream=True, timeout=60)
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            logger.error("Failed to download %s: %s", url, e)
+            raise
 
-        Returns:
-            Path: Local path where the file was saved.
-        """
-        filename = Path(urlparse(url).path).name or "downloaded.zip"
+        # Try to get filename from Content-Disposition header
+        cd = resp.headers.get("Content-Disposition", "")
+        filename = None
+        if "filename" in cd:
+            match = re.findall(r'filename[*]?=["\']?([^"\';\r\n]+)', cd)
+            if match:
+                filename = match[0].strip()
+
+        # Fallback: get filename from URL
+        if not filename:
+            parsed_url = urlparse(url)
+            filename = Path(parsed_url.path).name or "downloaded_file"
+
+            # If no extension, guess from content type
+            if not Path(filename).suffix:
+                content_type = resp.headers.get("Content-Type", "").split(';')[0].strip()
+                ext_map = {
+                    "application/pdf": ".pdf",
+                    "application/zip": ".zip",
+                    "application/json": ".json",
+                    "text/html": ".html",
+                    "application/msword": ".doc",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+                    "application/vnd.ms-excel": ".xls",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+                    "image/jpeg": ".jpg",
+                    "image/png": ".png",
+                    "image/gif": ".gif",
+                    "image/webp": ".webp",
+                    "text/plain": ".txt",
+                    "text/csv": ".csv"
+                }
+                ext = ext_map.get(content_type, "")
+                filename += ext
+
+        # Sanitize filename for filesystem
+        filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+
         local_path = self.cache_dir / filename
         logger.info("Downloading %s → %s", url, local_path)
-        resp = requests.get(url, stream=True, timeout=60)
-        resp.raise_for_status()
-        with open(local_path, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=8192):
-                f.write(chunk)
+
+        try:
+            with open(local_path, "wb") as f:
+                for chunk in resp.iter_content(chunk_size=8192):
+                    if chunk:  # Filter out keep-alive chunks
+                        f.write(chunk)
+        except IOError as e:
+            logger.error("Failed to save file %s: %s", local_path, e)
+            raise
+
         return local_path
 
     # Cache management methods

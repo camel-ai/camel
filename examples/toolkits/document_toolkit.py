@@ -24,25 +24,6 @@ from camel.models import ModelFactory
 from camel.toolkits import DocumentToolkit
 from camel.types import ModelPlatformType, ModelType
 
-# Create sample file
-md_content = """
-# Project Overview
-
-This toolkit processes **documents** of many types.
-
-## Features
-- Model‑agnostic architecture
-- Pluggable loaders (MarkItDown, Unstructured, …)
-- ZIP archive handling
-- Image & Excel special‑cases
-"""
-
-with tempfile.NamedTemporaryFile(suffix=".md", delete=False, mode="w", encoding="utf-8") as tmp:
-    tmp.write(md_content)
-    sample_doc_path = tmp.name
-
-print(f"Created sample document at: {sample_doc_path}")
-
 #Initialise the toolkit
 doc_toolkit = DocumentToolkit()
 
@@ -65,12 +46,7 @@ agent = ChatAgent(
 
 # Example: Ask the agent to extract the content
 response = agent.step(
-    f"Extract content in the document located at {sample_doc_path}."
+    f"Extract content in the document located at https://arxiv.org/pdf/1706.03762."
 )
 
 print(response.msgs[0].content)
-
-# Clean up the temporary file
-if os.path.exists(sample_doc_path):
-    os.remove(sample_doc_path)
-    print(f"\nRemoved temporary file: {sample_doc_path}")
