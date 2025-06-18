@@ -30,20 +30,9 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
-try:
-    import nbformat
-    from nbconvert import MarkdownExporter
-    from nbconvert.preprocessors import Preprocessor
-except ImportError:  # Allow the script to run in environments without these deps when no ipynb is processed
-    nbformat = None
-
-    class _DummyExporter:  # type: ignore
-        pass
-
-    MarkdownExporter = _DummyExporter  # type: ignore
-
-    class Preprocessor:  # Minimal stand-in so class definition below still works
-        pass
+import nbformat
+from nbconvert import MarkdownExporter
+from nbconvert.preprocessors import Preprocessor
 
 
 class RemoveOutputPreprocessor(Preprocessor):
@@ -708,14 +697,20 @@ def process_directory(
                 # If an explicit output directory is provided and differs from the current
                 # file location, copy the mdx file to the expected output location to keep
                 # folder structures in sync. Otherwise, just reference the existing file.
-                if current_output_dir and file_path.parent != current_output_dir:
+                if (
+                    current_output_dir
+                    and file_path.parent != current_output_dir
+                ):
                     dest_path = current_output_dir / file_path.name
                     try:
                         import shutil
+
                         shutil.copy2(file_path, dest_path)
                         output_file = dest_path
                     except Exception as copy_err:
-                        print(f"Error copying MDX file {file_path} -> {dest_path}: {copy_err}")
+                        print(
+                            f"Error copying MDX file {file_path} -> {dest_path}: {copy_err}"
+                        )
                         output_file = file_path  # Fallback to original path
                 else:
                     output_file = file_path
@@ -729,16 +724,23 @@ def process_directory(
                 try:
                     if 'mintlify' in file_path.parts:
                         mintlify_idx = list(file_path.parts).index('mintlify')
-                        rel_parts = file_path.parts[mintlify_idx + 1:]
+                        rel_parts = file_path.parts[mintlify_idx + 1 :]
 
-                        dest_md_path = Path('docs').joinpath(*rel_parts).with_suffix('.md')
+                        dest_md_path = (
+                            Path('docs')
+                            .joinpath(*rel_parts)
+                            .with_suffix('.md')
+                        )
                         dest_md_path.parent.mkdir(parents=True, exist_ok=True)
 
                         import shutil
+
                         shutil.copy2(file_path, dest_md_path)
                         print(f"    ↳ Synced MDX back to {dest_md_path}")
                 except Exception as sync_err:
-                    print(f"Warning: failed to sync MDX back to docs folder: {sync_err}")
+                    print(
+                        f"Warning: failed to sync MDX back to docs folder: {sync_err}"
+                    )
         except Exception as e:
             print(f"Error converting {file_path}: {e}")
 
