@@ -1280,7 +1280,7 @@ class Workforce(BaseNode):
                 f"Timeout waiting for returned task in "
                 f"workforce {self.node_id}"
             )
-            raise ValueError("Timeout waiting for task to be returned")
+            raise
 
     async def _post_ready_tasks(self) -> None:
         r"""Checks for unassigned tasks, assigns them, and then posts any
