@@ -112,6 +112,7 @@ class ModelFactory:
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
         **kwargs,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
@@ -136,6 +137,8 @@ class ModelFactory:
                 (default: :obj:`None`)
             timeout (Optional[float], optional): The timeout value in seconds
                 for API calls. (default: :obj:`None`)
+            max_retries (int, optional): Maximum number of retries
+                for API calls. (default: :obj:`3`)
             **kwargs: Additional model-specific parameters that will be passed
                 to the model constructor. For example, Azure OpenAI models may
                 require `api_version`, `azure_deployment_name`,
@@ -188,6 +191,7 @@ class ModelFactory:
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
             **kwargs,
         )
 
