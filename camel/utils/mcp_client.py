@@ -532,13 +532,14 @@ class MCPClient:
 
     def _normalize_type(self, type_value: Any) -> str:
         r"""Normalizes a JSON schema type from a list to a single string.
-        
+
         Converts array types like ["string", "null"] to single string "string".
         This fixes Gmail MCP tools that return list types.
-        
+
         Args:
-            type_value: The type value from JSON schema, could be string or list.
-            
+            type_value: The type value from JSON schema, could be string
+                or list.
+
         Returns:
             str: Normalized single type string.
         """
@@ -546,15 +547,17 @@ class MCPClient:
             return next((t for t in type_value if t != "null"), type_value[0])
         return type_value
 
-    def _sanitize_property_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+    def _sanitize_property_schema(
+        self, schema: Dict[str, Any]
+    ) -> Dict[str, Any]:
         r"""Sanitizes a single property schema for model compatibility.
-        
+
         Removes invalid enum declarations on non-string types and recursively
         processes nested object schemas. This fixes Notion MCP tools.
-        
+
         Args:
             schema: Property schema dictionary to sanitize.
-            
+
         Returns:
             Dict[str, Any]: Sanitized schema dictionary.
         """
@@ -563,16 +566,23 @@ class MCPClient:
             clean_schema["type"] = self._normalize_type(clean_schema["type"])
         if "enum" in clean_schema and clean_schema.get("type") != "string":
             clean_schema.pop("enum")
-        if clean_schema.get("type") == "object" and "properties" in clean_schema:
-            clean_schema["properties"] = self._sanitize_properties(clean_schema["properties"])
+        if (
+            clean_schema.get("type") == "object"
+            and "properties" in clean_schema
+        ):
+            clean_schema["properties"] = self._sanitize_properties(
+                clean_schema["properties"]
+            )
         return clean_schema
 
-    def _sanitize_properties(self, properties: Dict[str, Any]) -> Dict[str, Any]:
+    def _sanitize_properties(
+        self, properties: Dict[str, Any]
+    ) -> Dict[str, Any]:
         r"""Recursively sanitizes all properties in a schema dictionary.
-        
+
         Args:
             properties: Properties dictionary from tool schema.
-            
+
         Returns:
             Dict[str, Any]: Sanitized properties dictionary.
         """
