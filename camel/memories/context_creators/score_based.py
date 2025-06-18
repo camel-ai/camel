@@ -258,10 +258,10 @@ class ScoreBasedContextCreator(BaseContextCreator):
         for _tool_call_id, group in tool_call_groups.items():
             # Use the highest score in the group as the group's score
             best_score = max(unit.record.score for unit in group)
-            earliest_timestamp = min(unit.record.timestamp for unit in group)
+            latest_timestamp = max(unit.record.timestamp for unit in group)
             group_tokens = sum(unit.num_tokens for unit in group)
             sorted_tool_groups.append(
-                ((-best_score, earliest_timestamp), group, group_tokens)
+                ((-best_score, -latest_timestamp), group, group_tokens)
             )
 
         sorted_tool_groups.sort(key=lambda x: x[0])
