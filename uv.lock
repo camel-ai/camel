@@ -142,6 +142,18 @@ wheels = [
 ]
 
 [[package]]
+name = "aiohttp-retry"
+version = "2.9.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9d/61/ebda4d8e3d8cfa1fd3db0fb428db2dd7461d5742cea35178277ad180b033/aiohttp_retry-2.9.1.tar.gz", hash = "sha256:8eb75e904ed4ee5c2ec242fefe85bf04240f685391c4879d8f541d6028ff01f1", size = 13608 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1a/99/84ba7273339d0f3dfa57901b846489d2e5c2cd731470167757f1935fffbd/aiohttp_retry-2.9.1-py3-none-any.whl", hash = "sha256:66d2759d1921838256a05a3f80ad7e724936f083e35be5abb5e16eed6be6dc54", size = 9981 },
+]
+
+[[package]]
 name = "aiomysql"
 version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -547,7 +559,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.66"
+version = "0.2.67"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -953,8 +965,8 @@ requires-dist = [
     { name = "datasets", marker = "extra == 'all'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'huggingface'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'owl'", specifier = ">=3,<4" },
-    { name = "daytona-sdk", marker = "extra == 'all'", specifier = "==0.14.0" },
-    { name = "daytona-sdk", marker = "extra == 'dev-tools'", specifier = "==0.14.0" },
+    { name = "daytona-sdk", marker = "extra == 'all'", specifier = ">=0.20.0" },
+    { name = "daytona-sdk", marker = "extra == 'dev-tools'", specifier = ">=0.20.0" },
     { name = "diffusers", marker = "extra == 'all'", specifier = ">=0.25.0,<0.26" },
     { name = "diffusers", marker = "extra == 'huggingface'", specifier = ">=0.25.0,<0.26" },
     { name = "discord-py", marker = "extra == 'all'", specifier = ">=2.3.2,<3" },
@@ -1730,11 +1742,32 @@ wheels = [
 ]
 
 [[package]]
-name = "daytona-sdk"
-version = "0.14.0"
+name = "daytona-api-client-async"
+version = "0.20.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "aiohttp" },
+    { name = "aiohttp-retry" },
+    { name = "pydantic" },
+    { name = "python-dateutil" },
+    { name = "typing-extensions" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6e/e9/3496e82e36f999d81945acdd1e11cda2dfe3e470d31af384f14a1f9992e1/daytona_api_client_async-0.20.1.tar.gz", hash = "sha256:043045cb173b0b53416c19a9e276124a5c4fe14209f409a8572ef1975240e53f", size = 71806 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/68/b7/827bcf4e40b21b3ae3c0a0f31a81efec42476516f002c8c943d41696953e/daytona_api_client_async-0.20.1-py3-none-any.whl", hash = "sha256:f24e06e3ab6e554214ed064f1b4c8723356c76c14c69de9a73a6cad60a386127", size = 192394 },
+]
+
+[[package]]
+name = "daytona-sdk"
+version = "0.20.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiofiles" },
+    { name = "aiohttp" },
+    { name = "aiohttp-retry" },
     { name = "daytona-api-client" },
+    { name = "daytona-api-client-async" },
     { name = "deprecated" },
     { name = "environs" },
     { name = "httpx" },
@@ -1743,9 +1776,9 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/66/2c/1b48a7343168802dc9ae60d4bf5cda75c4755ca7fab39a444df2bcbaf3be/daytona_sdk-0.14.0.tar.gz", hash = "sha256:1df3eaa664dc793a33690a2361cf5262713ca5ff1f1c5730eb00b4940f11b6e8", size = 41874 }
+sdist = { url = "https://files.pythonhosted.org/packages/77/dd/ed663b652cf62f089253e660c8c2f8b8ca5e45acecae385921a16cef9fdd/daytona_sdk-0.20.0.tar.gz", hash = "sha256:b5c13b999fcce1e6460974dbbb0dd336d8ca1e96d6a25afe705f476fba4e6f11", size = 68472 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/47/ae/8ff649b3aa26ee2dbbf2f1243f7f17ca0b39e2c899d3d946a416313e3ee9/daytona_sdk-0.14.0-py3-none-any.whl", hash = "sha256:a6e5c8d56b8d2342a1a630de93b7346ce2a6bc81cb21a928988964a7b3ce7b0d", size = 46536 },
+    { url = "https://files.pythonhosted.org/packages/35/98/7692c1b28bec6511a5c2eedad7de06d973fb6529384034ddc4a2b23cc3d3/daytona_sdk-0.20.0-py3-none-any.whl", hash = "sha256:7919acfff21c072a0ea826a3b250c0d9c5765e58c054d2bd5b91ea76f0df4709", size = 83754 },
 ]
 
 [[package]]
