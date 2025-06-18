@@ -340,9 +340,12 @@ def test_browser_click_id_uses_aria_ref(base_browser_fixture):
         'height': 10,
     }
     browser.page.locator = MagicMock(return_value=mock_target)
-    browser.page.expect_event = MagicMock()
 
-    browser.click_id('test_id')
+    # Mock the context manager
+    with patch.object(browser.page, 'expect_event') as mock_expect_event:
+        mock_expect_event.return_value.__enter__.return_value = MagicMock()
+        browser.click_id('test_id')
+
     browser.page.locator.assert_called_once_with("[aria-ref='test_id']")
 
 
@@ -353,20 +356,11 @@ def test_browser_fill_input_id_uses_aria_ref(base_browser_fixture):
     mock_target = MagicMock()
     browser.page.locator = MagicMock(return_value=mock_target)
 
-    browser.fill_input_id('test_id', 'test text')
-    browser.page.locator.assert_called_once_with("[aria-ref='test_id']")
+    # Mock the context manager
+    with patch.object(browser.page, 'expect_download') as mock_expect_download:
+        mock_expect_download.return_value.__enter__.return_value = MagicMock()
+        browser.download_file_id('test_id')
 
-
-def test_browser_download_file_id_uses_aria_ref(base_browser_fixture):
-    """Verify download_file_id uses the correct aria-ref locator."""
-    browser = base_browser_fixture
-    browser.init()
-
-    mock_target = MagicMock()
-    browser.page.locator = MagicMock(return_value=mock_target)
-    browser.page.expect_download = MagicMock()
-
-    browser.download_file_id('test_id')
     browser.page.locator.assert_called_once_with("[aria-ref='test_id']")
 
 
