@@ -583,6 +583,7 @@
               "reference/camel.benchmarks.base",
               "reference/camel.benchmarks.browsecomp",
               "reference/camel.benchmarks.gaia",
+              "reference/camel.benchmarks.healthbench",
               "reference/camel.benchmarks.nexus",
               "reference/camel.benchmarks.ragbench",
               "reference/camel.benchmarks.mock_website.app",
