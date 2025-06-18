@@ -191,12 +191,28 @@ class ScoreBasedContextCreator(BaseContextCreator):
 
         for unit in units:
             message = unit.record.memory_record.message
+            backend_role = unit.record.memory_record.role_at_backend
 
             # Check if this is a tool call message
             if hasattr(message, 'func_name') and hasattr(
                 message, 'tool_call_id'
             ):
                 tool_call_id = getattr(message, 'tool_call_id', None)
+                if tool_call_id:
+                    if tool_call_id not in tool_call_groups:
+                        tool_call_groups[tool_call_id] = []
+                    tool_call_groups[tool_call_id].append(unit)
+
+            # Check if this is a tool response message
+            elif backend_role == OpenAIBackendRole.FUNCTION:
+                tool_call_id = None
+                if hasattr(message, 'tool_call_id'):
+                    tool_call_id = getattr(message, 'tool_call_id', None)
+                elif hasattr(message, 'result') and hasattr(
+                    message, 'tool_call_id'
+                ):
+                    tool_call_id = getattr(message, 'tool_call_id', None)
+
                 if tool_call_id:
                     if tool_call_id not in tool_call_groups:
                         tool_call_groups[tool_call_id] = []
@@ -225,11 +241,13 @@ class ScoreBasedContextCreator(BaseContextCreator):
         tool_call_unit_ids = set()
         for group in tool_call_groups.values():
             for unit in group:
-                tool_call_unit_ids.add(id(unit))
+                tool_call_unit_ids.add(unit.record.memory_record.uuid)
 
         # Separate tool call groups and standalone units
         standalone_units = [
-            u for u in regular_units if id(u) not in tool_call_unit_ids
+            u
+            for u in regular_units
+            if u.record.memory_record.uuid not in tool_call_unit_ids
         ]
 
         # Sort standalone units for truncation (high scores first)
