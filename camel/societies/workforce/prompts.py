@@ -88,16 +88,17 @@ Do not include any other text, explanations, justifications, or conversational f
 
 PROCESS_TASK_PROMPT = TextPrompt(
     """You need to process one given task.
+
+Please keep in mind the task you are going to process, the content of the task that you need to do is:
+
+==============================
+{content}
+==============================
+
 Here are results of some prerequisite tasks that you can refer to:
 
 ==============================
 {dependency_tasks_info}
-==============================
-
-The content of the task that you need to do is:
-
-==============================
-{content}
 ==============================
 
 Here are some additional information about the task:

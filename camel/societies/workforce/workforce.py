@@ -274,10 +274,13 @@ class Workforce(BaseNode):
             "of agents. This ensures efficient execution by minimizing "
             "context switching between agents.",
         )
-        _kwargs = dict(task_agent_kwargs or {})
+        _task_agent_kwargs = dict(task_agent_kwargs or {})
         extra_tools = TaskPlanningToolkit().get_tools()
-        _kwargs["tools"] = [*_kwargs.get("tools", []), *extra_tools]
-        self.task_agent = ChatAgent(task_sys_msg, **_kwargs)
+        _task_agent_kwargs["tools"] = [
+            *_task_agent_kwargs.get("tools", []),
+            *extra_tools,
+        ]
+        self.task_agent = ChatAgent(task_sys_msg, **_task_agent_kwargs)
 
     def __repr__(self):
         return (
@@ -823,9 +826,17 @@ class Workforce(BaseNode):
 
         # Check if we're already in an event loop
         try:
-            asyncio.get_running_loop()
+            current_loop = asyncio.get_running_loop()
+            # Store the current loop for potential reuse by async tools
+            self._loop = current_loop
 
-            # If we're in an event loop, we need to run in a thread
+            logger.info(
+                "Running in active event loop context. "
+                "Consider using process_task_async() directly for better "
+                "async tool compatibility."
+            )
+
+            # Create a new thread with a fresh event loop
             def run_in_thread():
                 # Create new event loop for this thread
                 new_loop = asyncio.new_event_loop()
@@ -836,6 +847,8 @@ class Workforce(BaseNode):
                     )
                 finally:
                     new_loop.close()
+                    # Restore original loop reference
+                    self._loop = current_loop
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(run_in_thread)
@@ -1273,12 +1286,15 @@ class Workforce(BaseNode):
             # Add timeout to prevent indefinite waiting
             return await asyncio.wait_for(
                 self._channel.get_returned_task_by_publisher(self.node_id),
-                timeout=300.0,  # 5 minute timeout
+                timeout=180.0,  # 3 minute timeout
             )
         except asyncio.TimeoutError:
             logger.warning(
                 f"Timeout waiting for returned task in "
-                f"workforce {self.node_id}"
+                f"workforce {self.node_id}. "
+                f"This may indicate an issue with async tool execution. "
+                f"Current pending tasks: {len(self._pending_tasks)}, "
+                f"In-flight tasks: {self._in_flight_tasks}"
             )
             raise
 
@@ -1771,10 +1787,10 @@ class Workforce(BaseNode):
                     child.description,
                     child.assistant_role_name,
                     child.user_role_name,
-                    child.chat_turn_limit,
                     child.assistant_agent_kwargs,
                     child.user_agent_kwargs,
                     child.summarize_agent_kwargs,
+                    child.chat_turn_limit,
                 )
             elif isinstance(child, Workforce):
                 new_instance.add_workforce(child.clone(with_memory))
