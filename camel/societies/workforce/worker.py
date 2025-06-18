@@ -13,9 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
+import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from colorama import Fore
 
@@ -35,14 +36,19 @@ class Worker(BaseNode, ABC):
         description (str): Description of the node.
         node_id (Optional[str]): ID of the node. If not provided, it will
             be generated automatically. (default: :obj:`None`)
+        max_concurrent_tasks (int): Maximum number of tasks this worker can
+            process concurrently. (default: :obj:`10`)
     """
 
     def __init__(
         self,
         description: str,
         node_id: Optional[str] = None,
+        max_concurrent_tasks: int = 10,
     ) -> None:
         super().__init__(description, node_id=node_id)
+        self.max_concurrent_tasks = max_concurrent_tasks
+        self._active_task_ids: Set[str] = set()
 
     def __repr__(self):
         return f"Worker node {self.node_id} ({self.description})"
@@ -60,7 +66,7 @@ class Worker(BaseNode, ABC):
         pass
 
     async def _get_assigned_task(self) -> Task:
-        r"""Get the task assigned to this node from the channel."""
+        r"""Get a task assigned to this node from the channel."""
         return await self._channel.get_assigned_task_by_assignee(self.node_id)
 
     @staticmethod
@@ -77,20 +83,10 @@ class Worker(BaseNode, ABC):
     def set_channel(self, channel: TaskChannel):
         self._channel = channel
 
-    @check_if_running(False)
-    async def _listen_to_channel(self):
-        """Continuously listen to the channel, process the task that are
-        assigned to this node, and update the result and status of the task.
-
-        This method should be run in an event loop, as it will run
-            indefinitely.
-        """
-        self._running = True
-        logger.info(f"{self} started.")
-
-        while True:
-            # Get the earliest task assigned to this node
-            task = await self._get_assigned_task()
+    async def _process_single_task(self, task: Task) -> None:
+        r"""Process a single task and handle its completion/failure."""
+        try:
+            self._active_task_ids.add(task.id)
             print(
                 f"{Fore.YELLOW}{self} get task {task.id}: {task.content}"
                 f"{Fore.RESET}"
@@ -109,6 +105,92 @@ class Worker(BaseNode, ABC):
             task.set_state(task_state)
 
             await self._channel.return_task(task.id)
+        except Exception as e:
+            logger.error(f"Error processing task {task.id}: {e}")
+            task.set_state(TaskState.FAILED)
+            await self._channel.return_task(task.id)
+        finally:
+            self._active_task_ids.discard(task.id)
+
+    @check_if_running(False)
+    async def _listen_to_channel(self):
+        r"""Continuously listen to the channel, process tasks that are
+        assigned to this node concurrently up to max_concurrent_tasks limit.
+
+        This method supports parallel task execution when multiple tasks
+        are assigned to the same worker.
+        """
+        self._running = True
+        logger.info(
+            f"{self} started with max {self.max_concurrent_tasks} "
+            f"concurrent tasks."
+        )
+
+        # Keep track of running task coroutines
+        running_tasks: Set[asyncio.Task] = set()
+
+        while self._running:
+            try:
+                # Clean up completed tasks
+                completed_tasks = [t for t in running_tasks if t.done()]
+                for completed_task in completed_tasks:
+                    running_tasks.remove(completed_task)
+                    # Check for exceptions in completed tasks
+                    try:
+                        await completed_task
+                    except Exception as e:
+                        logger.error(f"Task processing failed: {e}")
+
+                # Check if we can accept more tasks
+                if len(running_tasks) < self.max_concurrent_tasks:
+                    try:
+                        # Try to get a new task (with short timeout to avoid
+                        # blocking)
+                        task = await asyncio.wait_for(
+                            self._get_assigned_task(), timeout=1.0
+                        )
+
+                        # Create and start processing task
+                        task_coroutine = asyncio.create_task(
+                            self._process_single_task(task)
+                        )
+                        running_tasks.add(task_coroutine)
+
+                    except asyncio.TimeoutError:
+                        # No tasks available, continue loop
+                        if not running_tasks:
+                            # No tasks running and none available, short sleep
+                            await asyncio.sleep(0.1)
+                        continue
+                else:
+                    # At max capacity, wait for at least one task to complete
+                    if running_tasks:
+                        done, running_tasks = await asyncio.wait(
+                            running_tasks, return_when=asyncio.FIRST_COMPLETED
+                        )
+                        # Process completed tasks
+                        for completed_task in done:
+                            try:
+                                await completed_task
+                            except Exception as e:
+                                logger.error(f"Task processing failed: {e}")
+
+            except Exception as e:
+                logger.error(
+                    f"Error in worker {self.node_id} listen loop: {e}"
+                )
+                await asyncio.sleep(0.1)
+                continue
+
+        # Wait for all remaining tasks to complete when stopping
+        if running_tasks:
+            logger.info(
+                f"{self} stopping, waiting for {len(running_tasks)} "
+                f"tasks to complete..."
+            )
+            await asyncio.gather(*running_tasks, return_exceptions=True)
+
+        logger.info(f"{self} stopped.")
 
     @check_if_running(False)
     async def start(self):

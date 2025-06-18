@@ -995,18 +995,25 @@ class Workforce(BaseNode):
 
     @check_if_running(False)
     def add_single_agent_worker(
-        self, description: str, worker: ChatAgent
+        self,
+        description: str,
+        worker: ChatAgent,
+        max_concurrent_tasks: int = 10,
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses a single agent.
 
         Args:
             description (str): Description of the worker node.
             worker (ChatAgent): The agent to be added.
+            max_concurrent_tasks (int): Maximum number of tasks this worker can
+                process concurrently. (default: :obj:`10`)
 
         Returns:
             Workforce: The workforce node itself.
         """
-        worker_node = SingleAgentWorker(description, worker)
+        worker_node = SingleAgentWorker(
+            description, worker, max_concurrent_tasks
+        )
         self._children.append(worker_node)
         if self.metrics_logger:
             self.metrics_logger.log_worker_created(
@@ -1235,6 +1242,7 @@ class Workforce(BaseNode):
         new_node = SingleAgentWorker(
             description=new_node_conf.description,
             worker=new_agent,
+            max_concurrent_tasks=10,  # TODO: make this configurable
         )
         new_node.set_channel(self._channel)
 
@@ -1464,25 +1472,32 @@ class Workforce(BaseNode):
                     'processing_time_seconds'
                 ]
 
-            # Get token usage from task additional info
+            # Get token usage from task additional info (preferred - actual
+            # usage)
             if (
                 task.additional_info is not None
                 and 'token_usage' in task.additional_info
             ):
                 token_usage = task.additional_info['token_usage']
-
-            # Try to get token usage from SingleAgentWorker memory if available
-            assignee_node = next(
-                (
-                    child
-                    for child in self._children
-                    if child.node_id == worker_id
-                ),
-                None,
-            )
-            if isinstance(assignee_node, SingleAgentWorker):
-                _, total_tokens = assignee_node.worker.memory.get_context()
-                token_usage = {'total_tokens': total_tokens}
+            else:
+                # Fallback: Try to get token usage from SingleAgentWorker
+                # memory
+                assignee_node = next(
+                    (
+                        child
+                        for child in self._children
+                        if child.node_id == worker_id
+                    ),
+                    None,
+                )
+                if isinstance(assignee_node, SingleAgentWorker):
+                    try:
+                        _, total_tokens = (
+                            assignee_node.worker.memory.get_context()
+                        )
+                        token_usage = {'total_tokens': total_tokens}
+                    except Exception:
+                        token_usage = None
 
             # Log the completed task
             self.metrics_logger.log_task_completed(
@@ -1780,7 +1795,9 @@ class Workforce(BaseNode):
             if isinstance(child, SingleAgentWorker):
                 cloned_worker = child.worker.clone(with_memory)
                 new_instance.add_single_agent_worker(
-                    child.description, cloned_worker
+                    child.description,
+                    cloned_worker,
+                    child.max_concurrent_tasks,
                 )
             elif isinstance(child, RolePlayingWorker):
                 new_instance.add_role_playing_worker(
@@ -1791,6 +1808,7 @@ class Workforce(BaseNode):
                     child.user_agent_kwargs,
                     child.summarize_agent_kwargs,
                     child.chat_turn_limit,
+                    child.max_concurrent_tasks,
                 )
             elif isinstance(child, Workforce):
                 new_instance.add_workforce(child.clone(with_memory))
@@ -1884,7 +1902,7 @@ class Workforce(BaseNode):
             )
 
             try:
-                result_task = await workforce_instance.process_task(task)
+                result_task = await workforce_instance.process_task_async(task)
                 return {
                     "status": "success",
                     "task_id": result_task.id,
