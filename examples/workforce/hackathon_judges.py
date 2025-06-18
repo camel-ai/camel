@@ -251,7 +251,7 @@ def main():
         worker=researcher_agent,
     )
 
-    task = workforce.process_task(task)
+    workforce.process_task(task)
 
     # Test WorkforceLogger features
     print("\n--- Workforce Log Tree ---")
