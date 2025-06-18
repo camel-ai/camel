@@ -1,5 +1,42 @@
 <a id="camel.societies.workforce.workforce"></a>
 
+<a id="camel.societies.workforce.workforce.WorkforceState"></a>
+
+## WorkforceState
+
+```python
+class WorkforceState(Enum):
+```
+
+Workforce execution state for human intervention support.
+
+<a id="camel.societies.workforce.workforce.WorkforceSnapshot"></a>
+
+## WorkforceSnapshot
+
+```python
+class WorkforceSnapshot:
+```
+
+Snapshot of workforce state for resuming execution.
+
+<a id="camel.societies.workforce.workforce.WorkforceSnapshot.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    main_task: Optional[Task] = None,
+    pending_tasks: Optional[Deque[Task]] = None,
+    completed_tasks: Optional[List[Task]] = None,
+    task_dependencies: Optional[Dict[str, List[str]]] = None,
+    assignees: Optional[Dict[str, str]] = None,
+    current_task_index: int = 0,
+    description: str = ''
+):
+```
+
 <a id="camel.societies.workforce.workforce.Workforce"></a>
 
 ## Workforce
@@ -105,6 +142,162 @@ def _decompose_task(self, task: Task):
 
   List[Task]: The subtasks.
 
+<a id="camel.societies.workforce.workforce.Workforce.pause"></a>
+
+### pause
+
+```python
+def pause(self):
+```
+
+Pause the workforce execution.
+If the internal event-loop is already running we schedule the
+asynchronous pause coroutine onto it.  When the loop has not yet
+been created (e.g. the caller presses the hot-key immediately after
+workforce start-up) we fall back to a synchronous state change so
+that no tasks will be scheduled until the loop is ready.
+
+<a id="camel.societies.workforce.workforce.Workforce.resume"></a>
+
+### resume
+
+```python
+def resume(self):
+```
+
+Resume execution after a manual pause.
+
+<a id="camel.societies.workforce.workforce.Workforce.stop_gracefully"></a>
+
+### stop_gracefully
+
+```python
+def stop_gracefully(self):
+```
+
+Request workforce to finish current in-flight work then halt.
+
+Works both when the internal event-loop is alive and when it has not
+yet been started.  In the latter case we simply mark the stop flag so
+that the loop (when it eventually starts) will exit immediately after
+initialisation.
+
+<a id="camel.societies.workforce.workforce.Workforce.save_snapshot"></a>
+
+### save_snapshot
+
+```python
+def save_snapshot(self, description: str = ''):
+```
+
+Save current state as a snapshot.
+
+<a id="camel.societies.workforce.workforce.Workforce.list_snapshots"></a>
+
+### list_snapshots
+
+```python
+def list_snapshots(self):
+```
+
+List all available snapshots.
+
+<a id="camel.societies.workforce.workforce.Workforce.get_pending_tasks"></a>
+
+### get_pending_tasks
+
+```python
+def get_pending_tasks(self):
+```
+
+Get current pending tasks for human review.
+
+<a id="camel.societies.workforce.workforce.Workforce.get_completed_tasks"></a>
+
+### get_completed_tasks
+
+```python
+def get_completed_tasks(self):
+```
+
+Get completed tasks.
+
+<a id="camel.societies.workforce.workforce.Workforce.modify_task_content"></a>
+
+### modify_task_content
+
+```python
+def modify_task_content(self, task_id: str, new_content: str):
+```
+
+Modify the content of a pending task.
+
+<a id="camel.societies.workforce.workforce.Workforce.add_task"></a>
+
+### add_task
+
+```python
+def add_task(
+    self,
+    content: str,
+    task_id: Optional[str] = None,
+    additional_info: Optional[Dict[str, Any]] = None,
+    insert_position: int = -1
+):
+```
+
+Add a new task to the pending queue.
+
+<a id="camel.societies.workforce.workforce.Workforce.remove_task"></a>
+
+### remove_task
+
+```python
+def remove_task(self, task_id: str):
+```
+
+Remove a task from the pending queue.
+
+<a id="camel.societies.workforce.workforce.Workforce.reorder_tasks"></a>
+
+### reorder_tasks
+
+```python
+def reorder_tasks(self, task_ids: List[str]):
+```
+
+Reorder pending tasks according to the provided task IDs list.
+
+<a id="camel.societies.workforce.workforce.Workforce.resume_from_task"></a>
+
+### resume_from_task
+
+```python
+def resume_from_task(self, task_id: str):
+```
+
+Resume execution from a specific task.
+
+<a id="camel.societies.workforce.workforce.Workforce.restore_from_snapshot"></a>
+
+### restore_from_snapshot
+
+```python
+def restore_from_snapshot(self, snapshot_index: int):
+```
+
+Restore workforce state from a snapshot.
+
+<a id="camel.societies.workforce.workforce.Workforce.get_workforce_status"></a>
+
+### get_workforce_status
+
+```python
+def get_workforce_status(self):
+```
+
+Get current workforce status for human review.
+
 <a id="camel.societies.workforce.workforce.Workforce.process_task"></a>
 
 ### process_task
@@ -113,9 +306,8 @@ def _decompose_task(self, task: Task):
 def process_task(self, task: Task):
 ```
 
-The main entry point for the workforce to process a task. It will
-start the workforce and all the child nodes under it, process the
-task provided and return the updated task.
+Synchronous wrapper for process_task that handles async operations
+internally.
 
 **Parameters:**
 
@@ -124,6 +316,38 @@ task provided and return the updated task.
 **Returns:**
 
   Task: The updated task.
+
+<a id="camel.societies.workforce.workforce.Workforce._process_task_with_intervention"></a>
+
+### _process_task_with_intervention
+
+```python
+def _process_task_with_intervention(self, task: Task):
+```
+
+Process task with human intervention support. This creates and
+manages its own event loop to allow for pausing/resuming functionality.
+
+**Parameters:**
+
+- **task** (Task): The task to be processed.
+
+**Returns:**
+
+  Task: The updated task.
+
+<a id="camel.societies.workforce.workforce.Workforce.continue_from_pause"></a>
+
+### continue_from_pause
+
+```python
+def continue_from_pause(self):
+```
+
+**Returns:**
+
+  Optional[Task]: The completed task if execution finishes, None if
+still running/paused.
 
 <a id="camel.societies.workforce.workforce.Workforce.add_single_agent_worker"></a>
 
@@ -231,18 +455,19 @@ Get the information of all the child nodes under this node.
 ### _find_assignee
 
 ```python
-def _find_assignee(self, task: Task):
+def _find_assignee(self, tasks: List[Task]):
 ```
 
-Assigns a task to a worker node with the best capability.
+Assigns multiple tasks to worker nodes with the best capabilities.
 
 **Parameters:**
 
-- **task** (Task): The task to be assigned.
+- **tasks** (List[Task]): The tasks to be assigned.
 
 **Returns:**
 
-  str: ID of the worker node to be assigned.
+  TaskAssignResult: Assignment result containing task assignments
+with their dependencies.
 
 <a id="camel.societies.workforce.workforce.Workforce._create_worker_node_for_task"></a>
 
@@ -271,6 +496,51 @@ the coordinator can take when a task has failed.
 ```python
 def _create_new_agent(self, role: str, sys_msg: str):
 ```
+
+<a id="camel.societies.workforce.workforce.Workforce.get_workforce_log_tree"></a>
+
+### get_workforce_log_tree
+
+```python
+def get_workforce_log_tree(self):
+```
+
+Returns an ASCII tree representation of the task hierarchy and
+worker status.
+
+<a id="camel.societies.workforce.workforce.Workforce.get_workforce_kpis"></a>
+
+### get_workforce_kpis
+
+```python
+def get_workforce_kpis(self):
+```
+
+Returns a dictionary of key performance indicators.
+
+<a id="camel.societies.workforce.workforce.Workforce.dump_workforce_logs"></a>
+
+### dump_workforce_logs
+
+```python
+def dump_workforce_logs(self, file_path: str):
+```
+
+Dumps all collected logs to a JSON file.
+
+**Parameters:**
+
+- **file_path** (str): The path to the JSON file.
+
+<a id="camel.societies.workforce.workforce.Workforce._submit_coro_to_loop"></a>
+
+### _submit_coro_to_loop
+
+```python
+def _submit_coro_to_loop(self, coro: 'Coroutine'):
+```
+
+Thread-safe submission of coroutine to the workforce loop.
 
 <a id="camel.societies.workforce.workforce.Workforce.stop"></a>
 
