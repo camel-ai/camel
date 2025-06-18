@@ -560,7 +560,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.67"
+version = "0.2.68"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -2069,7 +2069,7 @@ wheels = [
 
 [[package]]
 name = "exa-py"
-version = "1.14.7"
+version = "1.14.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -2078,9 +2078,9 @@ dependencies = [
     { name = "requests" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/34/7f/05c67309ecad5ede4d9247c3ca912c596277a65b0f97c38af2eef2135bc9/exa_py-1.14.7.tar.gz", hash = "sha256:7889ef58ac0cc287fa7275eefd3834984efb1eb40724b15e0dd021106f944c83", size = 30867 }
+sdist = { url = "https://files.pythonhosted.org/packages/33/12/d84aae5dabee2cb10651c0d3a05cde2937b73f7221eee6f842b333471111/exa_py-1.14.9.tar.gz", hash = "sha256:b33f591bf0eb23aada26928a659f41e45bb70f276325fead20a6edca600e7a7f", size = 41455 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/03/73/503787a12a30eac2e19d9f34b8a9fe2611d83ab8536ed7bbaba957129e02/exa_py-1.14.7-py3-none-any.whl", hash = "sha256:8192e2eddd49c3cda9d3a1b7ef076af1cab764149f0d3e4ca5084eb3dc8e55cc", size = 39434 },
+    { url = "https://files.pythonhosted.org/packages/d3/37/2a77e76372278ab0db4b10f5568221f15e5f9324a6e62e9424db40fddc88/exa_py-1.14.9-py3-none-any.whl", hash = "sha256:68d23fa5fccbfec276f2867f88e4f2134356dc075c02ae2da969d80aa978540a", size = 38966 },
 ]
 
 [[package]]
