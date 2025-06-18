@@ -15,9 +15,11 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 import uuid
 from collections import deque
-from typing import Deque, Dict, List, Optional
+from enum import Enum
+from typing import Any, Coroutine, Deque, Dict, List, Optional
 
 from colorama import Fore
 
@@ -41,11 +43,54 @@ from camel.societies.workforce.utils import (
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, validate_task_content
-from camel.toolkits import CodeExecutionToolkit, SearchToolkit, ThinkingToolkit
+from camel.toolkits import (
+    CodeExecutionToolkit,
+    SearchToolkit,
+    TaskPlanningToolkit,
+    ThinkingToolkit,
+)
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required
 
+from .workforce_logger import WorkforceLogger
+
 logger = get_logger(__name__)
+
+
+class WorkforceState(Enum):
+    r"""Workforce execution state for human intervention support."""
+
+    IDLE = "idle"
+    RUNNING = "running"
+    PAUSED = "paused"
+    STOPPED = "stopped"
+
+
+class WorkforceSnapshot:
+    r"""Snapshot of workforce state for resuming execution."""
+
+    def __init__(
+        self,
+        main_task: Optional[Task] = None,
+        pending_tasks: Optional[Deque[Task]] = None,
+        completed_tasks: Optional[List[Task]] = None,
+        task_dependencies: Optional[Dict[str, List[str]]] = None,
+        assignees: Optional[Dict[str, str]] = None,
+        current_task_index: int = 0,
+        description: str = "",
+    ):
+        self.main_task = main_task
+        self.pending_tasks = pending_tasks.copy() if pending_tasks else deque()
+        self.completed_tasks = (
+            completed_tasks.copy() if completed_tasks else []
+        )
+        self.task_dependencies = (
+            task_dependencies.copy() if task_dependencies else {}
+        )
+        self.assignees = assignees.copy() if assignees else {}
+        self.current_task_index = current_task_index
+        self.description = description
+        self.timestamp = time.time()
 
 
 class Workforce(BaseNode):
@@ -102,6 +147,7 @@ class Workforce(BaseNode):
 
     Example:
         >>> # Configure with custom model and shared memory
+        >>> import asyncio
         >>> model = ModelFactory.create(
         ...     ModelPlatformType.OPENAI, ModelType.GPT_4O
         ... )
@@ -113,8 +159,11 @@ class Workforce(BaseNode):
         ... )
         >>>
         >>> # Process a task
-        >>> task = Task(content="Research AI trends", id="1")
-        >>> result = workforce.process_task(task)
+        >>> async def main():
+        ...     task = Task(content="Research AI trends", id="1")
+        ...     result = workforce.process_task(task)
+        ...     return result
+        >>> asyncio.run(main())
     """
 
     def __init__(
@@ -133,6 +182,36 @@ class Workforce(BaseNode):
         self.new_worker_agent_kwargs = new_worker_agent_kwargs
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
         self.share_memory = share_memory
+        self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
+        self._task: Optional[Task] = None
+        self._pending_tasks: Deque[Task] = deque()
+        self._task_dependencies: Dict[str, List[str]] = {}
+        self._assignees: Dict[str, str] = {}
+        self._in_flight_tasks: int = 0
+        # Dictionary to track task start times
+        self._task_start_times: Dict[str, float] = {}
+        # Human intervention support
+        self._state = WorkforceState.IDLE
+        self._pause_event = asyncio.Event()
+        self._pause_event.set()  # Initially not paused
+        self._stop_requested = False
+        self._snapshots: List[WorkforceSnapshot] = []
+        self._completed_tasks: List[Task] = []
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._main_task_future: Optional[asyncio.Future] = None
+        # Snapshot throttle support
+        self._last_snapshot_time: float = 0.0
+        # Minimum seconds between automatic snapshots
+        self.snapshot_interval: float = 30.0
+        if self.metrics_logger:
+            for child in self._children:
+                worker_type = type(child).__name__
+                role_or_desc = child.description
+                self.metrics_logger.log_worker_created(
+                    worker_id=child.node_id,
+                    worker_type=worker_type,
+                    role=role_or_desc,
+                )
 
         # Warning messages for default model usage
         if coordinator_agent_kwargs is None:
@@ -182,21 +261,29 @@ class Workforce(BaseNode):
             "a new worker for a task, etc.",
         )
         self.coordinator_agent = ChatAgent(
-            coord_agent_sys_msg, **(coordinator_agent_kwargs or {})
+            coord_agent_sys_msg,
+            **(coordinator_agent_kwargs or {}),
         )
 
         task_sys_msg = BaseMessage.make_assistant_message(
             role_name="Task Planner",
-            content="You are going to compose and decompose tasks.",
+            content="You are going to compose and decompose tasks. Keep "
+            "tasks that are sequential and require the same type of "
+            "agent together in one agent process. Only decompose tasks "
+            "that can be handled in parallel and require different types "
+            "of agents. This ensures efficient execution by minimizing "
+            "context switching between agents.",
         )
-        self.task_agent = ChatAgent(task_sys_msg, **(task_agent_kwargs or {}))
-
-        # If there is one, will set by the workforce class wrapping this
-        self._task: Optional[Task] = None
-        self._pending_tasks: Deque[Task] = deque()
+        _kwargs = dict(task_agent_kwargs or {})
+        extra_tools = TaskPlanningToolkit().get_tools()
+        _kwargs["tools"] = [*_kwargs.get("tools", []), *extra_tools]
+        self.task_agent = ChatAgent(task_sys_msg, **_kwargs)
 
     def __repr__(self):
-        return f"Workforce {self.node_id} ({self.description})"
+        return (
+            f"Workforce {self.node_id} ({self.description}) - "
+            f"State: {self._state.value}"
+        )
 
     def _collect_shared_memory(self) -> Dict[str, List]:
         r"""Collect memory from all SingleAgentWorker instances for sharing.
@@ -271,7 +358,7 @@ class Workforce(BaseNode):
             from camel.memories.records import MemoryRecord
 
             # Create consolidated memory objects from records
-            memory_records = []
+            memory_records: List[MemoryRecord] = []
             for record_dict in all_records:
                 try:
                     memory_record = MemoryRecord.from_dict(record_dict)
@@ -346,18 +433,313 @@ class Workforce(BaseNode):
 
         return subtasks
 
+    # Human intervention methods
+    async def _async_pause(self) -> None:
+        r"""Async implementation of pause to run on the event loop."""
+        if self._state == WorkforceState.RUNNING:
+            self._state = WorkforceState.PAUSED
+            self._pause_event.clear()
+            logger.info(f"Workforce {self.node_id} paused.")
+
+    def pause(self) -> None:
+        r"""Pause the workforce execution.
+        If the internal event-loop is already running we schedule the
+        asynchronous pause coroutine onto it.  When the loop has not yet
+        been created (e.g. the caller presses the hot-key immediately after
+        workforce start-up) we fall back to a synchronous state change so
+        that no tasks will be scheduled until the loop is ready.
+        """
+
+        if self._loop and not self._loop.is_closed():
+            self._submit_coro_to_loop(self._async_pause())
+        else:
+            # Loop not yet created, just mark state so when loop starts it
+            # will proceed.
+            if self._state == WorkforceState.RUNNING:
+                self._state = WorkforceState.PAUSED
+                self._pause_event.clear()
+                logger.info(
+                    f"Workforce {self.node_id} paused "
+                    f"(event-loop not yet started)."
+                )
+
+    async def _async_resume(self) -> None:
+        r"""Async implementation of resume to run on the event loop."""
+        if self._state == WorkforceState.PAUSED:
+            self._state = WorkforceState.RUNNING
+            self._pause_event.set()
+            logger.info(f"Workforce {self.node_id} resumed.")
+
+            # Re-post ready tasks (if any)
+            if self._pending_tasks:
+                await self._post_ready_tasks()
+
+    def resume(self) -> None:
+        r"""Resume execution after a manual pause."""
+
+        if self._loop and not self._loop.is_closed():
+            self._submit_coro_to_loop(self._async_resume())
+        else:
+            # Loop not running yet, just mark state so when loop starts it
+            # will proceed.
+            if self._state == WorkforceState.PAUSED:
+                self._state = WorkforceState.RUNNING
+                self._pause_event.set()
+                logger.info(
+                    f"Workforce {self.node_id} resumed "
+                    f"(event-loop not yet started)."
+                )
+
+    async def _async_stop_gracefully(self) -> None:
+        r"""Async implementation of stop_gracefully to run on the event
+        loop.
+        """
+        self._stop_requested = True
+        if self._pause_event.is_set() is False:
+            self._pause_event.set()  # Resume if paused to process stop
+        logger.info(f"Workforce {self.node_id} stop requested.")
+
+    def stop_gracefully(self) -> None:
+        r"""Request workforce to finish current in-flight work then halt.
+
+        Works both when the internal event-loop is alive and when it has not
+        yet been started.  In the latter case we simply mark the stop flag so
+        that the loop (when it eventually starts) will exit immediately after
+        initialisation.
+        """
+
+        if self._loop and not self._loop.is_closed():
+            self._submit_coro_to_loop(self._async_stop_gracefully())
+        else:
+            # Loop not yet created, set the flag synchronously so later
+            # startup will respect it.
+            self._stop_requested = True
+            # Ensure any pending pause is released so that when the loop does
+            # start it can see the stop request and exit.
+            self._pause_event.set()
+            logger.info(
+                f"Workforce {self.node_id} stop requested "
+                f"(event-loop not yet started)."
+            )
+
+    def save_snapshot(self, description: str = "") -> None:
+        r"""Save current state as a snapshot."""
+        snapshot = WorkforceSnapshot(
+            main_task=self._task,
+            pending_tasks=self._pending_tasks,
+            completed_tasks=self._completed_tasks,
+            task_dependencies=self._task_dependencies,
+            assignees=self._assignees,
+            current_task_index=len(self._completed_tasks),
+            description=description or f"Snapshot at {time.time()}",
+        )
+        self._snapshots.append(snapshot)
+        logger.info(f"Snapshot saved: {description}")
+
+    def list_snapshots(self) -> List[str]:
+        r"""List all available snapshots."""
+        snapshots_info = []
+        for i, snapshot in enumerate(self._snapshots):
+            desc_part = (
+                f" - {snapshot.description}" if snapshot.description else ""
+            )
+            info = (
+                f"Snapshot {i}: {len(snapshot.completed_tasks)} completed, "
+                f"{len(snapshot.pending_tasks)} pending{desc_part}"
+            )
+            snapshots_info.append(info)
+        return snapshots_info
+
+    def get_pending_tasks(self) -> List[Task]:
+        r"""Get current pending tasks for human review."""
+        return list(self._pending_tasks)
+
+    def get_completed_tasks(self) -> List[Task]:
+        r"""Get completed tasks."""
+        return self._completed_tasks.copy()
+
+    def modify_task_content(self, task_id: str, new_content: str) -> bool:
+        r"""Modify the content of a pending task."""
+        # Validate the new content first
+        if not validate_task_content(new_content, task_id):
+            logger.warning(
+                f"Task {task_id} content modification rejected: "
+                f"Invalid content. Content preview: '{new_content[:50]}...'"
+            )
+            return False
+
+        for task in self._pending_tasks:
+            if task.id == task_id:
+                task.content = new_content
+                logger.info(f"Task {task_id} content modified.")
+                return True
+        logger.warning(f"Task {task_id} not found in pending tasks.")
+        return False
+
+    def add_task(
+        self,
+        content: str,
+        task_id: Optional[str] = None,
+        additional_info: Optional[Dict[str, Any]] = None,
+        insert_position: int = -1,
+    ) -> Task:
+        r"""Add a new task to the pending queue."""
+        new_task = Task(
+            content=content,
+            id=task_id or f"human_added_{len(self._pending_tasks)}",
+            additional_info=additional_info,
+        )
+        if insert_position == -1:
+            self._pending_tasks.append(new_task)
+        else:
+            # Convert deque to list, insert, then back to deque
+            tasks_list = list(self._pending_tasks)
+            tasks_list.insert(insert_position, new_task)
+            self._pending_tasks = deque(tasks_list)
+
+        logger.info(f"New task added: {new_task.id}")
+        return new_task
+
+    def remove_task(self, task_id: str) -> bool:
+        r"""Remove a task from the pending queue."""
+        # Convert to list to find and remove
+        tasks_list = list(self._pending_tasks)
+        for i, task in enumerate(tasks_list):
+            if task.id == task_id:
+                tasks_list.pop(i)
+                self._pending_tasks = deque(tasks_list)
+                logger.info(f"Task {task_id} removed.")
+                return True
+        logger.warning(f"Task {task_id} not found in pending tasks.")
+        return False
+
+    def reorder_tasks(self, task_ids: List[str]) -> bool:
+        r"""Reorder pending tasks according to the provided task IDs list."""
+        # Create a mapping of task_id to task
+        tasks_dict = {task.id: task for task in self._pending_tasks}
+
+        # Check if all provided IDs exist
+        if not all(task_id in tasks_dict for task_id in task_ids):
+            logger.warning("Some task IDs not found in pending tasks.")
+            return False
+
+        # Check if we have the same number of tasks
+        if len(task_ids) != len(self._pending_tasks):
+            logger.warning(
+                "Number of task IDs doesn't match pending tasks count."
+            )
+            return False
+
+        # Reorder tasks
+        reordered_tasks = deque([tasks_dict[task_id] for task_id in task_ids])
+        self._pending_tasks = reordered_tasks
+
+        logger.info("Tasks reordered successfully.")
+        return True
+
+    def resume_from_task(self, task_id: str) -> bool:
+        r"""Resume execution from a specific task."""
+        if self._state != WorkforceState.PAUSED:
+            logger.warning(
+                "Workforce must be paused to resume from specific task."
+            )
+            return False
+
+        # Find the task in pending tasks
+        tasks_list = list(self._pending_tasks)
+        target_index = -1
+
+        for i, task in enumerate(tasks_list):
+            if task.id == task_id:
+                target_index = i
+                break
+
+        if target_index == -1:
+            logger.warning(f"Task {task_id} not found in pending tasks.")
+            return False
+
+        # Move completed tasks that come after the target task back to pending
+        tasks_to_move_back = tasks_list[:target_index]
+        remaining_tasks = tasks_list[target_index:]
+
+        # Update pending tasks to start from the target task
+        self._pending_tasks = deque(remaining_tasks)
+
+        # Move previously "completed" tasks that are after target back to
+        # pending and reset their state
+        if tasks_to_move_back:
+            # Reset state for tasks being moved back to pending
+            for task in tasks_to_move_back:
+                # Handle all possible task states
+                if task.state in [TaskState.DONE, TaskState.FAILED]:
+                    task.state = TaskState.OPEN
+                    # Clear result to avoid confusion
+                    task.result = None
+                    # Reset failure count to give task a fresh start
+                    task.failure_count = 0
+
+            logger.info(
+                f"Moving {len(tasks_to_move_back)} tasks back to pending "
+                f"state."
+            )
+
+        logger.info(f"Ready to resume from task: {task_id}")
+        return True
+
+    def restore_from_snapshot(self, snapshot_index: int) -> bool:
+        r"""Restore workforce state from a snapshot."""
+        if not (0 <= snapshot_index < len(self._snapshots)):
+            logger.warning(f"Invalid snapshot index: {snapshot_index}")
+            return False
+
+        if self._state == WorkforceState.RUNNING:
+            logger.warning(
+                "Cannot restore snapshot while workforce is running. "
+                "Pause first."
+            )
+            return False
+
+        snapshot = self._snapshots[snapshot_index]
+        self._task = snapshot.main_task
+        self._pending_tasks = snapshot.pending_tasks.copy()
+        self._completed_tasks = snapshot.completed_tasks.copy()
+        self._task_dependencies = snapshot.task_dependencies.copy()
+        self._assignees = snapshot.assignees.copy()
+
+        logger.info(f"Workforce state restored from snapshot {snapshot_index}")
+        return True
+
+    def get_workforce_status(self) -> Dict:
+        r"""Get current workforce status for human review."""
+        return {
+            "state": self._state.value,
+            "pending_tasks_count": len(self._pending_tasks),
+            "completed_tasks_count": len(self._completed_tasks),
+            "snapshots_count": len(self._snapshots),
+            "children_count": len(self._children),
+            "main_task_id": self._task.id if self._task else None,
+        }
+
     @check_if_running(False)
-    def process_task(self, task: Task) -> Task:
-        r"""The main entry point for the workforce to process a task. It will
-        start the workforce and all the child nodes under it, process the
-        task provided and return the updated task.
+    async def process_task_async(
+        self, task: Task, interactive: bool = False
+    ) -> Task:
+        r"""Main entry point to process a task asynchronously.
 
         Args:
             task (Task): The task to be processed.
+            interactive (bool, optional): If True, enables human-intervention
+                workflow (pause/resume/snapshot). Defaults to False, which
+                runs the task in a blocking one-shot manner.
 
         Returns:
             Task: The updated task.
         """
+        # Delegate to intervention pipeline when requested to keep
+        # backward-compat.
+        if interactive:
+            return await self._process_task_with_snapshot(task)
+
         if not validate_task_content(task.content, task.id):
             task.state = TaskState.FAILED
             task.result = "Task failed: Invalid or empty content provided"
@@ -369,17 +751,234 @@ class Workforce(BaseNode):
 
         self.reset()
         self._task = task
+        if self.metrics_logger:
+            self.metrics_logger.log_task_created(
+                task_id=task.id,
+                description=task.content,
+                task_type=task.type,
+                metadata=task.additional_info,
+            )
         task.state = TaskState.FAILED
-        self._pending_tasks.append(task)
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
+        subtasks = self._decompose_task(task)
+        if self.metrics_logger and subtasks:
+            self.metrics_logger.log_task_decomposed(
+                parent_task_id=task.id, subtask_ids=[st.id for st in subtasks]
+            )
+            for subtask in subtasks:
+                self.metrics_logger.log_task_created(
+                    task_id=subtask.id,
+                    description=subtask.content,
+                    parent_task_id=task.id,
+                    task_type=subtask.type,
+                    metadata=subtask.additional_info,
+                )
+        if subtasks:
+            # If decomposition happened, the original task becomes a container.
+            # We only execute its subtasks.
+            self._pending_tasks.extendleft(reversed(subtasks))
+        else:
+            # If no decomposition, execute the original task.
+            self._pending_tasks.append(task)
+
+        self.set_channel(TaskChannel())
+
+        await self.start()
+
+        if subtasks:
+            task.result = "\n\n".join(
+                f"--- Subtask {sub.id} Result ---\n{sub.result}"
+                for sub in task.subtasks
+                if sub.result
+            )
+            if task.subtasks and all(
+                sub.state == TaskState.DONE for sub in task.subtasks
+            ):
+                task.state = TaskState.DONE
+            else:
+                task.state = TaskState.FAILED
+
+        return task
+
+    def process_task(self, task: Task) -> Task:
+        r"""Synchronous wrapper for process_task that handles async operations
+        internally.
+
+        Args:
+            task (Task): The task to be processed.
+
+        Returns:
+            Task: The updated task.
+
+        Example:
+            >>> workforce = Workforce("My Team")
+            >>> task = Task(content="Analyze data", id="1")
+            >>> result = workforce.process_task(task)  # No async/await
+            needed
+            >>> print(result.result)
+        """
+        import asyncio
+        import concurrent.futures
+
+        # Check if we're already in an event loop
+        try:
+            asyncio.get_running_loop()
+
+            # If we're in an event loop, we need to run in a thread
+            def run_in_thread():
+                # Create new event loop for this thread
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    return new_loop.run_until_complete(
+                        self.process_task_async(task)
+                    )
+                finally:
+                    new_loop.close()
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(run_in_thread)
+                return future.result()
+
+        except RuntimeError:
+            # No event loop running, we can create one
+            return asyncio.run(self.process_task_async(task))
+
+    async def _process_task_with_snapshot(self, task: Task) -> Task:
+        r"""Async version of process_task that supports human intervention.
+        This method can be paused, resumed, and allows task modification.
+
+        Args:
+            task (Task): The task to be processed.
+
+        Returns:
+            Task: The updated task.
+        """
+
+        if not validate_task_content(task.content, task.id):
+            task.state = TaskState.FAILED
+            task.result = "Task failed: Invalid or empty content provided"
+            logger.warning(
+                f"Task {task.id} rejected: Invalid or empty content. "
+                f"Content preview: '{task.content[:50]}...'"
+            )
+            return task
+
+        self.reset()
+        self._task = task
+        self._state = WorkforceState.RUNNING
+        task.state = TaskState.OPEN
+        self._pending_tasks.append(task)
+
+        # Decompose the task into subtasks first
         subtasks = self._decompose_task(task)
         self._pending_tasks.extendleft(reversed(subtasks))
         self.set_channel(TaskChannel())
 
-        asyncio.run(self.start())
+        # Save initial snapshot
+        self.save_snapshot("Initial task decomposition")
+
+        try:
+            await self.start()
+        except Exception as e:
+            logger.error(f"Error in workforce execution: {e}")
+            self._state = WorkforceState.STOPPED
+            raise
+        finally:
+            if self._state != WorkforceState.STOPPED:
+                self._state = WorkforceState.IDLE
 
         return task
+
+    def _process_task_with_intervention(self, task: Task) -> Task:
+        r"""Process task with human intervention support. This creates and
+        manages its own event loop to allow for pausing/resuming functionality.
+
+        Args:
+            task (Task): The task to be processed.
+
+        Returns:
+            Task: The updated task.
+        """
+        # Create new event loop if none exists or if we need a fresh one
+        try:
+            self._loop = asyncio.get_event_loop()
+            if self._loop.is_closed():
+                self._loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self._loop)
+        except RuntimeError:
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
+
+        try:
+            return self._loop.run_until_complete(
+                self._process_task_with_snapshot(task)
+            )
+        finally:
+            # Decide whether to keep or close the loop
+            if self._loop and not self._loop.is_closed():
+                if self._state == WorkforceState.PAUSED:
+                    # Keep alive to support resume()
+                    logger.info(
+                        "Event loop kept alive for potential resume "
+                        "operations."
+                    )
+                else:
+                    # No more tasks; shut everything down cleanly
+                    try:
+                        # Ensure all async generators are finished
+                        self._loop.run_until_complete(
+                            self._loop.shutdown_asyncgens()
+                        )
+                    except RuntimeError:
+                        # Loop already running elsewhere
+                        pass
+                    self._loop.close()
+
+    def continue_from_pause(self) -> Optional[Task]:
+        r"""Continue execution from a paused state. This reuses the
+        existing event loop.
+
+        Returns:
+            Optional[Task]: The completed task if execution finishes, None if
+                still running/paused.
+        """
+        if self._state != WorkforceState.PAUSED:
+            logger.warning("Workforce is not in paused state.")
+            return None
+
+        if self._loop is None or self._loop.is_closed():
+            logger.error("No active event loop available for resuming.")
+            return None
+
+        # Resume execution
+        self.resume()
+
+        try:
+            # Continue the existing async task
+            remaining_task = self._loop.run_until_complete(
+                self._continue_execution()
+            )
+            return remaining_task
+        except Exception as e:
+            logger.error(f"Error continuing execution: {e}")
+            self._state = WorkforceState.STOPPED
+            return None
+
+    async def _continue_execution(self) -> Optional[Task]:
+        r"""Internal method to continue execution after pause."""
+        try:
+            await self._listen_to_channel()
+        except Exception as e:
+            logger.error(f"Error in continued execution: {e}")
+            self._state = WorkforceState.STOPPED
+            raise
+        finally:
+            if self._state != WorkforceState.STOPPED:
+                self._state = WorkforceState.IDLE
+
+        return self._task
 
     @check_if_running(False)
     def add_single_agent_worker(
@@ -396,6 +995,12 @@ class Workforce(BaseNode):
         """
         worker_node = SingleAgentWorker(description, worker)
         self._children.append(worker_node)
+        if self.metrics_logger:
+            self.metrics_logger.log_worker_created(
+                worker_id=worker_node.node_id,
+                worker_type='SingleAgentWorker',
+                role=worker_node.description,
+            )
         return self
 
     @check_if_running(False)
@@ -440,6 +1045,12 @@ class Workforce(BaseNode):
             chat_turn_limit=chat_turn_limit,
         )
         self._children.append(worker_node)
+        if self.metrics_logger:
+            self.metrics_logger.log_worker_created(
+                worker_id=worker_node.node_id,
+                worker_type='RolePlayingWorker',
+                role=worker_node.description,
+            )
         return self
 
     @check_if_running(False)
@@ -455,18 +1066,49 @@ class Workforce(BaseNode):
         self._children.append(workforce)
         return self
 
+    async def _async_reset(self) -> None:
+        r"""Async implementation of reset to run on the event loop."""
+        self._pause_event.set()
+
     @check_if_running(False)
     def reset(self) -> None:
         r"""Reset the workforce and all the child nodes under it. Can only
-        be called when the workforce is not running."""
+        be called when the workforce is not running.
+        """
         super().reset()
         self._task = None
         self._pending_tasks.clear()
         self._child_listening_tasks.clear()
+        # Clear dependency tracking
+        self._task_dependencies.clear()
+        self._completed_tasks = []
+        self._assignees.clear()
+        self._in_flight_tasks = 0
         self.coordinator_agent.reset()
         self.task_agent.reset()
+        self._task_start_times.clear()
         for child in self._children:
             child.reset()
+
+        # Reset intervention state
+        self._state = WorkforceState.IDLE
+        self._stop_requested = False
+        # Handle asyncio.Event in a thread-safe way
+        if self._loop and not self._loop.is_closed():
+            # If we have a loop, use it to set the event safely
+            asyncio.run_coroutine_threadsafe(
+                self._async_reset(), self._loop
+            ).result()
+        else:
+            try:
+                self._reset_task = asyncio.create_task(self._async_reset())
+            except RuntimeError:
+                asyncio.run(self._async_reset())
+
+        if hasattr(self, 'logger') and self.metrics_logger is not None:
+            self.metrics_logger.reset_task_data()
+        else:
+            self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
 
     @check_if_running(False)
     def set_channel(self, channel: TaskChannel) -> None:
@@ -497,21 +1139,36 @@ class Workforce(BaseNode):
 
     def _find_assignee(
         self,
-        task: Task,
-    ) -> str:
-        r"""Assigns a task to a worker node with the best capability.
+        tasks: List[Task],
+    ) -> TaskAssignResult:
+        r"""Assigns multiple tasks to worker nodes with the best capabilities.
 
         Parameters:
-            task (Task): The task to be assigned.
+            tasks (List[Task]): The tasks to be assigned.
 
         Returns:
-            str: ID of the worker node to be assigned.
+            TaskAssignResult: Assignment result containing task assignments
+                with their dependencies.
         """
         self.coordinator_agent.reset()
+
+        # Format tasks information for the prompt
+        tasks_info = ""
+        for task in tasks:
+            tasks_info += f"Task ID: {task.id}\n"
+            tasks_info += f"Content: {task.content}\n"
+            if task.additional_info:
+                tasks_info += f"Additional Info: {task.additional_info}\n"
+            tasks_info += "---\n"
+
         prompt = ASSIGN_TASK_PROMPT.format(
-            content=task.content,
+            tasks_info=tasks_info,
             child_nodes_info=self._get_child_nodes_info(),
-            additional_info=task.additional_info,
+        )
+
+        logger.debug(
+            f"Sending batch assignment request to coordinator "
+            f"for {len(tasks)} tasks."
         )
 
         response = self.coordinator_agent.step(
@@ -519,9 +1176,17 @@ class Workforce(BaseNode):
         )
         result_dict = json.loads(response.msg.content, parse_int=str)
         task_assign_result = TaskAssignResult(**result_dict)
-        return task_assign_result.assignee_id
+        return task_assign_result
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
+        # Record the start time when a task is posted
+        self._task_start_times[task.id] = time.time()
+
+        if self.metrics_logger:
+            self.metrics_logger.log_task_started(
+                task_id=task.id, worker_id=assignee_id
+            )
+        self._in_flight_tasks += 1
         await self._channel.post_task(task, self.node_id, assignee_id)
 
     async def _post_dependency(self, dependency: Task) -> None:
@@ -563,6 +1228,13 @@ class Workforce(BaseNode):
         print(f"{Fore.CYAN}{new_node} created.{Fore.RESET}")
 
         self._children.append(new_node)
+        if self.metrics_logger:
+            self.metrics_logger.log_worker_created(
+                worker_id=new_node.node_id,
+                worker_type='SingleAgentWorker',
+                role=new_node_conf.role,
+                metadata={'description': new_node_conf.description},
+            )
         self._child_listening_tasks.append(
             asyncio.create_task(new_node.start())
         )
@@ -594,47 +1266,103 @@ class Workforce(BaseNode):
 
     async def _get_returned_task(self) -> Task:
         r"""Get the task that's published by this node and just get returned
-        from the assignee.
+        from the assignee. Includes timeout handling to prevent indefinite
+        waiting.
         """
-        return await self._channel.get_returned_task_by_publisher(self.node_id)
+        try:
+            # Add timeout to prevent indefinite waiting
+            return await asyncio.wait_for(
+                self._channel.get_returned_task_by_publisher(self.node_id),
+                timeout=300.0,  # 5 minute timeout
+            )
+        except asyncio.TimeoutError:
+            logger.warning(
+                f"Timeout waiting for returned task in "
+                f"workforce {self.node_id}"
+            )
+            raise ValueError("Timeout waiting for task to be returned")
 
     async def _post_ready_tasks(self) -> None:
-        r"""Send all the pending tasks that have all the dependencies met to
-        the channel, or directly return if there is none. For now, we will
-        directly send the first task in the pending list because all the tasks
-        are linearly dependent."""
+        r"""Checks for unassigned tasks, assigns them, and then posts any
+        tasks whose dependencies have been met."""
 
-        if not self._pending_tasks:
-            return
+        # Step 1: Identify and assign any new tasks in the pending queue
+        tasks_to_assign = [
+            task
+            for task in self._pending_tasks
+            if task.id not in self._task_dependencies
+        ]
+        if tasks_to_assign:
+            logger.debug(
+                f"Found {len(tasks_to_assign)} new tasks. "
+                f"Requesting assignment..."
+            )
+            batch_result = self._find_assignee(tasks_to_assign)
+            logger.debug(
+                f"Coordinator returned assignments:\n"
+                f"{json.dumps(batch_result.dict(), indent=2)}"
+            )
+            for assignment in batch_result.assignments:
+                self._task_dependencies[assignment.task_id] = (
+                    assignment.dependencies
+                )
+                self._assignees[assignment.task_id] = assignment.assignee_id
+                if self.metrics_logger:
+                    # queue_time_seconds can be derived by logger if task
+                    # creation time is logged
+                    self.metrics_logger.log_task_assigned(
+                        task_id=assignment.task_id,
+                        worker_id=assignment.assignee_id,
+                        dependencies=assignment.dependencies,
+                        queue_time_seconds=None,
+                    )
 
-        ready_task = self._pending_tasks[0]
+        # Step 2: Iterate through all pending tasks and post those that are
+        # ready
+        posted_tasks = []
+        for task in self._pending_tasks:
+            # A task must be assigned to be considered for posting
+            if task.id in self._task_dependencies:
+                dependencies = self._task_dependencies[task.id]
+                # Check if all dependencies for this task are in the completed
+                # set
+                if all(
+                    dep_id in {t.id for t in self._completed_tasks}
+                    for dep_id in dependencies
+                ):
+                    assignee_id = self._assignees[task.id]
+                    logger.debug(
+                        f"Posting task {task.id} to assignee {assignee_id}. "
+                        f"Dependencies met."
+                    )
+                    await self._post_task(task, assignee_id)
+                    posted_tasks.append(task)
 
-        # If the task has failed previously, just compose and send the task
-        # to the channel as a dependency
-        if ready_task.state == TaskState.FAILED:
-            # TODO: the composing of tasks seems not work very well
-            self.task_agent.reset()
-            ready_task.compose(self.task_agent)
-            # Remove the subtasks from the channel
-            for subtask in ready_task.subtasks:
-                await self._channel.remove_task(subtask.id)
-            # Send the task to the channel as a dependency
-            await self._post_dependency(ready_task)
-            self._pending_tasks.popleft()
-            # Try to send the next task in the pending list
-            await self._post_ready_tasks()
-        else:
-            # Directly post the task to the channel if it's a new one
-            # Find a node to assign the task
-            assignee_id = self._find_assignee(task=ready_task)
-            await self._post_task(ready_task, assignee_id)
+        # Step 3: Remove the posted tasks from the pending list
+        for task in posted_tasks:
+            try:
+                self._pending_tasks.remove(task)
+            except ValueError:
+                # Task might have been removed by another process, which is
+                # fine
+                pass
 
     async def _handle_failed_task(self, task: Task) -> bool:
+        task.failure_count += 1
+
+        if self.metrics_logger:
+            worker_id = self._assignees.get(task.id)
+            self.metrics_logger.log_task_failed(
+                task_id=task.id,
+                worker_id=worker_id,
+                error_message=task.result or "Task execution failed",
+                error_type="TaskFailure",
+                metadata={'failure_count': task.failure_count},
+            )
+
         if task.failure_count >= 3:
             return True
-        task.failure_count += 1
-        # Remove the failed task from the channel
-        await self._channel.remove_task(task.id)
+
         if task.get_depth() >= 3:
             # Create a new worker node and reassign
             assignee = self._create_worker_node_for_task(task)
@@ -648,8 +1376,22 @@ class Workforce(BaseNode):
                 self._sync_shared_memory()
 
             await self._post_task(task, assignee.node_id)
+            action_taken = f"reassigned to new worker {assignee.node_id}"
         else:
             subtasks = self._decompose_task(task)
+            if self.metrics_logger and subtasks:
+                self.metrics_logger.log_task_decomposed(
+                    parent_task_id=task.id,
+                    subtask_ids=[st.id for st in subtasks],
+                )
+                for subtask in subtasks:
+                    self.metrics_logger.log_task_created(
+                        task_id=subtask.id,
+                        description=subtask.content,
+                        parent_task_id=task.id,
+                        task_type=subtask.type,
+                        metadata=subtask.additional_info,
+                    )
             # Insert packets at the head of the queue
             self._pending_tasks.extendleft(reversed(subtasks))
 
@@ -662,12 +1404,18 @@ class Workforce(BaseNode):
                 self._sync_shared_memory()
 
             await self._post_ready_tasks()
-        return False
+            action_taken = f"decomposed into {len(subtasks)} subtasks"
+        if task.id in self._assignees:
+            await self._channel.archive_task(task.id)
 
-    async def _handle_completed_task(self, task: Task) -> None:
-        # archive the packet, making it into a dependency
-        self._pending_tasks.popleft()
-        await self._channel.archive_task(task.id)
+        logger.debug(
+            f"Task {task.id} failed and was {action_taken}. "
+            f"Updating dependency state."
+        )
+        # Mark task as completed for dependency tracking
+        self._completed_tasks.append(task)
+
+        # Post next ready tasks
 
         # Sync shared memory after task completion to share knowledge
         if self.share_memory:
@@ -676,6 +1424,119 @@ class Workforce(BaseNode):
             )
             self._sync_shared_memory()
 
+        # Check if any pending tasks are now ready to execute
+        await self._post_ready_tasks()
+        return False
+
+    async def _handle_completed_task(self, task: Task) -> None:
+        if self.metrics_logger:
+            worker_id = self._assignees.get(task.id, "unknown")
+            processing_time_seconds = None
+            token_usage = None
+
+            # Get processing time from task start time or additional info
+            if task.id in self._task_start_times:
+                processing_time_seconds = (
+                    time.time() - self._task_start_times[task.id]
+                )
+                del self._task_start_times[task.id]  # Prevent memory leaks
+            elif (
+                task.additional_info is not None
+                and 'processing_time_seconds' in task.additional_info
+            ):
+                processing_time_seconds = task.additional_info[
+                    'processing_time_seconds'
+                ]
+
+            # Get token usage from task additional info
+            if (
+                task.additional_info is not None
+                and 'token_usage' in task.additional_info
+            ):
+                token_usage = task.additional_info['token_usage']
+
+            # Try to get token usage from SingleAgentWorker memory if available
+            assignee_node = next(
+                (
+                    child
+                    for child in self._children
+                    if child.node_id == worker_id
+                ),
+                None,
+            )
+            if isinstance(assignee_node, SingleAgentWorker):
+                _, total_tokens = assignee_node.worker.memory.get_context()
+                token_usage = {'total_tokens': total_tokens}
+
+            # Log the completed task
+            self.metrics_logger.log_task_completed(
+                task_id=task.id,
+                worker_id=worker_id,
+                result_summary=task.result if task.result else "Completed",
+                processing_time_seconds=processing_time_seconds,
+                token_usage=token_usage,
+                metadata={'current_state': task.state.value},
+            )
+
+        # Find and remove the completed task from pending tasks
+        tasks_list = list(self._pending_tasks)
+        found_and_removed = False
+
+        for i, pending_task in enumerate(tasks_list):
+            if pending_task.id == task.id:
+                # Remove this specific task
+                tasks_list.pop(i)
+                self._pending_tasks = deque(tasks_list)
+                found_and_removed = True
+                print(
+                    f"{Fore.GREEN}✅ Task {task.id} completed and removed "
+                    f"from queue.{Fore.RESET}"
+                )
+                break
+
+        if not found_and_removed:
+            # Task was already removed from pending queue (expected case when
+            # it had been popped immediately after posting).  No need to
+            # draw user attention with a warning; record at debug level.
+            logger.debug(
+                f"Completed task {task.id} was already removed from pending "
+                "queue."
+            )
+
+        # Archive the task and update dependency tracking
+        if task.id in self._assignees:
+            await self._channel.archive_task(task.id)
+
+        # Ensure it's in completed tasks set
+        self._completed_tasks.append(task)
+
+        # Handle parent task completion logic
+        parent = task.parent
+        if parent and parent.id not in {t.id for t in self._completed_tasks}:
+            all_subtasks_done = all(
+                sub.id in {t.id for t in self._completed_tasks}
+                for sub in parent.subtasks
+            )
+            if all_subtasks_done:
+                # Set the parent task state to done
+                parent.state = TaskState.DONE
+                logger.debug(
+                    f"All subtasks of {parent.id} are done. "
+                    f"Marking parent as complete."
+                )
+                # Treat the parent task as a completed task to unblock
+                # its dependents. Since it was never sent to a worker,
+                # we call this method recursively.
+                await self._handle_completed_task(parent)
+
+        # Sync shared memory after task completion to share knowledge
+        if self.share_memory:
+            logger.info(
+                f"Syncing shared memory after task {task.id} completion"
+            )
+            self._sync_shared_memory()
+
+        # Check if any pending tasks are now ready to execute
         await self._post_ready_tasks()
 
     async def _graceful_shutdown(self, failed_task: Task) -> None:
@@ -694,46 +1555,146 @@ class Workforce(BaseNode):
             f"seconds due to failure. You can use this time to inspect the "
             f"current state of the workforce."
         )
-
         # Wait for the full timeout period
         await asyncio.sleep(self.graceful_shutdown_timeout)
+
+    def get_workforce_log_tree(self) -> str:
+        r"""Returns an ASCII tree representation of the task hierarchy and
+        worker status.
+        """
+        if not self.metrics_logger:
+            return "Logger not initialized."
+        return self.metrics_logger.get_ascii_tree_representation()
+
+    def get_workforce_kpis(self) -> Dict[str, Any]:
+        r"""Returns a dictionary of key performance indicators."""
+        if not self.metrics_logger:
+            return {"error": "Logger not initialized."}
+        return self.metrics_logger.get_kpis()
+
+    def dump_workforce_logs(self, file_path: str) -> None:
+        r"""Dumps all collected logs to a JSON file.
+
+        Args:
+            file_path (str): The path to the JSON file.
+        """
+        if not self.metrics_logger:
+            print("Logger not initialized. Cannot dump logs.")
+            return
+        self.metrics_logger.dump_to_json(file_path)
+        # Use logger.info or print, consistent with existing style
+        logger.info(f"Workforce logs dumped to {file_path}")
 
     @check_if_running(False)
     async def _listen_to_channel(self) -> None:
         r"""Continuously listen to the channel, post task to the channel and
-        track the status of posted tasks.
+        track the status of posted tasks. Now supports pause/resume and
+        graceful stop.
         """
 
         self._running = True
+        self._state = WorkforceState.RUNNING
         logger.info(f"Workforce {self.node_id} started.")
 
         await self._post_ready_tasks()
 
-        while self._task is None or self._pending_tasks:
-            returned_task = await self._get_returned_task()
-            if returned_task.state == TaskState.DONE:
-                await self._handle_completed_task(returned_task)
-            elif returned_task.state == TaskState.FAILED:
-                halt = await self._handle_failed_task(returned_task)
-                if not halt:
-                    continue
-                print(
-                    f"{Fore.RED}Task {returned_task.id} has failed "
-                    f"for 3 times, halting the workforce.{Fore.RESET}"
-                )
-                # Graceful shutdown instead of immediate break
-                await self._graceful_shutdown(returned_task)
-                break
-            elif returned_task.state == TaskState.OPEN:
-                # TODO: multi-layer workforce
-                pass
-            else:
-                raise ValueError(
-                    f"Task {returned_task.id} has an unexpected state."
-                )
+        while (
+            self._task is None
+            or self._pending_tasks
+            or self._in_flight_tasks > 0
+        ) and not self._stop_requested:
+            try:
+                # Check for pause request at the beginning of each loop
+                # iteration
+                await self._pause_event.wait()
+
+                # Check for stop request after potential pause
+                if self._stop_requested:
+                    logger.info("Stop requested, breaking execution loop.")
+                    break
+
+                # Save snapshot before processing next task
+                if self._pending_tasks:
+                    current_task = self._pending_tasks[0]
+                    # Throttled snapshot
+                    if (
+                        time.time() - self._last_snapshot_time
+                        >= self.snapshot_interval
+                    ):
+                        self.save_snapshot(
+                            f"Before processing task: {current_task.id}"
+                        )
+                        self._last_snapshot_time = time.time()
+
+                # Get returned task (this may block until a task is returned)
+                returned_task = await self._get_returned_task()
+                self._in_flight_tasks -= 1
+
+                # Check for stop request after getting task
+                if self._stop_requested:
+                    logger.info("Stop requested after receiving task.")
+                    break
+
+                # Process the returned task based on its state
+                if returned_task.state == TaskState.DONE:
+                    print(
+                        f"{Fore.CYAN}🎯 Task {returned_task.id} completed "
+                        f"successfully.{Fore.RESET}"
+                    )
+                    await self._handle_completed_task(returned_task)
+                elif returned_task.state == TaskState.FAILED:
+                    halt = await self._handle_failed_task(returned_task)
+                    if not halt:
+                        continue
+                    print(
+                        f"{Fore.RED}Task {returned_task.id} has failed "
+                        f"for 3 times, halting the workforce.{Fore.RESET}"
+                    )
+                    # Graceful shutdown instead of immediate break
+                    await self._graceful_shutdown(returned_task)
+                    break
+                elif returned_task.state == TaskState.OPEN:
+                    # TODO: multi-layer workforce
+                    pass
+                else:
+                    raise ValueError(
+                        f"Task {returned_task.id} has an unexpected state."
+                    )
+
+            except Exception as e:
+                logger.error(f"Error processing task: {e}")
+                if self._stop_requested:
+                    break
+                # Continue with next iteration unless stop is requested
+                continue
+
+        # Handle final state
+        if self._stop_requested:
+            self._state = WorkforceState.STOPPED
+            logger.info("Workforce stopped by user request.")
+        elif not self._pending_tasks and self._in_flight_tasks == 0:
+            self._state = WorkforceState.IDLE
+            logger.info("All tasks completed.")
 
         # shut down the whole workforce tree
         self.stop()
+
+    def _submit_coro_to_loop(self, coro: 'Coroutine') -> None:
+        r"""Thread-safe submission of coroutine to the workforce loop."""
+
+        loop = self._loop
+        if loop is None or loop.is_closed():
+            logger.warning("Cannot submit coroutine - no active event loop")
+            return
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+
+        if running_loop is loop:
+            loop.create_task(coro)
+        else:
+            asyncio.run_coroutine_threadsafe(coro, loop)
 
     @check_if_running(False)
     async def start(self) -> None:
@@ -756,7 +1717,8 @@ class Workforce(BaseNode):
         by its parent node.
         """
         for child in self._children:
-            child.stop()
+            if child._running:
+                child.stop()
         for child_task in self._child_listening_tasks:
             child_task.cancel()
         self._running = False
@@ -776,11 +1738,19 @@ class Workforce(BaseNode):
         """
 
         # Create a new instance with the same configuration
+        # Extract the original kwargs from the agents to properly clone them
+        coordinator_kwargs = (
+            getattr(self.coordinator_agent, 'init_kwargs', {}) or {}
+        )
+        task_kwargs = getattr(self.task_agent, 'init_kwargs', {}) or {}
+
         new_instance = Workforce(
             description=self.description,
-            coordinator_agent_kwargs={},
-            task_agent_kwargs={},
-            new_worker_agent_kwargs=self.new_worker_agent_kwargs,
+            coordinator_agent_kwargs=coordinator_kwargs.copy(),
+            task_agent_kwargs=task_kwargs.copy(),
+            new_worker_agent_kwargs=self.new_worker_agent_kwargs.copy()
+            if self.new_worker_agent_kwargs
+            else None,
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
         )
@@ -801,10 +1771,10 @@ class Workforce(BaseNode):
                     child.description,
                     child.assistant_role_name,
                     child.user_role_name,
+                    child.chat_turn_limit,
                     child.assistant_agent_kwargs,
                     child.user_agent_kwargs,
                     child.summarize_agent_kwargs,
-                    child.chat_turn_limit,
                 )
             elif isinstance(child, Workforce):
                 new_instance.add_workforce(child.clone(with_memory))
@@ -863,7 +1833,9 @@ class Workforce(BaseNode):
         workforce_instance = self
 
         # Define functions first
-        def process_task(task_content, task_id=None, additional_info=None):
+        async def process_task(
+            task_content, task_id=None, additional_info=None
+        ):
             r"""Process a task using the workforce.
 
             Args:
@@ -885,7 +1857,8 @@ class Workforce(BaseNode):
                     - message (str): Error message if status is "error"
 
             Example:
-                >>> result = process_task("Analyze market trends", "task_001")
+                >>> result = await process_task("Analyze market trends",
+                "task_001")
                 >>> print(result["status"])  # "success" or "error"
             """
             task = Task(
@@ -895,7 +1868,7 @@ class Workforce(BaseNode):
             )
 
             try:
-                result_task = workforce_instance.process_task(task)
+                result_task = await workforce_instance.process_task(task)
                 return {
                     "status": "success",
                     "task_id": result_task.id,
@@ -1015,9 +1988,9 @@ class Workforce(BaseNode):
                 >>> for child in children:
                 ...     print(f"{child['type']}: {child['description']}")
             """
-            children_info = []
+            children_info: List[Dict[str, Any]] = []
             for child in workforce_instance._children:
-                child_info = {
+                child_info: Dict[str, Any] = {
                     "node_id": child.node_id,
                     "description": child.description,
                     "type": type(child).__name__,
