@@ -55,7 +55,10 @@ from .browser_toolkit_commons import (
     ACTION_WITH_FEEDBACK_LIST,
     AVAILABLE_ACTIONS_PROMPT,
     GET_FINAL_ANSWER_PROMPT_TEMPLATE,
+    NON_VISUAL_OBSERVE_PROMPT_TEMPLATE,
+    NON_VISUAL_WEB_AGENT_SYSTEM_PROMPT,
     OBSERVE_PROMPT_TEMPLATE,
+    PageSnapshot,
     PLANNING_AGENT_SYSTEM_PROMPT,
     TASK_PLANNING_PROMPT_TEMPLATE,
     TASK_REPLANNING_PROMPT_TEMPLATE,
@@ -189,6 +192,9 @@ class BaseBrowser:
         self.web_agent_model: Optional[BaseModelBackend] = (
             None  # Added for type hinting
         )
+        
+        # Add DOM snapshot capability
+        self.dom_snapshot: Optional[PageSnapshot] = None
 
     def init(self) -> None:
         r"""Initialize the browser."""
@@ -242,6 +248,19 @@ class BaseBrowser:
 
         assert self.context is not None
         assert self.page is not None
+        
+        # Initialize DOM snapshot capability
+        self.dom_snapshot = PageSnapshot(self.page)
+
+    def get_dom_snapshot(self) -> str:
+        r"""Get the DOM snapshot of the current page.
+        
+        Returns:
+            str: The DOM snapshot as structured text.
+        """
+        if self.dom_snapshot is None:
+            return "Error: DOM snapshot not initialized"
+        return self.dom_snapshot.capture()
 
     def clean_cache(self) -> None:
         r"""Delete the cache directory and its contents."""
@@ -810,7 +829,8 @@ class BrowserToolkit(BaseToolkit):
     r"""A class for browsing the web and interacting with web pages.
 
     This class provides methods for browsing the web and interacting with web
-    pages.
+    pages. Supports both visual (screenshot-based) and non-visual (DOM-based)
+    modes for element identification.
     """
 
     def __init__(
@@ -824,6 +844,7 @@ class BrowserToolkit(BaseToolkit):
         output_language: str = "en",
         cookie_json_path: Optional[str] = None,
         user_data_dir: Optional[str] = None,
+        use_visual_mode: bool = True,
     ):
         r"""Initialize the BrowserToolkit instance.
 
@@ -850,6 +871,11 @@ class BrowserToolkit(BaseToolkit):
             user_data_dir (Optional[str]): The directory to store user data
                 for persistent context. If None, a fresh browser instance
                 is used without saving data. (default: :obj:`None`)
+            use_visual_mode (bool): Whether to use visual mode (screenshot-based)
+                or non-visual mode (DOM-based) for element identification.
+                Visual mode provides screenshot images to the agent, while
+                non-visual mode provides structured DOM snapshots.
+                (default: :obj:`True`)
         """
         super().__init__()  # Call to super().__init__() added
         self.browser = BaseBrowser(
@@ -866,6 +892,7 @@ class BrowserToolkit(BaseToolkit):
         self.web_agent_model = web_agent_model
         self.planning_agent_model = planning_agent_model
         self.output_language = output_language
+        self.use_visual_mode = use_visual_mode
 
         self.history: List[Dict[str, Any]] = []  # Typed history list
         self.web_agent: ChatAgent
@@ -905,7 +932,11 @@ class BrowserToolkit(BaseToolkit):
         else:
             planning_model = planning_agent_model_backend
 
-        system_prompt = WEB_AGENT_SYSTEM_PROMPT
+        # Choose system prompt based on mode
+        if self.use_visual_mode:
+            system_prompt = WEB_AGENT_SYSTEM_PROMPT
+        else:
+            system_prompt = NON_VISUAL_WEB_AGENT_SYSTEM_PROMPT
 
         web_agent = ChatAgent(
             system_message=system_prompt,
@@ -937,20 +968,38 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 <detailed_plan>{detailed_plan}<detailed_plan>
         """
 
-        observe_prompt = OBSERVE_PROMPT_TEMPLATE.format(
-            task_prompt=task_prompt,
-            detailed_plan_prompt=detailed_plan_prompt_str,
-            AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
-            history_window=self.history_window,
-            history=self.history[-self.history_window :],
-        )
+        if self.use_visual_mode:
+            # Visual mode: use screenshots
+            observe_prompt = OBSERVE_PROMPT_TEMPLATE.format(
+                task_prompt=task_prompt,
+                detailed_plan_prompt=detailed_plan_prompt_str,
+                AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
+                history_window=self.history_window,
+                history=self.history[-self.history_window :],
+            )
 
-        # get current state
-        som_screenshot, _ = self.browser.get_som_screenshot(save_image=True)
-        img = _reload_image(som_screenshot)
-        message = BaseMessage.make_user_message(
-            role_name='user', content=observe_prompt, image_list=[img]
-        )
+            # get current state
+            som_screenshot, _ = self.browser.get_som_screenshot(save_image=True)
+            img = _reload_image(som_screenshot)
+            message = BaseMessage.make_user_message(
+                role_name='user', content=observe_prompt, image_list=[img]
+            )
+        else:
+            # Non-visual mode: use DOM snapshot
+            dom_snapshot = self.browser.get_dom_snapshot()
+            observe_prompt = NON_VISUAL_OBSERVE_PROMPT_TEMPLATE.format(
+                task_prompt=task_prompt,
+                detailed_plan_prompt=detailed_plan_prompt_str,
+                dom_snapshot=dom_snapshot,
+                AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
+                history_window=self.history_window,
+                history=self.history[-self.history_window :],
+            )
+
+            message = BaseMessage.make_user_message(
+                role_name='user', content=observe_prompt
+            )
+
         # Reset the history message of web_agent.
         self.web_agent.reset()
         resp = self.web_agent.step(message)

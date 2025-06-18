@@ -23,10 +23,12 @@ from PIL import Image
 from camel.toolkits.browser_toolkit import (
     BaseBrowser,
     BrowserToolkit,
+)
+from camel.toolkits.browser_toolkit_commons import (
+    dom_rectangle_from_dict,
     interactive_region_from_dict,
     visual_viewport_from_dict,
 )
-from camel.toolkits.browser_toolkit_commons import dom_rectangle_from_dict
 
 TEST_URL = "https://example.com"
 
@@ -218,6 +220,54 @@ def test_browser_toolkit_browse_url(browser_toolkit_fixture):
 
     assert result == "Task completed"
     toolkit.browser.visit_page.assert_called_once_with(TEST_URL)
+
+
+def test_browser_toolkit_init_with_visual_mode():
+    """Test BrowserToolkit initialization with use_visual_mode parameter."""
+    with patch('playwright.sync_api.sync_playwright'):
+        # Test visual mode (default)
+        toolkit_visual = BrowserToolkit(headless=True, use_visual_mode=True)
+        assert toolkit_visual.use_visual_mode is True
+        
+        # Test non-visual mode
+        toolkit_non_visual = BrowserToolkit(headless=True, use_visual_mode=False)
+        assert toolkit_non_visual.use_visual_mode is False
+
+
+def test_base_browser_dom_snapshot(base_browser_fixture):
+    """Test DOM snapshot functionality."""
+    browser = base_browser_fixture
+    browser.init()
+    
+    # Mock DOM snapshot functionality
+    browser.dom_snapshot.capture = MagicMock(return_value="=== DOM Snapshot ===\nTest elements")
+    
+    result = browser.get_dom_snapshot()
+    assert "DOM Snapshot" in result
+    browser.dom_snapshot.capture.assert_called_once()
+
+
+def test_browser_toolkit_observe_non_visual_mode():
+    """Test non-visual mode observation."""
+    with patch('playwright.sync_api.sync_playwright'):
+        toolkit = BrowserToolkit(headless=True, use_visual_mode=False)
+        
+        # Mock necessary components
+        toolkit.browser.get_dom_snapshot = MagicMock(return_value="=== DOM Snapshot ===\nTest elements")
+        toolkit.web_agent.step = MagicMock()
+        
+        # Mock response with proper structure
+        mock_response = MagicMock()
+        mock_response.msgs = [MagicMock()]
+        mock_response.msgs[0].content = '{"observation": "test obs", "reasoning": "test reason", "action_code": "click_id(1)"}'
+        toolkit.web_agent.step.return_value = mock_response
+        
+        obs, reason, action = toolkit._observe("test task")
+        
+        assert obs == "test obs"
+        assert reason == "test reason"
+        assert action == "click_id(1)"
+        toolkit.browser.get_dom_snapshot.assert_called_once()
 
 
 def test_browser_clean_cache(base_browser_fixture):
