@@ -12,9 +12,11 @@ The status of a packet. The packet can be in one of the following
 states:
 
 - `__INLINE_CODE_0__`: The packet has been sent to a worker.
-- `__INLINE_CODE_1__`: The packet has been returned by the worker, meaning that
+- `__INLINE_CODE_1__`: The packet has been claimed by a worker and is being
+processed.
+- `__INLINE_CODE_2__`: The packet has been returned by the worker, meaning that
 the status of the task inside has been updated.
-- `__INLINE_CODE_2__`: The packet has been archived, meaning that the content of
+- `__INLINE_CODE_3__`: The packet has been archived, meaning that the content of
 the task inside will not be changed. The task is considered
 as a dependency.
 
