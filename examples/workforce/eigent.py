@@ -15,6 +15,7 @@
 import asyncio
 
 from camel.agents.chat_agent import ChatAgent
+from camel.loaders import Firecrawl
 from camel.messages.base import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
@@ -24,6 +25,7 @@ from camel.toolkits import (
     CodeExecutionToolkit,
     DalleToolkit,
     FileWriteToolkit,
+    FunctionTool,
     HumanToolkit,
     ImageAnalysisToolkit,
     LinkedInToolkit,
@@ -31,6 +33,7 @@ from camel.toolkits import (
     PlaywrightMCPToolkit,
     PPTXToolkit,
     RedditToolkit,
+    SearchToolkit,
     SlackToolkit,
     TerminalToolkit,
     TwitterToolkit,
@@ -80,19 +83,20 @@ async def search_agent_factory(
 ):
     r"""Factory for creating a search agent, based on user-provided code
     structure."""
-    # search_toolkits = SearchToolkit()
+    search_toolkits = SearchToolkit()
     # browser_toolkits = AsyncBrowserToolkit()
     terminal_toolkits = TerminalToolkit()
     human_toolkits = HumanToolkit()
     tools = [
-        # FunctionTool(search_toolkits.search_wiki),
-        # # FunctionTool(search_toolkits.search_duckduckgo),
-        # # FunctionTool(search_toolkits.search_bing),
-        # # FunctionTool(search_toolkits.search_baidu),
+        FunctionTool(search_toolkits.search_wiki),
+        FunctionTool(search_toolkits.search_google),
+        FunctionTool(search_toolkits.search_bing),
+        FunctionTool(search_toolkits.search_baidu),
         *playwright_toolkit.get_tools(),
         # *browser_toolkits.get_tools(),
         *terminal_toolkits.get_tools(),
         *human_toolkits.get_tools(),
+        Firecrawl().scrape,
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
@@ -121,10 +125,10 @@ async def search_agent_factory(
     difficult to find through simple web searches). You can find the answer to 
     the question by performing subsequent operations on the URL, such as 
     extracting the content of the webpage.
-    - Do not solely rely on document tools or browser simulation to find the 
-    answer, you should combine document tools and browser simulation to 
-    comprehensively process web page information. Some content may need to do 
-    browser simulation to get, or some content is rendered by javascript.
+    - Do not solely rely on browser simulation to find the 
+    answer, you should combine search tools, scraper tools and browser 
+    simulation to comprehensively process web page information. Some content 
+    may need to do browser simulation to get.
     - In your response, you should mention the urls you have visited and 
     processed.
 
@@ -334,14 +338,25 @@ When assisting users, always:
 
 
 async def main():
-    playwright_toolkit = PlaywrightMCPToolkit()  # Create instance
+    playwright_toolkit = PlaywrightMCPToolkit(timeout=60)  # Create instance
     try:
         await playwright_toolkit.connect()  # Connect the instance
 
         # Create a single model backend for all agents
         model_backend = ModelFactory.create(
-            model_platform=ModelPlatformType.DEFAULT,
-            model_type=ModelType.DEFAULT,
+            model_platform=ModelPlatformType.ANTHROPIC,
+            model_type=ModelType.CLAUDE_SONNET_4,
+            # model_config_dict={
+            #     "max_tokens": 64000,
+            # }
+        )
+
+        model_backend_reason = ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.O3_MINI,
+            # model_config_dict={
+            #     "max_tokens": 64000,
+            # }
         )
 
         task_id = 'workforce_task'
@@ -356,10 +371,18 @@ async def main():
         # social_medium_agent = social_medium_agent_factory(model_backend,
         # task_id)
 
+        # Configure kwargs for all agents to use the same model_backend
+        coordinator_agent_kwargs = {"model": model_backend_reason}
+        task_agent_kwargs = {"model": model_backend_reason}
+        new_worker_agent_kwargs = {"model": model_backend}
+
         workforce = Workforce(
             'A workforce',
             graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
             share_memory=False,
+            coordinator_agent_kwargs=coordinator_agent_kwargs,
+            task_agent_kwargs=task_agent_kwargs,
+            new_worker_agent_kwargs=new_worker_agent_kwargs,
         )
 
         workforce.add_single_agent_worker(
@@ -387,7 +410,8 @@ async def main():
             id='0',
         )
 
-        workforce.process_task(human_task)
+        # Use the async version directly to avoid hanging with async tools
+        await workforce.process_task_async(human_task)
 
         # Test WorkforceLogger features
         print("\n--- Workforce Log Tree ---")
