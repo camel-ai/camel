@@ -1128,6 +1128,13 @@ class ChatAgent(BaseAgent):
     ) -> ChatAgentResponse:
         r"""Internal async method for non-streaming astep logic."""
 
+        try:
+            from camel.utils.langfuse import set_current_agent_session_id
+
+            set_current_agent_session_id(self.agent_id)
+        except ImportError:
+            pass  # Langfuse not available
+
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
                 role_name="User", content=input_message
@@ -1137,10 +1144,17 @@ class ChatAgent(BaseAgent):
 
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
+        accumulated_context_tokens = (
+            0  # This tracks cumulative context tokens, not API usage tokens
+        )
+
+        # Initialize token usage tracker
+        step_token_usage = self._create_token_usage_tracker()
         iteration_count = 0
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
+                accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
@@ -1148,7 +1162,7 @@ class ChatAgent(BaseAgent):
 
             response = await self._aget_model_response(
                 openai_messages,
-                num_tokens,
+                accumulated_context_tokens,
                 response_format,
                 self._get_full_tool_schemas(),
             )
@@ -1158,7 +1172,9 @@ class ChatAgent(BaseAgent):
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
                 return self._step_terminate(
-                    num_tokens, tool_call_records, "termination_triggered"
+                    accumulated_context_tokens,
+                    tool_call_records,
+                    "termination_triggered",
                 )
 
             if tool_call_requests := response.tool_call_requests:
@@ -1195,11 +1211,20 @@ class ChatAgent(BaseAgent):
         await self._aformat_response_if_needed(response, response_format)
         self._record_final_output(response.output_messages)
 
+        # Create token usage tracker for this step
+        step_token_usage = self._create_token_usage_tracker()
+
+        # Update with response usage
+        self._update_token_usage_tracker(step_token_usage, response.usage_dict)
+
         return self._convert_to_chatagent_response(
             response,
             tool_call_records,
-            num_tokens,
+            accumulated_context_tokens,
             external_tool_call_requests,
+            step_token_usage["prompt_tokens"],
+            step_token_usage["completion_tokens"],
+            step_token_usage["total_tokens"],
         )
 
     def _create_token_usage_tracker(self) -> Dict[str, int]:
