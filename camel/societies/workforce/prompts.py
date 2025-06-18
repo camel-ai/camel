@@ -201,21 +201,25 @@ WF_TASK_DECOMPOSE_PROMPT = r"""You need to decompose the given task into subtask
 
 These principles aim to reduce overall completion time by maximizing concurrent work and effectively utilizing all available worker capabilities.
 
-For example, if the task is "Find 10 relevant papers on AI ethics, summarize each, and then write a comparative report", and you must return the subtasks in the `<tasks>...</tasks>` format:
+**EXAMPLE FORMAT ONLY** (DO NOT use this example content for actual task decomposition):
 
-*   A poor decomposition (not following the output format or parallelism principles) might be:
-    `<tasks><task>Find 10 papers on AI ethics, summarize them, and write a report.</task></tasks>`
+If given a hypothetical task requiring research, analysis, and reporting with multiple items to process, you should decompose it to maximize parallelism:
 
-*   A better, more parallel decomposition, adhering to the output format, would be:
-    `<tasks>`
-    `<task>Subtask 1 (SearchAgent): Identify 10 relevant academic papers on AI ethics and collect their links or full texts.</task>`
-    `<task>Subtask 2.1 (InfoExtractionAgent): For Paper 1 (provide title/link if available from Subtask 1), retrieve and review its detailed content, then provide a thorough summary highlighting its research focus and key findings.</task>`
-    `<task>Subtask 2.2 (InfoExtractionAgent): For Paper 2 (provide title/link if available from Subtask 1), retrieve and review its detailed content, then provide a thorough summary highlighting its research focus and key findings.</task>`
-    `<!-- ... (repeat for papers 3 through 9) ... -->`
-    `<task>Subtask 2.10 (InfoExtractionAgent): For Paper 10 (provide title/link if available from Subtask 1), retrieve and review its detailed content, then provide a thorough summary highlighting its research focus and key findings.</task>`
-    `<task>Subtask 3 (WritingAgent): Based on the 10 summaries from Subtasks 2.1-2.10, write a comprehensive comparative report highlighting contributions and differences.</task>`
-    `</tasks>`
-    (Note: Subtasks 2.1 through 2.10 are designed to be parallelizable and will be assigned to available InfoExtractionAgent workers.)
+*   Poor decomposition (monolithic):
+    `<tasks><task>Do all research, analysis, and write final report.</task></tasks>`
+
+*   Better decomposition (parallel structure):
+    ```
+    <tasks>
+    <task>Subtask 1 (ResearchAgent): Gather initial data and resources.</task>
+    <task>Subtask 2.1 (AnalysisAgent): Analyze Item A from Subtask 1 results.</task>
+    <task>Subtask 2.2 (AnalysisAgent): Analyze Item B from Subtask 1 results.</task>
+    <task>Subtask 2.N (AnalysisAgent): Analyze Item N from Subtask 1 results.</task>
+    <task>Subtask 3 (ReportAgent): Compile all analyses into final report.</task>
+    </tasks>
+    ```
+
+**END OF FORMAT EXAMPLE** - Now apply this structure to your actual task below.
 
 The content of the task is:
 
