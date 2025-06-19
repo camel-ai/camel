@@ -57,14 +57,11 @@ from .browser_toolkit_commons import (
     ACTION_WITH_FEEDBACK_LIST,
     AVAILABLE_ACTIONS_PROMPT,
     GET_FINAL_ANSWER_PROMPT_TEMPLATE,
-    NON_VISUAL_OBSERVE_PROMPT_TEMPLATE,
-    NON_VISUAL_WEB_AGENT_SYSTEM_PROMPT,
     OBSERVE_PROMPT_TEMPLATE,
     PLANNING_AGENT_SYSTEM_PROMPT,
     TASK_PLANNING_PROMPT_TEMPLATE,
     TASK_REPLANNING_PROMPT_TEMPLATE,
     WEB_AGENT_SYSTEM_PROMPT,
-    AsyncPageSnapshot,
     InteractiveRegion,
     VisualViewport,
     _parse_json_output,
@@ -176,9 +173,6 @@ class AsyncBaseBrowser:
         if self.user_data_dir:
             os.makedirs(self.user_data_dir, exist_ok=True)
 
-        # Add DOM snapshot capability
-        self.dom_snapshot: Optional[AsyncPageSnapshot] = None
-
         # Load the page script
         abs_dir_path = os.path.dirname(os.path.abspath(__file__))
         page_script_path = os.path.join(abs_dir_path, "page_script.js")
@@ -249,27 +243,6 @@ class AsyncBaseBrowser:
 
         assert self.context is not None
         assert self.page is not None
-
-        # Initialize DOM snapshot capability
-        self.dom_snapshot = AsyncPageSnapshot(self.page)
-
-    async def async_get_dom_snapshot(self) -> str:
-        r"""Asynchronously get the DOM snapshot of the current page.
-
-        Returns:
-            str: The DOM snapshot as structured text.
-        """
-        if self.dom_snapshot is None:
-            return "Error: DOM snapshot not initialized"
-        return await self.dom_snapshot.capture()
-
-    def get_dom_snapshot(self) -> Coroutine[Any, Any, str]:
-        r"""Get the DOM snapshot of the current page.
-
-        Returns:
-            str: The DOM snapshot as structured text.
-        """
-        return self.async_get_dom_snapshot()
 
     def init(self) -> Coroutine[Any, Any, None]:
         r"""Initialize the browser asynchronously."""
@@ -1021,7 +994,6 @@ class AsyncBrowserToolkit(BaseToolkit):
         output_language: str = "en",
         cookie_json_path: Optional[str] = None,
         user_data_dir: Optional[str] = None,
-        use_visual_mode: bool = True,
     ):
         r"""Initialize the BrowserToolkit instance.
 
@@ -1047,11 +1019,6 @@ class AsyncBrowserToolkit(BaseToolkit):
                 (default: :obj:`None`)
             user_data_dir (Optional[str]): The directory to store user data
                 for persistent context. (default: :obj:`"user_data_dir/"`)
-            use_visual_mode (bool): Whether to use visual mode (screenshot-based)
-                or non-visual mode (DOM-based) for element identification.
-                Visual mode provides screenshot images to the agent, while
-                non-visual mode provides structured DOM snapshots.
-                (default: :obj:`True`)
         """
         super().__init__()
         self.browser = AsyncBaseBrowser(
@@ -1066,7 +1033,6 @@ class AsyncBrowserToolkit(BaseToolkit):
         self.web_agent_model = web_agent_model
         self.planning_agent_model = planning_agent_model
         self.output_language = output_language
-        self.use_visual_mode = use_visual_mode
         self.browser.web_agent_model = web_agent_model
 
         self.history: list[Any] = []
@@ -1099,11 +1065,7 @@ class AsyncBrowserToolkit(BaseToolkit):
         else:
             planning_model = self.planning_agent_model
 
-        # Choose system prompt based on mode
-        if self.use_visual_mode:
-            system_prompt = WEB_AGENT_SYSTEM_PROMPT
-        else:
-            system_prompt = NON_VISUAL_WEB_AGENT_SYSTEM_PROMPT
+        system_prompt = WEB_AGENT_SYSTEM_PROMPT
 
         web_agent = ChatAgent(
             system_message=system_prompt,
@@ -1135,41 +1097,21 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 <detailed_plan>{detailed_plan}</detailed_plan>
         """
 
-        if self.use_visual_mode:
-            # Visual mode: use screenshots
-            observe_prompt = OBSERVE_PROMPT_TEMPLATE.format(
-                task_prompt=task_prompt,
-                detailed_plan_prompt=detailed_plan_prompt_str,
-                AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
-                history_window=self.history_window,
-                history=self.history[-self.history_window :],
-            )
-            # get current state
-            som_screenshot, _ = await self.browser.async_get_som_screenshot(
-                save_image=True
-            )
-            img = _reload_image(som_screenshot)
-            message = BaseMessage.make_user_message(
-                role_name='user', content=observe_prompt, image_list=[img]
-            )
-        else:
-            # Non-visual mode: use DOM snapshot
-            dom_snapshot = await self.browser.get_dom_snapshot()
-            # Convert history list to string for template formatting
-            history_str = '\n'.join(
-                str(item) for item in self.history[-self.history_window :]
-            )
-            observe_prompt = NON_VISUAL_OBSERVE_PROMPT_TEMPLATE.format(
-                task_prompt=task_prompt,
-                detailed_plan_prompt=detailed_plan_prompt_str,
-                dom_snapshot=dom_snapshot,
-                AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
-                history_window=self.history_window,
-                history=history_str,
-            )
-            message = BaseMessage.make_user_message(
-                role_name='user', content=observe_prompt
-            )
+        observe_prompt = OBSERVE_PROMPT_TEMPLATE.format(
+            task_prompt=task_prompt,
+            detailed_plan_prompt=detailed_plan_prompt_str,
+            AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
+            history_window=self.history_window,
+            history=self.history[-self.history_window :],
+        )
+        # get current state
+        som_screenshot, _ = await self.browser.async_get_som_screenshot(
+            save_image=True
+        )
+        img = _reload_image(som_screenshot)
+        message = BaseMessage.make_user_message(
+            role_name='user', content=observe_prompt, image_list=[img]
+        )
         # Reset the history message of web_agent.
         self.web_agent.reset()
         resp = await self.web_agent.astep(message)
@@ -1310,10 +1252,8 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
     async def _async_get_final_answer(self, task_prompt: str) -> str:
         r"""Generate the final answer based on the task prompt."""
-        # Convert history list to string for template formatting
-        history_str = '\n'.join(str(item) for item in self.history)
         final_answer_prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
-            task_prompt=task_prompt, history=history_str
+            task_prompt=task_prompt, history=self.history
         )
         response = await self.planning_agent.astep(final_answer_prompt)
         if response.msgs is None or len(response.msgs) == 0:
@@ -1349,14 +1289,10 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         # Here are the available browser functions we can
         # use: {AVAILABLE_ACTIONS_PROMPT}
-        # Convert history list to string for template formatting
-        history_str = '\n'.join(
-            str(item) for item in self.history[-self.history_window :]
-        )
         replanning_prompt = TASK_REPLANNING_PROMPT_TEMPLATE.format(
             task_prompt=task_prompt,
             detailed_plan=detailed_plan,
-            history=history_str,
+            history=self.history[-self.history_window :],
         )
         # Reset the history message of planning_agent.
         self.planning_agent.reset()
@@ -1446,15 +1382,11 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                     logger.debug(f"Replanned schema: {replanned_schema}")
 
         if not task_completed:
-            # Convert history list to string for template formatting
-            history_str = '\n'.join(
-                str(item) for item in self.history[-self.history_window :]
-            )
             simulation_result = f"""
                 The task is not completed within the round limit. Please check 
                 the last round {self.history_window} information to see if 
                 there is any useful information:
-                <history>{history_str}</history>
+                <history>{self.history[-self.history_window:]}</history>
             """
 
         else:

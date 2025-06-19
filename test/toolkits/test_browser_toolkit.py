@@ -23,12 +23,10 @@ from PIL import Image
 from camel.toolkits.browser_toolkit import (
     BaseBrowser,
     BrowserToolkit,
-)
-from camel.toolkits.browser_toolkit_commons import (
-    dom_rectangle_from_dict,
     interactive_region_from_dict,
     visual_viewport_from_dict,
 )
+from camel.toolkits.browser_toolkit_commons import dom_rectangle_from_dict
 
 TEST_URL = "https://example.com"
 
@@ -222,63 +220,6 @@ def test_browser_toolkit_browse_url(browser_toolkit_fixture):
     toolkit.browser.visit_page.assert_called_once_with(TEST_URL)
 
 
-def test_browser_toolkit_init_with_visual_mode():
-    """Test BrowserToolkit initialization with use_visual_mode parameter."""
-    with patch('playwright.sync_api.sync_playwright'):
-        # Test visual mode (default)
-        toolkit_visual = BrowserToolkit(headless=True, use_visual_mode=True)
-        assert toolkit_visual.use_visual_mode is True
-
-        # Test non-visual mode
-        toolkit_non_visual = BrowserToolkit(
-            headless=True, use_visual_mode=False
-        )
-        assert toolkit_non_visual.use_visual_mode is False
-
-
-def test_base_browser_dom_snapshot(base_browser_fixture):
-    """Test DOM snapshot functionality."""
-    browser = base_browser_fixture
-    browser.init()
-
-    # Mock DOM snapshot functionality
-    browser.dom_snapshot.capture = MagicMock(
-        return_value="=== DOM Snapshot ===\nTest elements"
-    )
-
-    result = browser.get_dom_snapshot()
-    assert "DOM Snapshot" in result
-    browser.dom_snapshot.capture.assert_called_once()
-
-
-def test_browser_toolkit_observe_non_visual_mode():
-    """Test non-visual mode observation."""
-    with patch('playwright.sync_api.sync_playwright'):
-        toolkit = BrowserToolkit(headless=True, use_visual_mode=False)
-
-        # Mock necessary components
-        toolkit.browser.get_dom_snapshot = MagicMock(
-            return_value="=== DOM Snapshot ===\nTest elements"
-        )
-        toolkit.web_agent.step = MagicMock()
-
-        # Mock response with proper structure
-        mock_response = MagicMock()
-        mock_response.msgs = [MagicMock()]
-        mock_response.msgs[
-            0
-            # ruff: noqa: E501
-        ].content = '{"observation": "test obs", "reasoning": "test reason", "action_code": "click_id(1)"}'
-        toolkit.web_agent.step.return_value = mock_response
-
-        obs, reason, action = toolkit._observe("test task")
-
-        assert obs == "test obs"
-        assert reason == "test reason"
-        assert action == "click_id(1)"
-        toolkit.browser.get_dom_snapshot.assert_called_once()
-
-
 def test_browser_clean_cache(base_browser_fixture):
     browser = base_browser_fixture
 
@@ -325,54 +266,6 @@ def test_browser_back_navigation(base_browser_fixture):
 
     browser.page.go_back.assert_called_once()
     browser.page.wait_for_load_state.assert_called_once()
-
-
-def test_browser_click_id_uses_aria_ref(base_browser_fixture):
-    """Verify click_id uses the correct aria-ref locator."""
-    browser = base_browser_fixture
-    browser.init()
-
-    mock_target = MagicMock()
-    mock_target.bounding_box.return_value = {
-        'x': 0,
-        'y': 0,
-        'width': 10,
-        'height': 10,
-    }
-    browser.page.locator = MagicMock(return_value=mock_target)
-
-    # Mock the context manager
-    with patch.object(browser.page, 'expect_event') as mock_expect_event:
-        mock_expect_event.return_value.__enter__.return_value = MagicMock()
-        browser.click_id('test_id')
-
-    browser.page.locator.assert_called_once_with("[aria-ref='test_id']")
-
-
-def test_browser_fill_input_id_uses_aria_ref(base_browser_fixture):
-    """Verify fill_input_id uses the correct aria-ref locator."""
-    browser = base_browser_fixture
-    browser.init()
-    mock_target = MagicMock()
-    browser.page.locator = MagicMock(return_value=mock_target)
-
-    # Mock the context manager
-    with patch.object(browser.page, 'expect_download') as mock_expect_download:
-        mock_expect_download.return_value.__enter__.return_value = MagicMock()
-        browser.download_file_id('test_id')
-
-    browser.page.locator.assert_called_once_with("[aria-ref='test_id']")
-
-
-def test_browser_hover_id_uses_aria_ref(base_browser_fixture):
-    """Verify hover_id uses the correct aria-ref locator."""
-    browser = base_browser_fixture
-    browser.init()
-    mock_target = MagicMock()
-    browser.page.locator = MagicMock(return_value=mock_target)
-
-    browser.hover_id('test_id')
-    browser.page.locator.assert_called_once_with("[aria-ref='test_id']")
 
 
 def test_dom_rectangle_from_dict():

@@ -55,15 +55,12 @@ from .browser_toolkit_commons import (
     ACTION_WITH_FEEDBACK_LIST,
     AVAILABLE_ACTIONS_PROMPT,
     GET_FINAL_ANSWER_PROMPT_TEMPLATE,
-    NON_VISUAL_OBSERVE_PROMPT_TEMPLATE,
-    NON_VISUAL_WEB_AGENT_SYSTEM_PROMPT,
     OBSERVE_PROMPT_TEMPLATE,
     PLANNING_AGENT_SYSTEM_PROMPT,
     TASK_PLANNING_PROMPT_TEMPLATE,
     TASK_REPLANNING_PROMPT_TEMPLATE,
     WEB_AGENT_SYSTEM_PROMPT,
     InteractiveRegion,
-    PageSnapshot,
     VisualViewport,
     _add_set_of_mark,
     _parse_json_output,
@@ -193,9 +190,6 @@ class BaseBrowser:
             None  # Added for type hinting
         )
 
-        # Add DOM snapshot capability
-        self.dom_snapshot: Optional[PageSnapshot] = None
-
     def init(self) -> None:
         r"""Initialize the browser."""
         assert self.playwright is not None
@@ -248,19 +242,6 @@ class BaseBrowser:
 
         assert self.context is not None
         assert self.page is not None
-
-        # Initialize DOM snapshot capability
-        self.dom_snapshot = PageSnapshot(self.page)
-
-    def get_dom_snapshot(self) -> str:
-        r"""Get the DOM snapshot of the current page.
-
-        Returns:
-            str: The DOM snapshot as structured text.
-        """
-        if self.dom_snapshot is None:
-            return "Error: DOM snapshot not initialized"
-        return self.dom_snapshot.capture()
 
     def clean_cache(self) -> None:
         r"""Delete the cache directory and its contents."""
@@ -525,7 +506,7 @@ class BaseBrowser:
         assert self.page is not None
         if isinstance(identifier, int):
             identifier = str(identifier)
-        target = self.page.locator(f"[aria-ref='{identifier}']")
+        target = self.page.locator(f"[__elementId='{identifier}']")
 
         try:
             target.wait_for(timeout=5000)
@@ -582,7 +563,7 @@ class BaseBrowser:
         if isinstance(identifier, int):
             identifier = str(identifier)
         try:
-            target = self.page.locator(f"[aria-ref='{identifier}']")
+            target = self.page.locator(f"[__elementId='{identifier}']")
         except Exception as e:  # Consider using playwright specific
             # TimeoutError
             logger.debug(f"Error during download operation: {e}")
@@ -627,7 +608,7 @@ class BaseBrowser:
             identifier = str(identifier)
 
         try:
-            target = self.page.locator(f"[aria-ref='{identifier}']")
+            target = self.page.locator(f"[__elementId='{identifier}']")
         except Exception as e:  # Consider using playwright specific
             # TimeoutError
             logger.debug(f"Error during fill operation: {e}")
@@ -677,7 +658,7 @@ class BaseBrowser:
         if isinstance(identifier, int):
             identifier = str(identifier)
         try:
-            target = self.page.locator(f"[aria-ref='{identifier}']")
+            target = self.page.locator(f"[__elementId='{identifier}']")
         except Exception as e:  # Consider using playwright specific
             # TimeoutError
             logger.debug(f"Error during hover operation: {e}")
@@ -829,8 +810,7 @@ class BrowserToolkit(BaseToolkit):
     r"""A class for browsing the web and interacting with web pages.
 
     This class provides methods for browsing the web and interacting with web
-    pages. Supports both visual (screenshot-based) and non-visual (DOM-based)
-    modes for element identification.
+    pages.
     """
 
     def __init__(
@@ -844,7 +824,6 @@ class BrowserToolkit(BaseToolkit):
         output_language: str = "en",
         cookie_json_path: Optional[str] = None,
         user_data_dir: Optional[str] = None,
-        use_visual_mode: bool = True,
     ):
         r"""Initialize the BrowserToolkit instance.
 
@@ -871,11 +850,6 @@ class BrowserToolkit(BaseToolkit):
             user_data_dir (Optional[str]): The directory to store user data
                 for persistent context. If None, a fresh browser instance
                 is used without saving data. (default: :obj:`None`)
-            use_visual_mode (bool): Whether to use visual mode (screenshot-based)
-                or non-visual mode (DOM-based) for element identification.
-                Visual mode provides screenshot images to the agent, while
-                non-visual mode provides structured DOM snapshots.
-                (default: :obj:`True`)
         """
         super().__init__()  # Call to super().__init__() added
         self.browser = BaseBrowser(
@@ -892,7 +866,6 @@ class BrowserToolkit(BaseToolkit):
         self.web_agent_model = web_agent_model
         self.planning_agent_model = planning_agent_model
         self.output_language = output_language
-        self.use_visual_mode = use_visual_mode
 
         self.history: List[Dict[str, Any]] = []  # Typed history list
         self.web_agent: ChatAgent
@@ -932,11 +905,7 @@ class BrowserToolkit(BaseToolkit):
         else:
             planning_model = planning_agent_model_backend
 
-        # Choose system prompt based on mode
-        if self.use_visual_mode:
-            system_prompt = WEB_AGENT_SYSTEM_PROMPT
-        else:
-            system_prompt = NON_VISUAL_WEB_AGENT_SYSTEM_PROMPT
+        system_prompt = WEB_AGENT_SYSTEM_PROMPT
 
         web_agent = ChatAgent(
             system_message=system_prompt,
@@ -968,47 +937,20 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 <detailed_plan>{detailed_plan}<detailed_plan>
         """
 
-        if self.use_visual_mode:
-            # Visual mode: use screenshots
-            history_str = '\n'.join(
-                str(item) for item in self.history[-self.history_window :]
-            )
-            observe_prompt = OBSERVE_PROMPT_TEMPLATE.format(
-                task_prompt=task_prompt,
-                detailed_plan_prompt=detailed_plan_prompt_str,
-                AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
-                history_window=self.history_window,
-                history=history_str,
-            )
+        observe_prompt = OBSERVE_PROMPT_TEMPLATE.format(
+            task_prompt=task_prompt,
+            detailed_plan_prompt=detailed_plan_prompt_str,
+            AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
+            history_window=self.history_window,
+            history=self.history[-self.history_window :],
+        )
 
-            # get current state
-            som_screenshot, _ = self.browser.get_som_screenshot(
-                save_image=True
-            )
-            img = _reload_image(som_screenshot)
-            message = BaseMessage.make_user_message(
-                role_name='user', content=observe_prompt, image_list=[img]
-            )
-        else:
-            # Non-visual mode: use DOM snapshot
-            dom_snapshot = self.browser.get_dom_snapshot()
-            # Convert history list to string for template formatting
-            history_str = '\n'.join(
-                str(item) for item in self.history[-self.history_window :]
-            )
-            observe_prompt = NON_VISUAL_OBSERVE_PROMPT_TEMPLATE.format(
-                task_prompt=task_prompt,
-                detailed_plan_prompt=detailed_plan_prompt_str,
-                dom_snapshot=dom_snapshot,
-                AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
-                history_window=self.history_window,
-                history=history_str,
-            )
-
-            message = BaseMessage.make_user_message(
-                role_name='user', content=observe_prompt
-            )
-
+        # get current state
+        som_screenshot, _ = self.browser.get_som_screenshot(save_image=True)
+        img = _reload_image(som_screenshot)
+        message = BaseMessage.make_user_message(
+            role_name='user', content=observe_prompt, image_list=[img]
+        )
         # Reset the history message of web_agent.
         self.web_agent.reset()
         resp = self.web_agent.step(message)
@@ -1055,11 +997,6 @@ Here is a plan about how to solve the task step-by-step which you must follow:
             Tuple[bool, str]: A tuple containing a boolean indicating whether
                 the action was successful, and the information to be returned.
         """
-        if not action_code or not action_code.strip():
-            return False, "Error: No action code was provided."
-
-        if '(' not in action_code or ')' not in action_code:
-            return False, f"Error: Invalid action code format: '{action_code}'"
 
         def _check_if_with_feedback(action_code: str) -> bool:
             r"""Check if the action code needs feedback."""
@@ -1154,10 +1091,8 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         current viewport.
         """
 
-        # Convert history list to string for template formatting
-        history_str = '\n'.join(str(item) for item in self.history)
         prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
-            history=history_str, task_prompt=task_prompt
+            history=self.history, task_prompt=task_prompt
         )
 
         message = BaseMessage.make_user_message(
@@ -1196,15 +1131,11 @@ Here is a plan about how to solve the task step-by-step which you must follow:
             whether the task needs to be replanned, and the replanned schema.
         """
 
-        # Convert history list to string for template formatting
-        history_str = '\n'.join(
-            str(item) for item in self.history[-self.history_window :]
-        )
         replanning_prompt = TASK_REPLANNING_PROMPT_TEMPLATE.format(
             task_prompt=task_prompt,
             detailed_plan=detailed_plan,
             history_window=self.history_window,
-            history=history_str,
+            history=self.history[-self.history_window :],
         )
         # Reset the history message of planning_agent.
         self.planning_agent.reset()
@@ -1295,15 +1226,11 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         simulation_result: str
         if not task_completed:
-            # Convert history list to string for template formatting
-            history_str = '\n'.join(
-                str(item) for item in self.history[-self.history_window :]
-            )
             simulation_result = f"""
                 The task is not completed within the round limit. Please 
                 check the last round {self.history_window} information to 
                 see if there is any useful information:
-                <history>{history_str}</history>
+                <history>{self.history[-self.history_window :]}</history>
             """
 
         else:

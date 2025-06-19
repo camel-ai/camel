@@ -17,9 +17,6 @@ import io
 import json
 import random
 import re
-import time
-import os
-import subprocess
 from typing import (
     Any,
     BinaryIO,
@@ -29,14 +26,9 @@ from typing import (
     TypedDict,
     Union,
     cast,
-    Optional,
 )
 
 from PIL import Image, ImageDraw, ImageFont
-
-from camel.logger import get_logger
-
-logger = get_logger(__name__)
 
 # Constants
 TOP_NO_LABEL_ZONE = 20
@@ -91,10 +83,8 @@ Here is two example of the output:
 }}
 
 {{
-    "observation":  "The current page is a CAPTCHA verification page on 
-    Amazon. It asks the user to ..",
-    "reasoning": "To proceed with the task of searching for products, 
-    I need to complete..",
+    "observation":  "The current page is a CAPTCHA verification page on Amazon. It asks the user to ..",
+    "reasoning": "To proceed with the task of searching for products, I need to complete..",
     "action_code": "fill_input_id(3, 'AUXPMR')"
 }}
 
@@ -133,60 +123,41 @@ the text you want to find and skip massive amount of useless information.
 - Flexibly use interactive elements like slide down selection bar to filter
 out the information you need. Sometimes they are extremely useful.
 ```
-"""
+"""  # noqa: E501
 
 GET_FINAL_ANSWER_PROMPT_TEMPLATE = """
-We are solving a complex web task which needs multi-step browser 
-interaction. After the multi-step observation, reasoning and acting with web 
-browser, we think that the task is currently solved.
+We are solving a complex web task which needs multi-step browser interaction. After the multi-step observation, reasoning and acting with web browser, we think that the task is currently solved.
 Here are all trajectory we have taken:
 <history>{history}</history>
-Please find the final answer, or give valuable insights and founds (e.g. if 
-previous actions contain downloading files, your output should include the 
-path of the downloaded file) about the overall task: <task>{task_prompt}</task>
-        """
+Please find the final answer, or give valuable insights and founds (e.g. if previous actions contain downloading files, your output should include the path of the downloaded file) about the overall task: <task>{task_prompt}</task>
+        """  # noqa: E501
 
 TASK_PLANNING_PROMPT_TEMPLATE = """
 <task>{task_prompt}</task>
-According to the problem above, if we use browser interaction, what is the 
-general process of the interaction after visiting the webpage `{start_url}`? 
+According to the problem above, if we use browser interaction, what is the general process of the interaction after visiting the webpage `{start_url}`? 
 
-Please note that it can be viewed as Partially Observable MDP. Do not 
-over-confident about your plan.
-Please first restate the task in detail, and then provide a detailed plan to 
-solve the task.
-"""
+Please note that it can be viewed as Partially Observable MDP. Do not over-confident about your plan.
+Please first restate the task in detail, and then provide a detailed plan to solve the task.
+"""  # noqa: E501
 
 TASK_REPLANNING_PROMPT_TEMPLATE = """
-We are using browser interaction to solve a complex task which needs 
-multi-step actions.
+We are using browser interaction to solve a complex task which needs multi-step actions.
 Here are the overall task:
 <overall_task>{task_prompt}</overall_task>
 
-In order to solve the task, we made a detailed plan previously. Here is the 
-detailed plan:
+In order to solve the task, we made a detailed plan previously. Here is the detailed plan:
 <detailed plan>{detailed_plan}</detailed plan>
 
-According to the task above, we have made a series of observations, 
-reasonings, and actions. Here are the latest {history_window} trajectory (at 
-most) we have taken:
+According to the task above, we have made a series of observations, reasonings, and actions. Here are the latest {history_window} trajectory (at most) we have taken:
 <history>{history}</history>
 
-However, the task is not completed yet. As the task is partially observable, 
-we may need to replan the task based on the current state of the browser if 
-necessary.
-Now please carefully examine the current task planning schema, and our 
-history actions, and then judge whether the task needs to be fundamentally 
-replanned. If so, please provide a detailed replanned schema (including the 
-restated overall task).
+However, the task is not completed yet. As the task is partially observable, we may need to replan the task based on the current state of the browser if necessary.
+Now please carefully examine the current task planning schema, and our history actions, and then judge whether the task needs to be fundamentally replanned. If so, please provide a detailed replanned schema (including the restated overall task).
 
 Your output should be in json format, including the following fields:
-- `if_need_replan`: bool, A boolean value indicating whether the task needs 
-to be fundamentally replanned.
-- `replanned_schema`: str, The replanned schema for the task, which should 
-not be changed too much compared with the original one. If the task does not 
-need to be replanned, the value should be an empty string. 
-"""
+- `if_need_replan`: bool, A boolean value indicating whether the task needs to be fundamentally replanned.
+- `replanned_schema`: str, The replanned schema for the task, which should not be changed too much compared with the original one. If the task does not need to be replanned, the value should be an empty string. 
+"""  # noqa: E501
 
 AVAILABLE_ACTIONS_PROMPT = """
 1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
@@ -228,276 +199,6 @@ ACTION_WITH_FEEDBACK_LIST = [
     'download_file_id',
     'find_text_on_page',
 ]
-
-# Add new prompts for non-visual mode
-NON_VISUAL_OBSERVE_PROMPT_TEMPLATE = """
-You are a web automation agent. Your task is to analyze the current DOM 
-snapshot and determine the next action to accomplish the user's goal.
-
-**Current Task**: {task_prompt}
-
-{detailed_plan_prompt}
-
-**DOM Snapshot**:
-{dom_snapshot}
-
-**Action History** (last {history_window} actions):
-{history}
-
-**Available Actions**:
-{AVAILABLE_ACTIONS_PROMPT}
-
-**Important**: 
-- When using actions like click_id(), fill_input_id(), etc., use the 'ref' 
-value from the DOM snapshot (e.g., if ref=e23, use click_id('e23'))
-- Analyze the DOM structure to understand the page layout and interactive 
-elements
-- Focus on elements that are visible and interactable
-
-Provide your response in the following JSON format:
-{{
-    "observation": "Your analysis of the current page state and what you can 
-    see",
-    "reasoning": "Your step-by-step thinking about what action to take next",
-    "action_code": "The specific action to execute (e.g., click_id('e23'), 
-    fill_input_id('e5', 'search text'), etc.)"
-}}
-"""
-
-NON_VISUAL_WEB_AGENT_SYSTEM_PROMPT = """
-You are an expert web automation agent that analyzes DOM snapshots to 
-navigate and interact with web pages. 
-
-You have access to these key capabilities:
-1. Analyze DOM snapshots containing interactive elements with ref attributes
-2. Execute precise actions using element references
-3. Understand page structure and user interface patterns
-
-Key Guidelines:
-- Use element 'ref' values for all interactions (e.g., ref=e23 means use 
-'e23' in actions)
-- Prioritize elements that are visible and in the current viewport
-- Consider element roles, text content, and attributes to make informed 
-decisions
-- Be methodical and patient - complex tasks may require multiple steps
-- If an action fails, analyze the new DOM state and try alternative approaches
-
-You should provide clear observations, logical reasoning, and precise action 
-codes in your responses.
-"""
-
-
-class PageSnapshot:
-    def __init__(self, page):
-        self.page = page
-        self.snapshot_data = None
-        self._last_url = None  # Cache for URL-based optimization
-        self._last_snapshot_hash = None  # Cache for content-based optimization
-        self.snapshot_script = self._load_snapshot_script()
-
-    def _load_snapshot_script(self) -> str:
-        """Load the snapshot JavaScript from file"""
-        script_path = os.path.join(
-            os.path.dirname(__file__), 'js', 'browser_snapshot.js'
-        )
-        try:
-            with open(script_path, 'r', encoding='utf-8') as f:
-                return f.read()
-        except FileNotFoundError:
-            logger.error(f"Snapshot script not found at {script_path}")
-            return ""
-
-    def capture(self, force_refresh=False) -> str:
-        """Capture accessibility snapshot of the current page using optimized method"""
-        try:
-            current_url = self.page.url
-
-            # Quick optimization: if URL hasn't changed and we have cached data, return it
-            if (
-                not force_refresh
-                and current_url == self._last_url
-                and self.snapshot_data
-            ):
-                logger.debug("Using cached snapshot (same URL)")
-                return self.snapshot_data
-
-            # Fast page stability check (reduced waiting)
-            start_time = time.time()
-            self.page.wait_for_load_state('domcontentloaded', timeout=5000)
-            logger.debug(f"Page load check: {time.time() - start_time:.2f}s")
-
-            # Try direct evaluation first (fastest method)
-            start_time = time.time()
-            snapshot_text = self._get_snapshot_direct()
-            if snapshot_text:
-                logger.debug(f"{time.time() - start_time:.2f}s")
-                formatted_snapshot = self._format_snapshot(snapshot_text)
-                self._update_cache(current_url, formatted_snapshot)
-                return formatted_snapshot
-
-            # Final fallback
-            logger.warning("All snapshot methods failed, using basic fallback")
-            return self._fallback_snapshot()
-
-        except Exception as e:
-            logger.error(f"Error capturing snapshot: {e}")
-            return "Error: Could not capture page snapshot"
-
-    def _get_snapshot_direct(self) -> Optional[str]:
-        """Try to get snapshot directly using page.evaluate (fastest method)"""
-        if not self.snapshot_script:
-            return None
-        return self.page.evaluate(self.snapshot_script)
-
-    def _format_snapshot(self, snapshot_text: str) -> str:
-        """Format snapshot text consistently"""
-        formatted_snapshot = [
-            "- Page Snapshot",
-            "```yaml",
-            snapshot_text,
-            "```",
-        ]
-        return '\\n'.join(formatted_snapshot)
-
-    def _update_cache(self, url: str, snapshot: str):
-        """Update cache with new snapshot data"""
-        self._last_url = url
-        self.snapshot_data = snapshot
-        # Create simple hash for content comparison
-        self._last_snapshot_hash = hash(snapshot)
-
-    def _fallback_snapshot(self) -> str:
-        """Fallback method when _snapshotForAI is not available"""
-        try:
-            # Simple fallback that captures basic page info
-            title = self.page.title()
-            url = self.page.url
-
-            # Get basic text content from body
-            body_text = self.page.evaluate("""() => {
-                const body = document.body;
-                if (!body) return '';
-
-                // Get visible text content, but limit length
-                const text = body.textContent || '';
-                return text.trim().slice(0, 500);
-            }""")
-
-            fallback_snapshot = [
-                "- Page Snapshot",
-                "```yaml",
-                f"- generic [ref=e1]: {body_text}"
-                if body_text
-                else "- generic [ref=e1]: (no content)",
-                "```",
-            ]
-
-            return '\\n'.join(fallback_snapshot)
-
-        except Exception as e:
-            logger.warning(f"Error in fallback snapshot: {e}")
-            return "Error: Could not capture page snapshot"
-
-
-# For async support
-class AsyncPageSnapshot:
-    """Async version of PageSnapshot for use with async browsers."""
-
-    def __init__(self, page):
-        self.page = page
-        self.snapshot_data = None
-        self._last_url = None
-        self._last_snapshot_hash = None
-        self.snapshot_script = self._load_snapshot_script()
-
-    def _load_snapshot_script(self) -> str:
-        """Load the snapshot JavaScript from file"""
-        script_path = os.path.join(
-            os.path.dirname(__file__), 'js', 'browser_snapshot.js'
-        )
-        try:
-            with open(script_path, 'r', encoding='utf-8') as f:
-                return f.read()
-        except FileNotFoundError:
-            logger.error(f"Snapshot script not found at {script_path}")
-            return ""
-
-    async def capture(self, force_refresh=False) -> str:
-        """Async version of capture method"""
-        try:
-            current_url = await self.page.evaluate(
-                "() => window.location.href"
-            )
-
-            if (
-                not force_refresh
-                and current_url == self._last_url
-                and self.snapshot_data
-            ):
-                logger.debug("Using cached snapshot (same URL)")
-                return self.snapshot_data
-
-            await self.page.wait_for_load_state(
-                'domcontentloaded', timeout=5000
-            )
-
-            snapshot_text = await self._get_snapshot_direct()
-            if snapshot_text:
-                formatted_snapshot = self._format_snapshot(snapshot_text)
-                self._update_cache(current_url, formatted_snapshot)
-                return formatted_snapshot
-
-            return await self._fallback_snapshot()
-
-        except Exception as e:
-            logger.error(f"Error capturing async snapshot: {e}")
-            return "Error: Could not capture page snapshot"
-
-    async def _get_snapshot_direct(self) -> Optional[str]:
-        """Try to get snapshot directly using page.evaluate (fastest method)"""
-        if not self.snapshot_script:
-            return None
-        return await self.page.evaluate(self.snapshot_script)
-
-    def _format_snapshot(self, snapshot_text: str) -> str:
-        """Format snapshot text consistently"""
-        formatted_snapshot = [
-            "- Page Snapshot",
-            "```yaml",
-            snapshot_text,
-            "```",
-        ]
-        return '\\n'.join(formatted_snapshot)
-
-    def _update_cache(self, url: str, snapshot: str):
-        """Update cache with new snapshot data"""
-        self._last_url = url
-        self.snapshot_data = snapshot
-        self._last_snapshot_hash = hash(snapshot)
-
-    async def _fallback_snapshot(self) -> str:
-        """Fallback method when _snapshotForAI is not available"""
-        try:
-            body_text = await self.page.evaluate("""() => {
-                const body = document.body;
-                if (!body) return '';
-                const text = body.textContent || '';
-                return text.trim().slice(0, 500);
-            }""")
-
-            fallback_snapshot = [
-                "- Page Snapshot",
-                "```yaml",
-                f"- generic [ref=e1]: {body_text}"
-                if body_text
-                else "- generic [ref=e1]: (no content)",
-                "```",
-            ]
-            return '\\n'.join(fallback_snapshot)
-
-        except Exception as e:
-            logger.warning(f"Error in async fallback snapshot: {e}")
-            return "Error: Could not capture page snapshot"
 
 
 # TypedDicts
@@ -568,7 +269,6 @@ def _get_bool(d: Any, k: str) -> bool:
     )
 
 
-# ruff: noqa
 def _parse_json_output(
     text: str, logger: Any
 ) -> Dict[str, Any]:  # Added logger argument
@@ -738,10 +438,8 @@ def _add_set_of_mark(
 
     Returns:
         Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
-            containing the screenshot with marked ROIs,
-            ROIs fully within the
-            images, ROIs located above the visible area,
-            and ROIs located below
+            containing the screenshot with marked ROIs, ROIs fully within the
+            images, ROIs located above the visible area, and ROIs located below
             the visible area.
     """
     visible_rects: List[str] = list()
