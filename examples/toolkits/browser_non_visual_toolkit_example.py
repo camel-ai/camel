@@ -15,7 +15,7 @@ import logging
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.toolkits.snapshot_dev import BrowserNonVisualToolkit
+from camel.toolkits.non_visual_browser_toolkit import BrowserNonVisualToolkit
 from camel.types import ModelPlatformType, ModelType
 
 logging.basicConfig(
