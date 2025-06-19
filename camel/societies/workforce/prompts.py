@@ -80,7 +80,7 @@ Example valid response:
   ]
 }}
 
-IMPORTANT: Only add dependencies when one task truly needs the output/result of another task to complete successfully. Don't add dependencies unless they are logically necessary.
+IMPORTANT: Carefully analyze the sequence of tasks. A task's dependencies MUST include the IDs of all prior tasks whose outputs are necessary for its execution. For example, a task to 'Summarize Paper X' MUST depend on the task that 'Finds/Retrieves Paper X'. Similarly, a task that 'Compiles a report from summaries' MUST depend on all 'Summarize Paper X' tasks. Incorrect or missing dependencies will lead to critical operational failures and an inability to complete the overall objective. Be meticulous in defining these relationships.
 
 Do not include any other text, explanations, justifications, or conversational filler before or after the JSON object. Return ONLY the JSON object.
 """

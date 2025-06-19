@@ -89,9 +89,9 @@ async def search_agent_factory(
     human_toolkits = HumanToolkit()
     tools = [
         FunctionTool(search_toolkits.search_wiki),
-        FunctionTool(search_toolkits.search_google),
-        FunctionTool(search_toolkits.search_bing),
-        FunctionTool(search_toolkits.search_baidu),
+        # FunctionTool(search_toolkits.search_google),
+        # FunctionTool(search_toolkits.search_bing),
+        # FunctionTool(search_toolkits.search_baidu),
         *playwright_toolkit.get_tools(),
         # *browser_toolkits.get_tools(),
         *terminal_toolkits.get_tools(),
@@ -353,7 +353,7 @@ async def main():
 
         model_backend_reason = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4_1_MINI,
+            model_type=ModelType.O3_MINI,
             # model_config_dict={
             #     "max_tokens": 64000,
             # }
