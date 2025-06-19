@@ -4,52 +4,66 @@ icon: loader
 ---
 
 <Card title="What are Loaders?" icon="loader">
-CAMEL’s Loaders provide flexible ways to ingest and process all kinds of data structured files, unstructured text, web content, and even OCR from images. They power your agent’s ability to interact with the outside world.
-itionally, several data readers were added, including `Apify Reader`, `Chunkr Reader`, `Firecrawl Reader`, `Jina_url Reader`, and `Mistral Reader`, which enable retrieval of external data for improved data integration and analysis.
+  CAMEL’s Loaders provide flexible ways to ingest and process all kinds of data
+  structured files, unstructured text, web content, and even OCR from images.
+  They power your agent’s ability to interact with the outside world. itionally,
+  several data readers were added, including `Apify Reader`, `Chunkr Reader`,
+  `Firecrawl Reader`, `Jina_url Reader`, and `Mistral Reader`, which enable
+  retrieval of external data for improved data integration and analysis.
 </Card>
 ## Types
 
 <AccordionGroup>
 
-  <Accordion title="Base IO" icon="file">
-    Handles core file input/output for formats like PDF, DOCX, HTML, and more.<br></br>
-    Lets you represent, read, and process structured files.
-  </Accordion>
+{" "}
+<Accordion title="Base IO" icon="file">
+  Handles core file input/output for formats like PDF, DOCX, HTML, and more.<br></br>
+  Lets you represent, read, and process structured files.
+</Accordion>
 
-  <Accordion title="Unstructured IO" icon="puzzle">
-    Powerful ETL for parsing, cleaning, extracting, chunking, and staging unstructured data.<br></br>
-    Perfect for RAG pipelines and pre-processing.
-  </Accordion>
+{" "}
+<Accordion title="Unstructured IO" icon="puzzle">
+  Powerful ETL for parsing, cleaning, extracting, chunking, and staging
+  unstructured data.<br></br>
+  Perfect for RAG pipelines and pre-processing.
+</Accordion>
 
-  <Accordion title="Apify Reader" icon="robot">
-    Integrates with Apify to automate web workflows and scraping.<br></br>
-    Supports authentication, actor management, and dataset operations via API.
-  </Accordion>
+{" "}
+<Accordion title="Apify Reader" icon="robot">
+  Integrates with Apify to automate web workflows and scraping.<br></br>
+  Supports authentication, actor management, and dataset operations via API.
+</Accordion>
 
-  <Accordion title="Chunkr Reader" icon="scissors">
-    Connects to the Chunkr API for document chunking, segmentation, and OCR.<br></br>
-    Handles everything from simple docs to scanned PDFs.
-  </Accordion>
+{" "}
+<Accordion title="Chunkr Reader" icon="scissors">
+  Connects to the Chunkr API for document chunking, segmentation, and OCR.<br></br>
+  Handles everything from simple docs to scanned PDFs.
+</Accordion>
 
-  <Accordion title="Firecrawl Reader" icon="fire">
-    Converts entire websites into LLM-ready markdown using the Firecrawl API.<br></br>
-    Useful for quickly ingesting web content as clean text.
-  </Accordion>
+{" "}
+<Accordion title="Firecrawl Reader" icon="fire">
+  Converts entire websites into LLM-ready markdown using the Firecrawl API.<br></br>
+  Useful for quickly ingesting web content as clean text.
+</Accordion>
 
-  <Accordion title="JinaURL Reader" icon="globe">
-    Uses Jina AI’s URL reading service to cleanly extract web content.<br></br>
-    Designed for LLM-friendly extraction from any URL.
-  </Accordion>
+{" "}
+<Accordion title="JinaURL Reader" icon="globe">
+  Uses Jina AI’s URL reading service to cleanly extract web content.<br></br>
+  Designed for LLM-friendly extraction from any URL.
+</Accordion>
 
-  <Accordion title="MarkitDown Reader" icon="note">
-    Lightweight tool to convert files (HTML, DOCX, PDF, etc.) into Markdown.<br></br>
-    Ideal for prepping documents for LLM ingestion or analysis.
-  </Accordion>
+{" "}
+<Accordion title="MarkitDown Reader" icon="note">
+  Lightweight tool to convert files (HTML, DOCX, PDF, etc.) into Markdown.<br></br>
+  Ideal for prepping documents for LLM ingestion or analysis.
+</Accordion>
 
-  <Accordion title="Mistral Reader" icon="book-open-reader">
-    Integrates Mistral AI’s OCR service for extracting text from images and PDFs.<br></br>
-    Supports both local and remote file processing for various formats.
-  </Accordion>
+{" "}
+<Accordion title="Mistral Reader" icon="book-open-reader">
+  Integrates Mistral AI’s OCR service for extracting text from images and PDFs.
+  <br></br>
+  Supports both local and remote file processing for various formats.
+</Accordion>
 
 </AccordionGroup>
 
@@ -58,22 +72,25 @@ itionally, several data readers were added, including `Apify Reader`, `Chunkr Re
 <Card title="Using Base IO" icon="file">
 This module is designed to read files of various formats, extract their contents, and represent them as `File` objects, each tailored to handle a specific file type.
 
-
 <CodeGroup>
 ```python base_io_example.py
 from io import BytesIO
 from camel.loaders import create_file_from_raw_bytes
 
 # Read a pdf file from disk
+
 with open("test.pdf", "rb") as file:
-    file_content = file.read()
+file_content = file.read()
 
 # Use the create_file function to create an object based on the file extension
+
 file_obj = create_file_from_raw_bytes(file_content, "test.pdf")
 
 # Once you have the File object, you can access its content
+
 print(file_obj.docs[0]["page_content"])
-```
+
+````
 </CodeGroup>
 </Card>
 
@@ -96,33 +113,28 @@ example_url = (
 )
 elements = uio.parse_file_or_url(example_url)
 print(("\n\n".join([str(el) for el in elements])))
-```
+````
+
 ```markdown parsed_elements.md
->>> The Empire State Building was lit in green and white to celebrate the Philadelphia Eagles’ victory in the NFC Championship game on Sunday – a decision that’s sparked a bit of a backlash in the Big Apple.
->>> The Eagles advanced to the Super Bowl for the first time since 2018 after defeating the San Francisco 49ers 31-7, and the Empire State Building later tweeted how it was marking the occasion.
->>> Fly @Eagles Fly! We’re going Green and White in honor of the Eagles NFC Championship Victory. pic.twitter.com/RNiwbCIkt7— Empire State Building (@EmpireStateBldg)
->>> January 29, 2023...
+> > > The Empire State Building was lit in green and white to celebrate the Philadelphia Eagles’ victory in the NFC Championship game on Sunday – a decision that’s sparked a bit of a backlash in the Big Apple.
+> > > The Eagles advanced to the Super Bowl for the first time since 2018 after defeating the San Francisco 49ers 31-7, and the Empire State Building later tweeted how it was marking the occasion.
+> > > Fly @Eagles Fly! We’re going Green and White in honor of the Eagles NFC Championship Victory. pic.twitter.com/RNiwbCIkt7— Empire State Building (@EmpireStateBldg)
+> > > January 29, 2023...
 ```
+
 </CodeGroup>
 
 <br />
 
 <strong>2. Clean unstructured text data:</strong>
 <CodeGroup>
-```python unstructured_io_clean.py
-example_dirty_text = ("\x93Some dirty text â€™ with extra spaces and – dashes.")
-options = [
-    ('replace_unicode_quotes', {}),
-    ('clean_dashes', {}),
-    ('clean_non_ascii_chars', {}),
-    ('clean_extra_whitespace', {}),
-]
-cleaned_text = uio.clean_text_data(text=example_dirty_text, clean_options=options)
-print(cleaned_text)
-```
-```markdown cleaned_text.md
->>> Some dirty text with extra spaces and dashes.
-```
+  ```python unstructured_io_clean.py example_dirty_text = ("\x93Some dirty text
+  â€™ with extra spaces and – dashes.") options = [ ('replace_unicode_quotes',{" "}
+  {}), ('clean_dashes', {}), ('clean_non_ascii_chars', {}),
+  ('clean_extra_whitespace', {}), ] cleaned_text =
+  uio.clean_text_data(text=example_dirty_text, clean_options=options)
+  print(cleaned_text) ``` ```markdown cleaned_text.md >>> Some dirty text with
+  extra spaces and dashes. ```
 </CodeGroup>
 
 <br />
@@ -133,14 +145,16 @@ print(cleaned_text)
 example_email_text = "Contact me at example@email.com."
 
 extracted_text = uio.extract_data_from_text(
-    text=example_email_text,
-    extract_type="extract_email_address"
+text=example_email_text,
+extract_type="extract_email_address"
 )
 print(extracted_text)
-```
+
+````
 ```markdown extracted_email.md
 >>> ['example@email.com']
-```
+````
+
 </CodeGroup>
 
 <br />
@@ -151,16 +165,18 @@ print(extracted_text)
 chunks = uio.chunk_elements(elements=elements, chunk_type="chunk_by_title")
 
 for chunk in chunks:
-    print(chunk)
-    print("\n" + "-" * 80)
-```
+print(chunk)
+print("\n" + "-" \* 80)
+
+````
 ```markdown chunked_content.md
 >>> The Empire State Building was lit in green and white to celebrate the Philadelphia Eagles’ victory in the NFC Championship game on Sunday – a decision that’s sparked a bit of a backlash in the Big Apple.
 >>> --------------------------------------------------------------------------------
 >>> Fly @Eagles Fly! We’re going Green and White in honor of the Eagles NFC Championship Victory. pic.twitter.com/RNiwbCIkt7— Empire State Building (@EmpireStateBldg)
 >>> --------------------------------------------------------------------------------
 >>> January 29, 2023
-```
+````
+
 </CodeGroup>
 
 <br />
@@ -192,25 +208,28 @@ from camel.loaders import Apify
 apify = Apify()
 
 run_input = {
-    "startUrls": [{"url": "https://www.camel-ai.org/"}],
-    "maxCrawlDepth": 0,
-    "maxCrawlPages": 1,
+"startUrls": [{"url": "https://www.camel-ai.org/"}],
+"maxCrawlDepth": 0,
+"maxCrawlPages": 1,
 }
 actor_result = apify.run_actor(
-    actor_id="apify/website-content-crawler", run_input=run_input
+actor_id="apify/website-content-crawler", run_input=run_input
 )
 dataset_result = apify.get_dataset_items(
-    dataset_id=actor_result["defaultDatasetId"]
+dataset_id=actor_result["defaultDatasetId"]
 )
 print(dataset_result)
-```
+
+````
 ```markdown apify_output.md
 >>>[{'url': 'https://www.camel-ai.org/', 'crawl': {'loadedUrl': 'https://www.camel-ai.org/', ...}, 'metadata': {'canonicalUrl': 'https://www.camel-ai.org/', ...}, ... }]
-```
+````
+
 </CodeGroup>
 </Card>
 
 ---
+
 <Card title="Using Firecrawl Reader" icon="fire">
 Firecrawl Reader provides a simple way to turn any website into LLM-ready markdown format. Here’s how you can use it step by step:
 
@@ -231,6 +250,7 @@ Firecrawl Reader provides a simple way to turn any website into LLM-ready markdo
     ```
     </CodeGroup>
     When the status is <code>"completed"</code>, the content extraction is done and you can retrieve the results.
+
   </Step>
 
   <Step title="Retrieve the extracted markdown content">
@@ -243,21 +263,22 @@ Firecrawl Reader provides a simple way to turn any website into LLM-ready markdo
     ```markdown extracted_markdown.md
     >>>Camel-AI Team
 
-    We are finding the  
+    We are finding the
     scaling law of agent
 
-    🐫 CAMEL is an open-source library designed for the study of autonomous and 
-    communicative agents. We believe that studying these agents on a large scale 
-    offers valuable insights into their behaviors, capabilities, and potential 
-    risks. To facilitate research in this field, we implement and support various 
+    🐫 CAMEL is an open-source library designed for the study of autonomous and
+    communicative agents. We believe that studying these agents on a large scale
+    offers valuable insights into their behaviors, capabilities, and potential
+    risks. To facilitate research in this field, we implement and support various
     types of agents, tasks, prompts, models, and simulated environments.
 
-    **We are** always looking for more **contributors** and **collaborators**.  
+    **We are** always looking for more **contributors** and **collaborators**.
     Contact us to join forces via [Slack](https://join.slack.com/t/camel-kwr1314/
     shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA)
     or [Discord](https://discord.gg/CNcNpquyDc)...
     ```
     </CodeGroup>
+
   </Step>
 </Steps>
 
@@ -318,14 +339,15 @@ if __name__ == "__main__":
 A successful task returns a chunked structure like this:
 
 ```markdown
->>>Task ID: 7becf001-6f07-4f63-bddf-5633df363bbb
->>>Task Output:
->>>{    "task_id": "7becf001-6f07-4f63-bddf-5633df363bbb",    "status": "Succeeded",    "created_at": "2024-11-08T12:45:04.260765Z",    "finished_at": "2024-11-08T12:45:48.942365Z",    "expires_at": null,    "message": "Task succeeded",    "output": {        "chunks": [            {                "segments": [                    {                        "segment_id": "d53ec931-3779-41be-a220-3fe4da2770c5",                        "bbox": {                            "left": 224.16666,                            "top": 370.0,                            "width": 2101.6665,                            "height": 64.166664                        },                        "page_number": 1,                        "page_width": 2550.0,                        "page_height": 3300.0,                        "content": "Large Language Model based Multi-Agents: A Survey of Progress and Challenges",                        "segment_type": "Title",                        "ocr": null,                        "image": "https://chunkmydocs-bucket-prod.storage.googleapis.com/.../d53ec931-3779-41be-a220-3fe4da2770c5.jpg?...",                        "html": "<h1>Large Language Model based Multi-Agents: A Survey of Progress and Challenges</h1>",                        "markdown": "# Large Language Model based Multi-Agents: A Survey of Progress and Challenges\n\n"                    }                ],                "chunk_length": 11            },            {                "segments": [                    {                        "segment_id": "7bb38fc7-c1b3-4153-a3cc-116c0b9caa0a",                        "bbox": {                            "left": 432.49997,                            "top": 474.16666,                            "width": 1659.9999,                            "height": 122.49999                        },                        "page_number": 1,                        "page_width": 2550.0,                        "page_height": 3300.0,                        "content": "Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020",                        "segment_type": "Text",                        "ocr": null,                        "image": "https://chunkmydocs-bucket-prod.storage.googleapis.com/.../7bb38fc7-c1b3-4153-a3cc-116c0b9caa0a.jpg?...",                        "html": "<p>Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020</p>",                        "markdown": "Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020\n\n"                    }                ],                "chunk_length": 100            }        ]    } }
+> > > Task ID: 7becf001-6f07-4f63-bddf-5633df363bbb
+> > > Task Output:
+> > > { "task_id": "7becf001-6f07-4f63-bddf-5633df363bbb", "status": "Succeeded", "created_at": "2024-11-08T12:45:04.260765Z", "finished_at": "2024-11-08T12:45:48.942365Z", "expires_at": null, "message": "Task succeeded", "output": { "chunks": [ { "segments": [ { "segment_id": "d53ec931-3779-41be-a220-3fe4da2770c5", "bbox": { "left": 224.16666, "top": 370.0, "width": 2101.6665, "height": 64.166664 }, "page_number": 1, "page_width": 2550.0, "page_height": 3300.0, "content": "Large Language Model based Multi-Agents: A Survey of Progress and Challenges", "segment_type": "Title", "ocr": null, "image": "https://chunkmydocs-bucket-prod.storage.googleapis.com/.../d53ec931-3779-41be-a220-3fe4da2770c5.jpg?...", "html": "<h1>Large Language Model based Multi-Agents: A Survey of Progress and Challenges</h1>", "markdown": "# Large Language Model based Multi-Agents: A Survey of Progress and Challenges\n\n" } ], "chunk_length": 11 }, { "segments": [ { "segment_id": "7bb38fc7-c1b3-4153-a3cc-116c0b9caa0a", "bbox": { "left": 432.49997, "top": 474.16666, "width": 1659.9999, "height": 122.49999 }, "page_number": 1, "page_width": 2550.0, "page_height": 3300.0, "content": "Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020", "segment_type": "Text", "ocr": null, "image": "https://chunkmydocs-bucket-prod.storage.googleapis.com/.../7bb38fc7-c1b3-4153-a3cc-116c0b9caa0a.jpg?...", "html": "<p>Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020</p>", "markdown": "Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020\n\n" } ], "chunk_length": 100 } ] } }
 ```
 
 </Card>
 
 ---
+
 <Card title="Using Jina Reader" icon="link">
 Jina Reader provides a convenient interface to extract clean, LLM-friendly content from any URL in a chosen format (like markdown):
 
@@ -337,6 +359,7 @@ jina_reader = JinaURLReader(return_format=JinaReturnFormat.MARKDOWN)
 response = jina_reader.read_content("https://docs.camel-ai.org/")
 print(response)
 ```
+
 </Card>
 
 ---
@@ -356,14 +379,16 @@ print(response)
 Example output:
 
 ```markdown
->>>Welcome to CAMEL’s documentation! — CAMEL 0.2.61 documentation
+> > > Welcome to CAMEL’s documentation! — CAMEL 0.2.61 documentation
 
 [Skip to main content](https://docs.camel-ai.org/#main-content)
 ...
 ```
+
 </Card>
 
 ---
+
 <Card title="Using Mistral Reader" icon="book-open-reader">
 Mistral Reader offers OCR and text extraction from both PDFs and images, whether local or remote. Just specify the file path or URL:
 
@@ -399,10 +424,8 @@ print(local_ocr_response)
 Response includes structured page data, markdown content, and usage details.
 
 ```markdown
->>>pages=[OCRPageObject(index=5, markdown='![img-0.jpeg](./images/img-0.jpeg)\n\nFigure 2: Scatter plot of predicted accuracy versus (true) OOD accuracy. Each point denotes a dif...', 
-images=[OCRImageObject(id='img-0.jpeg', ...)], dimensions=OCRPageDimensions(...))] model='mistral-ocr-2505-completion' usage_info=...
+> > > pages=[OCRPageObject(index=5, markdown='![img-0.jpeg](./images/img-0.jpeg)\n\nFigure 2: Scatter plot of predicted accuracy versus (true) OOD accuracy. Each point denotes a dif...',
+> > > images=[OCRImageObject(id='img-0.jpeg', ...)], dimensions=OCRPageDimensions(...))] model='mistral-ocr-2505-completion' usage_info=...
 ```
+
 </Card>
-
-
-
