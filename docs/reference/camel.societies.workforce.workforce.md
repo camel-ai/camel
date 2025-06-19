@@ -358,7 +358,7 @@ def add_single_agent_worker(
     self,
     description: str,
     worker: ChatAgent,
-    max_concurrent_tasks: int = 10
+    pool_max_size: int = 10
 ):
 ```
 
@@ -368,7 +368,7 @@ Add a worker node to the workforce that uses a single agent.
 
 - **description** (str): Description of the worker node.
 - **worker** (ChatAgent): The agent to be added.
-- **max_concurrent_tasks** (int): Maximum number of tasks this worker can process concurrently. (default: :obj:`10`)
+- **pool_max_size** (int): Maximum size of the agent pool. (default: :obj:`10`)
 
 **Returns:**
 
