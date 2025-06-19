@@ -16,7 +16,7 @@ in a Docker container.
 
 - **image** (str): The name of the Docker image to use for the runtime.
 - **port** (int): The port number to use for the runtime API. (default: :obj: `8000`)
-- **remove** (bool): Whether to remove the container after stopping it. ' (default: :obj: `True`)
+- **remove** (bool): Whether to remove the container after stopping it. ' (default: :obj:`True`)
 - **kwargs** (dict): Additional keyword arguments to pass to the Docker client.
 
 <a id="camel.runtimes.docker_runtime.DockerRuntime.__init__"></a>
@@ -128,7 +128,7 @@ Build the Docker container and start it.
 
 **Parameters:**
 
-- **time_out** (int): The number of seconds to wait for the container to start. (default: :obj: `15`)
+- **time_out** (int): The number of seconds to wait for the container to start. (default: :obj:`15`)
 
 **Returns:**
 
@@ -154,8 +154,8 @@ Add a function or list of functions to the runtime.
 
 - **funcs** (Union[FunctionTool, List[FunctionTool]]): The function or list of functions to add.
 - **entrypoint** (str): The entrypoint for the function.
-- **redirect_stdout** (bool): Whether to return the stdout of the function. (default: :obj: `False`)
-- **arguments** (Optional[Dict[str, Any]]): The arguments for the function. (default: :obj: `None`)
+- **redirect_stdout** (bool): Whether to return the stdout of the function. (default: :obj:`False`)
+- **arguments** (Optional[Dict[str, Any]]): The arguments for the function. (default: :obj:`None`)
 
 **Returns:**
 
@@ -185,7 +185,7 @@ stop the Docker container.
 
 **Parameters:**
 
-- **remove** (Optional[bool]): Whether to remove the container after stopping it. (default: :obj: `None`)
+- **remove** (Optional[bool]): Whether to remove the container after stopping it. (default: :obj:`None`)
 
 **Returns:**
 
@@ -215,7 +215,7 @@ Wait for the API Server to be ready.
 
 **Parameters:**
 
-- **timeout** (int): The number of seconds to wait. (default: :obj: `10`) (default:  10)
+- **timeout** (int): The number of seconds to wait. (default: :obj:`10`) (default: 10)
 
 **Returns:**
 

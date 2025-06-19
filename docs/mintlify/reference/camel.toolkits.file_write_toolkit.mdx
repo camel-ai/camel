@@ -34,9 +34,9 @@ Initialize the FileWriteToolkit.
 **Parameters:**
 
 - **output_dir** (str): The default directory for output files. Defaults to the current working directory.
-- **timeout** (Optional[float]): The timeout for the toolkit. (default: :obj: `None`)
-- **default_encoding** (str): Default character encoding for text operations. (default: :obj: `utf-8`)
-- **backup_enabled** (bool): Whether to create backups of existing files before overwriting. (default: :obj: `True`)
+- **timeout** (Optional[float]): The timeout for the toolkit. (default: :obj:`None`)
+- **default_encoding** (str): Default character encoding for text operations. (default: :obj:`utf-8`)
+- **backup_enabled** (bool): Whether to create backups of existing files before overwriting. (default: :obj:`True`)
 
 <a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._resolve_filepath"></a>
 
@@ -80,7 +80,7 @@ Write text content to a plaintext file.
 
 - **file_path** (Path): The target file path.
 - **content** (str): The text content to write.
-- **encoding** (str): Character encoding to use. (default: :obj: `utf-8`) (default:  utf-8)
+- **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
 <a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._create_backup"></a>
 
@@ -130,7 +130,7 @@ Write text content to a PDF file with default formatting.
 
 - **file_path** (Path): The target file path.
 - **content** (str): The text content to write.
-- **use_latex** (bool): Whether to use LaTeX for rendering. (requires LaTeX toolchain). If False, uses FPDF for simpler PDF generation. (default: :obj: `False`)
+- **use_latex** (bool): Whether to use LaTeX for rendering. (requires LaTeX toolchain). If False, uses FPDF for simpler PDF generation. (default: :obj:`False`)
 
 <a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_csv_file"></a>
 
@@ -151,7 +151,7 @@ Write CSV content to a file.
 
 - **file_path** (Path): The target file path.
 - **content** (Union[str, List[List]]): The CSV content as a string or list of lists.
-- **encoding** (str): Character encoding to use. (default: :obj: `utf-8`) (default:  utf-8)
+- **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
 <a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_json_file"></a>
 
@@ -172,7 +172,7 @@ Write JSON content to a file.
 
 - **file_path** (Path): The target file path.
 - **content** (str): The JSON content as a string.
-- **encoding** (str): Character encoding to use. (default: :obj: `utf-8`) (default:  utf-8)
+- **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
 <a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_yaml_file"></a>
 
@@ -193,7 +193,7 @@ Write YAML content to a file.
 
 - **file_path** (Path): The target file path.
 - **content** (str): The YAML content as a string.
-- **encoding** (str): Character encoding to use. (default: :obj: `utf-8`) (default:  utf-8)
+- **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
 <a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_html_file"></a>
 
@@ -214,7 +214,7 @@ Write text content to an HTML file.
 
 - **file_path** (Path): The target file path.
 - **content** (str): The HTML content to write.
-- **encoding** (str): Character encoding to use. (default: :obj: `utf-8`) (default:  utf-8)
+- **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
 <a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_markdown_file"></a>
 
@@ -235,7 +235,7 @@ Write text content to a Markdown file.
 
 - **file_path** (Path): The target file path.
 - **content** (str): The Markdown content to write.
-- **encoding** (str): Character encoding to use. (default: :obj: `utf-8`) (default:  utf-8)
+- **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
 <a id="camel.toolkits.file_write_toolkit.FileWriteToolkit.write_to_file"></a>
 
