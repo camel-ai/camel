@@ -46,7 +46,7 @@ from camel.types import ModelPlatformType, ModelType
 def developer_agent_factory(model: BaseModelBackend, task_id: str):
     r"""Factory for creating a developer agent."""
     tools = [
-        *TerminalToolkit().get_tools(),
+        *TerminalToolkit(clone_current_env=True).get_tools(),
         *HumanToolkit().get_tools(),
         *CodeExecutionToolkit().get_tools(),
     ]
