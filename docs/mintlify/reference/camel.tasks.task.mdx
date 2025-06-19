@@ -1,5 +1,27 @@
 <a id="camel.tasks.task"></a>
 
+<a id="camel.tasks.task.validate_task_content"></a>
+
+## validate_task_content
+
+```python
+def validate_task_content(content: str, task_id: str = 'unknown', min_length: int = 10):
+```
+
+Validates task result content to avoid silent failures.
+It performs basic checks to ensure the content meets minimum
+quality standards.
+
+**Parameters:**
+
+- **content** (str): The task result content to validate.
+- **task_id** (str): Task ID for logging purposes. (default: :obj:`"unknown"`)
+- **min_length** (int): Minimum content length after stripping whitespace. (default: :obj:`10`)
+
+**Returns:**
+
+  bool: True if content passes validation, False otherwise.
+
 <a id="camel.tasks.task.parse_response"></a>
 
 ## parse_response
@@ -229,7 +251,7 @@ Get task result to a string.
 ```python
 def decompose(
     self,
-    agent: ChatAgent,
+    agent: 'ChatAgent',
     prompt: Optional[str] = None,
     task_parser: Callable[[str, str], List['Task']] = parse_response
 ):
@@ -255,7 +277,7 @@ generation and planner of agent.
 ```python
 def compose(
     self,
-    agent: ChatAgent,
+    agent: 'ChatAgent',
     template: TextPrompt = TASK_COMPOSE_PROMPT,
     result_parser: Optional[Callable[[str], str]] = None
 ):
@@ -390,7 +412,7 @@ self.tasks and self.task_map will be updated by the input tasks.
 def evolve(
     self,
     task: Task,
-    agent: ChatAgent,
+    agent: 'ChatAgent',
     template: Optional[TextPrompt] = None,
     task_parser: Optional[Callable[[str, str], List[Task]]] = None
 ):

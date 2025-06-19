@@ -14,19 +14,80 @@
 
 import re
 from enum import Enum
-from typing import Any, Callable, Dict, List, Literal, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Union,
+)
 
 from pydantic import BaseModel
 
-from camel.agents import ChatAgent
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 
+# Note: validate_task_content moved here to avoid circular imports
 from .task_prompt import (
     TASK_COMPOSE_PROMPT,
     TASK_DECOMPOSE_PROMPT,
     TASK_EVOLVE_PROMPT,
 )
+
+logger = get_logger(__name__)
+
+
+def validate_task_content(
+    content: str, task_id: str = "unknown", min_length: int = 10
+) -> bool:
+    r"""Validates task result content to avoid silent failures.
+    It performs basic checks to ensure the content meets minimum
+    quality standards.
+
+    Args:
+        content (str): The task result content to validate.
+        task_id (str): Task ID for logging purposes.
+            (default: :obj:`"unknown"`)
+        min_length (int): Minimum content length after stripping whitespace.
+            (default: :obj:`10`)
+
+    Returns:
+        bool: True if content passes validation, False otherwise.
+    """
+    # 1: Content must not be None
+    if content is None:
+        logger.warning(f"Task {task_id}: None content rejected")
+        return False
+
+    # 2: Content must not be empty after stripping whitespace
+    stripped_content = content.strip()
+    if not stripped_content:
+        logger.warning(
+            f"Task {task_id}: Empty or whitespace-only content rejected."
+        )
+        return False
+
+    # 3: Content must meet minimum meaningful length
+    if len(stripped_content) < min_length:
+        logger.warning(
+            f"Task {task_id}: Content too short ({len(stripped_content)} "
+            f"chars < {min_length} minimum). Content preview: "
+            f"'{stripped_content[:50]}...'"
+        )
+        return False
+
+    # All validation checks passed
+    logger.debug(
+        f"Task {task_id}: Content validation passed "
+        f"({len(stripped_content)} chars)"
+    )
+    return True
 
 
 def parse_response(
@@ -49,7 +110,16 @@ def parse_response(
     if task_id is None:
         task_id = "0"
     for i, content in enumerate(tasks_content):
-        tasks.append(Task(content=content.strip(), id=f"{task_id}.{i}"))
+        stripped_content = content.strip()
+        # validate subtask content before creating the task
+        if validate_task_content(stripped_content, f"{task_id}.{i}"):
+            tasks.append(Task(content=stripped_content, id=f"{task_id}.{i}"))
+        else:
+            logger.warning(
+                f"Skipping invalid subtask {task_id}.{i} "
+                f"during decomposition: "
+                f"Content '{stripped_content[:50]}...' failed validation"
+            )
     return tasks
 
 
@@ -228,7 +298,7 @@ class Task(BaseModel):
 
     def decompose(
         self,
-        agent: ChatAgent,
+        agent: "ChatAgent",
         prompt: Optional[str] = None,
         task_parser: Callable[[str, str], List["Task"]] = parse_response,
     ) -> List["Task"]:
@@ -263,7 +333,7 @@ class Task(BaseModel):
 
     def compose(
         self,
-        agent: ChatAgent,
+        agent: "ChatAgent",
         template: TextPrompt = TASK_COMPOSE_PROMPT,
         result_parser: Optional[Callable[[str], str]] = None,
     ):
@@ -412,12 +482,13 @@ class TaskManager:
     def evolve(
         self,
         task: Task,
-        agent: ChatAgent,
+        agent: "ChatAgent",
         template: Optional[TextPrompt] = None,
         task_parser: Optional[Callable[[str, str], List[Task]]] = None,
     ) -> Optional[Task]:
         r"""Evolve a task to a new task.
             Evolve is only used for data generation.
+
         Args:
             task (Task): A given task.
             agent (ChatAgent): An agent that used to evolve the task.

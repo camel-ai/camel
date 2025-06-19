@@ -19,6 +19,8 @@ from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, OpenAIAudioModels
 from camel.toolkits.video_analysis_toolkit import VideoAnalysisToolkit
 
+pytestmark = pytest.mark.heavy_dependency
+
 
 # Mock ffmpeg.Error for testing
 class MockFFmpegError(Exception):

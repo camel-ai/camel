@@ -83,7 +83,9 @@ def sanitize_and_enforce_required(parameters_dict):
 Cleans and updates the function schema to conform with OpenAI's
 requirements:
 - Removes invalid 'default' fields from the parameters schema.
-- Ensures all fields or function parameters are marked as required.
+- Ensures all fields are marked as required or have null type for optional
+fields.
+- Recursively adds additionalProperties: false to all nested objects.
 
 **Parameters:**
 
@@ -92,7 +94,7 @@ requirements:
 **Returns:**
 
   dict: The updated dictionary with invalid defaults removed and all
-fields set as required.
+fields properly configured for strict mode.
 
 <a id="camel.toolkits.function_tool.generate_docstring"></a>
 

@@ -25,10 +25,9 @@ from camel.societies.workforce.prompts import (
     ROLEPLAY_PROCESS_TASK_PROMPT,
     ROLEPLAY_SUMMARIZE_PROMPT,
 )
-from camel.societies.workforce.utils import TaskResult, validate_task_content
+from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
-from camel.tasks.task import Task, TaskState
-from camel.utils import print_text_animated
+from camel.tasks.task import Task, TaskState, validate_task_content
 
 
 class RolePlayingWorker(Worker):
@@ -141,24 +140,20 @@ class RolePlayingWorker(Worker):
                 )
                 break
 
-            print_text_animated(
+            print(
                 f"{Fore.BLUE}AI User:\n\n{user_response.msg.content}"
                 f"{Fore.RESET}\n",
-                delay=0.005,
             )
             chat_history.append(f"AI User: {user_response.msg.content}")
 
-            print_text_animated(
-                f"{Fore.GREEN}AI Assistant:{Fore.RESET}", delay=0.005
-            )
+            print(f"{Fore.GREEN}AI Assistant:{Fore.RESET}")
 
             for func_record in assistant_response.info['tool_calls']:
                 print(func_record)
 
-            print_text_animated(
+            print(
                 f"\n{Fore.GREEN}{assistant_response.msg.content}"
                 f"{Fore.RESET}\n",
-                delay=0.005,
             )
             chat_history.append(
                 f"AI Assistant: {assistant_response.msg.content}"
