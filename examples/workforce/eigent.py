@@ -96,7 +96,7 @@ async def search_agent_factory(
         # *browser_toolkits.get_tools(),
         *terminal_toolkits.get_tools(),
         *human_toolkits.get_tools(),
-        FunctionTool(Crawl4AI().crawl),
+        FunctionTool(Crawl4AI().scrape),
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
