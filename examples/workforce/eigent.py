@@ -15,7 +15,7 @@
 import asyncio
 
 from camel.agents.chat_agent import ChatAgent
-from camel.loaders import Firecrawl
+from camel.loaders import Crawl4AI
 from camel.messages.base import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
@@ -96,7 +96,7 @@ async def search_agent_factory(
         # *browser_toolkits.get_tools(),
         *terminal_toolkits.get_tools(),
         *human_toolkits.get_tools(),
-        Firecrawl().scrape,
+        FunctionTool(Crawl4AI().crawl),
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
