@@ -14,11 +14,10 @@
 
 import re
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-# rlcard doesn't come with type hints
-import rlcard  # type: ignore[import-untyped]
-from rlcard.agents import RandomAgent  # type: ignore[import-untyped]
+if TYPE_CHECKING:
+    from rlcard.agents import RandomAgent
 
 from camel.environments.models import Action, Observation
 from camel.environments.multi_step import MultiStepEnv
@@ -106,6 +105,8 @@ class RLCardsEnv(MultiStepEnv):
         This method initializes the RLCard environment with the specified game
         and parameters.
         """
+        import rlcard
+
         try:
             # Create the RLCard environment
             self.rlcard_env = rlcard.make(

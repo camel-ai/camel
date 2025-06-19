@@ -562,6 +562,7 @@
             "pages": [
               "reference/camel.environments.models",
               "reference/camel.environments.multi_step",
+              "reference/camel.environments.rlcards_env",
               "reference/camel.environments.single_step",
               "reference/camel.environments.tic_tac_toe"
             ]
