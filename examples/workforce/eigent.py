@@ -46,7 +46,7 @@ def developer_agent_factory(model: BaseModelBackend, task_id: str):
     r"""Factory for creating a developer agent."""
     tools = [
         *TerminalToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
         *CodeExecutionToolkit().get_tools(),
     ]
 
@@ -87,14 +87,14 @@ async def search_agent_factory(
     terminal_toolkits = TerminalToolkit()
     human_toolkits = HumanToolkit()
     tools = [
-        FunctionTool(search_toolkits.search_wiki),
-        # FunctionTool(search_toolkits.search_google),
+        # FunctionTool(search_toolkits.search_wiki),
+        FunctionTool(search_toolkits.search_google),
         # FunctionTool(search_toolkits.search_bing),
         # FunctionTool(search_toolkits.search_baidu),
         *playwright_toolkit.get_tools(),
         # *browser_toolkits.get_tools(),
         *terminal_toolkits.get_tools(),
-        *human_toolkits.get_tools(),
+        human_toolkits.ask_human_via_console,
         # Firecrawl().scrape,
     ]
 
@@ -166,7 +166,7 @@ def document_agent_factory(model: BaseModelBackend, task_id: str):
         *FileWriteToolkit().get_tools(),
         *PPTXToolkit().get_tools(),
         # *RetrievalToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
@@ -223,7 +223,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
         *DalleToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
     ]
 
     system_message = """You are a Multi-Modal Processing Assistant specialized 
@@ -331,7 +331,7 @@ When assisting users, always:
             *RedditToolkit().get_tools(),
             *NotionToolkit().get_tools(),
             *SlackToolkit().get_tools(),
-            *HumanToolkit().get_tools(),
+            HumanToolkit().ask_human_via_console,
         ],
     )
 
@@ -346,16 +346,16 @@ async def main():
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_4_1,
             # model_config_dict={
-            #     "max_tokens": 64000,
-            # }
+            #     "max_tokens": 32768,
+            # },
         )
 
         model_backend_reason = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_4_1,
             # model_config_dict={
-            #     "max_tokens": 64000,
-            # }
+            #    "max_tokens": 32768,
+            # },
         )
 
         task_id = 'workforce_task'
