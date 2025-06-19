@@ -55,11 +55,8 @@ RUN curl -fsSL https://install.python-poetry.org | python3.10 - && \
 # Upgrade pip and install base Python packages
 RUN python3.10 -m pip install --upgrade pip setuptools wheel
 
-# Install uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    mv /root/.local/bin/uv /usr/local/bin/uv && \
-    mv /root/.local/bin/uvx /usr/local/bin/uvx && \
-    chmod +x /usr/local/bin/uv /usr/local/bin/uvx
+# Install uv using pip instead of the shell script
+RUN pip install uv
 
 # Setup working directory
 WORKDIR /workspace

@@ -123,18 +123,25 @@ async def test_listen_to_channel_recovers_from_timeout():
             # Post initial ready tasks
             await workforce._post_ready_tasks()
 
-            # First try to get returned task - should timeout
-            try:
-                returned_task = await workforce._get_returned_task()
-                raise asyncio.TimeoutError("Simulated timeout")
-            except asyncio.TimeoutError:
-                # This is expected
-                pass
+            # try to get returned task - should raise TimeoutError
+            with pytest.raises(
+                asyncio.TimeoutError, match="Simulated timeout"
+            ):
+                await workforce._get_returned_task()
+
+            # Ensure the mock was called for the first attempt
+            assert mock_channel.get_returned_task_by_publisher.call_count == 1
 
             # Second try should succeed
-            returned_task = await workforce._get_returned_task()
+            returned_task_after_timeout = await workforce._get_returned_task()
+            assert returned_task_after_timeout is mock_task
+
+            # Ensure the mock was called for the second attempt
+            assert mock_channel.get_returned_task_by_publisher.call_count == 2
+
             # Process the task
-            await workforce._handle_completed_task(returned_task)
+            await workforce._handle_completed_task(returned_task_after_timeout)
+            workforce._handle_completed_task.assert_called_once_with(mock_task)
 
         finally:
             workforce._running = False
