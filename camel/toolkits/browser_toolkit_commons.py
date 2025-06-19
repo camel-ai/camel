@@ -269,12 +269,6 @@ def _get_bool(d: Any, k: str) -> bool:
     )
 
 
-def _normalize_identifier(identifier: Union[str, int]) -> str:
-    r"""Convert integer identifiers to strings, leave strings unchanged."""
-    if isinstance(identifier, int):
-        return str(identifier)
-    return identifier
-
 
 def _parse_json_output(
     text: str, logger: Any
