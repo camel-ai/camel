@@ -269,7 +269,6 @@ def _get_bool(d: Any, k: str) -> bool:
     )
 
 
-
 def _parse_json_output(
     text: str, logger: Any
 ) -> Dict[str, Any]:  # Added logger argument
