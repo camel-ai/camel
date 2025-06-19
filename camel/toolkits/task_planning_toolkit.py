@@ -32,7 +32,7 @@ class TaskPlanningToolkit(BaseToolkit):
 
         Args:
             timeout (Optional[float]): The timeout for the toolkit.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
 
@@ -53,7 +53,7 @@ class TaskPlanningToolkit(BaseToolkit):
                 string is the content for a new sub-task.
             original_task_id (Optional[str]): The id of the task to be
                 decomposed. If not provided, a new id will be generated.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
 
         Returns:
             List[Task]: A list of newly created sub-task objects.
@@ -99,7 +99,7 @@ class TaskPlanningToolkit(BaseToolkit):
             sub_task_contents (List[str]): A list of strings, where each
                 string is the content for a new sub-task.
             original_task_id (Optional[str]): The id of the task to be
-                decomposed. (default: :obj: `None`)
+                decomposed. (default: :obj:`None`)
 
         Returns:
             List[Task]: Reordered or modified tasks.

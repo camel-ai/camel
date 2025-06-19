@@ -25,10 +25,12 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
+import uuid
+
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -142,27 +144,29 @@ class Task(BaseModel):
         content (str): string content for task.
         id (str): An unique string identifier for the task. This should
             ideally be provided by the provider/model which created the task.
-            (default: :obj: `""`)
+            (default: :obj:`uuid.uuid4()`)
         state (TaskState): The state which should be OPEN, RUNNING, DONE or
-            DELETED. (default: :obj: `TaskState.OPEN`)
-        type (Optional[str]): task type. (default: :obj: `None`)
+            DELETED. (default: :obj:`TaskState.FAILED`)
+        type (Optional[str]): task type. (default: :obj:`None`)
         parent (Optional[Task]): The parent task, None for root task.
-            (default: :obj: `None`)
+            (default: :obj:`None`)
         subtasks (List[Task]): The childrent sub-tasks for the task.
-            (default: :obj: `[]`)
+            (default: :obj:`[]`)
         result (Optional[str]): The answer for the task.
-            (default: :obj: `""`)
+            (default: :obj:`""`)
         failure_count (int): The failure count for the task.
-            (default: :obj: `0`)
+            (default: :obj:`0`)
         additional_info (Optional[Dict[str, Any]]): Additional information for
-            the task. (default: :obj: `None`)
+            the task. (default: :obj:`None`)
     """
 
     content: str
 
-    id: str = ""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
 
-    state: TaskState = TaskState.OPEN
+    state: TaskState = (
+        TaskState.FAILED
+    )  # TODO: Add logic for OPEN in workforce.py
 
     type: Optional[str] = None
 
@@ -204,7 +208,9 @@ class Task(BaseModel):
 
     def reset(self):
         r"""Reset Task to initial state."""
-        self.state = TaskState.OPEN
+        self.state = (
+            TaskState.FAILED
+        )  # TODO: Add logic for OPEN in workforce.py
         self.result = ""
 
     def update_result(self, result: str):

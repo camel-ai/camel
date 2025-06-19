@@ -76,6 +76,7 @@ class SingleAgentWorker(Worker):
         """
         # Clone the agent for this specific task to avoid state conflicts
         # when processing multiple tasks concurrently
+        # TODO: check before clone, use auto scalling method
         worker_agent = self.worker.clone(with_memory=False)
 
         dependency_tasks_info = self._get_dep_tasks_info(dependencies)

@@ -15,7 +15,6 @@
 import asyncio
 
 from camel.agents.chat_agent import ChatAgent
-from camel.loaders import Firecrawl
 from camel.messages.base import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
@@ -96,7 +95,7 @@ async def search_agent_factory(
         # *browser_toolkits.get_tools(),
         *terminal_toolkits.get_tools(),
         *human_toolkits.get_tools(),
-        Firecrawl().scrape,
+        # Firecrawl().scrape,
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
@@ -345,7 +344,7 @@ async def main():
         # Create a single model backend for all agents
         model_backend = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4_1_MINI,
+            model_type=ModelType.GPT_4_1,
             # model_config_dict={
             #     "max_tokens": 64000,
             # }
@@ -353,7 +352,7 @@ async def main():
 
         model_backend_reason = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.O3_MINI,
+            model_type=ModelType.GPT_4_1,
             # model_config_dict={
             #     "max_tokens": 64000,
             # }
@@ -386,14 +385,23 @@ async def main():
         )
 
         workforce.add_single_agent_worker(
-            "Search & Information Retrieval Agent", worker=search_agent
+            "Search Agent: Can search the web, extract webpage content, "
+            "simulate browser actions, and provide relevant information to "
+            "solve the given task.",
+            worker=search_agent,
         ).add_single_agent_worker(
-            "Software Development & Code Generation Agent",
+            "Developer Agent: A skilled coding assistant that can write and "
+            "execute code, run terminal commands, and verify solutions to "
+            "complete tasks.",
             worker=developer_agent,
         ).add_single_agent_worker(
-            "Document Creation & Management Agent", worker=document_agent
+            "Document Agent: A document processing assistant for creating, "
+            "modifying, and managing various document formats, including "
+            "presentations.",
+            worker=document_agent,
         ).add_single_agent_worker(
-            "Multi-Modal Content Analysis & Generation Agent",
+            "Multi-Modal Agent: A multi-modal processing assistant for "
+            "analyzing, and generating media content like audio and images.",
             worker=multi_modal_agent,
         )
 

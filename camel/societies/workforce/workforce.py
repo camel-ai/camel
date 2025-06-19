@@ -674,8 +674,8 @@ class Workforce(BaseNode):
             # Reset state for tasks being moved back to pending
             for task in tasks_to_move_back:
                 # Handle all possible task states
-                if task.state in [TaskState.DONE, TaskState.FAILED]:
-                    task.state = TaskState.OPEN
+                if task.state in [TaskState.DONE, TaskState.OPEN]:
+                    task.state = TaskState.FAILED  # TODO: Add logic for OPEN
                     # Clear result to avoid confusion
                     task.result = None
                     # Reset failure count to give task a fresh start
@@ -881,7 +881,7 @@ class Workforce(BaseNode):
         self.reset()
         self._task = task
         self._state = WorkforceState.RUNNING
-        task.state = TaskState.OPEN
+        task.state = TaskState.FAILED  # TODO: Add logic for OPEN
         self._pending_tasks.append(task)
 
         # Decompose the task into subtasks first
@@ -1384,10 +1384,10 @@ class Workforce(BaseNode):
                 metadata={'failure_count': task.failure_count},
             )
 
-        if task.failure_count >= 3:
+        if task.failure_count > 3:
             return True
 
-        if task.get_depth() >= 3:
+        if task.get_depth() > 3:
             # Create a new worker node and reassign
             assignee = self._create_worker_node_for_task(task)
 
@@ -1685,7 +1685,7 @@ class Workforce(BaseNode):
                     await self._graceful_shutdown(returned_task)
                     break
                 elif returned_task.state == TaskState.OPEN:
-                    # TODO: multi-layer workforce
+                    # TODO: Add logic for OPEN
                     pass
                 else:
                     raise ValueError(
@@ -1808,7 +1808,6 @@ class Workforce(BaseNode):
                     child.user_agent_kwargs,
                     child.summarize_agent_kwargs,
                     child.chat_turn_limit,
-                    child.max_concurrent_tasks,
                 )
             elif isinstance(child, Workforce):
                 new_instance.add_workforce(child.clone(with_memory))
