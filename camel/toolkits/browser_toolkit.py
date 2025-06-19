@@ -63,7 +63,6 @@ from .browser_toolkit_commons import (
     InteractiveRegion,
     VisualViewport,
     _add_set_of_mark,
-    _normalize_identifier,
     _parse_json_output,
     _reload_image,
     interactive_region_from_dict,
@@ -505,7 +504,8 @@ class BaseBrowser:
     def click_id(self, identifier: Union[str, int]) -> None:
         r"""Click an element with the given identifier."""
         assert self.page is not None
-        identifier = _normalize_identifier(identifier)
+        if isinstance(identifier, int):
+            identifier = str(identifier)
         target = self.page.locator(f"[__elementId='{identifier}']")
 
         try:
@@ -560,7 +560,8 @@ class BaseBrowser:
             str: The result of the action.
         """
         assert self.page is not None
-        identifier = _normalize_identifier(identifier)
+        if isinstance(identifier, int):
+            identifier = str(identifier)
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
         except Exception as e:  # Consider using playwright specific
@@ -603,7 +604,8 @@ class BaseBrowser:
             str: The result of the action.
         """
         assert self.page is not None
-        identifier = _normalize_identifier(identifier)
+        if isinstance(identifier, int):
+            identifier = str(identifier)
 
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
@@ -653,7 +655,8 @@ class BaseBrowser:
             str: The result of the action.
         """
         assert self.page is not None
-        identifier = _normalize_identifier(identifier)
+        if isinstance(identifier, int):
+            identifier = str(identifier)
         try:
             target = self.page.locator(f"[__elementId='{identifier}']")
         except Exception as e:  # Consider using playwright specific
@@ -848,7 +851,7 @@ class BrowserToolkit(BaseToolkit):
                 for persistent context. If None, a fresh browser instance
                 is used without saving data. (default: :obj:`None`)
         """
-        super().__init__()
+        super().__init__()  # Call to super().__init__() added
         self.browser = BaseBrowser(
             headless=headless,
             cache_dir=cache_dir,
@@ -856,20 +859,21 @@ class BrowserToolkit(BaseToolkit):
             cookie_json_path=cookie_json_path,
             user_data_dir=user_data_dir,
         )
-        self.browser.web_agent_model = web_agent_model
+        self.browser.web_agent_model = web_agent_model  # Pass model to
+        # BaseBrowser instance
 
         self.history_window = history_window
         self.web_agent_model = web_agent_model
         self.planning_agent_model = planning_agent_model
         self.output_language = output_language
-        self.browser_initialized = False
 
         self.history: List[Dict[str, Any]] = []  # Typed history list
-        self.web_agent: ChatAgent
-        self.planning_agent: ChatAgent
         self.web_agent, self.planning_agent = self._initialize_agent(
             web_agent_model, planning_agent_model
         )
+
+        # Track whether the underlying browser has been initialized.
+        self._initialized: bool = False
 
     def _reset(self):
         self.web_agent.reset()
@@ -1227,7 +1231,7 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                 The task is not completed within the round limit. Please 
                 check the last round {self.history_window} information to 
                 see if there is any useful information:
-                <history>{self.history[-self.history_window:]}</history>
+                <history>{self.history[-self.history_window :]}</history>
             """
 
         else:
@@ -1237,48 +1241,48 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         # reached
         return simulation_result
 
-    def get_tools(self) -> List[FunctionTool]:
-        return [
-            FunctionTool(self.browse_url),
-            FunctionTool(self.setup_browser),
-            FunctionTool(self.shutdown_browser),
-            FunctionTool(self.visit_page),
-            FunctionTool(self.get_current_url),
-            FunctionTool(self.scroll_page),
-            FunctionTool(self.click_element),
-            FunctionTool(self.fill_input_element),
-            FunctionTool(self.hover_element),
-            FunctionTool(self.find_text_on_page),
-            FunctionTool(self.navigate_back),
-            FunctionTool(self.get_page_content),
-            FunctionTool(self.download_file_by_element_id),
-            FunctionTool(self.capture_screenshot),
-            FunctionTool(self.ask_question_about_video),
-        ]
+    def _ensure_initialized(self) -> None:
+        """Ensure that the underlying ``BaseBrowser`` is initialized.
 
-    def _ensure_browser_initialized(self):
-        if not self.browser_initialized:
+        The browser is only launched once per ``BrowserToolkit`` instance to
+        avoid spawning multiple playwright processes. Any primitive action
+        (e.g., ``scroll_down``) should call this helper beforehand.
+        """
+        if not self._initialized:
+            # Lazily initialize the browser the first time it is required.
             self.browser.init()
-            self.browser_initialized = True
+            self._initialized = True
 
-    def setup_browser(self) -> str:
-        r"""Initializes the browser session."""
-        if not self.browser_initialized:
-            self.browser.init()
-            self.browser_initialized = True
-            return "Browser session initialized."
-        return "Browser session already initialized."
+    def open_browser(self, start_url: Optional[str] = None) -> str:
+        r"""Launch a browser session.
 
-    def shutdown_browser(self) -> str:
-        r"""Closes the browser session."""
-        if self.browser_initialized:
+        Args:
+            start_url (Optional[str]): If provided, the browser will
+                immediately navigate to this URL after launch.
+
+        Returns:
+            str: Confirmation message indicating that the browser session
+                has started.
+        """
+        self._ensure_initialized()
+        if start_url:
+            self.browser.visit_page(start_url)
+        return "Browser session started."
+
+    def close_browser(self) -> str:
+        r"""Close the currently running browser session.
+
+        Returns:
+            str: Confirmation message about the close operation.
+        """
+        if self._initialized:
             self.browser.close()
-            self.browser_initialized = False
+            self._initialized = False
             return "Browser session closed."
-        return "Browser session was not initialized or already closed."
+        return "Browser was not running."
 
-    def visit_page(self, url: str) -> str:
-        r"""Navigates the browser to the specified URL.
+    def visit_page_tool(self, url: str) -> str:
+        r"""Navigate the browser to the specified URL.
 
         Args:
             url (str): The URL to visit.
@@ -1286,180 +1290,79 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         Returns:
             str: Confirmation message.
         """
-        self._ensure_browser_initialized()
+        self._ensure_initialized()
         self.browser.visit_page(url)
-        return f"Navigated to URL: {url}"
+        return f"Visited page: {url}"
 
-    def get_current_url(self) -> str:
-        r"""Returns the current URL of the browser.
-
-        Returns:
-            str: The current URL.
-        """
-        self._ensure_browser_initialized()
-        return self.browser.get_url()
-
-    def scroll_page(
-        self, direction: Literal["up", "down", "top", "bottom"]
-    ) -> str:
-        r"""Scrolls the current page.
+    def scroll_down(self, times: int = 1) -> str:
+        r"""Scroll down the current page.
 
         Args:
-            direction (Literal["up", "down", "top", "bottom"]): The
-                direction to scroll.
+            times (int): Number of PageDown key presses to issue.
+                (default: :obj:`1`).
 
         Returns:
             str: Confirmation message.
         """
-        self._ensure_browser_initialized()
-        if direction == "up":
-            self.browser.scroll_up()
-            return "Scrolled up."
-        elif direction == "down":
+        self._ensure_initialized()
+        for _ in range(max(1, times)):
             self.browser.scroll_down()
-            return "Scrolled down."
-        elif direction == "top":
-            return self.browser.scroll_to_top()
-        elif direction == "bottom":
-            return self.browser.scroll_to_bottom()
-        return "Invalid scroll direction."
+        return f"Scrolled down {times} time(s)."
 
-    def click_element(self, element_id: Union[str, int]) -> str:
-        r"""Clicks an element with the given ID.
+    def scroll_up(self, times: int = 1) -> str:
+        r"""Scroll up the current page.
 
         Args:
-            element_id (Union[str, int]): The ID of the element to click.
-
-        Returns:
-            str: Confirmation message or error.
-        """
-        self._ensure_browser_initialized()
-        try:
-            self.browser.click_id(element_id)
-            return f"Clicked element with ID: {element_id}"
-        except ValueError as e:
-            return str(e)
-        except Exception as e:
-            return f"Error clicking element {element_id}: {e}"
-
-    def fill_input_element(
-        self, element_id: Union[str, int], text: str
-    ) -> str:
-        r"""Fills an input field with the given text and presses Enter.
-
-        Args:
-            element_id (Union[str, int]): The ID of the input field.
-            text (str): The text to fill.
-
-        Returns:
-            str: Confirmation message or error.
-        """
-        self._ensure_browser_initialized()
-        return self.browser.fill_input_id(element_id, text)
-
-    def hover_element(self, element_id: Union[str, int]) -> str:
-        r"""Hovers over an element with the given ID.
-
-        Args:
-            element_id (Union[str, int]): The ID of the element to hover over.
-
-        Returns:
-            str: Confirmation message or error.
-        """
-        self._ensure_browser_initialized()
-        return self.browser.hover_id(element_id)
-
-    def find_text_on_page(self, search_text: str) -> str:
-        r"""Finds text on the current page and scrolls to it.
-
-        Args:
-            search_text (str): The text to find.
-
-        Returns:
-            str: Confirmation message or error.
-        """
-        self._ensure_browser_initialized()
-        return self.browser.find_text_on_page(search_text)
-
-    def navigate_back(self) -> str:
-        r"""Navigates back to the previous page in the browser history.
+            times (int): Number of PageUp key presses to issue.
+                (default: :obj:`1`).
 
         Returns:
             str: Confirmation message.
         """
-        self._ensure_browser_initialized()
-        self.browser.back()
-        return "Navigated back to the previous page."
+        self._ensure_initialized()
+        for _ in range(max(1, times)):
+            self.browser.scroll_up()
+        return f"Scrolled up {times} time(s)."
 
-    def get_page_content(
-        self, format: Literal["markdown", "html"] = "markdown"
-    ) -> str:
-        r"""Extracts the content of the current page.
-
-        Args:
-            format (Literal["markdown", "html"]): The desired format of the
-                content. Defaults to "markdown".
+    def get_page_markdown(self) -> str:
+        r"""Return the current page content converted to Markdown.
 
         Returns:
-            str: The page content in the specified format.
+            str: The markdown representation of the current page.
         """
-        self._ensure_browser_initialized()
-        if format == "markdown":
-            return self.browser.get_webpage_content()
-        elif format == "html":
-            return self.browser.extract_url_content()
-        return "Invalid format specified. Choose 'markdown' or 'html'."
+        self._ensure_initialized()
+        return self.browser.get_webpage_content()
 
-    def download_file_by_element_id(self, element_id: Union[str, int]) -> str:
-        r"""Downloads a file associated with a given element ID.
+    def click_element(self, identifier: Union[str, int]) -> str:
+        r"""Click the element specified by the identifier.
 
         Args:
-            element_id (Union[str, int]): The ID of the element that
-                triggers the download.
+            identifier (Union[str, int]): The ``__elementId`` assigned by
+                the page instrumentation.
 
         Returns:
-            str: Path to the downloaded file or an error message.
+            str: Confirmation message or error message.
         """
-        self._ensure_browser_initialized()
-        return self.browser.download_file_id(element_id)
-
-    def capture_screenshot(
-        self, mark_interactive_elements: bool = False
-    ) -> str:
-        r"""Captures a screenshot of the current page.
-
-        Args:
-            mark_interactive_elements (bool): Whether to mark interactive
-                elements on the screenshot. Defaults to False.
-
-        Returns:
-            str: Path to the saved screenshot or an error message.
-        """
-        self._ensure_browser_initialized()
+        self._ensure_initialized()
         try:
-            if mark_interactive_elements:
-                _, file_path = self.browser.get_som_screenshot(save_image=True)
-            else:
-                _, file_path = self.browser.get_screenshot(save_image=True)
-
-            if file_path:
-                return f"Screenshot saved to: {file_path}"
-            return "Failed to save screenshot."
+            self.browser.click_id(identifier)
+            return f"Clicked element with identifier '{identifier}'."
         except Exception as e:
-            return f"Error capturing screenshot: {e}"
+            return f"Failed to click element '{identifier}': {e}"
 
-    def ask_question_about_video(self, question: str) -> str:
-        r"""Asks a question about a video on the current page.
-        Note: This is an interactive function that may require user input.
+    def get_tools(self) -> List[FunctionTool]:
+        # Primitive actions first
+        primitive_tools = [
+            FunctionTool(self.open_browser),
+            FunctionTool(self.close_browser),
+            FunctionTool(self.visit_page_tool),
+            FunctionTool(self.scroll_down),
+            FunctionTool(self.scroll_up),
+            FunctionTool(self.get_page_markdown),
+            FunctionTool(self.click_element),
+        ]
 
-        Args:
-            question (str): The question to ask about the video.
+        # Keep the original closed-loop browse tool for backward compatibility
+        compound_tools = [FunctionTool(self.browse_url)]
 
-        Returns:
-            str: The answer to the question or an error/cancellation message.
-        """
-        self._ensure_browser_initialized()
-        # This function might require user interaction via input()
-        # which could be problematic if run non-interactively.
-        # Consider how this should be handled in different execution contexts.
-        return self.browser.ask_question_about_video(question)
+        return primitive_tools + compound_tools
