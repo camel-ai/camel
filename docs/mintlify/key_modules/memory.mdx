@@ -1,273 +1,199 @@
 ---
 title: "Memory"
+icon: memory
 ---
 
 For more detailed usage information, please refer to our cookbook: [Memory Cookbook](../cookbooks/advanced_features/agents_with_memory.ipynb)
 
-## 1. Concept
-The Memory module in CAMEL provides a flexible and powerful system for storing, retrieving, and managing information for AI agents. It enables agents to maintain context across conversations and retrieve relevant information from past interactions, enhancing the coherence and relevance of AI responses.
-
-## 2. Get Started
-
-### 2.1 Basic Usage
-
-Here's a quick example of how to use the `LongtermAgentMemory`:
-
-```python
-from camel.memories import (
-    ChatHistoryBlock,
-    LongtermAgentMemory,
-    MemoryRecord,
-    ScoreBasedContextCreator,
-    VectorDBBlock,
-)
-from camel.messages import BaseMessage
-from camel.types import ModelType, OpenAIBackendRole
-from camel.utils import OpenAITokenCounter
-
-# Initialize the memory
-memory = LongtermAgentMemory(
-    context_creator=ScoreBasedContextCreator(
-        token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
-        token_limit=1024,
-    ),
-    chat_history_block=ChatHistoryBlock(),
-    vector_db_block=VectorDBBlock(),
-)
-
-# Create and write new records
-records = [
-    MemoryRecord(
-        message=BaseMessage.make_user_message(
-            role_name="User",
-            meta_dict=None,
-            content="What is CAMEL AI?",
-        ),
-        role_at_backend=OpenAIBackendRole.USER,
-    ),
-    MemoryRecord(
-        message=BaseMessage.make_assistant_message(
-            role_name="Agent",
-            meta_dict=None,
-            content="CAMEL-AI.org is the 1st LLM multi-agent framework and "
-                    "an open-source community dedicated to finding the scaling law "
-                    "of agents.",
-        ),
-        role_at_backend=OpenAIBackendRole.ASSISTANT,
-    ),
-]
-memory.write_records(records)
-
-# Get context for the agent
-context, token_count = memory.get_context()
-
-print(context)
-print(f"Retrieved context (token count: {token_count}):")
-for message in context:
-    print(f"{message}")
-```
-
-```markdown
->>> Retrieved context (token count: 49):
-{'role': 'user', 'content': 'What is AI?'}
-{'role': 'assistant', 'content': 'AI refers to systems that mimic human intelligence.'}
-```
-
-Adding `LongtermAgentMemory` to your `ChatAgent`:
-
-```python
-from camel.agents import ChatAgent
-
-# Define system message for the agent
-sys_msg = BaseMessage.make_assistant_message(
-    role_name='Agent',
-    content='You are a curious agent wondering about the universe.',
-)
-
-# Initialize agent
-agent = ChatAgent(system_message=sys_msg)
-
-# Set memory to the agent
-agent.memory = memory
-
-
-# Define a user message
-usr_msg = BaseMessage.make_user_message(
-    role_name='User',
-    content="Tell me which is the 1st LLM multi-agent framework based on what we have discussed",
-)
-
-# Sending the message to the agent
-response = agent.step(usr_msg)
-
-# Check the response (just for illustrative purpose)
-print(response.msgs[0].content)
-```
-
-```markdown
->>> CAMEL AI is recognized as the first LLM (Large Language Model) multi-agent framework. It is an open-source community initiative focused on exploring the scaling laws of agents, enabling the development and interaction of multiple AI agents in a collaborative environment. This framework allows researchers and developers to experiment with various configurations and interactions among agents, facilitating advancements in AI capabilities and understanding.
-
-```
-
-## 3. Core Components
-
-### 3.1 MemoryRecord
-
-The basic data unit in the `CAMEL` memory system.
-
-Attributes:
-
-- `message`: The main content of the record (`BaseMessage`)
-- `role_at_backend`: The role this message played at the OpenAI backend (`OpenAIBackendRole`)
-- `uuid`: A unique identifier for the record
-- `extra_info`: Additional key-value pairs for extra information
-
-Methods:
-
-- `from_dict()`: Static method to construct a `MemoryRecord` from a dictionary
-- `to_dict()`: Convert the `MemoryRecord` to a dictionary for serialization
-- `to_openai_message()`: Convert the record to an `OpenAIMessage` object
-
-### 3.2 ContextRecord
-
-The result of memory retrieval from `AgentMemory`, which is used by `ContextCreator` to select records for creating the context for the agent.
-
-Attributes:
-
-- `memory_record`: A `MemoryRecord`
-- `score`: A float value representing the relevance or importance of the record
-
-### 3.3 MemoryBlock (Abstract Base Class)
-
-Serves as the fundamental component within the agent memory system. `MemoryBlock` class follows the "Composite Design pattern" so that you can compose objects into tree structures and then work with these structures as if they were individual objects.
-
-- `write_records()`: Write multiple records to memory
-- `write_record()`: Write a single record to memory
-- `clear()`: Remove all records from memory
-
-### 3.4 BaseContextCreator (Abstract Base Class)
-
-Defines the context creation strategies when retrieval messages exceed the model's context length.
-
-- `token_counter`: For counting tokens in a message
-- `token_limit`: The maximum number of tokens allowed in the generated context
-- `create_context()`: Create conversational context from chat history
-
-### 3.5 AgentMemory (Abstract Base Class)
-
-A specialized form of MemoryBlock designed for direct integration with an agent.
-
-- `retrieve()`: Get a list of `ContextRecords` from memory
-- `get_context_creator()`: Get a context creator
-- `get_context()`: Get chat context with a proper size for the agent
-
-## 4. Memory Block Implementations
-
-### 4.1 ChatHistoryBlock
-
-Stores all the chat histories and retrieves with optional window size.
-
-Initialization:
-
-- `storage`: Optional `BaseKeyValueStorage` (default: `InMemoryKeyValueStorage`)
-- `keep_rate`: Float value for scoring historical messages (default: `0.9`)
-
-Methods:
-
-- `retrieve()`: Get recent chat history with optional window size
-- `write_records()`: Write new records to chat history
-- `clear()`: Remove all chat messages
-
-Use Case: Ideal for maintaining recent conversation context and flow.
-
-### 4.2 VectorDBBlock
-
-Uses vector embeddings for maintaining and retrieving information.
-
-Initialization:
-
-- `storage`: Optional BaseVectorStorage (default: `QdrantStorage`)
-- `embedding`: Optional BaseEmbedding (default: `OpenAIEmbedding`)
-
-Methods:
-
-- `retrieve()`: Get similar records based on a keyword
-- `write_records()`: Convert and write new records to the vector database
-- `clear()`: Remove all records from the vector database
-
-Use Case: Better for retrieving semantically relevant information across a large set of messages.
-
-Key Differences:
-
-1. Storage Mechanism: `ChatHistoryBlock` uses key-value storage, `VectorDBBlock` uses vector database storage.
-2. Retrieval Method: `ChatHistoryBlock` retrieves based on recency, `VectorDBBlock` retrieves based on semantic similarity.
-3. Data Representation: `ChatHistoryBlock` stores messages in original form, `VectorDBBlock` converts to vector embeddings.
-
-## 5. Agent Memory Implementations
-
-### 5.1 ChatHistoryMemory
-
-An AgentMemory implementation that wraps ChatHistoryBlock.
-
-Initialization:
-
-- `context_creator`: `BaseContextCreator`
-- `storage`: Optional `BaseKeyValueStorage`
-- `window_size`: Optional int for retrieval window
-
-Methods:
-
-- `retrieve()`: Get recent chat messages
-- `write_records()`: Write new records to chat history
-- `get_context_creator()`: Get the context creator
-- `clear()`: Remove all chat messages
-
-### 5.2 VectorDBMemory
-
-An `AgentMemory` implementation that wraps `VectorDBBlock`.
-
-Initialization:
-
-- `context_creator`: `BaseContextCreator`
-- `storage`: Optional `BaseVectorStorage`
-- `retrieve_limit`: int for maximum number of retrieved messages (default:`3`)
-
-Methods:
-
-- `retrieve()`: Get relevant messages from the vector database
-- `write_records()`: Write new records and update current topic
-- `get_context_creator()`: Get the context creator
-
-### 5.3 LongtermAgentMemory
-
-Combines ChatHistoryMemory and VectorDBMemory for comprehensive memory management.
-
-Initialization:
-
-- `context_creator`: `BaseContextCreator`
-- `chat_history_block`: Optional `ChatHistoryBlock`
-- `vector_db_block`: Optional `VectorDBBlock`
-- `retrieve_limit`: int for maximum number of retrieved messages (default: `3`)
-
-Methods:
-
-- `retrieve()`: Get context from both chat history and vector database
-- `write_records()`: Write new records to both chat history and vector database
-- `get_context_creator()`: Get the context creator
-- `clear()`: Remove all records from both memory blocks
-
-### 5.4 Mem0Storage Integration
-
-[Mem0](https://mem0.ai/) offers cloud-based memory management capabilities that can be seamlessly integrated with CAMEL.
-
-Initialization params of `Mem0Storage`:
-
-- `api_key`: Optional str for Mem0 API authentication
-- `agent_id`: Optional str to associate memories with an agent
-- `user_id`: Optional str to associate memories with a user
-- `metadata`: Optional dictionary of metadata to include with all memories
-
-The simplest way to use Mem0 is through its `Mem0Storage` backend with `ChatHistoryMemory`:
+<Card title="What is Memory?" icon="database">
+  CAMEL's memory system helps agents recall relevant past information, making conversations context-aware and responses more coherent.
+</Card>
+
+## Getting Started
+
+<Steps>
+  <Step title="Basic Setup">
+  
+  Here's a simple example of how to use `LongtermAgentMemory`:
+
+  ```python
+  from camel.memories import (
+      ChatHistoryBlock,
+      LongtermAgentMemory,
+      MemoryRecord,
+      ScoreBasedContextCreator,
+      VectorDBBlock,
+  )
+  from camel.messages import BaseMessage
+  from camel.types import ModelType, OpenAIBackendRole
+  from camel.utils import OpenAITokenCounter
+
+  memory = LongtermAgentMemory(
+      context_creator=ScoreBasedContextCreator(
+          token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+          token_limit=1024,
+      ),
+      chat_history_block=ChatHistoryBlock(),
+      vector_db_block=VectorDBBlock(),
+  )
+
+  records = [
+      MemoryRecord(
+          message=BaseMessage.make_user_message(
+              role_name="User",
+              meta_dict=None,
+              content="What is CAMEL AI?",
+          ),
+          role_at_backend=OpenAIBackendRole.USER,
+      ),
+      MemoryRecord(
+          message=BaseMessage.make_assistant_message(
+              role_name="Agent",
+              meta_dict=None,
+              content="CAMEL-AI.org is the 1st LLM multi-agent framework and "
+                      "an open-source community dedicated to finding the scaling law "
+                      "of agents.",
+          ),
+          role_at_backend=OpenAIBackendRole.ASSISTANT,
+      ),
+  ]
+  memory.write_records(records)
+
+  context, token_count = memory.get_context()
+  print(f"Retrieved context (token count: {token_count}):")
+  for msg in context:
+      print(msg)
+  ```
+
+  </Step>
+
+  <Step title="Attach Memory to Agent">
+  
+  Link your memory module to a `ChatAgent`:
+
+  ```python
+  from camel.agents import ChatAgent
+
+  sys_msg = BaseMessage.make_assistant_message(
+      role_name='Agent',
+      content='You are a curious agent wondering about the universe.',
+  )
+
+  agent = ChatAgent(system_message=sys_msg)
+  agent.memory = memory
+
+  usr_msg = BaseMessage.make_user_message(
+      role_name='User',
+      content="Tell me which is the 1st LLM multi-agent framework based on what we discussed?",
+  )
+
+  response = agent.step(usr_msg)
+  print(response.msgs[0].content)
+  ```
+
+  </Step>
+</Steps>
+
+## Core Components
+
+<Card title="MemoryRecord" icon="bookmark">
+  <b>MemoryRecord</b> is the fundamental unit of memory in CAMEL, capturing a single message and its metadata.
+
+  **Attributes:**
+  - <code>message</code>: Content of the message (type: <code>BaseMessage</code>)
+  - <code>role_at_backend</code>: Role played at backend (type: <code>OpenAIBackendRole</code>)
+  - <code>uuid</code>: Unique identifier for the memory
+  - <code>extra_info</code>: Optional metadata
+
+  **Methods:**
+  - <code>from_dict()</code>: Build from dictionary
+  - <code>to_dict()</code>: Convert to dictionary
+  - <code>to_openai_message()</code>: Convert to OpenAI-compatible message format
+</Card>
+
+<Card title="ContextRecord" icon="folder">
+  <b>ContextRecord</b> is the result of a memory retrieval operation, typically used by context creators to build prompts.
+
+  **Attributes:**
+  - <code>memory_record</code>: A wrapped <code>MemoryRecord</code>
+  - <code>score</code>: Float score measuring relevance
+</Card>
+
+<Card title="MemoryBlock (Abstract Base Class)" icon="box">
+  <b>MemoryBlock</b> is an abstract interface for all memory storage modules. It follows the Composite Design Pattern for flexibility.
+
+  **Key Methods:**
+  - <code>write_records()</code>: Add multiple records
+  - <code>write_record()</code>: Add a single record
+  - <code>clear()</code>: Wipe all stored memory
+</Card>
+
+<Card title="BaseContextCreator (Abstract Base Class)" icon="filter">
+  <b>BaseContextCreator</b> defines strategies for constructing context windows when memory exceeds the model's token limit.
+
+  **Attributes:**
+  - <code>token_counter</code>: Logic to count message tokens
+  - <code>token_limit</code>: Cap on context size
+
+  **Method:**
+  - <code>create_context(records)</code>: Generates the appropriate context block from retrieved records
+</Card>
+
+<Card title="AgentMemory (Abstract Base Class)" icon="head-side-brain">
+  <b>AgentMemory</b> is an abstract memory class built to plug directly into an agent. It wraps around one or more <code>MemoryBlock</code>s and exposes context retrieval.
+
+  **Core Methods:**
+  - <code>retrieve()</code>: Pulls context records from memory
+  - <code>get_context()</code>: Produces a usable conversation context within token limits
+  - <code>get_context_creator()</code>: Returns the associated context creator
+</Card>
+
+## Agent Memory Implementations
+
+<Card title="ChatHistoryMemory" icon="cloud">
+  Designed for linear conversations, this memory wraps around <code>ChatHistoryBlock</code> and stores messages sequentially.
+
+  Ideal when you want the agent to remember the last few exchanges with precise control over how much history to keep.
+
+  <b>Configuration:</b>
+  - <code>context_creator</code>: Chooses what to include in the final context
+  - <code>window_size</code>: Optional number of recent messages to retrieve
+  - <code>storage</code>: Optional key-value store (e.g. in-memory or persistent)
+</Card>
+
+<Card title="VectorDBMemory" icon="database">
+  For deeper, more semantic memory retrieval, this one wraps <code>VectorDBBlock</code>. It transforms every memory into an embedding and retrieves via similarity search.
+
+  Use this when your agent needs to remember what was said, not just when it was said.
+
+  <b>Highlights:</b>
+  - Retrieves contextually relevant messages from large corpora
+  - Useful in exploratory or knowledge-intensive dialogues
+  - Can combine with various vector stores and embedding models
+</Card>
+
+<Card title="LongtermAgentMemory" icon="memo-circle-check">
+  This memory blends both recent context and semantic relevance. It pulls from both <code>ChatHistoryMemory</code> and <code>VectorDBMemory</code>, creating a more holistic view of past interactions.
+
+  The agent gets a balanced perspective: recent events + important older info.
+
+  <b>Why use it:</b>
+  - Great for longer sessions with topic shifts
+  - Fallbacks to vector memory when history limit is hit
+  - Modular and flexible for custom strategies
+</Card>
+
+<Card title="Mem0 Cloud Memory" icon="cloud-arrow-up">
+  Integrates <a href="https://mem0.ai/" target="_blank">Mem0</a>, a cloud-based storage layer for chat memory. Plug it directly into <code>ChatHistoryMemory</code> for persistent memory across sessions and devices.
+
+  <b>Config options:</b>
+  - <code>api_key</code>: For authenticating your account
+  - <code>agent_id</code>: A unique ID to scope memory to an agent
+  - <code>user_id</code>: Optional field to group memories per user
+  - <code>metadata</code>: Key-value tags for tracking or filtering
+
+  <i>This option is best if you want persistence, searchability, and a scalable memory backend without managing infrastructure.</i>
+</Card>
 
 ```python
 from camel.memories import ChatHistoryMemory, ScoreBasedContextCreator
@@ -275,48 +201,26 @@ from camel.storages import Mem0Storage
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
-# Initialize ChatHistoryMemory with Mem0Storage
 memory = ChatHistoryMemory(
     context_creator=ScoreBasedContextCreator(
         token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
         token_limit=1024,
     ),
     storage=Mem0Storage(
-        api_key="your_mem0_api_key",  # Or set MEM0_API_KEY environment variable
-        agent_id="agent123"  # Unique identifier for this agent
+        api_key="your_mem0_api_key",
+        agent_id="agent123"
     ),
-    agent_id="agent123"  # Should match the storage agent_id
+    agent_id="agent123"
 )
+```
 
-# Create and write new records
-records = [
-    MemoryRecord(
-        message=BaseMessage.make_user_message(
-            role_name="User",
-            content="What is CAMEL AI?",
-        ),
-        role_at_backend=OpenAIBackendRole.USER,
-    ),
-    MemoryRecord(
-        message=BaseMessage.make_assistant_message(
-            role_name="Agent",
-            content="CAMEL-AI.org is the 1st LLM multi-agent framework and "
-                    "an open-source community dedicated to finding the scaling law "
-                    "of agents.",
-        ),
-        role_at_backend=OpenAIBackendRole.ASSISTANT,
-    ),
-]
+```python
+# Example usage
 memory.write_records(records)
-
-
-# Get context for the agent
 context, token_count = memory.get_context()
-
-print(context)
-print(f"Retrieved context (token count: {token_count}):")
+print(f"Token count: {token_count}")
 for message in context:
-    print(f"{message}")
+    print(message)
 ```
 
 ```markdown
@@ -325,57 +229,67 @@ for message in context:
 {'role': 'assistant', 'content': 'CAMEL-AI.org is the 1st LLM multi-agent framework and an open-source community dedicated to finding the scaling law of agents.'}
 ```
 
-This approach provides cloud persistence for chat history while maintaining the simple sequential retrieval of `ChatHistoryMemory`. The key features include:
+<Note>
+Mem0 is perfect for stateless deployments where you need memory continuity over time. It offers automatic sync and peace of mind—ideal for agents that evolve with user behavior.
+</Note>
 
-1. Cloud persistence of chat history
-2. Simple setup and configuration
-3. Sequential retrieval based on conversation order
-4. Automatic synchronization across sessions
+## Advanced Topics
 
-Choose this approach when you need reliable cloud storage for your chat history without complex semantic search requirements.
+<Card title="Custom Context Creators" icon="sparkles">
+  Sometimes, default context builders aren’t enough—especially when your use case involves non-linear histories, custom token strategies, or novel scoring logic.
 
-## 6. Advanced Topics
+  You can subclass <code>BaseContextCreator</code> to implement your own rules for building context windows. This gives you full control over what your agent sees, when, and how much.
 
-### 6.1 Customizing Context Creator
+  Here's a basic scaffold:
 
-You can create custom context creators by subclassing `BaseContextCreator`:
+  ```python
+  from camel.memories import BaseContextCreator
 
-```python
-from camel.memories import BaseContextCreator
+  class MyCustomContextCreator(BaseContextCreator):
+      @property
+      def token_counter(self):
+          # Define how to count tokens
+          return
 
-class MyCustomContextCreator(BaseContextCreator):
-    @property
-    def token_counter(self):
-        # Implement your token counting logic
-        return 
+      @property
+      def token_limit(self):
+          return 1000
 
-    @property
-    def token_limit(self):
-        return 1000  # Or any other limit
+      def create_context(self, records):
+          # Your logic to filter, score, or truncate records
+          pass
+  ```
+</Card>
 
-    def create_context(self, records):
-        # Implement your context creation logic
-        pass
+<Card title="Embedding + Vector Store Customization" icon="database">
+  <code>VectorDBBlock</code> gives you flexibility to swap embeddings and vector storage backends. Whether you're running OpenAI, HuggingFace, or custom embeddings—it all plugs in cleanly.
 
-```
+  Here's how you'd set it up with <code>OpenAIEmbedding</code> and <code>QdrantStorage</code>:
 
-### 6.2 Customizing Vector Database Block
+  ```python
+  from camel.embeddings import OpenAIEmbedding
+  from camel.memories import VectorDBBlock
+  from camel.storages import QdrantStorage
 
-For `VectorDBBlock`, you can customize it by adjusting the embedding models or vector storages:
+  vector_db = VectorDBBlock(
+      embedding=OpenAIEmbedding(),
+      storage=QdrantStorage(vector_dim=OpenAIEmbedding().get_output_dim()),
+  )
+  ```
 
-```python
-from camel.embeddings import OpenAIEmbedding
-from camel.memories import VectorDBBlock
-from camel.storages import QdrantStorage
+  You can easily swap in other vector DBs like Pinecone, Weaviate, or even a local FAISS backend.
+</Card>
 
-vector_db = VectorDBBlock(
-    embedding=OpenAIEmbedding(),
-    storage=QdrantStorage(vector_dim=OpenAIEmbedding().get_output_dim()),
-)
-```
+<Card title="Performance Tips" icon="gauge">
+  Speed and scale matter—especially when agents run long sessions or multiple conversations in parallel.
 
-### 6.3 Performance Considerations
+  Some tips to keep things fast and lean:
 
-- For large-scale applications, consider using persistent storage backends instead of in-memory storage.
-- Optimize your context creator to balance between context relevance and token limits.
-- When using `VectorDBMemory`, be mindful of the trade-off between retrieval accuracy and speed as the database grows.
+  - Prefer persistent storages (e.g. Qdrant, Redis) over in-memory for production setups
+  - Tune token limits based on expected prompt size and model context length
+  - Use hybrid memory like <code>LongtermAgentMemory</code> when recency + relevance both matter
+  - Regularly prune or embed older messages to avoid memory bloat
+  - For fast inference, consider compact embeddings and efficient vector search (e.g. SGLang over vLLM for speed)
+
+  Keep an eye on both retrieval latency and token overhead. A slow memory kills flow.
+</Card>
