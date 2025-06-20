@@ -403,13 +403,8 @@ async def main():
     human_task = Task(
         content=(
             """
-            I want to read papers about GUI Agent. Please help me find 
-            ten papers, check the detailed content of the papers and help 
-            me write a comparison report, then create a nice slides(pptx) 
-            to introduce the latest research progress of GUI Agent. The 
-            slides should be very comprehensive and 
-            professional.
-            """
+Analyze the UK healthcare industry to support the planning of my next company. Provide a comprehensive market overview, including current trends, growth projections, and relevant regulations. Identify the top 5-10 major competitors in the space, including their names, website URLs, estimated market size or share, core services or products, key strengths, and notable weaknesses. Also highlight any significant opportunities, gaps, or underserved segments within the market. Present all findings in a well-structured, professional PDF report.
+            """  # noqa: E501
         ),
         id='0',
     )
