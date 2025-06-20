@@ -42,6 +42,11 @@ def test_model_manager(
     calls_count: int,
     times_each_model_called: int,
 ):
+    """
+    Test ModelManager's scheduling strategies and call distribution across models.
+    
+    This parametrized test verifies that ModelManager correctly applies the specified scheduling strategy ("round_robin", "always_first", "random_model", or an invalid strategy) when running a given number of calls. It checks that the correct number of models are managed, the scheduling strategy is set as expected, and each model's run method is called the appropriate number of times according to the strategy.
+    """
     models = (
         [Mock(run=Mock()) for _ in range(models_number)]
         if models_number > 1

@@ -39,12 +39,9 @@ def test_task():
 
 def test_task_management():
     """
-    Task 0: a start task
-        Task 1: a sub task 1
-        Task 2: a sub task 2
-            Task 2.1: a sub task of task 2
-            Task 2.2: a sub task of task 2
-        Task 3: a sub task 3
+    Tests hierarchical task creation, subtask management, and topological sorting within the TaskManager.
+    
+    Builds a tree of tasks with nested subtasks, verifies the string representation of the hierarchy, checks the topological sort order of subtasks, and asserts correct task ordering after adding tasks to the manager.
     """
     root_task = Task(content="a start task", id="0")
     sub_task_1 = Task(content="a sub task 1", id="1")
@@ -89,6 +86,11 @@ def test_task_management():
 @pytest.fixture
 def temp_image():
     # Create temporary image file and return PIL Image object
+    """
+    Pytest fixture that creates and yields a temporary 10x10 blue PNG image as a PIL Image object.
+    
+    The temporary image file is deleted after the test using this fixture completes.
+    """
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
         img = Image.new("RGB", (10, 10), color="blue")
         img.save(f, format="PNG")
@@ -101,6 +103,11 @@ def temp_image():
 @pytest.fixture
 def temp_video_bytes():
     # Create temporary video file and read as bytes
+    """
+    Pytest fixture that creates a temporary MP4 file with fake video data and yields its bytes.
+    
+    The temporary file is deleted after the test completes.
+    """
     with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
         f.write(b"fake video data")
         f.flush()
@@ -112,12 +119,9 @@ def temp_video_bytes():
 
 def test_image_task_management(temp_image):
     """
-    Task 0: Analyze image
-        Task 1: Detect objects in image
-        Task 2: Recognize text in image
-            Task 2.1: Recognize title text
-            Task 2.2: Recognize body text
-        Task 3: Generate image description
+    Tests hierarchical task management for image analysis, including subtasks for object detection, text recognition, and description generation, using a temporary image.
+    
+    Verifies correct construction of the task hierarchy, topological sorting of subtasks, and task addition order in the TaskManager.
     """
     root_task = Task(
         content="Analyze image",
@@ -167,12 +171,9 @@ def test_image_task_management(temp_image):
 
 def test_video_task_management(temp_video_bytes):
     """
-    Task 0: Analyze video
-        Task 1: Detect people in video
-        Task 2: Recognize speech in video
-            Task 2.1: Recognize opening dialogue
-            Task 2.2: Recognize ending dialogue
-        Task 3: Generate video summary
+    Tests hierarchical task management for video analysis, including subtasks for people detection, speech recognition (with nested dialogue recognition), and summary generation.
+    
+    Verifies correct construction of the task hierarchy, topological sorting of subtasks, and task addition order in the TaskManager when handling video data.
     """
     root_task = Task(
         content="Analyze video",

@@ -43,7 +43,13 @@ model = ModelFactory.create(
 
 def load_image(image_path: str) -> Image.Image:
     """
-    Load an image and ensure it has a valid format like PNG or JPEG.
+    Loads an image from the specified file path, ensuring it is in a valid format such as PNG or JPEG.
+    
+    Raises:
+        FileNotFoundError: If the image file does not exist.
+    
+    Returns:
+        Image.Image: The loaded image object with a guaranteed valid format.
     """
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file not found: {image_path}")
@@ -58,6 +64,15 @@ def load_image(image_path: str) -> Image.Image:
 
 
 def load_video(video_path: str) -> bytes:
+    """
+    Load a video file from the specified path and return its contents as bytes.
+    
+    Raises:
+        FileNotFoundError: If the video file does not exist.
+        
+    Returns:
+        bytes: The raw binary content of the video file.
+    """
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"Video file not found: {video_path}")
     with open(video_path, "rb") as f:
@@ -71,6 +86,16 @@ agent.reset()
 
 
 def create_image_task(image_path: str, task_id: str = "0") -> Task:
+    """
+    Create a Task object containing an image loaded from the specified file path.
+    
+    Parameters:
+        image_path (str): Path to the image file to be included in the task.
+        task_id (str, optional): Identifier for the task. Defaults to "0".
+    
+    Returns:
+        Task: A Task instance with the image attached in its image_list and the specified task ID.
+    """
     image = load_image(image_path)
     return Task(
         content="The task is in the image.", image_list=[image], id=task_id
@@ -78,6 +103,16 @@ def create_image_task(image_path: str, task_id: str = "0") -> Task:
 
 
 def create_video_task(video_path: str, task_id: str = "1") -> Task:
+    """
+    Create a Task object containing video data loaded from the specified file.
+    
+    Parameters:
+        video_path (str): Path to the video file to be loaded.
+        task_id (str, optional): Identifier for the created task. Defaults to "1".
+    
+    Returns:
+        Task: A Task instance with the video bytes attached and the specified ID.
+    """
     video_bytes = load_video(video_path)
     return Task(
         content="The task is in the video.",

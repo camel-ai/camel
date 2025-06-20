@@ -200,7 +200,9 @@ class Task(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __repr__(self) -> str:
-        r"""Return a string representation of the task."""
+        """
+        Return a concise string representation of the task, including its ID, content, and state.
+        """
         content_preview = self.content
         return (
             f"Task(id='{self.id}', content='{content_preview}', "
@@ -362,14 +364,13 @@ class Task(BaseModel):
         template: TextPrompt = TASK_COMPOSE_PROMPT,
         result_parser: Optional[Callable[[str], str]] = None,
     ):
-        r"""compose task result by the sub-tasks.
-
-        Args:
-            agent (ChatAgent): An agent that used to compose the task result.
-            template (TextPrompt, optional): The prompt template to compose
-                task. If not provided, the default template will be used.
-            result_parser (Callable[[str, str], List[Task]], optional): A
-                function to extract Task from response.
+        """
+        Composes the result of the current task by aggregating the results of its subtasks using an AI agent.
+        
+        If the task has subtasks, their results and any associated multimedia content are combined and sent to the agent using a prompt template. The agent's response is optionally parsed and set as the task's result.
+        
+        Parameters:
+            result_parser (optional): A function to process the agent's response before updating the task result.
         """
 
         if not self.subtasks:
@@ -515,19 +516,17 @@ class TaskManager:
         template: Optional[TextPrompt] = None,
         task_parser: Optional[Callable[[str, str], List[Task]]] = None,
     ) -> Optional[Task]:
-        r"""Evolve a task to a new task.
-            Evolve is only used for data generation.
-
-        Args:
-            task (Task): A given task.
-            agent (ChatAgent): An agent that used to evolve the task.
-            template (TextPrompt, optional): A prompt template to evolve task.
-                If not provided, the default template will be used.
-            task_parser (Callable, optional): A function to extract Task from
-                response. If not provided, the default parser will be used.
-
+        """
+        Generates a new task by evolving an existing one using an AI agent.
+        
+        Parameters:
+            task (Task): The task to be evolved.
+            agent (ChatAgent): The agent responsible for generating the evolved task.
+            template (TextPrompt, optional): Custom prompt template for task evolution. Defaults to a standard template if not provided.
+            task_parser (Callable, optional): Function to parse the agent's response into Task objects. Defaults to the standard parser.
+        
         Returns:
-            Task: The created :obj:`Task` instance or None.
+            Optional[Task]: The first evolved Task instance parsed from the agent's response, or None if no valid task is produced.
         """
 
         if template is None:
