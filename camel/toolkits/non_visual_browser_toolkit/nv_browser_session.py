@@ -21,6 +21,11 @@ from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 from .actions import ActionExecutor
 from .snapshot import PageSnapshot
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from playwright.sync_api import Playwright
+
 
 class NVBrowserSession:
     """Lightweight wrapper around Playwright for non-visual (headless)
@@ -37,7 +42,7 @@ class NVBrowserSession:
         self._headless = headless
         self._user_data_dir = user_data_dir
 
-        self._playwright = None  # type: ignore[assignment]
+        self._playwright: Optional["Playwright"] = None
         self._browser: Optional[Browser] = None
         self._context: Optional[BrowserContext] = None
         self._page: Optional[Page] = None
@@ -55,15 +60,19 @@ class NVBrowserSession:
         self._playwright = sync_playwright().start()
         if self._user_data_dir:
             Path(self._user_data_dir).mkdir(parents=True, exist_ok=True)
+            pl = self._playwright
+            assert pl is not None
             self._context = (
-                self._playwright.chromium.launch_persistent_context(
+                pl.chromium.launch_persistent_context(
                     user_data_dir=self._user_data_dir,
                     headless=self._headless,
                 )
             )
             self._browser = self._context.browser
         else:
-            self._browser = self._playwright.chromium.launch(
+            pl = self._playwright
+            assert pl is not None
+            self._browser = pl.chromium.launch(
                 headless=self._headless
             )
             self._context = self._browser.new_context()

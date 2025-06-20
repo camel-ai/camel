@@ -199,7 +199,7 @@ what was accomplished
                 "- Page Snapshot (no structural changes)"
             ):
                 assert self._session.snapshot is not None
-                full_snapshot = self._session.snapshot.snapshot_data
+                full_snapshot = self._session.snapshot.snapshot_data or ""
 
             action = self._llm_call(
                 prompt,
