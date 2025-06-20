@@ -88,7 +88,7 @@ def search_agent_factory(
     human_toolkits = HumanToolkit()
     tools = [
         # FunctionTool(search_toolkits.search_wiki),
-        FunctionTool(search_toolkits.search_google),
+        FunctionTool(search_toolkits.search_exa),
         # FunctionTool(search_toolkits.search_bing),
         # FunctionTool(search_toolkits.search_baidu),
         *browser_toolkit.get_tools(),
@@ -341,17 +341,17 @@ async def main():
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1,
-        # model_config_dict={
-        #     "max_tokens": 32768,
-        # },
+        model_config_dict={
+            "max_tokens": 32768,
+        },
     )
 
     model_backend_reason = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1,
-        # model_config_dict={
-        #    "max_tokens": 32768,
-        # },
+        model_config_dict={
+            "max_tokens": 32768,
+        },
     )
 
     task_id = 'workforce_task'

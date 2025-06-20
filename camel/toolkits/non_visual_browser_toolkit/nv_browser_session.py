@@ -20,14 +20,18 @@ from playwright.async_api import (
     Browser,
     BrowserContext,
     Page,
-    async_playwright,
 )
 
 from .actions import ActionExecutor
 from .snapshot import PageSnapshot
 
 if TYPE_CHECKING:
-    from playwright.async_api import Playwright
+    from playwright.async_api import (
+        Browser,
+        BrowserContext,
+        Page,
+        Playwright,
+    )
 
 
 class NVBrowserSession:
@@ -61,6 +65,8 @@ class NVBrowserSession:
     # Browser lifecycle helpers
     # ------------------------------------------------------------------
     async def ensure_browser(self) -> None:
+        from playwright.async_api import async_playwright
+
         if self._page is not None:
             return
 
@@ -169,7 +175,7 @@ class NVBrowserSession:
         return await self.executor.execute(action)
 
     # Low-level accessors -------------------------------------------------
-    async def get_page(self) -> Page:
+    async def get_page(self) -> "Page":
         await self.ensure_browser()
         assert self._page is not None
         return self._page
