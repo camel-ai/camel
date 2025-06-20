@@ -113,6 +113,11 @@ class ScoreBasedContextCreator(BaseContextCreator):
 
         # Process non-system messages with deduplication
         for idx, record in enumerate(records):
+            if (
+                record.memory_record.role_at_backend
+                == OpenAIBackendRole.SYSTEM
+            ):
+                continue
             if record.memory_record.uuid in seen_uuids:
                 continue
             seen_uuids.add(record.memory_record.uuid)
