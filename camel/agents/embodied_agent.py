@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional
 
 from colorama import Fore
 
@@ -19,12 +19,17 @@ from camel.agents.chat_agent import ChatAgent
 from camel.agents.tool_agents.base import BaseToolAgent
 from camel.interpreters import (
     BaseInterpreter,
+    DockerInterpreter,
+    E2BInterpreter,
     InternalPythonInterpreter,
+    JupyterKernelInterpreter,
     SubprocessInterpreter,
 )
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.responses import ChatAgentResponse
+from camel.runtime import LLMGuardRuntime
+from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.utils import print_text_animated
 
 # AgentOps decorator setting
@@ -61,6 +66,13 @@ class EmbodiedAgent(ChatAgent):
         verbose (bool, optional): Whether to print the critic's messages.
         logger_color (Any): The color of the logger displayed to the user.
             (default: :obj:`Fore.MAGENTA`)
+        use_llm_guard (bool, optional): Whether to use LLMGuardRuntime for
+            secure code execution. (default: :obj:`True`)
+        risk_threshold (int, optional): Risk threshold for code execution
+            when using LLMGuardRuntime. (default: :obj:`2`)
+        llm_guard_model (BaseModelBackend, optional): The model backend to use for
+            LLM guard security checks when use_llm_guard is True.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -72,8 +84,15 @@ class EmbodiedAgent(ChatAgent):
         code_interpreter: Optional[BaseInterpreter] = None,
         verbose: bool = False,
         logger_color: Any = Fore.MAGENTA,
+        use_llm_guard: bool = True,
+        llm_guard_model: Optional[BaseModelBackend] = None,
+        risk_threshold: int = 2,
     ) -> None:
         self.tool_agents = tool_agents
+        self.use_llm_guard = use_llm_guard
+        self.risk_threshold = risk_threshold
+
+        # Fallback interpreter usage
         self.code_interpreter: BaseInterpreter
         if code_interpreter is not None:
             self.code_interpreter = code_interpreter
@@ -81,6 +100,12 @@ class EmbodiedAgent(ChatAgent):
             self.code_interpreter = InternalPythonInterpreter()
         else:
             self.code_interpreter = SubprocessInterpreter()
+
+        # Set up secure code execution
+        if use_llm_guard:
+            self._setup_secure_code_execution(
+                code_interpreter, verbose, llm_guard_model
+            )
 
         if self.tool_agents:
             system_message = self._set_tool_agents(system_message)
@@ -91,6 +116,83 @@ class EmbodiedAgent(ChatAgent):
             model=model,
             message_window_size=message_window_size,
         )
+
+    def _setup_secure_code_execution(
+        self,
+        code_interpreter: Optional[BaseInterpreter],
+        verbose: bool,
+        llm_guard_model: Optional[BaseModelBackend] = None,
+    ) -> None:
+        """Set up secure code execution using CodeExecutionToolkit with LLMGuardRuntime."""
+        # Determine sandbox type based on interpreter preference
+        sandbox: Literal[
+            'internal_python', 'jupyter', 'docker', 'subprocess', 'e2b'
+        ]
+        if code_interpreter is not None:
+            if isinstance(code_interpreter, InternalPythonInterpreter):
+                sandbox = "internal_python"
+            elif isinstance(code_interpreter, SubprocessInterpreter):
+                sandbox = "subprocess"
+            elif isinstance(code_interpreter, DockerInterpreter):
+                sandbox = "docker"
+            elif isinstance(code_interpreter, E2BInterpreter):
+                sandbox = "e2b"
+            elif isinstance(code_interpreter, JupyterKernelInterpreter):
+                sandbox = "jupyter"
+            else:
+                sandbox = "subprocess"
+        elif self.tool_agents:
+            sandbox = "internal_python"
+        else:
+            sandbox = "subprocess"
+
+        # Create CodeExecutionToolkit with proper type casting
+        self.code_execution_toolkit = CodeExecutionToolkit(
+            sandbox=sandbox,
+            verbose=verbose,
+            require_confirm=False,  # LLMGuardRuntime handles security
+        )
+
+        # Set up LLMGuardRuntime with the toolkit
+        if llm_guard_model is not None:
+            self.llm_guard_runtime = LLMGuardRuntime(
+                verbose=verbose, model=llm_guard_model
+            )
+        else:
+            self.llm_guard_runtime = LLMGuardRuntime(verbose=verbose)
+
+        self.llm_guard_runtime.add(
+            self.code_execution_toolkit.get_tools(),
+            threshold=self.risk_threshold,
+        )
+
+        # Get the secured tools
+        self.secure_tools = self.llm_guard_runtime.get_tools()
+        self.execute_code_func = None
+        for tool in self.secure_tools:
+            if tool.get_function_name() == "execute_code":
+                self.execute_code_func = tool.func
+                break
+
+    def _execute_code_securely(
+        self, code: str, code_type: str = "python"
+    ) -> str:
+        """Execute code using secure LLMGuardRuntime."""
+        if self.use_llm_guard and self.execute_code_func:
+            try:
+                result = self.execute_code_func(code)
+                # Extract just the execution result from the formatted output
+                if (
+                    isinstance(result, str)
+                    and "> Executed Results:\n" in result
+                ):
+                    return result.split("> Executed Results:\n", 1)[1]
+                return str(result)
+            except Exception as e:
+                return f"Code execution failed with security check: {e}"
+        else:
+            # Fallback to direct interpreter
+            return self.code_interpreter.run(code, code_type)
 
     def _set_tool_agents(self, system_message: BaseMessage) -> BaseMessage:
         action_space_prompt = self._get_tool_agents_prompt()
@@ -172,7 +274,7 @@ class EmbodiedAgent(ChatAgent):
             try:
                 content = "\n> Executed Results:\n"
                 for block_idx, code in enumerate(codes):
-                    executed_output = self.code_interpreter.run(
+                    executed_output = self._execute_code_securely(
                         code, code.code_type
                     )
                     content += (
