@@ -97,7 +97,6 @@ async def search_agent_factory(
         # *browser_toolkits.get_tools(),
         *terminal_toolkits.get_tools(),
         human_toolkits.ask_human_via_console,
-        *human_toolkits.get_tools(),
         FunctionTool(Crawl4AI().scrape),
     ]
 
