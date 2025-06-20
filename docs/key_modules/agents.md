@@ -1,13 +1,32 @@
-## 1. Concept
+---
+title: "Agents"
+description: "Learn about CAMEL's agent types, with a focus on ChatAgent and advanced agent architectures for AI-powered automation."
+icon: user-helmet-safety
+---
 
-Agents in CAMEL are autonomous entities capable of performing specific tasks through interaction with language models and other components. Each agent is designed with a particular role and capability, allowing them to work independently or collaboratively to achieve complex goals.
 
-### 1.1. Base Agent Architecture
-All CAMEL agents inherit from the `BaseAgent` abstract class, which defines two core methods:
-- `reset()`: Resets the agent to its initial state
-- `step()`: Performs a single step of the agent's operation
+## Concept
 
-### 1.2. Chat Agent
+Agents in CAMEL are autonomous entities capable of performing specific tasks through interaction with language models and other components. 
+Each agent is designed with a particular role and capability, allowing them to work independently or collaboratively to achieve complex goals.
+
+<Note type="info" title="What is an Agent?">
+<strong>Think of an agent as an AI-powered teammate</strong> one that brings a defined role, memory, and tool-using abilities to every workflow. CAMEL’s agents are composable, robust, and can be extended with custom logic.
+</Note>
+
+## Base Agent Architecture
+
+All CAMEL agents inherit from the <code>BaseAgent</code> abstract class, which defines two essential methods:
+
+| Method      | Purpose             | Description                                  |
+|-------------|---------------------|----------------------------------------------|
+| <code>reset()</code> | State Management   | Resets the agent to its initial state         |
+| <code>step()</code>  | Task Execution     | Performs a single step of the agent's operation |
+
+## Types
+
+### ChatAgent
+
 The `ChatAgent` is the primary implementation that handles conversations with language models. It supports:
 - System message configuration for role definition
 - Memory management for conversation history
@@ -16,40 +35,39 @@ The `ChatAgent` is the primary implementation that handles conversations with la
 - Multiple model backend support with scheduling strategies
 - Async operation support
 
-## 2. Types
+<AccordionGroup>
 
-### 2.1. `ChatAgent`
-The main agent implementation for handling conversations with language models. Features include:
-- Tool integration and management
-- Memory management with customizable window sizes
-- Output language control
-- Response termination handling
-- Structured output support via Pydantic models
+  <Accordion title="Other Agent Types (When to Use)">
+  
+  **`CriticAgent`**  
+  Specialized agent for evaluating and critiquing responses or solutions. Used in scenarios requiring quality assessment or validation.
 
-### 2.2. `CriticAgent`
-Specialized agent for evaluating and critiquing responses or solutions. Used in scenarios requiring quality assessment or validation.
+  **`DeductiveReasonerAgent`**  
+  Focused on logical reasoning and deduction. Breaks down complex problems into smaller, manageable steps.
 
-### 2.3. `DeductiveReasonerAgent`
-Agent focused on logical reasoning and deduction. Breaks down complex problems into smaller, manageable steps.
+  **`EmbodiedAgent`**  
+  Designed for embodied AI scenarios, capable of understanding and responding to physical world contexts.
 
-### 2.4. `EmbodiedAgent`
-Agent designed for embodied AI scenarios, capable of understanding and responding to physical world contexts.
+  **`KnowledgeGraphAgent`**  
+  Specialized in building and utilizing knowledge graphs for enhanced reasoning and information management.
 
-### 2.5. `KnowledgeGraphAgent`
-Specialized in building and utilizing knowledge graphs for enhanced reasoning and information management.
+  **`MultiHopGeneratorAgent`**  
+  Handles multi-hop reasoning tasks, generating intermediate steps to reach conclusions.
 
-### 2.6. `MultiHopGeneratorAgent`
-Agent designed for handling multi-hop reasoning tasks, generating intermediate steps to reach conclusions.
+  **`SearchAgent`**  
+  Focused on information retrieval and search tasks across various data sources.
 
-### 2.7. `SearchAgent`
-Focused on information retrieval and search tasks across various data sources.
+  **`TaskAgent`**  
+  Handles task decomposition and management, breaking down complex tasks into manageable subtasks.
 
-### 2.8. `TaskAgent`
-Handles task decomposition and management, breaking down complex tasks into manageable subtasks.
+  </Accordion>
 
-## 3. Usage
+</AccordionGroup>
 
-### 3.1. Basic Chat Agent Usage
+## Usage
+
+### Basic ChatAgent Usage
+
 ```python
 from camel.agents import ChatAgent
 
@@ -60,7 +78,8 @@ agent = ChatAgent(system_message="You are a helpful assistant.")
 response = agent.step("Hello, can you help me?")
 ```
 
-### 3.2. Simplified Agent Creation
+### Simplified Agent Creation
+
 The `ChatAgent` supports multiple ways to specify the model:
 
 ```python
@@ -101,7 +120,8 @@ model = ModelFactory.create(
 agent_7 = ChatAgent("You are a helpful assistant.", model=model)
 ```
 
-### 3.3. Using Tools with Chat Agent
+### Using Tools with Chat Agent
+
 ```python
 from camel.agents import ChatAgent
 from camel.toolkits import FunctionTool
@@ -117,7 +137,8 @@ agent = ChatAgent(tools=[calculator])
 response = agent.step("What is 5 + 3?")
 ```
 
-### 3.4. Structured Output
+### Structured Output
+
 ```python
 from pydantic import BaseModel
 from typing import List
@@ -131,43 +152,70 @@ agent = ChatAgent()
 response = agent.step("List benefits of exercise", response_format=ResponseFormat)
 ```
 
-## 4. Best Practices
+## Best Practices
 
-### 4.1. Memory Management
-- Use appropriate window sizes to manage conversation history
-- Consider token limits when dealing with long conversations
-- Utilize the memory system for maintaining context
+<AccordionGroup>
 
-### 4.2. Tool Integration
-- Keep tool functions focused and well-documented
-- Handle tool errors gracefully
-- Use external tools for operations that should be handled by the user
+  <Accordion title="Memory Management">
+    <ul>
+      <li>Use appropriate window sizes to manage conversation history</li>
+      <li>Consider token limits when dealing with long conversations</li>
+      <li>Utilize the memory system for maintaining context</li>
+    </ul>
+  </Accordion>
 
-### 4.3. Response Handling
-- Implement appropriate response terminators for conversation control
-- Use structured outputs when specific response formats are needed
-- Handle async operations properly when dealing with long-running tasks
+  <Accordion title="Tool Integration">
+    <ul>
+      <li>Keep tool functions focused and well-documented</li>
+      <li>Handle tool errors gracefully</li>
+      <li>Use external tools for operations that should be handled by the user</li>
+    </ul>
+  </Accordion>
 
-### 4.4. Model Specification
-- Use the simplified model specification methods for cleaner code
-- For default platform models, just specify the model name as a string
-- For specific platforms, use the tuple format (platform, model)
-- Use enums for better type safety and IDE support
+  <Accordion title="Response Handling">
+    <ul>
+      <li>Implement appropriate response terminators for conversation control</li>
+      <li>Use structured outputs when specific response formats are needed</li>
+      <li>Handle async operations properly when dealing with long-running tasks</li>
+    </ul>
+  </Accordion>
 
-## 5. Advanced Features
+  <Accordion title="Model Specification">
+    <ul>
+      <li>Use the simplified model specification methods for cleaner code</li>
+      <li>For default platform models, just specify the model name as a string</li>
+      <li>For specific platforms, use the tuple format (platform, model)</li>
+      <li>Use enums for better type safety and IDE support</li>
+    </ul>
+  </Accordion>
 
-### 5.1. Model Scheduling
-The agent supports multiple model backends with customizable scheduling strategies:
-```python
-def custom_strategy(models):
-    # Custom model selection logic
-    return models[0]
+</AccordionGroup>
 
-agent.add_model_scheduling_strategy("custom", custom_strategy)
-```
+## Advanced Features
 
-### 5.2. Output Language Control
-Control the language of agent responses:
-```python
-agent.set_output_language("Spanish")
-```
+<Tabs>
+  <Tab title="Model Scheduling">
+    <Note type="info" title="Custom Model Selection">
+      You can dynamically select which model an agent uses for each step by adding your own scheduling strategy.
+    </Note>
+    <CodeGroup>
+      ```python title="Custom Model Scheduling"
+      def custom_strategy(models):
+          # Custom model selection logic
+          return models[0]
+
+      agent.add_model_scheduling_strategy("custom", custom_strategy)
+      ```
+    </CodeGroup>
+  </Tab>
+  <Tab title="Output Language Control">
+    <Note type="tip" title="Multilingual Output">
+      Agents can respond in any language. Set the output language on-the-fly during conversations.
+    </Note>
+    <CodeGroup>
+      ```python title="Set Output Language"
+      agent.set_output_language("Spanish")
+      ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
