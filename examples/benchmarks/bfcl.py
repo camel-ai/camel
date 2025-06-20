@@ -17,9 +17,10 @@ import json
 import logging
 import os
 from datetime import datetime
-from typing import Optional
 
-# Try to import tqdm for progress display
+from camel.logger import get_logger
+
+# Try to import tqdm for evaluation progress display
 try:
     from tqdm import tqdm
 
@@ -31,109 +32,14 @@ except ImportError:
         "You can install it using 'pip install tqdm'."
     )
 
-from camel.benchmarks import BFCLBenchmark
-from camel.benchmarks.bfcl import create_bfcl_agent
+from camel.benchmarks.bfcl import run_bfcl_benchmark
 
-logger = logging.getLogger(__name__)
-
-
-def run_bfcl_benchmark(
-    model_name: str,
-    category: str = "simple",
-    data_dir: str = "data/bfcl",
-    save_to: str = "results/bfcl",
-    subset: Optional[int] = None,
-    api_key: Optional[str] = None,
-    base_url: Optional[str] = None,
-    model_platform: str = "openai",
-    force_download: bool = False,
-):
-    """Run the BFCL benchmark with specified model and category.
-
-    Args:
-        model_name (str): Name of the model to use.
-        category (str): Category of function calls to evaluate.
-            Options: "simple", "multiple", "parallel", "parallel_multiple",
-            "irrelevance", "java", "javascript", "rest".
-            (default: :obj:`"simple"`)
-        data_dir (str): Directory to store dataset.
-            (default: :obj:`"data/bfcl"`)
-        save_to (str): Directory to save results.
-            (default: :obj:`"results/bfcl"`)
-        subset (int, optional): Number of samples to evaluate.
-            (default: :obj:`None`)
-        api_key (str, optional): API key for the model.
-            (default: :obj:`None`)
-        base_url (str, optional): Base URL for API requests.
-            (default: :obj:`None`)
-        model_platform (str, optional): Platform of the model.
-            (default: :obj:`"openai"`)
-        force_download (bool, optional): Whether to force download the dataset.
-            (default: :obj:`False`)
-    """
-    # Create data and results directories if they don't exist
-    os.makedirs(data_dir, exist_ok=True)
-    os.makedirs(save_to, exist_ok=True)
-
-    # Create timestamp for results file
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    results_file = os.path.join(
-        save_to, f"bfcl_{model_name}_{category}_{timestamp}.json"
-    )
-
-    # Initialize and run the benchmark directly
-    benchmark = BFCLBenchmark(data_dir=data_dir, save_to=results_file)
-
-    # Create a default system message in case needed
-    system_message = (
-        "You are an expert in function calling. "
-        "If the user request is not related to any function, you should "
-        "directly return a single string 'None' in natural language instead "
-        "of JSON format."
-        "You analyze user requests and call the appropriate functions "
-        "with the correct parameters. "
-        "Return the function call in JSON format with function_call property."
-    )
-
-    # Set up the agent to be benchmarked
-    agent = create_bfcl_agent(
-        model_platform=model_platform,
-        model_type=model_name,
-        api_key=api_key,
-        base_url=base_url,
-        system_message=system_message,
-    )
-
-    if agent is None:
-        logger.error(f"Failed to create agent for model {model_name}")
-        return None
-
-    benchmark.run(
-        agent=agent,
-        category=category,
-        randomize=False,
-        subset=subset,
-    )
-
-    # Log results
-    results = benchmark.results
-    total = len(results)
-    correct = sum(1 for result in results if result["result"])
-    accuracy = correct / total if total > 0 else 0
-    logger.info(f"Model: {model_name}")
-    logger.info(f"Category: {category}")
-    logger.info(f"Accuracy: {accuracy:.4f} ({correct}/{total})")
-    logger.info(f"Results saved to: {results_file}")
-
-    return benchmark
+logger = get_logger(__name__)
 
 
 if __name__ == "__main__":
     # set up logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    )
+    logger.setLevel(logging.INFO)
 
     parser = argparse.ArgumentParser(
         description="Run BFCL benchmark on a model."
@@ -326,7 +232,11 @@ if __name__ == "__main__":
             )
 
         # Save summary results
-        summary_path = os.path.join(args.save_to, "bfcl_summary.json")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        summary_path = os.path.join(
+            args.save_to,
+            f"bfcl_summary_{args.model}_{timestamp}.json",
+        )
         os.makedirs(os.path.dirname(summary_path), exist_ok=True)
         with open(summary_path, "w", encoding="utf-8") as f:
             summary = {

@@ -13,11 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import logging
 import os
 import random
 import re
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import (
     Any,
@@ -35,13 +35,14 @@ from huggingface_hub import snapshot_download
 
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import (
     RoleType,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Version prefix for BFCL dataset files
 VERSION_PREFIX = "BFCL_v3"
@@ -63,15 +64,15 @@ T = TypeVar('T', bound=BaseBenchmark)
 
 
 class BFCLSample:
-    """Sample for BFCL benchmark.
+    r"""Sample for BFCL benchmark.
 
     Args:
         question (str): User question/prompt.
         functions (str): JSON string of function definitions.
-        possible_answer (Union[List, Dict, str]): Possible correct
-            function call formats.
-        category (str): Category of the function call.
-        id (str, optional): Sample ID.
+        possible_answer (Optional[Union[List, Dict, str]]): Possible correct
+            function call formats. (default: :obj:`None`)
+        category (str): Category of the function call. (default: :obj:`""`)
+        id (Optional[str]): Sample ID. (default: :obj:`None`)
     """
 
     def __init__(
@@ -90,7 +91,7 @@ class BFCLSample:
 
 
 class FunctionCallParser:
-    """Parser for function calls in model responses.
+    r"""Parser for function calls in model responses.
 
     This class provides methods to extract and evaluate function calls
     from model-generated text responses.
@@ -98,13 +99,13 @@ class FunctionCallParser:
 
     @staticmethod
     def extract_json_from_string(text: str) -> Optional[Dict]:
-        """Attempt to extract a JSON object from text string.
+        r"""Attempt to extract a JSON object from text string.
 
         Args:
-            text (str): The text to parse for JSON objects
+            text (str): The text to parse for JSON objects.
 
         Returns:
-            Optional[Dict]: Extracted JSON object or None if not found
+            Optional[Dict]: Extracted JSON object or None if not found.
         """
         # Try to extract JSON from markdown code blocks
         json_pattern = r'```(?:json)?\s*([\s\S]*?)```'
@@ -145,14 +146,14 @@ class FunctionCallParser:
     def parse_function_call(
         response_text: str,
     ) -> Tuple[Optional[str], Optional[Dict]]:
-        """Parse a function call from model response text.
+        r"""Parse a function call from model response text.
 
         Args:
-            response_text (str): The model's response text
+            response_text (str): The model's response text.
 
         Returns:
-            tuple: (function_name, parameters) or (None, None)
-                if no function call is found
+            Tuple[Optional[str], Optional[Dict]]: (function_name, parameters)
+                or (None, None) if no function call is found.
         """
         # Try to extract JSON-formatted function call
         json_obj = FunctionCallParser.extract_json_from_string(response_text)
@@ -328,15 +329,15 @@ class FunctionCallParser:
 
     @staticmethod
     def evaluate_function_call(response_text: str, ground_truth: Dict) -> bool:
-        """Evaluate if a function call matches the expected ground truth.
+        r"""Evaluate if a function call matches the expected ground truth.
 
         Args:
-            response_text (str): The model's response text
-            ground_truth (dict): The expected answer in the format
-                {func_name: {param1: [value1], param2: [value2], ...}}
+            response_text (str): The model's response text.
+            ground_truth (Dict): The expected answer in the format
+                {func_name: {param1: [value1], param2: [value2], ...}}.
 
         Returns:
-            bool: True if the function call matches, False otherwise
+            bool: True if the function call matches, False otherwise.
         """
         # Verify ground_truth is valid
         if not ground_truth or not isinstance(ground_truth, dict):
@@ -528,22 +529,22 @@ def get_model(
     api_key: Optional[str] = None,
     url: Optional[str] = None,
 ):
-    """Create a model instance based on configuration.
+    r"""Create a model instance based on configuration.
 
     Args:
-        model_platform (str, optional): Model platform, e.g., openai,
+        model_platform (Optional[str]): Model platform, e.g., openai,
             anthropic, etc. If None, will read from environment variable
-            MODEL_PLATFORM, defaulting to openai.
-        model_type (str, optional): Model type, e.g., gpt-4, claude-3, etc.
-            If None, will read from environment variable MODEL_TYPE,
-            defaulting to gpt-4o.
-        api_key (str, optional): API key.
-            If None, will read from environment variable API_KEY.
-        url (str, optional): API endpoint URL.
-            If None, will read from environment variable BASE_URL.
+            MODEL_PLATFORM. (default: :obj:`None`)
+        model_type (Optional[str]): Model type, e.g., gpt-4, claude-3, etc.
+            If None, will read from environment variable MODEL_TYPE.
+            (default: :obj:`None`)
+        api_key (Optional[str]): API key. If None, will read from environment
+            variable API_KEY. (default: :obj:`None`)
+        url (Optional[str]): API endpoint URL. If None, will read from
+            environment variable BASE_URL. (default: :obj:`None`)
 
     Returns:
-        BaseModelBackend: Model backend instance
+        BaseModelBackend: Model backend instance.
     """
     # Get configuration from environment variables or parameters
     model_platform = model_platform or os.environ.get(
@@ -576,24 +577,25 @@ def create_bfcl_agent(
     base_url: Optional[str] = None,
     system_message: Optional[str] = None,
 ) -> Optional["ChatAgent"]:
-    """Create an agent for BFCL benchmark.
+    r"""Create an agent for BFCL benchmark.
 
     Args:
-        model_platform (str, optional): Model platform, e.g., openai,
+        model_platform (Optional[str]): Model platform, e.g., openai,
             anthropic, etc. If None, will read from environment variable
-            MODEL_PLATFORM, defaulting to openai.
-        model_type (str, optional): Model type, e.g., gpt-4, claude-3, etc.
-            If None, will read from environment variable MODEL_TYPE,
-            defaulting to gpt-4o.
-        api_key (str, optional): API key.
-            If None, will read from environment variable API_KEY.
-        base_url (str, optional): API endpoint URL.
-            If None, will read from environment variable BASE_URL.
-        system_message (str, optional): System message for the agent.
+            MODEL_PLATFORM. (default: :obj:`None`)
+        model_type (Optional[str]): Model type, e.g., gpt-4, claude-3, etc.
+            If None, will read from environment variable MODEL_TYPE.
+            (default: :obj:`None`)
+        api_key (Optional[str]): API key. If None, will read from environment
+            variable API_KEY. (default: :obj:`None`)
+        base_url (Optional[str]): API endpoint URL. If None, will read from
+            environment variable BASE_URL. (default: :obj:`None`)
+        system_message (Optional[str]): System message for the agent.
             If None, a default system message for function calling is used.
+            (default: :obj:`None`)
 
     Returns:
-        ChatAgent: Agent instance for BFCL benchmark,
+        Optional[ChatAgent]: Agent instance for BFCL benchmark,
             or None if creation fails.
     """
     # Create a default system message if not provided
@@ -637,15 +639,105 @@ def create_bfcl_agent(
         return None
 
 
+def run_bfcl_benchmark(
+    model_name: str,
+    category: str = "simple",
+    data_dir: str = "data/bfcl",
+    save_to: str = "results/bfcl",
+    subset: Optional[int] = None,
+    api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
+    model_platform: str = "openai",
+    force_download: bool = False,
+):
+    r"""Run the BFCL benchmark with specified model and category.
+
+    Args:
+        model_name (str): Name of the model to use.
+        category (str): Category of function calls to evaluate.
+            Options: "simple", "multiple", "parallel", "parallel_multiple",
+            "irrelevance", "java", "javascript", "rest".
+            (default: :obj:`"simple"`)
+        data_dir (str): Directory to store dataset.
+            (default: :obj:`"data/bfcl"`)
+        save_to (str): Directory to save results.
+            (default: :obj:`"results/bfcl"`)
+        subset (Optional[int]): Number of samples to evaluate.
+            (default: :obj:`None`)
+        api_key (Optional[str]): API key for the model.
+            (default: :obj:`None`)
+        base_url (Optional[str]): Base URL for API requests.
+            (default: :obj:`None`)
+        model_platform (str): Platform of the model.
+            (default: :obj:`"openai"`)
+        force_download (bool): Whether to force download the dataset.
+            (default: :obj:`False`)
+    """
+    # Create data and results directories if they don't exist
+    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(save_to, exist_ok=True)
+
+    # Create timestamp for results file
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    results_file = os.path.join(
+        save_to, f"bfcl_{model_name}_{category}_{timestamp}.json"
+    )
+
+    # Initialize and run the benchmark directly
+    benchmark = BFCLBenchmark(data_dir=data_dir, save_to=results_file)
+
+    # Create a default system message in case needed
+    system_message = (
+        "You are an expert in function calling. "
+        "If the user request is not related to any function, you should "
+        "directly return a single string 'None' in natural language instead "
+        "of JSON format."
+        "You analyze user requests and call the appropriate functions "
+        "with the correct parameters. "
+        "Return the function call in JSON format with function_call property."
+    )
+
+    # Set up the agent to be benchmarked
+    agent = create_bfcl_agent(
+        model_platform=model_platform,
+        model_type=model_name,
+        api_key=api_key,
+        base_url=base_url,
+        system_message=system_message,
+    )
+
+    if agent is None:
+        logger.error(f"Failed to create agent for model {model_name}")
+        return None
+
+    benchmark.run(
+        agent=agent,
+        category=category,
+        randomize=False,
+        subset=subset,
+    )
+
+    # Log results
+    results = benchmark.results
+    total = len(results)
+    correct = sum(1 for result in results if result["result"])
+    accuracy = correct / total if total > 0 else 0
+    logger.info(f"Model: {model_name}")
+    logger.info(f"Category: {category}")
+    logger.info(f"Accuracy: {accuracy:.4f} ({correct}/{total})")
+    logger.info(f"Results saved to: {results_file}")
+
+    return benchmark
+
+
 class BFCLBenchmark(BaseBenchmark):
-    """Berkeley Function Call Leaderboard (BFCL) benchmark adapted from
+    r"""Berkeley Function Call Leaderboard (BFCL) benchmark adapted from
     Gorilla-LLM's BFCL.
 
     Args:
         data_dir (str): Path to data directory.
         save_to (str): Path to save results.
-        processes (int, optional): Number of processes to use.
-            (default: :obj:`1`)
+        processes (int): Number of processes to use. (default: :obj:`1`)
     """
 
     REPO_ID = "gorilla-llm/Berkeley-Function-Calling-Leaderboard"
@@ -661,7 +753,7 @@ class BFCLBenchmark(BaseBenchmark):
         Args:
             data_dir (str): The directory to save the data.
             save_to (str): The file to save the results.
-            processes (int, optional): The number of processes to use for
+            processes (int): The number of processes to use for
                 parallel processing. (default: :obj:`1`)
         """
         super().__init__("bfcl", data_dir, save_to, processes)
@@ -695,13 +787,13 @@ class BFCLBenchmark(BaseBenchmark):
         return self
 
     def _download_category(self, category: str) -> bool:
-        """Download a specific category dataset from GitHub.
+        r"""Download a specific category dataset from GitHub.
 
         Args:
-            category (str): Category to download
+            category (str): Category to download.
 
         Returns:
-            bool: Whether download was successful
+            bool: Whether download was successful.
         """
         data_file = self.data_dir / f"{VERSION_PREFIX}_{category}.json"
 
@@ -746,6 +838,7 @@ class BFCLBenchmark(BaseBenchmark):
         Args:
             force_download (bool): Whether to force download the data.
                 (default: :obj:`False`)
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             BaseBenchmark: The benchmark instance.
@@ -946,7 +1039,7 @@ class BFCLBenchmark(BaseBenchmark):
         *args: Any,
         **kwargs: Any,
     ) -> BaseBenchmark:
-        """Run the BFCL benchmark.
+        r"""Run the BFCL benchmark.
 
         Args:
             agent (ChatAgent): The chat agent to use.
@@ -954,8 +1047,10 @@ class BFCLBenchmark(BaseBenchmark):
                 (default: :obj:`"test"`)
             randomize (bool): Whether to randomize the data.
                 (default: :obj:`False`)
-            subset (int, optional): Number of samples to evaluate.
+            subset (Optional[int]): Number of samples to evaluate.
                 (default: :obj:`None`)
+            *args (Any): Additional positional arguments.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             BaseBenchmark: The benchmark instance.
@@ -977,11 +1072,6 @@ class BFCLBenchmark(BaseBenchmark):
 
         # Initialize results storage
         self._results = []
-
-        # ensure agent is not None
-        if agent is None:
-            logger.error("Agent is None, cannot proceed with benchmark")
-            return self
 
         # Import tqdm for progress display
         try:
