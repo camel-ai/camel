@@ -14,6 +14,7 @@
 
 import io
 import os
+import shutil
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -37,7 +38,7 @@ def base_browser_fixture():
         yield browser
         # Cleanup
         if os.path.exists("test_cache"):
-            os.rmdir("test_cache")
+            shutil.rmtree("test_cache", ignore_errors=True)
 
 
 @pytest.fixture(scope="function")
@@ -47,7 +48,7 @@ def browser_toolkit_fixture():
         yield toolkit
         # Cleanup
         if os.path.exists("test_cache"):
-            os.rmdir("test_cache")
+            shutil.rmtree("test_cache", ignore_errors=True)
 
 
 def test_base_browser_init(base_browser_fixture):
@@ -56,6 +57,31 @@ def test_base_browser_init(base_browser_fixture):
     assert browser.cache_dir == "test_cache"
     assert isinstance(browser.history, list)
     assert isinstance(browser.page_history, list)
+    assert (
+        browser.user_data_dir is None
+    )  # Added assertion for default user_data_dir
+
+
+def test_base_browser_init_with_user_data_dir():
+    test_user_dir = "test_user_data_dir_sync"
+    try:
+        with patch('playwright.sync_api.sync_playwright'):
+            # Mock _ensure_browser_installed to prevent
+            # actual browser checks during this specific init test
+            with patch.object(
+                BaseBrowser, '_ensure_browser_installed', MagicMock()
+            ) as mock_ensure_installed:
+                browser = BaseBrowser(
+                    headless=True, user_data_dir=test_user_dir
+                )
+                mock_ensure_installed.assert_called_once()
+                assert browser.user_data_dir == test_user_dir
+                assert os.path.exists(
+                    test_user_dir
+                )  # Check if __init__ created it
+    finally:
+        if os.path.exists(test_user_dir):
+            shutil.rmtree(test_user_dir)
 
 
 def test_base_browser_initialization_order():
@@ -65,8 +91,72 @@ def test_base_browser_initialization_order():
         assert browser.page is None  # page not created yet
 
         browser.init()  # explicit init() call
+        # This assertion depends on user_data_dir being None. If it were set,
+        # browser.browser would be None. For default (None), it's not None.
         assert browser.browser is not None  # browser launched
         assert browser.page is not None  # page created
+
+
+def test_base_browser_initialization_order_with_user_data_dir():
+    test_init_dir = "test_init_user_data_sync"
+
+    with (
+        patch(
+            'playwright.sync_api.sync_playwright'
+        ) as mock_sync_playwright_entry,
+        patch.object(
+            BaseBrowser, '_ensure_browser_installed', MagicMock()
+        ) as mock_ensure_installed_in_init,
+    ):
+        # Configure the mock for sync_playwright().start()
+        mock_playwright_api = mock_sync_playwright_entry.return_value
+        mock_playwright_started_instance = (
+            mock_playwright_api.start.return_value
+        )
+
+        # Configure the mock for launch_persistent_context
+        mock_context = MagicMock(name="PersistentContextMock")
+        mock_page = MagicMock(name="PageMock")
+        # ruff: noqa: E501
+        mock_playwright_started_instance.chromium.launch_persistent_context.return_value = mock_context
+        mock_context.pages = []  # Simulate no pre-existing pages initially
+        mock_context.new_page.return_value = mock_page
+
+        try:
+            browser = BaseBrowser(headless=True, user_data_dir=test_init_dir)
+            # Assertions for __init__ behaviour
+            mock_ensure_installed_in_init.assert_called_once()
+            assert os.path.exists(
+                test_init_dir
+            )  # __init__ should have created it
+            assert browser.browser is None  # Before init
+            assert browser.page is None  # Before init
+            assert browser.context is None  # Before init
+
+            browser.init()
+            # Action: This calls
+            # self.playwright.chromium.launch_persistent_context
+
+            # Assertions for init() behaviour with user_data_dir
+            # ruff: noqa: E501
+            mock_playwright_started_instance.chromium.launch_persistent_context.assert_called_once()
+            # ruff: noqa: E501
+            call_kwargs = mock_playwright_started_instance.chromium.launch_persistent_context.call_args.kwargs
+            assert call_kwargs['user_data_dir'] == test_init_dir
+            assert call_kwargs['headless'] is True
+            assert call_kwargs['channel'] == "chromium"  # Default channel
+            assert call_kwargs['accept_downloads'] is True
+            assert isinstance(call_kwargs['user_agent'], str)
+            assert call_kwargs['java_script_enabled'] is True
+            assert isinstance(call_kwargs['args'], list)
+
+            assert browser.browser is None  # Key assertion: No separate
+            # browser object with persistent context
+            assert browser.context == mock_context
+            assert browser.page == mock_page
+        finally:
+            if os.path.exists(test_init_dir):
+                shutil.rmtree(test_init_dir)
 
 
 @pytest.mark.parametrize(

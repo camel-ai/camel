@@ -60,16 +60,6 @@ This function creates a schema compatible with OpenAI's API specifications,
 based on the provided Python function. It processes the function's
 parameters, types, and docstrings, and constructs a schema accordingly.
 
-Note:
-- Each parameter in `func` must have a type annotation; otherwise, it's
-treated as 'Any'.
-- Variable arguments (*args) and keyword arguments (**kwargs) are not
-supported and will be ignored.
-- A functional description including a brief and detailed explanation
-should be provided in the docstring of `func`.
-- All parameters of `func` must be described in its docstring.
-- Supported docstring styles: ReST, Google, Numpydoc, and Epydoc.
-
 **Parameters:**
 
 - **func** (Callable): The Python function to be converted into an OpenAI JSON schema.
@@ -93,7 +83,9 @@ def sanitize_and_enforce_required(parameters_dict):
 Cleans and updates the function schema to conform with OpenAI's
 requirements:
 - Removes invalid 'default' fields from the parameters schema.
-- Ensures all fields or function parameters are marked as required.
+- Ensures all fields are marked as required or have null type for optional
+fields.
+- Recursively adds additionalProperties: false to all nested objects.
 
 **Parameters:**
 
@@ -102,7 +94,7 @@ requirements:
 **Returns:**
 
   dict: The updated dictionary with invalid defaults removed and all
-fields set as required.
+fields properly configured for strict mode.
 
 <a id="camel.toolkits.function_tool.generate_docstring"></a>
 

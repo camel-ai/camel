@@ -39,6 +39,7 @@ from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.openrouter_model import OpenRouterModel
 from camel.models.ppio_model import PPIOModel
+from camel.models.qianfan_model import QianfanModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
@@ -98,6 +99,7 @@ class ModelFactory:
         ModelPlatformType.MODELSCOPE: ModelScopeModel,
         ModelPlatformType.NOVITA: NovitaModel,
         ModelPlatformType.WATSONX: WatsonXModel,
+        ModelPlatformType.QIANFAN: QianfanModel,
         ModelPlatformType.CRYNUX: CrynuxModel,
     }
 
@@ -110,6 +112,7 @@ class ModelFactory:
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
         **kwargs,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
@@ -134,6 +137,8 @@ class ModelFactory:
                 (default: :obj:`None`)
             timeout (Optional[float], optional): The timeout value in seconds
                 for API calls. (default: :obj:`None`)
+            max_retries (int, optional): Maximum number of retries
+                for API calls. (default: :obj:`3`)
             **kwargs: Additional model-specific parameters that will be passed
                 to the model constructor. For example, Azure OpenAI models may
                 require `api_version`, `azure_deployment_name`,
@@ -186,6 +191,7 @@ class ModelFactory:
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
             **kwargs,
         )
 

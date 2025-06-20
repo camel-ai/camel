@@ -17,6 +17,8 @@ import torch
 
 from camel.interpreters import InternalPythonInterpreter, InterpreterError
 
+pytestmark = pytest.mark.heavy_dependency
+
 
 def action_function():
     return "access action function"
