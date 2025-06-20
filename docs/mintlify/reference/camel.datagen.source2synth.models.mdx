@@ -1,0 +1,49 @@
+<a id="camel.datagen.source2synth.models"></a>
+
+<a id="camel.datagen.source2synth.models.ReasoningStep"></a>
+
+## ReasoningStep
+
+```python
+class ReasoningStep(BaseModel):
+```
+
+A single step in a multi-hop reasoning process.
+
+**Parameters:**
+
+- **step** (str): The textual description of the reasoning step.
+
+<a id="camel.datagen.source2synth.models.MultiHopQA"></a>
+
+## MultiHopQA
+
+```python
+class MultiHopQA(BaseModel):
+```
+
+A multi-hop question-answer pair with reasoning steps and supporting
+facts.
+
+**Parameters:**
+
+- **question** (str): The question requiring multi-hop reasoning.
+- **reasoning_steps** (List[ReasoningStep]): List of reasoning steps to answer.
+- **answer** (str): The final answer to the question.
+- **supporting_facts** (List[str]): List of facts supporting the reasoning.
+- **type** (str): The type of question-answer pair.
+
+<a id="camel.datagen.source2synth.models.ContextPrompt"></a>
+
+## ContextPrompt
+
+```python
+class ContextPrompt(BaseModel):
+```
+
+A context prompt for generating multi-hop question-answer pairs.
+
+**Parameters:**
+
+- **main_context** (str): The primary context for generating QA pairs.
+- **related_contexts** (Optional[List[str]]): Additional related contexts.

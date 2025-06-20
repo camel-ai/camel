@@ -27,8 +27,7 @@ from camel.societies.workforce.prompts import (
 )
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
-from camel.tasks.task import Task, TaskState
-from camel.utils import print_text_animated
+from camel.tasks.task import Task, TaskState, validate_task_content
 
 
 class RolePlayingWorker(Worker):
@@ -38,14 +37,17 @@ class RolePlayingWorker(Worker):
         description (str): Description of the node.
         assistant_role_name (str): The role name of the assistant agent.
         user_role_name (str): The role name of the user agent.
-        assistant_agent_kwargs (Optional[Dict], optional): The keyword
-            arguments to initialize the assistant agent in the role playing,
-            like the model name, etc. Defaults to None.
-        user_agent_kwargs (Optional[Dict], optional): The keyword arguments to
+        assistant_agent_kwargs (Optional[Dict]): The keyword arguments to
+            initialize the assistant agent in the role playing, like the model
+            name, etc. (default: :obj:`None`)
+        user_agent_kwargs (Optional[Dict]): The keyword arguments to
             initialize the user agent in the role playing, like the model name,
-            etc. Defaults to None.
-        chat_turn_limit (int, optional): The maximum number of chat turns in
-            the role playing. Defaults to 3.
+            etc. (default: :obj:`None`)
+        summarize_agent_kwargs (Optional[Dict]): The keyword arguments to
+            initialize the summarize agent, like the model name, etc.
+            (default: :obj:`None`)
+        chat_turn_limit (int): The maximum number of chat turns in the role
+            playing. (default: :obj:`20`)
     """
 
     def __init__(
@@ -55,9 +57,11 @@ class RolePlayingWorker(Worker):
         user_role_name: str,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
-        chat_turn_limit: int = 3,
+        summarize_agent_kwargs: Optional[Dict] = None,
+        chat_turn_limit: int = 20,
     ) -> None:
         super().__init__(description)
+        self.summarize_agent_kwargs = summarize_agent_kwargs
         summ_sys_msg = BaseMessage.make_assistant_message(
             role_name="Summarizer",
             content="You are a good summarizer. You will be presented with "
@@ -65,7 +69,11 @@ class RolePlayingWorker(Worker):
             "are trying to solve a task. Your job is summarizing the result "
             "of the task based on the chat history.",
         )
-        self.summarize_agent = ChatAgent(summ_sys_msg)
+        summarize_agent_dict = (
+            summarize_agent_kwargs if summarize_agent_kwargs else {}
+        )
+        summarize_agent_dict['system_message'] = summ_sys_msg
+        self.summarize_agent = ChatAgent(**summarize_agent_dict)
         self.chat_turn_limit = chat_turn_limit
         self.assistant_role_name = assistant_role_name
         self.user_role_name = user_role_name
@@ -132,24 +140,20 @@ class RolePlayingWorker(Worker):
                 )
                 break
 
-            print_text_animated(
+            print(
                 f"{Fore.BLUE}AI User:\n\n{user_response.msg.content}"
                 f"{Fore.RESET}\n",
-                delay=0.005,
             )
             chat_history.append(f"AI User: {user_response.msg.content}")
 
-            print_text_animated(
-                f"{Fore.GREEN}AI Assistant:{Fore.RESET}", delay=0.005
-            )
+            print(f"{Fore.GREEN}AI Assistant:{Fore.RESET}")
 
             for func_record in assistant_response.info['tool_calls']:
                 print(func_record)
 
-            print_text_animated(
+            print(
                 f"\n{Fore.GREEN}{assistant_response.msg.content}"
                 f"{Fore.RESET}\n",
-                delay=0.005,
             )
             chat_history.append(
                 f"AI Assistant: {assistant_response.msg.content}"
@@ -173,6 +177,14 @@ class RolePlayingWorker(Worker):
         )
         result_dict = json.loads(response.msg.content)
         task_result = TaskResult(**result_dict)
+
+        if not validate_task_content(task_result.content, task.id):
+            print(
+                f"{Fore.RED}Task {task.id}: Content validation failed - "
+                f"task marked as failed{Fore.RESET}"
+            )
+            return TaskState.FAILED
+
         task.result = task_result.content
 
         print(f"Task result: {task.result}\n")

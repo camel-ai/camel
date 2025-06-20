@@ -1,0 +1,136 @@
+<a id="camel.loaders.firecrawl_reader"></a>
+
+<a id="camel.loaders.firecrawl_reader.Firecrawl"></a>
+
+## Firecrawl
+
+```python
+class Firecrawl:
+```
+
+Firecrawl allows you to turn entire websites into LLM-ready markdown.
+
+**Parameters:**
+
+- **api_key** (Optional[str]): API key for authenticating with the Firecrawl API.
+- **api_url** (Optional[str]): Base URL for the Firecrawl API.
+- **References**: 
+- **https**: //docs.firecrawl.dev/introduction
+
+<a id="camel.loaders.firecrawl_reader.Firecrawl.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    api_key: Optional[str] = None,
+    api_url: Optional[str] = None
+):
+```
+
+<a id="camel.loaders.firecrawl_reader.Firecrawl.crawl"></a>
+
+### crawl
+
+```python
+def crawl(
+    self,
+    url: str,
+    params: Optional[Dict[str, Any]] = None,
+    **kwargs: Any
+):
+```
+
+Crawl a URL and all accessible subpages. Customize the crawl by
+setting different parameters, and receive the full response or a job
+ID based on the specified options.
+
+**Parameters:**
+
+- **url** (str): The URL to crawl.
+- **params** (Optional[Dict[str, Any]]): Additional parameters for the crawl request. Defaults to `None`. **kwargs (Any): Additional keyword arguments, such as `poll_interval`, `idempotency_key`.
+
+**Returns:**
+
+  Any: The crawl job ID or the crawl results if waiting until
+completion.
+
+<a id="camel.loaders.firecrawl_reader.Firecrawl.check_crawl_job"></a>
+
+### check_crawl_job
+
+```python
+def check_crawl_job(self, job_id: str):
+```
+
+Check the status of a crawl job.
+
+**Parameters:**
+
+- **job_id** (str): The ID of the crawl job.
+
+**Returns:**
+
+  Dict: The response including status of the crawl job.
+
+<a id="camel.loaders.firecrawl_reader.Firecrawl.scrape"></a>
+
+### scrape
+
+```python
+def scrape(self, url: str, params: Optional[Dict[str, str]] = None):
+```
+
+To scrape a single URL. This function supports advanced scraping
+by setting different parameters and returns the full scraped data as a
+dictionary.
+
+Reference: https://docs.firecrawl.dev/advanced-scraping-guide
+
+**Parameters:**
+
+- **url** (str): The URL to read.
+- **params** (Optional[Dict[str, str]]): Additional parameters for the scrape request.
+
+**Returns:**
+
+  Dict[str, str]: The scraped data.
+
+<a id="camel.loaders.firecrawl_reader.Firecrawl.structured_scrape"></a>
+
+### structured_scrape
+
+```python
+def structured_scrape(self, url: str, response_format: BaseModel):
+```
+
+Use LLM to extract structured data from given URL.
+
+**Parameters:**
+
+- **url** (str): The URL to read.
+- **response_format** (BaseModel): A pydantic model that includes value types and field descriptions used to generate a structured response by LLM. This schema helps in defining the expected output format.
+
+**Returns:**
+
+  Dict: The content of the URL.
+
+<a id="camel.loaders.firecrawl_reader.Firecrawl.map_site"></a>
+
+### map_site
+
+```python
+def map_site(self, url: str, params: Optional[Dict[str, Any]] = None):
+```
+
+Map a website to retrieve all accessible URLs.
+
+**Parameters:**
+
+- **url** (str): The URL of the site to map.
+- **params** (Optional[Dict[str, Any]]): Additional parameters for the map request. Defaults to `None`.
+
+**Returns:**
+
+  list: A list containing the URLs found on the site.

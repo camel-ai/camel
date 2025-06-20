@@ -434,3 +434,6 @@ results/bfcl/
 
 # Secret files for docker
 .container/.env
+
+# Environment variables file
+.env

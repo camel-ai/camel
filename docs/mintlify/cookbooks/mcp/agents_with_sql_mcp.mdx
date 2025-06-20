@@ -1,0 +1,435 @@
+---
+title: "CAMEL Cookbook: SQL MCP Server"
+---
+
+You can also check this cookbook in [Google Colab](https://drive.google.com/file/d/14Eznv3TZaT0Qnt6PvnMylk4i3yG6JCfz/view?usp=sharing).
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+This cookbook demonstrates how to use CAMEL AI agents to interact with an SQL database using natural language. We'll achieve this by connecting CAMEL to a **local SQL Model Control Protocol (MCP) server** that you provide. This setup allows the CAMEL agent to leverage MCP for database operations like querying data, listing tables, and describing schemas, all triggered by conversational prompts.
+
+**Key Learnings:**
+*   Understanding the role of MCP in CAMEL for tool usage.
+*   Setting up the CAMEL environment and necessary API keys.
+*   Preparing a local Python script (`sql_server_mcp.py`) to act as your SQL MCP server.
+*   Configuring CAMEL to connect to and utilize this local MCP server.
+*   Creating a sample SQLite database.
+*   Interacting with the database using natural language queries through a CAMEL agent.
+
+This approach focuses on using CAMEL with an MCP server that runs as a separate Python process, managed by CAMEL's `_MCPServer` utility.
+
+## 📦 Installation
+
+First, install the CAMEL package with all its dependencies:
+
+
+```python
+%pip install "camel-ai[all]==0.2.62"
+```
+
+## 🔑 Setting Up API Keys
+
+This cookbook uses OpenRouter as the model provider, which gives us access to various LLMs including Claude and Gemini. You'll need an OpenRouter API key.
+
+1. Sign up at [OpenRouter](https://openrouter.ai/)
+2. Get your API key from the dashboard
+3. The script will prompt you for the API key when running
+
+## Required Configuration Files
+
+Before running the code, you need to set up two important configuration files in your working directory:
+
+### 1. MCP Configuration File (`mcp_config.json`)
+
+Create a file named `mcp_config.json` with the following content:
+
+```json
+{
+    "mcpServers": {
+        "sql_server": {
+            "type": "script",
+            "command": "python",
+            "args": ["sql_server_mcp.py"],
+            "transport": "stdio"
+        }
+    }
+} 
+```
+
+This configuration tells CAMEL how to start and communicate with your SQL MCP server.
+
+### 2. SQL MCP Server Script (`sql_server_mcp.py`)
+
+Create a file named `sql_server_mcp.py` in your working directory. This script will handle all database operations:
+You can download and configure the script [here](https://github.com/parthshr370/MCP-Servers/blob/main/sql_server/sql_server_mcp.py)
+
+## Understanding MCP and Your Local SQL MCP Server
+
+**What is MCP?**
+
+MCP (Model Control Protocol) is a specification that allows Large Language Models (LLMs) to interact with external tools and services in a standardized way. In CAMEL, `MCPToolkit` enables agents to discover and use tools exposed by MCP-compliant servers. This cookbook focuses on using a Python-based MCP server that you'll run locally.
+
+**Your `sql_server_mcp.py` Script**
+
+For this cookbook to function, you need to have a Python script named `sql_server_mcp.py` in the **same directory** as this notebook (or where you execute the Python code derived from this markdown).
+
+This script is responsible for the direct database interactions. It should:
+1.  Use `mcp.server.fastmcp.FastMCP` (from the `modelcontextprotocol` Python SDK) to define an MCP server instance (e.g., `mcp = FastMCP("sqldb")`).
+2.  Define Python functions for database operations, such as:
+    *   `execute_query(connection_string: str, query: str) -> str`: Executes a given SQL query.
+    *   `list_tables(connection_string: str) -> str`: Lists tables in a database.
+    *   `describe_table(connection_string: str, table_name: str) -> str`: Describes a table's schema.
+3.  Decorate these functions with `@mcp.tool()` to expose them as tools to the LLM. Each tool should also have an `inputSchema` defined to guide the LLM on how to use it.
+4.  Include a `main` section (`if __name__ == "__main__":`) that runs the MCP server (e.g., `mcp.run(transport='stdio')`).## Understanding MCP and Your Local SQL MCP Server
+
+
+This tool handles:
+
+- Connecting to a SQLite database
+- Executing a SQL query
+- Handling different types of queries (SELECT vs. non-SELECT)
+- Formatting results as JSON
+- Error handling
+
+The `inputSchema` defines the required parameters and provides descriptions that help the LLM understand how to use the tool.
+
+This simple tool creates empty SQLite databases that can later be populated with tables and data.
+
+This cookbook will demonstrate how CAMEL's `_MCPServer` utility launches and communicates with your `sql_server_mcp.py` script using the Python interpreter.
+
+## Creating a Sample Database
+
+Let's create a local SQLite database (`sample.db`) that our agent will interact with. This database will contain `employees` and `departments` tables.
+
+
+```python
+import os
+import sqlite3
+
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
+
+db_path = "sample.db" # Database will be created in the current working directory
+
+# Remove existing database if any, to ensure a clean start
+if os.path.exists(db_path):
+    os.remove(db_path)
+    logger.info(f"Removed existing database: {db_path}")
+
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
+
+# Create employees table
+cursor.execute("""
+CREATE TABLE employees (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    department TEXT,
+    salary REAL,
+    hire_date TEXT
+)
+""")
+logger.info("Created 'employees' table.")
+
+# Create departments table
+cursor.execute("""
+CREATE TABLE departments (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    budget REAL,
+    location TEXT
+)
+""")
+logger.info("Created 'departments' table.")
+
+# Insert sample employee data
+employees_data = [
+    (1, 'John Doe', 'Engineering', 85000.00, '2020-01-15'),
+    (2, 'Jane Smith', 'Marketing', 75000.00, '2019-05-20'),
+    (3, 'Bob Johnson', 'Engineering', 95000.00, '2018-11-10'),
+    (4, 'Alice Brown', 'HR', 65000.00, '2021-03-05'),
+    (5, 'Charlie Davis', 'Engineering', 90000.00, '2020-08-12')
+]
+cursor.executemany("INSERT INTO employees VALUES (?, ?, ?, ?, ?)", employees_data)
+logger.info(f"Inserted {len(employees_data)} records into 'employees' table.")
+
+# Insert sample department data
+departments_data = [
+    (1, 'Engineering', 1000000.00, 'Building A'),
+    (2, 'Marketing', 500000.00, 'Building B'),
+    (3, 'HR', 300000.00, 'Building A'),
+    (4, 'Finance', 600000.00, 'Building C')
+]
+cursor.executemany("INSERT INTO departments VALUES (?, ?, ?, ?)", departments_data)
+logger.info(f"Inserted {len(departments_data)} records into 'departments' table.")
+
+conn.commit()
+conn.close()
+logger.info(f"Sample database '{db_path}' created and populated successfully.")
+```
+
+## Creating the CAMEL Agent
+
+Now let's create our CAMEL agent that will interact with the database. Save this as `mcp_camel.py`:
+
+
+```python
+import asyncio
+import os
+import sys
+from getpass import getpass
+from pathlib import Path
+
+# CAMEL AI Imports
+from camel.agents import ChatAgent
+from camel.logger import get_logger
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.toolkits import MCPToolkit
+from camel.types import ModelPlatformType, RoleType
+
+logger = get_logger(__name__)
+
+async def main():
+    # Path to your local MCP server script
+    server_script_path = Path.cwd() / "sql_server_mcp.py"
+    if not server_script_path.exists():
+        logger.error(f"MCP server script not found at: {server_script_path}")
+        logger.error("Please create 'sql_server_mcp.py' or update the path.")
+        return
+
+    # Path to your SQLite database
+    db_path = Path.cwd() / "sample.db"
+    if not db_path.exists():
+        logger.error(f"Database not found at: {db_path}")
+        logger.error("Please run the database setup script first.")
+        return
+
+    # Initialize MCPToolkit with config file
+    config_file_path = Path.cwd() / "mcp_config.json"
+    if not config_file_path.exists():
+        logger.error(f"MCP config file not found at: {config_file_path}")
+        return
+        
+    mcp_toolkit = MCPToolkit(config_path=str(config_file_path))
+    
+    await mcp_toolkit.connect()
+    tools = mcp_toolkit.get_tools()
+    
+    # Get API key securely from user input
+    openrouter_api_key = getpass('Enter your OpenRouter API key: ')
+    if not openrouter_api_key:
+        logger.error("API key is required to proceed.")
+        return
+
+    try:
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.OPENROUTER,
+            model_type="google/gemini-2.5-pro-preview",
+            api_key=openrouter_api_key,
+            model_config_dict={
+                "temperature": 0.2,
+                "max_tokens": 2048,
+            }
+        )
+        logger.info("Model configured successfully.")
+
+        # define the system message in detail
+        system_content = (
+            f"You are a helpful SQL assistant with access to MCP tools for database operations. "
+            f"The target database is located at: {db_path}. "
+            "Available tools:\n"
+            "1. execute_query(connection_string, query) - Execute SQL queries\n"
+            "2. list_tables(connection_string) - List all tables\n"
+            "3. describe_table(connection_string, table_name) - Get table schema\n"
+            "4. get_table_row_count(connection_string, table_name) - Count rows\n"
+            "\nWhen using these tools:\n"
+            "- Always use the full path to the database as connection_string\n"
+            "- Parse and display the JSON responses from the tools\n"
+            "- Handle any error messages in the responses\n"
+            "- For listing data, first get tables then query each one\n"
+            "\nNever write raw SQL without using the tools to execute it."
+        )
+
+        system_message = BaseMessage(
+            role_name="SQL Assistant",
+            role_type=RoleType.ASSISTANT,
+            meta_dict={"task": "SQL Database Operations"},
+            content=system_content
+        )
+
+        agent = ChatAgent(
+            system_message=system_message,
+            model=model,
+            tools=tools
+        )
+        agent.reset()
+
+        # Example query - you can modify this or make it interactive
+        user_question = "What tables are in the database and what's in them?"
+        
+        logger.info(f"\n>>> User: {user_question}")
+        
+        response = await agent.astep(user_question)
+        
+        if response and response.msgs:
+            agent_reply = response.msgs[0].content
+            print(f"<<< Agent: {agent_reply}")
+        else:
+            print("<<< Agent: No response received from the model.")
+            logger.error("Response object or messages were empty")
+            
+        print("\nScript finished.")
+
+    except Exception as e:
+        logger.error(f"An error occurred: {str(e)}")
+        print(f"\nError: {str(e)}")
+    finally:
+        await mcp_toolkit.disconnect() # final cleanup
+
+
+if __name__ == "__main__":
+    if sys.platform == "win32" and sys.version_info >= (3, 8):
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    asyncio.run(main())
+```
+
+## Running the Example
+
+1. Make sure you have all three required files in your directory:
+   - `mcp_config.json`
+   - `sql_server_mcp.py`
+   - `mcp_camel.py`
+
+2. Create and populate the database by running the database setup code
+
+3. Run the CAMEL agent:
+   ```bash
+   python mcp_camel.py
+   ```
+
+4. When prompted, enter your OpenRouter API key
+
+The agent will then:
+1. Connect to the local MCP server
+2. Use the provided tools to interact with the database
+3. Display the results in a human-readable format
+
+## Example Output - 
+Enter your OpenRouter API key: 
+Agent: I'll help you explore the database by first listing all tables and then examining their contents.
+
+Let's start by listing the tables in the database:
+
+```python
+list_tables("sample.db")
+```
+
+Based on the response, the database contains the following tables:
+- customers
+- orders
+- products
+
+Now, let's examine the schema of each table to understand their structure:
+
+```python
+describe_table("sample.db", "customers")
+```
+
+The customers table has the following columns:
+- id (INTEGER): Primary key
+- name (TEXT): Customer name
+- email (TEXT): Customer email
+- address (TEXT): Customer address
+
+```python
+describe_table("sample.db", "orders")
+```
+
+The orders table has the following columns:
+- id (INTEGER): Primary key
+- customer_id (INTEGER): Foreign key referencing customers
+- product_id (INTEGER): Foreign key referencing products
+- quantity (INTEGER): Order quantity
+- order_date (TEXT): Date of the order
+
+```python
+describe_table("sample.db", "products")
+```
+
+The products table has the following columns:
+- id (INTEGER): Primary key
+- name (TEXT): Product name
+- price (REAL): Product price
+- category (TEXT): Product category
+
+
+To summarize:
+1. The database contains 3 tables: customers, products, and orders
+2. The customers table has 5 customers with their contact information
+3. The products table has 6 products with pricing and category information
+4. The orders table has 10 orders linking customers to products with quantity and date information
+
+
+## Example Queries
+
+You can modify the `user_question` in `mcp_camel.py` to ask different questions, such as:
+- "What tables are in the database?"
+- "Show me all customers and their orders"
+- "How many products do we have in stock?"
+- "List all orders with their items and total amounts"
+
+## Conclusion
+
+In this cookbook, you've learned how to:
+- Set up a complete MCP-based database interaction system
+- Create and configure the necessary files (`mcp_config.json` and `sql_server_mcp.py`)
+- Build a CAMEL agent that can understand and execute database operations
+- Use OpenRouter to access powerful language models
+- Handle database operations safely through MCP tools
+
+This pattern can be extended to other types of databases or services by modifying the MCP server implementation while keeping the same CAMEL agent interface.
+
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+

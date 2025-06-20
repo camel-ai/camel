@@ -1,5 +1,3 @@
-# Tools
-
 For more detailed usage information, please refer to our cookbook: [Tools Cookbook](../cookbooks/advanced_features/agents_with_tools.ipynb)
 
 ## 1. Concept
@@ -177,6 +175,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | NotionToolkit | A toolkit for retrieving information from Notion pages and workspaces using the Notion API. |
 | OpenAPIToolkit | A toolkit for working with OpenAPI specifications and REST APIs. |
 | OpenBBToolkit | A toolkit for accessing and analyzing financial market data through the OpenBB Platform, including stocks, ETFs, cryptocurrencies, and economic indicators. |
+| PPTXToolkit | A toolkit for creating and manipulating PowerPoint (PPTX) files, including adding slides, text, and images. |
 | PubMedToolkit | A toolkit for interacting with PubMed's E-utilities API to access MEDLINE data. |
 | RedditToolkit | A toolkit for Reddit operations including collecting top posts, performing sentiment analysis on comments, and tracking keyword discussions. |
 | RetrievalToolkit | A toolkit for retrieving information from local vector storage systems based on specified queries. |
@@ -216,11 +215,11 @@ from camel.toolkits import ArxivToolkit
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run Arxiv Toolkit with MCP server mode.",
-        usage=f"python {sys.argv[0]} [--mode MODE]",
+        usage=f"python {sys.argv[0]} [--mode MODE] [--timeout TIMEOUT]",
     )
     parser.add_argument(
         "--mode",
-        choices=["stdio", "sse"],
+        choices=["stdio", "sse", "streamable-http"],
         default="stdio",
         help="MCP server mode (default: 'stdio')",
     )
@@ -236,7 +235,7 @@ if __name__ == "__main__":
     toolkit = ArxivToolkit(timeout=args.timeout)
 
     # Run the toolkit as an MCP server
-    toolkit.mcp.run(args.mode)
+    toolkit.run_mcp_server(mode=args.mode)
 ```
 
 The server can be run in two modes:

@@ -1,0 +1,153 @@
+<a id="camel.interpreters.docker_interpreter"></a>
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter"></a>
+
+## DockerInterpreter
+
+```python
+class DockerInterpreter(BaseInterpreter):
+```
+
+A class for executing code files or code strings in a docker container.
+
+This class handles the execution of code in different scripting languages
+(currently Python and Bash) within a docker container, capturing their
+stdout and stderr streams, and allowing user checking before executing code
+strings.
+
+**Parameters:**
+
+- **require_confirm** (bool, optional): If `True`, prompt user before running code strings for security. Defaults to `True`.
+- **print_stdout** (bool, optional): If `True`, print the standard output of the executed code. Defaults to `False`.
+- **print_stderr** (bool, optional): If `True`, print the standard error of the executed code. Defaults to `True`.
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    require_confirm: bool = True,
+    print_stdout: bool = False,
+    print_stderr: bool = True
+):
+```
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+Destructor for the DockerInterpreter class.
+
+This method ensures that the Docker container is removed when the
+interpreter is deleted.
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter._initialize_if_needed"></a>
+
+### _initialize_if_needed
+
+```python
+def _initialize_if_needed(self):
+```
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter._create_file_in_container"></a>
+
+### _create_file_in_container
+
+```python
+def _create_file_in_container(self, content: str):
+```
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter._run_file_in_container"></a>
+
+### _run_file_in_container
+
+```python
+def _run_file_in_container(self, file: Path, code_type: str):
+```
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.cleanup"></a>
+
+### cleanup
+
+```python
+def cleanup(self):
+```
+
+Explicitly stops and removes the Docker container.
+
+This method should be called when you're done with the interpreter
+to ensure proper cleanup of Docker resources.
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.run"></a>
+
+### run
+
+```python
+def run(self, code: str, code_type: str = 'python'):
+```
+
+Executes the given code in the container attached to the
+interpreter, and captures the stdout and stderr streams.
+
+**Parameters:**
+
+- **code** (str): The code string to execute.
+- **code_type** (str): The type of code to execute (e.g., 'python', 'bash'). (default: obj:`python`)
+
+**Returns:**
+
+  str: A string containing the captured stdout and stderr of the
+executed code.
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter._check_code_type"></a>
+
+### _check_code_type
+
+```python
+def _check_code_type(self, code_type: str):
+```
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.supported_code_types"></a>
+
+### supported_code_types
+
+```python
+def supported_code_types(self):
+```
+
+Provides supported code types by the interpreter.
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.update_action_space"></a>
+
+### update_action_space
+
+```python
+def update_action_space(self, action_space: Dict[str, Any]):
+```
+
+Updates action space for *python* interpreter
+
+<a id="camel.interpreters.docker_interpreter.DockerInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Executes a command in the Docker container and returns its output.
+
+**Parameters:**
+
+- **command** (str): The command to execute in the container.
+
+**Returns:**
+
+  str: A string containing the captured stdout and stderr of the
+executed command.

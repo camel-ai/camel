@@ -106,9 +106,9 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     assert isinstance(user_agent, ChatAgent)
     if model is None:
         assert (
-            assistant_agent.model_backend.model_type == ModelType.GPT_4O_MINI
+            assistant_agent.model_backend.model_type == ModelType.GPT_4_1_MINI
         )
-        assert user_agent.model_backend.model_type == ModelType.GPT_4O_MINI
+        assert user_agent.model_backend.model_type == ModelType.GPT_4_1_MINI
     else:
         assert assistant_agent.model_backend.model_type == ModelType.GPT_4O
         assert user_agent.model_backend.model_type == ModelType.GPT_4O
@@ -123,7 +123,9 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
             assert isinstance(critic, CriticAgent)
             assert role_playing.critic_sys_msg is not None
             if model is None:
-                assert critic.model_backend.model_type == ModelType.GPT_4O_MINI
+                assert (
+                    critic.model_backend.model_type == ModelType.GPT_4_1_MINI
+                )
             else:
                 assert critic.model_backend.model_type == ModelType.GPT_4O
 

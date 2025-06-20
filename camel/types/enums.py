@@ -15,7 +15,10 @@ import os
 from enum import Enum, EnumMeta
 from typing import cast
 
+from camel.logger import get_logger
 from camel.types.unified_model_type import UnifiedModelType
+
+logger = get_logger(__name__)
 
 
 class RoleType(Enum):
@@ -27,7 +30,7 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
-    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4o-mini")
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4.1-mini-2025-04-14")
 
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
@@ -44,6 +47,7 @@ class ModelType(UnifiedModelType, Enum):
     GPT_4_1_NANO = "gpt-4.1-nano-2025-04-14"
     O4_MINI = "o4-mini"
     O3 = "o3"
+    O3_PRO = "o3-pro"
 
     AWS_CLAUDE_3_7_SONNET = "anthropic.claude-3-7-sonnet-20250219-v1:0"
     AWS_CLAUDE_3_5_SONNET = "anthropic.claude-3-5-sonnet-20241022-v2:0"
@@ -53,6 +57,8 @@ class ModelType(UnifiedModelType, Enum):
     AWS_LLAMA_3_3_70B_INSTRUCT = "us.meta.llama3-3-70b-instruct-v1:0"
     AWS_LLAMA_3_2_90B_INSTRUCT = "us.meta.llama3-2-90b-instruct-v1:0"
     AWS_LLAMA_3_2_11B_INSTRUCT = "us.meta.llama3-2-11b-instruct-v1:0"
+    AWS_CLAUDE_SONNET_4 = "anthropic.claude-sonnet-4-20250514-v1:0"
+    AWS_CLAUDE_OPUS_4 = "anthropic.claude-opus-4-20250514-v1:0"
 
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
@@ -142,13 +148,15 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_2_0 = "claude-2.0"
     CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
 
-    # Claude3 models
+    # Claude models
     CLAUDE_3_OPUS = "claude-3-opus-latest"
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
+    CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
+    CLAUDE_OPUS_4 = "claude-opus-4-20250514"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -177,10 +185,13 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
-    GEMINI_2_5_PRO_EXP = "gemini-2.5-pro-exp-03-25"
-    GEMINI_2_0_FLASH = "gemini-2.0-flash-exp"
+    GEMINI_2_5_FLASH_PREVIEW = "gemini-2.5-flash-preview-04-17"
+    GEMINI_2_5_PRO_PREVIEW = "gemini-2.5-pro-preview-06-05"
+    GEMINI_2_0_FLASH = "gemini-2.0-flash"
+    GEMINI_2_0_FLASH_EXP = "gemini-2.0-flash-exp"
     GEMINI_2_0_FLASH_THINKING = "gemini-2.0-flash-thinking-exp"
     GEMINI_2_0_PRO_EXP = "gemini-2.0-pro-exp-02-05"
+    GEMINI_2_0_FLASH_LITE = "gemini-2.0-flash-lite"
     GEMINI_2_0_FLASH_LITE_PREVIEW = "gemini-2.0-flash-lite-preview-02-05"
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
@@ -196,6 +207,8 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
+    MISTRAL_MEDIUM_3 = "mistral-medium-latest"
+    MAGISTRAL_MEDIUM = "magistral-medium-2506"
 
     # Reka models
     REKA_CORE = "reka-core"
@@ -373,6 +386,35 @@ class ModelType(UnifiedModelType, Enum):
     )
     WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
+    # Qianfan models
+    QIANFAN_ERNIE_X1_TURBO_32K = "ernie-x1-turbo-32k"
+    QIANFAN_ERNIE_X1_32K = "ernie-x1-32k"
+    QIANFAN_ERNIE_X1_32K_PREVIEW = "ernie-x1-32k-preview"
+    QIANFAN_ERNIE_4_5_TURBO_128K = "ernie-4.5-turbo-128k"
+    QIANFAN_ERNIE_4_5_TURBO_32K = "ernie-4.5-turbo-32k"
+    QIANFAN_DEEPSEEK_V3 = "deepseek-v3"
+    QIANFAN_DEEPSEEK_R1 = "deepseek-r1"
+    QIANFAN_QWEN3_235B_A22B = "qwen3-235b-a22b"
+
+    # Crynux models
+    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    )
+    CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    )
+    CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+    )
+
+    CRYNUX_QWEN_3_4_B = "Qwen/Qwen3-4B"
+    CRYNUX_QWEN_3_8_B = "Qwen/Qwen3-8B"
+    CRYNUX_QWEN_2_5_7B = "Qwen/Qwen2.5-7B"
+    CRYNUX_QWEN_2_5_7B_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
+
+    CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B = "NousResearch/Hermes-3-Llama-3.1-8B"
+    CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B = "NousResearch/Hermes-3-Llama-3.2-3B"
+
     def __str__(self):
         return self.value
 
@@ -441,6 +483,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1,
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
+            ModelType.O3_PRO,
             ModelType.O3_MINI,
             ModelType.GPT_4_5_PREVIEW,
             ModelType.GPT_4_1,
@@ -462,6 +505,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_LLAMA_3_3_70B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_90B_INSTRUCT,
             ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
+            ModelType.AWS_CLAUDE_SONNET_4,
+            ModelType.AWS_CLAUDE_OPUS_4,
         }
 
     @property
@@ -475,6 +520,17 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
+            ModelType.O1,
+            ModelType.O1_PREVIEW,
+            ModelType.O1_MINI,
+            ModelType.O3_MINI,
+            ModelType.O3_PRO,
+            ModelType.GPT_4_5_PREVIEW,
+            ModelType.GPT_4_1,
+            ModelType.GPT_4_1_MINI,
+            ModelType.GPT_4_1_NANO,
+            ModelType.O4_MINI,
+            ModelType.O3,
         }
 
     @property
@@ -513,6 +569,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4,
+            ModelType.CLAUDE_OPUS_4,
         }
 
     @property
@@ -586,6 +644,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
+            ModelType.MISTRAL_MEDIUM_3,
+            ModelType.MAGISTRAL_MEDIUM,
         }
 
     @property
@@ -614,13 +674,16 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
-            ModelType.GEMINI_2_5_PRO_EXP,
+            ModelType.GEMINI_2_5_FLASH_PREVIEW,
+            ModelType.GEMINI_2_5_PRO_PREVIEW,
             ModelType.GEMINI_2_0_FLASH,
-            ModelType.GEMINI_1_5_FLASH,
-            ModelType.GEMINI_1_5_PRO,
+            ModelType.GEMINI_2_0_FLASH_EXP,
             ModelType.GEMINI_2_0_FLASH_THINKING,
             ModelType.GEMINI_2_0_PRO_EXP,
+            ModelType.GEMINI_2_0_FLASH_LITE,
             ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
+            ModelType.GEMINI_1_5_FLASH,
+            ModelType.GEMINI_1_5_PRO,
         }
 
     @property
@@ -815,6 +878,19 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_qianfan(self) -> bool:
+        return self in {
+            ModelType.QIANFAN_ERNIE_X1_TURBO_32K,
+            ModelType.QIANFAN_ERNIE_X1_32K,
+            ModelType.QIANFAN_ERNIE_X1_32K_PREVIEW,
+            ModelType.QIANFAN_ERNIE_4_5_TURBO_128K,
+            ModelType.QIANFAN_ERNIE_4_5_TURBO_32K,
+            ModelType.QIANFAN_DEEPSEEK_V3,
+            ModelType.QIANFAN_DEEPSEEK_R1,
+            ModelType.QIANFAN_QWEN3_235B_A22B,
+        }
+
+    @property
     def is_novita(self) -> bool:
         return self in {
             ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
@@ -860,6 +936,20 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_3_2_3B,
             ModelType.NOVITA_LLAMA_3_1_8B_BF16,
             ModelType.NOVITA_L31_70B_EURYALE_V2_2,
+        }
+
+    @property
+    def is_crynux(self) -> bool:
+        return self in {
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B,
+            ModelType.CRYNUX_QWEN_3_4_B,
+            ModelType.CRYNUX_QWEN_3_8_B,
+            ModelType.CRYNUX_QWEN_2_5_7B,
+            ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B,
         }
 
     @property
@@ -962,6 +1052,20 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_GLM_4_32B_0414,
             ModelType.NOVITA_GLM_Z1_RUMINATION_32B_0414,
             ModelType.NOVITA_QWEN_2_5_7B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_7B,
+            ModelType.CRYNUX_DEEPSEEK_R1_DISTILL_LLAMA_8B,
+            ModelType.CRYNUX_QWEN_3_4_B,
+            ModelType.CRYNUX_QWEN_3_8_B,
+            ModelType.CRYNUX_QWEN_2_5_7B,
+            ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B,
+            ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B,
+            ModelType.QIANFAN_ERNIE_X1_TURBO_32K,
+            ModelType.QIANFAN_ERNIE_X1_32K,
+            ModelType.QIANFAN_ERNIE_X1_32K_PREVIEW,
+            ModelType.QIANFAN_ERNIE_4_5_TURBO_32K,
+            ModelType.QIANFAN_QWEN3_235B_A22B,
         }:
             return 32_000
         elif self in {
@@ -1042,6 +1146,7 @@ class ModelType(UnifiedModelType, Enum):
             return 65_535
         elif self in {
             ModelType.NOVITA_QWEN_2_5_V1_72B,
+            ModelType.QIANFAN_DEEPSEEK_R1,
         }:
             return 96_000
         elif self in {
@@ -1094,6 +1199,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_R1,
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
+            ModelType.MISTRAL_MEDIUM_3,
+            ModelType.QIANFAN_ERNIE_4_5_TURBO_128K,
+            ModelType.QIANFAN_DEEPSEEK_V3,
         }:
             return 128_000
         elif self in {
@@ -1133,6 +1241,7 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.O1,
             ModelType.O3_MINI,
+            ModelType.O3_PRO,
             ModelType.CLAUDE_2_1,
             ModelType.CLAUDE_3_OPUS,
             ModelType.CLAUDE_3_SONNET,
@@ -1140,11 +1249,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4,
+            ModelType.CLAUDE_OPUS_4,
             ModelType.YI_MEDIUM_200K,
             ModelType.AWS_CLAUDE_3_5_SONNET,
             ModelType.AWS_CLAUDE_3_HAIKU,
             ModelType.AWS_CLAUDE_3_SONNET,
             ModelType.AWS_CLAUDE_3_7_SONNET,
+            ModelType.AWS_CLAUDE_SONNET_4,
+            ModelType.AWS_CLAUDE_OPUS_4,
             ModelType.O4_MINI,
             ModelType.O3,
         }:
@@ -1165,12 +1278,15 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 512_000
         elif self in {
-            ModelType.GEMINI_2_5_PRO_EXP,
+            ModelType.GEMINI_2_5_FLASH_PREVIEW,
+            ModelType.GEMINI_2_5_PRO_PREVIEW,
             ModelType.GEMINI_2_0_FLASH,
+            ModelType.GEMINI_2_0_FLASH_EXP,
+            ModelType.GEMINI_2_0_FLASH_THINKING,
+            ModelType.GEMINI_2_0_FLASH_LITE,
+            ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
-            ModelType.GEMINI_2_0_FLASH_THINKING,
-            ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
             ModelType.GEMINI_2_0_PRO_EXP,  # Not given in doc, assume the same
             ModelType.GLM_4_LONG,
             ModelType.TOGETHER_LLAMA_4_MAVERICK,
@@ -1186,8 +1302,17 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
+        elif self in {
+            ModelType.MAGISTRAL_MEDIUM,
+        }:
+            return 40_000
+
         else:
-            raise ValueError("Unknown model type")
+            logger.warning(
+                f"Unknown model type {self}, set maximum token limit "
+                f"to 999_999_999"
+            )
+            return 999_999_999
 
 
 class EmbeddingModelType(Enum):
@@ -1389,6 +1514,7 @@ class ModelPlatformType(Enum):
     MISTRAL = "mistral"
     REKA = "reka"
     TOGETHER = "together"
+    STUB = "stub"
     OPENAI_COMPATIBLE_MODEL = "openai-compatible-model"
     SAMBA = "samba-nova"
     COHERE = "cohere"
@@ -1407,6 +1533,8 @@ class ModelPlatformType(Enum):
     NETMIND = "netmind"
     NOVITA = "novita"
     WATSONX = "watsonx"
+    QIANFAN = "qianfan"
+    CRYNUX = "crynux"
 
     @classmethod
     def from_name(cls, name):
@@ -1576,6 +1704,16 @@ class ModelPlatformType(Enum):
     def is_novita(self) -> bool:
         r"""Returns whether this platform is Novita."""
         return self is ModelPlatformType.NOVITA
+
+    @property
+    def is_watsonx(self) -> bool:
+        r"""Returns whether this platform is WatsonX."""
+        return self is ModelPlatformType.WATSONX
+
+    @property
+    def is_crynux(self) -> bool:
+        r"""Returns whether this platform is Crynux."""
+        return self is ModelPlatformType.CRYNUX
 
 
 class AudioModelType(Enum):

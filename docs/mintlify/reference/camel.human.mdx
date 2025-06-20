@@ -1,0 +1,118 @@
+<a id="camel.human"></a>
+
+<a id="camel.human.Human"></a>
+
+## Human
+
+```python
+class Human:
+```
+
+A class representing a human user.
+
+**Parameters:**
+
+- **name** (str): The name of the human user.
+- **logger_color** (Any): The color of the menu options displayed to the user.
+- **input_button** (str): The text displayed for the input button.
+- **kill_button** (str): The text displayed for the kill button.
+- **options_dict** (Dict[str, str]): A dictionary containing the options displayed to the user.
+
+<a id="camel.human.Human.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    name: str = 'Kill Switch Engineer',
+    logger_color: Any = Fore.MAGENTA
+):
+```
+
+<a id="camel.human.Human.display_options"></a>
+
+### display_options
+
+```python
+def display_options(self, messages: Sequence[BaseMessage]):
+```
+
+Displays the options to the user.
+
+**Parameters:**
+
+- **messages** (Sequence[BaseMessage]): A list of `BaseMessage` objects.
+
+**Returns:**
+
+  None
+
+<a id="camel.human.Human.get_input"></a>
+
+### get_input
+
+```python
+def get_input(self):
+```
+
+**Returns:**
+
+  str: The user's input.
+
+<a id="camel.human.Human.parse_input"></a>
+
+### parse_input
+
+```python
+def parse_input(self, human_input: str):
+```
+
+Parses the user's input and returns a `BaseMessage` object.
+
+**Parameters:**
+
+- **human_input** (str): The user's input.
+
+**Returns:**
+
+  content: A `str` object representing the user's input.
+
+<a id="camel.human.Human.reduce_step"></a>
+
+### reduce_step
+
+```python
+def reduce_step(self, messages: Sequence[BaseMessage]):
+```
+
+Performs one step of the conversation by displaying options to the
+user, getting their input, and parsing their choice.
+
+**Parameters:**
+
+- **messages** (Sequence[BaseMessage]): A list of BaseMessage objects.
+
+**Returns:**
+
+  ChatAgentResponse: A `ChatAgentResponse` object representing the
+user's choice.
+
+<a id="camel.human.Human.clone"></a>
+
+### clone
+
+```python
+def clone(self, with_memory: bool = False):
+```
+
+Creates a new instance of the Human class with the same
+attributes.
+
+**Parameters:**
+
+- **with_memory** (bool): Flag indicating whether to include memory in the cloned instance. Currently not used. (default: :obj:`False`)
+
+**Returns:**
+
+  Human: A new Human instance with the same name and logger_color.

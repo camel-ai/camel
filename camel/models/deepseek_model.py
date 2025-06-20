@@ -28,7 +28,21 @@ from camel.types import (
     ChatCompletionChunk,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, api_keys_required
+from camel.utils import (
+    BaseTokenCounter,
+    api_keys_required,
+    get_current_agent_session_id,
+    update_langfuse_trace,
+)
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
+
 
 logger = get_logger(__name__)
 
@@ -64,6 +78,10 @@ class DeepSeekModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
 
     References:
         https://api-docs.deepseek.com/
@@ -82,6 +100,8 @@ class DeepSeekModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = DeepSeekConfig().as_dict()
@@ -98,6 +118,8 @@ class DeepSeekModel(OpenAICompatibleModel):
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
 
     def _prepare_request(
@@ -176,6 +198,7 @@ class DeepSeekModel(OpenAICompatibleModel):
             )
         return response
 
+    @observe()
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -193,6 +216,19 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )
@@ -205,6 +241,7 @@ class DeepSeekModel(OpenAICompatibleModel):
 
         return self._post_handle_response(response)
 
+    @observe()
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -222,6 +259,19 @@ class DeepSeekModel(OpenAICompatibleModel):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "agent_id": agent_session_id,
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         request_config = self._prepare_request(
             messages, response_format, tools
         )

@@ -11,725 +11,574 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+"""
+Tests for the refactored MCPToolkit.
+"""
+
 import json
 import tempfile
-from contextlib import AsyncExitStack
+from contextlib import asynccontextmanager
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
-
-
-class TestMCPClient:
-    r"""Test MCPClient class."""
-
-    @pytest.mark.asyncio
-    async def test_init(self):
-        r"""Test initialization of MCPClient."""
-        # Test with default parameters
-        server = MCPClient("test_command")
-        assert server.command_or_url == "test_command"
-        assert server.args == []
-        assert server.env == {}
-        assert server._mcp_tools == []
-        assert server.session is None
-        assert server._is_connected is False
-
-        # Test with custom parameters
-        server = MCPClient(
-            "test_url",
-            args=["--arg1", "--arg2"],
-            env={"ENV_VAR": "value"},
-            timeout=30,
-        )
-        assert server.command_or_url == "test_url"
-        assert server.args == ["--arg1", "--arg2"]
-        assert server.env == {"ENV_VAR": "value"}
-        assert server._mcp_tools == []
-        assert server.session is None
-        assert server._is_connected is False
-
-    @pytest.mark.asyncio
-    async def test_connection_http(self):
-        r"""Test connection with HTTP URL."""
-        with (
-            patch("mcp.client.sse.sse_client") as mock_sse_client,
-            patch("mcp.client.session.ClientSession") as mock_session,
-        ):
-            # Setup mocks
-            mock_read_stream = AsyncMock()
-            mock_write_stream = AsyncMock()
-            mock_sse_client.return_value.__aenter__.return_value = (
-                mock_read_stream,
-                mock_write_stream,
-            )
-
-            mock_session_instance = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = (
-                mock_session_instance
-            )
-
-            # Mock list_tools result
-            list_tools_result = MagicMock()
-            list_tools_result.tools = ["tool1", "tool2"]
-            mock_session_instance.list_tools.return_value = list_tools_result
-
-            # Test HTTP connection
-            server = MCPClient("https://example.com/api")
-            async with server.connection() as connected_server:
-                assert connected_server._is_connected is True
-                assert connected_server._mcp_tools == ["tool1", "tool2"]
-
-            # Verify mocks were called correctly
-            mock_sse_client.assert_called_once_with(
-                "https://example.com/api", headers={}
-            )
-            mock_session.assert_called_once()
-            mock_session_instance.initialize.assert_called_once()
-            mock_session_instance.list_tools.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_connection_stdio(self):
-        r"""Test connection with stdio command."""
-        with (
-            patch("mcp.client.stdio.stdio_client") as mock_stdio_client,
-            patch("mcp.client.session.ClientSession") as mock_session,
-        ):
-            # Setup mocks
-            mock_read_stream = AsyncMock()
-            mock_write_stream = AsyncMock()
-            mock_stdio_client.return_value.__aenter__.return_value = (
-                mock_read_stream,
-                mock_write_stream,
-            )
-
-            mock_session_instance = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = (
-                mock_session_instance
-            )
-
-            # Mock list_tools result
-            list_tools_result = MagicMock()
-            list_tools_result.tools = ["tool1", "tool2"]
-            mock_session_instance.list_tools.return_value = list_tools_result
-
-            # Test stdio connection
-            server = MCPClient(
-                "local_command", args=["--arg1"], env={"ENV_VAR": "value"}
-            )
-            async with server.connection() as connected_server:
-                assert connected_server._is_connected is True
-                assert connected_server._mcp_tools == ["tool1", "tool2"]
-
-            # Verify mocks were called correctly
-            mock_stdio_client.assert_called_once()
-            mock_session.assert_called_once()
-            mock_session_instance.initialize.assert_called_once()
-            mock_session_instance.list_tools.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_list_mcp_tools_not_connected(self):
-        r"""Test list_mcp_tools when not connected."""
-        server = MCPClient("test_command")
-        result = await server.list_mcp_tools()
-        assert isinstance(result, str)
-        assert "not connected" in result
-
-    @pytest.mark.asyncio
-    async def test_list_mcp_tools_connected(self):
-        r"""Test list_mcp_tools when connected."""
-        server = MCPClient("test_command")
-        server._session = AsyncMock()
-
-        # Mock successful response
-        mock_result = MagicMock()
-        server._session.list_tools.return_value = mock_result
-
-        result = await server.list_mcp_tools()
-        assert result == mock_result
-        server._session.list_tools.assert_called_once()
-
-        # Mock exception
-        server._session.list_tools.side_effect = Exception("Test error")
-        with pytest.raises(Exception) as excinfo:
-            await server.list_mcp_tools()
-        assert "Test error" in str(excinfo.value)
-
-    @pytest.mark.asyncio
-    async def test_generate_function_from_mcp_tool(self):
-        r"""Test generate_function_from_mcp_tool."""
-        server = MCPClient("test_command")
-        server._session = AsyncMock()
-
-        # Create mock MCP tool
-        mock_tool = MagicMock()
-        mock_tool.name = "test_function"
-        mock_tool.description = "Test function description"
-        mock_tool.inputSchema = {
-            "properties": {
-                "param1": {"type": "string"},
-                "param2": {"type": "integer"},
-                "param3": {"type": "boolean"},
-            },
-            "required": ["param1", "param2"],
-        }
-
-        # Generate function
-        func = server.generate_function_from_mcp_tool(mock_tool)
-
-        # Check function attributes
-        assert func.__name__ == "test_function"
-        assert func.__doc__ == "Test function description"
-        assert "param1" in func.__annotations__
-        assert "param2" in func.__annotations__
-        assert "param3" in func.__annotations__
-
-        # Mock call_tool response
-        mock_content = MagicMock()
-        mock_content.type = "text"
-        mock_content.text = "Test result"
-
-        mock_result = MagicMock()
-        mock_result.content = [mock_content]
-        server._session.call_tool.return_value = mock_result
-
-        # Test function call
-        result = await func(param1="test", param2=123)
-        assert result == "Test result"
-        server._session.call_tool.assert_called_once_with(
-            "test_function", {"param1": "test", "param2": 123}
-        )
-
-        # Test missing required parameter - now returns a message
-        with patch("camel.toolkits.mcp_toolkit.logger") as mock_logger:
-            mock_logger.reset_mock()
-
-            result = await func(param1="test")
-            assert result == "Missing required parameters."
-            mock_logger.warning.assert_called_once()
-
-        # Test different content types
-        # Image content
-        mock_content.type = "image"
-        mock_content.url = "https://example.com/image.jpg"
-        result = await func(param1="test", param2=123)
-        assert "Image available at" in result
-
-        # Image without URL
-        mock_content.url = None
-        result = await func(param1="test", param2=123)
-        assert "Image content received" in result
-
-        # Embedded resource
-        mock_content.type = "embedded_resource"
-        mock_content.name = "resource.pdf"
-        result = await func(param1="test", param2=123)
-        assert "Embedded resource: resource.pdf" in result
-
-        # Embedded resource without name
-        mock_content.name = None
-        result = await func(param1="test", param2=123)
-        assert "Embedded resource received" in result
-
-        # Unknown content type
-        mock_content.type = "unknown"
-        result = await func(param1="test", param2=123)
-        assert "not fully supported" in result
-
-        # No content
-        mock_result.content = []
-        result = await func(param1="test", param2=123)
-        assert "No data available" in result
-
-    @pytest.mark.asyncio
-    async def test_build_tool_schema(self):
-        r"""Test build_tool_schema method."""
-        server = MCPClient("test_command")
-        mock_tool = MagicMock()
-        mock_tool.name = "test_function"
-        mock_tool.description = "Test function description"
-        mock_tool.inputSchema = {
-            "properties": {
-                "param1": {"type": "string"},
-                "param2": {"type": "integer"},
-            },
-            "required": ["param1", "param2"],
-        }
-        schema = server._build_tool_schema(mock_tool)
-
-        target_schema = {
-            "type": "function",
-            "function": {
-                "name": "test_function",
-                "description": "Test function description",
-                "strict": False,
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "param1": {"type": "string"},
-                        "param2": {"type": "integer"},
-                    },
-                    "required": ["param1", "param2"],
-                    "additionalProperties": False,
-                },
-            },
-        }
-        assert schema == target_schema
-
-        # No description
-        mock_tool.description = None
-        schema = server._build_tool_schema(mock_tool)
-        assert schema == {
-            "type": "function",
-            "function": {
-                "name": "test_function",
-                "description": "No description provided.",
-                "strict": False,
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "param1": {"type": "string"},
-                        "param2": {"type": "integer"},
-                    },
-                    "required": ["param1", "param2"],
-                    "additionalProperties": False,
-                },
-            },
-        }
-
-    @pytest.mark.asyncio
-    async def test_get_tools(self):
-        r"""Test get_tools method for MCPClient."""
-        with patch(
-            "camel.toolkits.mcp_toolkit.FunctionTool"
-        ) as mock_function_tool:
-            server = MCPClient("test_command")
-
-            # Mock tools
-            mock_tool1 = MagicMock()
-            mock_tool2 = MagicMock()
-            server._mcp_tools = [mock_tool1, mock_tool2]
-
-            # Mock generate_function_from_mcp_tool
-            mock_func1 = AsyncMock()
-            mock_func2 = AsyncMock()
-            server.generate_function_from_mcp_tool = MagicMock(
-                side_effect=[mock_func1, mock_func2]
-            )
-
-            # Mock FunctionTool
-            mock_function_tool_instance1 = MagicMock()
-            mock_function_tool_instance2 = MagicMock()
-            mock_function_tool.side_effect = [
-                mock_function_tool_instance1,
-                mock_function_tool_instance2,
-            ]
-
-            # Get tools
-            tools = server.get_tools()
-
-            # Verify results
-            assert len(tools) == 2
-            assert tools[0] == mock_function_tool_instance1
-            assert tools[1] == mock_function_tool_instance2
-
-            # Verify mocks were called correctly
-            server.generate_function_from_mcp_tool.assert_any_call(mock_tool1)
-            server.generate_function_from_mcp_tool.assert_any_call(mock_tool2)
-
-    @pytest.mark.asyncio
-    async def test_connect_explicit(self):
-        r"""Test explicit connect method."""
-        with (
-            patch("mcp.client.sse.sse_client") as mock_sse_client,
-            patch("mcp.client.session.ClientSession") as mock_session,
-        ):
-            # Setup mocks
-            mock_read_stream = AsyncMock()
-            mock_write_stream = AsyncMock()
-            mock_sse_client.return_value.__aenter__.return_value = (
-                mock_read_stream,
-                mock_write_stream,
-            )
-
-            mock_session_instance = AsyncMock()
-            mock_session.return_value.__aenter__.return_value = (
-                mock_session_instance
-            )
-
-            # Mock list_tools result
-            list_tools_result = MagicMock()
-            list_tools_result.tools = ["tool1", "tool2"]
-            mock_session_instance.list_tools.return_value = list_tools_result
-
-            # Test HTTP connection
-            server = MCPClient("https://example.com/api")
-            result = await server.connect()
-
-            # Verify results
-            assert result == server
-            assert server._is_connected is True
-            assert server._mcp_tools == ["tool1", "tool2"]
-            assert server.session is not None
-
-            # Verify mocks were called correctly
-            mock_sse_client.assert_called_once_with(
-                "https://example.com/api", headers={}
-            )
-            mock_session.assert_called_once()
-            mock_session_instance.initialize.assert_called_once()
-            mock_session_instance.list_tools.assert_called_once()
-
-            # Test connecting when already connected
-            with patch("camel.toolkits.mcp_toolkit.logger") as mock_logger:
-                result = await server.connect()
-                assert result == server
-                mock_logger.warning.assert_called_once()
-                # Verify no new connections were made
-                assert mock_sse_client.call_count == 1
-
-    @pytest.mark.asyncio
-    async def test_connect_failure(self):
-        r"""Test connect method with failure."""
-        with patch("mcp.client.sse.sse_client") as mock_sse_client:
-            # Setup mock to raise exception
-            mock_sse_client.return_value.__aenter__.side_effect = Exception(
-                "Connection error"
-            )
-
-            # Create server
-            server = MCPClient("https://example.com/api")
-
-            with pytest.raises(Exception) as excinfo:
-                await server.connect()
-
-            assert "Connection error" in str(excinfo.value)
-
-            assert server._is_connected is False
-
-    @pytest.mark.asyncio
-    async def test_disconnect_explicit(self):
-        r"""Test explicit disconnect method."""
-        # Create server
-        server = MCPClient("test_command")
-
-        # Setup connected state
-        server._is_connected = True
-        server._exit_stack = AsyncMock()
-        server._exit_stack.aclose = AsyncMock()
-        server._session = MagicMock()
-
-        # Test disconnect
-        await server.disconnect()
-
-        # Verify results
-        assert server._is_connected is False
-        assert server.session is None
-        server._exit_stack.aclose.assert_called_once()
-
-        # Test disconnecting when not connected
-        server._exit_stack.aclose.reset_mock()
-
-        # Set up disconnected state
-        server._is_connected = False
-        server._exit_stack = AsyncMock()
-        server._exit_stack.aclose = AsyncMock()
-
-        await server.disconnect()
-
-        # Verify exit stack is still closed even when not connected
-        server._exit_stack.aclose.assert_called_once()
+from camel.toolkits.mcp_toolkit import (
+    MCPConnectionError,
+    MCPToolError,
+    MCPToolkit,
+)
+from camel.utils.mcp_client import MCPClient
 
 
 class TestMCPToolkit:
-    r"""Test MCPToolkit class."""
+    """Test MCPToolkit class."""
 
-    def test_init(self):
-        r"""Test initialization of MCPToolkit."""
-        # Test with servers list
-        server1 = MCPClient("test_command1")
-        server2 = MCPClient("test_command2")
-        toolkit = MCPToolkit(servers=[server1, server2])
+    def test_init_with_clients(self):
+        """Test MCPToolkit initialization with client instances."""
+        mock_client = MagicMock(spec=MCPClient)
+        toolkit = MCPToolkit(clients=[mock_client])
+        assert len(toolkit.clients) == 1
+        assert toolkit.clients[0] == mock_client
+        assert not toolkit.is_connected
 
-        assert toolkit.servers == [server1, server2]
-        assert isinstance(toolkit._exit_stack, AsyncExitStack)
-        assert toolkit._connected is False
+    def test_init_with_config_dict(self):
+        """Test MCPToolkit initialization with config dictionary."""
+        config_dict = {
+            "mcpServers": {"test_server": {"command": "npx", "args": ["test"]}}
+        }
 
-        # Test with both servers and config_path
-        with patch("camel.toolkits.mcp_toolkit.logger") as mock_logger:
-            with patch.object(
-                MCPToolkit, "_load_servers_from_config", return_value=[]
-            ):
-                toolkit = MCPToolkit(
-                    servers=[server1], config_path="dummy_path"
-                )
-                assert toolkit.servers == [server1]
-                mock_logger.warning.assert_called_once()
+        toolkit = MCPToolkit(config_dict=config_dict)
+        assert len(toolkit.clients) == 1
+        assert toolkit.clients[0].config.command == "npx"
 
-    def test_init_config_file_not_found(self):
-        r"""Test from_config with non-existent file."""
-        with patch("camel.toolkits.mcp_toolkit.logger") as mock_logger:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                non_existent_path = Path(temp_dir) / "non_existent.json"
-
-                with pytest.raises(FileNotFoundError):
-                    MCPToolkit(config_path=str(non_existent_path))
-
-                # Verify that a warning was logged
-                mock_logger.warning.assert_called_once_with(
-                    f"Config file not found: '{non_existent_path}'"
-                )
-
-    def test_init_config_invalid_json(self):
-        r"""Test from_config with invalid JSON."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            config_path = Path(temp_dir) / "invalid.json"
-            config_path.write_text("{invalid json")
-
-            with pytest.raises(json.JSONDecodeError) as excinfo:
-                MCPToolkit(config_path=str(config_path))
-
-                assert (
-                    "Expecting property name enclosed in double quotes"
-                    in str(excinfo.value)
-                )
-
-    def test_init_config_valid(self):
-        r"""Test from_config with valid configuration."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            config_path = Path(temp_dir) / "valid.json"
-            config_data = {
-                "mcpServers": {
-                    "server1": {
-                        "command": "test-command",
-                        "args": ["--arg1"],
-                        "env": {"TEST_ENV": "value"},
-                    },
-                    "server2": {"url": "https://test.com/sse"},
-                }
+    def test_init_with_config_file(self):
+        """Test MCPToolkit initialization with config file."""
+        config_data = {
+            "mcpServers": {
+                "filesystem": {
+                    "command": "npx",
+                    "args": [
+                        "-y",
+                        "@modelcontextprotocol/server-filesystem",
+                        "/path",
+                    ],
+                },
+                "remote-server": {
+                    "url": "https://api.example.com/mcp",
+                    "headers": {"Authorization": "Bearer token"},
+                },
             }
-            config_path.write_text(json.dumps(config_data))
+        }
 
-            toolkit = MCPToolkit(config_path=str(config_path))
-            assert len(toolkit.servers) == 2
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as f:
+            json.dump(config_data, f)
+            config_path = f.name
 
-            # Check local server toolkit
-            assert toolkit.servers[0].command_or_url == "test-command"
-            assert toolkit.servers[0].args == ["--arg1"]
-            assert "TEST_ENV" in toolkit.servers[0].env
+        try:
+            toolkit = MCPToolkit(config_path=config_path)
+            assert len(toolkit.clients) == 2
 
-            # Check web server toolkit
-            assert toolkit.servers[1].command_or_url == "https://test.com/sse"
+            # Check first client (filesystem)
+            assert toolkit.clients[0].config.command == "npx"
+            expected_args = [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "/path",
+            ]
+            assert toolkit.clients[0].config.args == expected_args
 
-    def test_load_servers_from_config_missing_required_fields(self):
-        r"""Test _load_servers_from_config with missing required fields."""
-        with patch("camel.toolkits.mcp_toolkit.logger") as mock_logger:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                config_path = Path(temp_dir) / "invalid_fields.json"
+            # Check second client (remote-server)
+            url = "https://api.example.com/mcp"
+            assert toolkit.clients[1].config.url == url
+            expected_headers = {"Authorization": "Bearer token"}
+            assert toolkit.clients[1].config.headers == expected_headers
 
-                # Missing command field
-                config_data = {"mcpServers": {"server1": {"args": ["--arg1"]}}}
-                config_path.write_text(json.dumps(config_data))
+        finally:
+            Path(config_path).unlink()
 
-                mcp_toolkit = MCPToolkit()
-                servers = mcp_toolkit._load_servers_from_config(
-                    str(config_path)
-                )
-                # Should return an empty list and log a warning
-                assert servers == []
-                mock_logger.warning.assert_called()
+    def test_init_no_sources_error(self):
+        """Test error when no configuration sources provided."""
+        expected_msg = (
+            "At least one of clients, config_path, or "
+            "config_dict must be provided"
+        )
+        with pytest.raises(ValueError, match=expected_msg):
+            MCPToolkit()
 
-                mock_logger.reset_mock()
+    def test_init_invalid_config_dict(self):
+        """Test error with invalid config dictionary."""
+        config_dict = {"invalid": "config"}
 
-                # Missing url field
-                config_data = {"mcpServers": {"server1": {"timeout": 30}}}
-                config_path.write_text(json.dumps(config_data))
+        expected_msg = "No valid MCP clients could be created"
+        with pytest.raises(ValueError, match=expected_msg):
+            MCPToolkit(config_dict=config_dict)
 
-                servers = mcp_toolkit._load_servers_from_config(
-                    str(config_path)
-                )
-                # Should return an empty list and log a warning
-                assert servers == []
-                mock_logger.warning.assert_called()
+    def test_init_file_not_found(self):
+        """Test error when config file not found."""
+        with pytest.raises(FileNotFoundError, match="Config file not found"):
+            MCPToolkit(config_path="/nonexistent/config.json")
 
-    def test_load_servers_from_config_invalid_structure(self):
-        r"""Test _load_servers_from_config with invalid structure."""
-        with patch("camel.toolkits.mcp_toolkit.logger") as mock_logger:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                config_path = Path(temp_dir) / "invalid_structure.json"
+    def test_init_invalid_json_file(self):
+        """Test error with invalid JSON file."""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as f:
+            f.write("invalid json content")
+            config_path = f.name
 
-                # mcpServers is not a dictionary
-                config_data = {"mcpServers": "not a dictionary"}
-                config_path.write_text(json.dumps(config_data))
+        try:
+            with pytest.raises(ValueError, match="Invalid JSON"):
+                MCPToolkit(config_path=config_path)
+        finally:
+            Path(config_path).unlink()
 
-                mcp_toolkit = MCPToolkit()
-                servers = mcp_toolkit._load_servers_from_config(
-                    str(config_path)
-                )
-                # Should return an empty list and log a warning
-                assert servers == []
-                mock_logger.warning.assert_called_with(
-                    "'mcpServers' is not a dictionary, skipping..."
-                )
+    def test_multiple_sources_combined(self):
+        """Test that multiple sources are combined."""
+        mock_client = MagicMock(spec=MCPClient)
+        config_dict = {
+            "mcpServers": {"test_server": {"command": "npx", "args": ["test"]}}
+        }
 
-    @pytest.mark.asyncio
-    async def test_connection(self):
-        r"""Test connection context manager."""
-        # Create mock servers with proper setup
-        server1 = AsyncMock()
-        server2 = AsyncMock()
+        toolkit = MCPToolkit(clients=[mock_client], config_dict=config_dict)
 
-        # Make connect method return the server itself
-        server1.connect = AsyncMock(return_value=server1)
-        server2.connect = AsyncMock(return_value=server2)
+        assert len(toolkit.clients) == 2
+        assert toolkit.clients[0] == mock_client
+        assert toolkit.clients[1].config.command == "npx"
 
-        # Create a proper async context manager for connection
-        async_cm1 = AsyncMock()
-        async_cm1.__aenter__.return_value = server1
 
-        async_cm2 = AsyncMock()
-        async_cm2.__aenter__.return_value = server2
-
-        # Set up the connection method to return our context manager
-        server1.connection = MagicMock(return_value=async_cm1)
-        server2.connection = MagicMock(return_value=async_cm2)
-
-        toolkit = MCPToolkit(servers=[server1, server2])
-
-        # Test connection context manager
-        async with toolkit.connection() as connected_toolkit:
-            assert connected_toolkit._connected is True
-            assert isinstance(connected_toolkit._exit_stack, AsyncExitStack)
-
-        # Verify context exit cleans up properly
-        assert toolkit._connected is False
-        assert isinstance(toolkit._exit_stack, AsyncExitStack)
-
-    def test_is_connected(self):
-        r"""Test is_connected method."""
-        toolkit = MCPToolkit(servers=[MCPClient("test_command")])
-        assert toolkit.is_connected() is False
-        toolkit._connected = True
-        assert toolkit.is_connected() is True
+class TestMCPToolkitConnectionManagement:
+    """Test connection management in MCPToolkit."""
 
     @pytest.mark.asyncio
-    async def test_get_tools(self):
-        r"""Test get_tools method."""
-        server1 = MCPClient("test_command1")
-        server2 = MCPClient("test_command2")
-        toolkit = MCPToolkit(servers=[server1, server2])
+    async def test_connect_success(self):
+        """Test successful connection to all clients."""
+        # Create mock clients with properly mocked async context managers
+        mock_client1 = MagicMock()
+        mock_client2 = MagicMock()
 
-        # Mock get_tools for both servers
+        # Create proper async context manager mocks
+        @asynccontextmanager
+        async def mock_connect1():
+            yield MagicMock()  # Mock session
+
+        @asynccontextmanager
+        async def mock_connect2():
+            yield MagicMock()  # Mock session
+
+        mock_client1.connect = mock_connect1
+        mock_client2.connect = mock_connect2
+        mock_client1.is_connected.return_value = True
+        mock_client2.is_connected.return_value = True
+
+        toolkit = MCPToolkit(clients=[mock_client1, mock_client2])
+
+        await toolkit.connect()
+
+        assert toolkit._is_connected
+        assert toolkit.is_connected
+
+    @pytest.mark.asyncio
+    async def test_connect_failure_rollback(self):
+        """Test rollback when connection fails."""
+        # Create mock clients
+        mock_client1 = MagicMock()
+        mock_client2 = MagicMock()
+
+        # Set up the first client as a successful async context manager
+        mock_client1.__aenter__.return_value = mock_client1
+        mock_client1.__aexit__.return_value = None
+
+        # Set up the second client to raise an exception during __aenter__
+        mock_client2.__aenter__.side_effect = Exception("Connection failed")
+
+        toolkit = MCPToolkit(clients=[mock_client1, mock_client2])
+
+        expected_msg = "Failed to connect to client 2"
+        with pytest.raises(MCPConnectionError, match=expected_msg):
+            await toolkit.connect()
+
+        assert not toolkit._is_connected
+        # Verify the first client's __aexit__ was called for cleanup
+        mock_client1.__aexit__.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_connect_already_connected(self):
+        """Test connecting when already connected."""
+        mock_client = MagicMock()
+
+        @asynccontextmanager
+        async def mock_connect():
+            yield MagicMock()  # Mock session
+
+        mock_client.connect = mock_connect
+
+        toolkit = MCPToolkit(clients=[mock_client])
+        toolkit._is_connected = True
+
+        result = await toolkit.connect()
+
+        assert result is toolkit
+
+    @pytest.mark.asyncio
+    async def test_disconnect_success(self):
+        """Test successful disconnection from all clients."""
+        mock_client1 = MagicMock()
+        mock_client1.disconnect = AsyncMock()
+
+        mock_client2 = MagicMock()
+        mock_client2.disconnect = AsyncMock()
+
+        toolkit = MCPToolkit(clients=[mock_client1, mock_client2])
+        toolkit._is_connected = True
+
+        await toolkit.disconnect()
+
+        assert not toolkit._is_connected
+
+    @pytest.mark.asyncio
+    async def test_disconnect_not_connected(self):
+        """Test disconnect when not connected."""
+        mock_client = MagicMock()
+        mock_client.disconnect = AsyncMock()
+
+        toolkit = MCPToolkit(clients=[mock_client])
+
+        await toolkit.disconnect()
+
+        # Should be a no-op when not connected
+        assert not toolkit._is_connected
+
+    @pytest.mark.asyncio
+    async def test_disconnect_with_errors(self):
+        """Test disconnect with some clients failing."""
+        mock_client1 = MagicMock()
+        disconnect_exc = Exception("Disconnect failed")
+        mock_client1.disconnect = AsyncMock(side_effect=disconnect_exc)
+
+        mock_client2 = MagicMock()
+        mock_client2.disconnect = AsyncMock()
+
+        toolkit = MCPToolkit(clients=[mock_client1, mock_client2])
+        toolkit._is_connected = True
+
+        await toolkit.disconnect()
+
+        assert not toolkit._is_connected
+
+    def test_is_connected_property(self):
+        """Test is_connected property."""
+        mock_client1 = MagicMock()
+        mock_client1.is_connected.return_value = True
+
+        mock_client2 = MagicMock()
+        mock_client2.is_connected.return_value = True
+
+        toolkit = MCPToolkit(clients=[mock_client1, mock_client2])
+
+        # Not connected initially
+        assert not toolkit.is_connected
+
+        # Mark as connected
+        toolkit._is_connected = True
+        assert toolkit.is_connected
+
+        # One client disconnected
+        mock_client2.is_connected.return_value = False
+        assert not toolkit.is_connected
+
+    @pytest.mark.asyncio
+    async def test_context_manager(self):
+        """Test async context manager."""
+        mock_client = MagicMock()
+
+        @asynccontextmanager
+        async def mock_connect():
+            yield MagicMock()  # Mock session
+
+        mock_client.connect = mock_connect
+        mock_client.is_connected.return_value = True
+
+        toolkit = MCPToolkit(clients=[mock_client])
+
+        async with toolkit as connected_toolkit:
+            assert connected_toolkit is toolkit
+
+
+class TestMCPToolkitFactoryMethods:
+    """Test factory methods for MCPToolkit."""
+
+    @pytest.mark.asyncio
+    async def test_create_success(self):
+        """Test successful creation with factory method."""
+        mock_client = MagicMock()
+        mock_client.connect = AsyncMock()
+        mock_client.is_connected.return_value = True
+
+        # Mock the toolkit creation
+        with patch.object(MCPToolkit, '__init__', return_value=None):
+            with patch.object(MCPToolkit, 'connect', return_value=None):
+                toolkit = MCPToolkit.__new__(MCPToolkit)
+                toolkit.clients = [mock_client]
+                toolkit._is_connected = False
+
+                # Mock the connect method
+                async def mock_connect():
+                    toolkit._is_connected = True
+                    return toolkit
+
+                toolkit.connect = mock_connect
+
+                patch_path = 'camel.toolkits.mcp_toolkit.MCPToolkit.__new__'
+                with patch(patch_path, return_value=toolkit):
+                    result = await MCPToolkit.create(clients=[mock_client])
+
+                    assert result is toolkit
+                    assert toolkit._is_connected
+
+    @pytest.mark.asyncio
+    async def test_create_failure_cleanup(self):
+        """Test cleanup on creation failure."""
+        mock_client = MagicMock()
+        mock_client.disconnect = AsyncMock()
+
+        with patch.object(MCPToolkit, '__init__', return_value=None):
+            toolkit = MCPToolkit.__new__(MCPToolkit)
+            toolkit.clients = [mock_client]
+            toolkit._is_connected = False
+
+            async def failing_connect():
+                raise Exception("Connection failed")
+
+            toolkit.connect = failing_connect
+            toolkit.disconnect = AsyncMock()
+
+            patch_path = 'camel.toolkits.mcp_toolkit.MCPToolkit.__new__'
+            with patch(patch_path, return_value=toolkit):
+                expected_msg = "Failed to initialize MCPToolkit"
+                with pytest.raises(MCPConnectionError, match=expected_msg):
+                    await MCPToolkit.create(clients=[mock_client])
+
+
+class TestMCPToolkitTools:
+    """Test tool management in MCPToolkit."""
+
+    def _create_test_toolkit(self, clients):
+        """Helper method to create a toolkit with mock clients."""
+        # Mock the parent class initialization to avoid the object.__new__
+        # error
+        with patch.object(MCPToolkit, '__init__', return_value=None):
+            toolkit = MCPToolkit.__new__(MCPToolkit)
+            toolkit.clients = clients
+            toolkit._is_connected = True
+            toolkit._exit_stack = None
+            return toolkit
+
+    def test_get_tools(self):
+        """Test getting tools from all clients."""
+        mock_client1 = MagicMock()
+        mock_client2 = MagicMock()
+
         mock_tool1 = MagicMock()
         mock_tool2 = MagicMock()
         mock_tool3 = MagicMock()
 
-        server1.get_tools = MagicMock(return_value=[mock_tool1, mock_tool2])
-        server2.get_tools = MagicMock(return_value=[mock_tool3])
+        mock_client1.get_tools.return_value = [mock_tool1, mock_tool2]
+        mock_client2.get_tools.return_value = [mock_tool3]
+        mock_client1.is_connected.return_value = True
+        mock_client2.is_connected.return_value = True
+
+        toolkit = self._create_test_toolkit([mock_client1, mock_client2])
 
         tools = toolkit.get_tools()
 
         assert len(tools) == 3
         assert tools == [mock_tool1, mock_tool2, mock_tool3]
-        server1.get_tools.assert_called_once()
-        server2.get_tools.assert_called_once()
+
+    def test_get_tools_not_connected_warning(self):
+        """Test warning when getting tools while not connected."""
+        mock_client = MagicMock()
+        mock_client.get_tools.return_value = []
+
+        toolkit = self._create_test_toolkit([mock_client])
+        # Set not connected for this test
+        toolkit._is_connected = False
+
+        with patch('camel.toolkits.mcp_toolkit.logger') as mock_logger:
+            toolkit.get_tools()
+
+            expected_msg = (
+                "MCPToolkit is not connected. "
+                "Tools may not be available until connected."
+            )
+            mock_logger.warning.assert_called_with(expected_msg)
+
+    def test_get_tools_client_error(self):
+        """Test handling client errors when getting tools."""
+        mock_client1 = MagicMock()
+        mock_client2 = MagicMock()
+
+        mock_tool = MagicMock()
+
+        mock_client1.get_tools.side_effect = Exception("Client error")
+        mock_client2.get_tools.return_value = [mock_tool]
+        mock_client1.is_connected.return_value = True
+        mock_client2.is_connected.return_value = True
+
+        toolkit = self._create_test_toolkit([mock_client1, mock_client2])
+
+        with patch('camel.toolkits.mcp_toolkit.logger') as mock_logger:
+            tools = toolkit.get_tools()
+
+            assert len(tools) == 1
+            assert tools[0] == mock_tool
+            expected_msg = "Failed to get tools from client 1: Client error"
+            mock_logger.error.assert_called_with(expected_msg)
+
+    def test_get_text_tools(self):
+        """Test getting text descriptions of tools."""
+        mock_client1 = MagicMock()
+        mock_client2 = MagicMock()
+
+        mock_client1.get_text_tools.return_value = "Tool 1\nTool 2"
+        mock_client2.get_text_tools.return_value = "Tool 3"
+        mock_client1.is_connected.return_value = True
+        mock_client2.is_connected.return_value = True
+
+        toolkit = self._create_test_toolkit([mock_client1, mock_client2])
+
+        text_tools = toolkit.get_text_tools()
+
+        expected = (
+            "=== Client 1 Tools ===\nTool 1\nTool 2\n\n"
+            "=== Client 2 Tools ===\nTool 3"
+        )
+        assert text_tools == expected
 
     @pytest.mark.asyncio
-    async def test_connect(self):
-        r"""Test explicit connect method."""
-        # Create mock servers
-        server1 = MCPClient("test_command1")
-        server2 = MCPClient("test_command2")
+    async def test_call_tool_success(self):
+        """Test successful tool call."""
+        mock_client1 = MagicMock()
+        mock_client2 = MagicMock()
 
-        # Mock connect methods
-        server1.connect = AsyncMock(return_value=server1)
-        server2.connect = AsyncMock(return_value=server2)
+        mock_tool1 = MagicMock()
+        mock_tool1.func.__name__ = "tool1"
+        mock_tool2 = MagicMock()
+        mock_tool2.func.__name__ = "tool2"
 
-        # Create toolkit with mock servers
-        toolkit = MCPToolkit(servers=[server1, server2])
+        mock_client1.get_tools.return_value = [mock_tool1]
+        mock_client2.get_tools.return_value = [mock_tool2]
+        mock_client2.call_tool = AsyncMock(return_value="tool result")
+        mock_client1.is_connected.return_value = True
+        mock_client2.is_connected.return_value = True
 
-        # Test connect
-        result = await toolkit.connect()
+        toolkit = self._create_test_toolkit([mock_client1, mock_client2])
 
-        # Verify results
-        assert result == toolkit
-        assert toolkit._connected is True
-        assert toolkit._exit_stack is not None
-        server1.connect.assert_called_once()
-        server2.connect.assert_called_once()
+        result = await toolkit.call_tool("tool2", {"arg": "value"})
 
-        # Test connecting when already connected
-        with patch("camel.toolkits.mcp_toolkit.logger") as mock_logger:
-            result = await toolkit.connect()
-            assert result == toolkit
-            mock_logger.warning.assert_called_once()
-            # Verify servers not connected again
-            assert server1.connect.call_count == 1
-            assert server2.connect.call_count == 1
+        assert result == "tool result"
+        expected_args = ("tool2", {"arg": "value"})
+        mock_client2.call_tool.assert_called_once_with(*expected_args)
 
     @pytest.mark.asyncio
-    async def test_connect_failure(self):
-        r"""Test connect method with failure."""
-        # Create mock servers
-        server1 = MCPClient("test_command1")
-        server2 = MCPClient("test_command2")
+    async def test_call_tool_not_connected(self):
+        """Test calling tool when not connected."""
+        mock_client = MagicMock()
 
-        # First server connects successfully, second fails
-        server1.connect = AsyncMock(return_value=server1)
-        server2.connect = AsyncMock(side_effect=Exception("Connection error"))
+        toolkit = self._create_test_toolkit([mock_client])
+        # Set not connected for this test
+        toolkit._is_connected = False
 
-        # Create toolkit with mock servers
-        toolkit = MCPToolkit(servers=[server1, server2])
-
-        # Test connect with failure - should raise the exception
-        with pytest.raises(Exception) as excinfo:
-            await toolkit.connect()
-
-        assert "Connection error" in str(excinfo.value)
-
-        # Verify first server was connected
-        server1.connect.assert_called_once()
-        # Verify second server was attempted
-        server2.connect.assert_called_once()
+        expected_msg = "MCPToolkit is not connected"
+        with pytest.raises(MCPConnectionError, match=expected_msg):
+            await toolkit.call_tool("test_tool", {})
 
     @pytest.mark.asyncio
-    async def test_disconnect(self):
-        r"""Test explicit disconnect method."""
-        # Create mock servers
-        server1 = MCPClient("test_command1")
-        server2 = MCPClient("test_command2")
+    async def test_call_tool_not_found(self):
+        """Test calling tool that doesn't exist."""
+        mock_client = MagicMock()
 
-        # Mock disconnect methods
-        server1.disconnect = AsyncMock()
-        server2.disconnect = AsyncMock()
+        mock_tool = MagicMock()
+        mock_tool.func.__name__ = "other_tool"
+        mock_client.get_tools.return_value = [mock_tool]
+        mock_client.is_connected.return_value = True
 
-        # Create toolkit with mock servers
-        toolkit = MCPToolkit(servers=[server1, server2])
+        toolkit = self._create_test_toolkit([mock_client])
 
-        # Setup connected state
-        toolkit._connected = True
-        toolkit._exit_stack = AsyncMock()
-        toolkit._exit_stack.aclose = AsyncMock()
+        expected_msg = "Tool 'nonexistent_tool' not found in any client"
+        with pytest.raises(MCPToolError, match=expected_msg):
+            await toolkit.call_tool("nonexistent_tool", {})
 
-        # Test disconnect
-        await toolkit.disconnect()
+    @pytest.mark.asyncio
+    async def test_call_tool_all_clients_fail(self):
+        """Test tool call when all clients fail."""
+        mock_client1 = MagicMock()
+        mock_client2 = MagicMock()
 
-        # Verify results
-        assert toolkit._connected is False
-        server1.disconnect.assert_called_once()
-        server2.disconnect.assert_called_once()
-        toolkit._exit_stack.aclose.assert_called_once()
+        mock_tool = MagicMock()
+        mock_tool.func.__name__ = "test_tool"
 
-        # Test disconnecting when not connected
-        server1.disconnect.reset_mock()
-        server2.disconnect.reset_mock()
-        toolkit._exit_stack.aclose.reset_mock()
+        mock_client1.get_tools.return_value = [mock_tool]
+        mock_client2.get_tools.return_value = [mock_tool]
 
-        await toolkit.disconnect()
+        client1_exc = Exception("Client 1 error")
+        client2_exc = Exception("Client 2 error")
+        mock_client1.call_tool = AsyncMock(side_effect=client1_exc)
+        mock_client2.call_tool = AsyncMock(side_effect=client2_exc)
+        mock_client1.is_connected.return_value = True
+        mock_client2.is_connected.return_value = True
 
-        # Verify no actions taken when not connected
-        server1.disconnect.assert_not_called()
-        server2.disconnect.assert_not_called()
-        toolkit._exit_stack.aclose.assert_not_called()
+        toolkit = self._create_test_toolkit([mock_client1, mock_client2])
+
+        expected_msg = "Tool 'test_tool' failed on all clients"
+        with pytest.raises(MCPToolError, match=expected_msg):
+            await toolkit.call_tool("test_tool", {})
+
+    def test_list_available_tools(self):
+        """Test listing available tools organized by client."""
+        mock_client1 = MagicMock()
+        mock_client2 = MagicMock()
+
+        mock_tool1 = MagicMock()
+        mock_tool1.func.__name__ = "tool1"
+        mock_tool2 = MagicMock()
+        mock_tool2.func.__name__ = "tool2"
+        mock_tool3 = MagicMock()
+        mock_tool3.func.__name__ = "tool3"
+
+        mock_client1.get_tools.return_value = [mock_tool1, mock_tool2]
+        mock_client2.get_tools.return_value = [mock_tool3]
+
+        toolkit = self._create_test_toolkit([mock_client1, mock_client2])
+
+        available_tools = toolkit.list_available_tools()
+
+        expected = {"client_1": ["tool1", "tool2"], "client_2": ["tool3"]}
+        assert available_tools == expected
+
+    def test_list_available_tools_with_errors(self):
+        """Test listing tools when some clients have errors."""
+        mock_client1 = MagicMock()
+        mock_client2 = MagicMock()
+
+        mock_tool = MagicMock()
+        mock_tool.func.__name__ = "tool1"
+
+        mock_client1.get_tools.side_effect = Exception("Client error")
+        mock_client2.get_tools.return_value = [mock_tool]
+
+        toolkit = self._create_test_toolkit([mock_client1, mock_client2])
+
+        with patch('camel.toolkits.mcp_toolkit.logger') as mock_logger:
+            available_tools = toolkit.list_available_tools()
+
+            expected = {"client_1": [], "client_2": ["tool1"]}
+            assert available_tools == expected
+            expected_msg = "Failed to list tools from client 1: Client error"
+            mock_logger.error.assert_called_with(expected_msg)
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])

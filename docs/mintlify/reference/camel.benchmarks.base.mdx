@@ -1,0 +1,148 @@
+<a id="camel.benchmarks.base"></a>
+
+<a id="camel.benchmarks.base.BaseBenchmark"></a>
+
+## BaseBenchmark
+
+```python
+class BaseBenchmark(ABC):
+```
+
+Base class for benchmarks.
+
+**Parameters:**
+
+- **name** (str): Name of the benchmark.
+- **data_dir** (str): Path to the data directory.
+- **save_to** (str): Path to save the results.
+- **processes** (int): Number of processes to use for parallel processing. :(default: :obj:`1`)
+
+<a id="camel.benchmarks.base.BaseBenchmark.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    name: str,
+    data_dir: str,
+    save_to: str,
+    processes: int = 1
+):
+```
+
+Initialize the benchmark.
+
+**Parameters:**
+
+- **name** (str): Name of the benchmark.
+- **data_dir** (str): Path to the data directory.
+- **save_to** (str): Path to save the results.
+- **processes** (int): Number of processes to use for parallel processing. :(default: :obj:`1`)
+
+<a id="camel.benchmarks.base.BaseBenchmark.download"></a>
+
+### download
+
+```python
+def download(self):
+```
+
+**Returns:**
+
+  BaseBenchmark: The benchmark instance.
+
+<a id="camel.benchmarks.base.BaseBenchmark.load"></a>
+
+### load
+
+```python
+def load(self, force_download: bool = False):
+```
+
+Load the benchmark data.
+
+**Parameters:**
+
+- **force_download** (bool): Whether to force download the data.
+
+**Returns:**
+
+  BaseBenchmark: The benchmark instance.
+
+<a id="camel.benchmarks.base.BaseBenchmark.train"></a>
+
+### train
+
+```python
+def train(self):
+```
+
+**Returns:**
+
+  List[Dict[str, Any]]: The training data.
+
+<a id="camel.benchmarks.base.BaseBenchmark.valid"></a>
+
+### valid
+
+```python
+def valid(self):
+```
+
+**Returns:**
+
+  List[Dict[str, Any]]: The validation data.
+
+<a id="camel.benchmarks.base.BaseBenchmark.test"></a>
+
+### test
+
+```python
+def test(self):
+```
+
+**Returns:**
+
+  List[Dict[str, Any]]: The test data.
+
+<a id="camel.benchmarks.base.BaseBenchmark.run"></a>
+
+### run
+
+```python
+def run(
+    self,
+    agent: ChatAgent,
+    on: Literal['train', 'valid', 'test'],
+    randomize: bool = False,
+    subset: Optional[int] = None,
+    *args,
+    **kwargs
+):
+```
+
+Run the benchmark.
+
+**Parameters:**
+
+- **agent** (ChatAgent): The chat agent.
+- **on** (str): The data split to run the benchmark on.
+- **randomize** (bool): Whether to randomize the data.
+- **subset** (int): The subset of the data to run the benchmark on.
+
+**Returns:**
+
+  BaseBenchmark: The benchmark instance.
+
+<a id="camel.benchmarks.base.BaseBenchmark.results"></a>
+
+### results
+
+```python
+def results(self):
+```
+
+**Returns:**
+
+  List[Dict[str, Any]]: The results.
