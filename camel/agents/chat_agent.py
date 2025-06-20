@@ -617,12 +617,10 @@ class ChatAgent(BaseAgent):
             _write_single_record(message, role, base_ts)  # Nothing to chunk
             return
 
-        # Define chunk size taking the prefix and the *remaining* budget into account
-        # ----------------------------------------------------------------------
-        # 1.  Base chunk size: one-tenth of the smaller of (a) total token limit
-        #    and (b) current remaining budget.  This prevents us from creating
-        #    chunks that are guaranteed to overflow the immediate context
-        #    window.
+        # 1.  Base chunk size: one-tenth of the smaller of (a) total token
+        # limit and (b) current remaining budget.  This prevents us from
+        # creating chunks that are guaranteed to overflow the
+        # immediate context window.
         base_chunk_size = max(1, remaining_budget) // 10
 
         # 2.  Each chunk gets a textual prefix such as:
