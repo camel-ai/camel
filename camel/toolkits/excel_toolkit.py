@@ -13,10 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 # Enables postponed evaluation of annotations (for string-based type hints)
-from __future__ import annotations
-
 import os
 from typing import TYPE_CHECKING, List, Optional, Union
+
+import pandas as pd
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -814,7 +814,7 @@ class ExcelToolkit(BaseToolkit):
     def append_row(
         self,
         sheet_name: str,
-        row_data: list[Union[str, int, float, None]],
+        row_data: List[Union[str, int, float, None]],
     ) -> str:
         """Append a row to the given sheet.
 
@@ -853,6 +853,7 @@ class ExcelToolkit(BaseToolkit):
             FunctionTool(self.get_rows),
             FunctionTool(self.update_row),
             FunctionTool(self.append_or_update_row),
+            FunctionTool(self.delete_rows),
             FunctionTool(self.delete_columns),
             FunctionTool(self.get_cell_value),
             FunctionTool(self.set_cell_value),
