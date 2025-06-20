@@ -15,7 +15,6 @@
 import asyncio
 
 from camel.agents.chat_agent import ChatAgent
-from camel.loaders import Firecrawl
 from camel.messages.base import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
@@ -47,7 +46,7 @@ def developer_agent_factory(model: BaseModelBackend, task_id: str):
     r"""Factory for creating a developer agent."""
     tools = [
         *TerminalToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
         *CodeExecutionToolkit().get_tools(),
     ]
 
@@ -88,15 +87,15 @@ async def search_agent_factory(
     terminal_toolkits = TerminalToolkit()
     human_toolkits = HumanToolkit()
     tools = [
-        FunctionTool(search_toolkits.search_wiki),
+        # FunctionTool(search_toolkits.search_wiki),
         FunctionTool(search_toolkits.search_google),
-        FunctionTool(search_toolkits.search_bing),
-        FunctionTool(search_toolkits.search_baidu),
+        # FunctionTool(search_toolkits.search_bing),
+        # FunctionTool(search_toolkits.search_baidu),
         *playwright_toolkit.get_tools(),
         # *browser_toolkits.get_tools(),
         *terminal_toolkits.get_tools(),
-        *human_toolkits.get_tools(),
-        Firecrawl().scrape,
+        human_toolkits.ask_human_via_console,
+        # Firecrawl().scrape,
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
@@ -167,7 +166,7 @@ def document_agent_factory(model: BaseModelBackend, task_id: str):
         *FileWriteToolkit().get_tools(),
         *PPTXToolkit().get_tools(),
         # *RetrievalToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
@@ -224,7 +223,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
         *DalleToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
     ]
 
     system_message = """You are a Multi-Modal Processing Assistant specialized 
@@ -332,7 +331,7 @@ When assisting users, always:
             *RedditToolkit().get_tools(),
             *NotionToolkit().get_tools(),
             *SlackToolkit().get_tools(),
-            *HumanToolkit().get_tools(),
+            HumanToolkit().ask_human_via_console,
         ],
     )
 
@@ -345,18 +344,18 @@ async def main():
         # Create a single model backend for all agents
         model_backend = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4_1_MINI,
+            model_type=ModelType.GPT_4_1,
             # model_config_dict={
-            #     "max_tokens": 64000,
-            # }
+            #     "max_tokens": 32768,
+            # },
         )
 
         model_backend_reason = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4_1_MINI,
+            model_type=ModelType.GPT_4_1,
             # model_config_dict={
-            #     "max_tokens": 64000,
-            # }
+            #    "max_tokens": 32768,
+            # },
         )
 
         task_id = 'workforce_task'
@@ -386,14 +385,23 @@ async def main():
         )
 
         workforce.add_single_agent_worker(
-            "Search & Information Retrieval Agent", worker=search_agent
+            "Search Agent: Can search the web, extract webpage content, "
+            "simulate browser actions, and provide relevant information to "
+            "solve the given task.",
+            worker=search_agent,
         ).add_single_agent_worker(
-            "Software Development & Code Generation Agent",
+            "Developer Agent: A skilled coding assistant that can write and "
+            "execute code, run terminal commands, and verify solutions to "
+            "complete tasks.",
             worker=developer_agent,
         ).add_single_agent_worker(
-            "Document Creation & Management Agent", worker=document_agent
+            "Document Agent: A document processing assistant for creating, "
+            "modifying, and managing various document formats, including "
+            "presentations.",
+            worker=document_agent,
         ).add_single_agent_worker(
-            "Multi-Modal Content Analysis & Generation Agent",
+            "Multi-Modal Agent: A multi-modal processing assistant for "
+            "analyzing, and generating media content like audio and images.",
             worker=multi_modal_agent,
         )
 
