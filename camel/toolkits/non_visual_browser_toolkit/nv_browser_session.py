@@ -14,14 +14,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 
 from .actions import ActionExecutor
 from .snapshot import PageSnapshot
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from playwright.sync_api import Playwright
@@ -62,19 +60,15 @@ class NVBrowserSession:
             Path(self._user_data_dir).mkdir(parents=True, exist_ok=True)
             pl = self._playwright
             assert pl is not None
-            self._context = (
-                pl.chromium.launch_persistent_context(
-                    user_data_dir=self._user_data_dir,
-                    headless=self._headless,
-                )
+            self._context = pl.chromium.launch_persistent_context(
+                user_data_dir=self._user_data_dir,
+                headless=self._headless,
             )
             self._browser = self._context.browser
         else:
             pl = self._playwright
             assert pl is not None
-            self._browser = pl.chromium.launch(
-                headless=self._headless
-            )
+            self._browser = pl.chromium.launch(headless=self._headless)
             self._context = self._browser.new_context()
 
         # Reuse an already open page (persistent context may restore last
