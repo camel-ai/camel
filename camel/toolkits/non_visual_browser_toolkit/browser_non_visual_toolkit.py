@@ -26,7 +26,7 @@ from .nv_browser_session import NVBrowserSession
 
 
 class BrowserNonVisualToolkit(BaseToolkit):
-    """A lightweight, *non-visual* browser toolkit exposing primitive
+    r"""A lightweight, *non-visual* browser toolkit exposing primitive
     Playwright actions as CAMEL `FunctionTool`s.
     """
 
@@ -35,7 +35,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
         *,
         headless: bool = True,
         user_data_dir: Optional[str] = None,
-        web_agent_model: Optional['BaseModelBackend'] = None,
+        web_agent_model: Optional[BaseModelBackend] = None,
     ) -> None:
         super().__init__()
         self._headless = headless
@@ -51,21 +51,47 @@ class BrowserNonVisualToolkit(BaseToolkit):
         # Optional higher-level agent (only if user supplies model)
         self._agent: Optional[PlaywrightLLMAgent] = None
 
+    def __del__(self):
+        r"""Ensure cleanup when toolkit is garbage collected."""
+        # Note: __del__ cannot be async, so we schedule cleanup if needed
+        import asyncio
+
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                task = loop.create_task(self.close_browser())
+                # Don't wait for completion to avoid blocking
+                del task
+            else:
+                asyncio.run(self.close_browser())
+        except Exception:
+            pass  # Don't fail during garbage collection
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-    def _ensure_browser(self):
-        self._session.ensure_browser()
+    async def _ensure_browser(self):
+        await self._session.ensure_browser()
 
-    def _require_page(self):
-        self._session.ensure_browser()
-        return self._session.page
+    async def _require_page(self):
+        await self._session.ensure_browser()
+        return await self._session.get_page()
+
+    def _validate_ref(self, ref: str, method_name: str) -> None:
+        """Validate that ref parameter is a non-empty string."""
+        if not ref or not isinstance(ref, str):
+            raise ValueError(
+                f"{method_name}(): 'ref' must be a non-empty string, "
+                f"got: {ref}"
+            )
 
     # ------------------------------------------------------------------
     # Tool implementations
     # ------------------------------------------------------------------
-    def open_browser(self, start_url: Optional[str] = None) -> Dict[str, str]:
-        """Launch a Playwright browser session.
+    async def open_browser(
+        self, start_url: Optional[str] = None
+    ) -> Dict[str, str]:
+        r"""Launch a Playwright browser session.
 
         Args:
             start_url (Optional[str]): If provided, the page will navigate to
@@ -75,26 +101,35 @@ class BrowserNonVisualToolkit(BaseToolkit):
             Dict[str, str]: Keys: ``result`` for action outcome,
             ``snapshot`` for full DOM snapshot.
         """
-        self._session.ensure_browser()
+        await self._session.ensure_browser()
         if start_url:
-            return self.visit_page(start_url)
+            return await self.visit_page(start_url)
         # If no start_url provided, still capture initial snapshot
-        snapshot = self._session.get_snapshot(
+        snapshot = await self._session.get_snapshot(
             force_refresh=True, diff_only=False
         )
         return {"result": "Browser session started.", "snapshot": snapshot}
 
-    def close_browser(self) -> str:
-        """Terminate the current browser session and free all resources.
+    async def close_browser(self) -> str:
+        r"""Terminate the current browser session and free all resources.
 
         Returns:
             str: Confirmation message.
         """
-        self._session.close()
+        # Close agent if it exists
+        if self._agent is not None:
+            try:
+                await self._agent.close()
+            except Exception:
+                pass  # Don't fail if agent cleanup fails
+            self._agent = None
+
+        # Close session
+        await self._session.close()
         return "Browser session closed."
 
     # Navigation / page state ------------------------------------------------
-    def visit_page(self, url: str) -> Dict[str, str]:
+    async def visit_page(self, url: str) -> Dict[str, str]:
         """Navigate the current page to the specified URL.
 
         Args:
@@ -104,16 +139,19 @@ class BrowserNonVisualToolkit(BaseToolkit):
             Dict[str, str]: Keys: ``result`` for action outcome,
             ``snapshot`` for full DOM snapshot.
         """
-        nav_result = self._session.visit(url)
-        snapshot = self._session.get_snapshot(
+        if not url or not isinstance(url, str):
+            raise ValueError("visit_page(): 'url' must be a non-empty string")
+
+        nav_result = await self._session.visit(url)
+        snapshot = await self._session.get_snapshot(
             force_refresh=True, diff_only=False
         )
         return {"result": nav_result, "snapshot": snapshot}
 
-    def get_page_snapshot(
+    async def get_page_snapshot(
         self, *, force_refresh: bool = False, diff_only: bool = False
     ) -> str:
-        """Capture a YAML-like structural snapshot of the DOM.
+        r"""Capture a YAML-like structural snapshot of the DOM.
 
         Args:
             force_refresh (bool): When ``True`` always re-generate the
@@ -125,13 +163,13 @@ class BrowserNonVisualToolkit(BaseToolkit):
         Returns:
             str: Formatted snapshot string.
         """
-        return self._session.get_snapshot(
+        return await self._session.get_snapshot(
             force_refresh=force_refresh, diff_only=diff_only
         )
 
     # Element-level wrappers -------------------------------------------------
-    def click(self, *, ref: str) -> Dict[str, str]:
-        """Click an element identified by ``ref``
+    async def click(self, *, ref: str) -> Dict[str, str]:
+        r"""Click an element identified by ``ref``
 
         Args:
             ref (str): Element reference ID extracted from snapshot (e.g.
@@ -140,14 +178,13 @@ class BrowserNonVisualToolkit(BaseToolkit):
         Returns:
             Dict[str, str]: Result message from ``ActionExecutor``.
         """
-        if not ref:
-            raise ValueError("click(): 'ref' must be a non-empty string.")
+        self._validate_ref(ref, "click")
 
         action: Dict[str, Any] = {"type": "click", "ref": ref}
-        return self._exec_with_snapshot(action)
+        return await self._exec_with_snapshot(action)
 
-    def type(self, *, ref: str, text: str) -> Dict[str, str]:
-        """Type text into an input or textarea element.
+    async def type(self, *, ref: str, text: str) -> Dict[str, str]:
+        r"""Type text into an input or textarea element.
 
         Args:
             ref (str): Element reference ID extracted from snapshot (e.g.
@@ -157,14 +194,13 @@ class BrowserNonVisualToolkit(BaseToolkit):
         Returns:
             Dict[str, str]: Execution result message.
         """
-        if not ref:
-            raise ValueError("type(): 'ref' must be non-empty.")
+        self._validate_ref(ref, "type")
 
         action: Dict[str, Any] = {"type": "type", "ref": ref, "text": text}
-        return self._exec_with_snapshot(action)
+        return await self._exec_with_snapshot(action)
 
-    def select(self, *, ref: str, value: str) -> Dict[str, str]:
-        """Select an option in a ``<select>`` element.
+    async def select(self, *, ref: str, value: str) -> Dict[str, str]:
+        r"""Select an option in a ``<select>`` element.
 
         Args:
             ref (str): Element reference ID.
@@ -173,14 +209,13 @@ class BrowserNonVisualToolkit(BaseToolkit):
         Returns:
             Dict[str, str]: Execution result message.
         """
-        if not ref:
-            raise ValueError("select(): 'ref' must be non-empty.")
+        self._validate_ref(ref, "select")
 
         action: Dict[str, Any] = {"type": "select", "ref": ref, "value": value}
-        return self._exec_with_snapshot(action)
+        return await self._exec_with_snapshot(action)
 
-    def scroll(self, *, direction: str, amount: int) -> Dict[str, str]:
-        """Scroll the page.
+    async def scroll(self, *, direction: str, amount: int) -> Dict[str, str]:
+        r"""Scroll the page.
 
         Args:
             direction (str): ``"down"`` or ``"up"``.
@@ -189,18 +224,21 @@ class BrowserNonVisualToolkit(BaseToolkit):
         Returns:
             Dict[str, str]: Execution result message.
         """
-        action = {"type": "scroll", "direction": direction, "amount": amount}
-        return self._exec_with_snapshot(action)
+        if direction not in ("up", "down"):
+            raise ValueError("scroll(): 'direction' must be 'up' or 'down'")
 
-    def wait(
+        action = {"type": "scroll", "direction": direction, "amount": amount}
+        return await self._exec_with_snapshot(action)
+
+    async def wait(
         self, *, timeout_ms: int | None = None, selector: str | None = None
     ) -> Dict[str, str]:
-        """Explicit wait utility.
+        r"""Explicit wait utility.
 
         Args:
             timeout_ms (Optional[int]): Milliseconds to sleep.
             selector (Optional[str]): Wait until this CSS selector appears
-            in DOM.
+                in DOM.
 
         Returns:
             Dict[str, str]: Execution result message.
@@ -214,10 +252,10 @@ class BrowserNonVisualToolkit(BaseToolkit):
             action["timeout"] = timeout_ms
         if selector is not None:
             action["selector"] = selector
-        return self._exec_with_snapshot(action)
+        return await self._exec_with_snapshot(action)
 
-    def extract(self, *, ref: str) -> Dict[str, str]:
-        """Extract text content from an element.
+    async def extract(self, *, ref: str) -> Dict[str, str]:
+        r"""Extract text content from an element.
 
         Args:
             ref (str): Element reference ID obtained from snapshot.
@@ -225,12 +263,11 @@ class BrowserNonVisualToolkit(BaseToolkit):
         Returns:
             Dict[str, str]: Extracted text or error message.
         """
-        if not ref:
-            raise ValueError("extract(): 'ref' must be non-empty.")
-        return self._exec_with_snapshot({"type": "extract", "ref": ref})
+        self._validate_ref(ref, "extract")
+        return await self._exec_with_snapshot({"type": "extract", "ref": ref})
 
-    def enter(self, *, ref: str) -> Dict[str, str]:
-        """Press the Enter key.
+    async def enter(self, *, ref: str) -> Dict[str, str]:
+        r"""Press the Enter key.
 
         Args:
             ref (str): Element reference ID to focus before pressing.
@@ -238,23 +275,33 @@ class BrowserNonVisualToolkit(BaseToolkit):
         Returns:
             Dict[str, str]: Execution result message.
         """
-        if not ref:
-            raise ValueError("enter(): 'ref' must be non-empty.")
+        self._validate_ref(ref, "enter")
 
         action: Dict[str, Any] = {"type": "enter", "ref": ref}
-        return self._exec_with_snapshot(action)
+        return await self._exec_with_snapshot(action)
 
     # Helper to run through ActionExecutor
-    def _exec(self, action: Dict[str, Any]) -> str:
-        return self._session.exec_action(action)
+    async def _exec(self, action: Dict[str, Any]) -> str:
+        return await self._session.exec_action(action)
 
-    def _exec_with_snapshot(self, action: Dict[str, Any]) -> Dict[str, str]:
-        """Execute action and, if DOM structure changed, include snapshot
-        diff."""
-        result = self._session.exec_action(action)
+    async def _exec_with_snapshot(
+        self, action: Dict[str, Any]
+    ) -> Dict[str, str]:
+        r"""Execute action and, if DOM structure changed, include snapshot
+        diff.
+        """
+        result = await self._session.exec_action(action)
+
+        # Only capture diff if action type typically changes DOM
+        from .actions import ActionExecutor
+
+        if not ActionExecutor.should_update_snapshot(action):
+            return {"result": result}
 
         # Capture structural diff to previous snapshot
-        diff = self._session.get_snapshot(force_refresh=True, diff_only=True)
+        diff = await self._session.get_snapshot(
+            force_refresh=True, diff_only=True
+        )
 
         if diff.startswith("- Page Snapshot (no structural changes)"):
             return {"result": result}
@@ -265,7 +312,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
     # Optional PlaywrightLLMAgent helpers
     # ------------------------------------------------------------------
     def _ensure_agent(self) -> PlaywrightLLMAgent:
-        """Create PlaywrightLLMAgent on first use if `web_agent_model`
+        r"""Create PlaywrightLLMAgent on first use if `web_agent_model`
         provided."""
         if self.web_agent_model is None:
             raise RuntimeError(
@@ -281,14 +328,15 @@ class BrowserNonVisualToolkit(BaseToolkit):
             )
         return self._agent
 
-    def solve_task(
+    async def solve_task(
         self, task_prompt: str, start_url: str, max_steps: int = 15
     ) -> str:
-        """Use LLM agent to autonomously complete the task (requires
+        r"""Use LLM agent to autonomously complete the task (requires
         `web_agent_model`)."""
+
         agent = self._ensure_agent()
-        agent.navigate(start_url)
-        agent.process_command(task_prompt, max_steps=max_steps)
+        await agent.navigate(start_url)
+        await agent.process_command(task_prompt, max_steps=max_steps)
         return "Task processing finished - see stdout for detailed trace."
 
     # ------------------------------------------------------------------
@@ -299,13 +347,13 @@ class BrowserNonVisualToolkit(BaseToolkit):
             FunctionTool(self.open_browser),
             FunctionTool(self.close_browser),
             FunctionTool(self.visit_page),
-            # FunctionTool(self.get_page_snapshot),
+            FunctionTool(self.get_page_snapshot),
             FunctionTool(self.click),
             FunctionTool(self.type),
             FunctionTool(self.select),
             FunctionTool(self.scroll),
             FunctionTool(self.wait),
-            # FunctionTool(self.extract),
+            FunctionTool(self.extract),
             FunctionTool(self.enter),
         ]
 

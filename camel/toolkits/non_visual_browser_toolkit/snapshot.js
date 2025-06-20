@@ -1,5 +1,5 @@
 (() => {
-    // Store each element as {text, priority}
+    // Store each element as {text, priority, depth}
     const elements = [];
 
     // Maximum lines allowed before we start dropping lower-priority nodes
@@ -89,6 +89,15 @@
         const tagName = node.tagName.toLowerCase();
         const text = getAccessibleName(node).slice(0, 50);
 
+        // Skip unlabeled links (anchors without any accessible name)
+        if (tagName === 'a' && !text) {
+            // Skip unlabeled links; process children if any
+            for (const child of node.children) {
+                traverse(child, depth + 1);
+            }
+            return;
+        }
+
         const hasRoleOrText = ['button', 'a', 'input', 'select', 'textarea', 'p', 'span'].includes(tagName) ||
                               node.getAttribute('role') || text;
 
@@ -96,12 +105,14 @@
             const role = getRole(node);
             const ref = `e${refCounter++}`;
             const label = text ? `"${text}"` : '';
-            const indent = '\t'.repeat(depth);
 
-            const lineText = `${indent}- ${role} ${label} [ref=${ref}]`;
+            // Raw line (without indent) – we will apply indentation later once we know
+            // which ancestor lines survive filtering so that indentation always reflects
+            // the visible hierarchy.
+            const lineText = `- ${role}${label ? ` ${label}` : ''} [ref=${ref}]`;
             const priority = getPriority(tagName, role, text);
 
-            elements.push({ text: lineText, priority });
+            elements.push({ text: lineText, priority, depth });
 
             // Always inject ref so Playwright can still locate the element even if line is later filtered out.
             node.setAttribute('aria-ref', ref);
@@ -150,5 +161,28 @@
         }
     }
 
-    return finalElements.map(el => el.text).join('\n');
+    // ------------------------------------------------------------------
+    // Re-apply indentation so that it matches the *visible* hierarchy only.
+    // Whenever an ancestor element is removed due to priority rules, its
+    // children will be re-indented one level up so the structure remains
+    // intuitive.
+    // ------------------------------------------------------------------
+    const outputLines = [];
+    const depthStack = []; // keeps track of kept original depths
+
+    for (const el of finalElements) {
+        // Pop depths that are not ancestors of current element
+        while (depthStack.length && depthStack[depthStack.length - 1] >= el.depth) {
+            depthStack.pop();
+        }
+
+        // Push the current depth so future descendants know their ancestor chain
+        depthStack.push(el.depth);
+
+        const compressedDepth = depthStack.length - 1; // root level has zero indent
+        const indent = '\t'.repeat(compressedDepth);
+        outputLines.push(indent + el.text);
+    }
+
+    return outputLines.join('\n');
 })();

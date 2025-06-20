@@ -12,7 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from playwright.async_api import Page
 
 # Logging support
 from camel.logger import get_logger
@@ -26,7 +29,7 @@ class PageSnapshot:
 
     MAX_TIMEOUT_MS = 5000  # wait_for_load_state timeout
 
-    def __init__(self, page):
+    def __init__(self, page: "Page"):
         self.page = page
         self.snapshot_data: Optional[str] = None  # last full snapshot
         self._last_url: Optional[str] = None
@@ -38,7 +41,7 @@ class PageSnapshot:
     # ---------------------------------------------------------------------
     # Public API
     # ---------------------------------------------------------------------
-    def capture(
+    async def capture(
         self, *, force_refresh: bool = False, diff_only: bool = False
     ) -> str:
         """Return current snapshot or just the diff to previous one."""
@@ -55,12 +58,12 @@ class PageSnapshot:
                 return self.snapshot_data
 
             # ensure DOM stability
-            self.page.wait_for_load_state(
+            await self.page.wait_for_load_state(
                 'domcontentloaded', timeout=self.MAX_TIMEOUT_MS
             )
 
             logger.debug("Capturing page snapshot …")
-            snapshot_text = self._get_snapshot_direct()
+            snapshot_text = await self._get_snapshot_direct()
             formatted = self._format_snapshot(snapshot_text or "<empty>")
 
             output = formatted
@@ -93,17 +96,18 @@ class PageSnapshot:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-    _snapshot_js_cache = None  # class-level cache
+    _snapshot_js_cache: Optional[str] = None  # class-level cache
 
-    def _get_snapshot_direct(self) -> Optional[str]:
+    async def _get_snapshot_direct(self) -> Optional[str]:
         try:
             if PageSnapshot._snapshot_js_cache is None:
                 js_path = Path(__file__).parent / "snapshot.js"
                 PageSnapshot._snapshot_js_cache = js_path.read_text(
                     encoding="utf-8"
                 )
-            return self.page.evaluate(PageSnapshot._snapshot_js_cache)  # type: ignore[arg-type]
-        except Exception:
+            return await self.page.evaluate(PageSnapshot._snapshot_js_cache)
+        except Exception as e:
+            logger.warning("Failed to execute snapshot JavaScript: %s", e)
             return None
 
     @staticmethod
@@ -112,6 +116,9 @@ class PageSnapshot:
 
     @staticmethod
     def _compute_diff(old: str, new: str) -> str:
+        if not old or not new:
+            return "- Page Snapshot (error: missing data for diff)"
+
         import difflib
 
         diff = list(
@@ -128,7 +135,7 @@ class PageSnapshot:
         return "\n".join(["- Page Snapshot (diff)", "```diff", *diff, "```"])
 
     # ------------------------------------------------------------------
-    def _detect_priorities(self, snapshot_yaml: str):
+    def _detect_priorities(self, snapshot_yaml: str) -> List[int]:
         """Return sorted list of priorities present (1,2,3)."""
         priorities = set()
         for line in snapshot_yaml.splitlines():

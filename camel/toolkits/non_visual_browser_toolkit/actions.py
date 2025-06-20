@@ -11,22 +11,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import time
-from typing import Any, Dict
+import asyncio
+from typing import TYPE_CHECKING, Any, Dict
 
-from playwright.sync_api import Page
+if TYPE_CHECKING:
+    from playwright.async_api import Page
 
 
 class ActionExecutor:
-    """Executes high-level actions (click, type …) on a Playwright Page."""
+    r"""Executes high-level actions (click, type …) on a Playwright Page."""
 
-    def __init__(self, page: Page):
+    # Configuration constants
+    DEFAULT_TIMEOUT = 5000  # 5 seconds
+    SHORT_TIMEOUT = 2000  # 2 seconds
+
+    def __init__(self, page: "Page"):
         self.page = page
 
     # ------------------------------------------------------------------
     # Public helpers
     # ------------------------------------------------------------------
-    def execute(self, action: Dict[str, Any]) -> str:
+    async def execute(self, action: Dict[str, Any]) -> str:
         if not action:
             return "No action to execute"
 
@@ -36,7 +41,7 @@ class ActionExecutor:
 
         try:
             # small helper to ensure basic stability
-            self._wait_dom_stable()
+            await self._wait_dom_stable()
 
             handler = {
                 "click": self._click,
@@ -51,14 +56,14 @@ class ActionExecutor:
             if handler is None:
                 return f"Error: Unknown action type '{action_type}'"
 
-            return handler(action)
+            return await handler(action)
         except Exception as exc:
             return f"Error executing {action_type}: {exc}"
 
     # ------------------------------------------------------------------
     # Internal handlers
     # ------------------------------------------------------------------
-    def _click(self, action):
+    async def _click(self, action: Dict[str, Any]) -> str:
         ref = action.get("ref")
         text = action.get("text")
         selector = action.get("selector")
@@ -75,14 +80,16 @@ class ActionExecutor:
 
         for sel in strategies:
             try:
-                if self.page.locator(sel).count() > 0:
-                    self.page.click(sel, timeout=2000, force=True)
+                if await self.page.locator(sel).count() > 0:
+                    await self.page.click(
+                        sel, timeout=self.SHORT_TIMEOUT, force=True
+                    )
                     return f"Clicked element via {sel}"
             except Exception:
                 pass
         return "Error: Could not click element"
 
-    def _type(self, action):
+    async def _type(self, action: Dict[str, Any]) -> str:
         ref = action.get("ref")
         selector = action.get("selector")
         text = action.get("text", "")
@@ -90,12 +97,12 @@ class ActionExecutor:
             return "Error: type requires ref/selector"
         target = selector or f"[aria-ref='{ref}']"
         try:
-            self.page.fill(target, text, timeout=2000)
+            await self.page.fill(target, text, timeout=self.SHORT_TIMEOUT)
             return f"Typed '{text}' into {target}"
         except Exception as exc:
             return f"Type failed: {exc}"
 
-    def _select(self, action):
+    async def _select(self, action: Dict[str, Any]) -> str:
         ref = action.get("ref")
         selector = action.get("selector")
         value = action.get("value", "")
@@ -103,56 +110,75 @@ class ActionExecutor:
             return "Error: select requires ref/selector"
         target = selector or f"[aria-ref='{ref}']"
         try:
-            self.page.select_option(target, value, timeout=10000)
+            await self.page.select_option(
+                target, value, timeout=self.DEFAULT_TIMEOUT
+            )
             return f"Selected '{value}' in {target}"
         except Exception as exc:
             return f"Select failed: {exc}"
 
-    def _wait(self, action):
+    async def _wait(self, action: Dict[str, Any]) -> str:
         if "timeout" in action:
             ms = action["timeout"]
-            time.sleep(ms / 1000)
+            await asyncio.sleep(ms / 1000)
             return f"Waited {ms}ms"
         if "selector" in action:
             sel = action["selector"]
-            self.page.wait_for_selector(sel, timeout=10000)
+            await self.page.wait_for_selector(
+                sel, timeout=self.DEFAULT_TIMEOUT
+            )
             return f"Waited for {sel}"
         return "Error: wait requires timeout/selector"
 
-    def _extract(self, action):
+    async def _extract(self, action: Dict[str, Any]) -> str:
         ref = action.get("ref")
         if not ref:
             return "Error: extract requires ref"
         target = f"[aria-ref='{ref}']"
-        self.page.wait_for_selector(target, timeout=10000)
-        txt = self.page.text_content(target)
+        await self.page.wait_for_selector(target, timeout=self.DEFAULT_TIMEOUT)
+        txt = await self.page.text_content(target)
         return f"Extracted: {txt[:100] if txt else 'None'}"
 
-    def _scroll(self, action):
+    async def _scroll(self, action: Dict[str, Any]) -> str:
         direction = action.get("direction", "down")
         amount = action.get("amount", 300)
-        self.page.evaluate(
-            f"window.scrollBy(0, "
-            f"{amount if direction == 'down' else -amount})"
-        )
-        time.sleep(0.5)
-        return f"Scrolled {direction} by {amount}px"
 
-    def _enter(self, action):
+        # Validate inputs to prevent injection
+        if direction not in ("up", "down"):
+            return "Error: direction must be 'up' or 'down'"
+
+        try:
+            # Safely convert amount to integer and clamp to reasonable range
+            amount_int = int(amount)
+            amount_int = max(
+                -5000, min(5000, amount_int)
+            )  # Clamp between -5000 and 5000
+        except (ValueError, TypeError):
+            return "Error: amount must be a valid number"
+
+        # Use safe evaluation with bound parameters
+        scroll_offset = amount_int if direction == "down" else -amount_int
+        await self.page.evaluate(f"window.scrollBy(0, {scroll_offset})")
+        await asyncio.sleep(0.5)
+        return f"Scrolled {direction} by {abs(amount_int)}px"
+
+    async def _enter(self, action: Dict[str, Any]) -> str:
         ref = action.get("ref")
         selector = action.get("selector")
         if ref:
-            self.page.focus(f"[aria-ref='{ref}']")
+            await self.page.focus(f"[aria-ref='{ref}']")
         elif selector:
-            self.page.focus(selector)
-        self.page.keyboard.press("Enter")
-        time.sleep(0.3)
+            await self.page.focus(selector)
+        await self.page.keyboard.press("Enter")
+        await asyncio.sleep(0.3)
         return "Pressed Enter"
 
     # utilities
-    def _wait_dom_stable(self):
+    async def _wait_dom_stable(self) -> None:
         try:
-            self.page.wait_for_load_state('domcontentloaded', timeout=2000)
+            await self.page.wait_for_load_state(
+                'domcontentloaded', timeout=self.SHORT_TIMEOUT
+            )
         except Exception:
             pass
 
