@@ -254,11 +254,21 @@ def update_memory(
 
 Updates the agent memory with a new message.
 
+If the single *message* exceeds the model's context window, it will
+be **automatically split into multiple smaller chunks** before being
+written into memory. This prevents later failures in
+`ScoreBasedContextCreator` where an over-sized message cannot fit
+into the available token budget at all.
+
+This slicing logic handles both regular text messages (in the
+`content` field) and long tool call results (in the `result` field of
+a `FunctionCallingMessage`).
+
 **Parameters:**
 
 - **message** (BaseMessage): The new message to add to the stored messages.
 - **role** (OpenAIBackendRole): The backend role type.
-- **timestamp** (Optional[float], optional): Custom timestamp for the memory record. If None, current timestamp will be used. (default: :obj:`None`)
+- **timestamp** (Optional[float], optional): Custom timestamp for the memory record. If `None`, the current time will be used. (default: :obj:`None`) (default: obj:`None`)
 
 <a id="camel.agents.chat_agent.ChatAgent.load_memory"></a>
 
