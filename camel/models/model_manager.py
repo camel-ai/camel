@@ -27,6 +27,10 @@ from typing import (
 )
 
 from openai import AsyncStream, Stream
+from openai.lib.streaming.chat import (
+    AsyncChatCompletionStreamManager,
+    ChatCompletionStreamManager,
+)
 from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
@@ -196,7 +200,11 @@ class ModelManager:
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        Stream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Process a list of messages by selecting a model based on
             the scheduling strategy.
             Sends the entire list of messages to the selected model,
@@ -207,9 +215,12 @@ class ModelManager:
                 history in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+            Union[ChatCompletion, Stream[ChatCompletionChunk],
+                  ChatCompletionStreamManager[BaseModel]]:
                 `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+                `Stream[ChatCompletionChunk]` in the stream mode, or
+                `ChatCompletionStreamManager[BaseModel]` for
+                structured-output stream.
         """
         self.current_model = self.scheduling_strategy()
 
@@ -233,7 +244,11 @@ class ModelManager:
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        AsyncStream[ChatCompletionChunk],
+        AsyncChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Process a list of messages by selecting a model based on
             the scheduling strategy.
             Sends the entire list of messages to the selected model,
@@ -244,9 +259,12 @@ class ModelManager:
                 history in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk],
+                  AsyncChatCompletionStreamManager[BaseModel]]:
                 `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+                `AsyncStream[ChatCompletionChunk]` in the stream mode, or
+                `AsyncChatCompletionStreamManager[BaseModel]` for
+                structured-output stream.
         """
         async with self.lock:
             self.current_model = self.scheduling_strategy()
