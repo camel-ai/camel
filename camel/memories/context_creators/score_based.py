@@ -375,25 +375,6 @@ class ScoreBasedContextCreator(BaseContextCreator):
         )
         return system_message_unit, []
 
-    def _truncation_sort_key(self, unit: _ContextUnit) -> Tuple[float, float]:
-        r"""Defines the sorting key for the truncation phase.
-
-        Sorting priority:
-        - Primary: Sort by score in descending order (higher scores first).
-        - Secondary: Sort by timestamp in ascending order (older messages
-            first when scores are equal).
-
-        Args:
-            unit (_ContextUnit): A `_ContextUnit` representing a conversation
-                record.
-
-        Returns:
-            Tuple[float, float]:
-            - Negative score for descending order sorting.
-            - Timestamp for ascending order sorting.
-        """
-        return (-unit.record.score, unit.record.timestamp)
-
     def _conversation_sort_key(
         self, unit: _ContextUnit
     ) -> Tuple[float, float]:
