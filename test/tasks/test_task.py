@@ -93,7 +93,9 @@ def temp_image():
         img = Image.new("RGB", (10, 10), color="blue")
         img.save(f, format="PNG")
         f.flush()
-        image = Image.open(f.name)
+        # Load image into memory to avoid file dependency
+        with Image.open(f.name) as loaded_img:
+            image = loaded_img.copy()
         yield image
     os.remove(f.name)
 
@@ -102,11 +104,10 @@ def temp_image():
 def temp_video_bytes():
     # Create temporary video file and read as bytes
     with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
-        f.write(b"fake video data")
+        video_data = b"fake video data"
+        f.write(video_data)
         f.flush()
-        f.seek(0)
-        video_bytes = f.read()
-        yield video_bytes
+        yield video_data
     os.remove(f.name)
 
 

@@ -88,12 +88,24 @@ def create_video_task(video_path: str, task_id: str = "1") -> Task:
 
 # Example usage
 img_path = "./examples/tasks/task_image.png"
-image_task = create_image_task(img_path, task_id="0")
-
 video_path = "./examples/tasks/task_video.mov"
-video_task = create_video_task(video_path, task_id="1")
 
-tasks = [image_task, video_task]
+tasks = []
+try:
+    image_task = create_image_task(img_path, task_id="0")
+    tasks.append(image_task)
+except FileNotFoundError as e:
+    print(f"Skipping image task: {e}")
+
+try:
+    video_task = create_video_task(video_path, task_id="1")
+    tasks.append(video_task)
+except FileNotFoundError as e:
+    print(f"Skipping video task: {e}")
+
+if not tasks:
+    print("No valid tasks found. Please ensure example files exist.")
+    exit(1)
 
 for task in tasks:
     task_manager = TaskManager(task)
