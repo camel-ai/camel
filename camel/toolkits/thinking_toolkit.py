@@ -32,7 +32,7 @@ class ThinkingToolkit(BaseToolkit):
 
         Args:
             timeout (Optional[float]): The timeout for the toolkit.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
         self.plans: List[str] = []

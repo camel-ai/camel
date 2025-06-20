@@ -36,18 +36,14 @@ class Worker(BaseNode, ABC):
         description (str): Description of the node.
         node_id (Optional[str]): ID of the node. If not provided, it will
             be generated automatically. (default: :obj:`None`)
-        max_concurrent_tasks (int): Maximum number of tasks this worker can
-            process concurrently. (default: :obj:`10`)
     """
 
     def __init__(
         self,
         description: str,
         node_id: Optional[str] = None,
-        max_concurrent_tasks: int = 10,
     ) -> None:
         super().__init__(description, node_id=node_id)
-        self.max_concurrent_tasks = max_concurrent_tasks
         self._active_task_ids: Set[str] = set()
 
     def __repr__(self):
@@ -114,17 +110,12 @@ class Worker(BaseNode, ABC):
 
     @check_if_running(False)
     async def _listen_to_channel(self):
-        r"""Continuously listen to the channel, process tasks that are
-        assigned to this node concurrently up to max_concurrent_tasks limit.
+        r"""Continuously listen to the channel and process assigned tasks.
 
-        This method supports parallel task execution when multiple tasks
-        are assigned to the same worker.
+        This method supports parallel task execution without artificial limits.
         """
         self._running = True
-        logger.info(
-            f"{self} started with max {self.max_concurrent_tasks} "
-            f"concurrent tasks."
-        )
+        logger.info(f"{self} started.")
 
         # Keep track of running task coroutines
         running_tasks: Set[asyncio.Task] = set()
@@ -141,39 +132,24 @@ class Worker(BaseNode, ABC):
                     except Exception as e:
                         logger.error(f"Task processing failed: {e}")
 
-                # Check if we can accept more tasks
-                if len(running_tasks) < self.max_concurrent_tasks:
-                    try:
-                        # Try to get a new task (with short timeout to avoid
-                        # blocking)
-                        task = await asyncio.wait_for(
-                            self._get_assigned_task(), timeout=1.0
-                        )
+                # Try to get a new task (with short timeout to avoid blocking)
+                try:
+                    task = await asyncio.wait_for(
+                        self._get_assigned_task(), timeout=1.0
+                    )
 
-                        # Create and start processing task
-                        task_coroutine = asyncio.create_task(
-                            self._process_single_task(task)
-                        )
-                        running_tasks.add(task_coroutine)
+                    # Create and start processing task
+                    task_coroutine = asyncio.create_task(
+                        self._process_single_task(task)
+                    )
+                    running_tasks.add(task_coroutine)
 
-                    except asyncio.TimeoutError:
-                        # No tasks available, continue loop
-                        if not running_tasks:
-                            # No tasks running and none available, short sleep
-                            await asyncio.sleep(0.1)
-                        continue
-                else:
-                    # At max capacity, wait for at least one task to complete
-                    if running_tasks:
-                        done, running_tasks = await asyncio.wait(
-                            running_tasks, return_when=asyncio.FIRST_COMPLETED
-                        )
-                        # Process completed tasks
-                        for completed_task in done:
-                            try:
-                                await completed_task
-                            except Exception as e:
-                                logger.error(f"Task processing failed: {e}")
+                except asyncio.TimeoutError:
+                    # No tasks available, continue loop
+                    if not running_tasks:
+                        # No tasks running and none available, short sleep
+                        await asyncio.sleep(0.1)
+                    continue
 
             except Exception as e:
                 logger.error(
