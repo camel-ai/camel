@@ -84,6 +84,7 @@ rag = [
     "pyobvector>=0.1.18",
     "google-genai>=1.13.0",
     "chunkr-ai>=0.0.50",
+    "chromadb>=0.6.0",
 ]
 web_tools = [
     "duckduckgo-search>=6.3.5,<7",
@@ -208,6 +209,7 @@ storage = [
     "mem0ai>=0.1.73",
     "pyobvector>=0.1.18",
     "weaviate-client>=4.15.0",
+    "chromadb>=0.6.0",
 ]
 owl = [
     "numpy>=1.2,<=2.2",
@@ -375,6 +377,7 @@ all = [
     "python-pptx>=1.0.2",
     "langfuse>=2.60.5",
     "Flask>=2.0",
+    "chromadb>=0.6.0",
 ]
 
 
