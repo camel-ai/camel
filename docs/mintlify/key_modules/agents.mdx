@@ -23,6 +23,7 @@ All CAMEL agents inherit from the <code>BaseAgent</code> abstract class, which d
 | <code>reset()</code> | State Management   | Resets the agent to its initial state         |
 | <code>step()</code>  | Task Execution     | Performs a single step of the agent's operation |
 
+## Types
 
 ### ChatAgent
 
@@ -33,18 +34,6 @@ The `ChatAgent` is the primary implementation that handles conversations with la
 - Response formatting and structured outputs
 - Multiple model backend support with scheduling strategies
 - Async operation support
-
-## Types
-
-### `ChatAgent`
-
-The main agent implementation for handling conversations with language models.  
-Features include:
-- Tool integration and management
-- Memory management with customizable window sizes
-- Output language control
-- Response termination handling
-- Structured output support via Pydantic models
 
 <AccordionGroup>
 
