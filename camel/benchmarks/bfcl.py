@@ -122,13 +122,19 @@ class FunctionCallParser:
                     try:
                         return json.loads(curly_match.group(0))
                     except Exception:
-                        pass
+                        logger.warning(
+                            "Failed to parse JSON object from text: "
+                            f"{text}"
+                        )
 
         # Try to parse the entire text as JSON
         try:
             return json.loads(text)
         except Exception:
-            pass
+            logger.warning(
+                "Failed to parse JSON object from text: "
+                f"{text}"
+            )
 
         # Try to find JSON object surrounded by curly braces in the text
         curly_pattern = r'{[\s\S]*?}'
@@ -137,7 +143,10 @@ class FunctionCallParser:
             try:
                 return json.loads(match.group(0))
             except Exception:
-                pass
+                logger.warning(
+                    "Failed to parse JSON object from text: "
+                    f"{text}"
+                )
 
         return None
 
@@ -174,7 +183,11 @@ class FunctionCallParser:
                         try:
                             parameters = json.loads(parameters)
                         except Exception:
-                            pass
+                            logger.warning(
+                                "Failed to parse parameters from "
+                                "function call: "
+                                f"{parameters}"
+                            )
                     return function_name, parameters
 
             # Try to extract general format function call
@@ -232,6 +245,10 @@ class FunctionCallParser:
                     # Try to parse parameter string as dictionary
                     parameters = eval(parameters_str)
                 except Exception:
+                    logger.warning(
+                        "Failed to parse parameters from REST API call: "
+                        f"{parameters_str}"
+                    )
                     parameters = {}
                 return "requests.get", {"url": url, "params": parameters}
 
@@ -322,7 +339,10 @@ class FunctionCallParser:
                 if parameters:
                     return function_name, parameters
         except Exception:
-            pass
+            logger.warning(
+                "Failed to parse function call from text: "
+                f"{response_text}"
+            )
 
         return None, None
 
@@ -483,7 +503,11 @@ class FunctionCallParser:
                                 value_matched = True
                                 break
                         except (ValueError, TypeError):
-                            pass
+                            logger.warning(
+                                "Failed to convert parameter value to float: "
+                                f"{param_value} or {expected_value} "
+                                f"for parameter {param_name}"
+                            )
 
                     # String comparison (case insensitive)
                     if isinstance(param_value, str) and isinstance(
