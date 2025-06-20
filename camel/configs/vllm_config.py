@@ -108,4 +108,5 @@ class VLLMConfig(BaseConfig):
     top_logprobs: Optional[int] = None
     extra_body: Optional[dict] = None
 
+
 VLLM_API_PARAMS = {param for param in VLLMConfig.model_fields.keys()}

@@ -1,168 +1,160 @@
 ---
 title: "Workforce"
+icon: users
 ---
 
-> Workforce is a system where multiple agents work together to solve tasks.
-> By using Workforce, users can quickly set up a multi-agent task solving
-> system with customized configurations. In this section, we will give a
-> brief view on the architecture of workforce, and how you can configure
-> and utilize it to solve tasks.
+<Card title="Concept" icon="users">
+Workforce is CAMEL-AI’s multi-agent teamwork engine.
 
-For more detailed usage information, please refer to our cookbook: [Create A Hackathon Judge Committee with Workforce](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+Instead of relying on a single agent, Workforce lets you organize a *team* of specialized agents—each with its own strengths—under a single, coordinated system. You can quickly assemble, configure, and launch collaborative agent “workforces” for any task that needs parallelization, diverse expertise, or complex workflows.
+
+With Workforce, agents plan, solve, and verify work together—like a project team in an organization, but fully automated.
+
+<Note type="info">
+**Key advantages of Workforce:**  
+- Instantly scale from single-agent to multi-agent workflows  
+- Built-in coordination, planning, and failure recovery  
+- Ideal for hackathons, evaluations, code review, brainstorming, and more  
+- Configure roles, toolsets, and communication patterns for *any* scenario  
+</Note>
+</Card>
+
+<Card title="See More: Hackathon Judge Committee Example" icon="link" href="https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing">
+  Check out our in-depth Workforce example:  
+  <b>Create a Hackathon Judge Committee with Workforce</b>
+</Card>
+
+---
 
 ## System Design
 
-### Architecture
+### Architecture: How Workforce Works
 
-Workforce follows a hierarchical architecture. A workforce can consist of 
-multiple worker nodes, and each of the worker nodes will contain 
-one agent or multiple agents as the worker. The worker nodes are managed by 
-a coordinator agent inside the workforce, and the coordinator agent will assign 
-tasks to the worker nodes according to the description of the worker nodes, 
-along with their tool sets.
+Workforce uses a **hierarchical, modular design** for real-world team problem-solving:
 
-Alongside the coordinator agent, there is also a task planner agent inside the
-workforce. The task planner agent will take the responsibility of decomposing
-and composing tasks, so that the workforce can solve the task step by step.
+See how the coordinator and task planner agents orchestrate a multi-agent workflow:
 
-### Communication Mechanism
+![Workforce Architecture Diagram](https://i.postimg.cc/jSnjsN57/Wechat-IMG1592.jpg)
 
-The communication inside the workforce is based on the task channel. The
-initialization of workforce will create a channel that will be shared by
-all the nodes. Tasks will later be posted into this channel, and each
-worker node will listen to the channel, accept tasks that are assigned
-to it from this channel to solve.
+- **Workforce:** The “team” as a whole.
+- **Worker nodes:** Individual contributors—each node can contain one or more agents, each with their own capabilities.
+- **Coordinator agent:** The “project manager”—routes tasks to worker nodes based on their role and skills.
+- **Task planner agent:** The “strategy lead”—breaks down big jobs into smaller, doable subtasks and organizes the workflow.
 
-When a task is solved, the worker node will post the result back to the
-channel, and the result will reside in the channel as a 'dependency' for
-other tasks, which will be shared by all the worker nodes.
+### Communication: A Shared Task Channel
 
-With this mechanism, the workforce can solve tasks in a collaborative and
-efficient way.
+- Every Workforce gets a **shared task channel** when it’s created.
+- **How it works:**
+  - All tasks are posted into this channel.
+  - Worker nodes “listen” and accept their assigned tasks.
+  - Results are posted back to the channel, where they’re available as dependencies for the next steps.
 
-### Failure Handling
+*This design lets agents build on each other's work and ensures no knowledge is lost between steps.*
 
-In the workforce, we have a mechanism to handle failures. When a task fails,
-the coordinator agent will take actions to fix it. The actions can be either
-decomposing the task into smaller ones and assign them again, or creating a
-new worker that is capable of doing the task.
+### Failure Handling: Built-In Robustness
 
-For now, the coordinator will make decisions based on the number of times the
-task has been decomposed. If the task has already been decomposed for more
-than a certain number of times, the coordinator will take the new worker
-creation action; if not, the coordinator will simply take the decomposition
-action.
+Workforce is designed to handle failures and recover gracefully:
 
-There will also be cases where a task just simply cannot be solved by
-agents. Under this circumstance, to prevent the workforce from being stuck
-in a infinite agent creation loop, the workforce will be halted if one task
-has been failed for a certain number of times (3 by default).
+- If a worker fails a task, the coordinator agent will:
+  - **Decompose and retry:** Break the task into even smaller pieces and reassign.
+  - **Escalate:** If the task keeps failing, create a new worker designed for that problem.
+- To prevent infinite loops, if a task has failed or been decomposed more than a set number of times (default: 3), Workforce will automatically halt that workflow.
 
-### A Simple Example of the Workflow
+<Tip>
+  <b>Tip:</b> Workforce automatically stops stuck workflows—so you don’t waste compute or get caught in agent loops!
+</Tip>
 
-Here is a diagram illustrating the workflow with a simple example.
+---
 
-![Workforce Example](https://i.postimg.cc/jSnjsN57/Wechat-IMG1592.jpg)
+<Card title="Quickstart: Build Your First Workforce" icon="rocket">
 
-## Get Started
+<Steps>
+  <Step title="Create a Workforce Instance">
+    To begin, import and create a new Workforce:
 
-In this section, we will show you how to create a workforce instance, add
-worker nodes to the workforce, and finally, how to start the workforce to
-solve tasks.
+    ```python
+    from camel.societies.workforce import Workforce
 
-### Create a Workforce Instance
+    # Create a workforce instance
+    workforce = Workforce("A Simple Workforce")
+    ```
 
-To start using Workforce, you need to first create a workforce instance, and
-then add worker nodes to the workforce. Here is an example of how you can do
-this:
+    <Tip>
+      For quick setups, just provide the description.  
+      For advanced workflows, you can pass in custom worker lists or configure the coordinator and planner agents.
+    </Tip>
+  </Step>
 
-```python
-from camel.societies.workforce import Workforce
+  <Step title="Add Worker Nodes">
+    Now add your worker agents.  
+    (Example: a `ChatAgent` for web search, named `search_agent`.)
 
-# Create a workforce instance
-workforce = Workforce("A Simple Workforce")
-```
+    ```python
+    # Add a worker agent to the workforce
+    workforce.add_single_agent_worker(
+        "An agent that can do web searches",
+        worker=search_agent,
+    )
+    ```
 
-Now we get a workforce instance with description "A Simple Workforce".
-However, there is no worker node in the workforce yet.
+    **Chain multiple agents for convenience:**
+    ```python
+    workforce.add_single_agent_worker(
+        "An agent that can do web searches",
+        worker=search_agent,
+    ).add_single_agent_worker(
+        "Another agent",
+        worker=another_agent,
+    ).add_single_agent_worker(
+        "Yet another agent",
+        worker=yet_another_agent,
+    )
+    ```
 
-> **Note: How to further customize the workforce**
->
-> You can quickly create a workforce instance with default configurations
-> by just providing the description of the workforce. However, you can also
-> configure the workforce with more details, such as providing a list of
-> worker nodes directly instead of adding them one by one, or configuring
-> the coordinator agent and task planner agent by passing the configurations
-> to the workforce instance.
+    <Tip>
+      The *description* is important!  
+      The coordinator uses it to assign tasks—so keep it clear and specific.
+    </Tip>
+  </Step>
 
-### Add Worker Nodes
+  <Step title="Start the Workforce and Solve Tasks">
+    Define a task and let the workforce handle it:
 
-After creating the workforce instance, you can add worker nodes to the
-workforce. To add a worker node, you need to first create worker agents
-that actually do the work.
+    ```python
+    from camel.tasks import Task
 
-Suppose we have already created an `ChatAgent` that can do web searches 
-called `search_agent`. Now we can add this worker agent to the workforce.
+    # The id can be any string
+    task = Task(
+        content="Make a travel plan for a 3-day trip to Paris.",
+        id="0",
+    )
 
-```python
-# Add the worker agent to the workforce
-workforce.add_single_agent_worker(
-    "An agent that can do web searches",
-    worker=search_agent,
-)
-```
+    # Process the task with the workforce
+    task = workforce.process_task(task)
 
-The adding function follows the fluent interface design pattern, so you can
-add multiple worker agents to the workforce in one line, like the following:
+    # See the result
+    print(task.result)
+    ```
+  </Step>
+</Steps>
+</Card>
 
-```python
-workforce.add_single_agent_worker(
-    "An agent that can do web searches",
-    worker=search_agent,
-).add_single_agent_worker(
-    "Another agent",
-    worker=another_agent,
-).add_single_agent_worker(
-    "Yet another agent",
-    worker=yet_another_agent,
-)
-```
+---
 
-Now we have some worker agents in the workforce. It's time to create a task and
-let the workforce solve it.
+<CardGroup cols={2}>
+  <Card
+    title="Cookbook: Hackathon Judge Committee"
+    icon="bookmark"
+    href="https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing"
+  >
+    See a real-world multi-agent workflow with Workforce.
+  </Card>
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/reference/#societies.workforce"
+  >
+    Full documentation for advanced usage and configuration.
+  </Card>
+</CardGroup>
 
-> **Note: The description is NOT trivial**
-> 
-> When adding an agent to the workforce as a worker node, the first argument
-> is the description of the worker node. Though it seems trivial, it is 
-> actually very important. The description will be used by the coordinator
-> agent as the basis to assign tasks to the worker nodes. Therefore, it is
-> recommended to provide a clear and concise description of the worker node.
-
-### Start the Workforce
-
-After adding worker nodes to the workforce, you can start the workforce to
-solve tasks. First we can define a task:
-
-```python
-from camel.tasks import Task
-
-# the id of the task can be any string to mark the task
-task = Task(
-    content="Make a travel plan for a 3-day trip to Paris.",
-    id="0",
-)
-```
-
-Then we can start the workforce with the task:
-
-```python
-task = workforce.process_task(task)
-```
-
-The final result of the task will be stored in the `result` attribute of the
-task object. You can check the result by:
-
-```python
-print(task.result)
-```
