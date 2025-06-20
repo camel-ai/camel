@@ -213,7 +213,7 @@ class VideoAnalysisToolkit(BaseToolkit):
                 )
                 self._use_audio_transcription = False
         if self._use_ocr:
-            self._use_ocr = self._check_ocr_dependencies()  # Now calls the dependency check
+            self._use_ocr = self._check_ocr_dependencies() 
     
     def __del__(self):
         r"""Clean up temporary directories and files when the object is
