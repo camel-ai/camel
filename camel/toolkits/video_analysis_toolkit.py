@@ -213,21 +213,7 @@ class VideoAnalysisToolkit(BaseToolkit):
                 )
                 self._use_audio_transcription = False
         if self._use_ocr:
-            try:
-                import pytesseract
-                pytesseract.get_tesseract_version()
-            except ImportError:
-                logger.error(
-                    "pytesseract not installed. OCR will be disabled. "
-                    "Install with: pip install pytesseract"
-                )
-                self._use_ocr = False
-            except EnvironmentError:
-                logger.error(
-                    "Tesseract OCR not found in PATH. OCR will be disabled. "
-                    "Install Tesseract: https://github.com/tesseract-ocr/tesseract"
-                )
-                self._use_ocr = False
+            self._use_ocr = self._check_ocr_dependencies()  # Now calls the dependency check
     
     def __del__(self):
         r"""Clean up temporary directories and files when the object is
@@ -264,19 +250,6 @@ class VideoAnalysisToolkit(BaseToolkit):
                     f"Failed to remove temporary directory "
                     f"{self._download_directory}: {e}"
                 )
-    def _create_vl_agent(self):
-        from camel.agents import ChatAgent
-        
-        if self.vl_model:
-            return ChatAgent(
-                model=self.vl_model, output_language=self.output_language
-            )
-        else:
-            logger.warning(
-                "No vision-language model provided. Using default model in "
-                "ChatAgent."
-            )
-            return ChatAgent(output_language=self.output_language)
 
     def _check_ocr_dependencies(self):
         if not self._use_ocr:
@@ -650,15 +623,18 @@ class VideoAnalysisToolkit(BaseToolkit):
             # Extract visual text with OCR
             visual_text = ""
             video_frames = self._extract_keyframes(video_path)
+            # Build visual text only if OCR is enabled
             if self._use_ocr:
+                visual_text = ""  # Initialize for OCR processing
                 for frame in video_frames:
                     text = self._extract_text_from_frame(frame)
                     processed = self._process_extracted_text(text)
                     if processed:
                         visual_text += processed + "\n"
                 visual_text = visual_text.strip() or "No visual text detected."
-
-            video_frames = self._extract_keyframes(video_path)
+            else:
+                visual_text = ""
+            
             prompt = VIDEO_QA_PROMPT.format(
                 audio_transcription=audio_transcript,
                 visual_text=visual_text,
