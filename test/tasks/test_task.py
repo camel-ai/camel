@@ -110,23 +110,26 @@ def temp_video_bytes():
     os.remove(f.name)
 
 
-def test_image_task_management():
+def test_image_task_management(temp_image):
     """
-    Task 0: 分析图片
-        Task 1: 检测图片中的物体
-        Task 2: 识别图片中的文字
-            Task 2.1: 识别标题文字
-            Task 2.2: 识别正文文字
-        Task 3: 生成图片描述
+    Task 0: Analyze image
+        Task 1: Detect objects in image
+        Task 2: Recognize text in image
+            Task 2.1: Recognize title text
+            Task 2.2: Recognize body text
+        Task 3: Generate image description
     """
-    from camel.tasks.task import Task, TaskManager
-
-    root_task = Task(content="分析图片", id="0")
-    sub_task_1 = Task(content="检测图片中的物体", id="1")
-    sub_task_2 = Task(content="识别图片中的文字", id="2")
-    sub_task_3 = Task(content="生成图片描述", id="3")
-    sub_task_2_1 = Task(content="识别标题文字", id="2.1")
-    sub_task_2_2 = Task(content="识别正文文字", id="2.2")
+    root_task = Task(
+        content="Analyze image",
+        id="0",
+        image_list=[temp_image],
+        image_detail="high",
+    )
+    sub_task_1 = Task(content="Detect objects in image", id="1")
+    sub_task_2 = Task(content="Recognize text in image", id="2")
+    sub_task_3 = Task(content="Generate image description", id="3")
+    sub_task_2_1 = Task(content="Recognize title text", id="2.1")
+    sub_task_2_2 = Task(content="Recognize body text", id="2.2")
 
     root_task.add_subtask(sub_task_1)
     root_task.add_subtask(sub_task_2)
@@ -162,23 +165,26 @@ def test_image_task_management():
     ]
 
 
-def test_video_task_management():
+def test_video_task_management(temp_video_bytes):
     """
-    Task 0: 分析视频
-        Task 1: 检测视频中的人物
-        Task 2: 识别视频中的语音
-            Task 2.1: 识别开头对白
-            Task 2.2: 识别结尾对白
-        Task 3: 生成视频摘要
+    Task 0: Analyze video
+        Task 1: Detect people in video
+        Task 2: Recognize speech in video
+            Task 2.1: Recognize opening dialogue
+            Task 2.2: Recognize ending dialogue
+        Task 3: Generate video summary
     """
-    from camel.tasks.task import Task, TaskManager
-
-    root_task = Task(content="分析视频", id="0")
-    sub_task_1 = Task(content="检测视频中的人物", id="1")
-    sub_task_2 = Task(content="识别视频中的语音", id="2")
-    sub_task_3 = Task(content="生成视频摘要", id="3")
-    sub_task_2_1 = Task(content="识别开头对白", id="2.1")
-    sub_task_2_2 = Task(content="识别结尾对白", id="2.2")
+    root_task = Task(
+        content="Analyze video",
+        id="0",
+        video_bytes=temp_video_bytes,
+        video_detail="high",
+    )
+    sub_task_1 = Task(content="Detect people in video", id="1")
+    sub_task_2 = Task(content="Recognize speech in video", id="2")
+    sub_task_3 = Task(content="Generate video summary", id="3")
+    sub_task_2_1 = Task(content="Recognize opening dialogue", id="2.1")
+    sub_task_2_2 = Task(content="Recognize ending dialogue", id="2.2")
 
     root_task.add_subtask(sub_task_1)
     root_task.add_subtask(sub_task_2)

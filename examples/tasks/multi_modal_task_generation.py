@@ -12,6 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import io
+import os
+
 from PIL import Image
 
 from camel.agents import ChatAgent
@@ -37,30 +40,58 @@ model = ModelFactory.create(
     model_config_dict={"temperature": 0.0},
 )
 
-img_path = "./examples/tasks/task_image.png"
-img = Image.open(img_path)
 
-video_path = "./examples/tasks/task_video.mov"
-with open(video_path, "rb") as f:
-    video = f.read()
+def load_image(image_path: str) -> Image.Image:
+    """
+    Load an image and ensure it has a valid format like PNG or JPEG.
+    """
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image file not found: {image_path}")
+
+    with Image.open(image_path) as img:
+        img_format = img.format or "PNG"
+
+        buffer = io.BytesIO()
+        img.save(buffer, format=img_format)
+        buffer.seek(0)
+        return Image.open(buffer)
+
+
+def load_video(video_path: str) -> bytes:
+    if not os.path.exists(video_path):
+        raise FileNotFoundError(f"Video file not found: {video_path}")
+    with open(video_path, "rb") as f:
+        return f.read()
+
+
 # set up agent
 assistant_sys_msg = "You are a personal math tutor and programmer."
 agent = ChatAgent(assistant_sys_msg, model=model)
 agent.reset()
 
-image_task = Task(
-    content="The task is in the image.",
-    image_list=[img],
-    id="0",
-)
-print("Image Task:", image_task.to_string())
 
-video_task = Task(
-    content="The task is in the video.",
-    video_bytes=video,
-    id="1",
-)
-print("Video Task:", video_task.to_string())
+def create_image_task(image_path: str, task_id: str = "0") -> Task:
+    image = load_image(image_path)
+    return Task(
+        content="The task is in the image.", image_list=[image], id=task_id
+    )
+
+
+def create_video_task(video_path: str, task_id: str = "1") -> Task:
+    video_bytes = load_video(video_path)
+    return Task(
+        content="The task is in the video.",
+        video_bytes=video_bytes,
+        id=task_id,
+    )
+
+
+# Example usage
+img_path = "./examples/tasks/task_image.png"
+image_task = create_image_task(img_path, task_id="0")
+
+video_path = "./examples/tasks/task_video.mov"
+video_task = create_video_task(video_path, task_id="1")
 
 tasks = [image_task, video_task]
 
