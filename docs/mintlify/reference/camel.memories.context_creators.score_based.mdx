@@ -62,6 +62,8 @@ Key strategies:
 3. Final output maintains chronological order and in history memory,
 the score of each message decreases according to keep_rate. The
 newer the message, the higher the score.
+4. Tool calls and their responses are kept together to maintain
+API compatibility
 
 **Parameters:**
 
@@ -72,6 +74,50 @@ newer the message, the higher the score.
   Tuple[List[OpenAIMessage], int]:
 - Ordered list of OpenAI messages
 - Total token count of the final context
+
+<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator._group_tool_calls_and_responses"></a>
+
+### _group_tool_calls_and_responses
+
+```python
+def _group_tool_calls_and_responses(self, units: List[_ContextUnit]):
+```
+
+Groups tool calls with their corresponding responses.
+
+**Parameters:**
+
+- **units** (List[_ContextUnit]): List of context units to analyze
+
+**Returns:**
+
+  Dict[str, List[_ContextUnit]]: Mapping from tool_call_id to list of
+related units (tool call + responses)
+
+<a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator._truncate_with_tool_call_awareness"></a>
+
+### _truncate_with_tool_call_awareness
+
+```python
+def _truncate_with_tool_call_awareness(
+    self,
+    regular_units: List[_ContextUnit],
+    tool_call_groups: Dict[str, List[_ContextUnit]],
+    system_tokens: int
+):
+```
+
+Truncates messages while preserving tool call-response pairs.
+
+**Parameters:**
+
+- **regular_units** (List[_ContextUnit]): All regular message units
+- **tool_call_groups** (Dict[str, List[_ContextUnit]]): Grouped tool calls
+- **system_tokens** (int): Tokens used by system message
+
+**Returns:**
+
+  List[_ContextUnit]: Units that fit within token limit
 
 <a id="camel.memories.context_creators.score_based.ScoreBasedContextCreator._extract_system_message"></a>
 

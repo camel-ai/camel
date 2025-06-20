@@ -76,6 +76,11 @@ class OpenAIModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the
+            OpenAI client initialization. These can include parameters like
+            'organization', 'default_headers', 'http_client', etc.
     """
 
     @api_keys_required(
@@ -91,12 +96,17 @@ class OpenAIModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
         api_key = api_key or os.environ.get("OPENAI_API_KEY")
         url = url or os.environ.get("OPENAI_API_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
+
+        # Store additional client args for later use
+        self._max_retries = max_retries
 
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter, timeout
@@ -106,30 +116,37 @@ class OpenAIModel(BaseModelBackend):
             from langfuse.openai import AsyncOpenAI as LangfuseAsyncOpenAI
             from langfuse.openai import OpenAI as LangfuseOpenAI
 
+            # Create Langfuse client with base parameters and additional
+            # arguments
             self._client = LangfuseOpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=self._max_retries,
                 base_url=self._url,
                 api_key=self._api_key,
+                **kwargs,
             )
             self._async_client = LangfuseAsyncOpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=self._max_retries,
                 base_url=self._url,
                 api_key=self._api_key,
+                **kwargs,
             )
         else:
+            # Create client with base parameters and additional arguments
             self._client = OpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=self._max_retries,
                 base_url=self._url,
                 api_key=self._api_key,
+                **kwargs,
             )
             self._async_client = AsyncOpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=self._max_retries,
                 base_url=self._url,
                 api_key=self._api_key,
+                **kwargs,
             )
 
     def _sanitize_config(self, config_dict: Dict[str, Any]) -> Dict[str, Any]:
