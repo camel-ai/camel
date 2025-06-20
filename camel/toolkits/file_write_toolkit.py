@@ -160,9 +160,7 @@ class FileWriteToolkit(BaseToolkit):
                 LaTeX toolchain). If False, uses FPDF for simpler PDF
                 generation. (default: :obj: `False`)
 
-        Raises:
-            RuntimeError: If the 'pylatex' or 'fpdf' library is not installed
-                when use_latex=True.
+
         """
         if use_latex:
             from pylatex import (
@@ -228,7 +226,7 @@ class FileWriteToolkit(BaseToolkit):
     def _write_csv_file(
         self,
         file_path: Path,
-        content: Union[str, List[List]],
+        content: Union[str, List[List[str]]],
         encoding: str = "utf-8",
     ) -> None:
         r"""Write CSV content to a file.
@@ -416,6 +414,25 @@ class FileWriteToolkit(BaseToolkit):
             logger.error(error_msg)
             return error_msg
 
+    def _check_file_size(
+        self, file_path: Path, max_size_mb: int = 100
+    ) -> None:
+        r"""Check if file size is within acceptable limits.
+
+        Args:
+            file_path (Path): Path to the file to check.
+            max_size_mb (int): Maximum file size in MB.
+            (default: :obj: `100`)
+
+        """
+        if file_path.exists():
+            file_size_mb = file_path.stat().st_size / (1024 * 1024)
+            if file_size_mb > max_size_mb:
+                logger.warning(
+                    f"File {file_path} is large ({file_size_mb:.1f} MB). "
+                    f"This may cause memory issues."
+                )
+
     def _sanitize_filename(self, filename: str) -> str:
         r"""Sanitize a filename by replacing any character that is not
         alphanumeric, a dot (.), hyphen (-), or underscore (_) with an
@@ -436,7 +453,7 @@ class FileWriteToolkit(BaseToolkit):
         self,
         filename: str,
         encoding: Optional[str] = None,
-    ) -> Union[str, List[List[str]], dict]:
+    ) -> Union[str, List[List[str]], Dict[str, Any]]:
         r"""Read content from a file.
 
         Supports multiple formats: Markdown (.md, .markdown), Plaintext (.txt),
@@ -450,21 +467,20 @@ class FileWriteToolkit(BaseToolkit):
                 :obj: `None`)
 
         Returns:
-            Union[str, List[List[str]], dict]: The content of the file. The
-                return type depends on the file format:
+            Union[str, List[List[str]], Dict[str, Any]]: The content of the
+                file. The return type depends on the file format:
                 - Text formats (txt, md, html, yaml): string
                 - CSV: list of lists
                 - JSON: dict or list
 
-        Raises:
-            FileNotFoundError: If the specified file does not exist.
-            ValueError: If the file format is not supported or the content
-                cannot be parsed.
         """
         file_path = self._resolve_filepath(filename)
 
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
+
+        # Check file size before reading
+        self._check_file_size(file_path)
 
         # Get encoding or use default
         file_encoding = encoding or self.default_encoding
@@ -526,10 +542,6 @@ class FileWriteToolkit(BaseToolkit):
         Returns:
             str: The content of the file or specified line range.
 
-        Raises:
-            FileNotFoundError: If the specified file does not exist.
-            ValueError: If start_line is less than 1 or max_lines is less than
-                1.
         """
         if start_line < 1:
             raise ValueError("start_line must be 1 or greater")
@@ -540,6 +552,9 @@ class FileWriteToolkit(BaseToolkit):
 
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
+
+        # Check file size before reading
+        self._check_file_size(file_path)
 
         file_encoding = encoding or self.default_encoding
 
@@ -595,9 +610,6 @@ class FileWriteToolkit(BaseToolkit):
         Returns:
             str: A message indicating the number of replacements made.
 
-        Raises:
-            FileNotFoundError: If the specified file does not exist.
-            ValueError: If an error occurs during the replacement operation.
         """
         file_path = self._resolve_filepath(filename)
 
@@ -688,9 +700,6 @@ class FileWriteToolkit(BaseToolkit):
                 - 'total_matches': Total number of matches found
                 - 'file_path': Path of the searched file
 
-        Raises:
-            FileNotFoundError: If the specified file does not exist.
-            ValueError: If an error occurs during the search operation.
         """
         file_path = self._resolve_filepath(filename)
 
@@ -831,9 +840,7 @@ class FileWriteToolkit(BaseToolkit):
         Returns:
             List[str]: List of file paths matching the pattern.
 
-        Raises:
-            FileNotFoundError: If the specified directory does not exist.
-            ValueError: If an error occurs during the search operation.
+
         """
         if directory is None:
             search_dir = self.output_dir
