@@ -49,7 +49,6 @@ def developer_agent_factory(model: BaseModelBackend, task_id: str):
         *TerminalToolkit().get_tools(),
         HumanToolkit().ask_human_via_console,
         *TerminalToolkit(clone_current_env=True).get_tools(),
-        *HumanToolkit().get_tools(),
         *CodeExecutionToolkit().get_tools(),
     ]
 
