@@ -16,13 +16,18 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
+from playwright.async_api import (
+    Browser,
+    BrowserContext,
+    Page,
+    async_playwright,
+)
 
 from .actions import ActionExecutor
 from .snapshot import PageSnapshot
 
 if TYPE_CHECKING:
-    from playwright.sync_api import Playwright
+    from playwright.async_api import Playwright
 
 
 class NVBrowserSession:
@@ -34,13 +39,17 @@ class NVBrowserSession:
     duplicating Playwright setup code.
     """
 
+    # Configuration constants
+    DEFAULT_NAVIGATION_TIMEOUT = 10000  # 10 seconds
+    NETWORK_IDLE_TIMEOUT = 5000  # 5 seconds
+
     def __init__(
         self, *, headless: bool = True, user_data_dir: Optional[str] = None
     ):
         self._headless = headless
         self._user_data_dir = user_data_dir
 
-        self._playwright: Optional["Playwright"] = None
+        self._playwright: Optional[Playwright] = None
         self._browser: Optional[Browser] = None
         self._context: Optional[BrowserContext] = None
         self._page: Optional[Page] = None
@@ -51,16 +60,16 @@ class NVBrowserSession:
     # ------------------------------------------------------------------
     # Browser lifecycle helpers
     # ------------------------------------------------------------------
-    def ensure_browser(self) -> None:
+    async def ensure_browser(self) -> None:
         if self._page is not None:
             return
 
-        self._playwright = sync_playwright().start()
+        self._playwright = await async_playwright().start()
         if self._user_data_dir:
             Path(self._user_data_dir).mkdir(parents=True, exist_ok=True)
             pl = self._playwright
             assert pl is not None
-            self._context = pl.chromium.launch_persistent_context(
+            self._context = await pl.chromium.launch_persistent_context(
                 user_data_dir=self._user_data_dir,
                 headless=self._headless,
             )
@@ -68,61 +77,99 @@ class NVBrowserSession:
         else:
             pl = self._playwright
             assert pl is not None
-            self._browser = pl.chromium.launch(headless=self._headless)
-            self._context = self._browser.new_context()
+            self._browser = await pl.chromium.launch(headless=self._headless)
+            self._context = await self._browser.new_context()
 
         # Reuse an already open page (persistent context may restore last
         # session)
         if self._context.pages:
             self._page = self._context.pages[0]
         else:
-            self._page = self._context.new_page()
+            self._page = await self._context.new_page()
         # helpers
         self.snapshot = PageSnapshot(self._page)
         self.executor = ActionExecutor(self._page)
 
-    def close(self) -> None:
-        if self._context is not None:
-            self._context.close()
-        if self._browser is not None:
-            self._browser.close()
-        if self._playwright is not None:
-            self._playwright.stop()
+    async def close(self) -> None:
+        r"""Close all browser resources, ensuring cleanup even if some
+        operations fail.
+        """
+        errors: list[str] = []
 
+        # Close context first (which closes pages)
+        if self._context is not None:
+            try:
+                await self._context.close()
+            except Exception as e:
+                errors.append(f"Context close error: {e}")
+
+        # Close browser
+        if self._browser is not None:
+            try:
+                await self._browser.close()
+            except Exception as e:
+                errors.append(f"Browser close error: {e}")
+
+        # Stop playwright
+        if self._playwright is not None:
+            try:
+                await self._playwright.stop()
+            except Exception as e:
+                errors.append(f"Playwright stop error: {e}")
+
+        # Reset all references
         self._playwright = self._browser = self._context = self._page = None
-        # type: ignore[assignment]
         self.snapshot = self.executor = None
+
+        # Log errors if any occurred during cleanup
+        if errors:
+            from camel.logger import get_logger
+
+            logger = get_logger(__name__)
+            logger.warning(
+                "Errors during browser session cleanup: %s", "; ".join(errors)
+            )
 
     # ------------------------------------------------------------------
     # Convenience wrappers around common actions
     # ------------------------------------------------------------------
-    def visit(self, url: str) -> str:
-        self.ensure_browser()
+    async def visit(self, url: str) -> str:
+        await self.ensure_browser()
         assert self._page is not None
-        self._page.goto(url, wait_until="domcontentloaded", timeout=2000)
-        try:
-            self._page.wait_for_load_state("networkidle", timeout=2000)
-        except Exception:
-            pass
-        return f"Visited {url}"
 
-    def get_snapshot(
+        try:
+            await self._page.goto(
+                url,
+                wait_until="domcontentloaded",
+                timeout=self.DEFAULT_NAVIGATION_TIMEOUT,
+            )
+            # Try to wait for network idle, but don't fail if it times out
+            try:
+                await self._page.wait_for_load_state(
+                    "networkidle", timeout=self.NETWORK_IDLE_TIMEOUT
+                )
+            except Exception:
+                pass  # Network idle timeout is not critical
+            return f"Visited {url}"
+        except Exception as e:
+            return f"Error visiting {url}: {e}"
+
+    async def get_snapshot(
         self, *, force_refresh: bool = False, diff_only: bool = False
     ) -> str:
-        self.ensure_browser()
+        await self.ensure_browser()
         assert self.snapshot is not None
-        return self.snapshot.capture(
+        return await self.snapshot.capture(
             force_refresh=force_refresh, diff_only=diff_only
         )
 
-    def exec_action(self, action: dict[str, Any]) -> str:
-        self.ensure_browser()
+    async def exec_action(self, action: dict[str, Any]) -> str:
+        await self.ensure_browser()
         assert self.executor is not None
-        return self.executor.execute(action)
+        return await self.executor.execute(action)
 
     # Low-level accessors -------------------------------------------------
-    @property
-    def page(self) -> Page:
-        self.ensure_browser()
+    async def get_page(self) -> Page:
+        await self.ensure_browser()
         assert self._page is not None
         return self._page
