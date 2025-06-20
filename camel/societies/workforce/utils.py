@@ -50,7 +50,8 @@ class TaskAssignment(BaseModel):
     )
     dependencies: List[str] = Field(
         default_factory=list,
-        description="List of task IDs that must complete before this task.",
+        description="List of task IDs that must complete before this task. "
+        "This is critical for the task decomposition and execution.",
     )
 
 
@@ -156,7 +157,14 @@ def check_if_running(
                 )
                 return None
             else:
-                raise last_exception
+                raise (
+                    last_exception
+                    if last_exception
+                    else RuntimeError(
+                        f"Unexpected failure in {func.__name__} "
+                        "with no exception captured."
+                    )
+                )
 
         return wrapper
 

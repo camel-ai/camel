@@ -34,13 +34,13 @@ class DaytonaRuntime(BaseRuntime):
     Args:
         api_key (Optional[str]): The Daytona API key for authentication. If not
             provided, it will try to use the DAYTONA_API_KEY environment
-            variable. (default: :obj: `None`)
+            variable. (default: :obj:`None`)
         api_url (Optional[str]): The URL of the Daytona server. If not
             provided, it will try to use the DAYTONA_API_URL environment
             variable. If none is provided, it will use "http://localhost:8000".
-            (default: :obj: `None`)
+            (default: :obj:`None`)
         language (Optional[str]): The programming language for the sandbox.
-            (default: :obj: `"python"`)
+            (default: :obj:`"python"`)
     """
 
     def __init__(
@@ -102,7 +102,7 @@ class DaytonaRuntime(BaseRuntime):
                 list of functions to add.
             entrypoint (str): The entrypoint for the function.
             arguments (Optional[Dict[str, Any]]): The arguments for the
-                function. (default: :obj: `None`)
+                function. (default: :obj:`None`)
 
         Returns:
             DaytonaRuntime: The current runtime.

@@ -15,19 +15,13 @@ processing in the workforce system.
 
 - **description** (str): Description of the node.
 - **node_id** (Optional[str]): ID of the node. If not provided, it will be generated automatically. (default: :obj:`None`)
-- **max_concurrent_tasks** (int): Maximum number of tasks this worker can process concurrently. (default: :obj:`10`)
 
 <a id="camel.societies.workforce.worker.Worker.__init__"></a>
 
 ### __init__
 
 ```python
-def __init__(
-    self,
-    description: str,
-    node_id: Optional[str] = None,
-    max_concurrent_tasks: int = 10
-):
+def __init__(self, description: str, node_id: Optional[str] = None):
 ```
 
 <a id="camel.societies.workforce.worker.Worker.__repr__"></a>
