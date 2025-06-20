@@ -88,7 +88,7 @@ def test_task_management():
 
 @pytest.fixture
 def temp_image():
-    # 创建临时图片文件并返回 PIL Image 对象
+    # Create temporary image file and return PIL Image object
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
         img = Image.new("RGB", (10, 10), color="blue")
         img.save(f, format="PNG")
@@ -100,7 +100,7 @@ def temp_image():
 
 @pytest.fixture
 def temp_video_bytes():
-    # 创建临时视频文件并读取为 bytes
+    # Create temporary video file and read as bytes
     with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
         f.write(b"fake video data")
         f.flush()
