@@ -52,15 +52,11 @@ async def example_with_registry_config(
         registry_configs=[registry_config],
     )
 
-    await agent.connect()
-
     # Use agent with async context manager
     async with agent:
         response = await agent.astep(message)
         print(f"\nResponse from {message}:")
         print(response.msgs[0].content)
-
-    await agent.disconnect()
 
 
 async def main():
