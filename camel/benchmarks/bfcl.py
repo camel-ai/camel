@@ -31,7 +31,6 @@ from typing import (
 )
 
 import requests
-from huggingface_hub import snapshot_download
 
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
@@ -769,6 +768,8 @@ class BFCLBenchmark(BaseBenchmark):
         """
         try:
             # First try using Hugging Face Hub
+            from huggingface_hub import snapshot_download
+
             snapshot_download(
                 repo_id=self.REPO_ID,
                 repo_type="dataset",
@@ -776,6 +777,15 @@ class BFCLBenchmark(BaseBenchmark):
                 local_dir_use_symlinks=True,
             )
             logger.info(f"Downloaded dataset from {self.REPO_ID}")
+        except ImportError:
+            logger.warning(
+                "huggingface_hub is not installed, falling back to "
+                "GitHub download. You can install it using "
+                "'pip install huggingface_hub'."
+            )
+            # Fallback to GitHub if huggingface_hub is not available
+            for category in TEST_CATEGORIES.keys():
+                self._download_category(category)
         except Exception as e:
             logger.warning(f"Failed to download from Hugging Face: {e}")
             logger.info("Trying to download from GitHub...")
