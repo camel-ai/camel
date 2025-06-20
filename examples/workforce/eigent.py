@@ -15,6 +15,7 @@
 import asyncio
 
 from camel.agents.chat_agent import ChatAgent
+from camel.loaders import Crawl4AI
 from camel.messages.base import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
@@ -47,6 +48,7 @@ def developer_agent_factory(model: BaseModelBackend, task_id: str):
     tools = [
         *TerminalToolkit().get_tools(),
         HumanToolkit().ask_human_via_console,
+        *TerminalToolkit(clone_current_env=True).get_tools(),
         *CodeExecutionToolkit().get_tools(),
     ]
 
@@ -95,7 +97,7 @@ def search_agent_factory(
         # *browser_toolkits.get_tools(),
         *terminal_toolkits.get_tools(),
         human_toolkits.ask_human_via_console,
-        # Firecrawl().scrape,
+        FunctionTool(Crawl4AI().scrape),
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
