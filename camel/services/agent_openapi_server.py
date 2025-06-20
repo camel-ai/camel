@@ -35,6 +35,8 @@ class InitRequest(BaseModel):
         model_type (Optional[str]): The model type to use. Should match a key
             supported by the model manager, e.g., "gpt-4o-mini".
             (default: :obj:`"gpt-4o-mini"`)
+        model_platform (Optional[str]): The model platform to use.
+            (default: :obj:`"openai"`)
         tools_names (Optional[List[str]]): A list of tool names to load from
             the tool registry. These tools will be available to the agent.
             (default: :obj:`None`)
@@ -51,8 +53,10 @@ class InitRequest(BaseModel):
             (default: :obj:`None`)
         output_language (Optional[str]): Preferred output language for the
             agent's replies. (default: :obj:`None`)
-        single_iteration (Optional[bool]): Whether to force single-turn
-            interaction behavior. (default: :obj:`False`)
+        max_iteration (Optional[int]): Maximum number of model
+            calling iterations allowed per step. If `None` (default), there's
+            no explicit limit. If `1`, it performs a single model call. If `N
+            > 1`, it allows up to N model calls. (default: :obj:`None`)
     """
 
     model_type: Optional[str] = "gpt-4o-mini"
@@ -68,7 +72,7 @@ class InitRequest(BaseModel):
     message_window_size: Optional[int] = None
     token_limit: Optional[int] = None
     output_language: Optional[str] = None
-    single_iteration: Optional[bool] = False
+    max_iteration: Optional[int] = None  # Changed from Optional[bool] = False
 
 
 class StepRequest(BaseModel):
@@ -133,16 +137,56 @@ class ChatAgentOpenAPIServer:
         self.response_format_registry = response_format_registry or {}
         self._setup_routes()
 
+    def _parse_input_message_for_step(
+        self, raw: Union[str, dict]
+    ) -> BaseMessage:
+        r"""Parses raw input into a BaseMessage object.
+
+        Args:
+            raw (str or dict): User input as plain text or dict.
+
+        Returns:
+            BaseMessage: Parsed input message.
+        """
+        if isinstance(raw, str):
+            return BaseMessage.make_user_message(role_name="User", content=raw)
+        elif isinstance(raw, dict):
+            if isinstance(raw.get("role_type"), str):
+                raw["role_type"] = RoleType(raw["role_type"].lower())
+            return BaseMessage(**raw)
+        raise HTTPException(
+            status_code=400, detail="Unsupported input format."
+        )
+
+    def _resolve_response_format_for_step(
+        self, name: Optional[str]
+    ) -> Optional[Type[BaseModel]]:
+        r"""Resolves the response format by name.
+
+        Args:
+            name (str or None): Optional format name.
+
+        Returns:
+            Optional[Type[BaseModel]]: Response schema class.
+        """
+        if name is None:
+            return None
+        if name not in self.response_format_registry:
+            raise HTTPException(
+                status_code=400, detail=f"Unknown response_format: {name}"
+            )
+        return self.response_format_registry[name]
+
     def _setup_routes(self):
         r"""Registers OpenAPI endpoints for agent creation and interaction.
 
         This includes routes for initializing agents (/init), sending
         messages (/step and /astep), resetting agent memory (/reset), and
         retrieving conversation history (/history). All routes are added
-        under the /v1 namespace.
+        under the /v1/agents namespace.
         """
 
-        router = APIRouter(prefix="/v1")
+        router = APIRouter(prefix="/v1/agents")
 
         @router.post("/init")
         def init_agent(request: InitRequest):
@@ -168,8 +212,8 @@ class ChatAgentOpenAPIServer:
             model_platform = request.model_platform
 
             model = ModelFactory.create(
-                model_platform=model_platform,
-                model_type=model_type,
+                model_platform=model_platform,  # type: ignore[arg-type]
+                model_type=model_type,  # type: ignore[arg-type]
             )
 
             # tools lookup
@@ -190,62 +234,17 @@ class ChatAgentOpenAPIServer:
             agent = ChatAgent(
                 model=model,
                 tools=tools,  # type: ignore[arg-type]
-                external_tools=request.external_tools,
+                external_tools=request.external_tools,  # type: ignore[arg-type]
                 system_message=system_message,
                 message_window_size=request.message_window_size,
                 token_limit=request.token_limit,
                 output_language=request.output_language,
-                single_iteration=request.single_iteration,  # type: ignore[arg-type]
+                max_iteration=request.max_iteration,
                 agent_id=agent_id,
             )
 
             self.agents[agent_id] = agent
             return {"agent_id": agent_id, "message": "Agent initialized."}
-
-        # === Step Agent Helpers ===
-        def _parse_input_message_for_step(
-            raw: Union[str, dict],
-        ) -> BaseMessage:
-            r"""Parses raw input into a BaseMessage object.
-
-            Args:
-                raw (str or dict): User input as plain text or dict.
-
-            Returns:
-                BaseMessage: Parsed input message.
-            """
-            if isinstance(raw, str):
-                return BaseMessage.make_user_message(
-                    role_name="User", content=raw
-                )
-            elif isinstance(raw, dict):
-                if isinstance(raw.get("role_type"), str):
-                    raw["role_type"] = RoleType(raw["role_type"].lower())
-                return BaseMessage(**raw)
-            raise HTTPException(
-                status_code=400, detail="Unsupported input format."
-            )
-
-        def _resolve_response_format_for_step(
-            name: Optional[str],
-        ) -> Optional[Type[BaseModel]]:
-            r"""Resolves the response format by name.
-
-            Args:
-                name (str or None): Optional format name.
-
-            Returns:
-                Optional[Type[BaseModel]]: Response schema class.
-            """
-            if name is None:
-                return None
-            if name not in self.response_format_registry:
-                raise HTTPException(
-                    status_code=400, detail=f"Unknown response_format: {name}"
-                )
-            return self.response_format_registry[name]
-
-        # === Step Agent Helpers end===
 
         @router.post("/astep/{agent_id}")
         async def astep_agent(agent_id: str, request: StepRequest):
@@ -263,17 +262,23 @@ class ChatAgentOpenAPIServer:
                 raise HTTPException(status_code=404, detail="Agent not found.")
 
             agent = self.agents[agent_id]
-            input_message = _parse_input_message_for_step(
+            input_message = self._parse_input_message_for_step(
                 request.input_message
             )
-            format_cls = _resolve_response_format_for_step(
+            format_cls = self._resolve_response_format_for_step(
                 request.response_format
             )
 
-            response = await agent.astep(
-                input_message=input_message, response_format=format_cls
-            )
-            return response.model_dump()
+            try:
+                response = await agent.astep(
+                    input_message=input_message, response_format=format_cls
+                )
+                return response.model_dump()
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Unexpected error during async step: {e!s}",
+                )
 
         @router.get("/list_agent_ids")
         def list_agent_ids():
@@ -315,17 +320,22 @@ class ChatAgentOpenAPIServer:
                 raise HTTPException(status_code=404, detail="Agent not found.")
 
             agent = self.agents[agent_id]
-            input_message = _parse_input_message_for_step(
+            input_message = self._parse_input_message_for_step(
                 request.input_message
             )
-            format_cls = _resolve_response_format_for_step(
+            format_cls = self._resolve_response_format_for_step(
                 request.response_format
             )
-
-            response = agent.step(
-                input_message=input_message, response_format=format_cls
-            )
-            return response.model_dump()
+            try:
+                response = agent.step(
+                    input_message=input_message, response_format=format_cls
+                )
+                return response.model_dump()
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Unexpected error during step: {e!s}",
+                )
 
         @router.post("/reset/{agent_id}")
         def reset_agent(agent_id: str):

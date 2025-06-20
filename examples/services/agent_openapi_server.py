@@ -25,11 +25,11 @@ def example_init_and_step():
     This example uses the OpenAPI-compatible FastAPI interface for
     `ChatAgentOpenAPIServer` and includes:
 
-    - POST /v1/init: Initializes the agent with a system message and a
+    - POST /v1/agents/init: Initializes the agent with a system message and a
       wiki search tool.
-    - POST /v1/step: Sends a user message prompting the agent to call
+    - POST /v1/agents/step: Sends a user message prompting the agent to call
       the tool.
-    - GET /v1/history: Retrieves the agent's full conversation history.
+    - GET /v1/agents/history: Retrieves the agent's full conversation history.
 
     The tool used is `search_wiki`, wrapped with `FunctionTool` and
     retrieved from the `SearchToolkit`.
@@ -47,7 +47,7 @@ def example_init_and_step():
     client = TestClient(server.get_app())
 
     r = client.post(
-        "/v1/init",
+        "/v1/agents/init",
         json={
             "agent_id": "demo",
             "tools_names": ["search_wiki"],
@@ -64,7 +64,7 @@ def example_init_and_step():
     """
 
     r = client.post(
-        "/v1/step/demo",  #
+        "/v1/agents/step/demo",  #
         json={"input_message": "Search: What is machine learning?"},
     )
     print("Step response:", r.json())
@@ -139,9 +139,8 @@ def example_init_and_step():
           }],
     """
 
-    r = client.get("/v1/history/demo")
+    r = client.get("/v1/agents/history/demo")
     print("History:", r.json())
-
 
     """
     History:
@@ -192,14 +191,14 @@ def example_init_and_step():
     """
 
     # Reset Agent
-    r = client.post("/v1/reset/demo")
+    r = client.post("/v1/agents/reset/demo")
     print("Reset:", r.json())
     """
     Reset: {'message': 'Agent demo reset.'}
     """
 
     # Display history again after reset
-    r = client.get("/v1/history/demo")
+    r = client.get("/v1/agents/history/demo")
     print("History:", r.json())
     """
     History: [{'role': 'system',
@@ -216,11 +215,11 @@ def example_init_and_astep():
     This example uses the OpenAPI-compatible FastAPI interface for
     `ChatAgentOpenAPIServer` and includes:
 
-    - POST /v1/init: Initializes the agent with a system message and a
+    - POST /v1/agents/init: Initializes the agent with a system message and a
       wiki search tool.
-    - POST /v1/step: Sends a user message prompting the agent to call
+    - POST /v1/agents/step: Sends a user message prompting the agent to call
       the tool.
-    - GET /v1/history: Retrieves the agent's full conversation history.
+    - GET /v1/agents/history: Retrieves the agent's full conversation history.
 
     The tool used is `search_wiki`, wrapped with `FunctionTool` and
     retrieved from the `SearchToolkit`.
@@ -238,7 +237,7 @@ def example_init_and_astep():
     client = TestClient(server.get_app())
 
     r = client.post(
-        "/v1/init",
+        "/v1/agents/init",
         json={
             "agent_id": "demo",
             "tools_names": ["search_wiki"],
@@ -253,7 +252,7 @@ def example_init_and_astep():
     # {'agent_id': 'demo', 'message': 'Agent initialized.'}
 
     r = client.post(
-        "/v1/astep/demo",  #
+        "/v1/agents/astep/demo",  #
         json={"input_message": "Search: What is machine learning?"},
     )
     print("Step response (astep):", r.json())
@@ -342,7 +341,7 @@ def example_listing_and_delete_agents():
     # Step 1: Create two agents
     for agent_id in ["agent_1", "agent_2"]:
         r = client.post(
-            "/v1/init",
+            "/v1/agents/init",
             json={
                 "agent_id": agent_id,
                 "system_message": f"You are {agent_id}, a helpful assistant.",
@@ -351,15 +350,15 @@ def example_listing_and_delete_agents():
         print(f"Init {agent_id}:", r.json())
 
     # Step 2: List current agents
-    r = client.get("/v1/list_agent_ids")
+    r = client.get("/v1/agents/list_agent_ids")
     print("Current agents:", r.json())  # Should contain agent_1 and agent_2
 
     # Step 3: Delete agent_1
-    r = client.post("/v1/delete/agent_1")
+    r = client.post("/v1/agents/delete/agent_1")
     print("Reset agent_1:", r.json())
 
     # Step 4: List agents again
-    r = client.get("/v1/list_agent_ids")
+    r = client.get("/v1/agents/list_agent_ids")
     print("Remaining agents:", r.json())  # Should contain only agent_2
 
     """
@@ -384,9 +383,9 @@ def example_multi_agent_turns(num_rounds: int = 10):
             debate. Each round consists of one message per agent.
 
     API calls used:
-    - POST /v1/init: Initializes each agent with a system message
+    - POST /v1/agents/init: Initializes each agent with a system message
       describing their debate role.
-    - POST /v1/step: Sends messages alternately between agents to
+    - POST /v1/agents/step: Sends messages alternately between agents to
       simulate a live debate.
 
     Prints each round of the debate to stdout.
@@ -416,7 +415,7 @@ def example_multi_agent_turns(num_rounds: int = 10):
     # Initialize each agent
     for agent_id, system_msg in roles.items():
         client.post(
-            "/v1/init",
+            "/v1/agents/init",
             json={"agent_id": agent_id, "system_message": system_msg},
         )
 
@@ -427,7 +426,7 @@ def example_multi_agent_turns(num_rounds: int = 10):
 
         print(f"\n[{speaker.upper()} → {receiver.upper()}]")
         response = client.post(
-            f"/v1/step/{speaker}", json={"input_message": message}
+            f"/v1/agents/step/{speaker}", json={"input_message": message}
         ).json()
         message = response["msgs"][0]["content"]
         print(message)
