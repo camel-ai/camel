@@ -532,6 +532,7 @@ class ChatAgent(BaseAgent):
             role (OpenAIBackendRole): The backend role type.
             timestamp (Optional[float], optional): Custom timestamp for the
                 memory record. If `None`, the current time will be used.
+                (default: :obj:`None`)
                     (default: obj:`None`)
         """
         import math
