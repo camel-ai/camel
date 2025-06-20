@@ -39,7 +39,7 @@ class SymPyToolkit(BaseToolkit):
 
         Args:
             default_variable (str): The default variable for
-                operations (default: :obj: `x`)
+                operations (default: :obj:`x`)
         """
         super().__init__(timeout=timeout)
         self.default_variable = default_variable
