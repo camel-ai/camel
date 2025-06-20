@@ -163,7 +163,6 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # ======================
         # 7. Output Assembly
         # ======================
-        final_units = sorted(remaining_units, key=self._conversation_sort_key)
 
         # In case system message is the only message in memory when sorted
         # units are empty, raise an error
