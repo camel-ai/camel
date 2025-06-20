@@ -617,14 +617,36 @@ class ChatAgent(BaseAgent):
             _write_single_record(message, role, base_ts)  # Nothing to chunk
             return
 
-        # Define chunk size and calculate total number of chunks
-        chunk_size_tokens = max(1, token_limit // 10)
-        num_chunks = math.ceil(len(all_token_ids) / chunk_size_tokens)
+        # Define chunk size taking the prefix and the *remaining* budget into account
+        # ----------------------------------------------------------------------
+        # 1.  Base chunk size: one-tenth of the smaller of (a) total token limit
+        #    and (b) current remaining budget.  This prevents us from creating
+        #    chunks that are guaranteed to overflow the immediate context
+        #    window.
+        base_chunk_size = max(1, remaining_budget) // 10
+
+        # 2.  Each chunk gets a textual prefix such as:
+        #        "[chunk 3/12 of a long message]\n"
+        #     The prefix itself consumes tokens, so if we do not subtract its
+        #     length the *total* tokens of the outgoing message (prefix + body)
+        #     can exceed the intended bound.  We estimate the prefix length
+        #     with a representative example that is safely long enough for the
+        #     vast majority of cases (three-digit indices).
+        sample_prefix = "[chunk 1/1000 of a long message]\n"
+        prefix_token_len = len(token_counter.encode(sample_prefix))
+
+        # 3.  The real capacity for the message body is therefore the base
+        #     chunk size minus the prefix length.  Fallback to at least one
+        #     token to avoid zero or negative sizes.
+        chunk_body_limit = max(1, base_chunk_size - prefix_token_len)
+
+        # 4.  Calculate how many chunks we will need with this body size.
+        num_chunks = math.ceil(len(all_token_ids) / chunk_body_limit)
         group_id = str(_uuid.uuid4())
 
         for i in range(num_chunks):
-            start_idx = i * chunk_size_tokens
-            end_idx = start_idx + chunk_size_tokens
+            start_idx = i * chunk_body_limit
+            end_idx = start_idx + chunk_body_limit
             chunk_token_ids = all_token_ids[start_idx:end_idx]
 
             chunk_body = token_counter.decode(chunk_token_ids)
