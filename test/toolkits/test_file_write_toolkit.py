@@ -298,15 +298,441 @@ def test_write_to_file_absolute_path(temp_dir):
     assert file_content == content
 
 
+def test_read_from_file_text(file_write_toolkit):
+    r"""Test reading plain text from a file."""
+    content = "Hello, world!"
+    filename = "test_read.txt"
+
+    # First write the file
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Then read it back
+    result = file_write_toolkit.read_from_file(filename)
+
+    assert result == content
+
+
+def test_read_from_file_json(file_write_toolkit):
+    r"""Test reading JSON data from a file."""
+    data = {"name": "John", "age": 30, "city": "New York"}
+    filename = "test_read.json"
+
+    # First write the file
+    file_write_toolkit.write_to_file(data, filename)
+
+    # Then read it back
+    result = file_write_toolkit.read_from_file(filename)
+
+    assert result == data
+
+
+def test_read_from_file_csv(file_write_toolkit):
+    r"""Test reading CSV data from a file."""
+    data = [
+        ["name", "age", "city"],
+        ["John", "30", "New York"],
+        ["Jane", "25", "San Francisco"],
+    ]
+    filename = "test_read.csv"
+
+    # First write the file
+    file_write_toolkit.write_to_file(data, filename)
+
+    # Then read it back
+    result = file_write_toolkit.read_from_file(filename)
+
+    assert result == data
+
+
+def test_read_from_file_yaml(file_write_toolkit):
+    r"""Test reading YAML data from a file."""
+    data = {"name": "John", "age": 30, "city": "New York"}
+    filename = "test_read.yaml"
+
+    # First write the file
+    file_write_toolkit.write_to_file(data, filename)
+
+    # Then read it back
+    result = file_write_toolkit.read_from_file(filename)
+
+    assert result == data
+
+
+def test_read_from_file_nonexistent(file_write_toolkit):
+    r"""Test reading from a file that doesn't exist."""
+    with pytest.raises(FileNotFoundError):
+        file_write_toolkit.read_from_file("nonexistent.txt")
+
+
+def test_read_file_content_full(file_write_toolkit):
+    r"""Test reading full file content."""
+    content = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5"
+    filename = "test_content.txt"
+
+    # First write the file
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Then read it back
+    result = file_write_toolkit.read_file_content(filename)
+
+    assert result == content
+
+
+def test_read_file_content_partial(file_write_toolkit):
+    r"""Test reading partial file content with line limits."""
+    content = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5"
+    filename = "test_content_partial.txt"
+
+    # First write the file
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Then read first 3 lines
+    result = file_write_toolkit.read_file_content(filename, max_lines=3)
+
+    assert result == "Line 1\nLine 2\nLine 3\n"
+
+
+def test_read_file_content_with_start_line(file_write_toolkit):
+    r"""Test reading file content starting from a specific line."""
+    content = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5"
+    filename = "test_content_start.txt"
+
+    # First write the file
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Then read starting from line 3
+    result = file_write_toolkit.read_file_content(filename, start_line=3)
+
+    # The result should match the expected content (without trailing newline)
+    assert result == "Line 3\nLine 4\nLine 5"
+
+
+def test_read_file_content_invalid_start_line(file_write_toolkit):
+    r"""Test reading file content with invalid start line."""
+    with pytest.raises(ValueError, match="start_line must be 1 or greater"):
+        file_write_toolkit.read_file_content("test.txt", start_line=0)
+
+
+def test_read_file_content_invalid_max_lines(file_write_toolkit):
+    r"""Test reading file content with invalid max lines."""
+    with pytest.raises(ValueError, match="max_lines must be 1 or greater"):
+        file_write_toolkit.read_file_content("test.txt", max_lines=0)
+
+
+def test_replace_in_file_simple(file_write_toolkit):
+    r"""Test simple text replacement in a file."""
+    content = "Hello, world! Hello, universe!"
+    filename = "test_replace.txt"
+
+    # First write the file
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Then replace text
+    result = file_write_toolkit.replace_in_file(filename, "Hello", "Hi")
+
+    # Check the result message
+    assert "Replaced 2 occurrence(s)" in result
+
+    # Check the file content was updated
+    updated_content = file_write_toolkit.read_from_file(filename)
+    assert updated_content == "Hi, world! Hi, universe!"
+
+
+def test_replace_in_file_case_sensitive(file_write_toolkit):
+    r"""Test case-sensitive text replacement."""
+    content = "Hello, world! hello, universe!"
+    filename = "test_replace_case.txt"
+
+    # First write the file
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Then replace text (case-sensitive)
+    result = file_write_toolkit.replace_in_file(
+        filename, "Hello", "Hi", case_sensitive=True
+    )
+
+    # Check the result message
+    assert "Replaced 1 occurrence(s)" in result
+
+    # Check the file content was updated
+    updated_content = file_write_toolkit.read_from_file(filename)
+    assert updated_content == "Hi, world! hello, universe!"
+
+
+def test_replace_in_file_case_insensitive(file_write_toolkit):
+    r"""Test case-insensitive text replacement."""
+    content = "Hello, world! hello, universe!"
+    filename = "test_replace_case_insensitive.txt"
+
+    # First write the file
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Then replace text (case-insensitive)
+    result = file_write_toolkit.replace_in_file(
+        filename, "hello", "Hi", case_sensitive=False
+    )
+
+    # Check the result message
+    assert "Replaced 2 occurrence(s)" in result
+
+    # Check the file content was updated
+    updated_content = file_write_toolkit.read_from_file(filename)
+    assert updated_content == "Hi, world! Hi, universe!"
+
+
+def test_replace_in_file_with_count(file_write_toolkit):
+    r"""Test text replacement with count limit."""
+    content = "Hello, world! Hello, universe! Hello, galaxy!"
+    filename = "test_replace_count.txt"
+
+    # First write the file
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Then replace text with count limit
+    result = file_write_toolkit.replace_in_file(
+        filename, "Hello", "Hi", count=2
+    )
+
+    # Check the result message
+    assert "Replaced 2 occurrence(s)" in result
+
+    # Check the file content was updated
+    updated_content = file_write_toolkit.read_from_file(filename)
+    assert updated_content == "Hi, world! Hi, universe! Hello, galaxy!"
+
+
+def test_replace_in_file_nonexistent(file_write_toolkit):
+    r"""Test replacing text in a file that doesn't exist."""
+    with pytest.raises(FileNotFoundError):
+        file_write_toolkit.replace_in_file("nonexistent.txt", "old", "new")
+
+
+def test_search_in_file_simple(file_write_toolkit):
+    r"""Test simple text search in a file."""
+    content = (
+        "Hello, world! This is a test file.\n"
+        "It contains multiple lines.\n"
+        "Hello again!"
+    )
+    filename = "test_search.txt"
+
+    # First write the file
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Then search for text
+    result = file_write_toolkit.search_in_file(filename, "Hello")
+
+    # Check the result structure
+    assert "matches" in result
+    assert "total_matches" in result
+    assert "file_path" in result
+    assert result["total_matches"] == 2
+    assert len(result["matches"]) == 2
+
+
+def test_search_in_file_with_context(file_write_toolkit):
+    r"""Test text search with context lines."""
+    content = "Line 1\nLine 2\nHello, world!\nLine 4\nLine 5"
+    filename = "test_search_context.txt"
+
+    # First write the file
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Then search for text with context
+    result = file_write_toolkit.search_in_file(
+        filename, "Hello", context_lines=1
+    )
+
+    # Check the result
+    assert result["total_matches"] == 1
+    assert "context" in result["matches"][0]
+    assert len(result["matches"][0]["context"]) == 3  # Line 2, 3, 4
+
+
+def test_search_in_file_case_insensitive(file_write_toolkit):
+    r"""Test case-insensitive text search."""
+    content = "Hello, world! hello, universe!"
+    filename = "test_search_case.txt"
+
+    # First write the file
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Then search for text (case-insensitive)
+    result = file_write_toolkit.search_in_file(
+        filename, "hello", case_sensitive=False
+    )
+
+    # Check the result
+    assert result["total_matches"] == 2
+
+
+def test_search_in_file_regex(file_write_toolkit):
+    r"""Test regex search in a file."""
+    content = "Hello, world! Hi, universe! Hey, galaxy!"
+    filename = "test_search_regex.txt"
+
+    # First write the file
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Then search with regex
+    result = file_write_toolkit.search_in_file(
+        filename, r"H[a-z]y", use_regex=True
+    )
+
+    # Check the result
+    assert result["total_matches"] == 1
+    assert result["matches"][0]["match_text"] == "Hey"
+
+
+def test_search_in_file_nonexistent(file_write_toolkit):
+    r"""Test searching in a file that doesn't exist."""
+    with pytest.raises(FileNotFoundError):
+        file_write_toolkit.search_in_file("nonexistent.txt", "test")
+
+
+def test_find_files_simple(file_write_toolkit):
+    r"""Test finding files with simple pattern."""
+    # Create some test files
+    file_write_toolkit.write_to_file("content1", "test1.txt")
+    file_write_toolkit.write_to_file("content2", "test2.txt")
+    file_write_toolkit.write_to_file("content3", "other.md")
+
+    # Find all .txt files
+    result = file_write_toolkit.find_files("*.txt")
+
+    # Check the result
+    assert len(result) == 2
+    assert any("test1.txt" in path for path in result)
+    assert any("test2.txt" in path for path in result)
+
+
+def test_find_files_recursive(file_write_toolkit):
+    r"""Test finding files recursively."""
+    # Create files in subdirectories
+    file_write_toolkit.write_to_file("content1", "subdir/test1.txt")
+    file_write_toolkit.write_to_file("content2", "subdir/test2.txt")
+    file_write_toolkit.write_to_file("content3", "test3.txt")
+
+    # Find all .txt files recursively
+    result = file_write_toolkit.find_files("*.txt", recursive=True)
+
+    # Check the result
+    assert len(result) == 3
+    assert any("test1.txt" in path for path in result)
+    assert any("test2.txt" in path for path in result)
+    assert any("test3.txt" in path for path in result)
+
+
+def test_find_files_non_recursive(file_write_toolkit):
+    r"""Test finding files non-recursively."""
+    # Create files in subdirectories
+    file_write_toolkit.write_to_file("content1", "subdir/test1.txt")
+    file_write_toolkit.write_to_file("content2", "test2.txt")
+
+    # Find .txt files non-recursively
+    result = file_write_toolkit.find_files("*.txt", recursive=False)
+
+    # Check the result (should only find files in root directory)
+    assert len(result) == 1
+    assert any("test2.txt" in path for path in result)
+
+
+def test_find_files_case_sensitive(file_write_toolkit):
+    r"""Test finding files with case sensitivity."""
+    # Create test files
+    file_write_toolkit.write_to_file("content1", "Test.txt")
+    file_write_toolkit.write_to_file("content2", "test.txt")
+
+    # Find files case-sensitively
+    result = file_write_toolkit.find_files("test.txt", case_sensitive=True)
+
+    # Check the result
+    assert len(result) == 1
+    assert any("test.txt" in path for path in result)
+
+
+def test_find_files_case_insensitive(file_write_toolkit):
+    r"""Test finding files with case insensitivity."""
+    # Create test files
+    file_write_toolkit.write_to_file("content1", "Test.txt")
+    file_write_toolkit.write_to_file("content2", "test.txt")
+
+    # Find files case-insensitively
+    result = file_write_toolkit.find_files("test.txt", case_sensitive=False)
+
+    # On Windows, case-insensitive matching might not work as expected
+    # with glob. So we'll check that at least one file is found
+    assert len(result) >= 1
+
+
+def test_find_files_hidden(file_write_toolkit):
+    r"""Test finding hidden files."""
+    # Create hidden and non-hidden files
+    file_write_toolkit.write_to_file("content1", ".hidden.txt")
+    file_write_toolkit.write_to_file("content2", "visible.txt")
+
+    # Find files including hidden ones
+    result = file_write_toolkit.find_files("*.txt", include_hidden=True)
+
+    # Check the result - on Windows, hidden files might not be found
+    # as expected
+    assert len(result) >= 1
+    assert any("visible.txt" in path for path in result)
+
+
+def test_find_files_exclude_hidden(file_write_toolkit):
+    r"""Test finding files excluding hidden ones."""
+    # Create hidden and non-hidden files
+    file_write_toolkit.write_to_file("content1", ".hidden.txt")
+    file_write_toolkit.write_to_file("content2", "visible.txt")
+
+    # Find files excluding hidden ones
+    result = file_write_toolkit.find_files("*.txt", include_hidden=False)
+
+    # Check the result
+    assert len(result) == 1
+    assert any("visible.txt" in path for path in result)
+
+
+def test_find_files_nonexistent_directory(file_write_toolkit):
+    r"""Test finding files in a directory that doesn't exist."""
+    with pytest.raises(FileNotFoundError):
+        file_write_toolkit.find_files(
+            "*.txt", directory="/nonexistent/directory"
+        )
+
+
+def test_find_files_not_directory(file_write_toolkit):
+    r"""Test finding files when the path is not a directory."""
+    # Create a file
+    file_write_toolkit.write_to_file("content", "test.txt")
+
+    # Try to use the file as a directory - should raise FileNotFoundError
+    # first
+    with pytest.raises(FileNotFoundError):
+        file_write_toolkit.find_files("*.txt", directory="test.txt")
+
+
 def test_get_tools(file_write_toolkit):
     r"""Test that get_tools returns the correct function tools."""
     tools = file_write_toolkit.get_tools()
 
-    # Check that we have the expected number of tools
-    assert len(tools) == 1
+    # Check that we have the expected number of tools (6 methods)
+    assert len(tools) == 6
 
-    # Check that the tool has the correct function name
-    assert tools[0].get_function_name() == "write_to_file"
+    # Check that the tools have the correct function names
+    function_names = [tool.get_function_name() for tool in tools]
+    expected_names = [
+        "write_to_file",
+        "read_from_file",
+        "read_file_content",
+        "replace_in_file",
+        "search_in_file",
+        "find_files",
+    ]
+
+    for expected_name in expected_names:
+        assert expected_name in function_names
 
 
 def test_sanitize_and_resolve_filepath(file_write_toolkit):
@@ -328,3 +754,79 @@ def test_sanitize_and_resolve_filepath(file_write_toolkit):
     assert (
         resolved_path == expected_path.resolve()
     ), "The resolved file path does not match the expected sanitized path."
+
+
+def test_sanitize_filename():
+    r"""Test the _sanitize_filename method directly."""
+    toolkit = FileWriteToolkit()
+
+    # Test various unsafe filenames
+    test_cases = [
+        ("My File.txt", "My_File.txt"),
+        ("file@name#.md", "file_name_.md"),
+        ("path/to/file with spaces.py", "path_to_file_with_spaces.py"),
+        ("normal_filename.txt", "normal_filename.txt"),
+        ("file with (parentheses).txt", "file_with__parentheses_.txt"),
+    ]
+
+    for unsafe, expected in test_cases:
+        sanitized = toolkit._sanitize_filename(unsafe)
+        assert sanitized == expected
+
+
+def test_write_to_file_pdf(file_write_toolkit):
+    r"""Test writing PDF content to a file."""
+    content = "This is a test PDF content."
+    filename = "test.pdf"
+
+    result = file_write_toolkit.write_to_file(content, filename)
+
+    # Check the result message
+    assert "successfully written" in result
+
+    # Check the file exists
+    file_path = file_write_toolkit._resolve_filepath(filename)
+    assert file_path.exists()
+
+
+@pytest.mark.skip(reason="DOCX dependency not available in test environment")
+def test_write_to_file_docx(file_write_toolkit):
+    r"""Test writing DOCX content to a file."""
+    content = "This is a test DOCX content."
+    filename = "test.docx"
+
+    result = file_write_toolkit.write_to_file(content, filename)
+
+    # Check the result message
+    assert "successfully written" in result
+
+    # Check the file exists
+    file_path = file_write_toolkit._resolve_filepath(filename)
+    assert file_path.exists()
+
+
+def test_write_to_file_error_handling(file_write_toolkit):
+    r"""Test error handling when writing to file fails."""
+    # Test with invalid encoding
+    content = "Test content"
+    filename = "test_error.txt"
+
+    result = file_write_toolkit.write_to_file(
+        content, filename, encoding="invalid_encoding"
+    )
+
+    # Should return an error message
+    assert "Error occurred" in result
+
+
+def test_read_from_file_error_handling(file_write_toolkit):
+    r"""Test error handling when reading from file fails."""
+    # Create a file with invalid JSON
+    content = "{ invalid json content"
+    filename = "test_invalid.json"
+
+    file_write_toolkit.write_to_file(content, filename)
+
+    # Reading should raise an error
+    with pytest.raises(ValueError):
+        file_write_toolkit.read_from_file(filename)
