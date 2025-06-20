@@ -94,8 +94,6 @@ print(file_obj.docs[0]["page_content"])
 </CodeGroup>
 </Card>
 
----
-
 <Card title="Using Unstructured IO" icon="puzzle">
 To get started with the <code>Unstructured IO</code> module, just import and initialize it. You can parse, clean, extract, chunk, and stage data from files or URLs. Here’s how you use it step by step:
 
@@ -136,8 +134,6 @@ print(("\n\n".join([str(el) for el in elements])))
   print(cleaned_text) ``` ```markdown cleaned_text.md >>> Some dirty text with
   extra spaces and dashes. ```
 </CodeGroup>
-
-<br />
 
 <strong>3. Extract data from text (for example, emails):</strong>
 <CodeGroup>
@@ -228,8 +224,6 @@ print(dataset_result)
 </CodeGroup>
 </Card>
 
----
-
 <Card title="Using Firecrawl Reader" icon="fire">
 Firecrawl Reader provides a simple way to turn any website into LLM-ready markdown format. Here’s how you can use it step by step:
 
@@ -285,8 +279,6 @@ Firecrawl Reader provides a simple way to turn any website into LLM-ready markdo
 <br />
 That’s it. With just a couple of lines, you can turn any website into clean markdown, ready for LLM pipelines or further processing.
 </Card>
-
----
 
 <Card title="Using Chunkr Reader" icon="cuttlefish">
 Chunkr Reader allows you to process PDFs (and other docs) in chunks, with built-in OCR and format control.  
@@ -361,8 +353,6 @@ print(response)
 ```
 
 </Card>
-
----
 
 <Card title="Using MarkitDown Reader" icon="notebook">
 MarkitDown Reader lets you convert files (like HTML or docs) into LLM-ready markdown with a single line.
