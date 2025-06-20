@@ -41,8 +41,8 @@ img_path = "./examples/tasks/task_image.png"
 img = Image.open(img_path)
 
 video_path = "./examples/tasks/task_video.mov"
-video = open(video_path, "rb").read()
-
+with open(video_path, "rb") as f:
+    video = f.read()
 # set up agent
 assistant_sys_msg = "You are a personal math tutor and programmer."
 agent = ChatAgent(assistant_sys_msg, model=model)
