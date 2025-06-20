@@ -51,11 +51,11 @@ class FileWriteToolkit(BaseToolkit):
             output_dir (str): The default directory for output files.
                 Defaults to the current working directory.
             timeout (Optional[float]): The timeout for the toolkit.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             default_encoding (str): Default character encoding for text
-                operations. (default: :obj: `utf-8`)
+                operations. (default: :obj:`utf-8`)
             backup_enabled (bool): Whether to create backups of existing files
-                before overwriting. (default: :obj: `True`)
+                before overwriting. (default: :obj:`True`)
         """
         super().__init__(timeout=timeout)
         self.output_dir = Path(output_dir).resolve()
@@ -97,7 +97,7 @@ class FileWriteToolkit(BaseToolkit):
         Args:
             file_path (Path): The target file path.
             content (str): The text content to write.
-            encoding (str): Character encoding to use. (default: :obj: `utf-8`)
+            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
         """
         with file_path.open("w", encoding=encoding) as f:
             f.write(content)
@@ -158,7 +158,7 @@ class FileWriteToolkit(BaseToolkit):
             content (str): The text content to write.
             use_latex (bool): Whether to use LaTeX for rendering. (requires
                 LaTeX toolchain). If False, uses FPDF for simpler PDF
-                generation. (default: :obj: `False`)
+                generation. (default: :obj:`False`)
 
 
         """
@@ -235,7 +235,7 @@ class FileWriteToolkit(BaseToolkit):
             file_path (Path): The target file path.
             content (Union[str, List[List]]): The CSV content as a string or
                 list of lists.
-            encoding (str): Character encoding to use. (default: :obj: `utf-8`)
+            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
         """
         import csv
 
@@ -258,7 +258,7 @@ class FileWriteToolkit(BaseToolkit):
         Args:
             file_path (Path): The target file path.
             content (str): The JSON content as a string.
-            encoding (str): Character encoding to use. (default: :obj: `utf-8`)
+            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
         """
         import json
 
@@ -287,7 +287,7 @@ class FileWriteToolkit(BaseToolkit):
         Args:
             file_path (Path): The target file path.
             content (str): The YAML content as a string.
-            encoding (str): Character encoding to use. (default: :obj: `utf-8`)
+            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
         """
         with file_path.open("w", encoding=encoding) as f:
             f.write(content)
@@ -301,7 +301,7 @@ class FileWriteToolkit(BaseToolkit):
         Args:
             file_path (Path): The target file path.
             content (str): The HTML content to write.
-            encoding (str): Character encoding to use. (default: :obj: `utf-8`)
+            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
         """
         with file_path.open("w", encoding=encoding) as f:
             f.write(content)
@@ -315,7 +315,7 @@ class FileWriteToolkit(BaseToolkit):
         Args:
             file_path (Path): The target file path.
             content (str): The Markdown content to write.
-            encoding (str): Character encoding to use. (default: :obj: `utf-8`)
+            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
         """
         with file_path.open("w", encoding=encoding) as f:
             f.write(content)

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -74,6 +74,8 @@ class ScoreBasedContextCreator(BaseContextCreator):
         3. Final output maintains chronological order and in history memory,
            the score of each message decreases according to keep_rate. The
            newer the message, the higher the score.
+        4. Tool calls and their responses are kept together to maintain
+           API compatibility
 
         Args:
             records (List[ContextRecord]): List of context records with scores
@@ -126,12 +128,17 @@ class ScoreBasedContextCreator(BaseContextCreator):
             )
 
         # ======================
-        # 3. Token Calculation
+        # 3. Tool Call Relationship Mapping
+        # ======================
+        tool_call_groups = self._group_tool_calls_and_responses(regular_units)
+
+        # ======================
+        # 4. Token Calculation
         # ======================
         total_tokens = system_tokens + sum(u.num_tokens for u in regular_units)
 
         # ======================
-        # 4. Early Return if Within Limit
+        # 5. Early Return if Within Limit
         # ======================
         if total_tokens <= self.token_limit:
             sorted_units = sorted(
@@ -140,7 +147,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
             return self._assemble_output(sorted_units, system_unit)
 
         # ======================
-        # 5. Truncation Logic
+        # 6. Truncation Logic with Tool Call Awareness
         # ======================
         logger.warning(
             f"Context truncation required "
@@ -148,24 +155,12 @@ class ScoreBasedContextCreator(BaseContextCreator):
             f"pruning low-score messages."
         )
 
-        # Sort for truncation: high scores first, older messages first at same
-        # score
-        sorted_for_truncation = sorted(
-            regular_units, key=self._truncation_sort_key
+        remaining_units = self._truncate_with_tool_call_awareness(
+            regular_units, tool_call_groups, system_tokens
         )
 
-        # Reverse to process from lowest score (end of sorted list)
-        remaining_units = []
-        current_total = system_tokens
-
-        for unit in sorted_for_truncation:
-            potential_total = current_total + unit.num_tokens
-            if potential_total <= self.token_limit:
-                remaining_units.append(unit)
-                current_total = potential_total
-
         # ======================
-        # 6. Output Assembly
+        # 7. Output Assembly
         # ======================
 
         # In case system message is the only message in memory when sorted
@@ -179,6 +174,115 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # Sort remaining units chronologically
         final_units = sorted(remaining_units, key=self._conversation_sort_key)
         return self._assemble_output(final_units, system_unit)
+
+    def _group_tool_calls_and_responses(
+        self, units: List[_ContextUnit]
+    ) -> Dict[str, List[_ContextUnit]]:
+        r"""Groups tool calls with their corresponding responses.
+
+        Args:
+            units (List[_ContextUnit]): List of context units to analyze
+
+        Returns:
+            Dict[str, List[_ContextUnit]]: Mapping from tool_call_id to list of
+                related units (tool call + responses)
+        """
+        tool_call_groups: Dict[str, List[_ContextUnit]] = {}
+
+        for unit in units:
+            message = unit.record.memory_record.message
+            backend_role = unit.record.memory_record.role_at_backend
+
+            # Check if this is a tool call message
+            if hasattr(message, 'func_name') and hasattr(
+                message, 'tool_call_id'
+            ):
+                tool_call_id = getattr(message, 'tool_call_id', None)
+                if tool_call_id:
+                    if tool_call_id not in tool_call_groups:
+                        tool_call_groups[tool_call_id] = []
+                    tool_call_groups[tool_call_id].append(unit)
+
+            # Check if this is a tool response message
+            elif backend_role == OpenAIBackendRole.FUNCTION:
+                tool_call_id = None
+                if hasattr(message, 'tool_call_id'):
+                    tool_call_id = getattr(message, 'tool_call_id', None)
+                elif hasattr(message, 'result') and hasattr(
+                    message, 'tool_call_id'
+                ):
+                    tool_call_id = getattr(message, 'tool_call_id', None)
+
+                if tool_call_id:
+                    if tool_call_id not in tool_call_groups:
+                        tool_call_groups[tool_call_id] = []
+                    tool_call_groups[tool_call_id].append(unit)
+
+        return tool_call_groups
+
+    def _truncate_with_tool_call_awareness(
+        self,
+        regular_units: List[_ContextUnit],
+        tool_call_groups: Dict[str, List[_ContextUnit]],
+        system_tokens: int,
+    ) -> List[_ContextUnit]:
+        r"""Truncates messages while preserving tool call-response pairs.
+
+        Args:
+            regular_units (List[_ContextUnit]): All regular message units
+            tool_call_groups (Dict[str, List[_ContextUnit]]): Grouped tool
+                calls
+            system_tokens (int): Tokens used by system message
+
+        Returns:
+            List[_ContextUnit]: Units that fit within token limit
+        """
+        # Create sets for quick lookup of tool call related units
+        tool_call_unit_ids = set()
+        for group in tool_call_groups.values():
+            for unit in group:
+                tool_call_unit_ids.add(unit.record.memory_record.uuid)
+
+        # Separate tool call groups and standalone units
+        standalone_units = [
+            u
+            for u in regular_units
+            if u.record.memory_record.uuid not in tool_call_unit_ids
+        ]
+
+        # Sort standalone units for truncation (high scores first)
+        standalone_units.sort(key=self._truncation_sort_key)
+
+        # Sort tool call groups by their best (highest) score
+        sorted_tool_groups = []
+        for _tool_call_id, group in tool_call_groups.items():
+            # Use the highest score in the group as the group's score
+            best_score = max(unit.record.score for unit in group)
+            latest_timestamp = max(unit.record.timestamp for unit in group)
+            group_tokens = sum(unit.num_tokens for unit in group)
+            sorted_tool_groups.append(
+                ((-best_score, -latest_timestamp), group, group_tokens)
+            )
+
+        sorted_tool_groups.sort(key=lambda x: x[0])
+
+        # Greedy selection to fit within token limit
+        remaining_units = []
+        current_tokens = system_tokens
+
+        # First, try to include complete tool call groups
+        for _, group, group_tokens in sorted_tool_groups:
+            if current_tokens + group_tokens <= self.token_limit:
+                remaining_units.extend(group)
+                current_tokens += group_tokens
+
+        # Then, include standalone units
+        for unit in standalone_units:
+            if current_tokens + unit.num_tokens <= self.token_limit:
+                remaining_units.append(unit)
+                current_tokens += unit.num_tokens
+
+        return remaining_units
 
     def _extract_system_message(
         self, records: List[ContextRecord]
