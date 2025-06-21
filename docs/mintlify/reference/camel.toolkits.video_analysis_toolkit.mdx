@@ -50,14 +50,6 @@ def __del__(self):
 Clean up temporary directories and files when the object is
 destroyed.
 
-<a id="camel.toolkits.video_analysis_toolkit.VideoAnalysisToolkit._check_ocr_dependencies"></a>
-
-### _check_ocr_dependencies
-
-```python
-def _check_ocr_dependencies(self):
-```
-
 <a id="camel.toolkits.video_analysis_toolkit.VideoAnalysisToolkit._extract_text_from_frame"></a>
 
 ### _extract_text_from_frame

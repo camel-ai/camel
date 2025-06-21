@@ -25,7 +25,6 @@ In this cookbook, we’ll explore [**Mistral OCR**](https://mistral.ai/news/mist
     <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
   </a>
 </div>  
-  
 
 ⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
 
