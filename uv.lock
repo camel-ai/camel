@@ -572,7 +572,9 @@ dependencies = [
     { name = "pillow" },
     { name = "psutil" },
     { name = "pydantic" },
+    { name = "reportlab" },
     { name = "tiktoken" },
+    { name = "types-reportlab" },
 ]
 
 [package.optional-dependencies]
@@ -609,7 +611,6 @@ all = [
     { name = "firecrawl-py" },
     { name = "fish-audio-sdk" },
     { name = "flask" },
-    { name = "fpdf" },
     { name = "google-api-python-client" },
     { name = "google-auth-httplib2" },
     { name = "google-auth-oauthlib" },
@@ -666,6 +667,7 @@ all = [
     { name = "rank-bm25" },
     { name = "redis" },
     { name = "reka-api" },
+    { name = "reportlab" },
     { name = "requests-oauthlib" },
     { name = "rlcard" },
     { name = "rouge" },
@@ -767,7 +769,6 @@ document-tools = [
     { name = "crawl4ai" },
     { name = "docx" },
     { name = "docx2txt" },
-    { name = "fpdf" },
     { name = "markitdown" },
     { name = "numpy" },
     { name = "openapi-spec-validator" },
@@ -777,6 +778,7 @@ document-tools = [
     { name = "pylatex" },
     { name = "pymupdf" },
     { name = "python-pptx" },
+    { name = "reportlab" },
     { name = "tabulate" },
     { name = "unstructured" },
     { name = "xls2xlsx" },
@@ -818,7 +820,6 @@ owl = [
     { name = "duckduckgo-search" },
     { name = "e2b-code-interpreter" },
     { name = "ffmpeg-python" },
-    { name = "fpdf" },
     { name = "html2text" },
     { name = "imageio", extra = ["pyav"] },
     { name = "mcp-server-fetch" },
@@ -838,6 +839,7 @@ owl = [
     { name = "pytesseract" },
     { name = "python-dotenv" },
     { name = "python-pptx" },
+    { name = "reportlab" },
     { name = "requests-oauthlib" },
     { name = "rouge" },
     { name = "scenedetect" },
@@ -1008,9 +1010,6 @@ requires-dist = [
     { name = "fish-audio-sdk", marker = "extra == 'model-platforms'", specifier = ">=2024.12.5,<2025" },
     { name = "flask", marker = "extra == 'all'", specifier = ">=2.0" },
     { name = "flask", marker = "extra == 'dev'", specifier = ">=2.0" },
-    { name = "fpdf", marker = "extra == 'all'", specifier = ">=1.7.2" },
-    { name = "fpdf", marker = "extra == 'document-tools'", specifier = ">=1.7.2" },
-    { name = "fpdf", marker = "extra == 'owl'", specifier = ">=1.7.2" },
     { name = "google-api-python-client", marker = "extra == 'all'", specifier = "==2.166.0" },
     { name = "google-api-python-client", marker = "extra == 'web-tools'", specifier = "==2.166.0" },
     { name = "google-auth-httplib2", marker = "extra == 'all'", specifier = "==0.2.0" },
@@ -1161,6 +1160,10 @@ requires-dist = [
     { name = "redis", marker = "extra == 'storage'", specifier = ">=5.0.6,<6" },
     { name = "reka-api", marker = "extra == 'all'", specifier = ">=3.0.8,<4" },
     { name = "reka-api", marker = "extra == 'model-platforms'", specifier = ">=3.0.8,<4" },
+    { name = "reportlab", specifier = "==4.4.2" },
+    { name = "reportlab", marker = "extra == 'all'", specifier = ">=4.4.2" },
+    { name = "reportlab", marker = "extra == 'document-tools'", specifier = ">=4.4.2" },
+    { name = "reportlab", marker = "extra == 'owl'", specifier = ">=4.4.2" },
     { name = "requests-oauthlib", marker = "extra == 'all'", specifier = ">=1.3.1,<2" },
     { name = "requests-oauthlib", marker = "extra == 'owl'", specifier = ">=1.3.1,<2" },
     { name = "requests-oauthlib", marker = "extra == 'web-tools'", specifier = ">=1.3.1,<2" },
@@ -1221,6 +1224,7 @@ requires-dist = [
     { name = "types-mock", marker = "extra == 'dev'", specifier = ">=5.1.0,<6" },
     { name = "types-pyyaml", marker = "extra == 'all'", specifier = ">=6.0.12,<7" },
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12,<7" },
+    { name = "types-reportlab", specifier = ">=4.4.1.20250602" },
     { name = "types-requests", marker = "extra == 'all'", specifier = ">=2.31.0,<3" },
     { name = "types-requests", marker = "extra == 'dev'", specifier = ">=2.31.0,<3" },
     { name = "types-setuptools", marker = "extra == 'all'", specifier = ">=69.2.0,<70" },
@@ -2366,12 +2370,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/46/e6/fe50183b1a0e1018e7487ee740fa8bb127b9f5075a41e20d017201e8ab14/fonttools-4.58.4-cp312-cp312-win_amd64.whl", hash = "sha256:82e8470535743409b30913ba2822e20077acf9ea70acec40b10fcf5671dceb58", size = 2236649 },
     { url = "https://files.pythonhosted.org/packages/0b/2f/c536b5b9bb3c071e91d536a4d11f969e911dbb6b227939f4c5b0bca090df/fonttools-4.58.4-py3-none-any.whl", hash = "sha256:a10ce13a13f26cbb9f37512a4346bb437ad7e002ff6fa966a7ce7ff5ac3528bd", size = 1114660 },
 ]
-
-[[package]]
-name = "fpdf"
-version = "1.7.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/37/c6/608a9e6c172bf9124aa687ec8b9f0e8e5d697d59a5f4fad0e2d5ec2a7556/fpdf-1.7.2.tar.gz", hash = "sha256:125840783289e7d12552b1e86ab692c37322e7a65b96a99e0ea86cca041b6779", size = 39504 }
 
 [[package]]
 name = "free-proxy"
@@ -6158,6 +6156,19 @@ wheels = [
 ]
 
 [[package]]
+name = "reportlab"
+version = "4.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "charset-normalizer" },
+    { name = "pillow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ec/9b/3483c7e4ad33d15f22d528872439e5bc92485814d7e7d10dbc3130368a83/reportlab-4.4.2.tar.gz", hash = "sha256:fc6283048ddd0781a9db1d671715990e6aa059c8d40ec9baf34294c4bd583a36", size = 3509063 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9f/74/ed990bc9586605d4e46f6b0e0b978a5b8e757aa599e39664bee26d6dc666/reportlab-4.4.2-py3-none-any.whl", hash = "sha256:58e11be387457928707c12153b7e41e52533a5da3f587b15ba8f8fd0805c6ee2", size = 1953624 },
+]
+
+[[package]]
 name = "requests"
 version = "2.32.4"
 source = { registry = "https://pypi.org/simple" }
@@ -7443,6 +7454,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/4e/22/59e2aeb48ceeee1f7cd4537db9568df80d62bdb44a7f9e743502ea8aab9c/types_pyyaml-6.0.12.20250516.tar.gz", hash = "sha256:9f21a70216fc0fa1b216a8176db5f9e0af6eb35d2f2932acb87689d03a5bf6ba", size = 17378 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/99/5f/e0af6f7f6a260d9af67e1db4f54d732abad514252a7a378a6c4d17dd1036/types_pyyaml-6.0.12.20250516-py3-none-any.whl", hash = "sha256:8478208feaeb53a34cb5d970c56a7cd76b72659442e733e268a94dc72b2d0530", size = 20312 },
+]
+
+[[package]]
+name = "types-reportlab"
+version = "4.4.1.20250602"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cd/ff/9b43c06f572bd0de79ce2c23795216746e7f990ad63a8902ab09882423c9/types_reportlab-4.4.1.20250602.tar.gz", hash = "sha256:ef26555384e9114e751ac6587740adcb4f241844cf103dd6f6f141d5254c1644", size = 68380 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8b/54/ec7fa9b4ff7cd68ba338468bf1bb44d6a10c24acb489ff5100aaaa4b67f3/types_reportlab-4.4.1.20250602-py3-none-any.whl", hash = "sha256:35f23b5a3526fed8cbd5d611673551761280d129ec702467c1d11dd08b8fb971", size = 109189 },
 ]
 
 [[package]]
