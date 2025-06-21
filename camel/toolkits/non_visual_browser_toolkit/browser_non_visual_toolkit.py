@@ -405,6 +405,9 @@ class BrowserNonVisualToolkit(BaseToolkit):
             FunctionTool(self.select),
             FunctionTool(self.scroll),
             # FunctionTool(self.wait),
+            # wait function is designed to wait an element
+            # not sure do we still need that
+            # since it may confuse with wait_user
             FunctionTool(self.extract),
             FunctionTool(self.enter),
             FunctionTool(self.wait_user),
