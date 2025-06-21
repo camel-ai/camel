@@ -656,6 +656,7 @@ all = [
     { name = "pyobvector" },
     { name = "pyowm" },
     { name = "pytelegrambotapi" },
+    { name = "pytesseract" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -792,6 +793,7 @@ media-tools = [
     { name = "ffmpeg-python" },
     { name = "imageio", extra = ["pyav"] },
     { name = "pydub" },
+    { name = "pytesseract" },
     { name = "scenedetect" },
     { name = "yt-dlp" },
 ]
@@ -833,6 +835,7 @@ owl = [
     { name = "pydub" },
     { name = "pylatex" },
     { name = "pymupdf" },
+    { name = "pytesseract" },
     { name = "python-dotenv" },
     { name = "python-pptx" },
     { name = "requests-oauthlib" },
@@ -1131,6 +1134,9 @@ requires-dist = [
     { name = "pyowm", marker = "extra == 'web-tools'", specifier = ">=3.3.0,<4" },
     { name = "pytelegrambotapi", marker = "extra == 'all'", specifier = ">=4.18.0,<5" },
     { name = "pytelegrambotapi", marker = "extra == 'communication-tools'", specifier = ">=4.18.0,<5" },
+    { name = "pytesseract", marker = "extra == 'all'", specifier = ">=0.3.13" },
+    { name = "pytesseract", marker = "extra == 'media-tools'", specifier = ">=0.3.13" },
+    { name = "pytesseract", marker = "extra == 'owl'", specifier = ">=0.3.13" },
     { name = "pytest", marker = "extra == 'all'", specifier = ">=7,<8" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7,<8" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7,<8" },
@@ -5474,6 +5480,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/bd/62/d29612ca33b7844e7
 wheels = [
     { url = "https://files.pythonhosted.org/packages/32/5a/3399a2caf51c91db650de57464465b830c2d4ea15b23d24a98182202b704/pymupdf-1.26.1-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:32296f12a7c7f36febd59cee77823a54490313bcaba9879b17def6518186f94e", size = 23054640 },
     { url = "https://files.pythonhosted.org/packages/64/e0/cc3ec6a4d5ada8992b8610f134565ceb517243f12736b50d795cb3459315/pymupdf-1.26.1-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:aad7949eca62aca40854510cdb125cf873b181726dc9497a90834200f31faa63", size = 22402766 },
+    { url = "https://files.pythonhosted.org/packages/e8/cf/d5b1cd775a17a7b83e25cbf4c46f64cf1352c962ca97646e3e01953cf0df/pymupdf-1.26.1-cp39-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:3b62c4d443121ed9a2eb967c3a0e45f8dbabcc838db8604ece02c4e868808edc", size = 23448474 },
     { url = "https://files.pythonhosted.org/packages/82/9f/e7101bd24a0f5cbfa0310c8e5c3a8ec0dd9a86986812ff86ac2fbd273c92/pymupdf-1.26.1-cp39-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:a65c411eb1cbb79e40c307e10fbad23658f19e9d7334ac4de21d24b58009a7b9", size = 24056183 },
     { url = "https://files.pythonhosted.org/packages/99/39/23ac15cf0edc2877ef366dc7ae041ac199d212433c2c3113661d1a1d5ad0/pymupdf-1.26.1-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:26cebdcc1b2b7a7445423599ce2e0000f2be0333cce0fa0e6846e5a7da46f965", size = 24258802 },
     { url = "https://files.pythonhosted.org/packages/e1/8c/56bd5951128d5c5c0b64d2942090c2cd7bc44302bac991b941ac736e3d63/pymupdf-1.26.1-cp39-abi3-win32.whl", hash = "sha256:82ed9e106cf564fc959c0691c374ba68443086ba1a1c9f26128eebbc3e6df9e5", size = 16927933 },
@@ -5670,6 +5677,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ba/f2/29ae3731db33f7e1e0efcf7055adc8a88d2dde97541ff549d27349e597a2/pytelegrambotapi-4.27.0.tar.gz", hash = "sha256:d89362a34eaaa87b0aff6b2f5445a3af082f04193dcaadb481562def84c59ee9", size = 1355340 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a8/ec/7dc84f817b692a6e1e673a0c335724a0926118541efff86446a20f0fa1f1/pytelegrambotapi-4.27.0-py3-none-any.whl", hash = "sha256:f555cecea9dcc48274c2592f8158e0c336654d3c5a4b86ce44342ffa5f76bd86", size = 287399 },
+]
+
+[[package]]
+name = "pytesseract"
+version = "0.3.13"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+    { name = "pillow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9f/a6/7d679b83c285974a7cb94d739b461fa7e7a9b17a3abfd7bf6cbc5c2394b0/pytesseract-0.3.13.tar.gz", hash = "sha256:4bf5f880c99406f52a3cfc2633e42d9dc67615e69d8a509d74867d3baddb5db9", size = 17689 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7a/33/8312d7ce74670c9d39a532b2c246a853861120486be9443eebf048043637/pytesseract-0.3.13-py3-none-any.whl", hash = "sha256:7a99c6c2ac598360693d83a416e36e0b33a67638bb9d77fdcac094a3589d4b34", size = 14705 },
 ]
 
 [[package]]
