@@ -45,15 +45,16 @@ class LazyLoader(types.ModuleType):
         self._name = name
         self._module_name = module_name
         self._mod = None
+
     def __load__(self):
         if self._mod is None:
             self._mod = __import__(self._module_name, fromlist=[""])
             sys.modules[self._name] = self._mod
         return self._mod
-        
+
     def __getattr__(self, name):
         return getattr(self.__load__(), name)
-        
+
     def __dir__(self):
         return dir(self.__load__())
 
