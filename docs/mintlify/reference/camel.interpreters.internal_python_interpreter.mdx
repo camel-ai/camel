@@ -50,6 +50,7 @@ Modifications copyright (C) 2023 CAMEL-AI.org
 - **import_white_list** (List[str], optional): A list that stores the Python modules or functions that can be imported in the code. All submodules and functions of the modules listed in this list are importable. Any other import statements will be rejected. The module and its submodule or function name are separated by a period (:obj:`.`). (default: :obj:`None`)
 - **unsafe_mode** (bool, optional): If `True`, the interpreter runs the code by `eval()` or `exec()` without any security check. (default: :obj:`False`)
 - **raise_error** (bool, optional): Raise error if the interpreter fails. (default: :obj:`False`)
+- **allow_builtins** (bool, optional): If `True`, safe built-in functions like print, len, str, etc. are added to the action space. (default: :obj:`True`)
 
 <a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter.__init__"></a>
 
@@ -61,9 +62,20 @@ def __init__(
     action_space: Optional[Dict[str, Any]] = None,
     import_white_list: Optional[List[str]] = None,
     unsafe_mode: bool = False,
-    raise_error: bool = False
+    raise_error: bool = False,
+    allow_builtins: bool = True
 ):
 ```
+
+<a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter._add_safe_builtins"></a>
+
+### _add_safe_builtins
+
+```python
+def _add_safe_builtins(self):
+```
+
+Add safe built-in functions to the action space.
 
 <a id="camel.interpreters.internal_python_interpreter.InternalPythonInterpreter.run"></a>
 

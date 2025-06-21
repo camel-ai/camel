@@ -79,6 +79,9 @@ class InternalPythonInterpreter(BaseInterpreter):
             (default: :obj:`False`)
         raise_error (bool, optional): Raise error if the interpreter fails.
             (default: :obj:`False`)
+        allow_builtins (bool, optional): If `True`, safe built-in functions
+            like print, len, str, etc. are added to the action space.
+            (default: :obj:`True`)
     """
 
     _CODE_TYPES: ClassVar[List[str]] = ["python", "py", "python3", "python2"]
@@ -89,15 +92,61 @@ class InternalPythonInterpreter(BaseInterpreter):
         import_white_list: Optional[List[str]] = None,
         unsafe_mode: bool = False,
         raise_error: bool = False,
+        allow_builtins: bool = True,
     ) -> None:
         self.action_space = action_space or dict()
-        # Add print to action space
-        self.action_space['print'] = print
         self.state = self.action_space.copy()
         self.fuzz_state: Dict[str, Any] = dict()
         self.import_white_list = import_white_list or list()
         self.raise_error = raise_error
         self.unsafe_mode = unsafe_mode
+
+        # Add safe built-in functions if allowed
+        if allow_builtins:
+            self._add_safe_builtins()
+
+    def _add_safe_builtins(self):
+        r"""Add safe built-in functions to the action space."""
+        safe_builtins = {
+            'print': print,
+            'len': len,
+            'str': str,
+            'int': int,
+            'float': float,
+            'bool': bool,
+            'list': list,
+            'dict': dict,
+            'tuple': tuple,
+            'set': set,
+            'abs': abs,
+            'min': min,
+            'max': max,
+            'sum': sum,
+            'sorted': sorted,
+            'reversed': reversed,
+            'enumerate': enumerate,
+            'zip': zip,
+            'range': range,
+            'round': round,
+            'type': type,
+            'isinstance': isinstance,
+            'hasattr': hasattr,
+            'getattr': getattr,
+            'setattr': setattr,
+            'dir': dir,
+            'help': help,
+            'map': map,
+            'filter': filter,
+            'any': any,
+            'all': all,
+            'ord': ord,
+            'chr': chr,
+            'bin': bin,
+            'oct': oct,
+            'hex': hex,
+        }
+        self.action_space.update(safe_builtins)
+        self.state.update(safe_builtins)
 
     def run(self, code: str, code_type: str = "python") -> str:
         r"""Executes the given code with specified code type in the
