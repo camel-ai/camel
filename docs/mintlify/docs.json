@@ -151,6 +151,7 @@
                 "group": "Multi Agent Society",
                 "pages": [
                   "cookbooks/multi_agent_society/agents_society",
+                  "cookbooks/multi_agent_society/azure_openai_claude_society",
                   "cookbooks/multi_agent_society/task_generation",
                   "cookbooks/multi_agent_society/workforce_judge_committee"
                 ]
@@ -507,7 +508,12 @@
               "reference/camel.toolkits.weather_toolkit",
               "reference/camel.toolkits.whatsapp_toolkit",
               "reference/camel.toolkits.wolfram_alpha_toolkit",
-              "reference/camel.toolkits.zapier_toolkit"
+              "reference/camel.toolkits.zapier_toolkit",
+              "reference/camel.toolkits.non_visual_browser_toolkit.actions",
+              "reference/camel.toolkits.non_visual_browser_toolkit.agent",
+              "reference/camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit",
+              "reference/camel.toolkits.non_visual_browser_toolkit.nv_browser_session",
+              "reference/camel.toolkits.non_visual_browser_toolkit.snapshot"
             ]
           },
           {

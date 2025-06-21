@@ -48,14 +48,14 @@ class ACIToolkit(BaseToolkit):
 
         Args:
             api_key (Optional[str]): The API key for authentication.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             base_url (Optional[str]): The base URL for the ACI API.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             linked_account_owner_id (Optional[str]): ID of the owner of the
                 linked account, e.g., "johndoe"
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             timeout (Optional[float]): Request timeout.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
         """
         from aci import ACI
 
@@ -80,20 +80,20 @@ class ACIToolkit(BaseToolkit):
         Args:
             intent (Optional[str]): Search results will be sorted by relevance
                 to this intent.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             allowed_app_only (bool): If true, only return apps that
                 are allowed by the agent/accessor, identified by the api key.
-                (default: :obj: `True`)
+                (default: :obj:`True`)
             include_functions (bool): If true, include functions
                 (name and description) in the search results.
-                (default: :obj: `False`)
+                (default: :obj:`False`)
             categories (Optional[List[str]]): List of categories to filter the
                 search results. Defaults to an empty list.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             limit (Optional[int]): Maximum number of results to return.
-                (default: :obj: `10`)
+                (default: :obj:`10`)
             offset (Optional[int]): Offset for pagination.
-                (default: :obj: `0`)
+                (default: :obj:`0`)
 
         Returns:
             Optional[List[AppBasic]]: List of matching apps if successful,
@@ -123,10 +123,10 @@ class ACIToolkit(BaseToolkit):
 
         Args:
             app_names (Optional[List[str]]): List of app names to filter the
-                results. (default: :obj: `None`)
+                results. (default: :obj:`None`)
             limit (Optional[int]): Maximum number of results to return.
-                (default: :obj: `10`)
-            offset (Optional[int]): Offset for pagination. (default: :obj: `0`)
+                (default: :obj:`10`)
+            offset (Optional[int]): Offset for pagination. (default: :obj:`0`)
 
         Returns:
             Union[List[AppConfiguration], str]: List of configured apps if
@@ -356,15 +356,15 @@ class ACIToolkit(BaseToolkit):
 
         Args:
             app_names (Optional[List[str]]): List of app names to filter the
-                search results. (default: :obj: `None`)
+                search results. (default: :obj:`None`)
             intent (Optional[str]): The search query/intent.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
             allowed_apps_only (bool): If true, only return
-                functions from allowed apps. (default: :obj: `True`)
+                functions from allowed apps. (default: :obj:`True`)
             limit (Optional[int]): Maximum number of results to return.
-                (default: :obj: `10`)
+                (default: :obj:`10`)
             offset (Optional[int]): Offset for pagination.
-                (default: :obj: `0`)
+                (default: :obj:`0`)
 
         Returns:
             List[Dict]: List of matching functions
@@ -395,7 +395,7 @@ class ACIToolkit(BaseToolkit):
                 owner id in the ACI dashboard (https://platform.aci.dev).
             allowed_apps_only (bool): If true, only returns functions/apps
                 that are allowed to be used by the agent/accessor, identified
-                by the api key. (default: :obj: `False`)
+                by the api key. (default: :obj:`False`)
 
         Returns:
             Dict: Result of the function execution
