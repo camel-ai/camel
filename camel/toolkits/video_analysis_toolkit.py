@@ -19,9 +19,6 @@ import io
 import os
 import re
 import tempfile
-import sys
-import types
-
 from pathlib import Path
 from typing import List, Optional
 
@@ -38,28 +35,6 @@ from .video_download_toolkit import (
     VideoDownloaderToolkit,
     _capture_screenshot,
 )
-
-class LazyLoader(types.ModuleType):
-    def __init__(self, name, module_name):
-        super().__init__(name)
-        self._name = name
-        self._module_name = module_name
-        self._mod = None
-
-    def __load__(self):
-        if self._mod is None:
-            self._mod = __import__(self._module_name, fromlist=[""])
-            sys.modules[self._name] = self._mod
-        return self._mod
-
-    def __getattr__(self, name):
-        return getattr(self.__load__(), name)
-
-    def __dir__(self):
-        return dir(self.__load__())
-
-sys.modules["cv2"] = LazyLoader("cv2", "cv2")
-sys.modules["numpy"] = LazyLoader("numpy", "numpy")
 
 logger = get_logger(__name__)
 
@@ -115,6 +90,7 @@ similar-looking species or objects
 **Question:**
 {question}
 """
+
 
 @MCPServer()
 class VideoAnalysisToolkit(BaseToolkit):
@@ -213,9 +189,7 @@ class VideoAnalysisToolkit(BaseToolkit):
                     "Audio transcription will be disabled."
                 )
                 self._use_audio_transcription = False
-        if self._use_ocr:
-            self._use_ocr = self._check_ocr_dependencies() 
-    
+
     def __del__(self):
         r"""Clean up temporary directories and files when the object is
         destroyed.
@@ -252,29 +226,7 @@ class VideoAnalysisToolkit(BaseToolkit):
                     f"{self._download_directory}: {e}"
                 )
 
-    def _check_ocr_dependencies(self):
-        if not self._use_ocr:
-            return False
-            
-        try:
-            import pytesseract
-            pytesseract.get_tesseract_version()
-            return True
-        except ImportError:
-            logger.error(
-                "pytesseract not installed. OCR will be disabled. "
-                "Install with: pip install pytesseract"
-            )
-            self._use_ocr = False
-            return False
-        except EnvironmentError:
-            logger.error(
-                "Tesseract OCR not found in PATH. OCR will be disabled. "
-                "Install Tesseract: https://github.com/tesseract-ocr/tesseract"
-            )
-            self._use_ocr = False
-            return False
-            
+    @dependencies_required("pytesseract", "cv2", "numpy")
     def _extract_text_from_frame(self, frame: Image.Image) -> str:
         r"""Extract text from a video frame using OCR.
 
@@ -286,19 +238,19 @@ class VideoAnalysisToolkit(BaseToolkit):
         """
         import cv2
         import numpy as np
-        import pytesseract # type: ignore[import-untyped]
+        import pytesseract
+
         try:
-            
             # Convert to OpenCV format for preprocessing
             cv_image = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
-            
+
             # Preprocessing for better OCR results
             gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
             blur = cv2.GaussianBlur(gray, (3, 3), 0)
             _, threshold = cv2.threshold(
                 blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
             )
-            
+
             # Convert back to PIL image for OCR
             preprocessed_frame = Image.fromarray(threshold)
             return pytesseract.image_to_string(preprocessed_frame).strip()
@@ -320,7 +272,7 @@ class VideoAnalysisToolkit(BaseToolkit):
         # Remove excessive whitespace
         text = re.sub(r'\s+', ' ', text).strip()
         return text
-        
+
     def _extract_audio_from_video(
         self, video_path: str, output_format: str = "mp3"
     ) -> str:
@@ -626,16 +578,13 @@ class VideoAnalysisToolkit(BaseToolkit):
             video_frames = self._extract_keyframes(video_path)
             # Build visual text only if OCR is enabled
             if self._use_ocr:
-                visual_text = ""  # Initialize for OCR processing
                 for frame in video_frames:
                     text = self._extract_text_from_frame(frame)
                     processed = self._process_extracted_text(text)
                     if processed:
                         visual_text += processed + "\n"
                 visual_text = visual_text.strip() or "No visual text detected."
-            else:
-                visual_text = ""
-            
+
             prompt = VIDEO_QA_PROMPT.format(
                 audio_transcription=audio_transcript,
                 visual_text=visual_text,
