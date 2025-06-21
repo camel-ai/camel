@@ -15,6 +15,7 @@ A class for analysing videos with vision-language model.
 - **download_directory** (Optional[str], optional): The directory where the video will be downloaded to. If not provided, video will be stored in a temporary directory and will be cleaned up after use. (default: :obj:`None`)
 - **model** (Optional[BaseModelBackend], optional): The model to use for visual analysis. (default: :obj:`None`)
 - **use_audio_transcription** (bool, optional): Whether to enable audio transcription using OpenAI's audio models. Requires a valid OpenAI API key. When disabled, video analysis will be based solely on visual content. (default: :obj:`False`)
+- **use_ocr** (bool, optional): Whether to enable OCR for extracting text from video frames. (default: :obj:`False`)
 - **frame_interval** (float, optional): Interval in seconds between frames to extract from the video. (default: :obj:`4.0`)
 - **output_language** (str, optional): The language for output responses. (default: :obj:`"English"`)
 - **cookies_path** (Optional[str]): The path to the cookies file for the video service in Netscape format. (default: :obj:`None`)
@@ -30,6 +31,7 @@ def __init__(
     download_directory: Optional[str] = None,
     model: Optional[BaseModelBackend] = None,
     use_audio_transcription: bool = False,
+    use_ocr: bool = False,
     frame_interval: float = 4.0,
     output_language: str = 'English',
     cookies_path: Optional[str] = None,
@@ -47,6 +49,50 @@ def __del__(self):
 
 Clean up temporary directories and files when the object is
 destroyed.
+
+<a id="camel.toolkits.video_analysis_toolkit.VideoAnalysisToolkit._check_ocr_dependencies"></a>
+
+### _check_ocr_dependencies
+
+```python
+def _check_ocr_dependencies(self):
+```
+
+<a id="camel.toolkits.video_analysis_toolkit.VideoAnalysisToolkit._extract_text_from_frame"></a>
+
+### _extract_text_from_frame
+
+```python
+def _extract_text_from_frame(self, frame: Image.Image):
+```
+
+Extract text from a video frame using OCR.
+
+**Parameters:**
+
+- **frame** (Image.Image): PIL image frame to process.
+
+**Returns:**
+
+  str: Extracted text from the frame.
+
+<a id="camel.toolkits.video_analysis_toolkit.VideoAnalysisToolkit._process_extracted_text"></a>
+
+### _process_extracted_text
+
+```python
+def _process_extracted_text(self, text: str):
+```
+
+Clean and format OCR-extracted text.
+
+**Parameters:**
+
+- **text** (str): Raw extracted OCR text.
+
+**Returns:**
+
+  str: Cleaned and formatted text.
 
 <a id="camel.toolkits.video_analysis_toolkit.VideoAnalysisToolkit._extract_audio_from_video"></a>
 
