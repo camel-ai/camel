@@ -146,7 +146,7 @@ class FileWriteToolkit(BaseToolkit):
         document.save(str(file_path))
         logger.debug(f"Wrote DOCX to {file_path} with default formatting")
 
-    @dependencies_required('pylatex', 'fpdf')
+    @dependencies_required('pylatex', 'reportlab')
     def _write_pdf_file(
         self, file_path: Path, content: str, use_latex: bool = False
     ) -> None:
@@ -156,12 +156,8 @@ class FileWriteToolkit(BaseToolkit):
             file_path (Path): The target file path.
             content (str): The text content to write.
             use_latex (bool): Whether to use LaTeX for rendering. (requires
-                LaTeX toolchain). If False, uses FPDF for simpler PDF
-                generation. (default: :obj:`False`)
-
-        Raises:
-            RuntimeError: If the 'pylatex' or 'fpdf' library is not installed
-                when use_latex=True.
+                LaTeX toolchain). If False, uses ReportLab for simpler PDF
+                generation with enhanced table support. (default: :obj:`False`)
         """
         if use_latex:
             from pylatex import (
@@ -199,30 +195,141 @@ class FileWriteToolkit(BaseToolkit):
 
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
-            from fpdf import FPDF
+            try:
+                from reportlab.lib import (
+                    colors,
+                )
+                from reportlab.lib.pagesizes import (
+                    A4,
+                )
+                from reportlab.lib.styles import (
+                    ParagraphStyle,
+                    getSampleStyleSheet,
+                )
+                from reportlab.lib.units import (
+                    cm,
+                )
+                from reportlab.platypus import (
+                    Flowable,
+                    Paragraph,
+                    SimpleDocTemplate,
+                    Spacer,
+                    Table,
+                    TableStyle,
+                )
+            except ImportError:
+                raise RuntimeError(
+                    "reportlab library is required for PDF generation."
+                )
 
-            # Use default formatting values
-            font_family = 'Arial'
-            font_size = 12
-            font_style = ''
-            line_height = 10
-            margin = 10
+            doc = SimpleDocTemplate(
+                str(file_path),
+                pagesize=A4,
+                rightMargin=2 * cm,
+                leftMargin=2 * cm,
+                topMargin=2 * cm,
+                bottomMargin=2 * cm,
+            )
+            styles = getSampleStyleSheet()
+            story: List[Flowable] = []
 
-            pdf = FPDF()
-            pdf.set_margins(margin, margin, margin)
+            # Add a custom style for headings
+            heading_style = ParagraphStyle(
+                'Heading1',
+                parent=styles['Heading1'],
+                fontSize=16,
+                spaceAfter=12,
+            )
 
-            pdf.add_page()
-            pdf.set_font(font_family, style=font_style, size=font_size)
+            # Process content by looking for markdown patterns
+            lines = content.split('\n')
+            i = 0
+            while i < len(lines):
+                line = lines[i].strip()
 
-            # Split content into paragraphs and add them
-            for para in content.split('\n'):
-                if para.strip():  # Skip empty paragraphs
-                    pdf.multi_cell(0, line_height, para)
-                else:
-                    pdf.ln(line_height)  # Add empty line
+                # Handle headings
+                if line.startswith('# '):
+                    story.append(Paragraph(line[2:], heading_style))
+                    story.append(Spacer(1, 0.5 * cm))
 
-            pdf.output(str(file_path))
-            logger.debug(f"Wrote PDF to {file_path} with custom formatting")
+                # Handle tables
+                elif (
+                    line.startswith('|')
+                    and i + 1 < len(lines)
+                    and lines[i + 1].strip().startswith('|---')
+                ):
+                    # Extract table headers
+                    headers = [cell.strip() for cell in line.split('|')[1:-1]]
+
+                    # Skip the separator line
+                    i += 2
+
+                    # Collect table data
+                    table_data = [headers]
+                    while i < len(lines) and lines[i].strip().startswith('|'):
+                        row = [
+                            cell.strip()
+                            for cell in lines[i].strip().split('|')[1:-1]
+                        ]
+                        table_data.append(row)
+                        i += 1
+
+                    # Create table
+                    if table_data:
+                        table = Table(
+                            table_data,
+                            colWidths=[doc.width / len(headers)]
+                            * len(headers),
+                        )
+                        table.setStyle(
+                            TableStyle(
+                                [
+                                    (
+                                        'BACKGROUND',
+                                        (0, 0),
+                                        (-1, 0),
+                                        colors.lightgrey,
+                                    ),
+                                    (
+                                        'TEXTCOLOR',
+                                        (0, 0),
+                                        (-1, 0),
+                                        colors.black,
+                                    ),
+                                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                                    (
+                                        'FONTNAME',
+                                        (0, 0),
+                                        (-1, 0),
+                                        'Helvetica-Bold',
+                                    ),
+                                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                                    (
+                                        'GRID',
+                                        (0, 0),
+                                        (-1, -1),
+                                        1,
+                                        colors.black,
+                                    ),
+                                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                                ]
+                            )
+                        )
+                        story.append(table)
+                        story.append(Spacer(1, 0.5 * cm))
+                    continue  # Skip the increment at the end of the loop
+
+                # Handle regular paragraphs
+                elif line:
+                    story.append(Paragraph(line, styles['Normal']))
+                    story.append(Spacer(1, 0.2 * cm))
+
+                i += 1
+
+            doc.build(story)
+            logger.debug(
+                f"Wrote PDF to {file_path} using ReportLab with table support"
+            )
 
     def _write_csv_file(
         self,
@@ -347,7 +454,7 @@ class FileWriteToolkit(BaseToolkit):
             encoding (Optional[str]): The character encoding to use. (default:
                 :obj: `None`)
             use_latex (bool): For PDF files, whether to use LaTeX rendering
-                (True) or simple FPDF rendering (False). (default: :obj:
+                (True) or simple ReportLab rendering (False). (default: :obj:
                 `False`)
 
         Returns:
