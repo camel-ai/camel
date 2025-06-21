@@ -72,7 +72,7 @@ def test_model_manager(
             assert model.run.call_count == times_each_model_called
     if strategy == "always_first":
         assert model_manager.scheduling_strategy.__name__ == "always_first"
-        assert models[0].run.call_count == times_each_model_called
+        assert models[0].run.call_count == times_each_model_called  # type: ignore[attr-defined]
 
     if strategy == "random_model":
         assert model_manager.scheduling_strategy.__name__ == "random_model"
