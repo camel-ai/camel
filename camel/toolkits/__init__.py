@@ -77,6 +77,7 @@ from .aci_toolkit import ACIToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
 from .task_planning_toolkit import TaskPlanningToolkit
+from .document_toolkit import DocumentToolkit
 from .non_visual_browser_toolkit import BrowserNonVisualToolkit
 
 
@@ -143,5 +144,6 @@ __all__ = [
     'WolframAlphaToolkit',
     'BohriumToolkit',
     'TaskPlanningToolkit',
+    'DocumentToolkit',
     'BrowserNonVisualToolkit',
 ]
