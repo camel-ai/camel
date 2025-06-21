@@ -342,7 +342,7 @@ async def main():
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1,
+        model_type=ModelType.GPT_4_1_MINI,
         # model_config_dict={
         #     "max_tokens": 32768,
         # },
@@ -350,7 +350,7 @@ async def main():
 
     model_backend_reason = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1,
+        model_type=ModelType.GPT_4_1_MINI,
         # model_config_dict={
         #     "max_tokens": 32768,
         # },
@@ -405,7 +405,7 @@ async def main():
     human_task = Task(
         content=(
             """
-Analyze the UK healthcare industry to support the planning of my next company. Provide a comprehensive market overview, including current trends, growth projections, and relevant regulations. Identify the top 5-10 major competitors in the space, including their names, website URLs, estimated market size or share, core services or products, key strengths, and notable weaknesses. Also highlight any significant opportunities, gaps, or underserved segments within the market. Present all findings in a well-structured, professional PDF report.
+I want to read papers about GUI Agent. Please help me find ten papers and summarize them into a report.
             """  # noqa: E501
         ),
         id='0',
