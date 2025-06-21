@@ -151,6 +151,7 @@
                 "group": "Multi Agent Society",
                 "pages": [
                   "cookbooks/multi_agent_society/agents_society",
+                  "cookbooks/multi_agent_society/azure_openai_claude_society",
                   "cookbooks/multi_agent_society/task_generation",
                   "cookbooks/multi_agent_society/workforce_judge_committee"
                 ]
