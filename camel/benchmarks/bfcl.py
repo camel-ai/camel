@@ -123,18 +123,14 @@ class FunctionCallParser:
                         return json.loads(curly_match.group(0))
                     except Exception:
                         logger.warning(
-                            "Failed to parse JSON object from text: "
-                            f"{text}"
+                            "Failed to parse JSON object from text: " f"{text}"
                         )
 
         # Try to parse the entire text as JSON
         try:
             return json.loads(text)
         except Exception:
-            logger.warning(
-                "Failed to parse JSON object from text: "
-                f"{text}"
-            )
+            logger.warning("Failed to parse JSON object from text: " f"{text}")
 
         # Try to find JSON object surrounded by curly braces in the text
         curly_pattern = r'{[\s\S]*?}'
@@ -144,8 +140,7 @@ class FunctionCallParser:
                 return json.loads(match.group(0))
             except Exception:
                 logger.warning(
-                    "Failed to parse JSON object from text: "
-                    f"{text}"
+                    "Failed to parse JSON object from text: " f"{text}"
                 )
 
         return None
@@ -188,6 +183,7 @@ class FunctionCallParser:
                                 "function call: "
                                 f"{parameters}"
                             )
+                            parameters = {}
                     return function_name, parameters
 
             # Try to extract general format function call
@@ -205,8 +201,7 @@ class FunctionCallParser:
                     for k, v in json_obj.items()
                     if k not in ['name', 'description', 'type']
                 }
-                if parameters:
-                    return function_name, parameters
+                return function_name, parameters
 
         # Try to parse JavaScript category special format
         if "createJsObject" in response_text or "JavaScript" in response_text:
@@ -336,12 +331,10 @@ class FunctionCallParser:
                     else:
                         parameters[param_name] = int(param_value)
 
-                if parameters:
-                    return function_name, parameters
+                return function_name, parameters
         except Exception:
             logger.warning(
-                "Failed to parse function call from text: "
-                f"{response_text}"
+                "Failed to parse function call from text: " f"{response_text}"
             )
 
         return None, None
