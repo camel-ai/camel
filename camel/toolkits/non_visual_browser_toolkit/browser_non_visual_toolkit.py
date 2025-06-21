@@ -321,7 +321,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
                 "wait_time(): 'seconds' must be a positive number"
             )
 
-        # Re-use underlying ActionExecutor's ``wait`` implementation (expects ms)
+        # Reuse underlying ActionExecutor's ``wait`` implementation (expects ms)
         timeout_ms = int(seconds * 1000)
         action: Dict[str, Any] = {"type": "wait", "timeout": timeout_ms}
 
