@@ -15,8 +15,6 @@ For more detailed usage information, please refer to our cookbook: [Tools Cookbo
   CAMEL provides a range of built-in toolkits—covering everything from web search and data extraction to code execution, GitHub integration, and much more.
 </Card>
 
----
-
 ## Get Started
 
 <Card title="Install Toolkits" icon="terminal">
