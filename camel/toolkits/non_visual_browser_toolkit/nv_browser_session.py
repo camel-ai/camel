@@ -16,12 +16,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from playwright.async_api import (
-    Browser,
-    BrowserContext,
-    Page,
-)
-
 from .actions import ActionExecutor
 from .snapshot import PageSnapshot
 

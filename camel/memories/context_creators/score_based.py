@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
@@ -18,7 +19,7 @@ from pydantic import BaseModel
 from camel.logger import get_logger
 from camel.memories.base import BaseContextCreator
 from camel.memories.records import ContextRecord
-from camel.messages import OpenAIMessage
+from camel.messages import FunctionCallingMessage, OpenAIMessage
 from camel.types.enums import OpenAIBackendRole
 from camel.utils import BaseTokenCounter
 
@@ -112,6 +113,11 @@ class ScoreBasedContextCreator(BaseContextCreator):
 
         # Process non-system messages with deduplication
         for idx, record in enumerate(records):
+            if (
+                record.memory_record.role_at_backend
+                == OpenAIBackendRole.SYSTEM
+            ):
+                continue
             if record.memory_record.uuid in seen_uuids:
                 continue
             seen_uuids.add(record.memory_record.uuid)
@@ -178,47 +184,32 @@ class ScoreBasedContextCreator(BaseContextCreator):
     def _group_tool_calls_and_responses(
         self, units: List[_ContextUnit]
     ) -> Dict[str, List[_ContextUnit]]:
-        r"""Groups tool calls with their corresponding responses.
+        r"""Groups tool calls with their corresponding responses based on
+        `tool_call_id`.
+
+        This improved logic robustly gathers all messages (assistant requests
+        and tool responses, including chunks) that share a `tool_call_id`.
 
         Args:
-            units (List[_ContextUnit]): List of context units to analyze
+            units (List[_ContextUnit]): List of context units to analyze.
 
         Returns:
-            Dict[str, List[_ContextUnit]]: Mapping from tool_call_id to list of
-                related units (tool call + responses)
+            Dict[str, List[_ContextUnit]]: Mapping from `tool_call_id` to a
+                list of related units.
         """
-        tool_call_groups: Dict[str, List[_ContextUnit]] = {}
+        tool_call_groups: Dict[str, List[_ContextUnit]] = defaultdict(list)
 
         for unit in units:
+            # FunctionCallingMessage stores tool_call_id.
             message = unit.record.memory_record.message
-            backend_role = unit.record.memory_record.role_at_backend
+            tool_call_id = getattr(message, 'tool_call_id', None)
 
-            # Check if this is a tool call message
-            if hasattr(message, 'func_name') and hasattr(
-                message, 'tool_call_id'
-            ):
-                tool_call_id = getattr(message, 'tool_call_id', None)
-                if tool_call_id:
-                    if tool_call_id not in tool_call_groups:
-                        tool_call_groups[tool_call_id] = []
-                    tool_call_groups[tool_call_id].append(unit)
+            if tool_call_id:
+                tool_call_groups[tool_call_id].append(unit)
 
-            # Check if this is a tool response message
-            elif backend_role == OpenAIBackendRole.FUNCTION:
-                tool_call_id = None
-                if hasattr(message, 'tool_call_id'):
-                    tool_call_id = getattr(message, 'tool_call_id', None)
-                elif hasattr(message, 'result') and hasattr(
-                    message, 'tool_call_id'
-                ):
-                    tool_call_id = getattr(message, 'tool_call_id', None)
-
-                if tool_call_id:
-                    if tool_call_id not in tool_call_groups:
-                        tool_call_groups[tool_call_id] = []
-                    tool_call_groups[tool_call_id].append(unit)
-
-        return tool_call_groups
+        # Filter out empty or incomplete groups if necessary,
+        # though defaultdict and getattr handle this gracefully.
+        return dict(tool_call_groups)
 
     def _truncate_with_tool_call_awareness(
         self,
@@ -227,60 +218,130 @@ class ScoreBasedContextCreator(BaseContextCreator):
         system_tokens: int,
     ) -> List[_ContextUnit]:
         r"""Truncates messages while preserving tool call-response pairs.
+        This method implements a more sophisticated truncation strategy:
+        1. It treats tool call groups (request + responses) and standalone
+           messages as individual items to be included.
+        2. It sorts all items by score and greedily adds them to the context.
+        3. **Partial Truncation**: If a complete tool group is too large to
+        fit,it attempts to add the request message and as many of the most
+        recent response chunks as the token budget allows.
 
         Args:
-            regular_units (List[_ContextUnit]): All regular message units
+            regular_units (List[_ContextUnit]): All regular message units.
             tool_call_groups (Dict[str, List[_ContextUnit]]): Grouped tool
-                calls
-            system_tokens (int): Tokens used by system message
+                calls.
+            system_tokens (int): Tokens used by the system message.
 
         Returns:
-            List[_ContextUnit]: Units that fit within token limit
+            List[_ContextUnit]: A list of units that fit within the token
+                limit.
         """
-        # Create sets for quick lookup of tool call related units
-        tool_call_unit_ids = set()
-        for group in tool_call_groups.values():
-            for unit in group:
-                tool_call_unit_ids.add(unit.record.memory_record.uuid)
 
-        # Separate tool call groups and standalone units
+        # Create a set for quick lookup of units belonging to any tool call
+        tool_call_unit_ids = {
+            unit.record.memory_record.uuid
+            for group in tool_call_groups.values()
+            for unit in group
+        }
+
+        # Separate standalone units from tool call groups
         standalone_units = [
             u
             for u in regular_units
             if u.record.memory_record.uuid not in tool_call_unit_ids
         ]
 
-        # Sort standalone units for truncation (high scores first)
-        standalone_units.sort(key=self._truncation_sort_key)
-
-        # Sort tool call groups by their best (highest) score
-        sorted_tool_groups = []
-        for _tool_call_id, group in tool_call_groups.items():
-            # Use the highest score in the group as the group's score
-            best_score = max(unit.record.score for unit in group)
-            latest_timestamp = max(unit.record.timestamp for unit in group)
-            group_tokens = sum(unit.num_tokens for unit in group)
-            sorted_tool_groups.append(
-                ((-best_score, -latest_timestamp), group, group_tokens)
+        # Prepare all items (standalone units and groups) for sorting
+        all_potential_items: List[Dict] = []
+        for unit in standalone_units:
+            all_potential_items.append(
+                {
+                    "type": "standalone",
+                    "score": unit.record.score,
+                    "timestamp": unit.record.timestamp,
+                    "tokens": unit.num_tokens,
+                    "item": unit,
+                }
+            )
+        for group in tool_call_groups.values():
+            all_potential_items.append(
+                {
+                    "type": "group",
+                    "score": max(u.record.score for u in group),
+                    "timestamp": max(u.record.timestamp for u in group),
+                    "tokens": sum(u.num_tokens for u in group),
+                    "item": group,
+                }
             )
 
-        sorted_tool_groups.sort(key=lambda x: x[0])
+        # Sort all potential items by score (high to low), then timestamp
+        all_potential_items.sort(key=lambda x: (-x["score"], -x["timestamp"]))
 
-        # Greedy selection to fit within token limit
-        remaining_units = []
+        remaining_units: List[_ContextUnit] = []
         current_tokens = system_tokens
 
-        # First, try to include complete tool call groups
-        for _, group, group_tokens in sorted_tool_groups:
-            if current_tokens + group_tokens <= self.token_limit:
-                remaining_units.extend(group)
-                current_tokens += group_tokens
+        for item_dict in all_potential_items:
+            item_type = item_dict["type"]
+            item = item_dict["item"]
+            item_tokens = item_dict["tokens"]
 
-        # Then, include standalone units
-        for unit in standalone_units:
-            if current_tokens + unit.num_tokens <= self.token_limit:
-                remaining_units.append(unit)
-                current_tokens += unit.num_tokens
+            if current_tokens + item_tokens <= self.token_limit:
+                # The whole item (standalone or group) fits, so add it
+                if item_type == "standalone":
+                    remaining_units.append(item)
+                else:  # item_type == "group"
+                    remaining_units.extend(item)
+                current_tokens += item_tokens
+
+            elif item_type == "group":
+                # The group does not fit completely; try partial inclusion.
+                request_unit: Optional[_ContextUnit] = None
+                response_units: List[_ContextUnit] = []
+
+                for unit in item:
+                    # Assistant msg with `args` is the request
+                    if (
+                        isinstance(
+                            unit.record.memory_record.message,
+                            FunctionCallingMessage,
+                        )
+                        and unit.record.memory_record.message.args is not None
+                    ):
+                        request_unit = unit
+                    else:
+                        response_units.append(unit)
+
+                # A group must have a request to be considered for inclusion.
+                if request_unit is None:
+                    continue
+
+                # Check if we can at least fit the request.
+                if (
+                    current_tokens + request_unit.num_tokens
+                    <= self.token_limit
+                ):
+                    units_to_add = [request_unit]
+                    tokens_to_add = request_unit.num_tokens
+
+                    # Sort responses by timestamp to add newest chunks first
+                    response_units.sort(
+                        key=lambda u: u.record.timestamp, reverse=True
+                    )
+
+                    for resp_unit in response_units:
+                        if (
+                            current_tokens
+                            + tokens_to_add
+                            + resp_unit.num_tokens
+                            <= self.token_limit
+                        ):
+                            units_to_add.append(resp_unit)
+                            tokens_to_add += resp_unit.num_tokens
+
+                    # A request must be followed by at least one response
+                    if len(units_to_add) > 1:
+                        remaining_units.extend(units_to_add)
+                        current_tokens += tokens_to_add
 
         return remaining_units
 
@@ -318,25 +379,6 @@ class ScoreBasedContextCreator(BaseContextCreator):
             num_tokens=tokens,
         )
         return system_message_unit, []
-
-    def _truncation_sort_key(self, unit: _ContextUnit) -> Tuple[float, float]:
-        r"""Defines the sorting key for the truncation phase.
-
-        Sorting priority:
-        - Primary: Sort by score in descending order (higher scores first).
-        - Secondary: Sort by timestamp in ascending order (older messages
-            first when scores are equal).
-
-        Args:
-            unit (_ContextUnit): A `_ContextUnit` representing a conversation
-                record.
-
-        Returns:
-            Tuple[float, float]:
-            - Negative score for descending order sorting.
-            - Timestamp for ascending order sorting.
-        """
-        return (-unit.record.score, unit.record.timestamp)
 
     def _conversation_sort_key(
         self, unit: _ContextUnit
