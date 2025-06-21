@@ -537,16 +537,16 @@ wheels = [
 
 [[package]]
 name = "botocore"
-version = "1.38.38"
+version = "1.38.40"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
     { name = "python-dateutil" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/22/f5/d05258ac4ae68769a956779192bfbd322e571ef9fc17a27f02d35c026b4b/botocore-1.38.38.tar.gz", hash = "sha256:acf9ae5b2d99c1f416f94fa5b4f8c044ecb76ffcb7fb1b1daec583f36892a8e2", size = 14009715 }
+sdist = { url = "https://files.pythonhosted.org/packages/61/23/42cc861466a34e45bd1783c3b3a547d5f723a8d21f6151cd1e3d84adfba6/botocore-1.38.40.tar.gz", hash = "sha256:aefbfe835a7ebe9bbdd88df3999b0f8f484dd025af4ebb3f3387541316ce4349", size = 14023829 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7b/c6/74f27ffe941dc1438b7fef620b402b982a9f9ab90a04ee47bd0314a02384/botocore-1.38.38-py3-none-any.whl", hash = "sha256:aa5cc63bf885819d862852edb647d6276fe423c60113e8db375bb7ad8d88a5d9", size = 13669107 },
+    { url = "https://files.pythonhosted.org/packages/ec/ae/7e39df3e794fa54f38805996ae012fecdb874e7d0e3d875b39a1090a355c/botocore-1.38.40-py3-none-any.whl", hash = "sha256:7528f47945502bf4226e629337c2ac2e454e661ac8fd1dc0fbf7f38082930f3f", size = 13685820 },
 ]
 
 [[package]]
@@ -560,7 +560,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.68"
+version = "0.2.69a1"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -3549,7 +3549,7 @@ wheels = [
 
 [[package]]
 name = "litellm"
-version = "1.72.6.post1"
+version = "1.72.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -3564,9 +3564,9 @@ dependencies = [
     { name = "tiktoken" },
     { name = "tokenizers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9d/49/673d6e95c086c578f48803d46583c64a89b60b6c22a2757e600d1eadd63a/litellm-1.72.6.post1.tar.gz", hash = "sha256:cc03455bfae17c4226e70bc0e8ac7c889fc577b4832fbb6bc5bd8bc5a2ab02f9", size = 8398642 }
+sdist = { url = "https://files.pythonhosted.org/packages/49/55/985c5d32af6ff43b98fbddf6739b8a225acc703ef3980d60cc4410084557/litellm-1.72.7.tar.gz", hash = "sha256:9bfdc156ebd8cb2fc869e0a388931b64468c4fd534df6a2f6e27f9cba2dafcb9", size = 8418897 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/18/d9/d6cbfe107e240a2206e34197f76ab73e0bc8312970b61b56452351da11aa/litellm-1.72.6.post1-py3-none-any.whl", hash = "sha256:94abba480b3e1c9f05ed75f908e8fb0d5fe1bd5304868bd435f99fbdfcdb4c88", size = 8305823 },
+    { url = "https://files.pythonhosted.org/packages/ec/55/78455fac9172a9b668c01b85df27e340d71df8e18771590fa45a04aec14e/litellm-1.72.7-py3-none-any.whl", hash = "sha256:704317ca71b00ca7fb164e8367e6559712605ed7f96f6d7fdb8b1276904a95e9", size = 8325244 },
 ]
 
 [[package]]
@@ -3902,7 +3902,7 @@ wheels = [
 
 [[package]]
 name = "mem0ai"
-version = "0.1.108"
+version = "0.1.110"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "openai" },
@@ -3912,9 +3912,9 @@ dependencies = [
     { name = "qdrant-client" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8d/35/c82e17db10300aee7ead6efff6cd1d2cfa59a11755386852987e4b50f7cb/mem0ai-0.1.108.tar.gz", hash = "sha256:4b8af72f39bf3d7a024c30905b5721fff64ffb323420b37ca1354d71b29a6814", size = 103891 }
+sdist = { url = "https://files.pythonhosted.org/packages/8d/fd/95c6285ad55a5fb78df17f15b5710273d59ae687c6ff79dcd03acb15e24f/mem0ai-0.1.110.tar.gz", hash = "sha256:8a9b6f45c2c4e5d97ce1aa096dc85991cd657acccde796422b65a52089ca7fcb", size = 107869 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0d/cf/809fa5d7e07615532e7a89c32361bc17e26245050d3cb763824f57614546/mem0ai-0.1.108-py3-none-any.whl", hash = "sha256:118583ac06879da4bd017e115791fbe8e8fabb400d6991aebd24e93fbe35ad2f", size = 161241 },
+    { url = "https://files.pythonhosted.org/packages/8a/d6/3d67909445682f5e73e910b187fc64ff84643709ac1956240d8a3834b1bd/mem0ai-0.1.110-py3-none-any.whl", hash = "sha256:4f69df6e633200b9d1b0177f82eaa96bf70a446aee8f40e56eedb67403f14395", size = 166820 },
 ]
 
 [[package]]
@@ -4142,11 +4142,11 @@ wheels = [
 
 [[package]]
 name = "narwhals"
-version = "1.42.1"
+version = "1.43.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/df/d6/168a787b7800d6c89846b791e4f5ee6b94998a80c8c2838a019d3d71984d/narwhals-1.42.1.tar.gz", hash = "sha256:50a5635b11aeda98cf9c37e839fd34b0a24159f59a4dfae930290ad698320494", size = 492865 }
+sdist = { url = "https://files.pythonhosted.org/packages/61/82/9f351a79260a6456db3f53d248268b4c3791f1e3228eec3c745e8816afd6/narwhals-1.43.1.tar.gz", hash = "sha256:6ff56d600da67a0a0980b83bd5577d076772fdba96474076ba4e76c920dbc1e5", size = 496655 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/3f/8d450588206b437dd239a6d44230c63095e71135bd95d5a74347d07adbd5/narwhals-1.42.1-py3-none-any.whl", hash = "sha256:7a270d44b94ccdb277a799ae890c42e8504c537c1849f195eb14717c6184977a", size = 359888 },
+    { url = "https://files.pythonhosted.org/packages/8f/1e/b741d4eabbde95b1790e7df3c33c6b19f9b48db98a1416c6a6f06572bc66/narwhals-1.43.1-py3-none-any.whl", hash = "sha256:1ee508fa4dc0e05aa5b88717ba11613d8d9ccf0dd1e48513d4a3afb237dba9f2", size = 362737 },
 ]
 
 [[package]]
@@ -4377,11 +4377,11 @@ wheels = [
 
 [[package]]
 name = "oauthlib"
-version = "3.3.0"
+version = "3.3.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/98/8a/6ea75ff7acf89f43afb157604429af4661a9840b1f2cece602b6a13c1893/oauthlib-3.3.0.tar.gz", hash = "sha256:4e707cf88d7dfc22a8cce22ca736a2eef9967c1dd3845efc0703fc922353eeb2", size = 190292 }
+sdist = { url = "https://files.pythonhosted.org/packages/0b/5f/19930f824ffeb0ad4372da4812c50edbd1434f678c90c2733e1188edfc63/oauthlib-3.3.1.tar.gz", hash = "sha256:0f0f8aa759826a193cf66c12ea1af1637f87b9b4622d46e866952bb022e538c9", size = 185918 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e1/3d/760b1456010ed11ce87c0109007f0166078dfdada7597f0091ae76eb7305/oauthlib-3.3.0-py3-none-any.whl", hash = "sha256:a2b3a0a2a4ec2feb4b9110f56674a39b2cc2f23e14713f4ed20441dfba14e934", size = 165155 },
+    { url = "https://files.pythonhosted.org/packages/be/9c/92789c596b8df838baa98fa71844d84283302f7604ed565dafe5a6b5041a/oauthlib-3.3.1-py3-none-any.whl", hash = "sha256:88119c938d2b8fb88561af5f6ee0eec8cc8d552b7bb1f712743136eb7523b7a1", size = 160065 },
 ]
 
 [[package]]
@@ -4916,7 +4916,7 @@ wheels = [
 
 [[package]]
 name = "posthog"
-version = "5.1.0"
+version = "5.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backoff" },
@@ -4925,9 +4925,9 @@ dependencies = [
     { name = "requests" },
     { name = "six" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/bd/4f8a48fd0599d00a15b926ba71555e6a4b27d2ba3c2c263536badd0f6f8e/posthog-5.1.0.tar.gz", hash = "sha256:e535c2dc9506426b8909aff6bd8d344d776c6da12d1c5c70d4d8d790bf8e1348", size = 85866 }
+sdist = { url = "https://files.pythonhosted.org/packages/49/0f/c3581fcf44dc0ae7a2df6320690d67e18d04d432140164dcdd13bff7f874/posthog-5.3.0.tar.gz", hash = "sha256:5cbcaacb98584b46776552a9e4e08565a1c88a9fa1171f9aa4d2b66610c5e2ef", size = 86494 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/8c/7dafe44dfab0ee0e439065c9c937a5a829e7e10ca34a64040c19a5793bd6/posthog-5.1.0-py3-none-any.whl", hash = "sha256:9a6cb6f1397ef65371e1ce3c6c6ef5df05f91b792cd1b12357de96d4d35f6aa2", size = 103449 },
+    { url = "https://files.pythonhosted.org/packages/da/21/2bdce2cefb5e4c1c77f2c714f7a3c85ecbd3eafdbb92ff4b096f3c2ae41b/posthog-5.3.0-py3-none-any.whl", hash = "sha256:fc69fa5455795b02fe9d7550624cd99ceb2007795722257a544a1e5fbd491fbd", size = 103788 },
 ]
 
 [[package]]
