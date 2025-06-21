@@ -256,7 +256,7 @@ class VideoAnalysisToolkit(BaseToolkit):
             return False
             
         try:
-            import pytesseract
+            import pytesseract # type: ignore[import-untyped]
             pytesseract.get_tesseract_version()
             return True
         except ImportError:
@@ -285,7 +285,7 @@ class VideoAnalysisToolkit(BaseToolkit):
         """
         import cv2
         import numpy as np
-        import pytesseract
+        import pytesseract # type: ignore[import-untyped]
         try:
             
             # Convert to OpenCV format for preprocessing
