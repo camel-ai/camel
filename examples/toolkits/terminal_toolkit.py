@@ -23,9 +23,7 @@ from camel.types import ModelPlatformType, ModelType
 # Get current script directory
 base_dir = os.path.dirname(os.path.abspath(__file__))
 # Define workspace directory for the toolkit
-workspace_dir = os.path.join(
-    os.path.dirname(os.path.dirname(base_dir)), "workspace"
-)
+workspace_dir = "workspace"
 
 # Define system message
 sys_msg = (
@@ -35,7 +33,11 @@ sys_msg = (
 )
 
 # Set model config
-tools = TerminalToolkit(working_dir=workspace_dir).get_tools()
+tools = TerminalToolkit(
+    working_dir=workspace_dir,
+    docker=True,
+    container_id="ac0b8df5c319b91a4d777f631c6ff63fdc37073b70b0ea944de68aaa40cccfd8",
+).get_tools()
 
 model_config_dict = ChatGPTConfig(
     temperature=0.0,
@@ -155,7 +157,7 @@ py\nexamples/bots/slack_bot.py', tool_call_id='call_LzRjSotNqKOWwU4yHcstlnG9')]
 # Define a user message for testing resource cleanup via __del__ method
 print("\n\n================ Testing Resource Cleanup ================")
 usr_msg = (
-    "Start a long-running process that sleeps for 300 seconds in the "
+    "Start a long-running process that sleeps for 30 seconds in the "
     "background, then show me the list of running processes"
 )
 
