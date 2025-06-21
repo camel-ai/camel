@@ -16,7 +16,9 @@
 from __future__ import annotations
 
 import os
-import tempfile
+import zipfile
+
+import requests
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -24,17 +26,41 @@ from camel.models import ModelFactory
 from camel.toolkits import DocumentToolkit
 from camel.types import ModelPlatformType, ModelType
 
-#Initialise the toolkit
+
+# set test file
+download_dir = "./test"
+os.makedirs(download_dir, exist_ok=True)
+
+files = {
+    "https://arxiv.org/pdf/1512.03385.pdf": "1512.03385.pdf",
+    "https://arxiv.org/pdf/1706.03762.pdf": "1706.03762.pdf"
+}
+
+for url, filename in files.items():
+    file_path = os.path.join(download_dir, filename)
+    response = requests.get(url)
+    if response.status_code == 200:
+        with open(file_path, "wb") as f:
+            f.write(response.content)
+        print(f"Downloaded: {filename}")
+    else:
+        print(f"Failed to download: {url}")
+
+zip_path = os.path.join(download_dir, "test.zip")
+with zipfile.ZipFile(zip_path, "w") as zipf:
+    for filename in files.values():
+        zipf.write(os.path.join(download_dir, filename), arcname=filename)
+        print(f"Added to zip: {filename}")
+
+# Init agent & toolkit
 doc_toolkit = DocumentToolkit()
 
-# Create a model using OpenAI
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O_MINI,
     model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
 )
 
-# Create a chat agent with the Document toolkit
 agent = ChatAgent(
     system_message=(
         "You are a helpful assistant that can read arbitrary documents. "
@@ -44,9 +70,21 @@ agent = ChatAgent(
     tools=[*doc_toolkit.get_tools()],
 )
 
-# Example: Ask the agent to extract the content
+# Run agent
 response = agent.step(
-    f"Extract content in the document located at https://arxiv.org/pdf/1706.03762."
+    fr"Extract content in the document located at {zip_path}, return the abstract of them."
 )
 
 print(response.msgs[0].content)
+
+# Cleanup all files
+for filename in files.values():
+    file_path = os.path.join(download_dir, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        print(f"Deleted: {file_path}")
+
+if os.path.exists(zip_path):
+    os.remove(zip_path)
+    print(f"Deleted: {zip_path}")
+

@@ -530,14 +530,29 @@ class DocumentToolkit(BaseToolkit):
 
             with zipfile.ZipFile(zip_path, "r") as zf:
                 zf.extractall(extract_dir)
+                # Log the files in the ZIP
+                logger.info(f"ZIP contains files: {zf.namelist()}")
 
             parts: List[str] = []
+            failed_files: List[str] = []
+
             for file in extract_dir.rglob("*"):
                 if file.is_file():
+                    logger.info(f"Processing file: {file}")
                     ok, text = self.extract_document_content(str(file))
                     if ok:
-                        parts.append(text)
-            return True, "\n\n".join(parts) if parts else ""
+                        parts.append(f"=== File: {file.name} ===\n{text}")
+                    else:
+                        failed_files.append(f"{file.name}: {text}")
+
+            if failed_files:
+                logger.warning(f"Failed to process files: {failed_files}")
+
+            result = "\n\n".join(parts) if parts else ""
+            if failed_files:
+                result += f"\n\nFailed to process:\n" + "\n".join(failed_files)
+
+            return True, result
         except Exception as exc:
             logger.error("ZIP processing failed for %s: %s", path_or_url, exc)
             logger.debug(traceback.format_exc())
@@ -658,8 +673,7 @@ class DocumentToolkit(BaseToolkit):
         mtime = p.stat().st_mtime if p.exists() else 0
         return hashlib.sha256(f"{path}:{mtime}".encode()).hexdigest()
 
-    @staticmethod
-    def _short_hash(path: Path) -> str:
+    def _short_hash(self, path: Path) -> str:
         r"""Generate a short hash for directory naming.
 
         Args:
