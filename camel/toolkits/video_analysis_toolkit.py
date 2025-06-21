@@ -17,7 +17,11 @@ from __future__ import annotations
 
 import io
 import os
+import re
 import tempfile
+import sys
+import types
+
 from pathlib import Path
 from typing import List, Optional
 
@@ -35,11 +39,38 @@ from .video_download_toolkit import (
     _capture_screenshot,
 )
 
+class LazyLoader(types.ModuleType):
+    def __init__(self, name, module_name):
+        super().__init__(name)
+        self._name = name
+        self._module_name = module_name
+        self._mod = None
+
+    def __load__(self):
+        if self._mod is None:
+            self._mod = __import__(self._module_name, fromlist=[""])
+            sys.modules[self._name] = self._mod
+        return self._mod
+
+    def __getattr__(self, name):
+        return getattr(self.__load__(), name)
+
+    def __dir__(self):
+        return dir(self.__load__())
+
+sys.modules["cv2"] = LazyLoader("cv2", "cv2")
+sys.modules["numpy"] = LazyLoader("numpy", "numpy")
+
 logger = get_logger(__name__)
 
 VIDEO_QA_PROMPT = """
 Analyze the provided video frames and corresponding audio transcription to \
 answer the given question(s) thoroughly and accurately.
+
+The transcriptions may come from two sources:
+  1. **Audio Transcription**: The spoken words in the video.
+  2. **Visual Text (OCR)**: Text extracted from the video frames (like \
+  captions, on-screen text, etc.).
 
 Instructions:
     1. Visual Analysis:
@@ -49,11 +80,13 @@ such as size, color, shape, texture, or behavior.
         - Note significant groupings, interactions, or contextual patterns \
 relevant to the analysis.
 
-    2. Audio Integration:
+    2. Audio and Text Integration:
         - Use the audio transcription to complement or clarify your visual \
 observations.
+        - Use the visual text (OCR) to get exact textual information that may \
+not be accurately readable from the images alone.
         - Identify names, descriptions, or contextual hints in the \
-transcription that help confirm or refine your visual analysis.
+transcriptions that help confirm or refine your visual analysis.
 
     3. Detailed Reasoning and Justification:
         - Provide a brief explanation of how you identified and distinguished \
@@ -65,7 +98,7 @@ your reasoning.
         - Specify the total number of distinct species or object types \
 identified in the video.
         - Describe the defining characteristics and any supporting evidence \
-from the video and transcription.
+from the video and transcription sources.
 
     5. Important Considerations:
         - Pay close attention to subtle differences that could distinguish \
@@ -76,10 +109,12 @@ similar-looking species or objects
 **Audio Transcription:**
 {audio_transcription}
 
+**Visual Text (OCR):**
+{visual_text}
+
 **Question:**
 {question}
 """
-
 
 @MCPServer()
 class VideoAnalysisToolkit(BaseToolkit):
@@ -96,6 +131,8 @@ class VideoAnalysisToolkit(BaseToolkit):
             transcription using OpenAI's audio models. Requires a valid OpenAI
             API key. When disabled, video analysis will be based solely on
             visual content. (default: :obj:`False`)
+        use_ocr (bool, optional): Whether to enable OCR for extracting text
+            from video frames. (default: :obj:`False`)
         frame_interval (float, optional): Interval in seconds between frames
             to extract from the video. (default: :obj:`4.0`)
         output_language (str, optional): The language for output responses.
@@ -113,6 +150,7 @@ class VideoAnalysisToolkit(BaseToolkit):
         download_directory: Optional[str] = None,
         model: Optional[BaseModelBackend] = None,
         use_audio_transcription: bool = False,
+        use_ocr: bool = False,
         frame_interval: float = 4.0,
         output_language: str = "English",
         cookies_path: Optional[str] = None,
@@ -122,6 +160,7 @@ class VideoAnalysisToolkit(BaseToolkit):
         self._cleanup = download_directory is None
         self._temp_files: list[str] = []  # Track temporary files for cleanup
         self._use_audio_transcription = use_audio_transcription
+        self._use_ocr = use_ocr
         self.output_language = output_language
         self.frame_interval = frame_interval
 
@@ -174,7 +213,9 @@ class VideoAnalysisToolkit(BaseToolkit):
                     "Audio transcription will be disabled."
                 )
                 self._use_audio_transcription = False
-
+        if self._use_ocr:
+            self._use_ocr = self._check_ocr_dependencies() 
+    
     def __del__(self):
         r"""Clean up temporary directories and files when the object is
         destroyed.
@@ -211,6 +252,75 @@ class VideoAnalysisToolkit(BaseToolkit):
                     f"{self._download_directory}: {e}"
                 )
 
+    def _check_ocr_dependencies(self):
+        if not self._use_ocr:
+            return False
+            
+        try:
+            import pytesseract
+            pytesseract.get_tesseract_version()
+            return True
+        except ImportError:
+            logger.error(
+                "pytesseract not installed. OCR will be disabled. "
+                "Install with: pip install pytesseract"
+            )
+            self._use_ocr = False
+            return False
+        except EnvironmentError:
+            logger.error(
+                "Tesseract OCR not found in PATH. OCR will be disabled. "
+                "Install Tesseract: https://github.com/tesseract-ocr/tesseract"
+            )
+            self._use_ocr = False
+            return False
+            
+    def _extract_text_from_frame(self, frame: Image.Image) -> str:
+        r"""Extract text from a video frame using OCR.
+
+        Args:
+            frame (Image.Image): PIL image frame to process.
+
+        Returns:
+            str: Extracted text from the frame.
+        """
+        import cv2
+        import numpy as np
+        import pytesseract # type: ignore[import-untyped]
+        try:
+            
+            # Convert to OpenCV format for preprocessing
+            cv_image = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
+            
+            # Preprocessing for better OCR results
+            gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+            blur = cv2.GaussianBlur(gray, (3, 3), 0)
+            _, threshold = cv2.threshold(
+                blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+            )
+            
+            # Convert back to PIL image for OCR
+            preprocessed_frame = Image.fromarray(threshold)
+            return pytesseract.image_to_string(preprocessed_frame).strip()
+        except Exception as e:
+            logger.error(f"OCR failed: {e}")
+            return ""
+
+    def _process_extracted_text(self, text: str) -> str:
+        r"""Clean and format OCR-extracted text.
+
+        Args:
+            text (str): Raw extracted OCR text.
+
+        Returns:
+            str: Cleaned and formatted text.
+        """
+        # Filter irrelevant characters and noise
+        text = re.sub(r'[^\w\s,.?!:;\'"()-]', '', text)
+        # Remove excessive whitespace
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
+        
     def _extract_audio_from_video(
         self, video_path: str, output_format: str = "mp3"
     ) -> str:
@@ -511,9 +621,24 @@ class VideoAnalysisToolkit(BaseToolkit):
                 audio_path = self._extract_audio_from_video(video_path)
                 audio_transcript = self._transcribe_audio(audio_path)
 
+            # Extract visual text with OCR
+            visual_text = ""
             video_frames = self._extract_keyframes(video_path)
+            # Build visual text only if OCR is enabled
+            if self._use_ocr:
+                visual_text = ""  # Initialize for OCR processing
+                for frame in video_frames:
+                    text = self._extract_text_from_frame(frame)
+                    processed = self._process_extracted_text(text)
+                    if processed:
+                        visual_text += processed + "\n"
+                visual_text = visual_text.strip() or "No visual text detected."
+            else:
+                visual_text = ""
+            
             prompt = VIDEO_QA_PROMPT.format(
                 audio_transcription=audio_transcript,
+                visual_text=visual_text,
                 question=question,
             )
 
