@@ -286,8 +286,8 @@ class SingleAgentWorker(Worker):
             )
         except Exception as e:
             print(
-                f"{Fore.RED}Error occurred while processing task {task.id}:"
-                f"\n{e}{Fore.RESET}"
+                f"{Fore.RED}Error processing task {task.id}: "
+                f"{type(e).__name__}: {e}{Fore.RESET}"
             )
             return TaskState.FAILED
         finally:
@@ -336,8 +336,15 @@ class SingleAgentWorker(Worker):
 
         print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
 
-        result_dict = json.loads(response.msg.content)
-        task_result = TaskResult(**result_dict)
+        try:
+            result_dict = json.loads(response.msg.content)
+            task_result = TaskResult(**result_dict)
+        except json.JSONDecodeError as e:
+            print(
+                f"{Fore.RED}JSON parsing error for task {task.id}: "
+                f"Invalid response format - {e}{Fore.RESET}"
+            )
+            return TaskState.FAILED
 
         color = Fore.RED if task_result.failed else Fore.GREEN
         print(
