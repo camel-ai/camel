@@ -256,7 +256,7 @@ class VideoAnalysisToolkit(BaseToolkit):
             return False
             
         try:
-            import pytesseract # type: ignore[import-untyped]
+            import pytesseract
             pytesseract.get_tesseract_version()
             return True
         except ImportError:
