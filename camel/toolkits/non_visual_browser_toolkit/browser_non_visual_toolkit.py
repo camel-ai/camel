@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# flake8: noqa: E501
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -52,20 +53,49 @@ class BrowserNonVisualToolkit(BaseToolkit):
         self._agent: Optional[PlaywrightLLMAgent] = None
 
     def __del__(self):
-        r"""Ensure cleanup when toolkit is garbage collected."""
-        # Note: __del__ cannot be async, so we schedule cleanup if needed
-        import asyncio
+        r"""Best-effort cleanup when toolkit is garbage collected.
 
+        1. We *avoid* running during the Python interpreter shutdown phase
+           (`sys.is_finalizing()`), because the import machinery and/or event
+           loop may already be torn down which leads to noisy exceptions such
+           as `ImportError: sys.meta_path is None` or
+           `RuntimeError: Event loop is closed`.
+        2. We protect all imports and event-loop operations with defensive
+           `try/except` blocks.  This ensures that, even if cleanup cannot be
+           carried out, we silently ignore the failure instead of polluting
+           stderr on program exit.
+        """
         try:
-            loop = asyncio.get_event_loop()
+            import sys
+
+            if getattr(sys, "is_finalizing", lambda: False)():
+                return  # Skip cleanup during interpreter shutdown
+
+            import asyncio
+
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                # No event loop in current thread → nothing to clean
+                return
+
+            if loop.is_closed():
+                # Event loop already closed → cannot run async cleanup
+                return
+
             if loop.is_running():
-                task = loop.create_task(self.close_browser())
-                # Don't wait for completion to avoid blocking
-                del task
+                try:
+                    task = loop.create_task(self.close_browser())
+                    del task  # Fire-and-forget
+                except RuntimeError:
+                    # Loop is running but not in this thread → ignore
+                    pass
             else:
+                # Own the loop → safe to run
                 asyncio.run(self.close_browser())
         except Exception:
-            pass  # Don't fail during garbage collection
+            # Suppress *all* errors during garbage collection
+            pass
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -94,8 +124,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
         r"""Launch a Playwright browser session.
 
         Args:
-            start_url (Optional[str]): If provided, the page will navigate to
-                this URL immediately after the browser launches.
+            start_url (Optional[str]): Optional URL to navigate to immediately after the browser launches.
 
         Returns:
             Dict[str, str]: Keys: ``result`` for action outcome,
@@ -128,7 +157,6 @@ class BrowserNonVisualToolkit(BaseToolkit):
         await self._session.close()
         return "Browser session closed."
 
-    # Navigation / page state ------------------------------------------------
     async def visit_page(self, url: str) -> Dict[str, str]:
         """Navigate the current page to the specified URL.
 
@@ -154,11 +182,8 @@ class BrowserNonVisualToolkit(BaseToolkit):
         r"""Capture a YAML-like structural snapshot of the DOM.
 
         Args:
-            force_refresh (bool): When ``True`` always re-generate the
-            snapshot even
-                if the URL has not changed.
-            diff_only (bool): If ``True`` return only the diff relative to the
-                previous snapshot.
+            force_refresh (bool): When ``True`` always re-generate the snapshot even if the URL has not changed.
+            diff_only (bool): When ``True`` return only the diff relative to the previous snapshot.
 
         Returns:
             str: Formatted snapshot string.
@@ -167,13 +192,11 @@ class BrowserNonVisualToolkit(BaseToolkit):
             force_refresh=force_refresh, diff_only=diff_only
         )
 
-    # Element-level wrappers -------------------------------------------------
     async def click(self, *, ref: str) -> Dict[str, str]:
         r"""Click an element identified by ``ref``
 
         Args:
-            ref (str): Element reference ID extracted from snapshot (e.g.
-            ``"e3"``).
+            ref (str): Element reference ID extracted from snapshot (e.g.``"e3"``).
 
         Returns:
             Dict[str, str]: Result message from ``ActionExecutor``.
@@ -187,8 +210,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
         r"""Type text into an input or textarea element.
 
         Args:
-            ref (str): Element reference ID extracted from snapshot (e.g.
-            ``"e3"``).
+            ref (str): Element reference ID extracted from snapshot (e.g.``"e3"``).
             text (str): The text to enter.
 
         Returns:
@@ -236,9 +258,8 @@ class BrowserNonVisualToolkit(BaseToolkit):
         r"""Explicit wait utility.
 
         Args:
-            timeout_ms (Optional[int]): Milliseconds to sleep.
-            selector (Optional[str]): Wait until this CSS selector appears
-                in DOM.
+            timeout_ms (Optional[int]): Milliseconds to sleep before continuing. If omitted (and ``selector`` is also ``None``), it defaults to 1000 ms.
+            selector (Optional[str]): A CSS selector to wait for before continuing. When provided, the function waits until this selector appears in the DOM.
 
         Returns:
             Dict[str, str]: Execution result message.
@@ -280,6 +301,39 @@ class BrowserNonVisualToolkit(BaseToolkit):
         action: Dict[str, Any] = {"type": "enter", "ref": ref}
         return await self._exec_with_snapshot(action)
 
+    async def wait_user(self, *, seconds: float = 1.0) -> Dict[str, str]:
+        r"""Pause execution for a given amount of *real* time and then
+        return a *full* page snapshot.
+
+        This is a convenience wrapper around the existing wait action for scenarios
+        where you encounter a CAPTCHA or need to pause for manual user input,
+        and want to retrieve the complete DOM snapshot afterward.
+
+        Args:
+            seconds (float): How long to sleep, expressed in seconds. Must
+                be a positive number. Defaults to ``1.0``.
+
+        Returns:
+            Dict[str, str]: Keys ``result`` and ``snapshot``.
+        """
+        if seconds is None or seconds <= 0:
+            raise ValueError(
+                "wait_time(): 'seconds' must be a positive number"
+            )
+
+        # Re-use underlying ActionExecutor's ``wait`` implementation (expects ms)
+        timeout_ms = int(seconds * 1000)
+        action: Dict[str, Any] = {"type": "wait", "timeout": timeout_ms}
+
+        # Execute the sleep via ActionExecutor (no snapshot diff expected)
+        result = await self._exec(action)
+
+        # Always return a *full* snapshot after the pause
+        snapshot = await self._session.get_snapshot(
+            force_refresh=True, diff_only=False
+        )
+        return {"result": result, "snapshot": snapshot}
+
     # Helper to run through ActionExecutor
     async def _exec(self, action: Dict[str, Any]) -> str:
         return await self._session.exec_action(action)
@@ -308,9 +362,6 @@ class BrowserNonVisualToolkit(BaseToolkit):
 
         return {"result": result, "snapshot": diff}
 
-    # ------------------------------------------------------------------
-    # Optional PlaywrightLLMAgent helpers
-    # ------------------------------------------------------------------
     def _ensure_agent(self) -> PlaywrightLLMAgent:
         r"""Create PlaywrightLLMAgent on first use if `web_agent_model`
         provided."""
@@ -347,14 +398,16 @@ class BrowserNonVisualToolkit(BaseToolkit):
             FunctionTool(self.open_browser),
             FunctionTool(self.close_browser),
             FunctionTool(self.visit_page),
-            FunctionTool(self.get_page_snapshot),
+            # FunctionTool(self.get_page_snapshot),
+            # not necessary since get_page_snapshot passively return the Agent
             FunctionTool(self.click),
             FunctionTool(self.type),
             FunctionTool(self.select),
             FunctionTool(self.scroll),
-            FunctionTool(self.wait),
+            # FunctionTool(self.wait),
             FunctionTool(self.extract),
             FunctionTool(self.enter),
+            FunctionTool(self.wait_user),
         ]
 
         if self.web_agent_model is not None:
