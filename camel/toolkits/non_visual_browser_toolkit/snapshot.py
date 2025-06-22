@@ -99,7 +99,7 @@ class PageSnapshot:
     _snapshot_js_cache: Optional[str] = None  # class-level cache
 
     async def _get_snapshot_direct(self) -> Optional[str]:
-        """Evaluate the snapshot-extraction JS with simple retry logic.
+        r"""Evaluate the snapshot-extraction JS with simple retry logic.
 
         Playwright throws *Execution context was destroyed* when a new page
         navigation happens between scheduling and evaluating the JS. In that
