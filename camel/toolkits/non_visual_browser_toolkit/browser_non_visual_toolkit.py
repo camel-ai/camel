@@ -271,40 +271,54 @@ class BrowserNonVisualToolkit(BaseToolkit):
         action: Dict[str, Any] = {"type": "enter", "ref": ref}
         return await self._exec_with_snapshot(action)
 
-    async def wait_user(self, *, seconds: float = 1.0) -> Dict[str, str]:
-        r"""Pause execution for a given amount of *real* time and then
-        return a *full* page snapshot.
+    async def wait_user(
+        self,
+        timeout_sec: float | None = None,
+    ) -> Dict[str, str]:
+        r"""Block until human presses Enter (or timeout).
 
-        This is a convenience wrapper around the existing wait action for
-        scenarios where you encounter a CAPTCHA or need to pause for manual
-        user input, and want to retrieve the complete DOM snapshot afterward.
+        This simple implementation is sufficient because the agent will not
+        proceed until this function returns.  It prints a prompt to stdout
+        and waits for the user to hit *Enter*.  Optionally a timeout can be
+        specified.
 
         Args:
-            seconds (float): How long to sleep, expressed in seconds. Must
-                be a positive number. (default: :obj:`1.0`)
+            timeout_sec (float | None): Maximum time to wait before
+                returning. If omitted, wait indefinitely.
 
         Returns:
-            Dict[str, str]: Keys ``result`` and ``snapshot``.
+            Dict[str, str]: Execution result message.
         """
-        if seconds is None or seconds <= 0:
-            logger.error("wait_time(): 'seconds' must be a positive number")
-            return {
-                "result": "wait_time(): 'seconds' must be a positive number"
-            }
 
-        # Reuse underlying ActionExecutor's ``wait`` implementation (expects
-        # ms)
-        timeout_ms = int(seconds * 1000)
-        action: Dict[str, Any] = {"type": "wait", "timeout": timeout_ms}
+        import asyncio
 
-        # Execute the sleep via ActionExecutor (no snapshot diff expected)
-        result = await self._exec(action)
-
-        # Always return a *full* snapshot after the pause
-        snapshot = await self._session.get_snapshot(
-            force_refresh=True, diff_only=False
+        prompt = (
+            "🕑 Agent is waiting for human input. "
+            "Complete the required action in the browser, then press Enter "
+            "to continue..."
         )
-        return {"result": result, "snapshot": snapshot}
+
+        logger.info(f"\n{prompt}\n")
+
+        async def _await_enter():
+            await asyncio.to_thread(input, ">>> Press Enter to resume <<<\n")
+
+        try:
+            if timeout_sec is not None:
+                await asyncio.wait_for(_await_enter(), timeout=timeout_sec)
+                result_msg = "User resumed or timeout reached."
+            else:
+                await _await_enter()
+                result_msg = "User resumed."
+        except asyncio.TimeoutError:
+            result_msg = f"Timeout {timeout_sec}s reached, auto-resumed."
+
+        snapshot = await self._session.get_snapshot(
+            force_refresh=True,
+            diff_only=False,
+        )
+
+        return {"result": result_msg, "snapshot": snapshot}
 
     # Helper to run through ActionExecutor
     async def _exec(self, action: Dict[str, Any]) -> str:

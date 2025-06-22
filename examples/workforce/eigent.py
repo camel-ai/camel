@@ -25,6 +25,7 @@ from camel.toolkits import (
     BrowserNonVisualToolkit,
     CodeExecutionToolkit,
     DalleToolkit,
+    EdgeOnePagesMCPToolkit,
     FileWriteToolkit,
     FunctionTool,
     HumanToolkit,
@@ -43,13 +44,17 @@ from camel.toolkits import (
 from camel.types import ModelPlatformType, ModelType
 
 
-def developer_agent_factory(model: BaseModelBackend, task_id: str):
+def developer_agent_factory(
+    model: BaseModelBackend,
+    task_id: str,
+    edgeone_pages_mcp_toolkit: EdgeOnePagesMCPToolkit,
+):
     r"""Factory for creating a developer agent."""
     tools = [
-        *TerminalToolkit().get_tools(),
         HumanToolkit().ask_human_via_console,
         *TerminalToolkit(clone_current_env=True).get_tools(),
         *CodeExecutionToolkit().get_tools(),
+        *edgeone_pages_mcp_toolkit.get_tools(),
     ]
 
     system_message = """You are a skilled coding assistant with DIRECT CODE 
@@ -62,6 +67,10 @@ def developer_agent_factory(model: BaseModelBackend, task_id: str):
     needed for efficient solutions
     - IMPLEMENT complete, production-ready code rather than theoretical 
     examples
+    - USE edgeone pages mcp toolkit to create and edit web pages, after you 
+    have created the web page, you can use the browser toolkit to view the 
+    web page,you can let search agent to visit the web page and verify the 
+    web page.
     - DEMONSTRATE results with proper error handling and practical 
     implementation
     - If there's dependency issues when you try to execute code, you should 
@@ -339,94 +348,138 @@ When assisting users, always:
 
 
 async def main():
-    # Create a single model backend for all agents
-    model_backend = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1_MINI,
-        # model_config_dict={
-        #     "max_tokens": 32768,
-        # },
-    )
+    edgeone_pages_mcp_toolkit = EdgeOnePagesMCPToolkit()
+    try:
+        await edgeone_pages_mcp_toolkit.connect()
 
-    model_backend_reason = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1_MINI,
-        # model_config_dict={
-        #     "max_tokens": 32768,
-        # },
-    )
+        # Create a single model backend for all agents
+        model_backend = ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4_1_MINI,
+            # model_config_dict={
+            #     "max_tokens": 32768,
+            # },
+        )
 
-    task_id = 'workforce_task'
+        model_backend_reason = ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4_1_MINI,
+            # model_config_dict={
+            #     "max_tokens": 32768,
+            # },
+        )
 
-    # Create agents using factory functions
-    search_agent = search_agent_factory(model_backend, task_id)
-    developer_agent = developer_agent_factory(model_backend, task_id)
-    document_agent = document_agent_factory(model_backend, task_id)
-    multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
-    # social_medium_agent = social_medium_agent_factory(model_backend,
-    # task_id)
+        # Create agents using factory functions
+        search_agent = search_agent_factory(model_backend, task_id)
+        developer_agent = developer_agent_factory(model_backend, task_id)
+        document_agent = document_agent_factory(model_backend, task_id)
+        multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
+        # social_medium_agent = social_medium_agent_factory(model_backend,
+        # task_id)
 
-    # Configure kwargs for all agents to use the same model_backend
-    coordinator_agent_kwargs = {"model": model_backend_reason}
-    task_agent_kwargs = {"model": model_backend_reason}
-    new_worker_agent_kwargs = {"model": model_backend}
+        # Configure kwargs for all agents to use the same model_backend
+        coordinator_agent_kwargs = {"model": model_backend_reason}
+        task_agent_kwargs = {"model": model_backend_reason}
+        new_worker_agent_kwargs = {"model": model_backend}
+        task_id = 'workforce_task'
 
-    workforce = Workforce(
-        'A workforce',
-        graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
-        share_memory=False,
-        coordinator_agent_kwargs=coordinator_agent_kwargs,
-        task_agent_kwargs=task_agent_kwargs,
-        new_worker_agent_kwargs=new_worker_agent_kwargs,
-    )
+        # Create agents using factory functions
+        search_agent = search_agent_factory(
+            model_backend, task_id, edgeone_pages_mcp_toolkit
+        )
+        document_agent = document_agent_factory(model_backend, task_id)
+        multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
+        social_medium_agent = social_medium_agent_factory(
+            model_backend, task_id
+        )
+        # Configure kwargs for all agents to use the same model_backend
+        coordinator_agent_kwargs = {"model": model_backend_reason}
+        task_agent_kwargs = {"model": model_backend_reason}
+        new_worker_agent_kwargs = {"model": model_backend}
 
-    workforce.add_single_agent_worker(
-        "Search Agent: Can search the web, extract webpage content, "
-        "simulate browser actions, and provide relevant information to "
-        "solve the given task.",
-        worker=search_agent,
-    ).add_single_agent_worker(
-        "Developer Agent: A skilled coding assistant that can write and "
-        "execute code, run terminal commands, and verify solutions to "
-        "complete tasks.",
-        worker=developer_agent,
-    ).add_single_agent_worker(
-        "Document Agent: A document processing assistant for creating, "
-        "modifying, and managing various document formats, including "
-        "presentations.",
-        worker=document_agent,
-    ).add_single_agent_worker(
-        "Multi-Modal Agent: A multi-modal processing assistant for "
-        "analyzing, and generating media content like audio and images.",
-        worker=multi_modal_agent,
-    )
+        workforce.add_single_agent_worker(
+            "Search Agent: Can search the web, extract webpage content, "
+            "simulate browser actions, and provide relevant information to "
+            "solve the given task.",
+            worker=search_agent,
+        ).add_single_agent_worker(
+            "Developer Agent: A skilled coding assistant that can write and "
+            "execute code, run terminal commands, and verify solutions to "
+            "complete tasks.",
+            worker=developer_agent,
+        ).add_single_agent_worker(
+            "Document Agent: A document processing assistant for creating, "
+            "modifying, and managing various document formats, including "
+            "presentations.",
+            worker=document_agent,
+        ).add_single_agent_worker(
+            "Multi-Modal Agent: A multi-modal processing assistant for "
+            "analyzing, and generating media content like audio and images.",
+            worker=multi_modal_agent,
+        )
 
-    # specify the task to be solved
-    human_task = Task(
-        content=(
-            """
-I want to read papers about GUI Agent. Please help me find ten papers and summarize them into a report.
-            """  # noqa: E501
-        ),
-        id='0',
-    )
+        # specify the task to be solved
+        human_task = Task(
+            content=(
+                """
+    I want to read papers about GUI Agent. Please help me find ten papers and summarize them into a report.
+                """  # noqa: E501
+            ),
+            id='0',
+        )
+        workforce = Workforce(
+            'A workforce',
+            graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
+            share_memory=False,
+            coordinator_agent_kwargs=coordinator_agent_kwargs,
+            task_agent_kwargs=task_agent_kwargs,
+            new_worker_agent_kwargs=new_worker_agent_kwargs,
+        )
 
-    # Use the async version directly to avoid hanging with async tools
-    await workforce.process_task_async(human_task)
+        workforce.add_single_agent_worker(
+            "Search Agent: Can search the web, extract webpage content, "
+            "simulate browser actions, and provide relevant information to "
+            "solve the given task.",
+            worker=search_agent,
+        )
 
-    # Test WorkforceLogger features
-    print("\n--- Workforce Log Tree ---")
-    print(workforce.get_workforce_log_tree())
+        workforce.add_single_agent_worker(
+            "Document Agent: A document processing assistant for creating, "
+            "modifying, and managing various document formats, including "
+            "presentations.",
+            worker=document_agent,
+        )
 
-    print("\n--- Workforce KPIs ---")
-    kpis = workforce.get_workforce_kpis()
-    for key, value in kpis.items():
-        print(f"{key}: {value}")
+        # specify the task to be solved
+        human_task = Task(
+            content=(
+                """
+    Gather today's headline news from BBC, Washington Post, Google News and CNN.
+    Each headline can be processed in parallel by the SearchAgent pool.
+                """
+            ),
+            id='0',
+        )
 
-    log_file_path = "eigent_logs.json"
-    print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
-    workforce.dump_workforce_logs(log_file_path)
-    print(f"Logs dumped. Please check the file: {log_file_path}")
+        # Use the async version directly to avoid hanging with async tools
+        await workforce.process_task_async(human_task)
+
+        # Test WorkforceLogger features
+        print("\n--- Workforce Log Tree ---")
+        print(workforce.get_workforce_log_tree())
+
+        print("\n--- Workforce KPIs ---")
+        kpis = workforce.get_workforce_kpis()
+        for key, value in kpis.items():
+            print(f"{key}: {value}")
+
+        log_file_path = "eigent_logs.json"
+        print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
+        workforce.dump_workforce_logs(log_file_path)
+        print(f"Logs dumped. Please check the file: {log_file_path}")
+
+    finally:
+        await edgeone_pages_mcp_toolkit.disconnect()
 
 
 if __name__ == "__main__":
