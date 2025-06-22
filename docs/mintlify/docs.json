@@ -55,21 +55,21 @@
             "group": "Key Modules",
             "pages": [
               "key_modules/agents",
+              "key_modules/models",
+              "key_modules/tools",
+              "key_modules/societies",
+              "key_modules/workforce",
               "key_modules/datagen",
               "key_modules/interpreters",
               "key_modules/runtimes",
-              "key_modules/society",
-              "key_modules/models",
               "key_modules/messages",
               "key_modules/memory",
-              "key_modules/tools",
               "key_modules/prompts",
               "key_modules/tasks",
               "key_modules/loaders",
               "key_modules/storages",
               "key_modules/embeddings",
-              "key_modules/retrievers",
-              "key_modules/workforce"
+              "key_modules/retrievers"
             ]
           },
           {

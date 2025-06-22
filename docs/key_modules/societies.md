@@ -1,5 +1,5 @@
 ---
-title: "Society"
+title: "Societies"
 description: "Collaborative agent frameworks in CAMEL: autonomous social behaviors, role-based task solving, and turn-based agent societies."
 icon: people-group
 ---
@@ -9,23 +9,12 @@ icon: people-group
   It powers <b>autonomous, multi-role agents</b> that can plan, debate, critique, and solve tasks together, minimizing human intervention while maximizing alignment with your goals.
 </Note>
 
----
-
 <Card icon="users" title="Society Concepts: How Do AI Agents Interact?" className="my-6">
   <b>Task:</b> An objective or idea, given as a simple prompt.<br/>
   <b>AI User:</b> The role responsible for providing instructions or challenges.<br/>
   <b>AI Assistant:</b> The role tasked with generating solutions, plans, or step-by-step responses.<br/>
   <b>Critic (optional):</b> An agent that reviews or critiques the assistant's responses for quality control.<br/><br/>
-  <b>Frameworks:</b>
-  <ul>
-    <li><code>RolePlaying</code> — Advanced turn-taking, prompt-guarded collaboration (most common for LLM societies).</li>
-    <li><code>BabyAGI</code> — Autonomous, open-ended R&D loops for big-picture or research goals.</li>
-  </ul>
 </Card>
-
----
-
-## 🤝 Frameworks
 
 <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
   <Card icon="repeat" title="RolePlaying" style={{ flex: "1 1 320px" }}>
@@ -47,18 +36,7 @@ icon: people-group
       </ul>
     </div>
   </Card>
-  <Card icon="flask" title="BabyAGI" style={{ flex: "1 1 320px" }}>
-    <b>Task-driven, fully autonomous project agent</b><br/>
-    Based on <a href="https://github.com/yoheinakajima/babyagi" target="_blank">BabyAGI</a>, with seamless CAMEL integration.
-    <ul>
-      <li>Self-driven research, R&D, and iterative problem-solving</li>
-      <li>Builds, updates, and executes dynamic task lists</li>
-      <li>Minimal initial human input—agents break down and solve tasks</li>
-    </ul>
-  </Card>
 </div>
-
----
 
 ## 🧩 RolePlaying Attributes
 
@@ -96,8 +74,6 @@ icon: people-group
     </table>
   </Accordion>
 </AccordionGroup>
-
----
 
 <Card icon="zap" title="Get Started: RolePlaying in Action" className="my-6">
   <b>Example: Turn-based multi-agent chat with custom roles and live output colors.</b>
@@ -182,20 +158,6 @@ if __name__ == "__main__":
   ~~~
 </Card>
 
----
-
-<Card icon="flask-conical" title="Framework Spotlight: BabyAGI" className="my-6">
-  <b>Autonomous project agent—no human in the loop.</b><br/>
-  <a href="https://github.com/yoheinakajima/babyagi" target="_blank">Original BabyAGI repo</a>
-  <ul>
-    <li>Designed for long-horizon, open-ended R&D</li>
-    <li>Automatically breaks down, plans, and solves complex tasks</li>
-    <li>Integrates with CAMEL's toolkit system for supercharged capabilities</li>
-  </ul>
-</Card>
-
----
-a\
 <AccordionGroup>
   <Accordion title="Tips & Best Practices">
     <ul>
