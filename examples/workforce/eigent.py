@@ -14,13 +14,9 @@
 
 import asyncio
 
-# ---------------------------------------------------------
-# Enable detailed logging for debugging/demo purposes
-# ---------------------------------------------------------
 from camel.logger import set_log_level, set_log_file
 
-# Console level: DEBUG; File log for later inspection
-set_log_level("DEBUG")  # Change to "INFO" if too verbose
+set_log_level("DEBUG")
 set_log_file("eigent_runtime.log")
 
 from camel.agents.chat_agent import ChatAgent
@@ -30,24 +26,13 @@ from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import (
-    AudioAnalysisToolkit,
     BrowserNonVisualToolkit,
     CodeExecutionToolkit,
-    DalleToolkit,
     FileWriteToolkit,
     FunctionTool,
     HumanToolkit,
-    ImageAnalysisToolkit,
-    LinkedInToolkit,
-    NotionToolkit,
-    PPTXToolkit,
-    RedditToolkit,
     SearchToolkit,
-    SlackToolkit,
     TerminalToolkit,
-    TwitterToolkit,
-    VideoDownloaderToolkit,
-    WhatsAppToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
 
@@ -94,21 +79,99 @@ class SearchAgent(ChatAgent):
 
     def __init__(self, model: BaseModelBackend):
         # Construct fresh toolkits for *this* agent
+        search_toolkits = SearchToolkit()
+        # browser_toolkits = AsyncBrowserToolkit()
         browser_toolkit = BrowserNonVisualToolkit(headless=False)
-        terminal_toolkit = TerminalToolkit()
-        human_ask = HumanToolkit().ask_human_via_console
-
+        terminal_toolkits = TerminalToolkit()
+        human_toolkits = HumanToolkit()
         tools = [
+            # FunctionTool(search_toolkits.search_wiki),
+            FunctionTool(search_toolkits.search_exa),
+            # FunctionTool(search_toolkits.search_bing),
+            # FunctionTool(search_toolkits.search_baidu),
             *browser_toolkit.get_tools(),
-            *terminal_toolkit.get_tools(),
-            human_ask,
+            # *browser_toolkits.get_tools(),
+            *terminal_toolkits.get_tools(),
+            human_toolkits.ask_human_via_console,
+            FunctionTool(Crawl4AI().scrape),
         ]
+        system_message_content = """You are a helpful assistant that can 
+        search the web, 
+            extract webpage content, simulate browser actions, and provide 
+            relevant 
+            information to solve the given task.
+            Keep in mind that:
+            - Do not be overly confident in your own knowledge. Searching 
+            can provide 
+            a broader perspective and help validate existing knowledge.  
+            - If one way fails to provide an answer, try other ways or 
+            methods. The 
+            answer does exist.
+            - When encountering verification challenges (like login, 
+            CAPTCHAs or robot 
+            checks), you MUST request help using the human toolkit.
+            - If the search snippet is unhelpful but the URL comes from an 
+            authoritative source, try visit the website for more details.  
+            - For the page you have visited, you should check the subpages 
+            of the page 
+            to see if it can provide more information to solve the task. 
+            - When looking for specific numerical values (e.g., dollar 
+            amounts), 
+            prioritize reliable sources and avoid relying only on search 
+            snippets.  
+            - When solving tasks that require web searches, check Wikipedia 
+            first 
+            before exploring other websites.  
+            - You can also simulate browser actions to get more information 
+            or verify 
+            the information you have found.
+            - Browser simulation is also helpful for finding target URLs. 
+            Browser 
+            simulation operations do not necessarily need to find specific 
+            answers, 
+            but can also help find web page URLs that contain answers (usually 
+            difficult to find through simple web searches). You can find the 
+            answer to 
+            the question by performing subsequent operations on the URL, 
+            such as 
+            extracting the content of the webpage.
+            - Do not solely rely on browser simulation to find the 
+            answer, you should combine search tools, scraper tools and browser 
+            simulation to comprehensively process web page information. Some 
+            content 
+            may need to do browser simulation to get.
+            - In your response, you should mention the urls you have visited 
+            and 
+            processed.
 
+        Here are some tips that help you perform web search:
+        - Never add too many keywords in your search query! Some detailed 
+        results need 
+            to perform browser interaction to get, not using search toolkit.
+        - If the question is complex, search results typically do not 
+        provide precise 
+            answers. It is not likely to find the answer directly using 
+            search toolkit 
+            only, the search query should be concise and focuses on finding 
+            official 
+            sources rather than direct answers.
+            For example, as for the question "What is the maximum length in 
+            meters of 
+            #9 in the first National Geographic short on YouTube that was ever 
+            released according to the Monterey Bay Aquarium website?", 
+            your first 
+            search term must be coarse-grained like "National Geographic 
+            YouTube" to 
+            find the youtube website first, and then try other fine-grained 
+            search 
+            terms step-by-step to find more urls.
+        - The results you return do not have to directly answer the original 
+        question, 
+            you only need to collect relevant information.
+
+            """
         system_message = BaseMessage.make_assistant_message(
-            role_name="Document Agent",
-            content="You are a helpful assistant that can search the web, "
-            "extract webpage content, simulate browser actions, and provide "
-            "relevant information to solve the given task."
+            role_name="Document Agent", content=system_message_content
         )
 
         super().__init__(
@@ -116,7 +179,6 @@ class SearchAgent(ChatAgent):
             model=model,
             tools=tools,
         )
-
 
     # Override clone to ensure a brand-new BrowserNonVisualToolkit per clone
     def clone(self, with_memory: bool = False):  # type: ignore[override]
@@ -347,12 +409,9 @@ async def main():
 
     # Create agents using factory functions
     search_agent = search_agent_factory(model_backend, task_id)
-    developer_agent = developer_agent_factory(model_backend, task_id)
     document_agent = document_agent_factory(model_backend, task_id)
     multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
-    # social_medium_agent = social_medium_agent_factory(model_backend,
-    # task_id)
-
+    social_medium_agent = social_medium_agent_factory(model_backend, task_id)
     # Configure kwargs for all agents to use the same model_backend
     coordinator_agent_kwargs = {"model": model_backend_reason}
     task_agent_kwargs = {"model": model_backend_reason}
@@ -387,7 +446,7 @@ async def main():
             """
 Gather today's headline news from BBC, Washington Post, Google News and CNN.
 Each headline can be processed in parallel by the SearchAgent pool.
-            """  # noqa: E501
+            """
         ),
         id='0',
     )

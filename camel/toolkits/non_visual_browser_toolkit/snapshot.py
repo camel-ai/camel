@@ -120,16 +120,20 @@ class PageSnapshot:
         while retries > 0:
             try:
                 return await self.page.evaluate(js_code)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 msg = str(e)
 
                 # Typical error when navigation happens between calls
                 nav_err = "Execution context was destroyed"
 
-                if nav_err in msg or "Most likely because of a navigation" in msg:
+                if (
+                    nav_err in msg
+                    or "Most likely because of a navigation" in msg
+                ):
                     retries -= 1
                     logger.debug(
-                        "Snapshot evaluate failed due to navigation; retrying (%d left)…",
+                        "Snapshot evaluate failed due to navigation; "
+                        "retrying (%d left)…",
                         retries,
                     )
 
@@ -138,15 +142,17 @@ class PageSnapshot:
                         await self.page.wait_for_load_state(
                             "domcontentloaded", timeout=self.MAX_TIMEOUT_MS
                         )
-                    except Exception:  # noqa: BLE001
-                        # Even if waiting fails, attempt retry to give it one more chance
+                    except Exception:
+                        # Even if waiting fails, attempt retry to give it
+                        # one more chance
                         pass
 
                     continue  # retry the evaluate()
 
                 # Any other exception → abort
                 logger.warning(
-                    "Failed to execute snapshot JavaScript: %s", e,  # noqa: G004
+                    "Failed to execute snapshot JavaScript: %s",
+                    e,
                 )
                 return None
 

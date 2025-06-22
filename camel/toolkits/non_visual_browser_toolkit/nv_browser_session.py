@@ -57,6 +57,7 @@ class NVBrowserSession:
 
         # Protect browser initialisation against concurrent calls
         import asyncio
+
         self._ensure_lock: "asyncio.Lock" = asyncio.Lock()
 
     # ------------------------------------------------------------------
@@ -93,6 +94,7 @@ class NVBrowserSession:
             self._context = await self._browser.new_context()
 
         from camel.logger import get_logger
+
         _dbg_logger = get_logger(__name__)
 
         # Reuse an already open page (persistent context may restore last
