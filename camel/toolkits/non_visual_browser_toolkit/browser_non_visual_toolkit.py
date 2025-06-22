@@ -11,19 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# flake8: noqa: E501
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
+from camel.logger import get_logger
 from camel.models import BaseModelBackend
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 
 from .agent import PlaywrightLLMAgent
-
-# session wrapper
 from .nv_browser_session import NVBrowserSession
+
+logger = get_logger(__name__)
 
 
 class BrowserNonVisualToolkit(BaseToolkit):
@@ -97,9 +97,6 @@ class BrowserNonVisualToolkit(BaseToolkit):
             # Suppress *all* errors during garbage collection
             pass
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
     async def _ensure_browser(self):
         await self._session.ensure_browser()
 
@@ -108,27 +105,26 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return await self._session.get_page()
 
     def _validate_ref(self, ref: str, method_name: str) -> None:
-        """Validate that ref parameter is a non-empty string."""
+        r"""Validate that ref parameter is a non-empty string."""
         if not ref or not isinstance(ref, str):
-            raise ValueError(
+            logger.error(
                 f"{method_name}(): 'ref' must be a non-empty string, "
                 f"got: {ref}"
             )
 
-    # ------------------------------------------------------------------
-    # Tool implementations
-    # ------------------------------------------------------------------
     async def open_browser(
         self, start_url: Optional[str] = None
     ) -> Dict[str, str]:
         r"""Launch a Playwright browser session.
 
         Args:
-            start_url (Optional[str]): Optional URL to navigate to immediately after the browser launches.
+            start_url (Optional[str]): Optional URL to navigate to immediately
+                after the browser launches. If not provided, the browser will
+                not navigate to any URL. (default: :obj:`None`)
 
         Returns:
             Dict[str, str]: Keys: ``result`` for action outcome,
-            ``snapshot`` for full DOM snapshot.
+                ``snapshot`` for full DOM snapshot.
         """
         await self._session.ensure_browser()
         if start_url:
@@ -158,14 +154,14 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return "Browser session closed."
 
     async def visit_page(self, url: str) -> Dict[str, str]:
-        """Navigate the current page to the specified URL.
+        r"""Navigate the current page to the specified URL.
 
         Args:
             url (str): The destination URL.
 
         Returns:
             Dict[str, str]: Keys: ``result`` for action outcome,
-            ``snapshot`` for full DOM snapshot.
+                ``snapshot`` for full DOM snapshot.
         """
         if not url or not isinstance(url, str):
             raise ValueError("visit_page(): 'url' must be a non-empty string")
@@ -182,8 +178,11 @@ class BrowserNonVisualToolkit(BaseToolkit):
         r"""Capture a YAML-like structural snapshot of the DOM.
 
         Args:
-            force_refresh (bool): When ``True`` always re-generate the snapshot even if the URL has not changed.
-            diff_only (bool): When ``True`` return only the diff relative to the previous snapshot.
+            force_refresh (bool): When ``True`` always re-generate the
+                snapshot even if the URL has not changed. (default:
+                :obj:`False`)
+            diff_only (bool): When ``True`` return only the diff relative to
+                the previous snapshot. (default: :obj:`False`)
 
         Returns:
             str: Formatted snapshot string.
@@ -196,7 +195,8 @@ class BrowserNonVisualToolkit(BaseToolkit):
         r"""Click an element identified by ``ref``
 
         Args:
-            ref (str): Element reference ID extracted from snapshot (e.g.``"e3"``).
+            ref (str): Element reference ID extracted from snapshot
+                (e.g.``"e3"``).
 
         Returns:
             Dict[str, str]: Result message from ``ActionExecutor``.
@@ -210,7 +210,8 @@ class BrowserNonVisualToolkit(BaseToolkit):
         r"""Type text into an input or textarea element.
 
         Args:
-            ref (str): Element reference ID extracted from snapshot (e.g.``"e3"``).
+            ref (str): Element reference ID extracted from snapshot.
+                (e.g.``"e3"``).
             text (str): The text to enter.
 
         Returns:
@@ -236,56 +237,22 @@ class BrowserNonVisualToolkit(BaseToolkit):
         action: Dict[str, Any] = {"type": "select", "ref": ref, "value": value}
         return await self._exec_with_snapshot(action)
 
-    async def scroll(self, *, direction: str, amount: int) -> Dict[str, str]:
+    async def scroll(
+        self, *, direction: Literal["up", "down"], amount: int
+    ) -> Dict[str, str]:
         r"""Scroll the page.
 
         Args:
-            direction (str): ``"down"`` or ``"up"``.
+            direction (Literal["up", "down"]): Scroll direction, could be
+                ``"up"`` or ``"down"``.
             amount (int): Pixel distance to scroll.
 
         Returns:
             Dict[str, str]: Execution result message.
         """
-        if direction not in ("up", "down"):
-            raise ValueError("scroll(): 'direction' must be 'up' or 'down'")
 
         action = {"type": "scroll", "direction": direction, "amount": amount}
         return await self._exec_with_snapshot(action)
-
-    async def wait(
-        self, *, timeout_ms: int | None = None, selector: str | None = None
-    ) -> Dict[str, str]:
-        r"""Explicit wait utility.
-
-        Args:
-            timeout_ms (Optional[int]): Milliseconds to sleep before continuing. If omitted (and ``selector`` is also ``None``), it defaults to 1000 ms.
-            selector (Optional[str]): A CSS selector to wait for before continuing. When provided, the function waits until this selector appears in the DOM.
-
-        Returns:
-            Dict[str, str]: Execution result message.
-        """
-        # Default to 1 000 ms sleep when no arguments provided
-        if timeout_ms is None and selector is None:
-            timeout_ms = 1000
-
-        action: Dict[str, Any] = {"type": "wait"}
-        if timeout_ms is not None:
-            action["timeout"] = timeout_ms
-        if selector is not None:
-            action["selector"] = selector
-        return await self._exec_with_snapshot(action)
-
-    async def extract(self, *, ref: str) -> Dict[str, str]:
-        r"""Extract text content from an element.
-
-        Args:
-            ref (str): Element reference ID obtained from snapshot.
-
-        Returns:
-            Dict[str, str]: Extracted text or error message.
-        """
-        self._validate_ref(ref, "extract")
-        return await self._exec_with_snapshot({"type": "extract", "ref": ref})
 
     async def enter(self, *, ref: str) -> Dict[str, str]:
         r"""Press the Enter key.
@@ -305,23 +272,25 @@ class BrowserNonVisualToolkit(BaseToolkit):
         r"""Pause execution for a given amount of *real* time and then
         return a *full* page snapshot.
 
-        This is a convenience wrapper around the existing wait action for scenarios
-        where you encounter a CAPTCHA or need to pause for manual user input,
-        and want to retrieve the complete DOM snapshot afterward.
+        This is a convenience wrapper around the existing wait action for
+        scenarios where you encounter a CAPTCHA or need to pause for manual
+        user input, and want to retrieve the complete DOM snapshot afterward.
 
         Args:
             seconds (float): How long to sleep, expressed in seconds. Must
-                be a positive number. Defaults to ``1.0``.
+                be a positive number. (default: :obj:`1.0`)
 
         Returns:
             Dict[str, str]: Keys ``result`` and ``snapshot``.
         """
         if seconds is None or seconds <= 0:
-            raise ValueError(
-                "wait_time(): 'seconds' must be a positive number"
-            )
+            logger.error("wait_time(): 'seconds' must be a positive number")
+            return {
+                "result": "wait_time(): 'seconds' must be a positive number"
+            }
 
-        # Reuse underlying ActionExecutor's ``wait`` implementation (expects ms)
+        # Reuse underlying ActionExecutor's ``wait`` implementation (expects
+        # ms)
         timeout_ms = int(seconds * 1000)
         action: Dict[str, Any] = {"type": "wait", "timeout": timeout_ms}
 
@@ -383,32 +352,32 @@ class BrowserNonVisualToolkit(BaseToolkit):
         self, task_prompt: str, start_url: str, max_steps: int = 15
     ) -> str:
         r"""Use LLM agent to autonomously complete the task (requires
-        `web_agent_model`)."""
+        `web_agent_model`).
+
+        Args:
+            task_prompt (str): The task prompt to complete.
+            start_url (str): The URL to navigate to.
+            max_steps (int): The maximum number of steps to take.
+                (default: :obj:`15`)
+
+        Returns:
+            str: The result of the task.
+        """
 
         agent = self._ensure_agent()
         await agent.navigate(start_url)
         await agent.process_command(task_prompt, max_steps=max_steps)
         return "Task processing finished - see stdout for detailed trace."
 
-    # ------------------------------------------------------------------
-    # Toolkit registration
-    # ------------------------------------------------------------------
     def get_tools(self) -> List[FunctionTool]:
         base_tools = [
             FunctionTool(self.open_browser),
             FunctionTool(self.close_browser),
             FunctionTool(self.visit_page),
-            # FunctionTool(self.get_page_snapshot),
-            # not necessary since get_page_snapshot passively return the Agent
             FunctionTool(self.click),
             FunctionTool(self.type),
             FunctionTool(self.select),
             FunctionTool(self.scroll),
-            # FunctionTool(self.wait),
-            # wait function is designed to wait an element
-            # not sure do we still need that
-            # since it may confuse with wait_user
-            FunctionTool(self.extract),
             FunctionTool(self.enter),
             FunctionTool(self.wait_user),
         ]
