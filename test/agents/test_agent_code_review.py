@@ -19,7 +19,7 @@ sys.modules['github'] = mock_github_module
 
 @pytest.fixture(autouse=True)
 def mock_model_factory():
-    """
+    r"""
     Mock the ModelFactory to return a mocked backend model.
     This avoids loading actual model implementations during tests.
     """
@@ -32,7 +32,7 @@ def mock_model_factory():
 
 @pytest.fixture(autouse=True)
 def mock_github_client():
-    """
+    r"""
     Patch the Github client inside CodeReviewAgent to use the mock Github class.
     This prevents real GitHub API calls during tests.
     """
@@ -41,7 +41,7 @@ def mock_github_client():
 
 @pytest.fixture
 def agent():
-    """
+    r"""
     Instantiate the CodeReviewAgent with dummy GitHub token and repo info.
     """
     return CodeReviewAgent(
@@ -50,7 +50,7 @@ def agent():
     )
 
 def test_get_commit_diff_by_sha(agent):
-    """
+    r"""
     Test getting commit diff info by commit SHA.
     Mocks GitHub commit and file attributes.
     """
@@ -82,7 +82,7 @@ def test_get_commit_diff_by_sha(agent):
     assert file_diff.patch == "patch content"
   
 def test_get_pr_diff_info(agent):
-    """
+    r"""
     Test retrieving PR diff info including files and commits.
     Mocks GitHub Pull Request, files and commits.
     """
@@ -127,7 +127,7 @@ def test_get_pr_diff_info(agent):
     assert file_diff.blob_url.startswith("https://github.com/")
 
 def test_build_diff_summary_text_pr_mode(agent):
-    """
+    r"""
     Test building diff summary text in PR review mode.
     """
     agent.is_incremental_review = False  
@@ -157,7 +157,7 @@ def test_build_diff_summary_text_pr_mode(agent):
     assert "- `feature_x.py`: added, +5/-0, total: 5" in summary
 
 def test_build_diff_summary_text_commit_mode(agent):
-    """
+    r"""
     Test building diff summary text in incremental commit review mode.
     """
     agent.is_incremental_review = True  
@@ -185,7 +185,7 @@ def test_build_diff_summary_text_commit_mode(agent):
     assert "- `refactor.py`: modified, +8/-2, total: 10" in summary
 
 def test_build_diff_summary_text_value_error(agent):
-    """
+    r"""
     Test build_diff_summary_text returns error string if both pr_diff and commit_diff provided or none.
     """
     agent.is_incremental_review = False
@@ -200,7 +200,7 @@ def test_build_diff_summary_text_value_error(agent):
     assert result == "Failed to generate diff summary."
     
 def test_get_review_context_incremental_mode(agent):
-    """
+    r"""
     Test get_review_context returns correct data in incremental mode (commit_sha).
     """
     agent.is_incremental_review = True
@@ -230,7 +230,7 @@ def test_get_review_context_incremental_mode(agent):
     agent.build_diff_summary_text.assert_called_once_with(commit_diff=mock_commit_diff)
 
 def test_get_review_context_normal_mode(agent):
-    """
+    r"""
     Test get_review_context returns correct data in normal PR mode.
     """
     agent.is_incremental_review = False
@@ -262,7 +262,7 @@ def test_get_review_context_normal_mode(agent):
     agent.build_diff_summary_text.assert_called_once_with(pr_diff=mock_pr_diff)
 
 def test_get_review_context_missing_params(agent):
-    """
+    r"""
     Test get_review_context raises ValueError when required parameters are missing.
     """
     agent.is_incremental_review = True
@@ -274,7 +274,7 @@ def test_get_review_context_missing_params(agent):
         agent.get_review_context(input_message="msg", pr_number=None, commit_sha=None)
 
 def test_chunk_file_diffs_by_token_basic(agent):
-    """
+    r"""
     Test chunking file diffs when total token count is within limit.
     Should return a single chunk containing all files.
     """
@@ -299,7 +299,7 @@ def test_chunk_file_diffs_by_token_basic(agent):
     assert filenames == ["file1.py", "file2.py"]
 
 def test_chunk_file_diffs_by_token_single_file_too_large(agent):
-    """
+    r"""
     Test chunking when a single file's diff exceeds token limit.
     The file should be split into multiple chunks by lines.
     """
@@ -325,7 +325,7 @@ def test_chunk_file_diffs_by_token_single_file_too_large(agent):
         assert files == ["bigfile.py"]
 
 def test_step_normal_mode(agent):
-    """
+    r"""
     Test step method in NORMAL mode with PR number.
     Mocks internal methods to simulate the full step process.
     """
@@ -362,7 +362,7 @@ def test_step_normal_mode(agent):
     agent.chunk_file_diffs_by_token.assert_called_once()
 
 def test_step_incremental_mode(agent):
-    """
+    r"""
     Test step method in INCREMENTAL mode with commit SHA.
     Mocks internal methods to simulate the full step process.
     """
@@ -399,7 +399,7 @@ def test_step_incremental_mode(agent):
     agent.chunk_file_diffs_by_token.assert_called_once()
 
 def test_step_missing_parameters(agent):
-    """
+    r"""
     Test step method when neither pr_number nor commit_sha is provided.
     Should return a terminated ChatAgentResponse with an error message.
     """
