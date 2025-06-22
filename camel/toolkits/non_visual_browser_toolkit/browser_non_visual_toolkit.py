@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional
 
 from camel.logger import get_logger
 from camel.models import BaseModelBackend
@@ -237,19 +237,22 @@ class BrowserNonVisualToolkit(BaseToolkit):
         action: Dict[str, Any] = {"type": "select", "ref": ref, "value": value}
         return await self._exec_with_snapshot(action)
 
-    async def scroll(
-        self, *, direction: Literal["up", "down"], amount: int
-    ) -> Dict[str, str]:
+    async def scroll(self, *, direction: str, amount: int) -> Dict[str, str]:
         r"""Scroll the page.
 
         Args:
-            direction (Literal["up", "down"]): Scroll direction, could be
-                ``"up"`` or ``"down"``.
+            direction (str): Scroll direction, should be ``"down"`` or
+                ``"up"``.
             amount (int): Pixel distance to scroll.
 
         Returns:
             Dict[str, str]: Execution result message.
         """
+        if direction not in ("up", "down"):
+            logger.error("scroll(): 'direction' must be 'up' or 'down'")
+            return {
+                "result": "scroll() Error: 'direction' must be 'up' or 'down'"
+            }
 
         action = {"type": "scroll", "direction": direction, "amount": amount}
         return await self._exec_with_snapshot(action)
