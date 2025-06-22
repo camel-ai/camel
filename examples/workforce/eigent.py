@@ -15,22 +15,25 @@
 import asyncio
 
 from camel.agents.chat_agent import ChatAgent
+from camel.loaders import Crawl4AI
 from camel.messages.base import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import (
     AudioAnalysisToolkit,
+    BrowserNonVisualToolkit,
     CodeExecutionToolkit,
     DalleToolkit,
     FileWriteToolkit,
+    FunctionTool,
     HumanToolkit,
     ImageAnalysisToolkit,
     LinkedInToolkit,
     NotionToolkit,
-    PlaywrightMCPToolkit,
     PPTXToolkit,
     RedditToolkit,
+    SearchToolkit,
     SlackToolkit,
     TerminalToolkit,
     TwitterToolkit,
@@ -44,7 +47,8 @@ def developer_agent_factory(model: BaseModelBackend, task_id: str):
     r"""Factory for creating a developer agent."""
     tools = [
         *TerminalToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
+        *TerminalToolkit(clone_current_env=True).get_tools(),
         *CodeExecutionToolkit().get_tools(),
     ]
 
@@ -73,26 +77,27 @@ def developer_agent_factory(model: BaseModelBackend, task_id: str):
     )
 
 
-async def search_agent_factory(
+def search_agent_factory(
     model: BaseModelBackend,
     task_id: str,
-    playwright_toolkit: PlaywrightMCPToolkit,
 ):
     r"""Factory for creating a search agent, based on user-provided code
     structure."""
-    # search_toolkits = SearchToolkit()
+    search_toolkits = SearchToolkit()
     # browser_toolkits = AsyncBrowserToolkit()
+    browser_toolkit = BrowserNonVisualToolkit(headless=False)
     terminal_toolkits = TerminalToolkit()
     human_toolkits = HumanToolkit()
     tools = [
         # FunctionTool(search_toolkits.search_wiki),
-        # # FunctionTool(search_toolkits.search_duckduckgo),
-        # # FunctionTool(search_toolkits.search_bing),
-        # # FunctionTool(search_toolkits.search_baidu),
-        *playwright_toolkit.get_tools(),
+        FunctionTool(search_toolkits.search_exa),
+        # FunctionTool(search_toolkits.search_bing),
+        # FunctionTool(search_toolkits.search_baidu),
+        *browser_toolkit.get_tools(),
         # *browser_toolkits.get_tools(),
         *terminal_toolkits.get_tools(),
-        *human_toolkits.get_tools(),
+        human_toolkits.ask_human_via_console,
+        FunctionTool(Crawl4AI().scrape),
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
@@ -121,10 +126,10 @@ async def search_agent_factory(
     difficult to find through simple web searches). You can find the answer to 
     the question by performing subsequent operations on the URL, such as 
     extracting the content of the webpage.
-    - Do not solely rely on document tools or browser simulation to find the 
-    answer, you should combine document tools and browser simulation to 
-    comprehensively process web page information. Some content may need to do 
-    browser simulation to get, or some content is rendered by javascript.
+    - Do not solely rely on browser simulation to find the 
+    answer, you should combine search tools, scraper tools and browser 
+    simulation to comprehensively process web page information. Some content 
+    may need to do browser simulation to get.
     - In your response, you should mention the urls you have visited and 
     processed.
 
@@ -163,7 +168,7 @@ def document_agent_factory(model: BaseModelBackend, task_id: str):
         *FileWriteToolkit().get_tools(),
         *PPTXToolkit().get_tools(),
         # *RetrievalToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
@@ -220,7 +225,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
         *DalleToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
     ]
 
     system_message = """You are a Multi-Modal Processing Assistant specialized 
@@ -328,83 +333,100 @@ When assisting users, always:
             *RedditToolkit().get_tools(),
             *NotionToolkit().get_tools(),
             *SlackToolkit().get_tools(),
-            *HumanToolkit().get_tools(),
+            HumanToolkit().ask_human_via_console,
         ],
     )
 
 
 async def main():
-    playwright_toolkit = PlaywrightMCPToolkit()  # Create instance
-    try:
-        await playwright_toolkit.connect()  # Connect the instance
+    # Create a single model backend for all agents
+    model_backend = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4_1_MINI,
+        # model_config_dict={
+        #     "max_tokens": 32768,
+        # },
+    )
 
-        # Create a single model backend for all agents
-        model_backend = ModelFactory.create(
-            model_platform=ModelPlatformType.DEFAULT,
-            model_type=ModelType.DEFAULT,
-        )
+    model_backend_reason = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4_1_MINI,
+        # model_config_dict={
+        #     "max_tokens": 32768,
+        # },
+    )
 
-        task_id = 'workforce_task'
+    task_id = 'workforce_task'
 
-        # Create agents using factory functions
-        search_agent = await search_agent_factory(
-            model_backend, task_id, playwright_toolkit
-        )
-        developer_agent = developer_agent_factory(model_backend, task_id)
-        document_agent = document_agent_factory(model_backend, task_id)
-        multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
-        # social_medium_agent = social_medium_agent_factory(model_backend,
-        # task_id)
+    # Create agents using factory functions
+    search_agent = search_agent_factory(model_backend, task_id)
+    developer_agent = developer_agent_factory(model_backend, task_id)
+    document_agent = document_agent_factory(model_backend, task_id)
+    multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
+    # social_medium_agent = social_medium_agent_factory(model_backend,
+    # task_id)
 
-        workforce = Workforce(
-            'A workforce',
-            graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
-            share_memory=False,
-        )
+    # Configure kwargs for all agents to use the same model_backend
+    coordinator_agent_kwargs = {"model": model_backend_reason}
+    task_agent_kwargs = {"model": model_backend_reason}
+    new_worker_agent_kwargs = {"model": model_backend}
 
-        workforce.add_single_agent_worker(
-            "Search & Information Retrieval Agent", worker=search_agent
-        ).add_single_agent_worker(
-            "Software Development & Code Generation Agent",
-            worker=developer_agent,
-        ).add_single_agent_worker(
-            "Document Creation & Management Agent", worker=document_agent
-        ).add_single_agent_worker(
-            "Multi-Modal Content Analysis & Generation Agent",
-            worker=multi_modal_agent,
-        )
+    workforce = Workforce(
+        'A workforce',
+        graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
+        share_memory=False,
+        coordinator_agent_kwargs=coordinator_agent_kwargs,
+        task_agent_kwargs=task_agent_kwargs,
+        new_worker_agent_kwargs=new_worker_agent_kwargs,
+    )
 
-        # specify the task to be solved
-        human_task = Task(
-            content=(
-                """
-                I want to read papers about GUI Agent. Please help me find 
-                ten papers, check the detailed content of the papers and help 
-                me write a comparison report, then create a nice slides(pptx) 
-                to introduce the latest research progress of GUI Agent.
-                """
-            ),
-            id='0',
-        )
+    workforce.add_single_agent_worker(
+        "Search Agent: Can search the web, extract webpage content, "
+        "simulate browser actions, and provide relevant information to "
+        "solve the given task.",
+        worker=search_agent,
+    ).add_single_agent_worker(
+        "Developer Agent: A skilled coding assistant that can write and "
+        "execute code, run terminal commands, and verify solutions to "
+        "complete tasks.",
+        worker=developer_agent,
+    ).add_single_agent_worker(
+        "Document Agent: A document processing assistant for creating, "
+        "modifying, and managing various document formats, including "
+        "presentations.",
+        worker=document_agent,
+    ).add_single_agent_worker(
+        "Multi-Modal Agent: A multi-modal processing assistant for "
+        "analyzing, and generating media content like audio and images.",
+        worker=multi_modal_agent,
+    )
 
-        workforce.process_task(human_task)
+    # specify the task to be solved
+    human_task = Task(
+        content=(
+            """
+I want to read papers about GUI Agent. Please help me find ten papers and summarize them into a report.
+            """  # noqa: E501
+        ),
+        id='0',
+    )
 
-        # Test WorkforceLogger features
-        print("\n--- Workforce Log Tree ---")
-        print(workforce.get_workforce_log_tree())
+    # Use the async version directly to avoid hanging with async tools
+    await workforce.process_task_async(human_task)
 
-        print("\n--- Workforce KPIs ---")
-        kpis = workforce.get_workforce_kpis()
-        for key, value in kpis.items():
-            print(f"{key}: {value}")
+    # Test WorkforceLogger features
+    print("\n--- Workforce Log Tree ---")
+    print(workforce.get_workforce_log_tree())
 
-        log_file_path = "eigent_logs.json"
-        print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
-        workforce.dump_workforce_logs(log_file_path)
-        print(f"Logs dumped. Please check the file: {log_file_path}")
+    print("\n--- Workforce KPIs ---")
+    kpis = workforce.get_workforce_kpis()
+    for key, value in kpis.items():
+        print(f"{key}: {value}")
 
-    finally:
-        await playwright_toolkit.disconnect()  # Disconnect the same instance
+    log_file_path = "eigent_logs.json"
+    print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
+    workforce.dump_workforce_logs(log_file_path)
+    print(f"Logs dumped. Please check the file: {log_file_path}")
 
 
 if __name__ == "__main__":
