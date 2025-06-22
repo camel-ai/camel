@@ -169,6 +169,8 @@ class ChatAgent(BaseAgent):
         stop_event (Optional[threading.Event], optional): Event to signal
             termination of the agent's operation. When set, the agent will
             terminate its execution. (default: :obj:`None`)
+        mask_tool_output (Optional[bool]): Whether to return a sanitized 
+            placeholder instead of the raw tool output. (default: :obj:`False`)
     """
 
     def __init__(
@@ -202,6 +204,7 @@ class ChatAgent(BaseAgent):
         max_iteration: Optional[int] = None,
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
+        mask_tool_output: bool = False,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -276,6 +279,7 @@ class ChatAgent(BaseAgent):
         self.response_terminators = response_terminators or []
         self.max_iteration = max_iteration
         self.stop_event = stop_event
+        self.mask_tool_output = mask_tool_output
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -1588,14 +1592,22 @@ class ChatAgent(BaseAgent):
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
         try:
-            result = tool(**args)
+            raw_result = tool(**args)
+            if self.mask_tool_output:
+                stored = raw_result # TODO: for implementation of secure storage
+                result= "[MASKED]"
+                mask_flag = True
+            else:
+                result = raw_result
+                mask_flag = False
         except Exception as e:
             # Capture the error message to prevent framework crash
             error_msg = f"Error executing tool '{func_name}': {e!s}"
             result = {"error": error_msg}
+            mask_flag = False
             logging.warning(error_msg)
 
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+        return self._record_tool_calling(func_name, args, result, tool_call_id, mask_output=mask_flag)
 
     async def _aexecute_tool(
         self,
@@ -1645,6 +1657,7 @@ class ChatAgent(BaseAgent):
         args: Dict[str, Any],
         result: Any,
         tool_call_id: str,
+        mask_output: bool = False,
     ):
         r"""Record the tool calling information in the memory, and return the
         tool calling record.
@@ -1666,6 +1679,7 @@ class ChatAgent(BaseAgent):
             func_name=func_name,
             result=result,
             tool_call_id=tool_call_id,
+            mask_output=mask_output,
         )
 
         # Use precise timestamps to ensure correct ordering
