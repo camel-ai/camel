@@ -89,13 +89,20 @@ class VectorDBBlock(MemoryBlock):
             records (List[MemoryRecord]): Memory records to be added to the
                 memory.
         """
+        # Filter out records with empty message content
+        valid_records = [
+            record
+            for record in records
+            if record.message.content and record.message.content.strip()
+        ]
+
         v_records = [
             VectorRecord(
                 vector=self.embedding.embed(record.message.content),
                 payload=record.to_dict(),
                 id=str(record.uuid),
             )
-            for record in records
+            for record in valid_records
         ]
         self.storage.add(v_records)
 

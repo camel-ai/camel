@@ -62,7 +62,7 @@ class PPTXToolkit(BaseToolkit):
             output_dir (str): The default directory for output files.
                 Defaults to the current working directory.
             timeout (Optional[float]): The timeout for the toolkit.
-                (default: :obj: `None`)
+                (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
         self.output_dir = Path(output_dir).resolve()
@@ -120,7 +120,7 @@ class PPTXToolkit(BaseToolkit):
             frame_paragraph: The paragraph to format.
             text (str): The text to format.
             set_color_to_white (bool): Whether to set the color to white.
-                (default: :obj: `False`)
+                (default: :obj:`False`)
         """
         from pptx.dml.color import RGBColor
 
@@ -170,7 +170,7 @@ class PPTXToolkit(BaseToolkit):
             flat_items_list (List[Tuple[str, int]]): The list of items to be
                 displayed.
             set_color_to_white (bool): Whether to set the font color to white.
-                (default: :obj: `False`)
+                (default: :obj:`False`)
         """
         if not flat_items_list:
             logger.warning("Empty bullet point list provided")
@@ -260,7 +260,7 @@ class PPTXToolkit(BaseToolkit):
                 provided, the default template will be used. (default: :obj:
                 `None`)
         """
-        import pptx
+        from pptx import Presentation
 
         # Use template if provided, otherwise create new presentation
         if template is not None:
@@ -270,9 +270,9 @@ class PPTXToolkit(BaseToolkit):
                     f"Template file not found: {template_path}, using "
                     "default template"
                 )
-                presentation = pptx.Presentation()
+                presentation = Presentation()
             else:
-                presentation = pptx.Presentation(str(template_path))
+                presentation = Presentation(str(template_path))
                 # Clear all existing slides by removing them from the slide
                 # list
                 while len(presentation.slides) > 0:
@@ -280,7 +280,7 @@ class PPTXToolkit(BaseToolkit):
                     presentation.part.drop_rel(rId)
                     del presentation.slides._sldIdLst[-1]
         else:
-            presentation = pptx.Presentation()
+            presentation = Presentation()
 
         slide_width_inch, slide_height_inch = (
             self._get_slide_width_height_inches(presentation)
@@ -368,7 +368,7 @@ class PPTXToolkit(BaseToolkit):
                 supplied, it is resolved to self.output_dir.
             template (Optional[str]): The path to the template PPTX file.
                 Initializes a presentation from a given template file Or PPTX
-                file. (default: :obj: `None`)
+                file. (default: :obj:`None`)
 
         Returns:
             str: A success message indicating the file was created.

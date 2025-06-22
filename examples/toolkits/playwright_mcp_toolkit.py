@@ -13,6 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 
+from pydantic import BaseModel, Field
+
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.toolkits import PlaywrightMCPToolkit
@@ -30,13 +32,19 @@ async def main():
         model_type=ModelType.DEFAULT,
     )
 
+    # pydantic basemodel as input params format
+    class AgentResponse(BaseModel):
+        url: str = Field(description="Url of the repository")
+        stars: int = Field(description="Stars of the repository")
+
     chat_agent = ChatAgent(
         model=model,
         tools=playwright_mcp_toolkit.get_tools(),
     )
 
     response = await chat_agent.astep(
-        "search for camel-ai using google search, how many stars does it have?"
+        "search for camel-ai using google search, how many stars does it has?",
+        response_format=AgentResponse,
     )
     print(response.msg.content)
 
@@ -50,7 +58,6 @@ if __name__ == "__main__":
 
 """
 ==============================================================================
-The GitHub repository for **camel-ai** has **12,338 stars**. If you need more
-information or details about the project, feel free to ask!
+{"url":"https://github.com/camel-ai/camel","stars":12900}
 ==============================================================================
 """
