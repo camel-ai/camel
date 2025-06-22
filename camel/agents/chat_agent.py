@@ -1904,11 +1904,35 @@ class ChatAgent(BaseAgent):
             ChatAgent: A new instance of :obj:`ChatAgent` with the same
                 configuration.
         """
+        import copy
+
         # Create a new instance with the same configuration
         # If with_memory is True, set system_message to None
         # If with_memory is False, use the original system message
         # To avoid duplicated system memory.
         system_message = None if with_memory else self._original_system_message
+
+        # Create deep copies of tools to avoid shared state
+        cloned_tools: List[Union[FunctionTool, Callable]] = []
+        for tool in self._internal_tools.values():
+            # Create a new FunctionTool instance to avoid sharing state
+            cloned_tool = copy.deepcopy(tool)
+            cloned_tools.append(cloned_tool)
+
+        # Create deep copies of external tool schemas
+        cloned_external_tools: List[
+            Union[FunctionTool, Callable, Dict[str, Any]]
+        ] = []
+        for schema in self._external_tool_schemas.values():
+            cloned_schema = copy.deepcopy(schema)
+            cloned_external_tools.append(cloned_schema)
+
+        # Create deep copies of response terminators to avoid shared state
+        cloned_terminators: List[ResponseTerminator] = []
+        if self.response_terminators:
+            for terminator in self.response_terminators:
+                cloned_terminator = copy.deepcopy(terminator)
+                cloned_terminators.append(cloned_terminator)
 
         new_agent = ChatAgent(
             system_message=system_message,
@@ -1919,11 +1943,9 @@ class ChatAgent(BaseAgent):
                 self.memory.get_context_creator(), "token_limit", None
             ),
             output_language=self._output_language,
-            tools=list(self._internal_tools.values()),
-            external_tools=[
-                schema for schema in self._external_tool_schemas.values()
-            ],
-            response_terminators=self.response_terminators,
+            tools=cloned_tools,
+            external_tools=cloned_external_tools,
+            response_terminators=cloned_terminators,
             scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
             max_iteration=self.max_iteration,
             stop_event=self.stop_event,
