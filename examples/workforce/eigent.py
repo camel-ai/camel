@@ -14,6 +14,15 @@
 
 import asyncio
 
+# ---------------------------------------------------------
+# Enable detailed logging for debugging/demo purposes
+# ---------------------------------------------------------
+from camel.logger import set_log_level, set_log_file
+
+# Console level: DEBUG; File log for later inspection
+set_log_level("DEBUG")  # Change to "INFO" if too verbose
+set_log_file("eigent_runtime.log")
+
 from camel.agents.chat_agent import ChatAgent
 from camel.loaders import Crawl4AI
 from camel.messages.base import BaseMessage
@@ -77,88 +86,66 @@ def developer_agent_factory(model: BaseModelBackend, task_id: str):
     )
 
 
+class SearchAgent(ChatAgent):
+    """SearchAgent with browser & terminal toolkits that recreates toolkits
+    on each clone so that every cloned agent owns an independent Playwright
+    browser session.
+    """
+
+    def __init__(self, model: BaseModelBackend):
+        # Construct fresh toolkits for *this* agent
+        browser_toolkit = BrowserNonVisualToolkit(headless=False)
+        terminal_toolkit = TerminalToolkit()
+        human_ask = HumanToolkit().ask_human_via_console
+
+        tools = [
+            *browser_toolkit.get_tools(),
+            *terminal_toolkit.get_tools(),
+            human_ask,
+        ]
+
+        system_message = BaseMessage.make_assistant_message(
+            role_name="Document Agent",
+            content="You are a helpful assistant that can search the web, "
+            "extract webpage content, simulate browser actions, and provide "
+            "relevant information to solve the given task."
+        )
+
+        super().__init__(
+            system_message=system_message,
+            model=model,
+            tools=tools,
+        )
+
+
+    # Override clone to ensure a brand-new BrowserNonVisualToolkit per clone
+    def clone(self, with_memory: bool = False):  # type: ignore[override]
+        cloned = super().clone(with_memory=with_memory)
+
+        # Remove existing internal tools copied from parent
+        cloned._internal_tools = {}
+
+        # Re-create toolkits so that clone gets its own browser session
+        browser_toolkit = BrowserNonVisualToolkit(headless=False)
+        terminal_toolkit = TerminalToolkit()
+        human_ask = HumanToolkit().ask_human_via_console
+
+        for tool in [
+            *browser_toolkit.get_tools(),
+            *terminal_toolkit.get_tools(),
+            human_ask,
+        ]:
+            cloned.add_tool(tool)
+
+        return cloned
+
+
 def search_agent_factory(
     model: BaseModelBackend,
     task_id: str,
 ):
-    r"""Factory for creating a search agent, based on user-provided code
-    structure."""
-    search_toolkits = SearchToolkit()
-    # browser_toolkits = AsyncBrowserToolkit()
-    browser_toolkit = BrowserNonVisualToolkit(headless=False)
-    terminal_toolkits = TerminalToolkit()
-    human_toolkits = HumanToolkit()
-    tools = [
-        # FunctionTool(search_toolkits.search_wiki),
-        FunctionTool(search_toolkits.search_exa),
-        # FunctionTool(search_toolkits.search_bing),
-        # FunctionTool(search_toolkits.search_baidu),
-        *browser_toolkit.get_tools(),
-        # *browser_toolkits.get_tools(),
-        *terminal_toolkits.get_tools(),
-        human_toolkits.ask_human_via_console,
-        FunctionTool(Crawl4AI().scrape),
-    ]
-
-    system_message = """You are a helpful assistant that can search the web, 
-    extract webpage content, simulate browser actions, and provide relevant 
-    information to solve the given task.
-    Keep in mind that:
-    - Do not be overly confident in your own knowledge. Searching can provide 
-    a broader perspective and help validate existing knowledge.  
-    - If one way fails to provide an answer, try other ways or methods. The 
-    answer does exist.
-    - When encountering verification challenges (like login, CAPTCHAs or robot 
-    checks), you MUST request help using the human toolkit.
-    - If the search snippet is unhelpful but the URL comes from an 
-    authoritative source, try visit the website for more details.  
-    - For the page you have visited, you should check the subpages of the page 
-    to see if it can provide more information to solve the task. 
-    - When looking for specific numerical values (e.g., dollar amounts), 
-    prioritize reliable sources and avoid relying only on search snippets.  
-    - When solving tasks that require web searches, check Wikipedia first 
-    before exploring other websites.  
-    - You can also simulate browser actions to get more information or verify 
-    the information you have found.
-    - Browser simulation is also helpful for finding target URLs. Browser 
-    simulation operations do not necessarily need to find specific answers, 
-    but can also help find web page URLs that contain answers (usually 
-    difficult to find through simple web searches). You can find the answer to 
-    the question by performing subsequent operations on the URL, such as 
-    extracting the content of the webpage.
-    - Do not solely rely on browser simulation to find the 
-    answer, you should combine search tools, scraper tools and browser 
-    simulation to comprehensively process web page information. Some content 
-    may need to do browser simulation to get.
-    - In your response, you should mention the urls you have visited and 
-    processed.
-
-Here are some tips that help you perform web search:
-- Never add too many keywords in your search query! Some detailed results need 
-    to perform browser interaction to get, not using search toolkit.
-- If the question is complex, search results typically do not provide precise 
-    answers. It is not likely to find the answer directly using search toolkit 
-    only, the search query should be concise and focuses on finding official 
-    sources rather than direct answers.
-    For example, as for the question "What is the maximum length in meters of 
-    #9 in the first National Geographic short on YouTube that was ever 
-    released according to the Monterey Bay Aquarium website?", your first 
-    search term must be coarse-grained like "National Geographic YouTube" to 
-    find the youtube website first, and then try other fine-grained search 
-    terms step-by-step to find more urls.
-- The results you return do not have to directly answer the original question, 
-    you only need to collect relevant information.
-    
-    """
-
-    return ChatAgent(
-        system_message=BaseMessage.make_assistant_message(
-            role_name="Document Agent",
-            content=system_message,
-        ),
-        model=model,
-        tools=tools,
-    )
+    # Simply return a new instance of our custom SearchAgent class.
+    return SearchAgent(model=model)
 
 
 def document_agent_factory(model: BaseModelBackend, task_id: str):
@@ -166,7 +153,7 @@ def document_agent_factory(model: BaseModelBackend, task_id: str):
     structure."""
     tools = [
         *FileWriteToolkit().get_tools(),
-        *PPTXToolkit().get_tools(),
+        # *PPTXToolkit().get_tools(),
         # *RetrievalToolkit().get_tools(),
         HumanToolkit().ask_human_via_console,
     ]
@@ -221,10 +208,10 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     r"""Factory for creating a multi modal agent, based on user-provided code
     structure."""
     tools = [
-        *VideoDownloaderToolkit().get_tools(),
-        *AudioAnalysisToolkit().get_tools(),
-        *ImageAnalysisToolkit().get_tools(),
-        *DalleToolkit().get_tools(),
+        # *VideoDownloaderToolkit().get_tools(),
+        # *AudioAnalysisToolkit().get_tools(),
+        # *ImageAnalysisToolkit().get_tools(),
+        # *DalleToolkit().get_tools(),
         HumanToolkit().ask_human_via_console,
     ]
 
@@ -327,12 +314,12 @@ When assisting users, always:
         ),
         model=model,
         tools=[
-            *WhatsAppToolkit().get_tools(),
-            *TwitterToolkit().get_tools(),
-            *LinkedInToolkit().get_tools(),
-            *RedditToolkit().get_tools(),
-            *NotionToolkit().get_tools(),
-            *SlackToolkit().get_tools(),
+            # *WhatsAppToolkit().get_tools(),
+            # *TwitterToolkit().get_tools(),
+            # *LinkedInToolkit().get_tools(),
+            # *RedditToolkit().get_tools(),
+            # *NotionToolkit().get_tools(),
+            # *SlackToolkit().get_tools(),
             HumanToolkit().ask_human_via_console,
         ],
     )
@@ -385,27 +372,21 @@ async def main():
         "simulate browser actions, and provide relevant information to "
         "solve the given task.",
         worker=search_agent,
-    ).add_single_agent_worker(
-        "Developer Agent: A skilled coding assistant that can write and "
-        "execute code, run terminal commands, and verify solutions to "
-        "complete tasks.",
-        worker=developer_agent,
-    ).add_single_agent_worker(
+    )
+
+    workforce.add_single_agent_worker(
         "Document Agent: A document processing assistant for creating, "
         "modifying, and managing various document formats, including "
         "presentations.",
         worker=document_agent,
-    ).add_single_agent_worker(
-        "Multi-Modal Agent: A multi-modal processing assistant for "
-        "analyzing, and generating media content like audio and images.",
-        worker=multi_modal_agent,
     )
 
     # specify the task to be solved
     human_task = Task(
         content=(
             """
-I want to read papers about GUI Agent. Please help me find ten papers and summarize them into a report.
+Gather today's headline news from BBC, Washington Post, Google News and CNN.
+Each headline can be processed in parallel by the SearchAgent pool.
             """  # noqa: E501
         ),
         id='0',
