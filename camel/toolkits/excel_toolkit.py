@@ -299,8 +299,8 @@ class ExcelToolkit(BaseToolkit):
                 "Please create a workbook first."
             )
 
-        if sheet_name not in self.wb.sheetnames:
-            return f"Error: Sheet {sheet_name} does not exist."
+        if sheet_name in self.wb.sheetnames:
+            return f"Error: Sheet {sheet_name} already exists."
 
         ws = self.wb.create_sheet(sheet_name)
         if data:
@@ -544,8 +544,10 @@ class ExcelToolkit(BaseToolkit):
         ws.delete_rows(start_row, num_rows)
 
         self._save_workbook()
-        return f"Deleted rows {start_row} to {end_row} from sheet \
-         {sheet_name} successfully."
+        return (
+            f"Deleted rows {start_row} to {end_row} from sheet "
+            f"{sheet_name} successfully."
+        )
 
     def delete_columns(
         self, sheet_name: str, start_col: int, end_col: Optional[int] = None
@@ -577,8 +579,10 @@ class ExcelToolkit(BaseToolkit):
         ws.delete_cols(start_col, num_cols)
 
         self._save_workbook()
-        return f"Deleted columns {start_col} to {end_col} from sheet \
-         {sheet_name} successfully."
+        return (
+            f"Deleted columns {start_col} to {end_col} from sheet "
+            f"{sheet_name} successfully."
+        )
 
     def get_cell_value(
         self, sheet_name: str, cell_reference: str
@@ -627,8 +631,10 @@ class ExcelToolkit(BaseToolkit):
         ws = self.wb[sheet_name]
         ws[cell_reference] = value
         self._save_workbook()
-        return f"Cell {cell_reference} updated successfully in sheet \
-         {sheet_name}."
+        return (
+            f"Cell {cell_reference} updated successfully in sheet "
+            f"{sheet_name}."
+        )
 
     def get_column_data(
         self, sheet_name: str, column: Union[int, str]
