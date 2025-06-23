@@ -40,6 +40,8 @@ test = [
     "mock>=5,<6",
     "pytest-asyncio>=0.23.0,<0.24",
 ]
+
+[project.optional-dependencies]
 dev = [
     "ruff>=0.7,<0.8",
     "mypy>=1.5.1,<2",
@@ -67,8 +69,6 @@ docs = [
     "nbsphinx",
     "sphinxext-rediraffe>=0.2.7,<0.3",
 ]
-
-[project.optional-dependencies]
 rag = [
     "numpy>=1.2,<=2.2",
     "qdrant-client>=1.9.0,<2",
@@ -384,17 +384,10 @@ all = [
     "pytesseract>=0.3.13",
 ]
 
-
 [project.urls]
 Homepage = "https://www.camel-ai.org/"
 Repository = "https://github.com/camel-ai/camel"
 Documentation = "https://docs.camel-ai.org"
-
-[tool.uv]
-default-groups = [
-    "dev",
-    "docs",
-]
 
 [tool.hatch.build.targets.sdist]
 include = ["camel"]
