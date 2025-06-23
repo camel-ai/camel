@@ -1,5 +1,26 @@
 <a id="camel.models.anthropic_model"></a>
 
+<a id="camel.models.anthropic_model.strip_trailing_whitespace_from_messages"></a>
+
+## strip_trailing_whitespace_from_messages
+
+```python
+def strip_trailing_whitespace_from_messages(messages: List[OpenAIMessage]):
+```
+
+Strip trailing whitespace from all message contents in a list of
+messages. This is necessary because the Anthropic API doesn't allow
+trailing whitespace in message content.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): List of messages to process
+
+**Returns:**
+
+  List[OpenAIMessage]: The processed messages with trailing whitespace
+removed
+
 <a id="camel.models.anthropic_model.AnthropicModel"></a>
 
 ## AnthropicModel
@@ -58,3 +79,29 @@ tokenization style.
 ```python
 def check_model_config(self):
 ```
+
+<a id="camel.models.anthropic_model.AnthropicModel._request_chat_completion"></a>
+
+### _request_chat_completion
+
+```python
+def _request_chat_completion(
+    self,
+    messages: List[OpenAIMessage],
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+<a id="camel.models.anthropic_model.AnthropicModel._patch_anthropic_token_counter"></a>
+
+### _patch_anthropic_token_counter
+
+```python
+def _patch_anthropic_token_counter(self):
+```
+
+Monkey patch the AnthropicTokenCounter class to handle trailing
+whitespace.
+
+This patches the count_tokens_from_messages method to strip trailing
+whitespace from message content before sending to the Anthropic API.
