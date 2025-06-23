@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.68"
+version = "0.2.69a4"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -135,6 +135,7 @@ media_tools = [
     "yt-dlp>=2024.11.4,<2025",
     "ffmpeg-python>=0.2.0,<0.3",
     "scenedetect>=0.6.5.2",
+    "pytesseract>=0.3.13",
 ]
 
 communication_tools = [
@@ -256,6 +257,8 @@ owl = [
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50",
     "python-pptx>=1.0.2",
+    "pytesseract>=0.3.13",
+    "markitdown==0.1.1",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -376,6 +379,7 @@ all = [
     "langfuse>=2.60.5",
     "Flask>=2.0",
     "rlcard>=1.0.0,<1.3.0",
+    "pytesseract>=0.3.13",
 ]
 
 
@@ -579,6 +583,7 @@ module = [
     "sentence_transformers.*",
     "cv2",
     "rlcard.*",
+    "pytesseract",
 ]
 ignore_missing_imports = true
 
@@ -590,4 +595,4 @@ skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolki
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
-ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci'
+ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,'
