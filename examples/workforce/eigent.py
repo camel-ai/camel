@@ -28,6 +28,7 @@ from camel.toolkits import (
     EdgeOnePagesMCPToolkit,
     FileWriteToolkit,
     FunctionTool,
+    GoogleDriveMCPToolkit,
     HumanToolkit,
     ImageAnalysisToolkit,
     LinkedInToolkit,
@@ -162,7 +163,7 @@ Here are some tips that help you perform web search:
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
-            role_name="Document Agent",
+            role_name="Search Agent",
             content=system_message,
         ),
         model=model,
@@ -170,12 +171,17 @@ Here are some tips that help you perform web search:
     )
 
 
-def document_agent_factory(model: BaseModelBackend, task_id: str):
+def document_agent_factory(
+    model: BaseModelBackend,
+    task_id: str,
+    google_drive_mcp_toolkit: GoogleDriveMCPToolkit,
+):
     r"""Factory for creating a document agent, based on user-provided code
     structure."""
     tools = [
         *FileWriteToolkit().get_tools(),
         *PPTXToolkit().get_tools(),
+        *google_drive_mcp_toolkit.get_tools(),
         # *RetrievalToolkit().get_tools(),
         HumanToolkit().ask_human_via_console,
     ]
@@ -349,8 +355,12 @@ When assisting users, always:
 
 async def main():
     edgeone_pages_mcp_toolkit = EdgeOnePagesMCPToolkit()
+    google_drive_mcp_toolkit = GoogleDriveMCPToolkit(
+        credentials_path="path/to/credentials.json"
+    )
     try:
         await edgeone_pages_mcp_toolkit.connect()
+        await google_drive_mcp_toolkit.connect()
 
         # Create a single model backend for all agents
         model_backend = ModelFactory.create(
@@ -381,7 +391,9 @@ async def main():
         developer_agent = developer_agent_factory(
             model_backend, task_id, edgeone_pages_mcp_toolkit
         )
-        document_agent = document_agent_factory(model_backend, task_id)
+        document_agent = document_agent_factory(
+            model_backend, task_id, google_drive_mcp_toolkit
+        )
         multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
 
         # Configure kwargs for all agents to use the same model_backend
@@ -450,6 +462,7 @@ async def main():
 
     finally:
         await edgeone_pages_mcp_toolkit.disconnect()
+        await google_drive_mcp_toolkit.disconnect()
 
 
 if __name__ == "__main__":
