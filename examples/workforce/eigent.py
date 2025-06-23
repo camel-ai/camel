@@ -369,33 +369,35 @@ async def main():
             # },
         )
 
-        # Create agents using factory functions
-        search_agent = search_agent_factory(model_backend, task_id)
-        developer_agent = developer_agent_factory(model_backend, task_id)
-        document_agent = document_agent_factory(model_backend, task_id)
-        multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
-        # social_medium_agent = social_medium_agent_factory(model_backend,
-        # task_id)
+        task_id = 'workforce_task'
 
         # Configure kwargs for all agents to use the same model_backend
         coordinator_agent_kwargs = {"model": model_backend_reason}
         task_agent_kwargs = {"model": model_backend_reason}
         new_worker_agent_kwargs = {"model": model_backend}
-        task_id = 'workforce_task'
 
         # Create agents using factory functions
         search_agent = search_agent_factory(
             model_backend, task_id, edgeone_pages_mcp_toolkit
         )
+        developer_agent = developer_agent_factory(model_backend, task_id)
         document_agent = document_agent_factory(model_backend, task_id)
         multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
-        social_medium_agent = social_medium_agent_factory(
-            model_backend, task_id
-        )
+
         # Configure kwargs for all agents to use the same model_backend
         coordinator_agent_kwargs = {"model": model_backend_reason}
         task_agent_kwargs = {"model": model_backend_reason}
         new_worker_agent_kwargs = {"model": model_backend}
+
+        # Create workforce instance before adding workers
+        workforce = Workforce(
+            'A workforce',
+            graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
+            share_memory=False,
+            coordinator_agent_kwargs=coordinator_agent_kwargs,
+            task_agent_kwargs=task_agent_kwargs,
+            new_worker_agent_kwargs=new_worker_agent_kwargs,
+        )
 
         workforce.add_single_agent_worker(
             "Search Agent: Can search the web, extract webpage content, "
@@ -427,14 +429,6 @@ async def main():
             ),
             id='0',
         )
-        workforce = Workforce(
-            'A workforce',
-            graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
-            share_memory=False,
-            coordinator_agent_kwargs=coordinator_agent_kwargs,
-            task_agent_kwargs=task_agent_kwargs,
-            new_worker_agent_kwargs=new_worker_agent_kwargs,
-        )
 
         workforce.add_single_agent_worker(
             "Search Agent: Can search the web, extract webpage content, "
@@ -454,8 +448,8 @@ async def main():
         human_task = Task(
             content=(
                 """
-    Gather today's headline news from BBC, Washington Post, Google News and CNN.
-    Each headline can be processed in parallel by the SearchAgent pool.
+    Gather today's headline news from BBC, Washington Post, Google News and 
+    CNN. Each headline can be processed in parallel by the SearchAgent pool.
                 """
             ),
             id='0',
