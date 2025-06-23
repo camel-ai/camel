@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import asyncio
 from typing import List, Optional
 
 from camel.logger import get_logger
@@ -33,7 +32,7 @@ class Crawl4AIToolkit(BaseToolkit):
     ):
         super().__init__(timeout=timeout)
 
-    def scrape(self, url: str) -> str:
+    async def scrape(self, url: str) -> str:
         r"""Scrapes a webpage and returns its content.
 
         This function is designed to fetch the content of a given URL and
@@ -50,15 +49,16 @@ class Crawl4AIToolkit(BaseToolkit):
         """
         from crawl4ai import AsyncWebCrawler, CrawlerRunConfig
 
-        async def _scrape():
+        try:
             async with AsyncWebCrawler() as client:
                 config = CrawlerRunConfig(
                     only_text=True,
                 )
                 content = await client.arun(url, crawler_config=config)
                 return str(content.markdown) if content.markdown else ""
-
-        return asyncio.run(_scrape())
+        except Exception as e:
+            logger.error(f"Error scraping {url}: {e}")
+            return f"Error scraping {url}: {e}"
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
