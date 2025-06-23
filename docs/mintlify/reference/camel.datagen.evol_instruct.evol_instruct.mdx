@@ -1,0 +1,205 @@
+<a id="camel.datagen.evol_instruct.evol_instruct"></a>
+
+<a id="camel.datagen.evol_instruct.evol_instruct.EvolInstructPipeline"></a>
+
+## EvolInstructPipeline
+
+```python
+class EvolInstructPipeline:
+```
+
+Pipeline for evolving prompts using the Evol-Instruct methodology.
+
+Supports custom templates defining evolution strategies and methods. The
+pipeline leverages language models to iteratively refine prompts through
+specified evolution strategies.
+
+**Parameters:**
+
+- **templates** (Type[EvolInstructTemplates]): Template class containing evolution strategy and method definitions. Must provide `EVOL_METHODS` and `STRATEGY` attributes. (default: :obj:`EvolInstructTemplates`)
+- **agent** (Optional[ChatAgent]): Chat agent instance for LLM interaction.
+- **If**: obj:`None`, initializes with a default ChatAgent. (default: :obj:`None`)
+
+<a id="camel.datagen.evol_instruct.evol_instruct.EvolInstructPipeline.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    templates: Type = EvolInstructTemplates,
+    agent: Optional[ChatAgent] = None
+):
+```
+
+Initialize pipeline with templates and language model agent.
+
+**Parameters:**
+
+- **templates** (Type[EvolInstructTemplates]): Template class containing evolution strategy configurations. (default: :obj:`EvolInstructTemplates`)
+- **agent** (Optional[ChatAgent]): Preconfigured chat agent instance. Creates a default ChatAgent if not provided. (default: :obj:`None`)
+
+<a id="camel.datagen.evol_instruct.evol_instruct.EvolInstructPipeline._resolve_evolution_method"></a>
+
+### _resolve_evolution_method
+
+```python
+def _resolve_evolution_method(self, method_key: str):
+```
+
+Resolve evolution method key to concrete implementation.
+
+**Parameters:**
+
+- **method_key** (str): Input method identifier. Can be: - Direct method key from templates.EVOL_METHODS - Strategy name from templates.STRATEGY keys
+
+**Returns:**
+
+  str: Resolved method key from EVOL_METHODS
+
+<a id="camel.datagen.evol_instruct.evol_instruct.EvolInstructPipeline._get_evolution_methods"></a>
+
+### _get_evolution_methods
+
+```python
+def _get_evolution_methods(self, method: Union[str, List[str]], num_generations: int = 2):
+```
+
+Get list of evolution methods based on input specification.
+
+**Parameters:**
+
+- **method** (Union[str, List[str]]): Specification for method selection. Can be: - Strategy name for methods from that strategy - Specific method name - List of method specifications
+- **num_generations** (int): Number of methods to return.
+
+**Returns:**
+
+  List[str]: List of resolved method names
+
+<a id="camel.datagen.evol_instruct.evol_instruct.EvolInstructPipeline._generate_single_evolution"></a>
+
+### _generate_single_evolution
+
+```python
+def _generate_single_evolution(
+    self,
+    prompt: str,
+    method: str,
+    return_method: bool = False
+):
+```
+
+Generate a single evolved prompt from a seed prompt.
+
+**Parameters:**
+
+- **prompt** (str): The seed prompt to evolve.
+- **method** (str): The evolution method key to use.
+- **return_method** (bool): If True, returns method along with prompt.
+
+**Returns:**
+
+  Tuple[str, str]: Evolved prompt and method
+
+<a id="camel.datagen.evol_instruct.evol_instruct.EvolInstructPipeline._generate_multiple_evolutions"></a>
+
+### _generate_multiple_evolutions
+
+```python
+def _generate_multiple_evolutions(
+    self,
+    prompt: str,
+    method: Union[str, List[str]],
+    num_generations: int = 2,
+    keep_original: bool = True,
+    num_threads: int = 10
+):
+```
+
+Generate multiple evolved versions of a prompt.
+
+**Parameters:**
+
+- **prompt** (str): Seed prompt to evolve.
+- **method** (Union[str, List[str]]): Evolution method specification.
+- **num_generations** (int): Candidates to generate per iteration.
+- **keep_original** (bool): Whether to keep the original prompt.
+- **num_threads** (int): Number of threads for parallel processing.
+
+**Returns:**
+
+  List[Tuple[str, str]]: List of (evolved_prompt, method) pairs
+
+<a id="camel.datagen.evol_instruct.evol_instruct.EvolInstructPipeline._generate_iterative_evolutions"></a>
+
+### _generate_iterative_evolutions
+
+```python
+def _generate_iterative_evolutions(
+    self,
+    prompt: str,
+    evolution_spec: Union[str, List[Union[str, List[str]]]],
+    num_generations: int = 2,
+    num_iterations: Optional[int] = None,
+    keep_original: bool = True,
+    scorer: Optional[BaseScorer] = None,
+    num_threads: int = 10
+):
+```
+
+Generate iterative evolutions of a prompt with scoring.
+
+**Parameters:**
+
+- **prompt** (str): Seed prompt to evolve.
+- **evolution_spec** (Union[str, List[Union[str, List[str]]]]): Evolution method specification. If a list is provided and num_iterations is None, then num_iterations is set to the length of the list.
+- **num_generations** (int): Candidates to generate per iteration.
+- **num_iterations** (Optional[int]): Number of evolution iterations. Defaults to the length of evolution_spec.
+- **keep_original** (bool): Include original prompt in results.
+- **scorer** (Optional[BaseScorer]): Scoring model for candidate.
+- **num_threads** (int): Number of threads for parallel processing.
+
+**Returns:**
+
+  Dict[int, List[Dict[str, Any]]]: Evolution results per iteration,
+where each candidate is represented as a dict with keys:
+"instruction", "method", and "scores".
+
+<a id="camel.datagen.evol_instruct.evol_instruct.EvolInstructPipeline.generate"></a>
+
+### generate
+
+```python
+def generate(
+    self,
+    prompts: List[str],
+    evolution_spec: Union[str, List[Union[str, List[str]]]],
+    num_generations: int = 2,
+    num_iterations: Optional[int] = None,
+    keep_original: bool = True,
+    scorer: Optional[BaseScorer] = None,
+    num_chunks: int = 1,
+    retry_limit: int = 3,
+    retry_delay: float = 1.0,
+    num_threads: int = 10
+):
+```
+
+Evolve a batch of prompts through iterative refinement.
+
+**Parameters:**
+
+- **prompts** (List[str]): Seed prompts to evolve.
+- **evolution_spec** (Union[str, List[Union[str, List[str]]]]): Evolution method specification. If a list is provided and num_iterations is None, then num_iterations is set to the length of the list.
+- **num_generations** (int): Candidates to generate per iteration.
+- **num_iterations** (Optional[int]): Number of evolution iterations. Defaults to the length of evolution_spec.
+- **keep_original** (bool): Include original prompts in results.
+- **scorer** (Optional[BaseScorer]): Scoring model for candidate.
+- **num_chunks** (int): Number of parallel processing chunks.
+- **retry_limit** (int): Max retries for failed generations.
+- **retry_delay** (float): Delay between retries in seconds.
+- **num_threads** (int): Number of threads for parallel processing.
+
+**Returns:**
+
+  List[Dict[int, List[Dict[str, Any]]]]: Evolution results.

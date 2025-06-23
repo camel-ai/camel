@@ -1,0 +1,147 @@
+<a id="camel.toolkits.notion_toolkit"></a>
+
+<a id="camel.toolkits.notion_toolkit.get_plain_text_from_rich_text"></a>
+
+## get_plain_text_from_rich_text
+
+```python
+def get_plain_text_from_rich_text(rich_text: List[dict]):
+```
+
+Extracts plain text from a list of rich text elements.
+
+**Parameters:**
+
+- **rich_text**: A list of dictionaries representing rich text elements. Each dictionary should contain a key named "plain_text" with the plain text content.
+
+**Returns:**
+
+  str: A string containing the combined plain text from all elements,
+joined together.
+
+<a id="camel.toolkits.notion_toolkit.get_media_source_text"></a>
+
+## get_media_source_text
+
+```python
+def get_media_source_text(block: dict):
+```
+
+Extracts the source URL and optional caption from a
+Notion media block.
+
+**Parameters:**
+
+- **block**: A dictionary representing a Notion media block.
+
+**Returns:**
+
+  A string containing the source URL and caption (if available),
+separated by a colon.
+
+<a id="camel.toolkits.notion_toolkit.NotionToolkit"></a>
+
+## NotionToolkit
+
+```python
+class NotionToolkit(BaseToolkit):
+```
+
+A toolkit for retrieving information from the user's notion pages.
+
+**Parameters:**
+
+- **notion_token** (Optional[str], optional): The notion_token used to interact with notion APIs. (default: :obj:`None`)
+- **notion_client** (module): The notion module for interacting with the notion APIs.
+
+<a id="camel.toolkits.notion_toolkit.NotionToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    notion_token: Optional[str] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Initializes the NotionToolkit.
+
+**Parameters:**
+
+- **notion_token** (Optional[str], optional): The optional notion_token used to interact with notion APIs.(default: :obj:`None`)
+
+<a id="camel.toolkits.notion_toolkit.NotionToolkit.list_all_users"></a>
+
+### list_all_users
+
+```python
+def list_all_users(self):
+```
+
+**Returns:**
+
+  List[dict]: A list of user objects with type, name, and workspace.
+
+<a id="camel.toolkits.notion_toolkit.NotionToolkit.list_all_pages"></a>
+
+### list_all_pages
+
+```python
+def list_all_pages(self):
+```
+
+**Returns:**
+
+  List[dict]: A list of page objects with title and id.
+
+<a id="camel.toolkits.notion_toolkit.NotionToolkit.get_notion_block_text_content"></a>
+
+### get_notion_block_text_content
+
+```python
+def get_notion_block_text_content(self, block_id: str):
+```
+
+Retrieves the text content of a Notion block.
+
+**Parameters:**
+
+- **block_id** (str): The ID of the Notion block to retrieve.
+
+**Returns:**
+
+  str: The text content of a Notion block, containing all
+the sub blocks.
+
+<a id="camel.toolkits.notion_toolkit.NotionToolkit.get_text_from_block"></a>
+
+### get_text_from_block
+
+```python
+def get_text_from_block(self, block: dict):
+```
+
+Extracts plain text from a Notion block based on its type.
+
+**Parameters:**
+
+- **block** (dict): A dictionary representing a Notion block.
+
+**Returns:**
+
+  str: A string containing the extracted plain text and block type.
+
+<a id="camel.toolkits.notion_toolkit.NotionToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

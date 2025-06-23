@@ -1,0 +1,27 @@
+<a id="camel.configs.qwen_config"></a>
+
+<a id="camel.configs.qwen_config.QwenConfig"></a>
+
+## QwenConfig
+
+```python
+class QwenConfig(BaseConfig):
+```
+
+Defines the parameters for generating chat completions using the
+Qwen API. You can refer to the following link for more details:
+https://help.aliyun.com/zh/model-studio/developer-reference/use-qwen-by-calling-api
+
+**Parameters:**
+
+- **stream** (bool, optional): Whether to stream the response. (default: :obj:`None`)
+- **temperature** (float, optional): Controls the diversity and focus of the generated results. Lower values make the output more focused, while higher values make it more diverse. (default: :obj:`None`)
+- **top_p** (float, optional): Controls the diversity and focus of the generated results. Higher values make the output more diverse, while lower values make it more focused. (default: :obj:`0.9`)
+- **presence_penalty** (float, optional): Controls the repetition content in the generated results. Positive values reduce the repetition of content, while negative values increase it. (default: :obj:`None`)
+- **response_format** (Optional[Dict[str, str]], optional): Specifies the format of the returned content. The available values are `{"type": "text"}` or `{"type": "json_object"}`. Setting it to `{"type": "json_object"}` will output a standard JSON string. (default: :obj:`None`)
+- **max_tokens** (Optional[int], optional): Allows the model to generate the maximum number of tokens. (default: :obj:`None`)
+- **seed** (Optional[int], optional): Sets the seed parameter to make the text generation process more deterministic, typically used to ensure that the results are consistent across model runs. By passing the same seed value (specified by you) in each model call while keeping other parameters unchanged, the model is likely to return the same result. (default: :obj:`None`)
+- **stop** (Optional[Union[str, List]], optional): Using the stop parameter, the model will automatically stop generating text when it is about to include the specified string or token_id. You can use the stop parameter to control the output of the model by passing sensitive words. (default: :obj:`None`)
+- **tools** (List, optional): Specifies an array of tools that the model can call. It can contain one or more tool objects. During a function call process, the model will select one tool from the array. (default: :obj:`None`)
+- **extra_body** (Optional[Dict[str, Any]], optional): Additional parameters to be sent to the Qwen API. If you want to enable internet search, you can set this parameter to `{"enable_search": True}`. (default: :obj:`None`)
+- **include_usage** (bool, optional): When streaming, specifies whether to include usage information in `stream_options`. (default: :obj:`None`)

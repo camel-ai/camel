@@ -216,4 +216,3 @@ class ChunkrLoader(BaseLoader):
     @property
     def supported_formats(self) -> set:
         return {"txt", "docx", "ppt", "pdf", "jpeg", "png", "tiff"}
-        return json.dumps(response_json, indent=4, ensure_ascii=False)

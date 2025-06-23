@@ -15,15 +15,16 @@
 from .apify_reader import ApifyLoader
 from .base_io import File, create_file, create_file_from_raw_bytes
 from .chunkr_reader import ChunkrLoader
+from .crawl4ai_reader import Crawl4AI
 from .firecrawl_reader import FirecrawlLoader
 from .jina_url_reader import JinaURLLoader
-from .mineru_extractor import MinerULoader
-from .olmocr_reader import olmOCRLoader
-from .panda_reader import PandasLoader
-from .unstructured_io import UnstructuredIOLoader
-from .crawl4ai_reader import Crawl4AI
 from .markitdown import MarkItDownLoader
+from .mineru_extractor import MinerULoader
+from .mistral_reader import MistralReader
+from .olmocr_reader import olmOCRLoader
+from .pandas_reader import PandasLoader
 from .scrapegraph_reader import ScrapeGraphAI
+from .unstructured_io import UnstructuredIOLoader
 
 __all__ = [
     'File',
@@ -40,4 +41,5 @@ __all__ = [
     'Crawl4AI',
     'MarkItDownLoader',
     'ScrapeGraphAI',
+    'MistralReader',
 ]

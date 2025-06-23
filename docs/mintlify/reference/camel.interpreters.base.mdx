@@ -1,0 +1,71 @@
+<a id="camel.interpreters.base"></a>
+
+<a id="camel.interpreters.base.BaseInterpreter"></a>
+
+## BaseInterpreter
+
+```python
+class BaseInterpreter(ABC):
+```
+
+An abstract base class for code interpreters.
+
+<a id="camel.interpreters.base.BaseInterpreter.run"></a>
+
+### run
+
+```python
+def run(self, code: str, code_type: str):
+```
+
+Executes the given code based on its type.
+
+**Parameters:**
+
+- **code** (str): The code to be executed.
+- **code_type** (str): The type of the code, which must be one of the types returned by `supported_code_types()`.
+
+**Returns:**
+
+  str: The result of the code execution. If the execution fails, this
+should include sufficient information to diagnose and correct
+the issue.
+
+<a id="camel.interpreters.base.BaseInterpreter.supported_code_types"></a>
+
+### supported_code_types
+
+```python
+def supported_code_types(self):
+```
+
+Provides supported code types by the interpreter.
+
+<a id="camel.interpreters.base.BaseInterpreter.update_action_space"></a>
+
+### update_action_space
+
+```python
+def update_action_space(self, action_space: Dict[str, Any]):
+```
+
+Updates action space for *python* interpreter
+
+<a id="camel.interpreters.base.BaseInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Executes a command in the interpreter.
+
+**Parameters:**
+
+- **command** (str): The command to execute.
+
+**Returns:**
+
+  Tuple[str, str]: A tuple containing the stdout and stderr of the
+command execution.

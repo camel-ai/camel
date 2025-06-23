@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -65,7 +65,7 @@ def test_initialization_with_default_embedding():
 
 
 # Test process method
-def test_process(mock_unstructured_modules):
+def test_process(mock_unstructured_modules, monkeypatch):
     mock_instance = mock_unstructured_modules.return_value
 
     # Create a mock chunk with metadata

@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, List, Optional
 if TYPE_CHECKING:
     from unstructured.documents.elements import Element
 
-from camel.loaders import UnstructuredIO
+from camel.loaders import UnstructuredIOLoader
 from camel.utils.chunker import BaseChunker
 
 
@@ -45,7 +45,7 @@ class UnstructuredIOChunker(BaseChunker):
         max_characters: int = 500,
         metadata_filename: Optional[str] = None,
     ):
-        self.uio = UnstructuredIO()
+        self.uio = UnstructuredIOLoader()
         self.chunk_type = chunk_type
         self.max_characters = max_characters
         self.metadata_filename = metadata_filename

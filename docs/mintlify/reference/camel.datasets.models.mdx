@@ -1,0 +1,48 @@
+<a id="camel.datasets.models"></a>
+
+<a id="camel.datasets.models.DataPoint"></a>
+
+## DataPoint
+
+```python
+class DataPoint(BaseModel):
+```
+
+A single data point in the dataset.
+
+**Parameters:**
+
+- **question** (str): The primary question or issue to be addressed.
+- **final_answer** (str): The final answer.
+- **rationale** (Optional[str]): Logical reasoning or explanation behind the answer. (default: :obj:`None`)
+- **metadata** (Optional[Dict[str, Any]]): Additional metadata about the data point. (default: :obj:`None`)
+
+<a id="camel.datasets.models.DataPoint.to_dict"></a>
+
+### to_dict
+
+```python
+def to_dict(self):
+```
+
+**Returns:**
+
+  Dict[str, Any]: Dictionary representation of the DataPoint.
+
+<a id="camel.datasets.models.DataPoint.from_dict"></a>
+
+### from_dict
+
+```python
+def from_dict(cls, data: Dict[str, Any]):
+```
+
+Create a DataPoint from a dictionary.
+
+**Parameters:**
+
+- **data** (Dict[str, Any]): Dictionary containing DataPoint fields.
+
+**Returns:**
+
+  DataPoint: New DataPoint instance.

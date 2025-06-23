@@ -1,0 +1,634 @@
+<a id="camel.utils.commons"></a>
+
+<a id="camel.utils.commons.print_text_animated"></a>
+
+## print_text_animated
+
+```python
+def print_text_animated(text, delay: float = 0.02, end: str = ''):
+```
+
+Prints the given text with an animated effect.
+
+**Parameters:**
+
+- **text** (str): The text to print.
+- **delay** (float, optional): The delay between each character printed. (default: :obj:`0.02`)
+- **end** (str, optional): The end character to print after each character of text. (default: :obj:`""`)
+
+<a id="camel.utils.commons.get_prompt_template_key_words"></a>
+
+## get_prompt_template_key_words
+
+```python
+def get_prompt_template_key_words(template: str):
+```
+
+Given a string template containing curly braces \{\}, return a set of
+the words inside the braces.
+
+**Parameters:**
+
+- **template** (str): A string containing curly braces.
+
+**Returns:**
+
+  List[str]: A list of the words inside the curly braces.
+
+<a id="camel.utils.commons.get_first_int"></a>
+
+## get_first_int
+
+```python
+def get_first_int(string: str):
+```
+
+Returns the first integer number found in the given string.
+
+If no integer number is found, returns None.
+
+**Parameters:**
+
+- **string** (str): The input string.
+
+**Returns:**
+
+  int or None: The first integer number found in the string, or None if
+no integer number is found.
+
+<a id="camel.utils.commons.download_tasks"></a>
+
+## download_tasks
+
+```python
+def download_tasks(task: TaskType, folder_path: str):
+```
+
+Downloads task-related files from a specified URL and extracts them.
+
+This function downloads a zip file containing tasks based on the specified
+`task` type from a predefined URL, saves it to `folder_path`, and then
+extracts the contents of the zip file into the same folder. After
+extraction, the zip file is deleted.
+
+**Parameters:**
+
+- **task** (TaskType): An enum representing the type of task to download.
+- **folder_path** (str): The path of the folder where the zip file will be downloaded and extracted.
+
+<a id="camel.utils.commons.get_task_list"></a>
+
+## get_task_list
+
+```python
+def get_task_list(task_response: str):
+```
+
+Parse the response of the Agent and return task list.
+
+**Parameters:**
+
+- **task_response** (str): The string response of the Agent.
+
+**Returns:**
+
+  List[str]: A list of the string tasks.
+
+<a id="camel.utils.commons.check_server_running"></a>
+
+## check_server_running
+
+```python
+def check_server_running(server_url: str):
+```
+
+Check whether the port referred by the URL to the server
+is open.
+
+**Parameters:**
+
+- **server_url** (str): The URL to the server running LLM inference service.
+
+**Returns:**
+
+  bool: Whether the port is open for packets (server is running).
+
+<a id="camel.utils.commons.dependencies_required"></a>
+
+## dependencies_required
+
+```python
+def dependencies_required(*required_modules: str):
+```
+
+A decorator to ensure that specified Python modules
+are available before a function executes.
+
+**Parameters:**
+
+- **required_modules** (str): The required modules to be checked for availability.
+
+**Returns:**
+
+  Callable[[F], F]: The original function with the added check for
+required module dependencies.
+
+**Raises:**
+
+- **ImportError**: If any of the required modules are not available.
+
+<a id="camel.utils.commons.is_module_available"></a>
+
+## is_module_available
+
+```python
+def is_module_available(module_name: str):
+```
+
+Check if a module is available for import.
+
+**Parameters:**
+
+- **module_name** (str): The name of the module to check for availability.
+
+**Returns:**
+
+  bool: True if the module can be imported, False otherwise.
+
+<a id="camel.utils.commons.api_keys_required"></a>
+
+## api_keys_required
+
+```python
+def api_keys_required(param_env_list: List[Tuple[Optional[str], str]]):
+```
+
+A decorator to check if the required API keys are provided in the
+environment variables or as function arguments.
+
+**Parameters:**
+
+- **param_env_list** (List[Tuple[Optional[str], str]]): A list of tuples where each tuple contains a function argument name (as the first element, or None) and the corresponding environment variable name (as the second element) that holds the API key.
+
+**Returns:**
+
+  Callable[[F], F]: The original function wrapped with the added check
+for the required API keys.
+
+**Raises:**
+
+- **ValueError**: If any of the required API keys are missing, either
+
+<a id="camel.utils.commons.get_system_information"></a>
+
+## get_system_information
+
+```python
+def get_system_information():
+```
+
+**Returns:**
+
+  dict: A dictionary containing various pieces of OS information.
+
+<a id="camel.utils.commons.to_pascal"></a>
+
+## to_pascal
+
+```python
+def to_pascal(snake: str):
+```
+
+Convert a snake_case string to PascalCase.
+
+**Parameters:**
+
+- **snake** (str): The snake_case string to be converted.
+
+**Returns:**
+
+  str: The converted PascalCase string.
+
+<a id="camel.utils.commons.get_pydantic_major_version"></a>
+
+## get_pydantic_major_version
+
+```python
+def get_pydantic_major_version():
+```
+
+**Returns:**
+
+  int: The major version number of Pydantic if installed, otherwise 0.
+
+<a id="camel.utils.commons.get_pydantic_object_schema"></a>
+
+## get_pydantic_object_schema
+
+```python
+def get_pydantic_object_schema(pydantic_params: Type[BaseModel]):
+```
+
+Get the JSON schema of a Pydantic model.
+
+**Parameters:**
+
+- **pydantic_params** (Type[BaseModel]): The Pydantic model class to retrieve the schema for.
+
+**Returns:**
+
+  dict: The JSON schema of the Pydantic model.
+
+<a id="camel.utils.commons.func_string_to_callable"></a>
+
+## func_string_to_callable
+
+```python
+def func_string_to_callable(code: str):
+```
+
+Convert a function code string to a callable function object.
+
+**Parameters:**
+
+- **code** (str): The function code as a string.
+
+**Returns:**
+
+  Callable[..., Any]: The callable function object extracted from the
+code string.
+
+<a id="camel.utils.commons.json_to_function_code"></a>
+
+## json_to_function_code
+
+```python
+def json_to_function_code(json_obj: Dict):
+```
+
+Generate a Python function code from a JSON schema.
+
+**Parameters:**
+
+- **json_obj** (dict): The JSON schema object containing properties and required fields, and json format is follow openai tools schema
+
+**Returns:**
+
+  str: The generated Python function code as a string.
+
+<a id="camel.utils.commons.text_extract_from_web"></a>
+
+## text_extract_from_web
+
+```python
+def text_extract_from_web(url: str):
+```
+
+Get the text information from given url.
+
+**Parameters:**
+
+- **url** (str): The website you want to search.
+
+**Returns:**
+
+  str: All texts extract from the web.
+
+<a id="camel.utils.commons.create_chunks"></a>
+
+## create_chunks
+
+```python
+def create_chunks(text: str, n: int):
+```
+
+Returns successive n-sized chunks from provided text. Split a text
+into smaller chunks of size n".
+
+**Parameters:**
+
+- **text** (str): The text to be split.
+- **n** (int): The max length of a single chunk.
+
+**Returns:**
+
+  List[str]: A list of split texts.
+
+<a id="camel.utils.commons.is_docker_running"></a>
+
+## is_docker_running
+
+```python
+def is_docker_running():
+```
+
+**Returns:**
+
+  bool: True if the Docker daemon is running, False otherwise.
+
+<a id="camel.utils.commons.agentops_decorator"></a>
+
+## agentops_decorator
+
+```python
+def agentops_decorator(func):
+```
+
+Decorator that records the execution of a function if ToolEvent is
+available.
+
+**Parameters:**
+
+- **func** (callable): The function to be decorated.
+
+**Returns:**
+
+  callable: The wrapped function which records its execution details.
+
+<a id="camel.utils.commons.AgentOpsMeta"></a>
+
+## AgentOpsMeta
+
+```python
+class AgentOpsMeta(type):
+```
+
+Metaclass that automatically decorates all callable attributes with
+the agentops_decorator,
+except for the 'get_tools' method.
+
+Methods:
+__new__(cls, name, bases, dct):
+Creates a new class with decorated methods.
+
+<a id="camel.utils.commons.AgentOpsMeta.__new__"></a>
+
+### __new__
+
+```python
+def __new__(
+    cls,
+    name,
+    bases,
+    dct
+):
+```
+
+<a id="camel.utils.commons.track_agent"></a>
+
+## track_agent
+
+```python
+def track_agent(*args, **kwargs):
+```
+
+Mock track agent decorator for AgentOps.
+
+<a id="camel.utils.commons.handle_http_error"></a>
+
+## handle_http_error
+
+```python
+def handle_http_error(response: requests.Response):
+```
+
+Handles the HTTP errors based on the status code of the response.
+
+**Parameters:**
+
+- **response** (requests.Response): The HTTP response from the API call.
+
+**Returns:**
+
+  str: The error type, based on the status code.
+
+<a id="camel.utils.commons.retry_on_error"></a>
+
+## retry_on_error
+
+```python
+def retry_on_error(max_retries: int = 3, initial_delay: float = 1.0):
+```
+
+Decorator to retry function calls on exception with exponential
+backoff.
+
+**Parameters:**
+
+- **max_retries** (int): Maximum number of retry attempts
+- **initial_delay** (float): Initial delay between retries in seconds
+
+**Returns:**
+
+  Callable: Decorated function with retry logic
+
+<a id="camel.utils.commons.BatchProcessor"></a>
+
+## BatchProcessor
+
+```python
+class BatchProcessor:
+```
+
+Handles batch processing with dynamic sizing and error handling based
+on system load.
+
+<a id="camel.utils.commons.BatchProcessor.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    max_workers: Optional[int] = None,
+    initial_batch_size: Optional[int] = None,
+    monitoring_interval: float = 5.0,
+    cpu_threshold: float = 80.0,
+    memory_threshold: float = 85.0
+):
+```
+
+Initialize the BatchProcessor with dynamic worker allocation.
+
+**Parameters:**
+
+- **max_workers**: Maximum number of workers. If None, will be determined dynamically based on system resources. (default: :obj:`None`)
+- **initial_batch_size**: Initial size of each batch. If `None`, defaults to `10`. (default: :obj:`None`)
+- **monitoring_interval**: Interval in seconds between resource checks. (default: :obj:`5.0`)
+- **cpu_threshold**: CPU usage percentage threshold for scaling down. (default: :obj:`80.0`)
+- **memory_threshold**: Memory usage percentage threshold for scaling down. (default: :obj:`85.0`)
+
+<a id="camel.utils.commons.BatchProcessor._calculate_optimal_workers"></a>
+
+### _calculate_optimal_workers
+
+```python
+def _calculate_optimal_workers(self):
+```
+
+Calculate optimal number of workers based on system resources.
+
+<a id="camel.utils.commons.BatchProcessor._update_resource_metrics"></a>
+
+### _update_resource_metrics
+
+```python
+def _update_resource_metrics(self):
+```
+
+Update current resource usage metrics.
+
+<a id="camel.utils.commons.BatchProcessor._should_check_resources"></a>
+
+### _should_check_resources
+
+```python
+def _should_check_resources(self):
+```
+
+Determine if it's time to check resource usage again.
+
+<a id="camel.utils.commons.BatchProcessor.adjust_batch_size"></a>
+
+### adjust_batch_size
+
+```python
+def adjust_batch_size(self, success: bool, processing_time: Optional[float] = None):
+```
+
+Adjust batch size based on success/failure and system resources.
+
+**Parameters:**
+
+- **success** (bool): Whether the last batch completed successfully
+- **processing_time** (Optional[float]): Time taken to process the last batch. (default: :obj:`None`)
+
+<a id="camel.utils.commons.BatchProcessor.get_performance_metrics"></a>
+
+### get_performance_metrics
+
+```python
+def get_performance_metrics(self):
+```
+
+**Returns:**
+
+  Dict containing performance metrics including:
+- total_processed: Total number of batches processed
+- error_rate: Percentage of failed batches
+- avg_processing_time: Average time per batch
+- current_batch_size: Current batch size
+- current_workers: Current number of workers
+- current_cpu: Current CPU usage percentage
+- current_memory: Current memory usage percentage
+
+<a id="camel.utils.commons.download_github_subdirectory"></a>
+
+## download_github_subdirectory
+
+```python
+def download_github_subdirectory(
+    repo: str,
+    subdir: str,
+    data_dir: Path,
+    branch = 'main'
+):
+```
+
+Download subdirectory of the Github repo of
+the benchmark.
+
+This function downloads all files and subdirectories from a
+specified subdirectory of a GitHub repository and
+saves them to a local directory.
+
+**Parameters:**
+
+- **repo** (str): The name of the GitHub repository in the format "owner/repo".
+- **subdir** (str): The path to the subdirectory within the repository to download.
+- **data_dir** (Path): The local directory where the files will be saved.
+- **branch** (str, optional): The branch of the repository to use. Defaults to "main".
+
+<a id="camel.utils.commons.generate_prompt_for_structured_output"></a>
+
+## generate_prompt_for_structured_output
+
+```python
+def generate_prompt_for_structured_output(response_format: Optional[Type[BaseModel]], user_message: str):
+```
+
+This function generates a prompt based on the provided Pydantic model and
+user message.
+
+**Parameters:**
+
+- **response_format** (Type[BaseModel]): The Pydantic model class.
+- **user_message** (str): The user message to be used in the prompt.
+
+**Returns:**
+
+  str: A prompt string for the LLM.
+
+<a id="camel.utils.commons.with_timeout"></a>
+
+## with_timeout
+
+```python
+def with_timeout(timeout = None):
+```
+
+Decorator that adds timeout functionality to functions.
+
+Executes functions with a specified timeout value. Returns a timeout
+message if execution time is exceeded.
+
+**Parameters:**
+
+- **timeout** (float, optional): The timeout duration in seconds. If None, will try to get timeout from the instance's timeout attribute. (default: :obj:`None`)
+
+<a id="camel.utils.commons.browser_toolkit_save_auth_cookie"></a>
+
+## browser_toolkit_save_auth_cookie
+
+```python
+def browser_toolkit_save_auth_cookie(cookie_json_path: str, url: str, wait_time: int = 60):
+```
+
+Saves authentication cookies and browser storage state to a JSON file.
+
+This function launches a browser window and navigates to the specified URL,
+allowing the user to manually authenticate (log in) during a 60-second
+wait period.After authentication, it saves all cookies, localStorage, and
+sessionStorage data to the specified JSON file path, which can be used
+later to maintain authenticated sessions without requiring manual login.
+
+**Parameters:**
+
+- **cookie_json_path** (str): Path where the authentication cookies and storage state will be saved as a JSON file. If the file already exists, it will be loaded first and then overwritten with updated state. The function checks if this file exists before attempting to use it.
+- **url** (str): The URL to navigate to for authentication (e.g., a login page).
+- **wait_time** (int): The time in seconds to wait for the user to manually authenticate.
+- **Usage**: 1. The function opens a browser window and navigates to the specified URL 2. User manually logs in during the wait_time wait period 3. Browser storage state (including auth cookies) is saved to the specified file 4. The saved state can be used in subsequent browser sessions to maintain authentication
+
+**Note:**
+
+The wait_time sleep is intentional to give the user enough time to
+complete the manual authentication process before the storage state
+is captured.
+
+<a id="camel.utils.commons.run_async"></a>
+
+## run_async
+
+```python
+def run_async(func: Callable[..., Any]):
+```
+
+Helper function to run async functions in synchronous context.
+
+**Parameters:**
+
+- **func** (Callable[..., Any]): The async function to wrap.
+
+**Returns:**
+
+  Callable[..., Any]: A synchronous wrapper for the async function.
