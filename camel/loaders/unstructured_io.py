@@ -476,7 +476,19 @@ class UnstructuredIO:
 
 
 class UnstructuredIOLoader(BaseLoader):
+    r"""
+    Loader for unstructured data.
+
+    Args:
+        config (Optional[Dict[str, Any]]): The configuration for the loader.
+    """
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        r"""
+        Initialize the UnstructuredIOLoader.
+
+        Args:
+            config (Optional[Dict[str, Any]]): The configuration for the loader.
+        """
         super().__init__(config)
 
     def load(self, source, **kwargs) -> Union[List["Element"], None]:
@@ -516,6 +528,29 @@ class UnstructuredIOLoader(BaseLoader):
         filetype: Optional[str] = None,
         parent_id: Optional[str] = None,
     ) -> "Element":
+        r"""
+        Create an element from text.
+
+        Args:
+            text (str): The text to create an element from.
+            element_id (Optional[str], optional): The ID of the element.
+                (default: :obj:`None`)
+            embeddings (Optional[List[float]], optional): The embeddings of
+                the element. (default: :obj:`None`)
+            filename (Optional[str], optional): The filename of the element.
+                (default: :obj:`None`)
+            file_directory (Optional[str], optional): The directory of the
+                element. (default: :obj:`None`)
+            last_modified (Optional[str], optional): The last modified time
+                of the element. (default: :obj:`None`)
+            filetype (Optional[str], optional): The type of the element.
+                (default: :obj:`None`)
+            parent_id (Optional[str], optional): The parent ID of the element.
+                (default: :obj:`None`)
+
+        Returns:
+            Element: The created element.
+        """
         return UnstructuredIO.create_element_from_text(
             text,
             element_id,
@@ -532,7 +567,17 @@ class UnstructuredIOLoader(BaseLoader):
         text: str,
         clean_options: Optional[List[Tuple[str, Dict[str, Any]]]] = None,
     ) -> str:
-        r"""Clean the text using UnstructuredIO's cleaning utility."""
+        r"""
+        Clean the text using UnstructuredIO's cleaning utility.
+
+        Args:
+            text (str): The text to clean.
+            clean_options (Optional[List[Tuple[str, Dict[str, Any]]]], optional):
+                The cleaning options. (default: :obj:`None`)
+
+        Returns:
+            str: The cleaned text.
+        """
         return UnstructuredIO.clean_text_data(text, clean_options)
 
     @staticmethod
@@ -551,6 +596,17 @@ class UnstructuredIOLoader(BaseLoader):
         ],
         **kwargs,
     ) -> Any:
+        r"""
+        Extract data from text using UnstructuredIO's extraction utility.
+
+        Args:
+            text (str): The text to extract data from.
+            extract_type (Literal): The type of data to extract.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Any: The extracted data.
+        """
         return UnstructuredIO.extract_data_from_text(
             text, extract_type, **kwargs
         )
@@ -573,12 +629,34 @@ class UnstructuredIOLoader(BaseLoader):
         ],
         **kwargs,
     ) -> Union[str, List[Dict], Any]:
+        r"""
+        Stage elements using UnstructuredIO's staging utility.
+
+        Args:
+            elements (List[Any]): The elements to stage.
+            stage_type (Literal): The type of staging to perform.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Union[str, List[Dict], Any]: The staged elements.
+        """
         return UnstructuredIO.stage_elements(elements, stage_type, **kwargs)
 
     @staticmethod
     def chunk_elements(
         elements: List["Element"], chunk_type: str, **kwargs
     ) -> List["Element"]:
+        r"""
+        Chunk elements using UnstructuredIO's chunking utility.
+
+        Args:
+            elements (List[Element]): The elements to chunk.
+            chunk_type (str): The type of chunking to perform.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Element]: The chunked elements.
+        """
         return UnstructuredIO.chunk_elements(elements, chunk_type, **kwargs)
 
     @property

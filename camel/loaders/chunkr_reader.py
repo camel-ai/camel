@@ -170,6 +170,12 @@ class ChunkrReader:
 
 
 class ChunkrLoader(BaseLoader):
+    r"""
+    ChunkrLoader is a loader that loads data from the Chunkr platform.
+
+    Args:
+        config (dict): The configuration for the loader.
+    """
     def __init__(
         self,
         config: Optional[Dict[str, Any]],
@@ -200,7 +206,21 @@ class ChunkrLoader(BaseLoader):
         )
 
     def load(self, source: str, **kwargs: Any) -> str:
-        # Submit the task and retrieve the task ID.
+        r"""
+        Load data from the Chunkr platform.
+
+        Args:
+            source (str): The source to load data from.
+            model (str, optional): The model to be used for the task.
+                (default: :obj:`Fast`)
+            ocr_strategy (str, optional): The OCR strategy. Defaults to 'Auto'.
+            target_chunk_length (str, optional): The target chunk length.
+                (default: :obj:`512`)
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            str: The loaded data.
+        """
         task_id = self.chunkr.submit_task(
             file_path=source,
             model=kwargs.get("model", "Fast"),
@@ -210,9 +230,25 @@ class ChunkrLoader(BaseLoader):
         return task_id
 
     def get_task_output(self, task_id: str, max_retries: int = 5) -> str:
-        # Wait for and return the task output.
+        r"""
+        Get the output of a task from the Chunkr platform.
+
+        Args:
+            task_id (str): The ID of the task to get the output for.
+            max_retries (int, optional): The maximum number of retries to
+                attempt. (default: :obj:`5`)
+
+        Returns:
+            str: The output of the task.
+        """
         return self.chunkr.get_task_output(task_id, max_retries=max_retries)
 
     @property
     def supported_formats(self) -> set:
+        r"""
+        Return the supported formats for the loader.
+
+        Returns:
+            set: The supported formats.
+        """
         return {"txt", "docx", "ppt", "pdf", "jpeg", "png", "tiff"}

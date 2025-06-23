@@ -374,7 +374,19 @@ class PandasReader:
 
 
 class PandasLoader(BaseLoader):
+    r"""
+    Loader for pandas DataFrame.
+
+    Args:
+        config (Optional[Dict[str, Any]]): The configuration for the loader.    
+    """
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        r"""
+        Initialize the PandasLoader.
+
+        Args:
+            config (Optional[Dict[str, Any]]): The configuration for the loader.
+        """
         super().__init__(config)
         from pandasai.llm import OpenAI  # type: ignore[import-untyped]
 
@@ -406,6 +418,17 @@ class PandasLoader(BaseLoader):
         *args: Any,
         **kwargs: Dict[str, Any],
     ) -> Union["SmartDataframe", "DataFrame"]:
+        r"""
+        Load the content of a file or DataFrame.
+
+        Args:
+            source (Union[pd.DataFrame, str]): The source to load.
+            *args (Any): Additional positional arguments.
+            **kwargs (Dict[str, Any]): Additional keyword arguments.
+
+        Returns:
+            Union["SmartDataframe", "DataFrame"]: The loaded content.
+        """
         from pandas import DataFrame
         from pandasai import SmartDataframe
 
@@ -424,4 +447,10 @@ class PandasLoader(BaseLoader):
 
     @property
     def supported_formats(self) -> set:
+        r"""
+        Return the supported formats for the loader.
+
+        Returns:
+            set: A set of supported formats.
+        """
         return set(self._loader_map.keys())

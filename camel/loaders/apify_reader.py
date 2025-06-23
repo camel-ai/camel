@@ -230,7 +230,19 @@ class Apify:
 
 
 class ApifyLoader(BaseLoader):
+    r"""
+    ApifyLoader is a loader that loads data from the Apify platform.
+
+    Args:
+        config (dict): The configuration for the loader.
+    """
     def __init__(self, config) -> None:
+        r"""
+        Initialize the ApifyLoader.
+
+        Args:
+            config (dict): The configuration for the loader.
+        """
         super().__init__(config)
         # Initialize the underlying Apify class.
         self._api_key = config.get("api_key") or os.environ.get(
@@ -239,6 +251,16 @@ class ApifyLoader(BaseLoader):
         self.apify = Apify(api_key=self._api_key)
 
     def load(self, source: str, **kwargs: Any) -> Union[dict, List[dict]]:
+        r"""
+        Load data from the Apify platform.
+
+        Args:
+            source (str): The source to load data from.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            Union[dict, List[dict]]: The loaded data.
+        """
         functionality = kwargs.get("functionality", "run_actor")
 
         if functionality == "run_actor":
@@ -290,4 +312,10 @@ class ApifyLoader(BaseLoader):
 
     @property
     def supported_formats(self) -> set:
+        r"""
+        Return the supported formats for the loader.
+
+        Returns:
+            set: The supported formats.
+        """
         return {"apify"}

@@ -107,6 +107,13 @@ class JinaURLLoader(BaseLoader):
         config: Optional[Dict[str, Any]],
         **kwargs: Any,
     ) -> None:
+        r"""
+        Initialize the JinaURLLoader.
+
+        Args:
+            config (Optional[Dict[str, Any]]): The configuration for the loader.
+            **kwargs (Any): Additional keyword arguments.
+        """
         super().__init__(config)
         self.config = config if config else {}
         self.api_key = self.config.get("api_key") or os.getenv('JINA_API_KEY')
@@ -140,8 +147,24 @@ class JinaURLLoader(BaseLoader):
         )
 
     def load(self, source: str, **kwargs: Any) -> str:
+        r"""
+        Load the content of a URL.
+
+        Args:
+            source (str): The URL to load.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            str: The content of the URL.
+        """
         return self.reader.read_content(source)
 
     @property
     def supported_formats(self) -> set:
+        r"""
+        Return the supported formats for the loader.
+
+        Returns:
+            set: A set of supported formats.
+        """
         return {"url", "html"}
