@@ -19,7 +19,7 @@ import time
 import uuid
 from collections import deque
 from enum import Enum
-from typing import Any, Deque, Dict, List, Optional
+from typing import Any, Coroutine, Deque, Dict, List, Optional
 
 from colorama import Fore
 
@@ -416,6 +416,23 @@ class Workforce(BaseNode):
             self._share_memory_with_agents(shared_memory)
         except Exception as e:
             logger.warning(f"Error synchronizing shared memory: {e}")
+
+    def _submit_coro_to_loop(self, coro: Coroutine) -> None:
+        r"""Submit a coroutine to the running event loop safely.
+
+        Args:
+            coro: The coroutine to submit to the event loop.
+        """
+        try:
+            if self._loop and not self._loop.is_closed():
+                # Use run_coroutine_threadsafe to safely submit to the loop
+                asyncio.run_coroutine_threadsafe(coro, self._loop)
+            else:
+                logger.warning(
+                    "Cannot submit coroutine: event loop is not available"
+                )
+        except Exception as e:
+            logger.error(f"Error submitting coroutine to event loop: {e}")
 
     def _decompose_task(self, task: Task) -> List[Task]:
         r"""Decompose the task into subtasks. This method will also set the
@@ -1860,6 +1877,23 @@ class Workforce(BaseNode):
 
         # shut down the whole workforce tree
         self.stop()
+
+    def _submit_coro_to_loop(self, coro: 'Coroutine') -> None:
+        r"""Thread-safe submission of coroutine to the workforce loop."""
+
+        loop = self._loop
+        if loop is None or loop.is_closed():
+            logger.warning("Cannot submit coroutine - no active event loop")
+            return
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+
+        if running_loop is loop:
+            loop.create_task(coro)
+        else:
+            asyncio.run_coroutine_threadsafe(coro, loop)
 
     @check_if_running(False)
     async def start(self) -> None:
