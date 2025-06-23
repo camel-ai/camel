@@ -115,16 +115,19 @@ class BrowserNonVisualToolkit(BaseToolkit):
     async def open_browser(
         self, start_url: Optional[str] = None
     ) -> Dict[str, str]:
-        r"""Launch a Playwright browser session.
+        r"""Launches a new browser session. This should be the first step.
 
         Args:
-            start_url (Optional[str]): Optional URL to navigate to immediately
-                after the browser launches. If not provided, the browser will
-                not navigate to any URL. (default: :obj:`None`)
+            start_url (Optional[str]): The URL to navigate to after the browser
+                launches. If not provided, the browser will open with a blank
+                page. (default: :obj:`None`)
 
         Returns:
-            Dict[str, str]: Keys: ``result`` for action outcome,
-                ``snapshot`` for full DOM snapshot.
+            Dict[str, str]: A dictionary containing the result of the action
+                and a snapshot of the page. The keys are "result" and
+                "snapshot". The "snapshot" is a YAML-like representation of
+                the page's DOM structure, including element references
+                (e.g., "e3") that can be used in other tool calls.
         """
         await self._session.ensure_browser()
         if start_url:
@@ -136,10 +139,12 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return {"result": "Browser session started.", "snapshot": snapshot}
 
     async def close_browser(self) -> str:
-        r"""Terminate the current browser session and free all resources.
+        r"""Closes the current browser session, freeing up all associated
+        resources. This should be called when the browsing task is complete.
 
         Returns:
-            str: Confirmation message.
+            str: A confirmation message indicating the session has been
+                closed.
         """
         # Close agent if it exists
         if self._agent is not None:
@@ -154,14 +159,17 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return "Browser session closed."
 
     async def visit_page(self, url: str) -> Dict[str, str]:
-        r"""Navigate the current page to the specified URL.
+        r"""Navigates the current browser page to a new URL.
 
         Args:
-            url (str): The destination URL.
+            url (str): The URL to navigate to. Must be a fully qualified URL
+                (e.g., "https://www.google.com").
 
         Returns:
-            Dict[str, str]: Keys: ``result`` for action outcome,
-                ``snapshot`` for full DOM snapshot.
+            Dict[str, str]: A dictionary containing the navigation result and a
+                snapshot of the new page. The keys are "result" and
+                "snapshot". The "snapshot" provides a fresh view of the
+                page's DOM structure.
         """
         if not url or not isinstance(url, str):
             raise ValueError("visit_page(): 'url' must be a non-empty string")
@@ -192,14 +200,16 @@ class BrowserNonVisualToolkit(BaseToolkit):
         )
 
     async def click(self, *, ref: str) -> Dict[str, str]:
-        r"""Click an element identified by ``ref``
+        r"""Performs a click action on a specified element on the current page.
 
         Args:
-            ref (str): Element reference ID extracted from snapshot
-                (e.g.``"e3"``).
+            ref (str): The reference ID of the element to click. This ID is
+                obtained from the page snapshot (e.g., "e12").
 
         Returns:
-            Dict[str, str]: Result message from ``ActionExecutor``.
+            Dict[str, str]: A dictionary containing the result of the action.
+                If the click causes a change in the page's structure, a
+                "snapshot" key will be included with a diff of the changes.
         """
         self._validate_ref(ref, "click")
 
@@ -207,15 +217,16 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return await self._exec_with_snapshot(action)
 
     async def type(self, *, ref: str, text: str) -> Dict[str, str]:
-        r"""Type text into an input or textarea element.
+        r"""Types text into an input field or textarea on the current page.
 
         Args:
-            ref (str): Element reference ID extracted from snapshot.
-                (e.g.``"e3"``).
-            text (str): The text to enter.
+            ref (str): The reference ID of the input element. This ID is
+                obtained from the page snapshot (e.g., "e25").
+            text (str): The text to be typed into the element.
 
         Returns:
-            Dict[str, str]: Execution result message.
+            Dict[str, str]: A dictionary containing the result of the action.
+                The key is "result".
         """
         self._validate_ref(ref, "type")
 
@@ -223,14 +234,17 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return await self._exec_with_snapshot(action)
 
     async def select(self, *, ref: str, value: str) -> Dict[str, str]:
-        r"""Select an option in a ``<select>`` element.
+        r"""Selects an option from a dropdown (<select>) element on the page.
 
         Args:
-            ref (str): Element reference ID.
-            value (str): The value / option to select.
+            ref (str): The reference ID of the <select> element. This ID is
+                obtained from the page snapshot.
+            value (str): The value of the option to be selected. This should
+                match the 'value' attribute of an <option> tag.
 
         Returns:
-            Dict[str, str]: Execution result message.
+            Dict[str, str]: A dictionary containing the result of the action.
+                The key is "result".
         """
         self._validate_ref(ref, "select")
 
@@ -238,15 +252,16 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return await self._exec_with_snapshot(action)
 
     async def scroll(self, *, direction: str, amount: int) -> Dict[str, str]:
-        r"""Scroll the page.
+        r"""Scrolls the current page up or down by a specified amount.
 
         Args:
-            direction (str): Scroll direction, should be ``"down"`` or
-                ``"up"``.
-            amount (int): Pixel distance to scroll.
+            direction (str): The direction to scroll. Must be either "up" or
+                "down".
+            amount (int): The number of pixels to scroll.
 
         Returns:
-            Dict[str, str]: Execution result message.
+            Dict[str, str]: A dictionary containing the result of the action.
+                The key is "result".
         """
         if direction not in ("up", "down"):
             logger.error("scroll(): 'direction' must be 'up' or 'down'")
@@ -258,13 +273,17 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return await self._exec_with_snapshot(action)
 
     async def enter(self, *, ref: str) -> Dict[str, str]:
-        r"""Press the Enter key.
+        r"""Simulates pressing the Enter key on a specific element.
+        This is often used to submit forms.
 
         Args:
-            ref (str): Element reference ID to focus before pressing.
+            ref (str): The reference ID of the element to focus before
+                pressing Enter. This ID is obtained from the page snapshot.
 
         Returns:
-            Dict[str, str]: Execution result message.
+            Dict[str, str]: A dictionary containing the result of the action.
+                If pressing Enter causes a page navigation or DOM change, a
+                "snapshot" key will be included with a diff of the changes.
         """
         self._validate_ref(ref, "enter")
 
@@ -273,21 +292,22 @@ class BrowserNonVisualToolkit(BaseToolkit):
 
     async def wait_user(
         self,
-        timeout_sec: float | None = None,
+        timeout_sec: Optional[float] = None,
     ) -> Dict[str, str]:
-        r"""Block until human presses Enter (or timeout).
-
-        This simple implementation is sufficient because the agent will not
-        proceed until this function returns.  It prints a prompt to stdout
-        and waits for the user to hit *Enter*.  Optionally a timeout can be
-        specified.
+        r"""Pauses the agent's execution and waits for human intervention.
+        This is useful for tasks that require manual steps, like solving a
+        CAPTCHA. The agent will print a message and wait for the user to
+        press the Enter key in the console.
 
         Args:
-            timeout_sec (float | None): Maximum time to wait before
-                returning. If omitted, wait indefinitely.
+            timeout_sec (Optional[float]): The maximum time in seconds to wait
+                for the user. If `None`, it will wait indefinitely. Defaults
+                to `None`. (default: :obj:`None`)
 
         Returns:
-            Dict[str, str]: Execution result message.
+            Dict[str, str]: A dictionary containing a result message and a
+                full snapshot of the current page after the user has acted.
+                The keys are "result" and "snapshot".
         """
 
         import asyncio
@@ -306,7 +326,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
         try:
             if timeout_sec is not None:
                 await asyncio.wait_for(_await_enter(), timeout=timeout_sec)
-                result_msg = "User resumed or timeout reached."
+                result_msg = "User resumed."
             else:
                 await _await_enter()
                 result_msg = "User resumed."

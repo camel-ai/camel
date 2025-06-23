@@ -30,7 +30,6 @@ async def main():
         model_type=ModelType.DEFAULT,
     )
 
-
     chat_agent = ChatAgent(
         model=model,
         tools=edgeone_pages_mcp_toolkit.get_tools(),

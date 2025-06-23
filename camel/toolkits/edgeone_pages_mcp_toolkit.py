@@ -20,13 +20,12 @@ from .mcp_toolkit import MCPToolkit
 
 
 class EdgeOnePagesMCPToolkit(BaseToolkit):
-    r"""EdgeOnePagesMCPToolkit provides an interface for interacting with EdgeOne
-    pages using the EdgeOne Pages MCP server.
+    r"""EdgeOnePagesMCPToolkit provides an interface for interacting with
+    EdgeOne pages using the EdgeOne Pages MCP server.
 
     Attributes:
         timeout (Optional[float]): Connection timeout in seconds.
             (default: :obj:`None`)
-
     """
 
     def __init__(
@@ -45,8 +44,8 @@ class EdgeOnePagesMCPToolkit(BaseToolkit):
             config_dict={
                 "mcpServers": {
                     "edgeone-pages-mcp-server": {
-                    "command": "npx",
-                    "args": ["edgeone-pages-mcp"]
+                        "command": "npx",
+                        "args": ["edgeone-pages-mcp"],
                     }
                 }
             },
