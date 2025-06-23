@@ -377,10 +377,10 @@ async def main():
         new_worker_agent_kwargs = {"model": model_backend}
 
         # Create agents using factory functions
-        search_agent = search_agent_factory(
+        search_agent = search_agent_factory(model_backend, task_id)
+        developer_agent = developer_agent_factory(
             model_backend, task_id, edgeone_pages_mcp_toolkit
         )
-        developer_agent = developer_agent_factory(model_backend, task_id)
         document_agent = document_agent_factory(model_backend, task_id)
         multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
 
