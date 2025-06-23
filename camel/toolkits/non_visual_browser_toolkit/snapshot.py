@@ -99,16 +99,65 @@ class PageSnapshot:
     _snapshot_js_cache: Optional[str] = None  # class-level cache
 
     async def _get_snapshot_direct(self) -> Optional[str]:
-        try:
-            if PageSnapshot._snapshot_js_cache is None:
-                js_path = Path(__file__).parent / "snapshot.js"
-                PageSnapshot._snapshot_js_cache = js_path.read_text(
-                    encoding="utf-8"
+        r"""Evaluate the snapshot-extraction JS with simple retry logic.
+
+        Playwright throws *Execution context was destroyed* when a new page
+        navigation happens between scheduling and evaluating the JS. In that
+        case we retry a few times after waiting for the next DOMContentLoaded
+        event; for all other exceptions we abort immediately.
+        """
+
+        # Load JS once and cache it at class level
+        if PageSnapshot._snapshot_js_cache is None:
+            js_path = Path(__file__).parent / "snapshot.js"
+            PageSnapshot._snapshot_js_cache = js_path.read_text(
+                encoding="utf-8"
+            )
+
+        js_code = PageSnapshot._snapshot_js_cache
+
+        retries: int = 3
+        while retries > 0:
+            try:
+                return await self.page.evaluate(js_code)
+            except Exception as e:
+                msg = str(e)
+
+                # Typical error when navigation happens between calls
+                nav_err = "Execution context was destroyed"
+
+                if (
+                    nav_err in msg
+                    or "Most likely because of a navigation" in msg
+                ):
+                    retries -= 1
+                    logger.debug(
+                        "Snapshot evaluate failed due to navigation; "
+                        "retrying (%d left)…",
+                        retries,
+                    )
+
+                    # Wait for next DOM stability before retrying
+                    try:
+                        await self.page.wait_for_load_state(
+                            "domcontentloaded", timeout=self.MAX_TIMEOUT_MS
+                        )
+                    except Exception:
+                        # Even if waiting fails, attempt retry to give it
+                        # one more chance
+                        pass
+
+                    continue  # retry the evaluate()
+
+                # Any other exception → abort
+                logger.warning(
+                    "Failed to execute snapshot JavaScript: %s",
+                    e,
                 )
-            return await self.page.evaluate(PageSnapshot._snapshot_js_cache)
-        except Exception as e:
-            logger.warning("Failed to execute snapshot JavaScript: %s", e)
-            return None
+                return None
+
+        logger.warning("Failed to execute snapshot JavaScript after retries")
+        return None
 
     @staticmethod
     def _format_snapshot(text: str) -> str:

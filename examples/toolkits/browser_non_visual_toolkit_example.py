@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
 import logging
 
 from camel.agents import ChatAgent
@@ -30,14 +31,13 @@ logging.basicConfig(
 logging.getLogger('camel.agents').setLevel(logging.INFO)
 logging.getLogger('camel.models').setLevel(logging.INFO)
 
-USER_DATA_DIR = r"User_Data"
+USER_DATA_DIR = r"D:/User_Data"
 
 model_backend = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
+    model_type=ModelType.GPT_4_1,
     model_config_dict={"temperature": 0.0, "top_p": 1},
 )
-
 
 web_toolkit = BrowserNonVisualToolkit(
     headless=False,
@@ -51,13 +51,25 @@ agent = ChatAgent(
     tools=[*web_toolkit.get_tools()],
 )
 
+TASK_PROMPT = """Click "Sign in to Google Account" on Google.
+If a CAPTCHA appears requiring user input, call the wait_user function — 
+wait 5 seconds each time and keep waiting until you detect that the snapshot 
+no longer contains content requiring user action.
+Make sure not to help the user fill in their account or CAPTCHA information.
+Before the task is completed, you must call the tool in every session and 
+use the wait_user function whenever needed.
 
-TASK_PROMPT = """Find the cheapest keyboard in Amazon, 
-open the product page and add it to cart."""
+"""
 
-response = agent.step(TASK_PROMPT)
 
-print("Task:", TASK_PROMPT)
-print(f"Using user data directory: {USER_DATA_DIR}\n")
-print("Response from agent:")
-print(response.msgs[0].content if response.msgs else "<no response>")
+async def main() -> None:
+    response = await agent.astep(TASK_PROMPT)
+
+    print("Task:", TASK_PROMPT)
+    print(f"Using user data directory: {USER_DATA_DIR}\n")
+    print("Response from agent:")
+    print(response.msgs[0].content if response.msgs else "<no response>")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

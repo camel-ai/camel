@@ -27,7 +27,17 @@ def __init__(self):
 def __del__(self):
 ```
 
-Ensure cleanup when toolkit is garbage collected.
+Best-effort cleanup when toolkit is garbage collected.
+
+1. We *avoid* running during the Python interpreter shutdown phase
+(`sys.is_finalizing()`), because the import machinery and/or event
+loop may already be torn down which leads to noisy exceptions such
+as `ImportError: sys.meta_path is None` or
+`RuntimeError: Event loop is closed`.
+2. We protect all imports and event-loop operations with defensive
+`try/except` blocks.  This ensures that, even if cleanup cannot be
+carried out, we silently ignore the failure instead of polluting
+stderr on program exit.
 
 <a id="camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.BrowserNonVisualToolkit._validate_ref"></a>
 
