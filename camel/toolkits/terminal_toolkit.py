@@ -104,6 +104,10 @@ class TerminalToolkit(BaseToolkit):
         if not os.path.exists(working_dir):
             os.makedirs(working_dir, exist_ok=True)
         self.working_dir = os.path.abspath(working_dir)
+
+        # Initialize current directory tracking
+        self.current_dir = self.working_dir
+
         self._update_terminal_output(
             f"Working directory set to: {self.working_dir}\n"
         )
@@ -132,6 +136,14 @@ class TerminalToolkit(BaseToolkit):
                 )
                 self.gui_thread.start()
                 self.terminal_ready.wait(timeout=5)
+
+        # Initialize current directory for Docker containers
+        if self.docker and self.container_id:
+            try:
+                self.current_dir = self.get_current_dir()
+            except Exception as e:
+                logger.warning(f"Failed to get initial directory: {e}")
+                self.current_dir = self.working_dir
 
     def _setup_file_output(self):
         r"""Set up file output to replace GUI, using a fixed file to simulate
@@ -365,6 +377,22 @@ class TerminalToolkit(BaseToolkit):
         docker_cmd: List[str] = ["docker", "exec", str(self.container_id)]
 
         return docker_cmd + [str(x) for x in command]
+
+    def get_current_dir(self) -> str:
+        r"""Get the current working directory in the Docker container.
+
+        Returns:
+            str: The current working directory path.
+        """
+        if not self.docker or self.container_id is None:
+            return self.working_dir
+
+        result = subprocess.run(
+            ['docker', 'exec', self.container_id, 'pwd'],
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
 
     def file_find_in_content(
         self, file: str, regex: str, sudo: bool = False
@@ -727,14 +755,27 @@ class TerminalToolkit(BaseToolkit):
             self._update_terminal_output(f"\n$ {command}\n")
 
             if self.docker:
+                # Handle directory changes for Docker containers
+                if command.startswith('cd '):
+                    # Handle directory change
+                    target_dir = command[3:].strip()
+                    full_command = (
+                        f"cd {self.current_dir} && cd {target_dir} && pwd"
+                    )
+                else:
+                    # Execute command in current directory
+                    full_command = f"cd {self.current_dir} && {command}"
+
                 # Properly format Docker command as a list
                 docker_command = [
                     "docker",
                     "exec",
-                    str(self.container_id),  # Ensure container_id is string
-                    "/bin/sh",
+                    str(self.container_id),
+                    "/bin/bash",
                     "-c",
-                    str(command),  # Ensure command is string
+                    str(
+                        full_command
+                    ),  # Use the full command with directory context
                 ]
                 use_shell = False
 
@@ -756,6 +797,10 @@ class TerminalToolkit(BaseToolkit):
                 output = stdout or ""
                 if stderr:
                     output += f"\nStderr Output:\n{stderr}"
+
+                # Update current directory if it was a cd command
+                if command.startswith('cd ') and proc.returncode == 0:
+                    self.current_dir = output.strip().split('\n')[-1]
 
                 self.shell_sessions[id]["output"] = output
                 self._update_terminal_output(output + "\n")
