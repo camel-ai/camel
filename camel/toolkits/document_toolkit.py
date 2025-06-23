@@ -19,7 +19,6 @@ import hashlib
 import traceback
 import zipfile
 import mimetypes
-import os
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Set
 from urllib.parse import urlparse
@@ -27,29 +26,14 @@ from urllib.parse import urlparse
 import requests
 
 from camel.logger import get_logger
+from camel.models import BaseModelBackend
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.toolkits import ImageAnalysisToolkit, ExcelToolkit
+from camel.toolkits import ImageAnalysisToolkit
+from camel.utils.commons import dependencies_required
 from camel.utils import retry_on_error, MCPServer
+from camel.loaders import MarkItDownLoader
 
-try:
-    from camel.loaders import MarkItDownLoader
-except Exception:
-    try:
-        from markitdown import MarkItDownLoader
-    except Exception:
-        MarkItDownLoader = None
-
-try:
-    from camel.loaders import UnstructuredIO
-except ImportError:
-    UnstructuredIO = None
-
-# Optional FireCrawl for webpage processing
-try:
-    from firecrawl import FirecrawlApp
-except ImportError:
-    FirecrawlApp = None
 
 logger = get_logger(__name__)
 
@@ -57,7 +41,7 @@ logger = get_logger(__name__)
 _TEXT_EXTS: Set[str] = {".txt", ".md", ".rtf"}
 _DOC_EXTS: Set[str] = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".odt"}
 _IMAGE_EXTS: Set[str] = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp"}
-_EXCEL_EXTS: Set[str] = {".xls", ".xlsx"}
+_EXCEL_EXTS: Set[str] = {".xls", ".xlsx", ".csv"}
 _ARCHIVE_EXTS: Set[str] = {".zip"}
 _WEB_EXTS: Set[str] = {".html", ".htm", ".xml"}
 _CODE_EXTS: Set[str] = {".py", ".js", ".java", ".cpp", ".c", ".go", ".rs"}
@@ -93,19 +77,14 @@ class _LoaderWrapper:
         """
         if hasattr(self._loader, "convert_file"):
             return self._loader.convert_file(path)  # type: ignore[attr-defined]
-        if hasattr(self._loader, "parse_file_or_url"):
-            elements = self._loader.parse_file_or_url(path)  # type: ignore[attr-defined]
-            if elements is None:
-                raise RuntimeError(f"UnstructuredIO failed to parse {path}")
-            return "\n".join(str(e) for e in elements)
-        raise AttributeError("Loader must expose convert_file or parse_file_or_url")
+        raise AttributeError("Loader must expose convert_file method")
 
 
 def _init_loader(loader_type: str, loader_kwargs: Optional[dict] | None) -> _LoaderWrapper:
     r"""Initialize a document loader based on the specified type.
 
     Args:
-        loader_type (str): Type of loader to initialize ('markitdown' or 'unstructured').
+        loader_type (str): Type of loader to initialize ('markitdown').
         loader_kwargs (Optional[dict]): Additional keyword arguments for the loader.
 
     Returns:
@@ -125,12 +104,7 @@ def _init_loader(loader_type: str, loader_kwargs: Optional[dict] | None) -> _Loa
             )
         return _LoaderWrapper(MarkItDownLoader(**loader_kwargs))
 
-    if loader_type == "unstructured":
-        if UnstructuredIO is None:
-            raise ImportError("UnstructuredIO loader not available – `pip install unstructured`.")
-        return _LoaderWrapper(UnstructuredIO())
-
-    raise ValueError("Unsupported loader_type. Choose 'markitdown', 'unstructured', or supply custom loader.")
+    raise ValueError("Unsupported loader_type. Only 'markitdown' is supported.")
 
 
 @MCPServer()
@@ -146,7 +120,7 @@ class DocumentToolkit(BaseToolkit):
             self,
             *,
             cache_dir: str | Path | None = None,
-            model: Optional[object] = None,
+            model: Optional[BaseModelBackend] = None,
             loader_type: str = "markitdown",
             loader_kwargs: Optional[dict] = None,
             enable_cache: bool = True,
@@ -157,7 +131,7 @@ class DocumentToolkit(BaseToolkit):
             cache_dir (str | Path | None): Directory for caching processed documents.
                 Defaults to ~/.cache/camel/documents.
             model (Optional[object]): Model backend for image analysis.
-            loader_type (str): Primary document loader type ('markitdown' or 'unstructured').
+            loader_type (str): Primary document loader type ('markitdown').
             loader_kwargs (Optional[dict]): Additional arguments for the primary loader.
             enable_cache (bool): Whether to enable disk and memory caching.
         """
@@ -170,7 +144,6 @@ class DocumentToolkit(BaseToolkit):
 
         # Initialize specialized toolkits for specific file types
         self.image_tool = ImageAnalysisToolkit(model=model)
-        self.excel_tool = ExcelToolkit()
 
         # Initialize primary document loader
         self._loader = _init_loader(loader_type, loader_kwargs)
@@ -185,9 +158,6 @@ class DocumentToolkit(BaseToolkit):
                 self.mid_loader = None
         else:
             self.mid_loader = None
-
-        # Initialize optional UnstructuredIO for fallback parsing
-        self.uio = UnstructuredIO() if UnstructuredIO is not None else None
 
         # Initialize in-memory cache (keyed by SHA-256 of path + mtime)
         self._cache: Dict[str, str] = {}
@@ -257,10 +227,6 @@ class DocumentToolkit(BaseToolkit):
                 if getattr(self, "mid_loader", None) is not None:
                     txt = self.mid_loader.convert_file(document_path)  # type: ignore[attr-defined]
                     return self._cache_and_return(cache_key, True, txt)
-                elif self.uio is not None:
-                    elements = self.uio.parse_file_or_url(document_path)  # type: ignore[attr-defined]
-                    txt = "\n".join(map(str, elements)) if elements else ""
-                    return self._cache_and_return(cache_key, True, txt)
                 else:
                     logger.warning("No suitable loader for DOC/PDF – falling back to generic loader")
 
@@ -268,7 +234,7 @@ class DocumentToolkit(BaseToolkit):
                 ok, txt = self._handle_webpage(document_path)
                 return self._cache_and_return(cache_key, ok, txt)
 
-                # Fallback to generic loader
+            # Fallback to generic loader
             txt = self._loader.convert_file(document_path)
             return self._cache_and_return(cache_key, True, txt)
 
@@ -330,16 +296,12 @@ class DocumentToolkit(BaseToolkit):
             extracted_text = self._extract_webpage_content(url)
             return True, extracted_text
         except Exception as e:
-            logger.warning(f"FireCrawl failed for {url}: {e}, falling back to UnstructuredIO")
+            logger.warning(f"FireCrawl failed for {url}: {e}, falling back to MarkItDown")
             try:
-                if self.uio is not None:
-                    elements = self.uio.parse_file_or_url(url)
-                    if elements is None:
-                        logger.error(f"Failed to parse the webpage: {url}.")
-                        return False, f"Failed to parse the webpage: {url}."
-                    else:
-                        elements_str = "\n".join(str(element) for element in elements)
-                        return True, elements_str
+                # Try using MarkItDown as fallback
+                if self.mid_loader is not None:
+                    txt = self.mid_loader.convert_file(url)  # type: ignore[attr-defined]
+                    return True, txt
                 else:
                     return False, "No suitable loader for webpage processing."
             except Exception as e2:
@@ -347,8 +309,9 @@ class DocumentToolkit(BaseToolkit):
                 return False, f"Failed to extract content from the webpage: {e2}"
 
     @retry_on_error()
+    @dependencies_required('crawl4ai')
     def _extract_webpage_content(self, url: str) -> str:
-        r"""Extract webpage content using the FireCrawl API.
+        r"""Extract webpage content using the Crawl4AI loader.
 
         Args:
             url (str): The URL of the webpage to extract content from.
@@ -357,31 +320,34 @@ class DocumentToolkit(BaseToolkit):
             str: The extracted webpage content in markdown format.
 
         Raises:
-            ValueError: If FIRECRAWL_API_KEY environment variable is not set.
-            ImportError: If FireCrawl library is not available.
+            ImportError: If Crawl4AI library is not available.
+            Exception: If scraping fails or returns no content.
         """
-        api_key = os.getenv("FIRECRAWL_API_KEY")
-        if not api_key:
-            raise ValueError("FIRECRAWL_API_KEY environment variable not set")
+        from camel.loaders import Crawl4AI
 
-        if FirecrawlApp is None:
-            raise ImportError("FireCrawl not available – install `firecrawl-py`")
+        # Initialize Crawl4AI crawler
+        crawler = Crawl4AI()
 
-        # Initialize FireCrawl application with API key
-        app = FirecrawlApp(api_key=api_key)
+        try:
+            # Use asyncio to run the async scrape method
+            import asyncio
+            scrape_result = asyncio.run(crawler.scrape(url))
 
-        data = app.crawl_url(
-            url, params={"limit": 1, "scrapeOptions": {"formats": ["markdown"]}}
-        )
-        logger.debug(f"Extracted data from {url}: {data}")
+            logger.debug(f"Extracted data from {url}: {scrape_result}")
 
-        if len(data["data"]) == 0:
-            if data["success"]:
-                return "No content found on the webpage."
+            # Extract markdown content from the result
+            if scrape_result and 'markdown' in scrape_result:
+                markdown_content = scrape_result['markdown']
+                if markdown_content:
+                    return str(markdown_content)
+                else:
+                    return "No content found on the webpage."
             else:
                 return "Error while crawling the webpage."
 
-        return str(data["data"][0]["markdown"])
+        except Exception as e:
+            logger.error(f"Error scraping {url}: {str(e)}")
+            return f"Error while crawling the webpage: {str(e)}"
 
 
     # Specialized file type handlers
@@ -402,19 +368,146 @@ class DocumentToolkit(BaseToolkit):
         except Exception as e:
             return False, f"Error processing image {path}: {e}"
 
-    def _handle_excel(self, path: str) -> Tuple[bool, str]:
-        r"""Process Excel files using the Excel toolkit.
+    @dependencies_required('tabulate')
+    def _convert_to_markdown(self, df: 'pd.DataFrame') -> str:
+        r"""Convert DataFrame to Markdown format table."""
+        from tabulate import tabulate
+
+        md_table = tabulate(df, headers='keys', tablefmt='pipe')
+        return str(md_table)
+
+    @dependencies_required('pandas', 'openpyxl', 'xls2xlsx')
+    def _extract_excel_content(self, document_path: str) -> str:
+        r"""Extract detailed cell information from an Excel file, including
+        multiple sheets.
 
         Args:
-            path (str): Path to the Excel file.
+            document_path (str): The path of the Excel file.
+
+        Returns:
+            str: Extracted excel information, including details of each sheet.
+        """
+        import pandas as pd
+        from openpyxl import load_workbook
+        from xls2xlsx import XLS2XLSX
+
+        logger.debug(
+            f"Calling extract_excel_content with document_path: {document_path}"
+        )
+
+        if not (
+                document_path.endswith("xls")
+                or document_path.endswith("xlsx")
+                or document_path.endswith("csv")
+        ):
+            logger.error("Only xls, xlsx, csv files are supported.")
+            return (
+                f"Failed to process file {document_path}: "
+                f"It is not excel format. Please try other ways."
+            )
+
+        if document_path.endswith("csv"):
+            try:
+                df = pd.read_csv(document_path)
+                md_table = self._convert_to_markdown(df)
+                return f"CSV File Processed:\n{md_table}"
+            except Exception as e:
+                logger.error(f"Failed to process file {document_path}: {e}")
+                return f"Failed to process file {document_path}: {e}"
+
+        if document_path.endswith("xls"):
+            output_path = document_path.replace(".xls", ".xlsx")
+            x2x = XLS2XLSX(document_path)
+            x2x.to_xlsx(output_path)
+            document_path = output_path
+
+        # Load the Excel workbook
+        wb = load_workbook(document_path, data_only=True)
+        sheet_info_list = []
+
+        # Iterate through all sheets
+        for sheet in wb.sheetnames:
+            ws = wb[sheet]
+            cell_info_list = []
+
+            for row in ws.iter_rows():
+                for cell in row:
+                    row_num = cell.row
+                    col_letter = cell.column_letter
+
+                    cell_value = cell.value
+
+                    font_color = None
+                    if (
+                            cell.font
+                            and cell.font.color
+                            and "rgb=None" not in str(cell.font.color)
+                    ):  # Handle font color
+                        font_color = cell.font.color.rgb
+
+                    fill_color = None
+                    if (
+                            cell.fill
+                            and cell.fill.fgColor
+                            and "rgb=None" not in str(cell.fill.fgColor)
+                    ):  # Handle fill color
+                        fill_color = cell.fill.fgColor.rgb
+
+                    cell_info_list.append(
+                        {
+                            "index": f"{row_num}{col_letter}",
+                            "value": cell_value,
+                            "font_color": font_color,
+                            "fill_color": fill_color,
+                        }
+                    )
+
+            # Convert the sheet to a DataFrame and then to markdown
+            sheet_df = pd.read_excel(
+                document_path, sheet_name=sheet, engine='openpyxl'
+            )
+            markdown_content = self._convert_to_markdown(sheet_df)
+
+            # Collect all information for the sheet
+            sheet_info = {
+                "sheet_name": sheet,
+                "cell_info_list": cell_info_list,
+                "markdown_content": markdown_content,
+            }
+            sheet_info_list.append(sheet_info)
+
+        result_str = ""
+        for sheet_info in sheet_info_list:
+            result_str += f"""
+            Sheet Name: {sheet_info['sheet_name']}
+            Cell information list:
+            {sheet_info['cell_info_list']}
+
+            Markdown View of the content:
+            {sheet_info['markdown_content']}
+
+            {'-' * 40}
+            """
+
+        return result_str
+
+    def _handle_excel(self, path: str) -> Tuple[bool, str]:
+        r"""Process Excel and CSV files using integrated Excel processing.
+
+        Args:
+            path (str): Path to the Excel or CSV file.
 
         Returns:
             Tuple[bool, str]: Success status and Excel content.
         """
         try:
-            res = self.excel_tool.extract_excel_content(path)
+            res = self._extract_excel_content(path)
+            # Check if the result indicates an error
+            if res.startswith("Failed to process file"):
+                return False, res
             return True, res
         except Exception as e:
+            logger.error(f"Error processing Excel file {path}: {e}")
             return False, f"Error processing Excel file {path}: {e}"
 
     def _handle_data_file(self, path: str) -> Tuple[bool, str]:
