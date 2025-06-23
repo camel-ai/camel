@@ -1,0 +1,501 @@
+---
+title: "CAMEL Cookbook: Pairing AI Agents with 600+ MCP Tools via ACI.dev"
+---
+
+You can also check this cookbook in [Google Colab](https://drive.google.com/file/d/14Eznv3TZaT0Qnt6PvnMylk4i3yG6JCfz/view?usp=sharing).
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+This cookbook demonstrates how to supercharge your **CAMEL AI agents** by connecting them to 600+ MCP tools seamlessly through **ACI.dev**. We'll explore how to move beyond traditional tooling limitations and create powerful AI agents that can interact with multiple services like GitHub, Gmail, and more through a unified interface.
+
+**Key Learnings:**
+
+- Understanding the evolution from traditional tooling to MCP
+- How ACI.dev enhances vanilla MCP with better tool management
+- Setting up CAMEL AI agents with ACI's MCP server
+- Creating practical demos like GitHub repository management
+- Best practices for multi-app AI workflows
+
+This approach focuses on using **CAMEL with ACI.dev's enhanced MCP servers** to create more powerful and flexible AI agents.
+
+## 📦 Installation
+
+First, install the required packages for this cookbook:
+
+
+```python
+%pip install "camel-ai[all]==0.2.62" python-dotenv rich uv
+```
+
+> Note - This method uses uv, a fast Python installer and toolchain, to run the ACI.dev MCP server directly from the command line, as defined in our configuration script.
+
+## 🔑 Setting Up API Keys
+
+This cookbook uses multiple services that require API keys:
+
+1. **ACI.dev API Key**: Sign up at [ACI.dev](https://aci.dev) and get your API key from Project Settings
+2. **Google Gemini API Key**: Get your API key from [Google's API Console](https://console.developers.google.com/)
+3. **Linked Account Owner ID**: This is provided when you connect apps in ACI.dev
+
+The scripts will load these from environment variables, so you'll need to create a `.env` file.
+
+## 🤖 Introduction
+
+LLMs have been in the AI landscape for some time now and so are the tools powering them.
+
+On their own, LLMs can crank out essays, spark creative ideas, or break down tricky concepts which in itself is pretty impressive.
+
+But let's be real: without the ability to connect to the world around them, *they're just fancy word machines*. What turns them into real problem-solvers, capable of grabbing fresh data or tackling tasks, is **tooling**.
+
+## 🔧 Traditional Tooling
+
+**Tooling** is essentially a set of directions that tells an LLM how to *kick off a specific action when you ask for it.*
+
+Imagine it as handing your AI a bunch of tasks to do, it wasn't built for, like pulling in the latest info or automating a process. The catch? **Historically, tooling has been a walled garden**. Every provider think OpenAI, Cursor, or others, has their own implementation of tooling, which creates a mismatch of setups that don't play nice together. It's a hassle for users and vendors alike.
+
+## 🌐 MCP: The Better Tooling
+
+Which is what **MCP** solves. **MCP** is like a universal connector, a *straightforward protocol that lets any LLM, agent, or editor hook up with tools from any source.*
+
+It's built on a client-server setup: the **client** (your LLM or agent) talks to the server (where the tools live). When you need something beyond the LLM's cutoff knowledge, like up-to-date docs, it doesn't flounder. It pings the MCP server, grabs the right function's details, runs it, and delivers the answer in plain English.
+
+### MCP Architecture Example
+
+Here's a **practical example**:
+
+1. Imagine you're working in **Cursor (the client)** and need to implement a function using the latest React hooks from the React 18 documentation.
+2. You request, "Please provide a useEffect setup for the current version."
+
+The challenge? The LLM powering *Cursor has a knowledge cutoff, so it's limited* to, say, React 17 and unaware of recent updates.
+
+With MCP, this isn't an issue. It connects to a search MCP server, retrieves the latest React documentation, and delivers the precise useEffect syntax directly from the source.
+
+It's like equipping your AI with a seamless connection to the most up-to-date resources, ensuring accuracy without any detours.
+
+*MCP's a game-changer, no question*. **But it's not perfect**. It often locks tools to single apps, requires hands-on setup for each one, and can't pick the best tool for the job on its own. **That's where ACI.dev steps in — to smooth out those rough edges and push things further.**
+
+## 🚀 Outdoing Vanilla MCP
+
+### Why ACI.dev Takes MCP to the Next Level
+
+MCP lays a strong groundwork, but it's got some gaps. Let's break down where it stumbles and how ACI.dev steps up to fix it.
+
+With standard MCP:
+
+- **One server, one app**: You're stuck running separate servers for each tool — like one for GitHub, another for Gmail — which gets messy fast.
+- **Setup takes effort**: Every tool needs its own configuration, and dealing with OAuth for a bunch of them is a headache for a normal or enterprise user
+- **No smart tool picks**: MCP can't figure out the right tool for a task — you've got to spell it all out ahead of time in the prompt to let the LLM know what tool to use and execute.
+
+With these headaches in mind, ACI.dev built something better. Our platform ties AI to third-party software through tool-calling APIs, making integration and automation a breeze.
+
+It does this by introducing **two ways** to access MCP servers:
+
+- The **Apps MCP Server** and the **Unified MCP Server** to give your AI a cleaner way to tap into tools and data.
+
+This setup gives you access to 600+ MCP tools in the palm of your hand and make it easy for you to access any tool via both these methods.
+
+### How ACI.dev Levels Up MCP
+
+- **All Your Apps, One Server** — ACI Apps MCP Server lets you set up tools like GitHub, Vercel, Cloudflare, and Gmail in one spot. It's a single hub for your AI's toolkit, keeping things simple.
+- **Tools That Find Themselves** - Forget predefining every tool. Unified MCP Server uses functions like ACI_SEARCH_FUNCTION and ACI_EXECUTE_FUNCTION to let your AI hunt down and run the perfect tool for the job.
+- **Smarter Context Handling** — MCP can bog down your LLM by stuffing its context with tools you don't need. ACI.dev keeps it lean, loading only what's necessary, when it's necessary, so your LLM has enough memory for actual token prediction.
+- **Smooth Cross-App Flows** — ACI.dev makes linking apps seamless without jumping between servers.
+- **Easy Setup, and Authentication** - Configuring tools individually can be time-consuming, but ACI simplifies the process by centralizing everything. Manage accounts, API keys, and settings in one hub. Just add apps from the ACI App Store, enable them in Project Settings, and link them with a single linked-account-owner-id. Done.
+
+
+## 🛠️ Tutorial: Two Ways to Integrate CAMEL AI with ACI
+
+Alright, we've covered how MCP and ACI.dev make LLMs way more than just word generators. Now, let's get our hands dirty with practical demos using CAMEL AI. There are **two ways** to integrate CAMEL AI with ACI.dev:
+
+1. **MCP Server Approach** - Using CAMEL's MCPToolkit with ACI's MCP servers
+2. **Direct Toolkit Approach** - Using CAMEL's built-in ACIToolkit
+
+We'll explore both methods with hands-on examples. Let's dive in.
+
+### Step 1: Signing Up and Setting Up Your ACI.dev Project
+
+First things first, head to [ACI.dev](https://aci.dev) and sign up if you don't have an account. Once you're in, create a new project or pick one you've already got. This is your control hub for managing apps and snagging your API key.
+
+![aci](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*3LoS4_biV27QxxQHKl3kcw.png)
+
+### Step 2: Adding Apps in the ACI App Store
+
+1. Zip over to the ACI App Store.
+2. Search for the GitHub app, hit "Add," and follow the prompts to link your GitHub account. During the OAuth flow, you'll set a linked-account-owner-id (usually your email or a unique ID from ACI). Jot this down—you'll need it later.
+3. For these demos, GitHub is our star player. Want to level up? You can add Brave Search or arXiv apps for extra firepower, but they're optional here.
+
+![log](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*DvD7N7oRehBSxTahxZkebQ.png)
+
+### Step 3: Enabling Apps and Grabbing Your API Key
+
+1. Go to Project Settings and check the "Allowed Apps" section. Make sure GitHub (and any other apps you added) is toggled on. If it's not, flip that switch.
+2. Copy your API key from this page and keep it safe. It's the golden ticket for connecting CAMEL AI to ACI's services.
+
+![apps](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*V22RnZyPGxbn15xteIrjZw.png)
+
+### Step 4: Environment Variables Setup
+
+Both methods use the same environment variables. Create a `.env` file in your project folder with these variables:
+
+```bash
+GEMINI_API_KEY="your_gemini_api_key_here" 
+ACI_API_KEY="your_aci_api_key_here" 
+LINKED_ACCOUNT_OWNER_ID="your_linked_account_owner_id_here"
+```
+
+Replace:
+
+- `your_gemini_api_key_here` with your GEMINI API key for the Gemini model (get it from Google's API console)
+- `your_aci_api_key_here` with the API key from ACI.dev's Project Settings
+- `your_linked_account_owner_id_here` with the ID from the aci.dev platform
+
+## 🔧 Method 1: Using MCP Server Approach
+
+This method uses CAMEL's MCPToolkit to connect to ACI's MCP servers. It's ideal when you want to leverage the full MCP ecosystem and have more control over server configurations.
+
+### Configuration Script
+
+Here's the `create_config.py` script to set up the MCP server connection:
+
+```python
+import os
+import json
+from dotenv import load_dotenv
+
+def create_config():
+    """Create MCP config with proper environment variable substitution"""
+    load_dotenv() # load variables from the env
+    aci_api_key = os.getenv("ACI_API_KEY")
+
+    if not aci_api_key:
+        raise ValueError("ACI_API_KEY environment variable is required")
+    linked_account_owner_id = os.getenv("LINKED_ACCOUNT_OWNER_ID")
+    if not linked_account_owner_id:
+        raise ValueError("LINKED_ACCOUNT_OWNER_ID environment variable is required")
+    config = {
+        "mcpServers": {
+            "aci_apps": {
+                "command": "uvx",
+                "args": [
+                    "aci-mcp",
+                    "apps-server",
+                    "--apps=GITHUB",
+                    "--linked-account-owner-id",
+                    linked_account_owner_id,
+                ],
+                "env": {"ACI_API_KEY": aci_api_key},
+            }
+        }
+    }
+    with open("config.json", "w") as f:
+        json.dump(config, f, indent=2)
+    print("✓ Config created successfully with API key")
+    return config
+
+if __name__ == "__main__":
+    create_config()
+```
+
+
+##### Main CAMEL AI Agent Script (MCP Approach)
+
+Here's the `main.py` script to run the CAMEL AI agent:
+
+
+```python
+#!/usr/bin/env python3
+import asyncio
+import os
+
+from dotenv import load_dotenv
+from rich import print as rprint
+
+from camel.agents import ChatAgent
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.toolkits import MCPToolkit
+from camel.types import ModelPlatformType, ModelType
+
+load_dotenv()
+
+async def main():
+    try:
+        from create_config import create_config  # creates config.json
+        rprint("[green]CAMEL AI Agent with MCP Toolkit[/green]")
+        # Create config for MCP server
+        create_config()
+        # Connect to MCP server
+        rprint("Connecting to MCP server...")
+        mcp_toolkit = MCPToolkit(config_path="config.json")
+
+        await mcp_toolkit.connect()
+        tools = mcp_toolkit.get_tools() # connects and loads the tools in server
+        rprint(f"Connected successfully. Found [cyan]{len(tools)}[/cyan] tools available")
+        
+
+        # Set up Gemini model
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.GEMINI, # you can use other models here too
+            model_type=ModelType.GEMINI_2_5_PRO,
+            api_key=os.getenv("GEMINI_API_KEY"),
+            model_config_dict={"temperature": 0.7, "max_tokens": 40000},
+        )
+        system_message = BaseMessage.make_assistant_message(
+            role_name="Assistant",
+            content="You are a helpful assistant with access to GitHub tools via ACI's MCP server.",
+        )
+
+        # Create CAMEL agent
+        agent = ChatAgent(
+            system_message=system_message,
+            model=model, # encapsulate your model tools and memory here
+            tools=tools
+        )
+        rprint("[green]Agent ready[/green]")
+
+        # Get user query
+        user_query = input("\nEnter your query: ")
+        user_message = BaseMessage.make_user_message(role_name="User", content=user_query)
+        rprint("\n[yellow]Processing...[/yellow]")
+        response = await agent.astep(user_message) # ask agent the question ( async ) 
+
+        # Show response
+        if response and hasattr(response, "msgs") and response.msgs:
+            rprint(f"\nFound [cyan]{len(response.msgs)}[/cyan] messages:")
+            for i, msg in enumerate(response.msgs):
+                rprint(f"Message {i+1}: {msg.content}")
+        elif response:
+            rprint(f"Response content: {response}")
+        else:
+            rprint("[red]No response received[/red]")
+        
+        # Disconnect from MCP
+        await mcp_toolkit.disconnect()
+        rprint("\n[green]Done[/green]")
+    except Exception as e:
+        rprint(f"[red]Error: {e}[/red]")
+        import traceback
+        rprint(f"[dim]{traceback.format_exc()}[/dim]")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+#### Step 5: Running the Demo Task (MCP Method)
+
+With everything set up, let's fire up the CAMEL AI agent and give it a job.
+
+##### Run the Script
+
+In your terminal, navigate to your project folder and run:
+
+```bash
+python main.py
+```
+
+This generates the config.json file, connects to the MCP server, and starts the agent. You'll see a prompt asking for your query.
+
+##### Enter the Query
+
+Type this into the prompt:
+
+```
+Create a new GitHub repository named 'my-ski-demo' with the description 'A demo repository for top US skiing locations' and push a README.md file with the content: '# Epic Ski Destinations\nBest spots: Aspen, Vail, Park City.'
+```
+
+The agent will use the GitHub tool via the MCP server to create the repo and add the README.md file.
+
+### Method 2: Using Direct Toolkit Approach
+
+This method uses CAMEL's built-in ACIToolkit, which provides a more direct integration without needing MCP server configuration. It's simpler to set up and ideal for straightforward use cases.
+
+#### ACIToolkit Implementation
+
+Here's how to use the direct toolkit approach with the same environment setup:
+
+
+```python
+import os
+
+from dotenv import load_dotenv
+from rich import print as rprint
+
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.toolkits import ACIToolkit
+from camel.types import ModelPlatformType, ModelType
+
+load_dotenv()
+
+def main():
+    rprint("[green]CAMEL AI with ACI Toolkit[/green]")
+    
+    # get the linked account from env or use default
+    linked_account_owner_id = os.getenv("LINKED_ACCOUNT_OWNER_ID")
+    if not linked_account_owner_id:
+        raise ValueError("LINKED_ACCOUNT_OWNER_ID environment variable is required")
+    rprint(f"Using account: [cyan]{linked_account_owner_id}[/cyan]")
+    
+    # setup aci toolkit
+    aci_toolkit = ACIToolkit(linked_account_owner_id=linked_account_owner_id)
+    tools = aci_toolkit.get_tools()
+    rprint(f"Loaded [cyan]{len(tools)}[/cyan] tools")
+    
+    # setup gemini model
+    model = ModelFactory.create(
+            model_platform=ModelPlatformType.GEMINI, # you can use other models here too
+            model_type=ModelType.GEMINI_2_5_PRO,
+            api_key=os.getenv("GEMINI_API_KEY"),
+            model_config_dict={"temperature": 0.7, "max_tokens": 40000},
+    )
+    
+    # create agent with tools
+    agent = ChatAgent(model=model, tools=tools)
+    rprint("[green]Agent ready[/green]")
+    
+    # get user query
+    query = input("\nEnter your query: ")
+    rprint("\n[yellow]Processing...[/yellow]")
+    
+    response = agent.step(query)
+    
+    # show raw response
+    rprint(f"\n[dim]{response.msg}[/dim]")
+    rprint(f"\n[dim]Raw response type: {type(response)}[/dim]")
+    rprint(f"[dim]Response: {response}[/dim]")
+    
+    # try to get the actual content
+    if hasattr(response, 'msgs') and response.msgs:
+        rprint(f"\nFound [cyan]{len(response.msgs)}[/cyan] messages:")
+        for i, msg in enumerate(response.msgs):
+            rprint(f"Message {i + 1}: {msg.content}")
+    
+    rprint("\n[green]Done[/green]")
+
+if __name__ == "__main__":
+    main()
+```
+
+### Running the ACIToolkit Method
+
+1. Save the above script as `main_toolkit.py`
+2. Make sure your `.env` file has the required variables (same as MCP method)
+3. Run the script:
+
+```bash
+python main_toolkit.py
+```
+
+4. Enter your query when prompted, for example:
+
+```
+"Create a GitHub repository named 'my-aci-toolkit-demo' and add a README.md file with the content '# ACI Toolkit Demo'."
+```
+
+
+## 📊 Comparing Both Methods
+
+|Feature|MCP Approach|ACIToolkit Approach|
+|---|---|---|
+|**Setup Complexity**|More complex (requires config files)|Simpler (direct import)|
+|**Flexibility**|High (full MCP ecosystem)|Moderate (ACI-focused)|
+|**Performance**|Slightly more overhead|More direct, faster|
+|**Use Case**|Complex multi-server setups|Quick integrations|
+|**Dependencies**|Requires `uv` and MCP config|Just CAMEL and ACI|
+
+**Choose MCP Approach when:**
+
+- You need to integrate multiple MCP servers
+- You want fine-grained control over server configuration
+- You're building complex multi-agent systems
+
+**Choose ACIToolkit Approach when:**
+
+- You want quick and simple ACI integration
+- You're prototyping or building straightforward workflows
+- You prefer minimal configuration overhead
+
+## ✅ Checking the Results (Both Methods)
+
+Once either agent finishes processing, head to your GitHub account to verify the results:
+
+1. Look for the newly created repository in your GitHub account
+2. Open the repo and verify that any files were created as requested
+3. Check the repository description and other metadata
+
+## 🔧 Troubleshooting and Tips (Both Methods)
+
+- **No Repo Created?** Double-check that your GitHub app is linked in ACI.dev and that your `.env` file has the correct `ACI_API_KEY` and `LINKED_ACCOUNT_OWNER_ID`.
+- **Event Loop Errors? (MCP Method)** If you hit a "RuntimeError: Event loop is already running," try adding `import nest_asyncio; nest_asyncio.apply()` at the top of `main_mcp.py` to handle async conflicts.
+- **Import Errors? (ACIToolkit Method)** Make sure you have the latest version of CAMEL AI installed with `pip install --upgrade "camel-ai[all]"`
+- **Tool Loading Issues?** Both methods automatically discover available tools from your ACI account. Ensure your apps are properly enabled in ACI.dev Project Settings.
+- **API Rate Limits?** If you hit rate limits, the agents will typically handle retries automatically, but you may need to wait a moment between requests.
+
+
+## Example Queries
+
+You can modify the user query to ask different questions, such as:
+
+- "Create a new repository and add multiple files with different content"
+- "Search for recent articles about AI agents and create a summary document"
+- "List my existing repositories and their descriptions"
+- "Create an issue in my repository with a bug report"
+
+## 🎯 Conclusion
+
+The world of AI agents and tooling is buzzing with potential, and MCP is a solid step toward making LLMs more than just clever chatbots.
+
+In this cookbook, you've learned how to:
+
+- Understand the evolution from traditional tooling to MCP
+- Set up ACI.dev's enhanced MCP servers with CAMEL AI
+- Create practical AI agents that can interact with multiple services
+- Handle authentication and configuration seamlessly
+- Build workflows that span multiple applications
+
+As new ideas and implementations pop up in the agentic space, it's worth staying curious and watching for what's next. The future's wide open, and tools like these are just the start.
+
+**Happy coding!**
+
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
