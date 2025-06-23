@@ -78,6 +78,7 @@ from .playwright_mcp_toolkit import PlaywrightMCPToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
 from .task_planning_toolkit import TaskPlanningToolkit
 from .non_visual_browser_toolkit import BrowserNonVisualToolkit
+from .edgeone_pages_mcp_toolkit import EdgeOnePagesMCPToolkit
 
 
 __all__ = [
@@ -144,4 +145,5 @@ __all__ = [
     'BohriumToolkit',
     'TaskPlanningToolkit',
     'BrowserNonVisualToolkit',
+    'EdgeOnePagesMCPToolkit',
 ]
