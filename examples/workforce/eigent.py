@@ -424,30 +424,6 @@ async def main():
         human_task = Task(
             content=(
                 """
-    I want to read papers about GUI Agent. Please help me find ten papers and summarize them into a report.
-                """  # noqa: E501
-            ),
-            id='0',
-        )
-
-        workforce.add_single_agent_worker(
-            "Search Agent: Can search the web, extract webpage content, "
-            "simulate browser actions, and provide relevant information to "
-            "solve the given task.",
-            worker=search_agent,
-        )
-
-        workforce.add_single_agent_worker(
-            "Document Agent: A document processing assistant for creating, "
-            "modifying, and managing various document formats, including "
-            "presentations.",
-            worker=document_agent,
-        )
-
-        # specify the task to be solved
-        human_task = Task(
-            content=(
-                """
     Gather today's headline news from BBC, Washington Post, Google News and 
     CNN. Each headline can be processed in parallel by the SearchAgent pool.
                 """
