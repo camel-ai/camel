@@ -15,7 +15,6 @@
 import asyncio
 
 from camel.agents.chat_agent import ChatAgent
-from camel.loaders import Crawl4AI
 from camel.messages.base import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
@@ -24,6 +23,7 @@ from camel.toolkits import (
     AudioAnalysisToolkit,
     BrowserNonVisualToolkit,
     CodeExecutionToolkit,
+    Crawl4AIToolkit,
     DalleToolkit,
     EdgeOnePagesMCPToolkit,
     FileWriteToolkit,
@@ -31,6 +31,7 @@ from camel.toolkits import (
     HumanToolkit,
     ImageAnalysisToolkit,
     LinkedInToolkit,
+    MarkItDownToolkit,
     NotionToolkit,
     PPTXToolkit,
     RedditToolkit,
@@ -42,6 +43,7 @@ from camel.toolkits import (
     WhatsAppToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
+from camel.utils.commons import api_keys_required
 
 
 def developer_agent_factory(
@@ -67,14 +69,15 @@ def developer_agent_factory(
     needed for efficient solutions
     - IMPLEMENT complete, production-ready code rather than theoretical 
     examples
-    - USE edgeone pages mcp toolkit to create and edit web pages, after you 
-    have created the web page, you can use the browser toolkit to view the 
-    web page,you can let search agent to visit the web page and verify the 
-    web page.
+    - USE edgeone pages mcp toolkit to create and edit web pages. After you 
+    create a web page, you can ask the search agent to visit it for 
+    verification.
     - DEMONSTRATE results with proper error handling and practical 
     implementation
     - If there's dependency issues when you try to execute code, you should 
-    use the terminal toolkit to install the dependencies."""
+    use the terminal toolkit to install the dependencies.
+    - ASK for human input via the console if you are stuck or need 
+    clarification."""
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -86,27 +89,22 @@ def developer_agent_factory(
     )
 
 
+@api_keys_required([(None, 'EXA_API_KEY')])
 def search_agent_factory(
     model: BaseModelBackend,
     task_id: str,
 ):
     r"""Factory for creating a search agent, based on user-provided code
     structure."""
-    search_toolkits = SearchToolkit()
-    # browser_toolkits = AsyncBrowserToolkit()
-    browser_toolkit = BrowserNonVisualToolkit(headless=False)
-    terminal_toolkits = TerminalToolkit()
-    human_toolkits = HumanToolkit()
     tools = [
-        # FunctionTool(search_toolkits.search_wiki),
-        FunctionTool(search_toolkits.search_exa),
-        # FunctionTool(search_toolkits.search_bing),
-        # FunctionTool(search_toolkits.search_baidu),
-        *browser_toolkit.get_tools(),
-        # *browser_toolkits.get_tools(),
-        *terminal_toolkits.get_tools(),
-        human_toolkits.ask_human_via_console,
-        FunctionTool(Crawl4AI().scrape),
+        # FunctionTool(SearchToolkit().search_wiki),
+        FunctionTool(SearchToolkit().search_exa),
+        # FunctionTool(SearchToolkit().search_bing),
+        # FunctionTool(SearchToolkit().search_baidu),
+        *BrowserNonVisualToolkit(headless=False).get_tools(),
+        *TerminalToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
+        *Crawl4AIToolkit().get_tools(),
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
@@ -162,7 +160,7 @@ Here are some tips that help you perform web search:
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
-            role_name="Document Agent",
+            role_name="Search Agent",
             content=system_message,
         ),
         model=model,
@@ -178,6 +176,7 @@ def document_agent_factory(model: BaseModelBackend, task_id: str):
         *PPTXToolkit().get_tools(),
         # *RetrievalToolkit().get_tools(),
         HumanToolkit().ask_human_via_console,
+        *MarkItDownToolkit().get_tools(),
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
@@ -241,7 +240,8 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     in analyzing and generating various types of media content. Your 
     capabilities include:
 
-    1. Audio Analysis & Processing:
+    1. Video & Audio Analysis:
+       - Download videos from URLs for analysis.
        - Transcribe speech from audio files to text with high accuracy
        - Answer specific questions about audio content
        - Process audio from both local files and URLs
@@ -292,47 +292,45 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
             integrated toolkits enable you to:
 
 1. WhatsApp Business Management (WhatsAppToolkit):
-   - Send text messages to customers via the WhatsApp Business API
-   - Send template messages for standardized communications
-   - Retrieve business profile information
+   - Send text and template messages to customers via the WhatsApp Business 
+   API.
+   - Retrieve business profile information.
 
 2. Twitter Account Management (TwitterToolkit):
-   - Create tweets with text content (respecting character limits)
-   - Create tweets with polls or as quote tweets
-   - Delete existing tweets
-   - Retrieve user profile information
+   - Create tweets with text content, polls, or as quote tweets.
+   - Delete existing tweets.
+   - Retrieve user profile information.
 
 3. LinkedIn Professional Networking (LinkedInToolkit):
-   - Create posts on LinkedIn (respecting character limits)
-   - Delete existing posts (with user confirmation)
-   - Retrieve authenticated user's profile information
+   - Create posts on LinkedIn.
+   - Delete existing posts.
+   - Retrieve authenticated user's profile information.
 
 4. Reddit Content Analysis (RedditToolkit):
-   - Collect top posts and comments from specified subreddits
-   - Perform sentiment analysis on Reddit comments
-   - Track keyword discussions across multiple subreddits
+   - Collect top posts and comments from specified subreddits.
+   - Perform sentiment analysis on Reddit comments.
+   - Track keyword discussions across multiple subreddits.
 
 5. Notion Workspace Management (NotionToolkit):
-   - List all pages in a Notion workspace
-   - List all users with access to the workspace
-   - Retrieve and extract text content from Notion blocks
+   - List all pages and users in a Notion workspace.
+   - Retrieve and extract text content from Notion blocks.
 
 6. Slack Workspace Interaction (SlackToolkit):
-   - Create new Slack channels (public or private)
-   - Join or leave existing channels
-   - Send and delete messages in channels
-   - Retrieve channel information and message history
+   - Create new Slack channels (public or private).
+   - Join or leave existing channels.
+   - Send and delete messages in channels.
+   - Retrieve channel information and message history.
 
 7. Human Interaction (HumanToolkit):
-   - Ask questions to users via console
-   - Send messages to users via console
+   - Ask questions to users and send messages via console.
 
 When assisting users, always:
-1. Identify which platform's functionality is needed for the task
-2. Check if required API credentials are available before attempting operations
-3. Provide clear explanations of what actions you're taking
-4. Handle rate limits and API restrictions appropriately
-5. Ask clarifying questions when user requests are ambiguous""",
+- Identify which platform's functionality is needed for the task.
+- Check if required API credentials are available before attempting 
+operations.
+- Provide clear explanations of what actions you're taking.
+- Handle rate limits and API restrictions appropriately.
+- Ask clarifying questions when user requests are ambiguous.""",
         ),
         model=model,
         tools=[
@@ -424,8 +422,11 @@ async def main():
         human_task = Task(
             content=(
                 """
-    Gather today's headline news from BBC, Washington Post, Google News and 
-    CNN. Each headline can be processed in parallel by the SearchAgent pool.
+I want to read papers about GUI Agent. Please help me find 
+ten papers, check the detailed content of the papers and help 
+me write a comparison report, then create a nice slides(pptx) 
+to introduce the latest research progress of GUI Agent. The 
+slides should be very comprehensive and professional.
                 """
             ),
             id='0',
