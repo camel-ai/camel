@@ -506,45 +506,40 @@ class Workforce(BaseNode):
 
         Returns:
             str: ID of the worker node to be assigned.
-
-        Raises:
-            ValueError: If the coordinator assigns task to a
-            non-existent worker.
         """
-        self.coordinator_agent.reset()
-        prompt = ASSIGN_TASK_PROMPT.format(
+        valid_worker_ids = [child.node_id for child in self._children]
+
+        base_prompt = ASSIGN_TASK_PROMPT.format(
             content=task.content,
             child_nodes_info=self._get_child_nodes_info(),
             additional_info=task.additional_info,
         )
 
-        response = self.coordinator_agent.step(
-            prompt, response_format=TaskAssignResult
-        )
-        result_dict = json.loads(response.msg.content, parse_int=str)
-        task_assign_result = TaskAssignResult(**result_dict)
-        assignee_id = task_assign_result.assignee_id
+        # assign task to a worker node and validate the assignment
+        assignee_id = self._try_task_assignment(base_prompt, valid_worker_ids)
+        if assignee_id:
+            logger.info(f"Task {task.id} assigned to worker '{assignee_id}'")
+            return assignee_id
 
-        # Validate that the assigned worker actually exists
-        valid_worker_ids = [child.node_id for child in self._children]
-        if assignee_id not in valid_worker_ids:
-            logger.error(
-                f"CRITICAL: Task {task.id} assignment failed - Coordinator "
-                f"assigned task to non-existent worker '{assignee_id}'. "
-                f"This is a critical security issue that can cause task loss. "
-                f"Available workers: {valid_worker_ids}. "
-                f"Task content: '{task.content[:100]}...'"
-            )
-            raise ValueError(
-                f"Coordinator assigned task {task.id} to non-existent worker "
-                f"'{assignee_id}'. Valid worker IDs are: {valid_worker_ids}"
-            )
-
-        logger.info(
-            f"Task {task.id} successfully assigned to worker '{assignee_id}' "
-            f"by coordinator"
+        # if the assignment failed, retry with feedback
+        logger.warning(f"Retrying assignment for task {task.id}...")
+        retry_prompt = base_prompt + (
+            f"\n\nIMPORTANT: You MUST choose from these exact worker IDs: "
+            f"{valid_worker_ids}. Do not use non-existent worker IDs."
         )
-        return assignee_id
+
+        # try again with feedback
+        assignee_id = self._try_task_assignment(retry_prompt, valid_worker_ids)
+        if assignee_id:
+            logger.info(
+                f"Task {task.id} assigned to worker '{assignee_id}' on retry"
+            )
+            return assignee_id
+
+        # if retry also failed, the fallback is to create a new worker
+        logger.warning(f"Creating new worker for task {task.id}")
+        new_worker = self._create_worker_node_for_task(task)
+        return new_worker.node_id
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
         logger.info(
@@ -655,8 +650,6 @@ class Workforce(BaseNode):
         else:
             # Directly post the task to the channel if it's a new one
             # Find a node to assign the task
-            # TODO: Add graceful error handling for when _find_assignee()
-            # raises ValueError due to invalid worker assignments
             assignee_id = self._find_assignee(task=ready_task)
             await self._post_task(ready_task, assignee_id)
 
@@ -765,6 +758,80 @@ class Workforce(BaseNode):
 
         # shut down the whole workforce tree
         self.stop()
+
+    def _try_task_assignment(
+        self, prompt: str, valid_worker_ids: List[str]
+    ) -> Optional[str]:
+        """Helper function to try task assignment to workers.
+
+        Args:
+            prompt (str): The prompt to send to coordinator agent.
+            valid_worker_ids (List[str]): List of valid worker IDs.
+
+        Returns:
+            Optional[str]: Worker ID if assignment successful, None otherwise.
+        """
+        try:
+            self.coordinator_agent.reset()
+            response = self.coordinator_agent.step(
+                prompt, response_format=TaskAssignResult
+            )
+
+            # validate response content exists
+            if not response.msg.content or not response.msg.content.strip():
+                logger.warning(
+                    "Coordinator returned empty response for task assignment"
+                )
+                return None
+
+            # parse JSON with error logging
+            try:
+                result_dict = json.loads(response.msg.content, parse_int=str)
+            except json.JSONDecodeError as json_err:
+                logger.warning(
+                    f"Coordinator returned invalid JSON: {json_err}. "
+                    f"Response content: '{response.msg.content[:100]}...'"
+                )
+                return None
+
+            # validate JSON structure
+            try:
+                task_assign_result = TaskAssignResult(**result_dict)
+                assignee_id = task_assign_result.assignee_id
+            except (TypeError, ValueError) as struct_err:
+                logger.warning(
+                    f"Coordinator returned malformed assignment result: "
+                    f"{struct_err}. Expected format: "
+                    f"{{'assignee_id': 'worker_id'}}. "
+                    f"Got: {result_dict}"
+                )
+                return None
+
+            # validate assignee ID
+            if not assignee_id or not isinstance(assignee_id, str):
+                logger.warning(
+                    f"Coordinator returned invalid "
+                    f"assignee_id: '{assignee_id}'. "
+                    f"Expected non-empty string."
+                )
+                return None
+
+            if assignee_id in valid_worker_ids:
+                return assignee_id
+            else:
+                logger.warning(
+                    f"Coordinator assigned to "
+                    f"non-existent worker '{assignee_id}'. "
+                    f"Available workers: {valid_worker_ids}"
+                )
+                return None
+
+        except Exception as e:
+            logger.warning(
+                f"Unexpected error during task assignment: "
+                f"{type(e).__name__}: {e}"
+            )
+            return None
 
     @check_if_running(False)
     async def start(self) -> None:
