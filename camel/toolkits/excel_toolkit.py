@@ -16,8 +16,6 @@
 import os
 from typing import TYPE_CHECKING, List, Optional, Union
 
-import pandas as pd
-
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -25,7 +23,7 @@ from camel.utils import MCPServer
 
 # Import only for type hints (not executed at runtime)
 if TYPE_CHECKING:
-    import pandas as pd
+    from pandas import DataFrame
 
 logger = get_logger(__name__)
 
@@ -60,11 +58,11 @@ class ExcelToolkit(BaseToolkit):
 
             self.wb = load_workbook(file_path)
 
-    def _convert_to_markdown(self, df: pd.DataFrame) -> str:
+    def _convert_to_markdown(self, df: "DataFrame") -> str:
         r"""Convert DataFrame to Markdown format table.
 
         Args:
-            df (pd.DataFrame): DataFrame containing the Excel data.
+            df (DataFrame): DataFrame containing the Excel data.
 
         Returns:
             str: Markdown formatted table.
@@ -197,14 +195,14 @@ class ExcelToolkit(BaseToolkit):
                 If None, uses self.file_path.
 
         Returns:
-            str: Success message.
+            str: Success or error message.
         """
         if not self.wb:
-            raise ValueError("No workbook loaded to save.")
+            return "Error: No workbook loaded to save."
 
         save_path = file_path or self.file_path
         if not save_path:
-            raise ValueError("No file path specified for saving.")
+            return "Error: No file path specified for saving."
 
         self.wb.save(save_path)
         return f"Workbook saved successfully to {save_path}"
@@ -266,7 +264,7 @@ class ExcelToolkit(BaseToolkit):
         """
         target_path = file_path or self.file_path
         if not target_path:
-            raise ValueError("No file path specified for deletion.")
+            return "Error: No file path specified for deletion."
 
         if not os.path.exists(target_path):
             return f"File {target_path} does not exist."
@@ -296,12 +294,13 @@ class ExcelToolkit(BaseToolkit):
             str: Success message.
         """
         if not self.wb:
-            raise ValueError(
-                "Workbook not initialized. Please create a workbook first."
+            return (
+                "Error: Workbook not initialized. "
+                "Please create a workbook first."
             )
 
-        if sheet_name in self.wb.sheetnames:
-            return f"Sheet {sheet_name} already exists."
+        if sheet_name not in self.wb.sheetnames:
+            return f"Error: Sheet {sheet_name} does not exist."
 
         ws = self.wb.create_sheet(sheet_name)
         if data:
@@ -321,7 +320,7 @@ class ExcelToolkit(BaseToolkit):
             str: Success message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
             return f"Sheet {sheet_name} does not exist."
@@ -344,7 +343,7 @@ class ExcelToolkit(BaseToolkit):
             str: Success message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
             return f"Sheet {sheet_name} does not exist."
@@ -373,12 +372,13 @@ class ExcelToolkit(BaseToolkit):
             str: Success message.
         """
         if not self.wb:
-            raise ValueError(
-                "Workbook not initialized. Please create a workbook first."
+            return (
+                "Error: Workbook not initialized. "
+                "Please create a workbook first."
             )
 
         if sheet_name not in self.wb.sheetnames:
-            return f"Sheet {sheet_name} does not exist."
+            return f"Error: Sheet {sheet_name} does not exist."
 
         ws = self.wb[sheet_name]
         if data:
@@ -393,7 +393,7 @@ class ExcelToolkit(BaseToolkit):
         sheet_name: str,
         start_row: Optional[int] = None,
         end_row: Optional[int] = None,
-    ) -> List[List[Union[str, int, float, None]]]:
+    ) -> Union[List[List[Union[str, int, float, None]]], str]:
         r"""Get all rows or a range of rows from a sheet.
 
         Args:
@@ -404,14 +404,15 @@ class ExcelToolkit(BaseToolkit):
                 If None, goes to last row.
 
         Returns:
-            List[List[Union[str, int, float, None]]]:
-                List of rows, where each row is a list of cell values.
+            Union[List[List[Union[str, int, float, None]]], str]:
+                List of rows, where each row is a list of cell values, or
+                an error message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
-            raise ValueError(f"Sheet {sheet_name} does not exist.")
+            return f"Error: Sheet {sheet_name} does not exist."
 
         ws = self.wb[sheet_name]
         rows = []
@@ -444,7 +445,7 @@ class ExcelToolkit(BaseToolkit):
             str: Success message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
             return f"Sheet {sheet_name} does not exist."
@@ -484,7 +485,7 @@ class ExcelToolkit(BaseToolkit):
             str: Success message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
             return f"Sheet {sheet_name} does not exist."
@@ -528,7 +529,7 @@ class ExcelToolkit(BaseToolkit):
             str: Success message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
             return f"Sheet {sheet_name} does not exist."
@@ -561,7 +562,7 @@ class ExcelToolkit(BaseToolkit):
             str: Success message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
             return f"Sheet {sheet_name} does not exist."
@@ -589,13 +590,13 @@ class ExcelToolkit(BaseToolkit):
             cell_reference (str): Cell reference (e.g., 'A1', 'B2').
 
         Returns:
-            Union[str, int, float, None]: The cell value.
+            Union[str, int, float, None]: The cell value or an error message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
-            raise ValueError(f"Sheet {sheet_name} does not exist.")
+            return f"Error: Sheet {sheet_name} does not exist."
 
         ws = self.wb[sheet_name]
         return ws[cell_reference].value
@@ -618,7 +619,7 @@ class ExcelToolkit(BaseToolkit):
             str: Success message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
             return f"Sheet {sheet_name} does not exist."
@@ -631,7 +632,7 @@ class ExcelToolkit(BaseToolkit):
 
     def get_column_data(
         self, sheet_name: str, column: Union[int, str]
-    ) -> List[Union[str, int, float, None]]:
+    ) -> Union[List[Union[str, int, float, None]], str]:
         """Get all data from a specific column.
 
         Args:
@@ -640,13 +641,14 @@ class ExcelToolkit(BaseToolkit):
                 Column number (1-based) or letter (e.g., 'A', 'B').
 
         Returns:
-            List[Union[str, int, float, None]]: List of values in the column.
+            Union[List[Union[str, int, float, None]], str]:
+                List of values in the column or an error message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
-            raise ValueError(f"Sheet {sheet_name} does not exist.")
+            return f"Error: Sheet {sheet_name} does not exist."
 
         ws = self.wb[sheet_name]
 
@@ -671,7 +673,7 @@ class ExcelToolkit(BaseToolkit):
         sheet_name: str,
         search_value: Union[str, int, float],
         search_column: Optional[Union[int, str]] = None,
-    ) -> List[str]:
+    ) -> Union[List[str], str]:
         """Find cells containing a specific value.
 
         Args:
@@ -681,13 +683,14 @@ class ExcelToolkit(BaseToolkit):
                 Specific column to search in. If None, searches entire sheet.
 
         Returns:
-            List[str]: List of cell references containing the value.
+            Union[List[str], str]: List of cell references containing the
+                value or an error message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
-            raise ValueError(f"Sheet {sheet_name} does not exist.")
+            return f"Error: Sheet {sheet_name} does not exist."
 
         ws = self.wb[sheet_name]
         found_cells = []
@@ -719,7 +722,7 @@ class ExcelToolkit(BaseToolkit):
 
     def get_range_values(
         self, sheet_name: str, cell_range: str
-    ) -> List[List[Union[str, int, float, None]]]:
+    ) -> Union[List[List[Union[str, int, float, None]]], str]:
         """Get values from a specific range of cells.
 
         Args:
@@ -727,13 +730,14 @@ class ExcelToolkit(BaseToolkit):
             cell_range (str): Range of cells (e.g., 'A1:C5').
 
         Returns:
-            List[List[Union[str, int, float, None]]]: 2D list of cell values.
+            Union[List[List[Union[str, int, float, None]]], str]:
+                2D list of cell values or an error message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
-            raise ValueError(f"Sheet {sheet_name} does not exist.")
+            return f"Error: Sheet {sheet_name} does not exist."
 
         ws = self.wb[sheet_name]
         range_values = []
@@ -764,10 +768,10 @@ class ExcelToolkit(BaseToolkit):
             str: Success message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
-            return f"Sheet {sheet_name} does not exist."
+            return f"Error: Sheet {sheet_name} does not exist."
 
         ws = self.wb[sheet_name]
 
@@ -798,10 +802,10 @@ class ExcelToolkit(BaseToolkit):
             str: Success message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
 
         if sheet_name not in self.wb.sheetnames:
-            return f"Sheet {sheet_name} does not exist."
+            return f"Error: Sheet {sheet_name} does not exist."
 
         import pandas as pd
 
@@ -826,9 +830,9 @@ class ExcelToolkit(BaseToolkit):
             str: Success message.
         """
         if not self.wb:
-            raise ValueError("Workbook not initialized.")
+            return "Error: Workbook not initialized."
         if sheet_name not in self.wb.sheetnames:
-            return f"Sheet {sheet_name} does not exist."
+            return f"Error: Sheet {sheet_name} does not exist."
         ws = self.wb[sheet_name]
         ws.append(row_data)
         self._save_workbook()
