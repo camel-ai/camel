@@ -15,7 +15,6 @@
 import asyncio
 
 from camel.agents.chat_agent import ChatAgent
-from camel.loaders import Crawl4AI
 from camel.messages.base import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
@@ -24,6 +23,7 @@ from camel.toolkits import (
     AudioAnalysisToolkit,
     BrowserNonVisualToolkit,
     CodeExecutionToolkit,
+    Crawl4AIToolkit,
     DalleToolkit,
     EdgeOnePagesMCPToolkit,
     FileWriteToolkit,
@@ -31,6 +31,7 @@ from camel.toolkits import (
     HumanToolkit,
     ImageAnalysisToolkit,
     LinkedInToolkit,
+    MarkItDownToolkit,
     NotionToolkit,
     PPTXToolkit,
     RedditToolkit,
@@ -92,21 +93,15 @@ def search_agent_factory(
 ):
     r"""Factory for creating a search agent, based on user-provided code
     structure."""
-    search_toolkits = SearchToolkit()
-    # browser_toolkits = AsyncBrowserToolkit()
-    browser_toolkit = BrowserNonVisualToolkit(headless=False)
-    terminal_toolkits = TerminalToolkit()
-    human_toolkits = HumanToolkit()
     tools = [
-        # FunctionTool(search_toolkits.search_wiki),
-        FunctionTool(search_toolkits.search_exa),
-        # FunctionTool(search_toolkits.search_bing),
-        # FunctionTool(search_toolkits.search_baidu),
-        *browser_toolkit.get_tools(),
-        # *browser_toolkits.get_tools(),
-        *terminal_toolkits.get_tools(),
-        human_toolkits.ask_human_via_console,
-        FunctionTool(Crawl4AI().scrape),
+        # FunctionTool(SearchToolkit().search_wiki),
+        FunctionTool(SearchToolkit().search_exa),
+        # FunctionTool(SearchToolkit().search_bing),
+        # FunctionTool(SearchToolkit().search_baidu),
+        *BrowserNonVisualToolkit(headless=False).get_tools(),
+        *TerminalToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
+        *Crawl4AIToolkit().get_tools(),
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
@@ -178,6 +173,7 @@ def document_agent_factory(model: BaseModelBackend, task_id: str):
         *PPTXToolkit().get_tools(),
         # *RetrievalToolkit().get_tools(),
         HumanToolkit().ask_human_via_console,
+        *MarkItDownToolkit().get_tools(),
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
