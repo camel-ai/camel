@@ -1211,7 +1211,7 @@ class Workforce(BaseNode):
                 f"VALID WORKER IDS: {valid_worker_ids}. "
                 f"Please reassign ONLY the above tasks using these valid IDs."
             )
-            prompt += f"\n\n{feedback}"
+            prompt = prompt + f"\n\n{feedback}"
 
         response = self.coordinator_agent.step(
             prompt, response_format=TaskAssignResult
