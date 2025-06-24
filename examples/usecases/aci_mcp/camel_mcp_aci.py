@@ -50,7 +50,7 @@ async def main():
         # setup gemini model
         model = ModelFactory.create(
             model_platform=ModelPlatformType.GEMINI,
-            model_type=ModelType.GEMINI_2_5_PRO_PREVIEW,
+            model_type=ModelType.GEMINI_2_5_PRO,
             api_key=os.getenv("GEMINI_API_KEY"),
             model_config_dict={"temperature": 0.7, "max_tokens": 40000},
         )
