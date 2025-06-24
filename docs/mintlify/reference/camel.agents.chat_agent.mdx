@@ -381,6 +381,80 @@ def _try_format_message(self, message: BaseMessage, response_format: Type[BaseMo
   bool: Whether the message is formatted successfully (or no format
 is needed).
 
+<a id="camel.agents.chat_agent.ChatAgent._check_tools_strict_compatibility"></a>
+
+### _check_tools_strict_compatibility
+
+```python
+def _check_tools_strict_compatibility(self):
+```
+
+**Returns:**
+
+  bool: True if all tools are strict mode compatible,
+False otherwise.
+
+<a id="camel.agents.chat_agent.ChatAgent._convert_response_format_to_prompt"></a>
+
+### _convert_response_format_to_prompt
+
+```python
+def _convert_response_format_to_prompt(self, response_format: Type[BaseModel]):
+```
+
+Convert a Pydantic response format to a prompt instruction.
+
+**Parameters:**
+
+- **response_format** (Type[BaseModel]): The Pydantic model class.
+
+**Returns:**
+
+  str: A prompt instruction requesting the specific format.
+
+<a id="camel.agents.chat_agent.ChatAgent._handle_response_format_with_non_strict_tools"></a>
+
+### _handle_response_format_with_non_strict_tools
+
+```python
+def _handle_response_format_with_non_strict_tools(
+    self,
+    input_message: Union[BaseMessage, str],
+    response_format: Optional[Type[BaseModel]] = None
+):
+```
+
+Handle response format when tools are not strict mode compatible.
+
+**Parameters:**
+
+- **input_message**: The original input message.
+- **response_format**: The requested response format.
+
+**Returns:**
+
+  Tuple: (modified_message, modified_response_format,
+used_prompt_formatting)
+
+<a id="camel.agents.chat_agent.ChatAgent._apply_prompt_based_parsing"></a>
+
+### _apply_prompt_based_parsing
+
+```python
+def _apply_prompt_based_parsing(
+    self,
+    response: ModelResponse,
+    original_response_format: Type[BaseModel]
+):
+```
+
+Apply manual parsing when using prompt-based formatting.
+
+**Parameters:**
+
+- **response**: The model response to parse.
+- **original_response_format**: The original response format class.
+
 <a id="camel.agents.chat_agent.ChatAgent._format_response_if_needed"></a>
 
 ### _format_response_if_needed
