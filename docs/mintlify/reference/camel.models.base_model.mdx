@@ -101,6 +101,40 @@ detected.
 
   List[OpenAIMessage]: Preprocessed messages
 
+<a id="camel.models.base_model.BaseModelBackend._log_request"></a>
+
+### _log_request
+
+```python
+def _log_request(self, messages: List[OpenAIMessage]):
+```
+
+Log the request messages to a JSON file if logging is enabled.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): The messages to log.
+
+**Returns:**
+
+  Optional[str]: The path to the log file if logging is enabled,
+None otherwise.
+
+<a id="camel.models.base_model.BaseModelBackend._log_response"></a>
+
+### _log_response
+
+```python
+def _log_response(self, log_path: str, response: Any):
+```
+
+Log the response to the existing log file.
+
+**Parameters:**
+
+- **log_path** (str): The path to the log file.
+- **response** (Any): The response to log.
+
 <a id="camel.models.base_model.BaseModelBackend._run"></a>
 
 ### _run
