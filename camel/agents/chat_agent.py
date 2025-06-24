@@ -406,7 +406,10 @@ class ChatAgent(BaseAgent):
             # List of tuples (platform, type)
             resolved_models_list = []
             for model_spec in model_list:
-                platform, type_ = model_spec[0], model_spec[1]  # type: ignore[index]
+                platform, type_ = (  # type: ignore[index]
+                    model_spec[0],
+                    model_spec[1],
+                )
                 resolved_models_list.append(
                     ModelFactory.create(
                         model_platform=platform, model_type=type_
@@ -846,6 +849,185 @@ class ChatAgent(BaseAgent):
         except ValidationError:
             return False
 
+    def _check_tools_strict_compatibility(self) -> bool:
+        r"""Check if all tools are compatible with OpenAI strict mode.
+
+        Returns:
+            bool: True if all tools are strict mode compatible,
+                False otherwise.
+        """
+        tool_schemas = self._get_full_tool_schemas()
+        for schema in tool_schemas:
+            if not schema.get("function", {}).get("strict", True):
+                return False
+        return True
+
+    def _convert_response_format_to_prompt(
+        self, response_format: Type[BaseModel]
+    ) -> str:
+        r"""Convert a Pydantic response format to a prompt instruction.
+
+        Args:
+            response_format (Type[BaseModel]): The Pydantic model class.
+
+        Returns:
+            str: A prompt instruction requesting the specific format.
+        """
+        try:
+            # Get the JSON schema from the Pydantic model
+            schema = response_format.model_json_schema()
+
+            # Create a prompt based on the schema
+            format_instruction = (
+                "\n\nPlease respond in the following JSON format:\n" "{\n"
+            )
+
+            properties = schema.get("properties", {})
+            for field_name, field_info in properties.items():
+                field_type = field_info.get("type", "string")
+                description = field_info.get("description", "")
+
+                if field_type == "array":
+                    format_instruction += (
+                        f'    "{field_name}": ["array of values"]'
+                    )
+                elif field_type == "object":
+                    format_instruction += f'    "{field_name}": {{"object"}}'
+                elif field_type == "boolean":
+                    format_instruction += f'    "{field_name}": true'
+                elif field_type == "number":
+                    format_instruction += f'    "{field_name}": 0'
+                else:
+                    format_instruction += f'    "{field_name}": "string value"'
+
+                if description:
+                    format_instruction += f'  // {description}'
+
+                # Add comma if not the last item
+                if field_name != list(properties.keys())[-1]:
+                    format_instruction += ","
+                format_instruction += "\n"
+
+            format_instruction += "}"
+            return format_instruction
+
+        except Exception as e:
+            logger.warning(
+                f"Failed to convert response_format to prompt: {e}. "
+                f"Using generic format instruction."
+            )
+            return (
+                "\n\nPlease respond in a structured JSON format "
+                "that matches the requested schema."
+            )
+
+    def _handle_response_format_with_non_strict_tools(
+        self,
+        input_message: Union[BaseMessage, str],
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> Tuple[Union[BaseMessage, str], Optional[Type[BaseModel]], bool]:
+        r"""Handle response format when tools are not strict mode compatible.
+
+        Args:
+            input_message: The original input message.
+            response_format: The requested response format.
+
+        Returns:
+            Tuple: (modified_message, modified_response_format,
+                   used_prompt_formatting)
+        """
+        if response_format is None:
+            return input_message, response_format, False
+
+        # Check if tools are strict mode compatible
+        if self._check_tools_strict_compatibility():
+            return input_message, response_format, False
+
+        # Tools are not strict compatible, convert to prompt
+        logger.info(
+            "Non-strict tools detected. Converting response_format to "
+            "prompt-based formatting."
+        )
+
+        format_prompt = self._convert_response_format_to_prompt(
+            response_format
+        )
+
+        # Modify the message to include format instruction
+        modified_message: Union[BaseMessage, str]
+        if isinstance(input_message, str):
+            modified_message = input_message + format_prompt
+        else:
+            modified_message = input_message.create_new_instance(
+                input_message.content + format_prompt
+            )
+
+        # Return None for response_format to avoid strict mode conflicts
+        # and True to indicate we used prompt formatting
+        return modified_message, None, True
+
+    def _apply_prompt_based_parsing(
+        self,
+        response: ModelResponse,
+        original_response_format: Type[BaseModel],
+    ) -> None:
+        r"""Apply manual parsing when using prompt-based formatting.
+
+        Args:
+            response: The model response to parse.
+            original_response_format: The original response format class.
+        """
+        for message in response.output_messages:
+            if message.content:
+                try:
+                    # Try to extract JSON from the response content
+                    import json
+                    import re
+
+                    from pydantic import ValidationError
+
+                    # Try to find JSON in the content
+                    content = message.content.strip()
+
+                    # Try direct parsing first
+                    try:
+                        parsed_json = json.loads(content)
+                        message.parsed = (
+                            original_response_format.model_validate(
+                                parsed_json
+                            )
+                        )
+                        continue
+                    except (json.JSONDecodeError, ValidationError):
+                        pass
+
+                    # Try to extract JSON from text
+                    json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+                    json_matches = re.findall(json_pattern, content, re.DOTALL)
+
+                    for json_str in json_matches:
+                        try:
+                            parsed_json = json.loads(json_str)
+                            message.parsed = (
+                                original_response_format.model_validate(
+                                    parsed_json
+                                )
+                            )
+                            # Update content to just the JSON for consistency
+                            message.content = json.dumps(parsed_json)
+                            break
+                        except (json.JSONDecodeError, ValidationError):
+                            continue
+
+                    if not message.parsed:
+                        logger.warning(
+                            f"Failed to parse JSON from response: "
+                            f"{content[:100]}..."
+                        )
+
+                except Exception as e:
+                    logger.warning(f"Error during prompt-based parsing: {e}")
+
     def _format_response_if_needed(
         self,
         response: ModelResponse,
@@ -932,6 +1114,14 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        # Handle response format compatibility with non-strict tools
+        original_response_format = response_format
+        input_message, response_format, used_prompt_formatting = (
+            self._handle_response_format_with_non_strict_tools(
+                input_message, response_format
+            )
+        )
+
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
@@ -1014,6 +1204,13 @@ class ChatAgent(BaseAgent):
             break
 
         self._format_response_if_needed(response, response_format)
+
+        # Apply manual parsing if we used prompt-based formatting
+        if used_prompt_formatting and original_response_format:
+            self._apply_prompt_based_parsing(
+                response, original_response_format
+            )
+
         self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
@@ -1065,6 +1262,14 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        # Handle response format compatibility with non-strict tools
+        original_response_format = response_format
+        input_message, response_format, used_prompt_formatting = (
+            self._handle_response_format_with_non_strict_tools(
+                input_message, response_format
+            )
+        )
+
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
                 role_name="User", content=input_message
@@ -1097,6 +1302,11 @@ class ChatAgent(BaseAgent):
                 self._get_full_tool_schemas(),
             )
             iteration_count += 1
+
+            # Accumulate API token usage
+            self._update_token_usage_tracker(
+                step_token_usage, response.usage_dict
+            )
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
@@ -1139,13 +1349,14 @@ class ChatAgent(BaseAgent):
             break
 
         await self._aformat_response_if_needed(response, response_format)
+
+        # Apply manual parsing if we used prompt-based formatting
+        if used_prompt_formatting and original_response_format:
+            self._apply_prompt_based_parsing(
+                response, original_response_format
+            )
+
         self._record_final_output(response.output_messages)
-
-        # Create token usage tracker for this step
-        step_token_usage = self._create_token_usage_tracker()
-
-        # Update with response usage
-        self._update_token_usage_tracker(step_token_usage, response.usage_dict)
 
         return self._convert_to_chatagent_response(
             response,
@@ -1924,7 +2135,9 @@ class ChatAgent(BaseAgent):
                 schema for schema in self._external_tool_schemas.values()
             ],
             response_terminators=self.response_terminators,
-            scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
+            scheduling_strategy=(
+                self.model_backend.scheduling_strategy.__name__
+            ),
             max_iteration=self.max_iteration,
             stop_event=self.stop_event,
         )

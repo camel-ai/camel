@@ -1,421 +1,389 @@
 ---
-title: "Loaders"
-icon: loader
+title: "Memory"
+icon: memory
 ---
 
-<Card title="What are Loaders?" icon="loader">
-  CAMEL’s Loaders provide flexible ways to ingest and process all kinds of data
-  structured files, unstructured text, web content, and even OCR from images.
-  They power your agent’s ability to interact with the outside world. itionally,
-  several data readers were added, including `Apify Reader`, `Chunkr Reader`,
-  `Firecrawl Reader`, `Jina_url Reader`, and `Mistral Reader`, which enable
-  retrieval of external data for improved data integration and analysis.
+<Card title="What is Memory?" icon="memory">
+  The CAMEL Memory module gives your AI agents a flexible, persistent way to **store, retrieve, and manage information**, across any conversation or task.
+
+  With memory, agents can maintain context, recall key details from previous chats, and deliver much more coherent, context-aware responses.
+
+  Memory is what transforms a “chatbot” into a smart, adaptable assistant.
 </Card>
-## Types
+
+<Card title="Basic Usage: LongtermAgentMemory" icon="star-shooting">
+  This is the fastest way to enable true memory for your agents: store, retrieve, and leverage context across interactions.
+
+  <Tabs>
+    <Tab title="Python Example">
+      ```python
+      from camel.memories import (
+          ChatHistoryBlock,
+          LongtermAgentMemory,
+          MemoryRecord,
+          ScoreBasedContextCreator,
+          VectorDBBlock,
+      )
+      from camel.messages import BaseMessage
+      from camel.types import ModelType, OpenAIBackendRole
+      from camel.utils import OpenAITokenCounter
+
+      # Initialize the memory
+      memory = LongtermAgentMemory(
+          context_creator=ScoreBasedContextCreator(
+              token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+              token_limit=1024,
+          ),
+          chat_history_block=ChatHistoryBlock(),
+          vector_db_block=VectorDBBlock(),
+      )
+
+      # Create and write new records
+      records = [
+          MemoryRecord(
+              message=BaseMessage.make_user_message(
+                  role_name="User",
+                  meta_dict=None,
+                  content="What is CAMEL AI?",
+              ),
+              role_at_backend=OpenAIBackendRole.USER,
+          ),
+          MemoryRecord(
+              message=BaseMessage.make_assistant_message(
+                  role_name="Agent",
+                  meta_dict=None,
+                  content="CAMEL-AI.org is the 1st LLM multi-agent framework and "
+                          "an open-source community dedicated to finding the scaling law "
+                          "of agents.",
+              ),
+              role_at_backend=OpenAIBackendRole.ASSISTANT,
+          ),
+      ]
+      memory.write_records(records)
+
+      # Get context for the agent
+      context, token_count = memory.get_context()
+
+      print(context)
+      print(f"Retrieved context (token count: {token_count}):")
+      for message in context:
+          print(f"{message}")
+      ```
+    </Tab>
+    <Tab title="Output">
+      ```markdown
+      >>> Retrieved context (token count: 49):
+      {'role': 'user', 'content': 'What is AI?'}
+      {'role': 'assistant', 'content': 'AI refers to systems that mimic human intelligence.'}
+      ```
+    </Tab>
+  </Tabs>
+</Card>
+
+<Card title="Integrate Memory into a ChatAgent" icon="user-secret">
+  Assign memory to any agent and watch your AI recall and reason like a pro.
+
+  <Tabs>
+    <Tab title="Python Example">
+      ```python
+      from camel.agents import ChatAgent
+
+      # Define system message for the agent
+      sys_msg = BaseMessage.make_assistant_message(
+          role_name='Agent',
+          content='You are a curious agent wondering about the universe.',
+      )
+
+      # Initialize agent
+      agent = ChatAgent(system_message=sys_msg)
+
+      # Set memory to the agent
+      agent.memory = memory
+
+      # Define a user message
+      usr_msg = BaseMessage.make_user_message(
+          role_name='User',
+          content="Tell me which is the 1st LLM multi-agent framework based on what we have discussed",
+      )
+
+      # Sending the message to the agent
+      response = agent.step(usr_msg)
+
+      # Check the response (just for illustrative purpose)
+      print(response.msgs[0].content)
+      ```
+    </Tab>
+    <Tab title="Output">
+      ```markdown
+      >>> CAMEL AI is recognized as the first LLM (Large Language Model) multi-agent framework. It is an open-source community initiative focused on exploring the scaling laws of agents, enabling the development and interaction of multiple AI agents in a collaborative environment. This framework allows researchers and developers to experiment with various configurations and interactions among agents, facilitating advancements in AI capabilities and understanding.
+      ```
+    </Tab>
+  </Tabs>
+</Card>
+
+<Card title="Core Components of CAMEL Memory" icon="code">
 
 <AccordionGroup>
 
-{" "}
-<Accordion title="Base IO" icon="file">
-  Handles core file input/output for formats like PDF, DOCX, HTML, and more.<br></br>
-  Lets you represent, read, and process structured files.
-</Accordion>
+  <Accordion title="MemoryRecord" icon="file-signature">
+    **What it is:**  
+    The basic data unit in CAMEL’s memory system—everything stored/retrieved flows through this structure.
 
-{" "}
-<Accordion title="Unstructured IO" icon="puzzle">
-  Powerful ETL for parsing, cleaning, extracting, chunking, and staging
-  unstructured data.<br></br>
-  Perfect for RAG pipelines and pre-processing.
-</Accordion>
+    **Attributes:**
+    - **message**: The content, as a `BaseMessage`
+    - **role_at_backend**: Backend role (`OpenAIBackendRole`)
+    - **uuid**: Unique identifier for the record
+    - **extra_info**: Optional metadata (key-value pairs)
 
-{" "}
-<Accordion title="Apify Reader" icon="robot">
-  Integrates with Apify to automate web workflows and scraping.<br></br>
-  Supports authentication, actor management, and dataset operations via API.
-</Accordion>
+    **Key methods:**
+    - `from_dict()`: Build from a Python dict
+    - `to_dict()`: Convert to dict for saving/serialization
+    - `to_openai_message()`: Transform into an OpenAI message object
+  </Accordion>
 
-{" "}
-<Accordion title="Chunkr Reader" icon="scissors">
-  Connects to the Chunkr API for document chunking, segmentation, and OCR.<br></br>
-  Handles everything from simple docs to scanned PDFs.
-</Accordion>
+  <Accordion title="ContextRecord" icon="folder-grid">
+    **What it is:**  
+    Result of memory retrieval from `AgentMemory`, scored for context relevance.
 
-{" "}
-<Accordion title="Firecrawl Reader" icon="fire">
-  Converts entire websites into LLM-ready markdown using the Firecrawl API.<br></br>
-  Useful for quickly ingesting web content as clean text.
-</Accordion>
+    **Attributes:**
+    - **memory_record**: The original `MemoryRecord`
+    - **score**: How important/relevant this record is (float)
+  </Accordion>
 
-{" "}
-<Accordion title="JinaURL Reader" icon="globe">
-  Uses Jina AI’s URL reading service to cleanly extract web content.<br></br>
-  Designed for LLM-friendly extraction from any URL.
-</Accordion>
+  <Accordion title="MemoryBlock (Abstract Base Class)" icon="block">
+    **What it is:**  
+    The core “building block” for agent memory, following the Composite design pattern (supports tree structures).
 
-{" "}
-<Accordion title="MarkitDown Reader" icon="note">
-  Lightweight tool to convert files (HTML, DOCX, PDF, etc.) into Markdown.<br></br>
-  Ideal for prepping documents for LLM ingestion or analysis.
-</Accordion>
+    **Key methods:**
+    - `write_records()`: Store multiple records
+    - `write_record()`: Store a single record
+    - `clear()`: Remove all stored records
+  </Accordion>
 
-{" "}
-<Accordion title="Mistral Reader" icon="book-open-reader">
-  Integrates Mistral AI’s OCR service for extracting text from images and PDFs.
-  <br></br>
-  Supports both local and remote file processing for various formats.
-</Accordion>
+  <Accordion title="BaseContextCreator (Abstract Base Class)" icon="shapes">
+    **What it is:**  
+    Defines strategies for generating agent context when data exceeds model limits.
+
+    **Key methods/properties:**
+    - `token_counter`: Counts message tokens
+    - `token_limit`: Max allowed tokens in the context
+    - `create_context()`: Algorithm for building context from chat history
+  </Accordion>
+
+  <Accordion title="AgentMemory (Abstract Base Class)" icon="brain-circuit">
+    **What it is:**  
+    Specialized `MemoryBlock` for direct agent use.
+
+    **Key methods:**
+    - `retrieve()`: Get `ContextRecord` list
+    - `get_context_creator()`: Return the associated context creator
+    - `get_context()`: Return properly sized chat context
+  </Accordion>
+
+</AccordionGroup>
+</Card>
+
+<Card title="Memory Block Implementations" icon="database">
+
+<AccordionGroup>
+
+  <Accordion title="ChatHistoryBlock" icon="comment-dots">
+    **What it does:**  
+    Stores and retrieves recent chat history (like a conversation timeline).
+
+    **Initialization:**
+    - `storage`: Optional (default `InMemoryKeyValueStorage`)
+    - `keep_rate`: Historical message score weighting (default `0.9`)
+
+    **Methods:**
+    - `retrieve()`: Get recent chats (windowed)
+    - `write_records()`: Add new records
+    - `clear()`: Remove all chat history
+
+    **Use Case:**  
+    Best for maintaining the most recent conversation flow/context.
+  </Accordion>
+
+  <Accordion title="VectorDBBlock" icon="file-vector">
+    **What it does:**  
+    Uses vector embeddings for storing and retrieving information based on semantic similarity.
+
+    **Initialization:**
+    - `storage`: Optional vector DB (`QdrantStorage` by default)
+    - `embedding`: Embedding model (default: `OpenAIEmbedding`)
+
+    **Methods:**
+    - `retrieve()`: Get similar records based on query/keyword
+    - `write_records()`: Add new records (converted to vectors)
+    - `clear()`: Remove all vector records
+
+    **Use Case:**  
+    Ideal for large histories or when semantic search is needed.
+  </Accordion>
 
 </AccordionGroup>
 
-## Get Started
-
-<Card title="Using Base IO" icon="file">
-This module is designed to read files of various formats, extract their contents, and represent them as `File` objects, each tailored to handle a specific file type.
-
-<CodeGroup>
-```python base_io_example.py
-from io import BytesIO
-from camel.loaders import create_file_from_raw_bytes
-
-# Read a pdf file from disk
-
-with open("test.pdf", "rb") as file:
-file_content = file.read()
-
-# Use the create_file function to create an object based on the file extension
-
-file_obj = create_file_from_raw_bytes(file_content, "test.pdf")
-
-# Once you have the File object, you can access its content
-
-print(file_obj.docs[0]["page_content"])
-
-````
-</CodeGroup>
+<ParamField path="Difference" type="string">
+  **Key Differences:**
+  - **Storage:** ChatHistoryBlock uses key-value storage. VectorDBBlock uses vector DBs.
+  - **Retrieval:** ChatHistoryBlock retrieves by recency. VectorDBBlock retrieves by similarity.
+  - **Data:** ChatHistoryBlock stores raw messages. VectorDBBlock stores embeddings.
+</ParamField>
 </Card>
 
-<Card title="Using Unstructured IO" icon="puzzle">
-To get started with the <code>Unstructured IO</code> module, just import and initialize it. You can parse, clean, extract, chunk, and stage data from files or URLs. Here’s how you use it step by step:
+<Card title="Agent Memory Implementations & Advanced Usage" icon="user-cog">
 
-<br />
+<Card title="ChatHistoryMemory" icon="comment-dots">
+**What is it?**  
+An **AgentMemory** implementation that wraps `ChatHistoryBlock`.  
+**Best for:** Sequential, recent chat context (simple conversation memory).
 
-<strong>1. Parse unstructured data from a file or URL:</strong>
-<CodeGroup>
-```python unstructured_io_parse.py
-from camel.loaders import UnstructuredIO
+**Initialization:**
+- `context_creator`: `BaseContextCreator`
+- `storage`: Optional `BaseKeyValueStorage`
+- `window_size`: Optional `int` (retrieval window)
 
-uio = UnstructuredIO()
-example_url = (
-    "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
-    "philadelphia-eagles-spt-intl/index.html"
-)
-elements = uio.parse_file_or_url(example_url)
-print(("\n\n".join([str(el) for el in elements])))
-````
-
-```markdown parsed_elements.md
-> > > The Empire State Building was lit in green and white to celebrate the Philadelphia Eagles’ victory in the NFC Championship game on Sunday – a decision that’s sparked a bit of a backlash in the Big Apple.
-> > > The Eagles advanced to the Super Bowl for the first time since 2018 after defeating the San Francisco 49ers 31-7, and the Empire State Building later tweeted how it was marking the occasion.
-> > > Fly @Eagles Fly! We’re going Green and White in honor of the Eagles NFC Championship Victory. pic.twitter.com/RNiwbCIkt7— Empire State Building (@EmpireStateBldg)
-> > > January 29, 2023...
-```
-
-</CodeGroup>
-
-<br />
-
-<strong>2. Clean unstructured text data:</strong>
-<CodeGroup>
-  ```python unstructured_io_clean.py example_dirty_text = ("\x93Some dirty text
-  â€™ with extra spaces and – dashes.") options = [ ('replace_unicode_quotes',{" "}
-  {}), ('clean_dashes', {}), ('clean_non_ascii_chars', {}),
-  ('clean_extra_whitespace', {}), ] cleaned_text =
-  uio.clean_text_data(text=example_dirty_text, clean_options=options)
-  print(cleaned_text) ``` ```markdown cleaned_text.md >>> Some dirty text with
-  extra spaces and dashes. ```
-</CodeGroup>
-
-<strong>3. Extract data from text (for example, emails):</strong>
-<CodeGroup>
-```python unstructured_io_extract.py
-example_email_text = "Contact me at example@email.com."
-
-extracted_text = uio.extract_data_from_text(
-text=example_email_text,
-extract_type="extract_email_address"
-)
-print(extracted_text)
-
-````
-```markdown extracted_email.md
->>> ['example@email.com']
-````
-
-</CodeGroup>
-
-<br />
-
-<strong>4. Chunk content by title:</strong>
-<CodeGroup>
-```python unstructured_io_chunk.py
-chunks = uio.chunk_elements(elements=elements, chunk_type="chunk_by_title")
-
-for chunk in chunks:
-print(chunk)
-print("\n" + "-" \* 80)
-
-````
-```markdown chunked_content.md
->>> The Empire State Building was lit in green and white to celebrate the Philadelphia Eagles’ victory in the NFC Championship game on Sunday – a decision that’s sparked a bit of a backlash in the Big Apple.
->>> --------------------------------------------------------------------------------
->>> Fly @Eagles Fly! We’re going Green and White in honor of the Eagles NFC Championship Victory. pic.twitter.com/RNiwbCIkt7— Empire State Building (@EmpireStateBldg)
->>> --------------------------------------------------------------------------------
->>> January 29, 2023
-````
-
-</CodeGroup>
-
-<br />
-
-<strong>5. Stage elements for use with other platforms:</strong>
-<CodeGroup>
-```python unstructured_io_stage.py
-staged_element = uio.stage_elements(elements=elements, stage_type="stage_for_baseplate")
-print(staged_element)
-```
-```markdown staged_elements.md
->>> {'rows': [{'data': {'type': 'UncategorizedText', 'element_id': 'e78902d05b0cb1e4c38fc7a79db450d5', 'text': 'CNN\n        \xa0—'}, 'metadata': {'filetype': 'text/html', 'languages': ['eng'], 'page_number': 1, 'url': 'https://www.cnn.com/2023/01/30/sport/empire-state-building-green-philadelphia-eagles-spt-intl/index.html', 'emphasized_text_contents': ['CNN'], 'emphasized_text_tags': ['span']}}, ...
-```
-</CodeGroup>
-
-<br />
-This guide gets you started with <code>Unstructured IO</code>. For more, see the <a href="https://docs.unstructured.io" target="_blank">Unstructured IO Documentation</a>.
+**Methods:**
+- `retrieve()`: Get recent chat messages
+- `write_records()`: Write new records to chat history
+- `get_context_creator()`: Get the context creator
+- `clear()`: Remove all chat messages
 </Card>
 
----
+<Card title="VectorDBMemory" icon="vector-square">
+**What is it?**  
+An **AgentMemory** implementation that wraps `VectorDBBlock`.  
+**Best for:** Semantic search—find relevant messages by meaning, not just recency.
 
-<Card title="Using Apify Reader" icon="robot">
-Initialize the Apify client, set up the required actors and parameters, and run the actor.
+**Initialization:**
+- `context_creator`: `BaseContextCreator`
+- `storage`: Optional `BaseVectorStorage`
+- `retrieve_limit`: `int` (default `3`)
 
-<CodeGroup>
-```python apify_reader.py
-from camel.loaders import Apify
-
-apify = Apify()
-
-run_input = {
-"startUrls": [{"url": "https://www.camel-ai.org/"}],
-"maxCrawlDepth": 0,
-"maxCrawlPages": 1,
-}
-actor_result = apify.run_actor(
-actor_id="apify/website-content-crawler", run_input=run_input
-)
-dataset_result = apify.get_dataset_items(
-dataset_id=actor_result["defaultDatasetId"]
-)
-print(dataset_result)
-
-````
-```markdown apify_output.md
->>>[{'url': 'https://www.camel-ai.org/', 'crawl': {'loadedUrl': 'https://www.camel-ai.org/', ...}, 'metadata': {'canonicalUrl': 'https://www.camel-ai.org/', ...}, ... }]
-````
-
-</CodeGroup>
+**Methods:**
+- `retrieve()`: Get relevant messages from the vector DB
+- `write_records()`: Write new records and update topic
+- `get_context_creator()`: Get the context creator
 </Card>
 
-<Card title="Using Firecrawl Reader" icon="fire">
-Firecrawl Reader provides a simple way to turn any website into LLM-ready markdown format. Here’s how you can use it step by step:
+<Card title="LongtermAgentMemory" icon="layer-group">
+**What is it?**  
+Combines **ChatHistoryMemory** and **VectorDBMemory** for hybrid memory.  
+**Best for:** Production bots that need both recency & semantic search.
 
-<Steps>
-  <Step title="Initialize the Firecrawl client and start a crawl">
-    First, create a Firecrawl client and crawl a specific URL.
+**Initialization:**
+- `context_creator`: `BaseContextCreator`
+- `chat_history_block`: Optional `ChatHistoryBlock`
+- `vector_db_block`: Optional `VectorDBBlock`
+- `retrieve_limit`: `int` (default `3`)
 
-    <CodeGroup>
-    ```python firecrawl_crawl.py
-    from camel.loaders import Firecrawl
-
-    firecrawl = Firecrawl()
-    response = firecrawl.crawl(url="https://www.camel-ai.org/about")
-    print(response["status"])  # Should print "completed" when done
-    ```
-    ```markdown crawl_status.md
-    >>>completed
-    ```
-    </CodeGroup>
-    When the status is <code>"completed"</code>, the content extraction is done and you can retrieve the results.
-
-  </Step>
-
-  <Step title="Retrieve the extracted markdown content">
-    Once finished, access the LLM-ready markdown directly from the response:
-
-    <CodeGroup>
-    ```python firecrawl_markdown.py
-    print(response["data"][0]["markdown"])
-    ```
-    ```markdown extracted_markdown.md
-    >>>Camel-AI Team
-
-    We are finding the
-    scaling law of agent
-
-    🐫 CAMEL is an open-source library designed for the study of autonomous and
-    communicative agents. We believe that studying these agents on a large scale
-    offers valuable insights into their behaviors, capabilities, and potential
-    risks. To facilitate research in this field, we implement and support various
-    types of agents, tasks, prompts, models, and simulated environments.
-
-    **We are** always looking for more **contributors** and **collaborators**.
-    Contact us to join forces via [Slack](https://join.slack.com/t/camel-kwr1314/
-    shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA)
-    or [Discord](https://discord.gg/CNcNpquyDc)...
-    ```
-    </CodeGroup>
-
-  </Step>
-</Steps>
-
-<br />
-That’s it. With just a couple of lines, you can turn any website into clean markdown, ready for LLM pipelines or further processing.
+**Methods:**
+- `retrieve()`: Get context from both history & vector DB
+- `write_records()`: Write to both chat history & vector DB
+- `get_context_creator()`: Get the context creator
+- `clear()`: Remove all records from both memory blocks
 </Card>
 
-<Card title="Using Chunkr Reader" icon="cuttlefish">
-Chunkr Reader allows you to process PDFs (and other docs) in chunks, with built-in OCR and format control.  
-Below is a basic usage pattern:
+<Card title="Mem0Storage Integration" icon="warehouse">
+Add [Mem0](https://mem0.ai/) for cloud-based memory with automatic sync.
 
-Initialize the `ChunkrReader` and `ChunkrReaderConfig`, set the file path and chunking options, then submit your task and fetch results:
+**Initialization Params:**
+- `api_key`: (optional) Mem0 API authentication
+- `agent_id`: (optional) Agent association
+- `user_id`: (optional) User association
+- `metadata`: (optional) Dict of metadata for all memories
 
-```python
-import asyncio
-from camel.loaders import ChunkrReader, ChunkrReaderConfig
+<Tabs>
+  <Tab title="Python Example">
+    ```python
+    from camel.memories import ChatHistoryMemory, ScoreBasedContextCreator
+    from camel.storages import Mem0Storage
+    from camel.types import ModelType
+    from camel.utils import OpenAITokenCounter
 
-async def main():
-    chunkr = ChunkrReader()
-
-    config = ChunkrReaderConfig(
-        chunk_processing=512,      # Example: target chunk length
-        ocr_strategy="Auto",       # Example: OCR strategy
-        high_resolution=False      # False for faster processing (old "Fast" model)
+    memory = ChatHistoryMemory(
+        context_creator=ScoreBasedContextCreator(
+            token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+            token_limit=1024,
+        ),
+        storage=Mem0Storage(
+            api_key="your_mem0_api_key",  # Or set MEM0_API_KEY env var
+            agent_id="agent123"
+        ),
+        agent_id="agent123"
     )
+    # ...write and retrieve as usual...
+    ```
+  </Tab>
+  <Tab title="Output">
+    ```markdown
+    >>> Retrieved context (token count: 49):
+    {'role': 'user', 'content': 'What is CAMEL AI?'}
+    {'role': 'assistant', 'content': 'CAMEL-AI.org is the 1st LLM multi-agent framework and an open-source community dedicated to finding the scaling law of agents.'}
+    ```
+  </Tab>
+</Tabs>
 
-    # Replace with your actual file path.
-    file_path = "/path/to/your/document.pdf"
-    try:
-        task_id = await chunkr.submit_task(
-            file_path=file_path,
-            chunkr_config=config,
-        )
-        print(f"Task ID: {task_id}")
+**Why use this?**
+- Cloud persistence of chat history
+- Simple setup and config
+- Sequential retrieval—conversation order preserved
+- Syncs across sessions automatically
 
-        # Poll and fetch the output.
-        if task_id:
-            task_output_json_str = await chunkr.get_task_output(task_id=task_id)
-            if task_output_json_str:
-                print("Task Output:")
-                print(task_output_json_str)
-            else:
-                print(f"Failed to get output for task {task_id}, or task did not succeed/was cancelled.")
-    except ValueError as e:
-        print(f"An error occurred during task submission or retrieval: {e}")
-    except FileNotFoundError:
-        print(f"Error: File not found at {file_path}. Please check the path.")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-
-if __name__ == "__main__":
-    print("To run this example, replace '/path/to/your/document.pdf' with a real file path, ensure CHUNKR_API_KEY is set, and uncomment 'asyncio.run(main())'.")
-    # asyncio.run(main()) # Uncomment to run the example
-```
-
-A successful task returns a chunked structure like this:
-
-```markdown
-> > > Task ID: 7becf001-6f07-4f63-bddf-5633df363bbb
-> > > Task Output:
-> > > { "task_id": "7becf001-6f07-4f63-bddf-5633df363bbb", "status": "Succeeded", "created_at": "2024-11-08T12:45:04.260765Z", "finished_at": "2024-11-08T12:45:48.942365Z", "expires_at": null, "message": "Task succeeded", "output": { "chunks": [ { "segments": [ { "segment_id": "d53ec931-3779-41be-a220-3fe4da2770c5", "bbox": { "left": 224.16666, "top": 370.0, "width": 2101.6665, "height": 64.166664 }, "page_number": 1, "page_width": 2550.0, "page_height": 3300.0, "content": "Large Language Model based Multi-Agents: A Survey of Progress and Challenges", "segment_type": "Title", "ocr": null, "image": "https://chunkmydocs-bucket-prod.storage.googleapis.com/.../d53ec931-3779-41be-a220-3fe4da2770c5.jpg?...", "html": "<h1>Large Language Model based Multi-Agents: A Survey of Progress and Challenges</h1>", "markdown": "# Large Language Model based Multi-Agents: A Survey of Progress and Challenges\n\n" } ], "chunk_length": 11 }, { "segments": [ { "segment_id": "7bb38fc7-c1b3-4153-a3cc-116c0b9caa0a", "bbox": { "left": 432.49997, "top": 474.16666, "width": 1659.9999, "height": 122.49999 }, "page_number": 1, "page_width": 2550.0, "page_height": 3300.0, "content": "Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020", "segment_type": "Text", "ocr": null, "image": "https://chunkmydocs-bucket-prod.storage.googleapis.com/.../7bb38fc7-c1b3-4153-a3cc-116c0b9caa0a.jpg?...", "html": "<p>Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020</p>", "markdown": "Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020\n\n" } ], "chunk_length": 100 } ] } }
-```
-
+**Use when:** you need reliable, persistent chat history in the cloud (not advanced semantic search).
+</Card>
 </Card>
 
----
+<Card title="Advanced Topics" icon="star">
 
-<Card title="Using Jina Reader" icon="link">
-Jina Reader provides a convenient interface to extract clean, LLM-friendly content from any URL in a chosen format (like markdown):
+<Card title="Customizing Context Creator" icon="folder-grid">
+You can subclass `BaseContextCreator` for advanced control.
 
-```python
-from camel.loaders import JinaURLReader
-from camel.types.enums import JinaReturnFormat
+<Tabs>
+  <Tab title="Python Example">
+    ```python
+    from camel.memories import BaseContextCreator
 
-jina_reader = JinaURLReader(return_format=JinaReturnFormat.MARKDOWN)
-response = jina_reader.read_content("https://docs.camel-ai.org/")
-print(response)
-```
+    class MyCustomContextCreator(BaseContextCreator):
+        @property
+        def token_counter(self):
+            # Implement your token counting logic
+            return 
 
+        @property
+        def token_limit(self):
+            return 1000
+
+        def create_context(self, records):
+            # Implement your context creation logic
+            pass
+    ```
+  </Tab>
+</Tabs>
 </Card>
 
-<Card title="Using MarkitDown Reader" icon="notebook">
-MarkitDown Reader lets you convert files (like HTML or docs) into LLM-ready markdown with a single line.
+<Card title="Customizing VectorDBBlock" icon="database">
+You can use custom embeddings or vector DBs.
 
-```python
-from camel.loaders import MarkItDownLoader
+<Tabs>
+  <Tab title="Python Example">
+    ```python
+    from camel.embeddings import OpenAIEmbedding
+    from camel.memories import VectorDBBlock
+    from camel.storages import QdrantStorage
 
-loader = MarkItDownLoader()
-response = loader.convert_file("demo.html")
-
-print(response)
-```
-
-Example output:
-
-```markdown
-> > > Welcome to CAMEL’s documentation! — CAMEL 0.2.61 documentation
-
-[Skip to main content](https://docs.camel-ai.org/#main-content)
-...
-```
-
+    vector_db = VectorDBBlock(
+        embedding=OpenAIEmbedding(),
+        storage=QdrantStorage(vector_dim=OpenAIEmbedding().get_output_dim()),
+    )
+    ```
+  </Tab>
+</Tabs>
 </Card>
 
----
-
-<Card title="Using Mistral Reader" icon="book-open-reader">
-Mistral Reader offers OCR and text extraction from both PDFs and images, whether local or remote. Just specify the file path or URL:
-
-```python
-from camel.loaders import MistralReader
-
-mistral_reader = MistralReader()
-
-# Extract text from a PDF URL
-url_ocr_response = mistral_reader.extract_text(
-    file_path="https://arxiv.org/pdf/2201.04234", pages=[5]
-)
-print(url_ocr_response)
-```
-
-You can also extract from images or local files:
-
-```python
-# Extract text from an image URL
-image_ocr_response = mistral_reader.extract_text(
-    file_path="https://raw.githubusercontent.com/mistralai/cookbook/refs/heads/main/mistral/ocr/receipt.png",
-    is_image=True,
-)
-print(image_ocr_response)
-```
-
-```python
-# Extract text from a local PDF file
-local_ocr_response = mistral_reader.extract_text("path/to/your/document.pdf")
-print(local_ocr_response)
-```
-
-Response includes structured page data, markdown content, and usage details.
-
-```markdown
-> > > pages=[OCRPageObject(index=5, markdown='![img-0.jpeg](./images/img-0.jpeg)\n\nFigure 2: Scatter plot of predicted accuracy versus (true) OOD accuracy. Each point denotes a dif...',
-> > > images=[OCRImageObject(id='img-0.jpeg', ...)], dimensions=OCRPageDimensions(...))] model='mistral-ocr-2505-completion' usage_info=...
-```
+<Card title="Performance Considerations" icon="chart-user">
+- For production, use persistent storage (not just in-memory).
+- Optimize your context creator for both relevance and token count.
+</Card>
 
 </Card>
