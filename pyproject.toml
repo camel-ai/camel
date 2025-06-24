@@ -211,6 +211,8 @@ storage = [
     "mem0ai>=0.1.73",
     "pyobvector>=0.1.18",
     "weaviate-client>=4.15.0",
+    "psycopg[binary]>=3.1.18,<4",
+    "pgvector>=0.2.4,<0.3"
 ]
 owl = [
     "numpy>=1.2,<=2.2",
@@ -382,6 +384,8 @@ all = [
     "Flask>=2.0",
     "rlcard>=1.0.0,<1.3.0",
     "pytesseract>=0.3.13",
+    "psycopg[binary]>=3.1.18,<4",
+    "pgvector>=0.2.4,<0.3"
 ]
 
 [project.urls]
@@ -579,6 +583,8 @@ module = [
     "cv2",
     "rlcard.*",
     "pytesseract",
+    "psycopg",
+    "pgvector"
 ]
 ignore_missing_imports = true
 

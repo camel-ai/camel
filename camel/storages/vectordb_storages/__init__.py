@@ -22,6 +22,7 @@ from .base import (
 from .faiss import FaissStorage
 from .milvus import MilvusStorage
 from .oceanbase import OceanBaseStorage
+from .pgvector import PgVectorStorage
 from .qdrant import QdrantStorage
 from .tidb import TiDBStorage
 from .weaviate import WeaviateStorage
@@ -38,4 +39,5 @@ __all__ = [
     'WeaviateStorage',
     'VectorRecord',
     'VectorDBStatus',
+    'PgVectorStorage',
 ]
