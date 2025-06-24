@@ -41,7 +41,6 @@ from camel.societies.workforce.utils import (
     TaskAssignResult,
     WorkerConf,
     check_if_running,
-    safe_parse_agent_json_response,
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, validate_task_content
@@ -1224,24 +1223,8 @@ class Workforce(BaseNode):
             )
             return TaskAssignResult(assignments=[])
 
-        try:
-            result_dict = safe_parse_agent_json_response(
-                response.msg.content,
-                context="coordinator task assignment",
-                logger_instance=logger,
-            )
-            return TaskAssignResult(**result_dict)
-        except ValueError as e:
-            logger.error(
-                f"Failed to parse coordinator "
-                f"response for task assignment: {e}"
-            )
-            return TaskAssignResult(assignments=[])
-        except Exception as e:
-            logger.error(
-                f"Unexpected error parsing " f"coordinator response: {e}"
-            )
-            return TaskAssignResult(assignments=[])
+        result_dict = json.loads(response.msg.content, parse_int=str)
+        return TaskAssignResult(**result_dict)
 
     def _validate_assignments(
         self, assignments: List, valid_ids: set
