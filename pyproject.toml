@@ -586,8 +586,9 @@ module = [
     "cv2",
     "rlcard.*",
     "pytesseract",
-    "psycopg",
-    "pgvector"
+    "psycopg.*",
+    "pgvecto.*",
+    "pgvector.*",
 ]
 ignore_missing_imports = true
 
