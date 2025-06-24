@@ -1,16 +1,92 @@
 ---
-title: "Loaders"
-icon: loader
+title: "Memory"
+description: "Memory management in CAMEL agents"
+icon: "brain"
 ---
 
+# Memory in CAMEL
+
+Memory is a critical component of the CAMEL framework that allows agents to maintain state, remember past interactions, and effectively handle multi-step reasoning tasks. This page provides an overview of the memory systems in CAMEL and how to use them.
+
+## Introduction
+
+Memory in CAMEL enables agents to:
+- Store and retrieve past conversations and interactions
+- Maintain context across multiple turns
+- Access and update knowledge for long-term reasoning
+- Provide stateful capabilities for complex problem solving
+
+The `AgentMemory` class and its implementations form the backbone of CAMEL's memory system.
+
+## Memory Types
+
+<AccordionGroup>
+  <Accordion title="ChatHistoryMemory" icon="comments">
+    Stores conversation history between users and agents, maintaining the context of interactions.
+  </Accordion>
+  
+  <Accordion title="ContextCreators" icon="layer-group">
+    Algorithms that select relevant information from memory to include in the context window.
+  </Accordion>
+  
+  <Accordion title="Memory Blocks" icon="database">
+    Specialized memory structures for organizing and retrieving different types of information.
+  </Accordion>
+</AccordionGroup>
+
+## Working with Memory
+
+```python
+from camel.agents import ChatAgent
+from camel.messages import BaseMessage
+from camel.memories import ChatHistoryMemory
+
+# Create a memory instance
+memory = ChatHistoryMemory()
+
+# Create an agent with memory
+agent = ChatAgent(
+    system_message="You are a helpful assistant.",
+    model="gpt-3.5-turbo",
+    memory=memory,
+)
+
+# Interact with the agent
+response = agent.step("Hello, how are you?")
+print(response.msg.content)
+
+# Memory automatically stores the interaction
+print(f"Memory records: {len(memory.get_records())}")
+```
+
+## Memory with Context Creators
+
+Context creators help manage the context window by selecting the most relevant information:
+
+```python
+from camel.memories import ScoreBasedContextCreator
+
+# Create a context creator that selects content based on relevance scores
+context_creator = ScoreBasedContextCreator(
+    query_embedding_fn=your_embedding_function,
+    record_embedding_fn=your_embedding_function,
+)
+
+# Attach it to memory
+memory.set_context_creator(context_creator)
+```
+
+For more detailed information, check the [API Reference](/reference/camel.memories).
+
 <Card title="What are Loaders?" icon="loader">
-  CAMEL’s Loaders provide flexible ways to ingest and process all kinds of data
+  CAMEL's Loaders provide flexible ways to ingest and process all kinds of data
   structured files, unstructured text, web content, and even OCR from images.
-  They power your agent’s ability to interact with the outside world. itionally,
+  They power your agent's ability to interact with the outside world. itionally,
   several data readers were added, including `Apify Reader`, `Chunkr Reader`,
   `Firecrawl Reader`, `Jina_url Reader`, and `Mistral Reader`, which enable
   retrieval of external data for improved data integration and analysis.
 </Card>
+
 ## Types
 
 <AccordionGroup>
@@ -48,7 +124,7 @@ icon: loader
 
 {" "}
 <Accordion title="JinaURL Reader" icon="globe">
-  Uses Jina AI’s URL reading service to cleanly extract web content.<br></br>
+  Uses Jina AI's URL reading service to cleanly extract web content.<br></br>
   Designed for LLM-friendly extraction from any URL.
 </Accordion>
 
@@ -60,7 +136,7 @@ icon: loader
 
 {" "}
 <Accordion title="Mistral Reader" icon="book-open-reader">
-  Integrates Mistral AI’s OCR service for extracting text from images and PDFs.
+  Integrates Mistral AI's OCR service for extracting text from images and PDFs.
   <br></br>
   Supports both local and remote file processing for various formats.
 </Accordion>
@@ -94,10 +170,8 @@ print(file_obj.docs[0]["page_content"])
 </CodeGroup>
 </Card>
 
----
-
 <Card title="Using Unstructured IO" icon="puzzle">
-To get started with the <code>Unstructured IO</code> module, just import and initialize it. You can parse, clean, extract, chunk, and stage data from files or URLs. Here’s how you use it step by step:
+To get started with the <code>Unstructured IO</code> module, just import and initialize it. You can parse, clean, extract, chunk, and stage data from files or URLs. Here's how you use it step by step:
 
 <br />
 
@@ -116,9 +190,9 @@ print(("\n\n".join([str(el) for el in elements])))
 ````
 
 ```markdown parsed_elements.md
-> > > The Empire State Building was lit in green and white to celebrate the Philadelphia Eagles’ victory in the NFC Championship game on Sunday – a decision that’s sparked a bit of a backlash in the Big Apple.
+> > > The Empire State Building was lit in green and white to celebrate the Philadelphia Eagles' victory in the NFC Championship game on Sunday – a decision that's sparked a bit of a backlash in the Big Apple.
 > > > The Eagles advanced to the Super Bowl for the first time since 2018 after defeating the San Francisco 49ers 31-7, and the Empire State Building later tweeted how it was marking the occasion.
-> > > Fly @Eagles Fly! We’re going Green and White in honor of the Eagles NFC Championship Victory. pic.twitter.com/RNiwbCIkt7— Empire State Building (@EmpireStateBldg)
+> > > Fly @Eagles Fly! We're going Green and White in honor of the Eagles NFC Championship Victory. pic.twitter.com/RNiwbCIkt7— Empire State Building (@EmpireStateBldg)
 > > > January 29, 2023...
 ```
 
@@ -136,8 +210,6 @@ print(("\n\n".join([str(el) for el in elements])))
   print(cleaned_text) ``` ```markdown cleaned_text.md >>> Some dirty text with
   extra spaces and dashes. ```
 </CodeGroup>
-
-<br />
 
 <strong>3. Extract data from text (for example, emails):</strong>
 <CodeGroup>
@@ -170,9 +242,9 @@ print("\n" + "-" \* 80)
 
 ````
 ```markdown chunked_content.md
->>> The Empire State Building was lit in green and white to celebrate the Philadelphia Eagles’ victory in the NFC Championship game on Sunday – a decision that’s sparked a bit of a backlash in the Big Apple.
+>>> The Empire State Building was lit in green and white to celebrate the Philadelphia Eagles' victory in the NFC Championship game on Sunday – a decision that's sparked a bit of a backlash in the Big Apple.
 >>> --------------------------------------------------------------------------------
->>> Fly @Eagles Fly! We’re going Green and White in honor of the Eagles NFC Championship Victory. pic.twitter.com/RNiwbCIkt7— Empire State Building (@EmpireStateBldg)
+>>> Fly @Eagles Fly! We're going Green and White in honor of the Eagles NFC Championship Victory. pic.twitter.com/RNiwbCIkt7— Empire State Building (@EmpireStateBldg)
 >>> --------------------------------------------------------------------------------
 >>> January 29, 2023
 ````
@@ -228,10 +300,8 @@ print(dataset_result)
 </CodeGroup>
 </Card>
 
----
-
 <Card title="Using Firecrawl Reader" icon="fire">
-Firecrawl Reader provides a simple way to turn any website into LLM-ready markdown format. Here’s how you can use it step by step:
+Firecrawl Reader provides a simple way to turn any website into LLM-ready markdown format. Here's how you can use it step by step:
 
 <Steps>
   <Step title="Initialize the Firecrawl client and start a crawl">
@@ -283,10 +353,8 @@ Firecrawl Reader provides a simple way to turn any website into LLM-ready markdo
 </Steps>
 
 <br />
-That’s it. With just a couple of lines, you can turn any website into clean markdown, ready for LLM pipelines or further processing.
+That's it. With just a couple of lines, you can turn any website into clean markdown, ready for LLM pipelines or further processing.
 </Card>
-
----
 
 <Card title="Using Chunkr Reader" icon="cuttlefish">
 Chunkr Reader allows you to process PDFs (and other docs) in chunks, with built-in OCR and format control.  
@@ -362,8 +430,6 @@ print(response)
 
 </Card>
 
----
-
 <Card title="Using MarkitDown Reader" icon="notebook">
 MarkitDown Reader lets you convert files (like HTML or docs) into LLM-ready markdown with a single line.
 
@@ -379,7 +445,7 @@ print(response)
 Example output:
 
 ```markdown
-> > > Welcome to CAMEL’s documentation! — CAMEL 0.2.61 documentation
+> > > Welcome to CAMEL's documentation! — CAMEL 0.2.61 documentation
 
 [Skip to main content](https://docs.camel-ai.org/#main-content)
 ...

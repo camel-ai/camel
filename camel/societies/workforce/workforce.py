@@ -882,11 +882,16 @@ class Workforce(BaseNode):
         self._task = task
         self._state = WorkforceState.RUNNING
         task.state = TaskState.FAILED  # TODO: Add logic for OPEN
-        self._pending_tasks.append(task)
 
         # Decompose the task into subtasks first
         subtasks = self._decompose_task(task)
-        self._pending_tasks.extendleft(reversed(subtasks))
+        if subtasks:
+            # If decomposition happened, the original task becomes a container.
+            # We only execute its subtasks.
+            self._pending_tasks.extendleft(reversed(subtasks))
+        else:
+            # If no decomposition, execute the original task.
+            self._pending_tasks.append(task)
         self.set_channel(TaskChannel())
 
         # Save initial snapshot
