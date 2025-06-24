@@ -35,6 +35,7 @@ dependencies = [
     "weasyprint>=65.1",
     "markdown>=3.8.2",
     "types-markdown>=3.8.0.20250415",
+    "xhtml2pdf>=0.2.17",
 ]
 
 

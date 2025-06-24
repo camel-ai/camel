@@ -184,50 +184,48 @@ class FileWriteToolkit(BaseToolkit):
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
             try:
-                from markdown import (
-                    markdown as md_to_html,  # type: ignore[import]
-                )
-                from weasyprint import HTML  # type: ignore[import]
+                from bs4 import BeautifulSoup
+                from markdown import markdown as md_to_html
+                from xhtml2pdf import pisa  # type: ignore[import]
 
-                # Convert Markdown to HTML with table support
-                html_body = md_to_html(content, extensions=["tables"])
-
-                # Wrap in basic HTML structure with table styling
-                html_template = f"""
-                <html>
-                <head>
-                    <meta charset="utf-8">
-                    <style>
-                        body {{
-                            font-family: sans-serif;
-                            margin: 2em;
-                        }}
-                        table {{
-                            width: 100%;
-                            border-collapse: collapse;
-                        }}
-                        th, td {{
-                            border: 1px solid #999;
-                            padding: 8px;
-                            text-align: left;
-                        }}
-                        th {{
-                            background-color: #f2f2f2;
-                        }}
-                    </style>
-                </head>
-                <body>
-                {html_body}
-                </body>
-                </html>
+                STYLE = """
+                <style>
+                body {
+                    font-family: Helvetica, sans-serif;
+                    font-size: 12pt;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 10px 0;
+                }
+                th, td {
+                    border: 1px solid #666;
+                    padding: 6px 8px;
+                    text-align: left;
+                }
+                th {
+                    background-color: #f0f0f0;
+                }
+                </style>
                 """
 
-                # Render HTML to PDF
-                HTML(string=html_template).write_pdf(str(file_path))
+                html_body = md_to_html(content, extensions=["tables"])
 
-                logger.info(f"Wrote PDF (with WeasyPrint) to {file_path}")
+                html_fixed = str(BeautifulSoup(html_body, "html5lib"))
+
+                html_source = STYLE + html_fixed
+
+                with open(file_path, "w+b") as result_file:
+                    pisa_status = pisa.CreatePDF(html_source, dest=result_file)
+
+                    if pisa_status.err:
+                        print("An error occurred!")
+
+                logger.info(f"Wrote PDF to {file_path}")
+
             except Exception as e:
-                logger.exception("Failed to write PDF using WeasyPrint.")
+                logger.exception("Failed to write PDF.")
                 raise RuntimeError("Failed to generate PDF: " + str(e))
 
     def _write_csv_file(
