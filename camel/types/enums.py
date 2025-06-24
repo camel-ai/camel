@@ -211,7 +211,6 @@ class ModelType(UnifiedModelType, Enum):
     MAGISTRAL_MEDIUM = "magistral-medium-2506"
     MISTRAL_SMALL_3_2 = "mistral-small-2506"
 
-
     # Reka models
     REKA_CORE = "reka-core"
     REKA_FLASH = "reka-flash"
