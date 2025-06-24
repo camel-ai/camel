@@ -24,7 +24,7 @@ This class provides multiple ways to connect to ChromaDB instances:
 
 - **vector_dim** (int): The dimension of storing vectors.
 - **collection_name** (Optional[str], optional): Name for the collection in ChromaDB. If not provided, auto-generated with timestamp. (default: :obj:`None`)
-- **client_type** (ChromaClientType, optional): Type of ChromaDB client to use. Supported types: 'ephemeral', 'persistent', 'http', 'cloud'. (default: :obj:`"ephemeral"`) # Persistent client parameters
+- **client_type** (`Literal["ephemeral", "persistent", "http", "cloud"]`): Type of ChromaDB client to use. Supported types: 'ephemeral', 'persistent', 'http', 'cloud'. (default: :obj:`"ephemeral"`) # Persistent client parameters
 - **path** (Optional[str], optional): Path to directory for persistent storage. Only used when client_type='persistent'. (default: :obj:`"./chroma"`) # HTTP client parameters
 - **host** (str, optional): Host for remote ChromaDB server. (default: :obj:`"localhost"`)
 - **port** (int, optional): Port for remote ChromaDB server. (default: :obj:`8000`)
@@ -49,7 +49,7 @@ def __init__(
     self,
     vector_dim: int,
     collection_name: Optional[str] = None,
-    client_type: ChromaClientType = 'ephemeral',
+    client_type: Literal['ephemeral', 'persistent', 'http', 'cloud'] = 'ephemeral',
     path: Optional[str] = './chroma',
     host: str = 'localhost',
     port: int = 8000,
@@ -84,14 +84,17 @@ Deletes the collection if :obj:`delete_collection_on_del` is set to
 ### _validate_client_type
 
 ```python
-def _validate_client_type(self, client_type: ChromaClientType):
+def _validate_client_type(
+    self,
+    client_type: Literal['ephemeral', 'persistent', 'http', 'cloud']
+):
 ```
 
 Validates client type parameter.
 
 **Parameters:**
 
-- **client_type**: The client type to validate.
+- **client_type** (`Literal["ephemeral", "persistent", "http", "cloud"]`): The client type to validate.
 
 <a id="camel.storages.vectordb_storages.chroma.ChromaStorage._validate_client_config"></a>
 
