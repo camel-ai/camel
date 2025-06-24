@@ -126,68 +126,61 @@ icon: memory
 <AccordionGroup>
 
   <Accordion title="MemoryRecord" icon="file-signature">
-    <b>What it is:</b>  
+    **What it is:**  
     The basic data unit in CAMEL’s memory system—everything stored/retrieved flows through this structure.
 
-    <ul>
-      <li><b>message</b>: The content, as a <code>BaseMessage</code></li>
-      <li><b>role_at_backend</b>: Backend role (<code>OpenAIBackendRole</code>)</li>
-      <li><b>uuid</b>: Unique identifier for the record</li>
-      <li><b>extra_info</b>: Optional metadata (key-value pairs)</li>
-    </ul>
-    <b>Key methods:</b>
-    <ul>
-      <li><code>from_dict()</code>: Build from a Python dict</li>
-      <li><code>to_dict()</code>: Convert to dict for saving/serialization</li>
-      <li><code>to_openai_message()</code>: Transform into an OpenAI message object</li>
-    </ul>
+    **Attributes:**
+    - **message**: The content, as a `BaseMessage`
+    - **role_at_backend**: Backend role (`OpenAIBackendRole`)
+    - **uuid**: Unique identifier for the record
+    - **extra_info**: Optional metadata (key-value pairs)
+
+    **Key methods:**
+    - `from_dict()`: Build from a Python dict
+    - `to_dict()`: Convert to dict for saving/serialization
+    - `to_openai_message()`: Transform into an OpenAI message object
   </Accordion>
 
   <Accordion title="ContextRecord" icon="folder-grid">
-    <b>What it is:</b>  
-    Result of memory retrieval from <code>AgentMemory</code>, scored for context relevance.
+    **What it is:**  
+    Result of memory retrieval from `AgentMemory`, scored for context relevance.
 
-    <ul>
-      <li><b>memory_record</b>: The original <code>MemoryRecord</code></li>
-      <li><b>score</b>: How important/relevant this record is (float)</li>
-    </ul>
+    **Attributes:**
+    - **memory_record**: The original `MemoryRecord`
+    - **score**: How important/relevant this record is (float)
   </Accordion>
 
   <Accordion title="MemoryBlock (Abstract Base Class)" icon="block">
-    <b>What it is:</b>  
+    **What it is:**  
     The core “building block” for agent memory, following the Composite design pattern (supports tree structures).
 
-    <ul>
-      <li><code>write_records()</code>: Store multiple records</li>
-      <li><code>write_record()</code>: Store a single record</li>
-      <li><code>clear()</code>: Remove all stored records</li>
-    </ul>
+    **Key methods:**
+    - `write_records()`: Store multiple records
+    - `write_record()`: Store a single record
+    - `clear()`: Remove all stored records
   </Accordion>
 
   <Accordion title="BaseContextCreator (Abstract Base Class)" icon="shapes">
-    <b>What it is:</b>  
+    **What it is:**  
     Defines strategies for generating agent context when data exceeds model limits.
 
-    <ul>
-      <li><code>token_counter</code>: Counts message tokens</li>
-      <li><code>token_limit</code>: Max allowed tokens in the context</li>
-      <li><code>create_context()</code>: Algorithm for building context from chat history</li>
-    </ul>
+    **Key methods/properties:**
+    - `token_counter`: Counts message tokens
+    - `token_limit`: Max allowed tokens in the context
+    - `create_context()`: Algorithm for building context from chat history
   </Accordion>
 
   <Accordion title="AgentMemory (Abstract Base Class)" icon="brain-circuit">
-    <b>What it is:</b>  
-    Specialized <code>MemoryBlock</code> for direct agent use.
+    **What it is:**  
+    Specialized `MemoryBlock` for direct agent use.
 
-    <ul>
-      <li><code>retrieve()</code>: Get <code>ContextRecord</code> list</li>
-      <li><code>get_context_creator()</code>: Return the associated context creator</li>
-      <li><code>get_context()</code>: Return properly sized chat context</li>
-    </ul>
+    **Key methods:**
+    - `retrieve()`: Get `ContextRecord` list
+    - `get_context_creator()`: Return the associated context creator
+    - `get_context()`: Return properly sized chat context
   </Accordion>
 
 </AccordionGroup>
-
 </Card>
 
 <Card title="Memory Block Implementations" icon="database">
@@ -195,58 +188,47 @@ icon: memory
 <AccordionGroup>
 
   <Accordion title="ChatHistoryBlock" icon="comment-dots">
-    <b>What it does:</b>  
+    **What it does:**  
     Stores and retrieves recent chat history (like a conversation timeline).
 
-    <b>Initialization:</b>
-    <ul>
-      <li><code>storage</code>: Optional (default <code>InMemoryKeyValueStorage</code>)</li>
-      <li><code>keep_rate</code>: Historical message score weighting (default <code>0.9</code>)</li>
-    </ul>
+    **Initialization:**
+    - `storage`: Optional (default `InMemoryKeyValueStorage`)
+    - `keep_rate`: Historical message score weighting (default `0.9`)
 
-    <b>Methods:</b>
-    <ul>
-      <li><code>retrieve()</code>: Get recent chats (windowed)</li>
-      <li><code>write_records()</code>: Add new records</li>
-      <li><code>clear()</code>: Remove all chat history</li>
-    </ul>
+    **Methods:**
+    - `retrieve()`: Get recent chats (windowed)
+    - `write_records()`: Add new records
+    - `clear()`: Remove all chat history
 
-    <b>Use Case:</b>  
+    **Use Case:**  
     Best for maintaining the most recent conversation flow/context.
   </Accordion>
 
   <Accordion title="VectorDBBlock" icon="file-vector">
-    <b>What it does:</b>  
+    **What it does:**  
     Uses vector embeddings for storing and retrieving information based on semantic similarity.
 
-    <b>Initialization:</b>
-    <ul>
-      <li><code>storage</code>: Optional vector DB (<code>QdrantStorage</code> by default)</li>
-      <li><code>embedding</code>: Embedding model (default: <code>OpenAIEmbedding</code>)</li>
-    </ul>
+    **Initialization:**
+    - `storage`: Optional vector DB (`QdrantStorage` by default)
+    - `embedding`: Embedding model (default: `OpenAIEmbedding`)
 
-    <b>Methods:</b>
-    <ul>
-      <li><code>retrieve()</code>: Get similar records based on query/keyword</li>
-      <li><code>write_records()</code>: Add new records (converted to vectors)</li>
-      <li><code>clear()</code>: Remove all vector records</li>
-    </ul>
+    **Methods:**
+    - `retrieve()`: Get similar records based on query/keyword
+    - `write_records()`: Add new records (converted to vectors)
+    - `clear()`: Remove all vector records
 
-    <b>Use Case:</b>  
+    **Use Case:**  
     Ideal for large histories or when semantic search is needed.
   </Accordion>
 
 </AccordionGroup>
 
 <ParamField path="Difference" type="string">
-  <b>Key Differences:</b>
-  <ul>
-    <li><b>Storage:</b> ChatHistoryBlock uses key-value storage. VectorDBBlock uses vector DBs.</li>
-    <li><b>Retrieval:</b> ChatHistoryBlock retrieves by recency. VectorDBBlock retrieves by similarity.</li>
-    <li><b>Data:</b> ChatHistoryBlock stores raw messages. VectorDBBlock stores embeddings.</li>
-  </ul>
+  **Key Differences:**
+  - **Storage:** ChatHistoryBlock uses key-value storage. VectorDBBlock uses vector DBs.
+  - **Retrieval:** ChatHistoryBlock retrieves by recency. VectorDBBlock retrieves by similarity.
+  - **Data:** ChatHistoryBlock stores raw messages. VectorDBBlock stores embeddings.
 </ParamField>
-
 </Card>
 
 <Card title="Agent Memory Implementations & Advanced Usage" icon="user-cog">
