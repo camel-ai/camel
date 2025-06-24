@@ -146,7 +146,7 @@ class FileWriteToolkit(BaseToolkit):
         document.save(str(file_path))
         logger.debug(f"Wrote DOCX to {file_path} with default formatting")
 
-    @dependencies_required('pylatex', 'reportlab')
+    @dependencies_required('pylatex', 'weasyprint', 'markdown')
     def _write_pdf_file(
         self, file_path: Path, content: str, use_latex: bool = False
     ) -> None:
@@ -156,35 +156,24 @@ class FileWriteToolkit(BaseToolkit):
             file_path (Path): The target file path.
             content (str): The text content to write.
             use_latex (bool): Whether to use LaTeX for rendering. (requires
-                LaTeX toolchain). If False, uses ReportLab for simpler PDF
-                generation with enhanced table support. (default: :obj:`False`)
+                LaTeX toolchain). If False, uses Markdown and WeasyPrint for
+                Markdown->HTML->PDF rendering.
         """
         if use_latex:
-            from pylatex import (
-                Command,
-                Document,
-                Math,
-                Section,
-            )
-            from pylatex.utils import (
-                NoEscape,
-            )
+            from pylatex import Command, Document, Math, Section
+            from pylatex.utils import NoEscape
 
             doc = Document(documentclass="article")
             doc.packages.append(Command('usepackage', 'amsmath'))
 
             with doc.create(Section('Generated Content')):
                 for line in content.split('\n'):
-                    # Remove leading whitespace
                     stripped_line = line.strip()
-                    # Check if the line is intended as a standalone math
-                    # expression
                     if (
                         stripped_line.startswith('$')
                         and stripped_line.endswith('$')
                         and len(stripped_line) > 1
                     ):
-                        # Extract content between the '$' delimiters
                         math_data = stripped_line[1:-1]
                         doc.append(Math(data=math_data))
                     else:
@@ -192,197 +181,107 @@ class FileWriteToolkit(BaseToolkit):
                     doc.append(NoEscape(r'\par'))
 
             doc.generate_pdf(str(file_path), clean_tex=False)
-
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
             try:
-                from reportlab.lib import (
-                    colors,
-                )
-                from reportlab.lib.pagesizes import (
-                    A4,
-                )
-                from reportlab.lib.styles import (
-                    ParagraphStyle,
-                    getSampleStyleSheet,
-                )
-                from reportlab.lib.units import (
-                    cm,
-                )
-                from reportlab.platypus import (
-                    Flowable,
-                    Paragraph,
-                    SimpleDocTemplate,
-                    Spacer,
-                    Table,
-                    TableStyle,
-                )
-            except ImportError:
-                raise RuntimeError(
-                    "reportlab library is required for PDF generation."
-                )
+                from markdown import markdown as md_to_html
+                from weasyprint import HTML
 
-            doc = SimpleDocTemplate(
-                str(file_path),
-                pagesize=A4,
-                rightMargin=2 * cm,
-                leftMargin=2 * cm,
-                topMargin=2 * cm,
-                bottomMargin=2 * cm,
-            )
-            styles = getSampleStyleSheet()
-            story: List[Flowable] = []
+                # Convert Markdown to HTML with table support
+                html_body = md_to_html(content, extensions=["tables"])
 
-            # Add a custom style for headings
-            heading_style = ParagraphStyle(
-                'Heading1',
-                parent=styles['Heading1'],
-                fontSize=16,
-                spaceAfter=12,
-            )
+                # Wrap in basic HTML structure with table styling
+                html_template = f"""
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        body {{
+                            font-family: sans-serif;
+                            margin: 2em;
+                        }}
+                        table {{
+                            width: 100%;
+                            border-collapse: collapse;
+                        }}
+                        th, td {{
+                            border: 1px solid #999;
+                            padding: 8px;
+                            text-align: left;
+                        }}
+                        th {{
+                            background-color: #f2f2f2;
+                        }}
+                    </style>
+                </head>
+                <body>
+                {html_body}
+                </body>
+                </html>
+                """
 
-            # Process content by looking for markdown patterns
-            lines = content.split('\n')
-            i = 0
-            while i < len(lines):
-                line = lines[i].strip()
+                # Render HTML to PDF
+                HTML(string=html_template).write_pdf(str(file_path))
 
-                # Handle headings
-                if line.startswith('# '):
-                    story.append(Paragraph(line[2:], heading_style))
-                    story.append(Spacer(1, 0.5 * cm))
+                logger.info(f"Wrote PDF (with WeasyPrint) to {file_path}")
+            except Exception as e:
+                logger.exception("Failed to write PDF using WeasyPrint.")
+                raise RuntimeError("Failed to generate PDF: " + str(e))
 
-                # Handle tables
-                elif (
-                    line.startswith('|')
-                    and i + 1 < len(lines)
-                    and lines[i + 1].strip().startswith('|---')
-                ):
-                    # Extract table headers
-                    headers = [cell.strip() for cell in line.split('|')[1:-1]]
+        def _write_csv_file(
+            self,
+            file_path: Path,
+            content: Union[str, List[List]],
+            encoding: str = "utf-8",
+        ) -> None:
+            r"""Write CSV content to a file.
 
-                    # Skip the separator line
-                    i += 2
+            Args:
+                file_path (Path): The target file path.
+                content (Union[str, List[List]]): The CSV content
+                    as a string or list of lists.
+                encoding (str): Character encoding to use.
+                    (default: :obj:`utf-8`)
+            """
+            import csv
 
-                    # Collect table data
-                    table_data = [headers]
-                    while i < len(lines) and lines[i].strip().startswith('|'):
-                        row = [
-                            cell.strip()
-                            for cell in lines[i].strip().split('|')[1:-1]
-                        ]
-                        table_data.append(row)
-                        i += 1
-
-                    # Create table
-                    if table_data:
-                        table = Table(
-                            table_data,
-                            colWidths=[doc.width / len(headers)]
-                            * len(headers),
-                        )
-                        table.setStyle(
-                            TableStyle(
-                                [
-                                    (
-                                        'BACKGROUND',
-                                        (0, 0),
-                                        (-1, 0),
-                                        colors.lightgrey,
-                                    ),
-                                    (
-                                        'TEXTCOLOR',
-                                        (0, 0),
-                                        (-1, 0),
-                                        colors.black,
-                                    ),
-                                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                                    (
-                                        'FONTNAME',
-                                        (0, 0),
-                                        (-1, 0),
-                                        'Helvetica-Bold',
-                                    ),
-                                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                                    (
-                                        'GRID',
-                                        (0, 0),
-                                        (-1, -1),
-                                        1,
-                                        colors.black,
-                                    ),
-                                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                                ]
-                            )
-                        )
-                        story.append(table)
-                        story.append(Spacer(1, 0.5 * cm))
-                    continue  # Skip the increment at the end of the loop
-
-                # Handle regular paragraphs
-                elif line:
-                    story.append(Paragraph(line, styles['Normal']))
-                    story.append(Spacer(1, 0.2 * cm))
-
-                i += 1
-
-            doc.build(story)
-            logger.debug(
-                f"Wrote PDF to {file_path} using ReportLab with table support"
-            )
-
-    def _write_csv_file(
-        self,
-        file_path: Path,
-        content: Union[str, List[List]],
-        encoding: str = "utf-8",
-    ) -> None:
-        r"""Write CSV content to a file.
-
-        Args:
-            file_path (Path): The target file path.
-            content (Union[str, List[List]]): The CSV content as a string or
-                list of lists.
-            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
-        """
-        import csv
-
-        with file_path.open("w", encoding=encoding, newline='') as f:
-            if isinstance(content, str):
-                f.write(content)
-            else:
-                writer = csv.writer(f)
-                writer.writerows(content)
-        logger.debug(f"Wrote CSV to {file_path} with {encoding} encoding")
-
-    def _write_json_file(
-        self,
-        file_path: Path,
-        content: str,
-        encoding: str = "utf-8",
-    ) -> None:
-        r"""Write JSON content to a file.
-
-        Args:
-            file_path (Path): The target file path.
-            content (str): The JSON content as a string.
-            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
-        """
-        import json
-
-        with file_path.open("w", encoding=encoding) as f:
-            if isinstance(content, str):
-                try:
-                    # Try parsing as JSON string first
-                    data = json.loads(content)
-                    json.dump(data, f, ensure_ascii=False)
-                except json.JSONDecodeError:
-                    # If not valid JSON string, write as is
+            with file_path.open("w", encoding=encoding, newline='') as f:
+                if isinstance(content, str):
                     f.write(content)
-            else:
-                # If not string, dump as JSON
-                json.dump(content, f, ensure_ascii=False)
-        logger.debug(f"Wrote JSON to {file_path} with {encoding} encoding")
+                else:
+                    writer = csv.writer(f)
+                    writer.writerows(content)
+            logger.debug(f"Wrote CSV to {file_path} with {encoding} encoding")
+
+        def _write_json_file(
+            self,
+            file_path: Path,
+            content: str,
+            encoding: str = "utf-8",
+        ) -> None:
+            r"""Write JSON content to a file.
+
+            Args:
+                file_path (Path): The target file path.
+                content (str): The JSON content as a string.
+                encoding (str): Character encoding to use. 
+                    (default: :obj:`utf-8`)
+            """
+            import json
+
+            with file_path.open("w", encoding=encoding) as f:
+                if isinstance(content, str):
+                    try:
+                        # Try parsing as JSON string first
+                        data = json.loads(content)
+                        json.dump(data, f, ensure_ascii=False)
+                    except json.JSONDecodeError:
+                        # If not valid JSON string, write as is
+                        f.write(content)
+                else:
+                    # If not string, dump as JSON
+                    json.dump(content, f, ensure_ascii=False)
+            logger.debug(f"Wrote JSON to {file_path} with {encoding} encoding")
 
     def _write_yaml_file(
         self,
