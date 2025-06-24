@@ -19,7 +19,7 @@ import time
 import uuid
 from collections import deque
 from enum import Enum
-from typing import Any, Coroutine, Deque, Dict, List, Optional
+from typing import Any, Coroutine, Deque, Dict, List, Optional, Set, Tuple
 
 from colorama import Fore
 
@@ -37,6 +37,7 @@ from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
+    TaskAssignment,
     TaskAssignResult,
     WorkerConf,
     check_if_running,
@@ -1164,6 +1165,195 @@ class Workforce(BaseNode):
             )
         return info
 
+    def _get_valid_worker_ids(self) -> set:
+        r"""Get all valid worker IDs from child nodes.
+
+        Returns:
+            set: Set of valid worker IDs that can be assigned tasks.
+        """
+        valid_worker_ids = {child.node_id for child in self._children}
+        return valid_worker_ids
+
+    def _call_coordinator_for_assignment(
+        self, tasks: List[Task], invalid_ids: Optional[List[str]] = None
+    ) -> TaskAssignResult:
+        r"""Call coordinator agent to assign tasks with optional validation
+        feedback in the case of invalid worker IDs.
+
+        Args:
+            tasks (List[Task]): Tasks to assign.
+            invalid_ids (List[str], optional): Invalid worker IDs from previous
+                attempt (if any).
+
+        Returns:
+            TaskAssignResult: Assignment result from coordinator.
+        """
+        # format tasks information for the prompt
+        tasks_info = ""
+        for task in tasks:
+            tasks_info += f"Task ID: {task.id}\n"
+            tasks_info += f"Content: {task.content}\n"
+            if task.additional_info:
+                tasks_info += f"Additional Info: {task.additional_info}\n"
+            tasks_info += "---\n"
+
+        prompt = str(
+            ASSIGN_TASK_PROMPT.format(
+                tasks_info=tasks_info,
+                child_nodes_info=self._get_child_nodes_info(),
+            )
+        )
+
+        # add feedback if this is a retry
+        if invalid_ids:
+            valid_worker_ids = list(self._get_valid_worker_ids())
+            feedback = (
+                f"VALIDATION ERROR: The following worker IDs are invalid: "
+                f"{invalid_ids}. "
+                f"VALID WORKER IDS: {valid_worker_ids}. "
+                f"Please reassign ONLY the above tasks using these valid IDs."
+            )
+            prompt = prompt + f"\n\n{feedback}"
+
+        response = self.coordinator_agent.step(
+            prompt, response_format=TaskAssignResult
+        )
+
+        if response.msg is None or response.msg.content is None:
+            logger.error(
+                "Coordinator agent returned empty response for task assignment"
+            )
+            return TaskAssignResult(assignments=[])
+
+        result_dict = json.loads(response.msg.content, parse_int=str)
+        return TaskAssignResult(**result_dict)
+
+    def _validate_assignments(
+        self, assignments: List[TaskAssignment], valid_ids: Set[str]
+    ) -> Tuple[List[TaskAssignment], List[TaskAssignment]]:
+        r"""Validate task assignments against valid worker IDs.
+
+        Args:
+            assignments (List[TaskAssignment]): Assignments to validate.
+            valid_ids (Set[str]): Set of valid worker IDs.
+
+        Returns:
+            Tuple[List[TaskAssignment], List[TaskAssignment]]:
+                (valid_assignments, invalid_assignments)
+        """
+        valid_assignments: List[TaskAssignment] = []
+        invalid_assignments: List[TaskAssignment] = []
+
+        for assignment in assignments:
+            if assignment.assignee_id in valid_ids:
+                valid_assignments.append(assignment)
+            else:
+                invalid_assignments.append(assignment)
+
+        return valid_assignments, invalid_assignments
+
+    def _handle_task_assignment_fallbacks(self, tasks: List[Task]) -> List:
+        r"""Create new workers for unassigned tasks as fallback.
+
+        Args:
+            tasks (List[Task]): Tasks that need new workers.
+
+        Returns:
+            List[TaskAssignment]: Assignments for newly created workers.
+        """
+        fallback_assignments = []
+
+        for task in tasks:
+            logger.info(f"Creating new worker for unassigned task {task.id}")
+            new_worker = self._create_worker_node_for_task(task)
+
+            assignment = TaskAssignment(
+                task_id=task.id,
+                assignee_id=new_worker.node_id,
+                dependencies=[],
+            )
+            fallback_assignments.append(assignment)
+
+        return fallback_assignments
+
+    def _handle_assignment_retry_and_fallback(
+        self,
+        invalid_assignments: List[TaskAssignment],
+        tasks: List[Task],
+        valid_worker_ids: Set[str],
+    ) -> List[TaskAssignment]:
+        r"""Called if Coordinator agent fails to assign tasks to valid worker
+        IDs. Handles retry assignment and fallback worker creation for invalid
+        assignments.
+
+        Args:
+            invalid_assignments (List[TaskAssignment]): Invalid assignments to
+                retry.
+            tasks (List[Task]): Original tasks list for task lookup.
+            valid_worker_ids (set): Set of valid worker IDs.
+
+        Returns:
+            List[TaskAssignment]: Final assignments for the invalid tasks.
+        """
+        invalid_ids = [a.assignee_id for a in invalid_assignments]
+        invalid_tasks = [
+            task
+            for task in tasks
+            if any(a.task_id == task.id for a in invalid_assignments)
+        ]
+
+        # handle cases where coordinator returned no assignments at all
+        if not invalid_assignments:
+            invalid_tasks = tasks  # all tasks need assignment
+            logger.warning(
+                f"Coordinator returned no assignments. "
+                f"Retrying assignment for all {len(invalid_tasks)} tasks."
+            )
+        else:
+            logger.warning(
+                f"Invalid worker IDs detected: {invalid_ids}. "
+                f"Retrying assignment for {len(invalid_tasks)} tasks."
+            )
+
+        # retry assignment with feedback
+        retry_result = self._call_coordinator_for_assignment(
+            invalid_tasks, invalid_ids
+        )
+        final_assignments = []
+
+        if retry_result.assignments:
+            retry_valid, retry_invalid = self._validate_assignments(
+                retry_result.assignments, valid_worker_ids
+            )
+            final_assignments.extend(retry_valid)
+
+            # collect tasks that are still unassigned for fallback
+            if retry_invalid:
+                unassigned_tasks = [
+                    task
+                    for task in invalid_tasks
+                    if any(a.task_id == task.id for a in retry_invalid)
+                ]
+            else:
+                unassigned_tasks = []
+        else:
+            # retry failed completely, all invalid tasks need fallback
+            logger.warning("Retry assignment failed")
+            unassigned_tasks = invalid_tasks
+
+        # handle fallback for any remaining unassigned tasks
+        if unassigned_tasks:
+            logger.warning(
+                f"Creating fallback workers for {len(unassigned_tasks)} "
+                f"unassigned tasks"
+            )
+            fallback_assignments = self._handle_task_assignment_fallbacks(
+                unassigned_tasks
+            )
+            final_assignments.extend(fallback_assignments)
+
+        return final_assignments
+
     def _find_assignee(
         self,
         tasks: List[Task],
@@ -1178,39 +1368,41 @@ class Workforce(BaseNode):
                 with their dependencies.
         """
         self.coordinator_agent.reset()
-
-        # Format tasks information for the prompt
-        tasks_info = ""
-        for task in tasks:
-            tasks_info += f"Task ID: {task.id}\n"
-            tasks_info += f"Content: {task.content}\n"
-            if task.additional_info:
-                tasks_info += f"Additional Info: {task.additional_info}\n"
-            tasks_info += "---\n"
-
-        prompt = ASSIGN_TASK_PROMPT.format(
-            tasks_info=tasks_info,
-            child_nodes_info=self._get_child_nodes_info(),
-        )
+        valid_worker_ids = self._get_valid_worker_ids()
 
         logger.debug(
             f"Sending batch assignment request to coordinator "
             f"for {len(tasks)} tasks."
         )
 
-        response = self.coordinator_agent.step(
-            prompt, response_format=TaskAssignResult
-        )
-        if response.msg is None or response.msg.content is None:
-            logger.error(
-                "Coordinator agent returned empty response for task assignment"
-            )
-            # Return empty result as fallback
-            return TaskAssignResult(assignments=[])
+        assignment_result = self._call_coordinator_for_assignment(tasks)
 
-        result_dict = json.loads(response.msg.content, parse_int=str)
-        task_assign_result = TaskAssignResult(**result_dict)
-        return task_assign_result
+        # validate assignments
+        valid_assignments, invalid_assignments = self._validate_assignments(
+            assignment_result.assignments, valid_worker_ids
+        )
+
+        # check if we have assignments for all tasks
+        assigned_task_ids = {
+            a.task_id for a in valid_assignments + invalid_assignments
+        }
+        unassigned_tasks = [t for t in tasks if t.id not in assigned_task_ids]
+
+        # if all assignments are valid and all tasks are assigned, return early
+        if not invalid_assignments and not unassigned_tasks:
+            return TaskAssignResult(assignments=valid_assignments)
+
+        # handle retry and fallback for
+        # invalid assignments and unassigned tasks
+        all_problem_assignments = invalid_assignments
+        retry_and_fallback_assignments = (
+            self._handle_assignment_retry_and_fallback(
+                all_problem_assignments, tasks, valid_worker_ids
+            )
+        )
+        valid_assignments.extend(retry_and_fallback_assignments)
+
+        return TaskAssignResult(assignments=valid_assignments)
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
         # Record the start time when a task is posted
