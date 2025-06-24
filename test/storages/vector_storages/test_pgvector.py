@@ -53,7 +53,7 @@ def test_pgvector_add(mock_pgvector_conn):
         patch("pgvector.psycopg.register_vector"),
     ):
         storage = PgVectorStorage(4, {"host": "localhost"})
-        mock_cursor.execute.reset_mock()
+        mock_cursor.executemany.reset_mock()
         records = [
             VectorRecord(
                 id="1", vector=[0.1, 0.2, 0.3, 0.4], payload={"a": 1}
@@ -63,7 +63,7 @@ def test_pgvector_add(mock_pgvector_conn):
             ),
         ]
         storage.add(records)
-        assert mock_cursor.execute.call_count == 2
+        assert mock_cursor.executemany.call_count == 1
         mock_conn.commit.assert_called()
 
 
