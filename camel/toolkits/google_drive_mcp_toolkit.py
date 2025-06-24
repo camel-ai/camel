@@ -33,7 +33,7 @@ class GoogleDriveMCPToolkit(BaseToolkit):
         timeout: Optional[float] = None,
         credentials_path: Optional[str] = None,
     ) -> None:
-        r"""Initializes the EdgeOnePagesMCPToolkit.
+        r"""Initializes the GoogleDriveMCPToolkit.
 
         Args:
             timeout (Optional[float]): Connection timeout in seconds.
