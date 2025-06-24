@@ -160,13 +160,13 @@ class Task(BaseModel):
         additional_info (Optional[Dict[str, Any]]): Additional information for
             the task. (default: :obj:`None`)
         image_list (Optional[List[Image.Image]]): Optional list of PIL Image
-            objects associated with the message. (default: :obj:`None`)
+            objects associated with the task. (default: :obj:`None`)
         image_detail (Literal["auto", "low", "high"]): Detail level of the
-            images associated with the message. (default: :obj:`auto`)
+            images associated with the task. (default: :obj:`auto`)
         video_bytes (Optional[bytes]): Optional bytes of a video associated
-            with the message. (default: :obj:`None`)
+            with the task. (default: :obj:`None`)
         video_detail (Literal["auto", "low", "high"]): Detail level of the
-            videos associated with the message. (default: :obj:`low`)
+            videos associated with the task. (default: :obj:`auto`)
     """
 
     content: str
@@ -195,7 +195,7 @@ class Task(BaseModel):
 
     video_bytes: Optional[bytes] = None
 
-    video_detail: Literal["auto", "low", "high"] = "low"
+    video_detail: Literal["auto", "low", "high"] = "auto"
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
