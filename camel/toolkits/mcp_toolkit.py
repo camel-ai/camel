@@ -457,7 +457,37 @@ class MCPToolkit(BaseToolkit):
         try:
             schema = tool.get_openai_tool_schema()
 
-            # Check if the tool already has strict mode enabled
+            # Check if any object in the schema has additionalProperties: true
+            def _has_additional_properties_true(obj):
+                r"""Recursively check if any object has additionalProperties: true"""  # noqa: E501
+                if isinstance(obj, dict):
+                    if obj.get("additionalProperties") is True:
+                        return True
+                    for value in obj.values():
+                        if _has_additional_properties_true(value):
+                            return True
+                elif isinstance(obj, list):
+                    for item in obj:
+                        if _has_additional_properties_true(item):
+                            return True
+                return False
+
+            # FIRST: Check if the schema contains additionalProperties: true
+            # This must be checked before strict mode validation
+            if _has_additional_properties_true(schema):
+                # Force strict mode to False and log warning
+                if "function" in schema:
+                    schema["function"]["strict"] = False
+                tool.set_openai_tool_schema(schema)
+                logger.warning(
+                    f"Tool '{tool.get_function_name()}' contains "
+                    f"additionalProperties: true which is incompatible with "
+                    f"OpenAI strict mode. Setting strict=False for this tool."
+                )
+                return tool
+
+            # SECOND: Check if the tool already has strict mode enabled
+            # Only do this if there are no additionalProperties conflicts
             if schema.get("function", {}).get("strict") is True:
                 return tool
 
