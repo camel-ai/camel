@@ -25,10 +25,13 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel
+from PIL import Image
+from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
+import uuid
+
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -142,27 +145,37 @@ class Task(BaseModel):
         content (str): string content for task.
         id (str): An unique string identifier for the task. This should
             ideally be provided by the provider/model which created the task.
-            (default: :obj: `""`)
+            (default: :obj:`uuid.uuid4()`)
         state (TaskState): The state which should be OPEN, RUNNING, DONE or
-            DELETED. (default: :obj: `TaskState.OPEN`)
-        type (Optional[str]): task type. (default: :obj: `None`)
+            DELETED. (default: :obj:`TaskState.FAILED`)
+        type (Optional[str]): task type. (default: :obj:`None`)
         parent (Optional[Task]): The parent task, None for root task.
-            (default: :obj: `None`)
+            (default: :obj:`None`)
         subtasks (List[Task]): The childrent sub-tasks for the task.
-            (default: :obj: `[]`)
+            (default: :obj:`[]`)
         result (Optional[str]): The answer for the task.
-            (default: :obj: `""`)
+            (default: :obj:`""`)
         failure_count (int): The failure count for the task.
-            (default: :obj: `0`)
+            (default: :obj:`0`)
         additional_info (Optional[Dict[str, Any]]): Additional information for
-            the task. (default: :obj: `None`)
+            the task. (default: :obj:`None`)
+        image_list (Optional[List[Image.Image]]): Optional list of PIL Image
+            objects associated with the task. (default: :obj:`None`)
+        image_detail (Literal["auto", "low", "high"]): Detail level of the
+            images associated with the task. (default: :obj:`auto`)
+        video_bytes (Optional[bytes]): Optional bytes of a video associated
+            with the task. (default: :obj:`None`)
+        video_detail (Literal["auto", "low", "high"]): Detail level of the
+            videos associated with the task. (default: :obj:`auto`)
     """
 
     content: str
 
-    id: str = ""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
 
-    state: TaskState = TaskState.OPEN
+    state: TaskState = (
+        TaskState.FAILED
+    )  # TODO: Add logic for OPEN in workforce.py
 
     type: Optional[str] = None
 
@@ -175,6 +188,16 @@ class Task(BaseModel):
     failure_count: int = 0
 
     additional_info: Optional[Dict[str, Any]] = None
+
+    image_list: Optional[List[Image.Image]] = None
+
+    image_detail: Literal["auto", "low", "high"] = "auto"
+
+    video_bytes: Optional[bytes] = None
+
+    video_detail: Literal["auto", "low", "high"] = "auto"
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __repr__(self) -> str:
         r"""Return a string representation of the task."""
@@ -204,7 +227,9 @@ class Task(BaseModel):
 
     def reset(self):
         r"""Reset Task to initial state."""
-        self.state = TaskState.OPEN
+        self.state = (
+            TaskState.FAILED
+        )  # TODO: Add logic for OPEN in workforce.py
         self.result = ""
 
     def update_result(self, result: str):
@@ -357,6 +382,10 @@ class Task(BaseModel):
             role_name=role_name,
             content=self.content,
             additional_info=self.additional_info,
+            image_list=self.image_list,
+            image_detail=self.image_detail,
+            video_bytes=self.video_bytes,
+            video_detail=self.video_detail,
             other_results=sub_tasks_result,
         )
         msg = BaseMessage.make_user_message(
@@ -507,7 +536,12 @@ class TaskManager:
         role_name = agent.role_name
         content = template.format(role_name=role_name, content=task.content)
         msg = BaseMessage.make_user_message(
-            role_name=role_name, content=content
+            role_name=role_name,
+            content=content,
+            image_list=task.image_list,
+            image_detail=task.image_detail,
+            video_bytes=task.video_bytes,
+            video_detail=task.video_detail,
         )
         response = agent.step(msg)
         if task_parser is None:

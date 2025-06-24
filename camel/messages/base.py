@@ -69,7 +69,7 @@ class BaseMessage:
         image_detail (Literal["auto", "low", "high"]): Detail level of the
             images associated with the message. (default: :obj:`auto`)
         video_detail (Literal["auto", "low", "high"]): Detail level of the
-            videos associated with the message. (default: :obj:`low`)
+            videos associated with the message. (default: :obj:`auto`)
         parsed: Optional[Union[Type[BaseModel], dict]]: Optional object which
             is parsed from the content. (default: :obj:`None`)
     """
@@ -82,7 +82,7 @@ class BaseMessage:
     video_bytes: Optional[bytes] = None
     image_list: Optional[List[Image.Image]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
-    video_detail: Literal["auto", "low", "high"] = "low"
+    video_detail: Literal["auto", "low", "high"] = "auto"
     parsed: Optional[Union[BaseModel, dict]] = None
 
     @classmethod

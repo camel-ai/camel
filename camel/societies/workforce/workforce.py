@@ -274,10 +274,13 @@ class Workforce(BaseNode):
             "of agents. This ensures efficient execution by minimizing "
             "context switching between agents.",
         )
-        _kwargs = dict(task_agent_kwargs or {})
+        _task_agent_kwargs = dict(task_agent_kwargs or {})
         extra_tools = TaskPlanningToolkit().get_tools()
-        _kwargs["tools"] = [*_kwargs.get("tools", []), *extra_tools]
-        self.task_agent = ChatAgent(task_sys_msg, **_kwargs)
+        _task_agent_kwargs["tools"] = [
+            *_task_agent_kwargs.get("tools", []),
+            *extra_tools,
+        ]
+        self.task_agent = ChatAgent(task_sys_msg, **_task_agent_kwargs)
 
     def __repr__(self):
         return (
@@ -671,8 +674,8 @@ class Workforce(BaseNode):
             # Reset state for tasks being moved back to pending
             for task in tasks_to_move_back:
                 # Handle all possible task states
-                if task.state in [TaskState.DONE, TaskState.FAILED]:
-                    task.state = TaskState.OPEN
+                if task.state in [TaskState.DONE, TaskState.OPEN]:
+                    task.state = TaskState.FAILED  # TODO: Add logic for OPEN
                     # Clear result to avoid confusion
                     task.result = None
                     # Reset failure count to give task a fresh start
@@ -823,9 +826,17 @@ class Workforce(BaseNode):
 
         # Check if we're already in an event loop
         try:
-            asyncio.get_running_loop()
+            current_loop = asyncio.get_running_loop()
+            # Store the current loop for potential reuse by async tools
+            self._loop = current_loop
 
-            # If we're in an event loop, we need to run in a thread
+            logger.info(
+                "Running in active event loop context. "
+                "Consider using process_task_async() directly for better "
+                "async tool compatibility."
+            )
+
+            # Create a new thread with a fresh event loop
             def run_in_thread():
                 # Create new event loop for this thread
                 new_loop = asyncio.new_event_loop()
@@ -836,6 +847,8 @@ class Workforce(BaseNode):
                     )
                 finally:
                     new_loop.close()
+                    # Restore original loop reference
+                    self._loop = current_loop
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(run_in_thread)
@@ -868,12 +881,17 @@ class Workforce(BaseNode):
         self.reset()
         self._task = task
         self._state = WorkforceState.RUNNING
-        task.state = TaskState.OPEN
-        self._pending_tasks.append(task)
+        task.state = TaskState.FAILED  # TODO: Add logic for OPEN
 
         # Decompose the task into subtasks first
         subtasks = self._decompose_task(task)
-        self._pending_tasks.extendleft(reversed(subtasks))
+        if subtasks:
+            # If decomposition happened, the original task becomes a container.
+            # We only execute its subtasks.
+            self._pending_tasks.extendleft(reversed(subtasks))
+        else:
+            # If no decomposition, execute the original task.
+            self._pending_tasks.append(task)
         self.set_channel(TaskChannel())
 
         # Save initial snapshot
@@ -982,18 +1000,27 @@ class Workforce(BaseNode):
 
     @check_if_running(False)
     def add_single_agent_worker(
-        self, description: str, worker: ChatAgent
+        self,
+        description: str,
+        worker: ChatAgent,
+        pool_max_size: int = 10,
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses a single agent.
 
         Args:
             description (str): Description of the worker node.
             worker (ChatAgent): The agent to be added.
+            pool_max_size (int): Maximum size of the agent pool.
+                (default: :obj:`10`)
 
         Returns:
             Workforce: The workforce node itself.
         """
-        worker_node = SingleAgentWorker(description, worker)
+        worker_node = SingleAgentWorker(
+            description=description,
+            worker=worker,
+            pool_max_size=pool_max_size,
+        )
         self._children.append(worker_node)
         if self.metrics_logger:
             self.metrics_logger.log_worker_created(
@@ -1174,6 +1201,13 @@ class Workforce(BaseNode):
         response = self.coordinator_agent.step(
             prompt, response_format=TaskAssignResult
         )
+        if response.msg is None or response.msg.content is None:
+            logger.error(
+                "Coordinator agent returned empty response for task assignment"
+            )
+            # Return empty result as fallback
+            return TaskAssignResult(assignments=[])
+
         result_dict = json.loads(response.msg.content, parse_int=str)
         task_assign_result = TaskAssignResult(**result_dict)
         return task_assign_result
@@ -1211,8 +1245,21 @@ class Workforce(BaseNode):
         response = self.coordinator_agent.step(
             prompt, response_format=WorkerConf
         )
-        result_dict = json.loads(response.msg.content)
-        new_node_conf = WorkerConf(**result_dict)
+        if response.msg is None or response.msg.content is None:
+            logger.error(
+                "Coordinator agent returned empty response for worker creation"
+            )
+            # Create a fallback worker configuration
+            new_node_conf = WorkerConf(
+                description=f"Fallback worker for "
+                f"task: {task.content[:50]}...",
+                role="General Assistant",
+                sys_msg="You are a general assistant that can help "
+                "with various tasks.",
+            )
+        else:
+            result_dict = json.loads(response.msg.content)
+            new_node_conf = WorkerConf(**result_dict)
 
         new_agent = self._create_new_agent(
             new_node_conf.role,
@@ -1222,6 +1269,7 @@ class Workforce(BaseNode):
         new_node = SingleAgentWorker(
             description=new_node_conf.description,
             worker=new_agent,
+            pool_max_size=10,  # TODO: make this configurable
         )
         new_node.set_channel(self._channel)
 
@@ -1273,12 +1321,15 @@ class Workforce(BaseNode):
             # Add timeout to prevent indefinite waiting
             return await asyncio.wait_for(
                 self._channel.get_returned_task_by_publisher(self.node_id),
-                timeout=300.0,  # 5 minute timeout
+                timeout=180.0,  # 3 minute timeout
             )
         except asyncio.TimeoutError:
             logger.warning(
                 f"Timeout waiting for returned task in "
-                f"workforce {self.node_id}"
+                f"workforce {self.node_id}. "
+                f"This may indicate an issue with async tool execution. "
+                f"Current pending tasks: {len(self._pending_tasks)}, "
+                f"In-flight tasks: {self._in_flight_tasks}"
             )
             raise
 
@@ -1360,10 +1411,10 @@ class Workforce(BaseNode):
                 metadata={'failure_count': task.failure_count},
             )
 
-        if task.failure_count >= 3:
+        if task.failure_count > 3:
             return True
 
-        if task.get_depth() >= 3:
+        if task.get_depth() > 3:
             # Create a new worker node and reassign
             assignee = self._create_worker_node_for_task(task)
 
@@ -1448,25 +1499,32 @@ class Workforce(BaseNode):
                     'processing_time_seconds'
                 ]
 
-            # Get token usage from task additional info
+            # Get token usage from task additional info (preferred - actual
+            # usage)
             if (
                 task.additional_info is not None
                 and 'token_usage' in task.additional_info
             ):
                 token_usage = task.additional_info['token_usage']
-
-            # Try to get token usage from SingleAgentWorker memory if available
-            assignee_node = next(
-                (
-                    child
-                    for child in self._children
-                    if child.node_id == worker_id
-                ),
-                None,
-            )
-            if isinstance(assignee_node, SingleAgentWorker):
-                _, total_tokens = assignee_node.worker.memory.get_context()
-                token_usage = {'total_tokens': total_tokens}
+            else:
+                # Fallback: Try to get token usage from SingleAgentWorker
+                # memory
+                assignee_node = next(
+                    (
+                        child
+                        for child in self._children
+                        if child.node_id == worker_id
+                    ),
+                    None,
+                )
+                if isinstance(assignee_node, SingleAgentWorker):
+                    try:
+                        _, total_tokens = (
+                            assignee_node.worker.memory.get_context()
+                        )
+                        token_usage = {'total_tokens': total_tokens}
+                    except Exception:
+                        token_usage = None
 
             # Log the completed task
             self.metrics_logger.log_task_completed(
@@ -1654,7 +1712,7 @@ class Workforce(BaseNode):
                     await self._graceful_shutdown(returned_task)
                     break
                 elif returned_task.state == TaskState.OPEN:
-                    # TODO: multi-layer workforce
+                    # TODO: Add logic for OPEN
                     pass
                 else:
                     raise ValueError(
@@ -1764,17 +1822,19 @@ class Workforce(BaseNode):
             if isinstance(child, SingleAgentWorker):
                 cloned_worker = child.worker.clone(with_memory)
                 new_instance.add_single_agent_worker(
-                    child.description, cloned_worker
+                    child.description,
+                    cloned_worker,
+                    pool_max_size=10,
                 )
             elif isinstance(child, RolePlayingWorker):
                 new_instance.add_role_playing_worker(
                     child.description,
                     child.assistant_role_name,
                     child.user_role_name,
-                    child.chat_turn_limit,
                     child.assistant_agent_kwargs,
                     child.user_agent_kwargs,
                     child.summarize_agent_kwargs,
+                    child.chat_turn_limit,
                 )
             elif isinstance(child, Workforce):
                 new_instance.add_workforce(child.clone(with_memory))
@@ -1868,7 +1928,7 @@ class Workforce(BaseNode):
             )
 
             try:
-                result_task = await workforce_instance.process_task(task)
+                result_task = await workforce_instance.process_task_async(task)
                 return {
                     "status": "success",
                     "task_id": result_task.id,

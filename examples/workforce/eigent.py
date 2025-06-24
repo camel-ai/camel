@@ -21,16 +21,22 @@ from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import (
     AudioAnalysisToolkit,
+    BrowserNonVisualToolkit,
     CodeExecutionToolkit,
+    Crawl4AIToolkit,
     DalleToolkit,
+    EdgeOnePagesMCPToolkit,
     FileWriteToolkit,
+    FunctionTool,
+    # GoogleDriveMCPToolkit,
     HumanToolkit,
     ImageAnalysisToolkit,
     LinkedInToolkit,
+    MarkItDownToolkit,
     NotionToolkit,
-    PlaywrightMCPToolkit,
     PPTXToolkit,
     RedditToolkit,
+    SearchToolkit,
     SlackToolkit,
     TerminalToolkit,
     TwitterToolkit,
@@ -38,14 +44,20 @@ from camel.toolkits import (
     WhatsAppToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
+from camel.utils.commons import api_keys_required
 
 
-def developer_agent_factory(model: BaseModelBackend, task_id: str):
+def developer_agent_factory(
+    model: BaseModelBackend,
+    task_id: str,
+    edgeone_pages_mcp_toolkit: EdgeOnePagesMCPToolkit,
+):
     r"""Factory for creating a developer agent."""
     tools = [
-        *TerminalToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
+        *TerminalToolkit(clone_current_env=True).get_tools(),
         *CodeExecutionToolkit().get_tools(),
+        *edgeone_pages_mcp_toolkit.get_tools(),
     ]
 
     system_message = """You are a skilled coding assistant with DIRECT CODE 
@@ -58,10 +70,15 @@ def developer_agent_factory(model: BaseModelBackend, task_id: str):
     needed for efficient solutions
     - IMPLEMENT complete, production-ready code rather than theoretical 
     examples
+    - USE edgeone pages mcp toolkit to create and edit web pages. After you 
+    create a web page, you can ask the search agent to visit it for 
+    verification.
     - DEMONSTRATE results with proper error handling and practical 
     implementation
     - If there's dependency issues when you try to execute code, you should 
-    use the terminal toolkit to install the dependencies."""
+    use the terminal toolkit to install the dependencies.
+    - ASK for human input via the console if you are stuck or need 
+    clarification."""
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -73,26 +90,22 @@ def developer_agent_factory(model: BaseModelBackend, task_id: str):
     )
 
 
-async def search_agent_factory(
+@api_keys_required([(None, 'EXA_API_KEY')])
+def search_agent_factory(
     model: BaseModelBackend,
     task_id: str,
-    playwright_toolkit: PlaywrightMCPToolkit,
 ):
     r"""Factory for creating a search agent, based on user-provided code
     structure."""
-    # search_toolkits = SearchToolkit()
-    # browser_toolkits = AsyncBrowserToolkit()
-    terminal_toolkits = TerminalToolkit()
-    human_toolkits = HumanToolkit()
     tools = [
-        # FunctionTool(search_toolkits.search_wiki),
-        # # FunctionTool(search_toolkits.search_duckduckgo),
-        # # FunctionTool(search_toolkits.search_bing),
-        # # FunctionTool(search_toolkits.search_baidu),
-        *playwright_toolkit.get_tools(),
-        # *browser_toolkits.get_tools(),
-        *terminal_toolkits.get_tools(),
-        *human_toolkits.get_tools(),
+        # FunctionTool(SearchToolkit().search_wiki),
+        FunctionTool(SearchToolkit().search_exa),
+        # FunctionTool(SearchToolkit().search_bing),
+        # FunctionTool(SearchToolkit().search_baidu),
+        *BrowserNonVisualToolkit(headless=False).get_tools(),
+        *TerminalToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
+        *Crawl4AIToolkit().get_tools(),
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
@@ -121,10 +134,10 @@ async def search_agent_factory(
     difficult to find through simple web searches). You can find the answer to 
     the question by performing subsequent operations on the URL, such as 
     extracting the content of the webpage.
-    - Do not solely rely on document tools or browser simulation to find the 
-    answer, you should combine document tools and browser simulation to 
-    comprehensively process web page information. Some content may need to do 
-    browser simulation to get, or some content is rendered by javascript.
+    - Do not solely rely on browser simulation to find the 
+    answer, you should combine search tools, scraper tools and browser 
+    simulation to comprehensively process web page information. Some content 
+    may need to do browser simulation to get.
     - In your response, you should mention the urls you have visited and 
     processed.
 
@@ -148,7 +161,7 @@ Here are some tips that help you perform web search:
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
-            role_name="Document Agent",
+            role_name="Search Agent",
             content=system_message,
         ),
         model=model,
@@ -156,14 +169,20 @@ Here are some tips that help you perform web search:
     )
 
 
-def document_agent_factory(model: BaseModelBackend, task_id: str):
+def document_agent_factory(
+    model: BaseModelBackend,
+    task_id: str,
+    # google_drive_mcp_toolkit: GoogleDriveMCPToolkit,
+):
     r"""Factory for creating a document agent, based on user-provided code
     structure."""
     tools = [
         *FileWriteToolkit().get_tools(),
         *PPTXToolkit().get_tools(),
+        # *google_drive_mcp_toolkit.get_tools(),
         # *RetrievalToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
+        *MarkItDownToolkit().get_tools(),
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
@@ -220,14 +239,15 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
         *DalleToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        HumanToolkit().ask_human_via_console,
     ]
 
     system_message = """You are a Multi-Modal Processing Assistant specialized 
     in analyzing and generating various types of media content. Your 
     capabilities include:
 
-    1. Audio Analysis & Processing:
+    1. Video & Audio Analysis:
+       - Download videos from URLs for analysis.
        - Transcribe speech from audio files to text with high accuracy
        - Answer specific questions about audio content
        - Process audio from both local files and URLs
@@ -278,47 +298,45 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
             integrated toolkits enable you to:
 
 1. WhatsApp Business Management (WhatsAppToolkit):
-   - Send text messages to customers via the WhatsApp Business API
-   - Send template messages for standardized communications
-   - Retrieve business profile information
+   - Send text and template messages to customers via the WhatsApp Business 
+   API.
+   - Retrieve business profile information.
 
 2. Twitter Account Management (TwitterToolkit):
-   - Create tweets with text content (respecting character limits)
-   - Create tweets with polls or as quote tweets
-   - Delete existing tweets
-   - Retrieve user profile information
+   - Create tweets with text content, polls, or as quote tweets.
+   - Delete existing tweets.
+   - Retrieve user profile information.
 
 3. LinkedIn Professional Networking (LinkedInToolkit):
-   - Create posts on LinkedIn (respecting character limits)
-   - Delete existing posts (with user confirmation)
-   - Retrieve authenticated user's profile information
+   - Create posts on LinkedIn.
+   - Delete existing posts.
+   - Retrieve authenticated user's profile information.
 
 4. Reddit Content Analysis (RedditToolkit):
-   - Collect top posts and comments from specified subreddits
-   - Perform sentiment analysis on Reddit comments
-   - Track keyword discussions across multiple subreddits
+   - Collect top posts and comments from specified subreddits.
+   - Perform sentiment analysis on Reddit comments.
+   - Track keyword discussions across multiple subreddits.
 
 5. Notion Workspace Management (NotionToolkit):
-   - List all pages in a Notion workspace
-   - List all users with access to the workspace
-   - Retrieve and extract text content from Notion blocks
+   - List all pages and users in a Notion workspace.
+   - Retrieve and extract text content from Notion blocks.
 
 6. Slack Workspace Interaction (SlackToolkit):
-   - Create new Slack channels (public or private)
-   - Join or leave existing channels
-   - Send and delete messages in channels
-   - Retrieve channel information and message history
+   - Create new Slack channels (public or private).
+   - Join or leave existing channels.
+   - Send and delete messages in channels.
+   - Retrieve channel information and message history.
 
 7. Human Interaction (HumanToolkit):
-   - Ask questions to users via console
-   - Send messages to users via console
+   - Ask questions to users and send messages via console.
 
 When assisting users, always:
-1. Identify which platform's functionality is needed for the task
-2. Check if required API credentials are available before attempting operations
-3. Provide clear explanations of what actions you're taking
-4. Handle rate limits and API restrictions appropriately
-5. Ask clarifying questions when user requests are ambiguous""",
+- Identify which platform's functionality is needed for the task.
+- Check if required API credentials are available before attempting 
+operations.
+- Provide clear explanations of what actions you're taking.
+- Handle rate limits and API restrictions appropriately.
+- Ask clarifying questions when user requests are ambiguous.""",
         ),
         model=model,
         tools=[
@@ -328,49 +346,89 @@ When assisting users, always:
             *RedditToolkit().get_tools(),
             *NotionToolkit().get_tools(),
             *SlackToolkit().get_tools(),
-            *HumanToolkit().get_tools(),
+            HumanToolkit().ask_human_via_console,
         ],
     )
 
 
 async def main():
-    playwright_toolkit = PlaywrightMCPToolkit()  # Create instance
+    edgeone_pages_mcp_toolkit = EdgeOnePagesMCPToolkit()
+    # google_drive_mcp_toolkit = GoogleDriveMCPToolkit(
+    #     credentials_path="path/to/credentials.json"
+    # )
     try:
-        await playwright_toolkit.connect()  # Connect the instance
+        await edgeone_pages_mcp_toolkit.connect()
+        # await google_drive_mcp_toolkit.connect()
 
         # Create a single model backend for all agents
         model_backend = ModelFactory.create(
-            model_platform=ModelPlatformType.DEFAULT,
-            model_type=ModelType.DEFAULT,
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4_1_MINI,
+            # model_config_dict={
+            #     "max_tokens": 32768,
+            # },
+        )
+
+        model_backend_reason = ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4_1_MINI,
+            # model_config_dict={
+            #     "max_tokens": 32768,
+            # },
         )
 
         task_id = 'workforce_task'
 
-        # Create agents using factory functions
-        search_agent = await search_agent_factory(
-            model_backend, task_id, playwright_toolkit
-        )
-        developer_agent = developer_agent_factory(model_backend, task_id)
-        document_agent = document_agent_factory(model_backend, task_id)
-        multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
-        # social_medium_agent = social_medium_agent_factory(model_backend,
-        # task_id)
+        # Configure kwargs for all agents to use the same model_backend
+        coordinator_agent_kwargs = {"model": model_backend_reason}
+        task_agent_kwargs = {"model": model_backend_reason}
+        new_worker_agent_kwargs = {"model": model_backend}
 
+        # Create agents using factory functions
+        search_agent = search_agent_factory(model_backend, task_id)
+        developer_agent = developer_agent_factory(
+            model_backend, task_id, edgeone_pages_mcp_toolkit
+        )
+        document_agent = document_agent_factory(
+            model_backend,
+            task_id,
+            # google_drive_mcp_toolkit
+        )
+        multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
+
+        # Configure kwargs for all agents to use the same model_backend
+        coordinator_agent_kwargs = {"model": model_backend_reason}
+        task_agent_kwargs = {"model": model_backend_reason}
+        new_worker_agent_kwargs = {"model": model_backend}
+
+        # Create workforce instance before adding workers
         workforce = Workforce(
             'A workforce',
             graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
             share_memory=False,
+            coordinator_agent_kwargs=coordinator_agent_kwargs,
+            task_agent_kwargs=task_agent_kwargs,
+            new_worker_agent_kwargs=new_worker_agent_kwargs,
         )
 
         workforce.add_single_agent_worker(
-            "Search & Information Retrieval Agent", worker=search_agent
+            "Search Agent: Can search the web, extract webpage content, "
+            "simulate browser actions, and provide relevant information to "
+            "solve the given task.",
+            worker=search_agent,
         ).add_single_agent_worker(
-            "Software Development & Code Generation Agent",
+            "Developer Agent: A skilled coding assistant that can write and "
+            "execute code, run terminal commands, and verify solutions to "
+            "complete tasks.",
             worker=developer_agent,
         ).add_single_agent_worker(
-            "Document Creation & Management Agent", worker=document_agent
+            "Document Agent: A document processing assistant for creating, "
+            "modifying, and managing various document formats, including "
+            "presentations.",
+            worker=document_agent,
         ).add_single_agent_worker(
-            "Multi-Modal Content Analysis & Generation Agent",
+            "Multi-Modal Agent: A multi-modal processing assistant for "
+            "analyzing, and generating media content like audio and images.",
             worker=multi_modal_agent,
         )
 
@@ -378,16 +436,18 @@ async def main():
         human_task = Task(
             content=(
                 """
-                I want to read papers about GUI Agent. Please help me find 
-                ten papers, check the detailed content of the papers and help 
-                me write a comparison report, then create a nice slides(pptx) 
-                to introduce the latest research progress of GUI Agent.
+I want to read papers about GUI Agent. Please help me find 
+ten papers, check the detailed content of the papers and help 
+me write a comparison report, then create a nice slides(pptx) 
+to introduce the latest research progress of GUI Agent. The 
+slides should be very comprehensive and professional.
                 """
             ),
             id='0',
         )
 
-        workforce.process_task(human_task)
+        # Use the async version directly to avoid hanging with async tools
+        await workforce.process_task_async(human_task)
 
         # Test WorkforceLogger features
         print("\n--- Workforce Log Tree ---")
@@ -404,7 +464,8 @@ async def main():
         print(f"Logs dumped. Please check the file: {log_file_path}")
 
     finally:
-        await playwright_toolkit.disconnect()  # Disconnect the same instance
+        await edgeone_pages_mcp_toolkit.disconnect()
+        # await google_drive_mcp_toolkit.disconnect()
 
 
 if __name__ == "__main__":
