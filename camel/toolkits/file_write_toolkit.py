@@ -355,7 +355,7 @@ class FileWriteToolkit(BaseToolkit):
             encoding (Optional[str]): The character encoding to use. (default:
                 :obj: `None`)
             use_latex (bool): For PDF files, whether to use LaTeX rendering
-                (True) or simple ReportLab rendering (False). (default: :obj:
+                (True) or simple PDF rendering (False). (default: :obj:
                 `False`)
 
         Returns:
