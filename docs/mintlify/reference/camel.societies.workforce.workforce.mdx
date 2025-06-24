@@ -456,6 +456,103 @@ def _get_child_nodes_info(self):
 
 Get the information of all the child nodes under this node.
 
+<a id="camel.societies.workforce.workforce.Workforce._get_valid_worker_ids"></a>
+
+### _get_valid_worker_ids
+
+```python
+def _get_valid_worker_ids(self):
+```
+
+**Returns:**
+
+  set: Set of valid worker IDs that can be assigned tasks.
+
+<a id="camel.societies.workforce.workforce.Workforce._call_coordinator_for_assignment"></a>
+
+### _call_coordinator_for_assignment
+
+```python
+def _call_coordinator_for_assignment(self, tasks: List[Task], invalid_ids: Optional[List[str]] = None):
+```
+
+Call coordinator agent to assign tasks with optional validation
+feedback in the case of invalid worker IDs.
+
+**Parameters:**
+
+- **tasks** (List[Task]): Tasks to assign.
+- **invalid_ids** (List[str], optional): Invalid worker IDs from previous attempt (if any).
+
+**Returns:**
+
+  TaskAssignResult: Assignment result from coordinator.
+
+<a id="camel.societies.workforce.workforce.Workforce._validate_assignments"></a>
+
+### _validate_assignments
+
+```python
+def _validate_assignments(self, assignments: List[TaskAssignment], valid_ids: Set[str]):
+```
+
+Validate task assignments against valid worker IDs.
+
+**Parameters:**
+
+- **assignments** (List[TaskAssignment]): Assignments to validate.
+- **valid_ids** (Set[str]): Set of valid worker IDs.
+
+**Returns:**
+
+  Tuple[List[TaskAssignment], List[TaskAssignment]]:
+(valid_assignments, invalid_assignments)
+
+<a id="camel.societies.workforce.workforce.Workforce._handle_task_assignment_fallbacks"></a>
+
+### _handle_task_assignment_fallbacks
+
+```python
+def _handle_task_assignment_fallbacks(self, tasks: List[Task]):
+```
+
+Create new workers for unassigned tasks as fallback.
+
+**Parameters:**
+
+- **tasks** (List[Task]): Tasks that need new workers.
+
+**Returns:**
+
+  List[TaskAssignment]: Assignments for newly created workers.
+
+<a id="camel.societies.workforce.workforce.Workforce._handle_assignment_retry_and_fallback"></a>
+
+### _handle_assignment_retry_and_fallback
+
+```python
+def _handle_assignment_retry_and_fallback(
+    self,
+    invalid_assignments: List[TaskAssignment],
+    tasks: List[Task],
+    valid_worker_ids: Set[str]
+):
+```
+
+Called if Coordinator agent fails to assign tasks to valid worker
+IDs. Handles retry assignment and fallback worker creation for invalid
+assignments.
+
+**Parameters:**
+
+- **invalid_assignments** (List[TaskAssignment]): Invalid assignments to retry.
+- **tasks** (List[Task]): Original tasks list for task lookup.
+- **valid_worker_ids** (set): Set of valid worker IDs.
+
+**Returns:**
+
+  List[TaskAssignment]: Final assignments for the invalid tasks.
+
 <a id="camel.societies.workforce.workforce.Workforce._find_assignee"></a>
 
 ### _find_assignee
