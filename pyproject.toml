@@ -34,6 +34,7 @@ dependencies = [
     "pillow>=10.1.0,<11.0.0",
     "weasyprint>=65.1",
     "markdown>=3.8.2",
+    "types-markdown>=3.8.0.20250415",
 ]
 
 

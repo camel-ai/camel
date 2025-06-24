@@ -184,8 +184,10 @@ class FileWriteToolkit(BaseToolkit):
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
             try:
-                from markdown import markdown as md_to_html
-                from weasyprint import HTML
+                from markdown import (
+                    markdown as md_to_html,  # type: ignore[import]
+                )
+                from weasyprint import HTML  # type: ignore[import]
 
                 # Convert Markdown to HTML with table support
                 html_body = md_to_html(content, extensions=["tables"])
@@ -228,60 +230,60 @@ class FileWriteToolkit(BaseToolkit):
                 logger.exception("Failed to write PDF using WeasyPrint.")
                 raise RuntimeError("Failed to generate PDF: " + str(e))
 
-        def _write_csv_file(
-            self,
-            file_path: Path,
-            content: Union[str, List[List]],
-            encoding: str = "utf-8",
-        ) -> None:
-            r"""Write CSV content to a file.
+    def _write_csv_file(
+        self,
+        file_path: Path,
+        content: Union[str, List[List]],
+        encoding: str = "utf-8",
+    ) -> None:
+        r"""Write CSV content to a file.
 
-            Args:
-                file_path (Path): The target file path.
-                content (Union[str, List[List]]): The CSV content
-                    as a string or list of lists.
-                encoding (str): Character encoding to use.
-                    (default: :obj:`utf-8`)
-            """
-            import csv
+        Args:
+            file_path (Path): The target file path.
+            content (Union[str, List[List]]): The CSV content
+                as a string or list of lists.
+            encoding (str): Character encoding to use.
+                (default: :obj:`utf-8`)
+        """
+        import csv
 
-            with file_path.open("w", encoding=encoding, newline='') as f:
-                if isinstance(content, str):
+        with file_path.open("w", encoding=encoding, newline='') as f:
+            if isinstance(content, str):
+                f.write(content)
+            else:
+                writer = csv.writer(f)
+                writer.writerows(content)
+        logger.debug(f"Wrote CSV to {file_path} with {encoding} encoding")
+
+    def _write_json_file(
+        self,
+        file_path: Path,
+        content: str,
+        encoding: str = "utf-8",
+    ) -> None:
+        r"""Write JSON content to a file.
+
+        Args:
+            file_path (Path): The target file path.
+            content (str): The JSON content as a string.
+            encoding (str): Character encoding to use.
+                (default: :obj:`utf-8`)
+        """
+        import json
+
+        with file_path.open("w", encoding=encoding) as f:
+            if isinstance(content, str):
+                try:
+                    # Try parsing as JSON string first
+                    data = json.loads(content)
+                    json.dump(data, f, ensure_ascii=False)
+                except json.JSONDecodeError:
+                    # If not valid JSON string, write as is
                     f.write(content)
-                else:
-                    writer = csv.writer(f)
-                    writer.writerows(content)
-            logger.debug(f"Wrote CSV to {file_path} with {encoding} encoding")
-
-        def _write_json_file(
-            self,
-            file_path: Path,
-            content: str,
-            encoding: str = "utf-8",
-        ) -> None:
-            r"""Write JSON content to a file.
-
-            Args:
-                file_path (Path): The target file path.
-                content (str): The JSON content as a string.
-                encoding (str): Character encoding to use. 
-                    (default: :obj:`utf-8`)
-            """
-            import json
-
-            with file_path.open("w", encoding=encoding) as f:
-                if isinstance(content, str):
-                    try:
-                        # Try parsing as JSON string first
-                        data = json.loads(content)
-                        json.dump(data, f, ensure_ascii=False)
-                    except json.JSONDecodeError:
-                        # If not valid JSON string, write as is
-                        f.write(content)
-                else:
-                    # If not string, dump as JSON
-                    json.dump(content, f, ensure_ascii=False)
-            logger.debug(f"Wrote JSON to {file_path} with {encoding} encoding")
+            else:
+                # If not string, dump as JSON
+                json.dump(content, f, ensure_ascii=False)
+        logger.debug(f"Wrote JSON to {file_path} with {encoding} encoding")
 
     def _write_yaml_file(
         self,
