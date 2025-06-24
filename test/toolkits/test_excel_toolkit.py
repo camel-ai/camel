@@ -105,7 +105,10 @@ def test_extract_excel_content_xlsx(excel_toolkit):
     with (
         patch('openpyxl.load_workbook') as mock_load_workbook,
         patch('pandas.read_excel') as mock_read_excel,
+        patch('os.path.exists') as mock_exists,
     ):
+        mock_exists.return_value = True
+
         # Mock the workbook and sheet
         mock_workbook = MagicMock()
         mock_sheet = MagicMock()
@@ -149,7 +152,10 @@ def test_extract_excel_content_xls(excel_toolkit):
         patch('xls2xlsx.XLS2XLSX') as mock_xls2xlsx,
         patch('openpyxl.load_workbook') as mock_load_workbook,
         patch('pandas.read_excel') as mock_read_excel,
+        patch('os.path.exists') as mock_exists,
     ):
+        mock_exists.return_value = True
+
         # Mock the XLS2XLSX conversion
         mock_xls_converter = MagicMock()
         mock_xls2xlsx.return_value = mock_xls_converter
@@ -205,31 +211,28 @@ def test_get_tools(excel_toolkit):
     r"""Test the get_tools method returns the correct tools."""
     tools = excel_toolkit.get_tools()
 
-    # Check that we have the expected number of tools (20 total)
-    assert len(tools) == 20
+    assert len(tools) == 18
 
     # Check that all expected function names are present
     expected_function_names = [
         "extract_excel_content",
         "create_workbook",
         "delete_workbook",
+        "export_sheet_to_csv",
         "create_sheet",
         "delete_sheet",
         "clear_sheet",
-        "add_data_to_sheet",
         "get_rows",
+        "get_cell_value",
+        "get_column_data",
+        "get_range_values",
+        "find_cells",
+        "append_row",
         "update_row",
-        "append_or_update_row",
+        "set_cell_value",
+        "set_range_values",
         "delete_rows",
         "delete_columns",
-        "get_cell_value",
-        "set_cell_value",
-        "get_column_data",
-        "find_cells",
-        "get_range_values",
-        "set_range_values",
-        "export_sheet_to_csv",
-        "append_row",
     ]
 
     actual_function_names = [tool.get_function_name() for tool in tools]
@@ -391,7 +394,7 @@ def test_clear_sheet(excel_toolkit):
 
 
 def test_add_data_to_sheet(excel_toolkit):
-    r"""Test adding data to a sheet."""
+    r"""Test adding data to a sheet using append_row."""
     with tempfile.NamedTemporaryFile(
         suffix=".xlsx", delete=False
     ) as temp_file:
@@ -400,9 +403,11 @@ def test_add_data_to_sheet(excel_toolkit):
     try:
         excel_toolkit.create_workbook(temp_path, 'TestSheet')
 
-        data = [['Alice', 25], ['Bob', 30]]
-        result = excel_toolkit.add_data_to_sheet('TestSheet', data)
-        assert "added to sheet" in result
+        # Add data using append_row
+        result1 = excel_toolkit.append_row('TestSheet', ['Alice', 25])
+        result2 = excel_toolkit.append_row('TestSheet', ['Bob', 30])
+        assert "appended to sheet" in result1
+        assert "appended to sheet" in result2
 
         # Verify data was added
         rows = excel_toolkit.get_rows('TestSheet')
@@ -469,7 +474,7 @@ def test_update_row(excel_toolkit):
 
 
 def test_append_or_update_row_new(excel_toolkit):
-    r"""Test appending a new row."""
+    r"""Test appending a new row using append_row."""
     with tempfile.NamedTemporaryFile(
         suffix=".xlsx", delete=False
     ) as temp_file:
@@ -480,8 +485,8 @@ def test_append_or_update_row_new(excel_toolkit):
         excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
 
         new_data = ['Bob', 30]
-        result = excel_toolkit.append_or_update_row('TestSheet', new_data)
-        assert "Appended new row" in result
+        result = excel_toolkit.append_row('TestSheet', new_data)
+        assert "appended to sheet" in result
 
         # Verify new row was added
         rows = excel_toolkit.get_rows('TestSheet')
@@ -493,7 +498,7 @@ def test_append_or_update_row_new(excel_toolkit):
 
 
 def test_append_or_update_row_existing(excel_toolkit):
-    r"""Test updating an existing row."""
+    r"""Test updating an existing row using update_row."""
     with tempfile.NamedTemporaryFile(
         suffix=".xlsx", delete=False
     ) as temp_file:
@@ -504,8 +509,8 @@ def test_append_or_update_row_existing(excel_toolkit):
         excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
 
         updated_data = ['Alice', 26]  # Same name, different age
-        result = excel_toolkit.append_or_update_row('TestSheet', updated_data)
-        assert "Updated existing row" in result
+        result = excel_toolkit.update_row('TestSheet', 2, updated_data)
+        assert "updated in sheet TestSheet successfully" in result
 
         # Verify row was updated
         rows = excel_toolkit.get_rows('TestSheet')
