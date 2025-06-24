@@ -38,8 +38,8 @@ class GoogleDriveMCPToolkit(BaseToolkit):
         Args:
             timeout (Optional[float]): Connection timeout in seconds.
                 (default: :obj:`None`)
-            credentials_path (Optional[str]): Path to the Google Drive credentials file.
-                (default: :obj:`None`)
+            credentials_path (Optional[str]): Path to the Google Drive
+                credentials file. (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
 
@@ -47,14 +47,9 @@ class GoogleDriveMCPToolkit(BaseToolkit):
             config_dict={
                 "mcpServers": {
                     "gdrive": {
-                    "command": "npx",
-                    "args": [
-                        "-y",
-                        "@modelcontextprotocol/server-gdrive"
-                    ],
-                    "env": {
-                        "GDRIVE_CREDENTIALS_PATH": credentials_path
-                        }
+                        "command": "npx",
+                        "args": ["-y", "@modelcontextprotocol/server-gdrive"],
+                        "env": {"GDRIVE_CREDENTIALS_PATH": credentials_path},
                     }
                 }
             },
