@@ -1303,6 +1303,11 @@ class ChatAgent(BaseAgent):
             )
             iteration_count += 1
 
+            # Accumulate API token usage
+            self._update_token_usage_tracker(
+                step_token_usage, response.usage_dict
+            )
+
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
@@ -1352,12 +1357,6 @@ class ChatAgent(BaseAgent):
             )
 
         self._record_final_output(response.output_messages)
-
-        # Create token usage tracker for this step
-        step_token_usage = self._create_token_usage_tracker()
-
-        # Update with response usage
-        self._update_token_usage_tracker(step_token_usage, response.usage_dict)
 
         return self._convert_to_chatagent_response(
             response,
