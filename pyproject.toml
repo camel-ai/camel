@@ -213,7 +213,7 @@ storage = [
     "pyobvector>=0.1.18",
     "weaviate-client>=4.15.0",
     "psycopg[binary]>=3.1.18,<4",
-    "pgvector>=0.2.4,<0.3"
+    "pgvector>=0.2.4,<0.3",
     "chromadb>=0.6.0,<1.0.0",
 ]
 owl = [
@@ -387,7 +387,7 @@ all = [
     "rlcard>=1.0.0,<1.3.0",
     "pytesseract>=0.3.13",
     "psycopg[binary]>=3.1.18,<4",
-    "pgvector>=0.2.4,<0.3"
+    "pgvector>=0.2.4,<0.3",
     "chromadb>=0.6.0,<1.0.0",
 ]
 
