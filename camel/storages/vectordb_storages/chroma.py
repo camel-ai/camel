@@ -11,19 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 
 if TYPE_CHECKING:
-    from chromadb import ClientAPI
+    from chromadb.api import ClientAPI
     from chromadb.api.models.Collection import Collection
     from chromadb.api.types import (
         QueryResult,
     )
 
-
+from camel.logger import get_logger
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
@@ -34,11 +32,7 @@ from camel.storages.vectordb_storages import (
 from camel.types import VectorDistance
 from camel.utils import dependencies_required
 
-logger = logging.getLogger(__name__)
-
-
-# Type definitions for ChromaDB client types
-ChromaClientType = Literal["ephemeral", "persistent", "http", "cloud"]
+logger = get_logger(__name__)
 
 
 class ChromaStorage(BaseVectorStorage):
@@ -59,9 +53,9 @@ class ChromaStorage(BaseVectorStorage):
         collection_name (Optional[str], optional): Name for the collection in
             ChromaDB. If not provided, auto-generated with timestamp.
             (default: :obj:`None`)
-        client_type (ChromaClientType, optional): Type of ChromaDB client to
-            use. Supported types: 'ephemeral', 'persistent', 'http', 'cloud'.
-            (default: :obj:`"ephemeral"`)
+        client_type (Literal["ephemeral", "persistent", "http", "cloud"]):
+            Type of ChromaDB client to use. Supported types: 'ephemeral',
+            'persistent', 'http', 'cloud'. (default: :obj:`"ephemeral"`)
 
         # Persistent client parameters
         path (Optional[str], optional): Path to directory for persistent
@@ -145,7 +139,9 @@ class ChromaStorage(BaseVectorStorage):
         self,
         vector_dim: int,
         collection_name: Optional[str] = None,
-        client_type: ChromaClientType = "ephemeral",
+        client_type: Literal[
+            "ephemeral", "persistent", "http", "cloud"
+        ] = "ephemeral",
         # Persistent client parameters
         path: Optional[str] = "./chroma",
         # HTTP client parameters
@@ -176,7 +172,9 @@ class ChromaStorage(BaseVectorStorage):
 
         # Validate client type
         self._validate_client_type(client_type)
-        self.client_type: ChromaClientType = client_type
+        self.client_type: Literal[
+            "ephemeral", "persistent", "http", "cloud"
+        ] = client_type
 
         # Store connection parameters for later use
         self._connection_params = {
@@ -226,11 +224,14 @@ class ChromaStorage(BaseVectorStorage):
                     f"'{self.collection_name}': {e}"
                 )
 
-    def _validate_client_type(self, client_type: ChromaClientType) -> None:
+    def _validate_client_type(
+        self, client_type: Literal["ephemeral", "persistent", "http", "cloud"]
+    ) -> None:
         r"""Validates client type parameter.
 
         Args:
-            client_type: The client type to validate.
+            client_type (Literal["ephemeral", "persistent", "http", "cloud"]):
+                The client type to validate.
 
         Raises:
             ValueError: If client type is invalid.
@@ -273,7 +274,9 @@ class ChromaStorage(BaseVectorStorage):
         import chromadb
 
         # Map client types to handler methods
-        client_handlers: Dict[ChromaClientType, Any] = {
+        client_handlers: Dict[
+            Literal["ephemeral", "persistent", "http", "cloud"], Any
+        ] = {
             'ephemeral': self._create_ephemeral_client,
             'persistent': self._create_persistent_client,
             'http': self._create_http_client,
