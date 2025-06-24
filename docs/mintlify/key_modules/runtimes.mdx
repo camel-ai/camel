@@ -52,17 +52,12 @@ CAMEL’s **runtime module** enables the secure, flexible, and isolated executio
 
 </div>
 
-
----
-
 ## Runtime Interface
 
 All runtimes inherit from <b>BaseRuntime</b>, which defines core methods:
 - <code>add(funcs)</code>: Register one or more <code>FunctionTool</code> objects for execution
 - <code>reset()</code>: Reset the runtime to its initial state
 - <code>get_tools()</code>: List all tools managed by the runtime
-
----
 
 ## Quick Start Example: RemoteHttpRuntime
 
@@ -92,8 +87,6 @@ All runtimes inherit from <b>BaseRuntime</b>, which defines core methods:
       # Add 1 + 2: 3
   ```
 </Card>
-
----
 
 ## Runtime Types: Key Features
 
@@ -127,14 +120,10 @@ All runtimes inherit from <b>BaseRuntime</b>, which defines core methods:
   </Accordion>
 </AccordionGroup>
 
----
-
 ## More Examples
 
 You’ll find runnable scripts for each runtime in <b>[examples/runtime](https://github.com/camel-ai/camel/tree/master/examples/runtimes)/</b> in our main repo.  
 Each script demonstrates how to initialize and use a specific runtime—perfect for experimentation or production setups.
-
----
 
 ## Final Note
 

@@ -55,21 +55,21 @@
             "group": "Key Modules",
             "pages": [
               "key_modules/agents",
+              "key_modules/models",
+              "key_modules/tools",
+              "key_modules/societies",
+              "key_modules/workforce",
               "key_modules/datagen",
               "key_modules/interpreters",
               "key_modules/runtimes",
-              "key_modules/society",
-              "key_modules/models",
               "key_modules/messages",
               "key_modules/memory",
-              "key_modules/tools",
               "key_modules/prompts",
               "key_modules/tasks",
               "key_modules/loaders",
               "key_modules/storages",
               "key_modules/embeddings",
-              "key_modules/retrievers",
-              "key_modules/workforce"
+              "key_modules/retrievers"
             ]
           },
           {
@@ -151,6 +151,7 @@
                 "group": "Multi Agent Society",
                 "pages": [
                   "cookbooks/multi_agent_society/agents_society",
+                  "cookbooks/multi_agent_society/azure_openai_claude_society",
                   "cookbooks/multi_agent_society/task_generation",
                   "cookbooks/multi_agent_society/workforce_judge_committee"
                 ]
@@ -460,14 +461,17 @@
               "reference/camel.toolkits.browser_toolkit",
               "reference/camel.toolkits.browser_toolkit_commons",
               "reference/camel.toolkits.code_execution",
+              "reference/camel.toolkits.craw4ai_toolkit",
               "reference/camel.toolkits.dalle_toolkit",
               "reference/camel.toolkits.dappier_toolkit",
               "reference/camel.toolkits.data_commons_toolkit",
+              "reference/camel.toolkits.edgeone_pages_mcp_toolkit",
               "reference/camel.toolkits.excel_toolkit",
               "reference/camel.toolkits.file_write_toolkit",
               "reference/camel.toolkits.function_tool",
               "reference/camel.toolkits.github_toolkit",
               "reference/camel.toolkits.google_calendar_toolkit",
+              "reference/camel.toolkits.google_drive_mcp_toolkit",
               "reference/camel.toolkits.google_maps_toolkit",
               "reference/camel.toolkits.google_scholar_toolkit",
               "reference/camel.toolkits.human_toolkit",
@@ -475,6 +479,7 @@
               "reference/camel.toolkits.jina_reranker_toolkit",
               "reference/camel.toolkits.klavis_toolkit",
               "reference/camel.toolkits.linkedin_toolkit",
+              "reference/camel.toolkits.markitdown_toolkit",
               "reference/camel.toolkits.math_toolkit",
               "reference/camel.toolkits.mcp_toolkit",
               "reference/camel.toolkits.memory_toolkit",

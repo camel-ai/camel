@@ -155,14 +155,19 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # ======================
         # 6. Truncation Logic with Tool Call Awareness
         # ======================
-        logger.warning(
-            f"Context truncation required "
-            f"({total_tokens} > {self.token_limit}), "
-            f"pruning low-score messages."
-        )
-
         remaining_units = self._truncate_with_tool_call_awareness(
             regular_units, tool_call_groups, system_tokens
+        )
+
+        # Log only after truncation is actually performed so that both
+        # the original and the final token counts are visible.
+        tokens_after = system_tokens + sum(
+            u.num_tokens for u in remaining_units
+        )
+        logger.warning(
+            "Context truncation performed: "
+            f"before={total_tokens}, after={tokens_after}, "
+            f"limit={self.token_limit}"
         )
 
         # ======================

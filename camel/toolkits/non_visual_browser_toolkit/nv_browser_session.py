@@ -55,10 +55,23 @@ class NVBrowserSession:
         self.snapshot: Optional[PageSnapshot] = None
         self.executor: Optional[ActionExecutor] = None
 
+        # Protect browser initialisation against concurrent calls
+        import asyncio
+
+        self._ensure_lock: "asyncio.Lock" = asyncio.Lock()
+
     # ------------------------------------------------------------------
     # Browser lifecycle helpers
     # ------------------------------------------------------------------
     async def ensure_browser(self) -> None:
+        # Serialise initialisation to avoid race conditions where multiple
+        # concurrent coroutine calls create multiple browser instances for
+        # the same NVBrowserSession.
+        async with self._ensure_lock:
+            await self._ensure_browser_inner()
+
+    # Moved original logic to helper
+    async def _ensure_browser_inner(self) -> None:
         from playwright.async_api import async_playwright
 
         if self._page is not None:
@@ -80,12 +93,27 @@ class NVBrowserSession:
             self._browser = await pl.chromium.launch(headless=self._headless)
             self._context = await self._browser.new_context()
 
+        from camel.logger import get_logger
+
+        _dbg_logger = get_logger(__name__)
+
         # Reuse an already open page (persistent context may restore last
         # session)
         if self._context.pages:
             self._page = self._context.pages[0]
         else:
             self._page = await self._context.new_page()
+
+        # Debug information to help trace concurrency issues
+        _dbg_logger.debug(
+            "Session %s created browser=%s context=%s page=%s (url=%s)",
+            hex(id(self)),
+            hex(id(self._browser)) if self._browser else None,
+            hex(id(self._context)) if self._context else None,
+            hex(id(self._page)),
+            self._page.url if self._page else "<none>",
+        )
+
         # helpers
         self.snapshot = PageSnapshot(self._page)
         self.executor = ActionExecutor(self._page)
