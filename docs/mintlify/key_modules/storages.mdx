@@ -63,6 +63,10 @@ The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving
     **ChromaStorage**
     - For [ChromaDB](https://www.trychroma.com/) (AI-native open-source embedding database)  
     - Simple API, scales from notebook to production
+
+    **PgVectorStorage**
+    - For [PostgreSQL with pgvector](https://github.com/pgvector/pgvector) (open-source vector engine)
+    - Leverages PostgreSQL for vector search
   </Accordion>
 
   <Accordion title="Graph Storages" icon="chart-waterfall">
