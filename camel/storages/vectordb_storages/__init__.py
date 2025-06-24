@@ -19,6 +19,7 @@ from .base import (
     VectorDBStatus,
     VectorRecord,
 )
+from .chroma import ChromaStorage
 from .faiss import FaissStorage
 from .milvus import MilvusStorage
 from .oceanbase import OceanBaseStorage
@@ -31,6 +32,7 @@ __all__ = [
     'BaseVectorStorage',
     'VectorDBQuery',
     'VectorDBQueryResult',
+    'ChromaStorage',
     'QdrantStorage',
     'MilvusStorage',
     "TiDBStorage",

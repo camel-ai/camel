@@ -86,6 +86,7 @@ rag = [
     "pyobvector>=0.1.18",
     "google-genai>=1.13.0",
     "chunkr-ai>=0.0.50",
+    "chromadb>=0.6.0,<1.0.0",
 ]
 web_tools = [
     "duckduckgo-search>=6.3.5,<7",
@@ -213,6 +214,7 @@ storage = [
     "weaviate-client>=4.15.0",
     "psycopg[binary]>=3.1.18,<4",
     "pgvector>=0.2.4,<0.3"
+    "chromadb>=0.6.0,<1.0.0",
 ]
 owl = [
     "numpy>=1.2,<=2.2",
@@ -386,6 +388,7 @@ all = [
     "pytesseract>=0.3.13",
     "psycopg[binary]>=3.1.18,<4",
     "pgvector>=0.2.4,<0.3"
+    "chromadb>=0.6.0,<1.0.0",
 ]
 
 [project.urls]
