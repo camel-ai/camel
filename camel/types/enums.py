@@ -209,6 +209,8 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
     MISTRAL_MEDIUM_3 = "mistral-medium-latest"
     MAGISTRAL_MEDIUM = "magistral-medium-2506"
+    MISTRAL_SMALL_3_2 = "mistral-small-2506"
+
 
     # Reka models
     REKA_CORE = "reka-core"
@@ -646,6 +648,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_3B,
             ModelType.MISTRAL_MEDIUM_3,
             ModelType.MAGISTRAL_MEDIUM,
+            ModelType.MISTRAL_SMALL_3_2,
         }
 
     @property
@@ -1166,6 +1169,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
+            ModelType.MISTRAL_SMALL_3_2,
             ModelType.QWEN_2_5_CODER_32B,
             ModelType.QWEN_2_5_VL_72B,
             ModelType.QWEN_2_5_72B,
