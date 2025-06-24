@@ -284,6 +284,13 @@ class SingleAgentWorker(Worker):
             response = await worker_agent.astep(
                 prompt, response_format=TaskResult
             )
+
+            # Get token usage from the response
+            usage_info = response.info.get("usage") or response.info.get(
+                "token_usage"
+            )
+            total_tokens = usage_info.get("total_tokens", 0)
+
         except Exception as e:
             print(
                 f"{Fore.RED}Error processing task {task.id}: "
@@ -293,13 +300,6 @@ class SingleAgentWorker(Worker):
         finally:
             # Return agent to pool or let it be garbage collected
             await self._return_worker_agent(worker_agent)
-
-        # Get actual token usage from the agent that processed this task
-        try:
-            _, total_token_count = worker_agent.memory.get_context()
-        except Exception:
-            # Fallback if memory context unavailable
-            total_token_count = 0
 
         # Populate additional_info with worker attempt details
         if task.additional_info is None:
@@ -321,7 +321,7 @@ class SingleAgentWorker(Worker):
             f"to process task {task.content}",
             "response_content": response.msg.content,
             "tool_calls": response.info.get("tool_calls"),
-            "total_token_count": total_token_count,
+            "total_tokens": total_tokens,
         }
 
         # Store the worker attempt in additional_info
@@ -330,9 +330,7 @@ class SingleAgentWorker(Worker):
         task.additional_info["worker_attempts"].append(worker_attempt_details)
 
         # Store the actual token usage for this specific task
-        task.additional_info["token_usage"] = {
-            "total_tokens": total_token_count
-        }
+        task.additional_info["token_usage"] = {"total_tokens": total_tokens}
 
         print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
 
