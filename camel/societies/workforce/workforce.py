@@ -19,7 +19,7 @@ import time
 import uuid
 from collections import deque
 from enum import Enum
-from typing import Any, Coroutine, Deque, Dict, List, Optional
+from typing import Any, Coroutine, Deque, Dict, List, Optional, Set, Tuple
 
 from colorama import Fore
 
@@ -1197,9 +1197,11 @@ class Workforce(BaseNode):
                 tasks_info += f"Additional Info: {task.additional_info}\n"
             tasks_info += "---\n"
 
-        prompt = ASSIGN_TASK_PROMPT.format(
-            tasks_info=tasks_info,
-            child_nodes_info=self._get_child_nodes_info(),
+        prompt = str(
+            ASSIGN_TASK_PROMPT.format(
+                tasks_info=tasks_info,
+                child_nodes_info=self._get_child_nodes_info(),
+            )
         )
 
         # add feedback if this is a retry
@@ -1227,19 +1229,20 @@ class Workforce(BaseNode):
         return TaskAssignResult(**result_dict)
 
     def _validate_assignments(
-        self, assignments: List, valid_ids: set
-    ) -> tuple:
+        self, assignments: List[TaskAssignment], valid_ids: Set[str]
+    ) -> Tuple[List[TaskAssignment], List[TaskAssignment]]:
         r"""Validate task assignments against valid worker IDs.
 
         Args:
             assignments (List[TaskAssignment]): Assignments to validate.
-            valid_ids (set): Set of valid worker IDs.
+            valid_ids (Set[str]): Set of valid worker IDs.
 
         Returns:
-            tuple: (valid_assignments, invalid_assignments)
+            Tuple[List[TaskAssignment], List[TaskAssignment]]:
+                (valid_assignments, invalid_assignments)
         """
-        valid_assignments = []
-        invalid_assignments = []
+        valid_assignments: List[TaskAssignment] = []
+        invalid_assignments: List[TaskAssignment] = []
 
         for assignment in assignments:
             if assignment.assignee_id in valid_ids:
@@ -1275,10 +1278,10 @@ class Workforce(BaseNode):
 
     def _handle_assignment_retry_and_fallback(
         self,
-        invalid_assignments: List,
+        invalid_assignments: List[TaskAssignment],
         tasks: List[Task],
-        valid_worker_ids: set,
-    ) -> List:
+        valid_worker_ids: Set[str],
+    ) -> List[TaskAssignment]:
         r"""Called if Coordinator agent fails to assign tasks to valid worker
         IDs. Handles retry assignment and fallback worker creation for invalid
         assignments.
