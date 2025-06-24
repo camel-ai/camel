@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.69a4"
+version = "0.2.69a6"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -34,12 +34,14 @@ dependencies = [
 ]
 
 
-[project.optional-dependencies]
+[project.dependency-groups]
 test = [
     "pytest>=7,<8",
     "mock>=5,<6",
     "pytest-asyncio>=0.23.0,<0.24",
 ]
+
+[project.optional-dependencies]
 dev = [
     "ruff>=0.7,<0.8",
     "mypy>=1.5.1,<2",
@@ -56,7 +58,7 @@ dev = [
     "types-tqdm>=4.66.0,<5",
     "types-requests>=2.31.0,<3",
     "types-setuptools>=69.2.0,<70",
-    "uv==0.6.5",
+    "uv>=0.7.0,<0.8",
     "Flask>=2.0",
 ]
 docs = [
@@ -382,17 +384,10 @@ all = [
     "pytesseract>=0.3.13",
 ]
 
-
 [project.urls]
 Homepage = "https://www.camel-ai.org/"
 Repository = "https://github.com/camel-ai/camel"
 Documentation = "https://docs.camel-ai.org"
-
-[tool.uv]
-default-groups = [
-    "dev",
-    "docs",
-]
 
 [tool.hatch.build.targets.sdist]
 include = ["camel"]

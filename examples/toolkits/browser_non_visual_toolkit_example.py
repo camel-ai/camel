@@ -41,14 +41,12 @@ model_backend = ModelFactory.create(
 
 web_toolkit = BrowserNonVisualToolkit(
     headless=False,
-    user_data_dir=USER_DATA_DIR,
 )
 
 agent = ChatAgent(
-    system_message="""
-    """,
     model=model_backend,
     tools=[*web_toolkit.get_tools()],
+    max_iteration=10,
 )
 
 TASK_PROMPT = """Click "Sign in to Google Account" on Google.
