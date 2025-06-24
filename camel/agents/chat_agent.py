@@ -1919,7 +1919,7 @@ class ChatAgent(BaseAgent):
                 self.memory.get_context_creator(), "token_limit", None
             ),
             output_language=self._output_language,
-            tools=list(self._internal_tools.values()),
+            tools=[tool.func for tool in self._internal_tools.values()],
             external_tools=[
                 schema for schema in self._external_tool_schemas.values()
             ],
