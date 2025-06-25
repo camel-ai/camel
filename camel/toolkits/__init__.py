@@ -76,7 +76,12 @@ from .klavis_toolkit import KlavisToolkit
 from .aci_toolkit import ACIToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
-
+from .task_planning_toolkit import TaskPlanningToolkit
+from .non_visual_browser_toolkit import BrowserNonVisualToolkit
+from .edgeone_pages_mcp_toolkit import EdgeOnePagesMCPToolkit
+from .google_drive_mcp_toolkit import GoogleDriveMCPToolkit
+from .craw4ai_toolkit import Crawl4AIToolkit
+from .markitdown_toolkit import MarkItDownToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -140,4 +145,10 @@ __all__ = [
     'PlaywrightMCPToolkit',
     'WolframAlphaToolkit',
     'BohriumToolkit',
+    'TaskPlanningToolkit',
+    'BrowserNonVisualToolkit',
+    'EdgeOnePagesMCPToolkit',
+    'GoogleDriveMCPToolkit',
+    'Crawl4AIToolkit',
+    'MarkItDownToolkit',
 ]

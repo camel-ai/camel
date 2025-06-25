@@ -16,10 +16,7 @@ from sentence_transformers import SentenceTransformer
 
 from camel.embeddings import SentenceTransformerEncoder
 
-pytestmark = pytest.mark.skip(
-    reason="Temporarily skipping tests due to Huggingface "
-    "credentials not available"
-)
+pytestmark = pytest.mark.heavy_dependency
 
 
 def test_SentenceTransformerEmbedding_initialization():

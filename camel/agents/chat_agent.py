@@ -19,12 +19,10 @@ import textwrap
 import threading
 import uuid
 from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
     Callable,
     Dict,
     List,
@@ -56,7 +54,11 @@ from camel.memories import (
     MemoryRecord,
     ScoreBasedContextCreator,
 )
-from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
+from camel.messages import (
+    BaseMessage,
+    FunctionCallingMessage,
+    OpenAIMessage,
+)
 from camel.models import (
     BaseModelBackend,
     ModelFactory,
@@ -97,6 +99,15 @@ try:
         raise ImportError
 except (ImportError, AttributeError):
     from camel.utils import track_agent
+
+# Langfuse decorator setting
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 
 SIMPLE_FORMAT_PROMPT = TextPrompt(
@@ -153,8 +164,10 @@ class ChatAgent(BaseAgent):
             (default: :obj:`None`)
         scheduling_strategy (str): name of function that defines how to select
             the next model in ModelManager. (default: :str:`round_robin`)
-        single_iteration (bool): Whether to let the agent perform only one
-            model calling at each step. (default: :obj:`False`)
+        max_iteration (Optional[int], optional): Maximum number of model
+            calling iterations allowed per step. If `None` (default), there's
+            no explicit limit. If `1`, it performs a single model call. If `N
+            > 1`, it allows up to N model calls. (default: :obj:`None`)
         agent_id (str, optional): The ID of the agent. If not provided, a
             random UUID will be generated. (default: :obj:`None`)
         stop_event (Optional[threading.Event], optional): Event to signal
@@ -190,7 +203,7 @@ class ChatAgent(BaseAgent):
         ] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
         scheduling_strategy: str = "round_robin",
-        single_iteration: bool = False,
+        max_iteration: Optional[int] = None,
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
     ) -> None:
@@ -206,7 +219,7 @@ class ChatAgent(BaseAgent):
         self.model_type = self.model_backend.model_type
 
         # Assign unique ID
-        self.agent_id = agent_id if agent_id else str(uuid.uuid4())[:6]
+        self.agent_id = agent_id if agent_id else str(uuid.uuid4())
 
         # Set up memory
         context_creator = ScoreBasedContextCreator(
@@ -265,7 +278,7 @@ class ChatAgent(BaseAgent):
         # Set up other properties
         self.terminated = False
         self.response_terminators = response_terminators or []
-        self.single_iteration = single_iteration
+        self.max_iteration = max_iteration
         self.stop_event = stop_event
 
     def reset(self):
@@ -461,7 +474,14 @@ class ChatAgent(BaseAgent):
         self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
     ) -> None:
         new_tool_schema = convert_to_schema(tool)
-        self._external_tool_schemas[new_tool_schema["name"]] = new_tool_schema
+        # Handle both OpenAI format and legacy format
+        if "function" in new_tool_schema:
+            # OpenAI format: {"type": "function", "function": {...}}
+            tool_name = new_tool_schema["function"]["name"]
+        else:
+            # Legacy format: {"name": "...", "description": "...", ...}
+            tool_name = new_tool_schema["name"]
+        self._external_tool_schemas[tool_name] = new_tool_schema
 
     def remove_tool(self, tool_name: str) -> bool:
         r"""Remove a tool from the agent by name.
@@ -504,26 +524,171 @@ class ChatAgent(BaseAgent):
     ) -> None:
         r"""Updates the agent memory with a new message.
 
+        If the single *message* exceeds the model's context window, it will
+        be **automatically split into multiple smaller chunks** before being
+        written into memory. This prevents later failures in
+        `ScoreBasedContextCreator` where an over-sized message cannot fit
+        into the available token budget at all.
+
+        This slicing logic handles both regular text messages (in the
+        `content` field) and long tool call results (in the `result` field of
+        a `FunctionCallingMessage`).
+
         Args:
             message (BaseMessage): The new message to add to the stored
                 messages.
             role (OpenAIBackendRole): The backend role type.
             timestamp (Optional[float], optional): Custom timestamp for the
-                memory record. If None, current timestamp will be used.
+                memory record. If `None`, the current time will be used.
                 (default: :obj:`None`)
+                    (default: obj:`None`)
         """
-        from datetime import timezone
+        import math
+        import time
+        import uuid as _uuid
 
-        self.memory.write_record(
-            MemoryRecord(
-                message=message,
-                role_at_backend=role,
-                timestamp=timestamp
-                if timestamp is not None
-                else datetime.now(timezone.utc).timestamp(),
-                agent_id=self.agent_id,
+        # 1. Helper to write a record to memory
+        def _write_single_record(
+            message: BaseMessage, role: OpenAIBackendRole, timestamp: float
+        ):
+            self.memory.write_record(
+                MemoryRecord(
+                    message=message,
+                    role_at_backend=role,
+                    timestamp=timestamp,
+                    agent_id=self.agent_id,
+                )
             )
+
+        base_ts = (
+            timestamp
+            if timestamp is not None
+            else time.time_ns() / 1_000_000_000
         )
+
+        # 2. Get token handling utilities, fallback if unavailable
+        try:
+            context_creator = self.memory.get_context_creator()
+            token_counter = context_creator.token_counter
+            token_limit = context_creator.token_limit
+        except AttributeError:
+            _write_single_record(message, role, base_ts)
+            return
+
+        # 3. Check if slicing is necessary
+        try:
+            current_tokens = token_counter.count_tokens_from_messages(
+                [message.to_openai_message(role)]
+            )
+            _, ctx_tokens = self.memory.get_context()
+            remaining_budget = max(0, token_limit - ctx_tokens)
+
+            if current_tokens <= remaining_budget:
+                _write_single_record(message, role, base_ts)
+                return
+        except Exception as e:
+            logger.warning(
+                f"Token calculation failed before chunking, "
+                f"writing message as-is. Error: {e}"
+            )
+            _write_single_record(message, role, base_ts)
+            return
+
+        # 4. Perform slicing
+        logger.warning(
+            f"Message with {current_tokens} tokens exceeds remaining budget "
+            f"of {remaining_budget}. Slicing into smaller chunks."
+        )
+
+        text_to_chunk: Optional[str] = None
+        is_function_result = False
+
+        if isinstance(message, FunctionCallingMessage) and isinstance(
+            message.result, str
+        ):
+            text_to_chunk = message.result
+            is_function_result = True
+        elif isinstance(message.content, str):
+            text_to_chunk = message.content
+
+        if not text_to_chunk or not text_to_chunk.strip():
+            _write_single_record(message, role, base_ts)
+            return
+        # Encode the entire text to get a list of all token IDs
+        try:
+            all_token_ids = token_counter.encode(text_to_chunk)
+        except Exception as e:
+            logger.error(f"Failed to encode text for chunking: {e}")
+            _write_single_record(message, role, base_ts)  # Fallback
+            return
+
+        if not all_token_ids:
+            _write_single_record(message, role, base_ts)  # Nothing to chunk
+            return
+
+        # 1.  Base chunk size: one-tenth of the smaller of (a) total token
+        # limit and (b) current remaining budget.  This prevents us from
+        # creating chunks that are guaranteed to overflow the
+        # immediate context window.
+        base_chunk_size = max(1, remaining_budget) // 10
+
+        # 2.  Each chunk gets a textual prefix such as:
+        #        "[chunk 3/12 of a long message]\n"
+        #     The prefix itself consumes tokens, so if we do not subtract its
+        #     length the *total* tokens of the outgoing message (prefix + body)
+        #     can exceed the intended bound.  We estimate the prefix length
+        #     with a representative example that is safely long enough for the
+        #     vast majority of cases (three-digit indices).
+        sample_prefix = "[chunk 1/1000 of a long message]\n"
+        prefix_token_len = len(token_counter.encode(sample_prefix))
+
+        # 3.  The real capacity for the message body is therefore the base
+        #     chunk size minus the prefix length.  Fallback to at least one
+        #     token to avoid zero or negative sizes.
+        chunk_body_limit = max(1, base_chunk_size - prefix_token_len)
+
+        # 4.  Calculate how many chunks we will need with this body size.
+        num_chunks = math.ceil(len(all_token_ids) / chunk_body_limit)
+        group_id = str(_uuid.uuid4())
+
+        for i in range(num_chunks):
+            start_idx = i * chunk_body_limit
+            end_idx = start_idx + chunk_body_limit
+            chunk_token_ids = all_token_ids[start_idx:end_idx]
+
+            chunk_body = token_counter.decode(chunk_token_ids)
+
+            prefix = f"[chunk {i + 1}/{num_chunks} of a long message]\n"
+            new_body = prefix + chunk_body
+
+            if is_function_result and isinstance(
+                message, FunctionCallingMessage
+            ):
+                new_msg: BaseMessage = FunctionCallingMessage(
+                    role_name=message.role_name,
+                    role_type=message.role_type,
+                    meta_dict=message.meta_dict,
+                    content=message.content,
+                    func_name=message.func_name,
+                    args=message.args,
+                    result=new_body,
+                    tool_call_id=message.tool_call_id,
+                )
+            else:
+                new_msg = message.create_new_instance(new_body)
+
+            meta = (new_msg.meta_dict or {}).copy()
+            meta.update(
+                {
+                    "chunk_idx": i + 1,
+                    "chunk_total": num_chunks,
+                    "chunk_group_id": group_id,
+                }
+            )
+            new_msg.meta_dict = meta
+
+            # Increment timestamp slightly to maintain order
+            _write_single_record(new_msg, role, base_ts + i * 1e-6)
 
     def load_memory(self, memory: AgentMemory) -> None:
         r"""Load the provided memory into the agent.
@@ -644,9 +809,19 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the current system
         message.
         """
+        import time
+
         self.memory.clear()
+        # avoid UserWarning: The `ChatHistoryMemory` is empty.
         if self.system_message is not None:
-            self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
+            self.memory.write_record(
+                MemoryRecord(
+                    message=self.system_message,
+                    role_at_backend=OpenAIBackendRole.SYSTEM,
+                    timestamp=time.time_ns() / 1_000_000_000,
+                    agent_id=self.agent_id,
+                )
+            )
 
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
@@ -678,6 +853,185 @@ class ChatAgent(BaseAgent):
             return True
         except ValidationError:
             return False
+
+    def _check_tools_strict_compatibility(self) -> bool:
+        r"""Check if all tools are compatible with OpenAI strict mode.
+
+        Returns:
+            bool: True if all tools are strict mode compatible,
+                False otherwise.
+        """
+        tool_schemas = self._get_full_tool_schemas()
+        for schema in tool_schemas:
+            if not schema.get("function", {}).get("strict", True):
+                return False
+        return True
+
+    def _convert_response_format_to_prompt(
+        self, response_format: Type[BaseModel]
+    ) -> str:
+        r"""Convert a Pydantic response format to a prompt instruction.
+
+        Args:
+            response_format (Type[BaseModel]): The Pydantic model class.
+
+        Returns:
+            str: A prompt instruction requesting the specific format.
+        """
+        try:
+            # Get the JSON schema from the Pydantic model
+            schema = response_format.model_json_schema()
+
+            # Create a prompt based on the schema
+            format_instruction = (
+                "\n\nPlease respond in the following JSON format:\n" "{\n"
+            )
+
+            properties = schema.get("properties", {})
+            for field_name, field_info in properties.items():
+                field_type = field_info.get("type", "string")
+                description = field_info.get("description", "")
+
+                if field_type == "array":
+                    format_instruction += (
+                        f'    "{field_name}": ["array of values"]'
+                    )
+                elif field_type == "object":
+                    format_instruction += f'    "{field_name}": {{"object"}}'
+                elif field_type == "boolean":
+                    format_instruction += f'    "{field_name}": true'
+                elif field_type == "number":
+                    format_instruction += f'    "{field_name}": 0'
+                else:
+                    format_instruction += f'    "{field_name}": "string value"'
+
+                if description:
+                    format_instruction += f'  // {description}'
+
+                # Add comma if not the last item
+                if field_name != list(properties.keys())[-1]:
+                    format_instruction += ","
+                format_instruction += "\n"
+
+            format_instruction += "}"
+            return format_instruction
+
+        except Exception as e:
+            logger.warning(
+                f"Failed to convert response_format to prompt: {e}. "
+                f"Using generic format instruction."
+            )
+            return (
+                "\n\nPlease respond in a structured JSON format "
+                "that matches the requested schema."
+            )
+
+    def _handle_response_format_with_non_strict_tools(
+        self,
+        input_message: Union[BaseMessage, str],
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> Tuple[Union[BaseMessage, str], Optional[Type[BaseModel]], bool]:
+        r"""Handle response format when tools are not strict mode compatible.
+
+        Args:
+            input_message: The original input message.
+            response_format: The requested response format.
+
+        Returns:
+            Tuple: (modified_message, modified_response_format,
+                   used_prompt_formatting)
+        """
+        if response_format is None:
+            return input_message, response_format, False
+
+        # Check if tools are strict mode compatible
+        if self._check_tools_strict_compatibility():
+            return input_message, response_format, False
+
+        # Tools are not strict compatible, convert to prompt
+        logger.info(
+            "Non-strict tools detected. Converting response_format to "
+            "prompt-based formatting."
+        )
+
+        format_prompt = self._convert_response_format_to_prompt(
+            response_format
+        )
+
+        # Modify the message to include format instruction
+        modified_message: Union[BaseMessage, str]
+        if isinstance(input_message, str):
+            modified_message = input_message + format_prompt
+        else:
+            modified_message = input_message.create_new_instance(
+                input_message.content + format_prompt
+            )
+
+        # Return None for response_format to avoid strict mode conflicts
+        # and True to indicate we used prompt formatting
+        return modified_message, None, True
+
+    def _apply_prompt_based_parsing(
+        self,
+        response: ModelResponse,
+        original_response_format: Type[BaseModel],
+    ) -> None:
+        r"""Apply manual parsing when using prompt-based formatting.
+
+        Args:
+            response: The model response to parse.
+            original_response_format: The original response format class.
+        """
+        for message in response.output_messages:
+            if message.content:
+                try:
+                    # Try to extract JSON from the response content
+                    import json
+                    import re
+
+                    from pydantic import ValidationError
+
+                    # Try to find JSON in the content
+                    content = message.content.strip()
+
+                    # Try direct parsing first
+                    try:
+                        parsed_json = json.loads(content)
+                        message.parsed = (
+                            original_response_format.model_validate(
+                                parsed_json
+                            )
+                        )
+                        continue
+                    except (json.JSONDecodeError, ValidationError):
+                        pass
+
+                    # Try to extract JSON from text
+                    json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+                    json_matches = re.findall(json_pattern, content, re.DOTALL)
+
+                    for json_str in json_matches:
+                        try:
+                            parsed_json = json.loads(json_str)
+                            message.parsed = (
+                                original_response_format.model_validate(
+                                    parsed_json
+                                )
+                            )
+                            # Update content to just the JSON for consistency
+                            message.content = json.dumps(parsed_json)
+                            break
+                        except (json.JSONDecodeError, ValidationError):
+                            continue
+
+                    if not message.parsed:
+                        logger.warning(
+                            f"Failed to parse JSON from response: "
+                            f"{content[:100]}..."
+                        )
+
+                except Exception as e:
+                    logger.warning(f"Error during prompt-based parsing: {e}")
 
     def _format_response_if_needed(
         self,
@@ -734,6 +1088,7 @@ class ChatAgent(BaseAgent):
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
 
+    @observe()
     def step(
         self,
         input_message: Union[BaseMessage, str],
@@ -756,6 +1111,22 @@ class ChatAgent(BaseAgent):
                 flag, and session information.
         """
 
+        # Set Langfuse session_id using agent_id for trace grouping
+        try:
+            from camel.utils.langfuse import set_current_agent_session_id
+
+            set_current_agent_session_id(self.agent_id)
+        except ImportError:
+            pass  # Langfuse not available
+
+        # Handle response format compatibility with non-strict tools
+        original_response_format = response_format
+        input_message, response_format, used_prompt_formatting = (
+            self._handle_response_format_with_non_strict_tools(
+                input_message, response_format
+            )
+        )
+
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
@@ -774,6 +1145,7 @@ class ChatAgent(BaseAgent):
 
         # Initialize token usage tracker
         step_token_usage = self._create_token_usage_tracker()
+        iteration_count = 0
 
         while True:
             try:
@@ -790,6 +1162,7 @@ class ChatAgent(BaseAgent):
                 response_format,
                 self._get_full_tool_schemas(),
             )
+            iteration_count += 1
 
             # Accumulate API token usage
             self._update_token_usage_tracker(
@@ -824,7 +1197,10 @@ class ChatAgent(BaseAgent):
                 if external_tool_call_requests:
                     break
 
-                if self.single_iteration:
+                if (
+                    self.max_iteration is not None
+                    and iteration_count >= self.max_iteration
+                ):
                     break
 
                 # If we're still here, continue the loop
@@ -833,6 +1209,13 @@ class ChatAgent(BaseAgent):
             break
 
         self._format_response_if_needed(response, response_format)
+
+        # Apply manual parsing if we used prompt-based formatting
+        if used_prompt_formatting and original_response_format:
+            self._apply_prompt_based_parsing(
+                response, original_response_format
+            )
+
         self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
@@ -850,6 +1233,7 @@ class ChatAgent(BaseAgent):
         openai_messages, _ = self.memory.get_context()
         return openai_messages
 
+    @observe()
     async def astep(
         self,
         input_message: Union[BaseMessage, str],
@@ -876,6 +1260,21 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
+        try:
+            from camel.utils.langfuse import set_current_agent_session_id
+
+            set_current_agent_session_id(self.agent_id)
+        except ImportError:
+            pass  # Langfuse not available
+
+        # Handle response format compatibility with non-strict tools
+        original_response_format = response_format
+        input_message, response_format, used_prompt_formatting = (
+            self._handle_response_format_with_non_strict_tools(
+                input_message, response_format
+            )
+        )
+
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
                 role_name="User", content=input_message
@@ -891,6 +1290,7 @@ class ChatAgent(BaseAgent):
 
         # Initialize token usage tracker
         step_token_usage = self._create_token_usage_tracker()
+        iteration_count = 0
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -905,6 +1305,12 @@ class ChatAgent(BaseAgent):
                 accumulated_context_tokens,
                 response_format,
                 self._get_full_tool_schemas(),
+            )
+            iteration_count += 1
+
+            # Accumulate API token usage
+            self._update_token_usage_tracker(
+                step_token_usage, response.usage_dict
             )
 
             # Terminate Agent if stop_event is set
@@ -936,7 +1342,10 @@ class ChatAgent(BaseAgent):
                 if external_tool_call_requests:
                     break
 
-                if self.single_iteration:
+                if (
+                    self.max_iteration is not None
+                    and iteration_count >= self.max_iteration
+                ):
                     break
 
                 # If we're still here, continue the loop
@@ -945,13 +1354,14 @@ class ChatAgent(BaseAgent):
             break
 
         await self._aformat_response_if_needed(response, response_format)
+
+        # Apply manual parsing if we used prompt-based formatting
+        if used_prompt_formatting and original_response_format:
+            self._apply_prompt_based_parsing(
+                response, original_response_format
+            )
+
         self._record_final_output(response.output_messages)
-
-        # Create token usage tracker for this step
-        step_token_usage = self._create_token_usage_tracker()
-
-        # Update with response usage
-        self._update_token_usage_tracker(step_token_usage, response.usage_dict)
 
         return self._convert_to_chatagent_response(
             response,
@@ -1334,6 +1744,13 @@ class ChatAgent(BaseAgent):
         """
         output_messages: List[BaseMessage] = []
         for choice in response.choices:
+            # Skip messages with no meaningful content
+            if (
+                choice.message.content is None
+                or choice.message.content.strip() == ""
+            ) and not choice.message.tool_calls:
+                continue
+
             meta_dict = {}
             if logprobs_info := handle_logprobs(choice):
                 meta_dict["logprobs_info"] = logprobs_info
@@ -1563,8 +1980,32 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
+        import asyncio
+
         try:
-            result = await tool.async_call(**args)
+            # Try different invocation paths in order of preference
+            if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
+                # Case: FunctionTool wrapping an MCP tool
+                result = await tool.func.async_call(**args)
+
+            elif hasattr(tool, 'async_call') and callable(tool.async_call):
+                # Case: tool itself has async_call
+                result = await tool.async_call(**args)
+
+            elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
+                tool.func
+            ):
+                # Case: tool wraps a direct async function
+                result = await tool.func(**args)
+
+            elif asyncio.iscoroutinefunction(tool):
+                # Case: tool is itself a coroutine function
+                result = await tool(**args)
+
+            else:
+                # Fallback: synchronous call
+                result = tool(**args)
+
         except Exception as e:
             # Capture the error message to prevent framework crash
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
@@ -1602,17 +2043,24 @@ class ChatAgent(BaseAgent):
             tool_call_id=tool_call_id,
         )
 
-        # Use slightly different timestamps to ensure correct ordering
+        # Use precise timestamps to ensure correct ordering
         # This ensures the assistant message (tool call) always appears before
         # the function message (tool result) in the conversation context
-        current_time = datetime.now().timestamp()
+        # Use time.time_ns() for nanosecond precision to avoid collisions
+        import time
+
+        current_time_ns = time.time_ns()
+        base_timestamp = current_time_ns / 1_000_000_000  # Convert to seconds
+
         self.update_memory(
-            assist_msg, OpenAIBackendRole.ASSISTANT, timestamp=current_time
+            assist_msg, OpenAIBackendRole.ASSISTANT, timestamp=base_timestamp
         )
+
+        # Add minimal increment to ensure function message comes after
         self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
-            timestamp=current_time + 0.001,
+            timestamp=base_timestamp + 1e-6,
         )
 
         # Record information about this tool call
@@ -1687,7 +2135,7 @@ class ChatAgent(BaseAgent):
                 self.memory.get_context_creator(), "token_limit", None
             ),
             output_language=self._output_language,
-            tools=list(self._internal_tools.values()),
+            tools=[tool.func for tool in self._internal_tools.values()],
             external_tools=[
                 schema for schema in self._external_tool_schemas.values()
             ],
@@ -1695,7 +2143,7 @@ class ChatAgent(BaseAgent):
             scheduling_strategy=(
                 self.model_backend.scheduling_strategy.__name__
             ),
-            single_iteration=self.single_iteration,
+            max_iteration=self.max_iteration,
             stop_event=self.stop_event,
         )
 
@@ -1719,6 +2167,7 @@ class ChatAgent(BaseAgent):
             f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
         )
 
+    @dependencies_required("mcp")
     def to_mcp(
         self,
         name: str = "CAMEL-ChatAgent",
@@ -1745,13 +2194,7 @@ class ChatAgent(BaseAgent):
         Returns:
             FastMCP: An MCP server instance that can be run.
         """
-        try:
-            from mcp.server.fastmcp import FastMCP
-        except ImportError:
-            raise ImportError(
-                "The 'mcp' package is required to use the to_mcp method. "
-                "Install it with 'pip install mcp'."
-            )
+        from mcp.server.fastmcp import FastMCP
 
         # Combine dependencies
         all_dependencies = ["camel-ai[all]"]
@@ -1842,7 +2285,7 @@ class ChatAgent(BaseAgent):
                     "description": tool.get_function_description() or "",
                     "parameters": [
                         {"name": param_name, "type": str(param_type)}
-                        for param_name, param_type in tool.get_parameters().items()  # noqa: E501
+                        for param_name, param_type in tool.parameters.items()
                     ],
                 }
             return tool_info
@@ -1902,11 +2345,8 @@ class ChatAgent(BaseAgent):
         )
 
         @app.post("/v1/chat/completions")
-        async def chat_completions(
-            request_data: dict,
-        ) -> Union[Dict[str, Any], JSONResponse, StreamingResponse]:
+        async def chat_completions(request_data: dict):
             try:
-                # Parse request data manually to avoid Pydantic issues
                 messages = request_data.get("messages", [])
                 model = request_data.get("model", "camel-model")
                 stream = request_data.get("stream", False)
@@ -1946,11 +2386,7 @@ class ChatAgent(BaseAgent):
                     # Type guard to ensure tools_to_use is not None
                     if tools_to_use is not None:
                         for tool in tools_to_use:
-                            # Convert to CAMEL tool format and add to agent
-                            if "function" in tool:
-                                self.add_external_tool(tool)
-                            else:
-                                self.add_external_tool({"function": tool})
+                            self.add_external_tool(tool)
 
                 # Get the response from the agent
                 if current_user_message is not None:
@@ -1962,7 +2398,7 @@ class ChatAgent(BaseAgent):
                             media_type="text/event-stream",
                         )
                     else:
-                        agent_response = self.step(current_user_message)
+                        agent_response = await self.astep(current_user_message)
 
                         # Convert CAMEL response to OpenAI format
                         if not agent_response.msgs:
@@ -2048,11 +2484,9 @@ class ChatAgent(BaseAgent):
                     content={"error": f"Internal server error: {e!s}"},
                 )
 
-        async def _stream_response(
-            message: BaseMessage, request_data: dict
-        ) -> AsyncIterator[str]:
+        async def _stream_response(message: BaseMessage, request_data: dict):
             # Start a separate task for the agent processing
-            agent_response = self.step(message)
+            agent_response = await self.astep(message)
 
             if not agent_response.msgs:
                 # Stream an error message if no response

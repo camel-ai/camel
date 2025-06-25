@@ -25,10 +25,10 @@ user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
     study of autonomous and communicative agents."""
 
 
-# Example of using the gemini-2.5-pro-preview-05-06 model
+# Example of using the gemini-2.5-pro-preview-06-05 model
 model_2_5_pro_pre = ModelFactory.create(
     model_platform=ModelPlatformType.GEMINI,
-    model_type=ModelType.GEMINI_2_5_PRO_PREVIEW,
+    model_type=ModelType.GEMINI_2_5_PRO,
     model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
 )
 camel_agent_pro = ChatAgent(system_message=sys_msg, model=model_2_5_pro_pre)
@@ -37,13 +37,14 @@ print(response_pro.msgs[0].content)
 
 '''
 ===============================================================================
-Hello CAMEL AI! 👋
+Hello and a big hi to the entire CAMEL AI community!
 
-A big, warm greeting to your fantastic open-source community! 
-It's wonderful to hear about your dedication to 
-the study of autonomous and communicative agents. 
-That's a truly exciting and important field.
-Keep up the great work, and best of luck with all your endeavors!
+It's fantastic to acknowledge your dedication to 
+the important and fascinating study of autonomous and communicative agents. 
+Open-source collaboration is the engine of innovation, 
+and your work is pushing the boundaries of what's possible in AI.
+
+Keep up the brilliant research and community building
 ===============================================================================
 '''
 

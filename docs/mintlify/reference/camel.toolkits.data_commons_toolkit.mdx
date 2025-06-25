@@ -56,7 +56,8 @@ Query the Data Commons knowledge graph using SPARQL.
 representing a node matching the query conditions if success,
 (default: :obj:`None`) otherwise.
 
-Note:
+**Note:**
+
 - Only supports a limited subset of SPARQL functionality (ORDER BY,
 DISTINCT, LIMIT).
 - Each variable in the query should have a 'typeOf' condition.
@@ -87,7 +88,8 @@ Retrieve triples associated with nodes.
 DCIDs and values are lists of associated triples if success,
 (default: :obj:`None`) otherwise.
 
-Note:
+**Note:**
+
 - The function will raise a ValueError if any of the required
 arguments are missing.
 - The function will raise a TypeError if the dcids are not a string

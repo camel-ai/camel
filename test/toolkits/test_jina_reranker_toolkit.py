@@ -17,6 +17,8 @@ import pytest
 
 from camel.toolkits.jina_reranker_toolkit import JinaRerankerToolkit
 
+pytestmark = pytest.mark.heavy_dependency
+
 
 @pytest.fixture
 def mock_model():

@@ -66,6 +66,59 @@ def main():
             print(chunk.choices[0].delta.content, end="", flush=True)
     print()
 
+    # Tool calling example
+    print("\n4. Tool Calling:")
+
+    # Define a simple calculator tool
+    calculator_tool = {
+        "type": "function",
+        "function": {
+            "name": "calculate",
+            "description": "Perform basic arithmetic operations",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "operation": {
+                        "type": "string",
+                        "enum": ["add", "subtract", "multiply", "divide"],
+                        "description": "The arithmetic operation to perform",
+                    },
+                    "a": {"type": "number", "description": "First number"},
+                    "b": {"type": "number", "description": "Second number"},
+                },
+                "required": ["operation", "a", "b"],
+            },
+        },
+    }
+
+    response = client.chat.completions.create(
+        model="camel-model",
+        messages=[
+            {
+                "role": "user",
+                "content": "What is 15 multiplied by 8?Use calculator tool.",
+            }
+        ],
+        tools=[calculator_tool],
+    )
+
+    # Check if the model wants to call a tool
+    if response.choices[0].message.tool_calls:
+        tool_call = response.choices[0].message.tool_calls[0]
+        print(f"Tool called: {tool_call.function.name}")
+        print(f"Arguments: {tool_call.function.arguments}")
+
+        # In a real implementation, you would execute the tool here
+        # For this example, we'll just show what would happen
+        import json
+
+        args = json.loads(tool_call.function.arguments)
+        if args["operation"] == "multiply":
+            result = args["a"] * args["b"]
+            print(f"Tool result: {result}")
+    else:
+        print(f"Response: {response.choices[0].message.content}")
+
     print("\n✅ All tests completed!")
 
 
@@ -106,6 +159,11 @@ Streaming: Sure! Here we go:
 5...  
 
 Nice and slow! That's counting from 1 to 5! 
+
+4. Tool Calling:
+Tool called: calculate
+Arguments: {"operation": "multiply", "a": 15, "b": 8}
+Tool result: 120
 
 ✅ All tests completed!
 """
