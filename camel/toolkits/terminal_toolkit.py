@@ -240,8 +240,10 @@ class TerminalToolkit(BaseToolkit):
             self.root.mainloop()
 
         except Exception as e:
-            logger.warning(f"Failed to create GUI terminal: {e}")
-            logger.info("Falling back to file output mode")
+            logger.warning(
+                f"Failed to create GUI terminal: {e}, "
+                f"falling back to file output mode"
+            )
             # Fallback to file output mode when GUI creation fails
             self._setup_file_output()
             self.terminal_ready.set()
