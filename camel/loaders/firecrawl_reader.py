@@ -181,6 +181,7 @@ class FirecrawlLoader(BaseLoader):
     Args:
         config (dict): The configuration for the loader.
     """
+
     def __init__(
         self,
         config: Optional[Dict[str, Any]],
@@ -189,7 +190,8 @@ class FirecrawlLoader(BaseLoader):
         Initialize the FirecrawlLoader.
 
         Args:
-            config (Optional[Dict[str, Any]]): The configuration for the loader.
+            config (Optional[Dict[str, Any]]): The configuration
+                for the loader.
         """
         super().__init__(config)
         self.config = config if config else {}

@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 from .base_loader import BaseLoader
 
 
-def check_suffix(valid_suffixs: List[str]) -> Callable:
+def check_suffix(valid_suffixes: List[str]) -> Callable:
     r"""A decorator to check the file suffix of a given file path.
 
     Args:
@@ -41,9 +41,9 @@ def check_suffix(valid_suffixs: List[str]) -> Callable:
             self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
         ) -> "DataFrame":
             suffix = Path(file_path).suffix
-            if suffix not in valid_suffixs:
+            if suffix not in valid_suffixes:
                 raise ValueError(
-                    f"Only {', '.join(valid_suffixs)} files are supported"
+                    f"Only {', '.join(valid_suffixes)} files are supported"
                 )
             return func(self, file_path, *args, **kwargs)
 
@@ -378,14 +378,17 @@ class PandasLoader(BaseLoader):
     Loader for pandas DataFrame.
 
     Args:
-        config (Optional[Dict[str, Any]]): The configuration for the loader.    
+        config (Optional[Dict[str, Any]]): The configuration for
+            the loader.
     """
+
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         r"""
         Initialize the PandasLoader.
 
         Args:
-            config (Optional[Dict[str, Any]]): The configuration for the loader.
+            config (Optional[Dict[str, Any]]): The configuration
+                for the loader.
         """
         super().__init__(config)
         from pandasai.llm import OpenAI  # type: ignore[import-untyped]

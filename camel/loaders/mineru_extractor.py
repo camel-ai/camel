@@ -259,6 +259,7 @@ class MinerULoader(BaseLoader):
     Args:
         config (Optional[Dict[str, Any]]): The configuration for the loader.
     """
+
     def __init__(
         self,
         config: Optional[Dict[str, Any]] = None,
@@ -267,7 +268,8 @@ class MinerULoader(BaseLoader):
         Initialize the MinerULoader.
 
         Args:
-            config (Optional[Dict[str, Any]]): The configuration for the loader.
+            config (Optional[Dict[str, Any]]): The configuration
+                for the loader.
         """
         super().__init__(config)
         self.config = config if config else {}

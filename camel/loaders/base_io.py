@@ -32,10 +32,10 @@ class BaseIOLoader(BaseLoader):
         r"""Load files from different source types.
 
         Args:
-            source: A source object that respresent the contents of the file.
-            The format can be BytesIO, raw bytes or text with diffent
-            extentions.
-            **kwargs: Additional keyword argments.
+            source: A source object that represent the contents of the file.
+            The format can be BytesIO, raw bytes or text with different
+            extensions.
+            **kwargs: Additional keyword arguments.
 
         Return:
             File: A File object.

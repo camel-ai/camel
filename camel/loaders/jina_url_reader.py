@@ -111,7 +111,8 @@ class JinaURLLoader(BaseLoader):
         Initialize the JinaURLLoader.
 
         Args:
-            config (Optional[Dict[str, Any]]): The configuration for the loader.
+            config (Optional[Dict[str, Any]]): The configuration
+                for the loader.
             **kwargs (Any): Additional keyword arguments.
         """
         super().__init__(config)

@@ -176,6 +176,7 @@ class ChunkrLoader(BaseLoader):
     Args:
         config (dict): The configuration for the loader.
     """
+
     def __init__(
         self,
         config: Optional[Dict[str, Any]],

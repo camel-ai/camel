@@ -482,12 +482,14 @@ class UnstructuredIOLoader(BaseLoader):
     Args:
         config (Optional[Dict[str, Any]]): The configuration for the loader.
     """
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         r"""
         Initialize the UnstructuredIOLoader.
 
         Args:
-            config (Optional[Dict[str, Any]]): The configuration for the loader.
+            config (Optional[Dict[str, Any]]): The configuration
+                for the loader.
         """
         super().__init__(config)
 
@@ -572,7 +574,8 @@ class UnstructuredIOLoader(BaseLoader):
 
         Args:
             text (str): The text to clean.
-            clean_options (Optional[List[Tuple[str, Dict[str, Any]]]], optional):
+            clean_options (Optional[List[Tuple[str, Dict[str, Any]]]],
+                optional):
                 The cleaning options. (default: :obj:`None`)
 
         Returns:
