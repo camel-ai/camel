@@ -176,9 +176,11 @@ class Workforce(BaseNode):
 
     Note:
         When custom coordinator_agent or task_agent are provided, the workforce
-        will log a warning and create new agents with the required system
-        messages and tools to ensure proper functionality. The provided agents'
-        model configurations will be preserved.
+        will preserve the user's system message and append the required
+        workforce coordination or task planning instructions to it. This
+        ensures both the user's intent is preserved and proper workforce
+        functionality is maintained. All other agent configurations (model,
+        memory, tools, etc.) will also be preserved.
     """
 
     def __init__(
@@ -246,15 +248,29 @@ class Workforce(BaseNode):
             )
             self.coordinator_agent = ChatAgent(coord_agent_sys_msg)
         else:
-            logger.warning(
-                "Custom coordinator_agent provided. Creating new agent with "
-                "provided model configuration and default system message to "
-                "ensure proper workforce coordination functionality."
+            logger.info(
+                "Custom coordinator_agent provided. Preserving user's "
+                "system message and appending workforce coordination "
+                "instructions to ensure proper functionality."
             )
+
+            if coordinator_agent.system_message is not None:
+                user_sys_msg_content = coordinator_agent.system_message.content
+                combined_content = (
+                    f"{user_sys_msg_content}\n\n"
+                    f"{coord_agent_sys_msg.content}"
+                )
+                combined_sys_msg = BaseMessage.make_assistant_message(
+                    role_name=coordinator_agent.system_message.role_name,
+                    content=combined_content,
+                )
+            else:
+                combined_sys_msg = coord_agent_sys_msg
+
             # Create a new agent with the provided agent's configuration
-            # but with the required system message
+            # but with the combined system message
             self.coordinator_agent = ChatAgent(
-                system_message=coord_agent_sys_msg,
+                system_message=combined_sys_msg,
                 model=coordinator_agent.model_backend,
                 memory=coordinator_agent.memory,
                 message_window_size=getattr(
@@ -302,27 +318,35 @@ class Workforce(BaseNode):
                 tools=TaskPlanningToolkit().get_tools(),  # type: ignore[arg-type]
             )
         else:
-            logger.warning(
-                "Custom task_agent provided. Creating new agent with "
-                "provided model configuration, default system message, "
-                "and TaskPlanningToolkit to ensure proper task "
-                "planning functionality."
+            logger.info(
+                "Custom task_agent provided. Preserving user's "
+                "system message and appending task planning "
+                "instructions to ensure proper functionality."
             )
-            # Combine provided agent's tools with required TaskPlanningToolkit
-            # Start with the required TaskPlanningToolkit tools as functions
-            combined_tools = [tool.func for tool in task_planning_tools]
-            existing_tool_names = {
-                tool.get_function_name() for tool in task_planning_tools
-            }
-            # Add any additional tools from the provided agent
-            for tool in task_agent._internal_tools.values():
-                if tool.get_function_name() not in existing_tool_names:
-                    combined_tools.append(tool.func)
+
+            if task_agent.system_message is not None:
+                user_task_sys_msg_content = task_agent.system_message.content
+                combined_task_content = (
+                    f"{user_task_sys_msg_content}\n\n"
+                    f"{task_sys_msg.content}"
+                )
+                combined_task_sys_msg = BaseMessage.make_assistant_message(
+                    role_name=task_agent.system_message.role_name,
+                    content=combined_task_content,
+                )
+            else:
+                combined_task_sys_msg = task_sys_msg
+
+            # Since ChatAgent constructor uses a dictionary with
+            # function names as keys, we don't need to manually deduplicate.
+            combined_tools = [
+                tool.func for tool in task_agent._internal_tools.values()
+            ] + [tool.func for tool in task_planning_tools]
 
             # Create a new agent with the provided agent's configuration
-            # but with the required system message and tools
+            # but with the combined system message and tools
             self.task_agent = ChatAgent(
-                system_message=task_sys_msg,
+                system_message=combined_task_sys_msg,
                 model=task_agent.model_backend,
                 memory=task_agent.memory,
                 message_window_size=getattr(
