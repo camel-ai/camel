@@ -13,7 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Dict, List
 
-from camel.loaders import UnstructuredIO
+import numpy as np
+
+from camel.loaders import UnstructuredIOLoader
 from camel.retrievers import BaseRetriever
 from camel.utils import dependencies_required
 
@@ -46,7 +48,9 @@ class BM25Retriever(BaseRetriever):
 
         self.bm25: BM25Okapi = None
         self.content_input_path: str = ""
-        self.unstructured_modules: UnstructuredIO = UnstructuredIO()
+        self.unstructured_modules: UnstructuredIOLoader = (
+            UnstructuredIOLoader()
+        )
 
     def process(
         self,
@@ -69,9 +73,7 @@ class BM25Retriever(BaseRetriever):
 
         # Load and preprocess documents
         self.content_input_path = content_input_path
-        elements = self.unstructured_modules.parse_file_or_url(
-            content_input_path, **kwargs
-        )
+        elements = self.unstructured_modules.load(content_input_path, **kwargs)
         if elements:
             self.chunks = self.unstructured_modules.chunk_elements(
                 chunk_type=chunk_type, elements=elements
@@ -104,7 +106,6 @@ class BM25Retriever(BaseRetriever):
                 model has not been initialized by calling `process`
                 first.
         """
-        import numpy as np
 
         if top_k <= 0:
             raise ValueError("top_k must be a positive integer.")

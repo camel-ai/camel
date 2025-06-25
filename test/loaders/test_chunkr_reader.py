@@ -12,113 +12,75 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import json
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import mock_open, patch
 
-from chunkr_ai.models import Status
-
-from camel.loaders import ChunkrReader, ChunkrReaderConfig
+from camel.loaders import ChunkrLoader
 
 
 class TestChunkrReader(unittest.TestCase):
-    def setUp(self):
-        with patch('chunkr_ai.Chunkr'):
-            self.reader = ChunkrReader(api_key="fake_api_key")
+    @patch('requests.post')
+    @patch(
+        'builtins.open', new_callable=mock_open, read_data='fake file content'
+    )
+    def test_submit_task_success(self, mock_file, mock_post):
+        mock_post.return_value.ok = True
+        mock_post.return_value.json.return_value = {'task_id': '12345'}
 
-    @patch('chunkr_ai.Chunkr')
-    async def test_submit_task_success(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
-        mock_task = AsyncMock()
-        mock_task.task_id = "12345"
-        mock_chunkr_instance.create_task = AsyncMock(return_value=mock_task)
+        reader = ChunkrLoader(config={"api_key": "test_api_key"})
+        task_id = reader.load('fake_path.txt')
 
-        task_id = await self.reader.submit_task("fake_path.pdf")
+        self.assertEqual(task_id, '12345')
+        mock_post.assert_called_once()
+        mock_file.assert_called_once_with('fake_path.txt', 'rb')
 
-        self.assertEqual(task_id, "12345")
-        mock_chunkr_instance.create_task.assert_called_once()
+    @patch('requests.post')
+    @patch(
+        'builtins.open', new_callable=mock_open, read_data='fake file content'
+    )
+    def test_submit_task_no_task_id(self, mock_file, mock_post):
+        mock_post.return_value.ok = True
+        mock_post.return_value.json.return_value = {}
 
-    @patch('chunkr_ai.Chunkr')
-    async def test_submit_task_with_config(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
-        mock_task = AsyncMock()
-        mock_task.task_id = "12345"
-        mock_chunkr_instance.create_task = AsyncMock(return_value=mock_task)
-
-        config = ChunkrReaderConfig()
-        config.chunk_processing = 1024
-
-        task_id = await self.reader.submit_task("fake_path.pdf", config)
-
-        self.assertEqual(task_id, "12345")
-        mock_chunkr_instance.create_task.assert_called_once()
-
-    @patch('chunkr_ai.Chunkr')
-    async def test_submit_task_failure(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
-        mock_chunkr_instance.create_task = AsyncMock(side_effect=Exception())
+        reader = ChunkrLoader(config={"api_key": "test_api_key"})
 
         with self.assertRaises(ValueError) as context:
-            await self.reader.submit_task("fake_path.pdf")
+            reader.load('fake_path.txt')
 
-        self.assertIn("Failed to submit task", str(context.exception))
-        mock_chunkr_instance.create_task.assert_called_once()
+        self.assertEqual(
+            str(context.exception),
+            "Failed to submit task: Task ID not returned in the response.",
+        )
 
-    @patch('chunkr_ai.Chunkr')
-    async def test_get_task_output_success(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
-        mock_task = AsyncMock()
-        mock_task.status = Status.SUCCEEDED
-        mock_task.json.return_value = {"status": "Succeeded"}
-        mock_task.poll = AsyncMock()
-        mock_chunkr_instance.get_task = AsyncMock(return_value=mock_task)
+    @patch('requests.get')
+    def test_get_task_output_success(self, mock_get):
+        mock_get.return_value.ok = True
+        mock_get.return_value.json.return_value = {
+            'status': 'Succeeded',
+            'result': 'Some result',
+        }
 
-        result = await self.reader.get_task_output("test_task_id")
+        reader = ChunkrLoader(config={"api_key": "test_api_key"})
+        result = reader.get_task_output('12345')
 
-        expected_result = json.dumps({"status": "Succeeded"}, indent=4)
-        self.assertEqual(result, expected_result)
-        mock_chunkr_instance.get_task.assert_called_once_with("test_task_id")
-        mock_task.poll.assert_called_once()
+        self.assertIn('result', result)
+        mock_get.assert_called_once_with(
+            'https://api.chunkr.ai/api/v1/task/12345',
+            headers=reader._headers,
+            timeout=reader.timeout,
+        )
 
-    @patch('chunkr_ai.Chunkr')
-    async def test_get_task_output_failed(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
-        mock_task = AsyncMock()
-        mock_task.status = Status.FAILED
-        mock_task.poll = AsyncMock()
-        mock_chunkr_instance.get_task = AsyncMock(return_value=mock_task)
+    @patch('requests.get')
+    def test_get_task_output_max_retries(self, mock_get):
+        mock_get.return_value.ok = True
+        mock_get.return_value.json.return_value = {'status': 'Pending'}
 
-        result = await self.reader.get_task_output("test_task_id")
+        reader = ChunkrLoader(config={"api_key": "test_api_key"})
 
-        self.assertEqual(result, None)
-        mock_chunkr_instance.get_task.assert_called_once_with("test_task_id")
-        mock_task.poll.assert_called_once()
+        with self.assertRaises(RuntimeError) as context:
+            reader.get_task_output('12345', max_retries=2)
 
-    @patch('chunkr_ai.Chunkr')
-    async def test_get_task_output_get_task_error(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
-        mock_chunkr_instance.get_task = AsyncMock(side_effect=Exception())
-
-        with self.assertRaises(ValueError) as context:
-            await self.reader.get_task_output("test_task_id")
-
-        self.assertIn("Failed to get task by task id", str(context.exception))
-        mock_chunkr_instance.get_task.assert_called_once_with("test_task_id")
-
-    @patch('chunkr_ai.Chunkr')
-    async def test_get_task_output_poll_error(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
-        mock_task = AsyncMock()
-        mock_task.poll = AsyncMock(side_effect=Exception())
-        mock_chunkr_instance.get_task = AsyncMock(return_value=mock_task)
-
-        with self.assertRaises(ValueError) as context:
-            await self.reader.get_task_output("test_task_id")
-
-        self.assertIn("Failed to retrieve task status", str(context.exception))
-        mock_chunkr_instance.get_task.assert_called_once_with("test_task_id")
-        mock_task.poll.assert_called_once()
-
-
-if __name__ == "__main__":
-    unittest.main()
+        self.assertEqual(
+            str(context.exception), "Max retries reached for task 12345."
+        )
+        self.assertEqual(mock_get.call_count, 2)

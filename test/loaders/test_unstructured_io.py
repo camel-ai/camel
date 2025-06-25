@@ -16,17 +16,17 @@ from typing import Any, Dict, List, Tuple
 
 import pytest
 
-from camel.loaders import UnstructuredIO
+from camel.loaders import UnstructuredIOLoader
 
 
 # Create a fixture to initialize the UnstructuredIO instance
 @pytest.fixture
-def unstructured_instance() -> UnstructuredIO:
-    return UnstructuredIO()
+def unstructured_instance() -> UnstructuredIOLoader:
+    return UnstructuredIOLoader({})
 
 
 # Test the create_element_from_text method
-def test_create_element_from_text(unstructured_instance: UnstructuredIO):
+def test_create_element_from_text(unstructured_instance: UnstructuredIOLoader):
     # Input parameters
     test_text = "Hello, World!"
     test_id = str(uuid.uuid4())
@@ -66,11 +66,11 @@ def test_create_element_from_text(unstructured_instance: UnstructuredIO):
 
 
 # Test the parse_file_or_url method
-def test_parse_file_or_url(unstructured_instance: UnstructuredIO):
+def test_parse_file_or_url(unstructured_instance: UnstructuredIOLoader):
     # You can mock the required dependencies and test different scenarios here
 
     # Test parsing a valid URL (mock the necessary dependencies)
-    result = unstructured_instance.parse_file_or_url(
+    result = unstructured_instance.load(
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
         "philadelphia-eagles-spt-intl/index.html"
     )
@@ -78,11 +78,11 @@ def test_parse_file_or_url(unstructured_instance: UnstructuredIO):
 
     # Test parsing a non-existent file (should raise FileNotFoundError)
     with pytest.raises(FileNotFoundError):
-        unstructured_instance.parse_file_or_url("nonexistent_file.txt")
+        unstructured_instance.load("nonexistent_file.txt")
 
 
 # Test the clean_text_data method
-def test_clean_text_data(unstructured_instance: UnstructuredIO):
+def test_clean_text_data(unstructured_instance: UnstructuredIOLoader):
     # Test with a valid cleaning option
     test_options: List[Tuple[str, Dict[str, Any]]] = [
         ("clean_extra_whitespace", {})
@@ -107,7 +107,7 @@ def test_clean_text_data(unstructured_instance: UnstructuredIO):
 
 
 # Test the extract_data_from_text method
-def test_extract_data_from_text(unstructured_instance: UnstructuredIO):
+def test_extract_data_from_text(unstructured_instance: UnstructuredIOLoader):
     # Test extracting an email address
     test_email_text = "Contact me at example@email.com."
     extracted_email = unstructured_instance.extract_data_from_text(
@@ -125,13 +125,13 @@ def test_extract_data_from_text(unstructured_instance: UnstructuredIO):
 
 
 # Test the stage_elements method
-def test_stage_elements_for_csv(unstructured_instance: UnstructuredIO):
+def test_stage_elements_for_csv(unstructured_instance: UnstructuredIOLoader):
     # Test staging for baseplate
     test_url = (
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
         "philadelphia-eagles-spt-intl/index.html"
     )
-    test_elements = unstructured_instance.parse_file_or_url(test_url)
+    test_elements = unstructured_instance.load(test_url)
     staged_element: Any = unstructured_instance.stage_elements(
         elements=test_elements,  # type:ignore[arg-type]
         stage_type="stage_for_baseplate",
@@ -159,13 +159,13 @@ def test_stage_elements_for_csv(unstructured_instance: UnstructuredIO):
 
 
 # Test the chunk_elements method
-def test_chunk_elements(unstructured_instance: UnstructuredIO):
+def test_chunk_elements(unstructured_instance: UnstructuredIOLoader):
     # Test chunking content from a url
     test_url = (
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
         "philadelphia-eagles-spt-intl/index.html"
     )
-    test_elements = unstructured_instance.parse_file_or_url(test_url)
+    test_elements = unstructured_instance.load(test_url)
     chunked_sections = unstructured_instance.chunk_elements(
         elements=test_elements,  # type:ignore[arg-type]
         chunk_type="chunk_by_title",  # type:ignore[arg-type]

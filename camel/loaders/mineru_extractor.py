@@ -14,11 +14,13 @@
 
 import os
 import time
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
 from camel.utils import api_keys_required
+
+from .base_loader import BaseLoader
 
 
 class MinerU:
@@ -248,3 +250,137 @@ class MinerU:
                 raise
 
             time.sleep(check_interval)
+
+
+class MinerULoader(BaseLoader):
+    r"""
+    MinerU loader for document extraction.
+
+    Args:
+        config (Optional[Dict[str, Any]]): The configuration for the loader.
+    """
+
+    def __init__(
+        self,
+        config: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        r"""
+        Initialize the MinerULoader.
+
+        Args:
+            config (Optional[Dict[str, Any]]): The configuration
+                for the loader.
+        """
+        super().__init__(config)
+        self.config = config if config else {}
+        self._api_key = self.config.get("api_key") or os.environ.get(
+            "MINERU_API_KEY"
+        )
+        self._api_url = self.config.get("api_url", "https://mineru.net/api/v4")
+        self._headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+        }
+        self.is_ocr = self.config.get("is_ocr", False)
+        self.enable_formula = self.config.get("enable_formula", False)
+        self.enable_table = self.config.get("enable_table", True)
+        self.layout_model = self.config.get("layout_model", "doclayout_yolo")
+        self.language = self.config.get("language", "en")
+
+        self.mineru = MinerU(
+            api_key=self._api_key,
+            api_url=self._api_url,
+            is_ocr=self.is_ocr,
+            enable_formula=self.enable_formula,
+            enable_table=self.enable_table,
+            layout_model=self.layout_model,
+            language=self.language,
+        )
+
+    def load(self, source: str, **kwargs: Any) -> Dict:
+        r"""
+        Load the content of a URL.
+
+        Args:
+            source (str): The URL to load.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            Dict: The content of the URL.
+        """
+        return self.mineru.extract_url(source)
+
+    def batch_load(self, files: List[Dict[str, Union[str, bool]]]) -> str:
+        r"""
+        Load the content of multiple URLs.
+
+        Args:
+            files (List[Dict[str, Union[str, bool]]]): List of document
+                configurations. Each document requires 'url' and optionally
+                'is_ocr' and 'data_id' parameters.
+
+        Returns:
+            str: Batch identifier for tracking extraction progress.
+        """
+        return self.mineru.batch_extract_urls(files)
+
+    def get_task_status(self, task_id: str) -> Dict:
+        r"""
+        Get the status of a single extraction task.
+
+        Args:
+            task_id (str): Unique identifier of the extraction task.
+
+        Returns:
+            Dict: Current task status and results if completed.
+        """
+        return self.mineru.get_task_status(task_id)
+
+    def get_batch_status(self, batch_id: str) -> Dict:
+        r"""
+        Get the status of a batch extraction task.
+
+        Args:
+            batch_id (str): Unique identifier of the batch extraction task.
+
+        Returns:
+            Dict: Current status and results for all documents in the batch.
+        """
+        return self.mineru.get_batch_status(batch_id)
+
+    def wait_for_completion(
+        self,
+        task_id: str,
+        is_batch: bool = False,
+        timeout: float = 100,
+        check_interval: float = 5,
+    ) -> Dict:
+        r"""
+        Wait for the completion of a single or batch extraction task.
+
+        Args:
+            task_id (str): Unique identifier of the extraction task.
+            is_batch (bool, optional): Indicates if task is a batch operation.
+                (default: :obj:`False`)
+            timeout (float, optional): Maximum wait time in seconds.
+                (default: :obj:`100`)
+            check_interval (float, optional): Time between status checks in
+                seconds. (default: :obj:`5`)
+
+        Returns:
+            Dict: Final task status and extraction results.
+        """
+        return self.mineru.wait_for_completion(
+            task_id, is_batch, timeout, check_interval
+        )
+
+    @property
+    def supported_formats(self) -> set:
+        r"""
+        Return the supported formats for the loader.
+
+        Returns:
+            set: A set of supported formats.
+        """
+        return {"url", "pdf", "doc", "docx", "txt", "html"}

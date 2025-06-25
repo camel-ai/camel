@@ -11,16 +11,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+
+import pandas as pd
 
 if TYPE_CHECKING:
     from pandas import DataFrame
     from pandasai import SmartDataframe
 
+from .base_loader import BaseLoader
 
-def check_suffix(valid_suffixs: List[str]) -> Callable:
+
+def check_suffix(valid_suffixes: List[str]) -> Callable:
     r"""A decorator to check the file suffix of a given file path.
 
     Args:
@@ -36,9 +41,9 @@ def check_suffix(valid_suffixs: List[str]) -> Callable:
             self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
         ) -> "DataFrame":
             suffix = Path(file_path).suffix
-            if suffix not in valid_suffixs:
+            if suffix not in valid_suffixes:
                 raise ValueError(
-                    f"Only {', '.join(valid_suffixs)} files are supported"
+                    f"Only {', '.join(valid_suffixes)} files are supported"
                 )
             return func(self, file_path, *args, **kwargs)
 
@@ -366,3 +371,89 @@ class PandasReader:
         import pandas as pd
 
         return pd.read_orc(file_path, *args, **kwargs)
+
+
+class PandasLoader(BaseLoader):
+    r"""
+    Loader for pandas DataFrame.
+
+    Args:
+        config (Optional[Dict[str, Any]]): The configuration for
+            the loader.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        r"""
+        Initialize the PandasLoader.
+
+        Args:
+            config (Optional[Dict[str, Any]]): The configuration
+                for the loader.
+        """
+        super().__init__(config)
+        from pandasai.llm import OpenAI  # type: ignore[import-untyped]
+
+        self.config = config or {}
+        if "llm" not in self.config:
+            self.config["llm"] = OpenAI(
+                api_token=os.getenv("OPENAI_API_KEY"),
+            )
+
+        self._loader_map = {
+            ".csv": pd.read_csv,
+            ".xlsx": pd.read_excel,
+            ".xls": pd.read_excel,
+            ".json": pd.read_json,
+            ".parquet": pd.read_parquet,
+            ".sql": pd.read_sql,
+            ".html": pd.read_html,
+            ".feather": pd.read_feather,
+            ".dta": pd.read_stata,
+            ".sas": pd.read_sas,
+            ".pkl": pd.read_pickle,
+            ".h5": pd.read_hdf,
+            ".orc": pd.read_orc,
+        }
+
+    def load(
+        self,
+        source: Union[pd.DataFrame, str],
+        *args: Any,
+        **kwargs: Dict[str, Any],
+    ) -> Union["SmartDataframe", "DataFrame"]:
+        r"""
+        Load the content of a file or DataFrame.
+
+        Args:
+            source (Union[pd.DataFrame, str]): The source to load.
+            *args (Any): Additional positional arguments.
+            **kwargs (Dict[str, Any]): Additional keyword arguments.
+
+        Returns:
+            Union["SmartDataframe", "DataFrame"]: The loaded content.
+        """
+        from pandas import DataFrame
+        from pandasai import SmartDataframe
+
+        if isinstance(source, DataFrame):
+            return SmartDataframe(source, config=self.config)
+        file_path = str(source)
+        path = Path(file_path)
+        if not file_path.startswith("http") and not path.exists():
+            raise FileNotFoundError(f"File {file_path} not found")
+
+        suffix = path.suffix.lower()
+        if suffix not in self._loader_map:
+            raise ValueError(f"Unsupported file format: {suffix}")
+        df = self._loader_map[suffix](file_path, *args, **kwargs)
+        return df
+
+    @property
+    def supported_formats(self) -> set:
+        r"""
+        Return the supported formats for the loader.
+
+        Returns:
+            set: A set of supported formats.
+        """
+        return set(self._loader_map.keys())
