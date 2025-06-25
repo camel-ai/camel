@@ -19,12 +19,20 @@ from typing import List, Literal, Optional, Tuple, Union
 from camel.logger import get_logger
 from camel.toolkits import BaseToolkit, FunctionTool
 from camel.utils import MCPServer, dependencies_required
+from PIL import Image
 
 # Set up logging
 logger = get_logger(__name__)
 
 DURATION = 0.1
 
+# Add visual recognition components
+from .browser_toolkit_commons import (
+    _add_set_of_mark,
+    _reload_image,
+    InteractiveRegion,
+    visual_viewport_from_dict,
+)
 
 @MCPServer()
 class PyAutoGUIToolkit(BaseToolkit):
@@ -35,6 +43,8 @@ class PyAutoGUIToolkit(BaseToolkit):
         self,
         timeout: Optional[float] = None,
         screenshots_dir: str = "tmp",
+        visual_model: Optional[BaseModelBackend] = None,
+        output_language: str = "en",
     ):
         r"""Initializes the PyAutoGUIToolkit with optional timeout.
 
@@ -62,6 +72,81 @@ class PyAutoGUIToolkit(BaseToolkit):
         self.safe_max_y = int(self.screen_height * (1 - self.safe_margin))
         self.screen_center = (self.screen_width // 2, self.screen_height // 2)
         self.screenshots_dir = os.path.expanduser(screenshots_dir)
+        
+         # Visual recognition components
+        self.visual_model = visual_model
+        self.output_language = output_language
+        self.element_registry: Dict[str, InteractiveRegion] = {}
+        self.current_screenshot: Optional[Image.Image] = None
+
+    def get_visual_viewport(self) -> Dict[str, float]:
+        """Get the visual viewport dimensions."""
+        return {
+            "width": self.screen_width,
+            "height": self.screen_height,
+            "offset_left": 0,
+            "offset_top": 0,
+            "page_scale_factor": 1.0
+        }
+
+    def capture_screenshot(self) -> Image.Image:
+        """Capture a screenshot of the entire desktop."""
+        return self.pyautogui.screenshot()
+
+    def get_interactive_elements(self) -> Dict[str, InteractiveRegion]:
+        """Get interactive elements with visual recognition."""
+        # Capture new screenshot
+        self.current_screenshot = self.capture_screenshot()
+        
+        # Placeholder: In real implementation, use visual model to detect elements
+        # For now, return an empty dictionary
+        return {}
+
+    def get_som_screenshot(self, save_image: bool = True) -> Tuple[Image.Image, Optional[str]]:
+        """Get screenshot with interactive elements marked."""
+        # Get interactive elements
+        elements = self.get_interactive_elements()
+        
+        # Capture screenshot
+        screenshot = self.capture_screenshot()
+        self.current_screenshot = screenshot
+        
+        # Add visual markers to elements
+        marked_image, _, _, _ = _add_set_of_mark(screenshot, elements)
+        
+        # Save image if requested
+        file_path = None
+        if save_image:
+            os.makedirs(self.screenshots_dir, exist_ok=True)
+            timestamp = int(time.time())
+            filename = f"marked_screenshot_{timestamp}.png"
+            file_path = os.path.join(self.screenshots_dir, filename)
+            marked_image.save(file_path)
+            
+        return marked_image, file_path
+
+    def click_element(self, element_id: str) -> str:
+        """Click on a visually recognized element by ID."""
+        if element_id not in self.element_registry:
+            return f"Element ID {element_id} not found"
+            
+        element = self.element_registry[element_id]
+        center_x = element.x + element.width / 2
+        center_y = element.y + element.height / 2
+        
+        return self.mouse_click(x=int(center_x), y=int(center_y))
+
+    def fill_element(self, element_id: str, text: str) -> str:
+        """Fill text in a visually recognized input element."""
+        if element_id not in self.element_registry:
+            return f"Element ID {element_id} not found"
+            
+        # Focus on the element
+        self.click_element(element_id)
+        time.sleep(0.2)
+        
+        # Type the text
+        return self.keyboard_type(text)
 
     def _get_safe_coordinates(self, x: int, y: int) -> Tuple[int, int]:
         r"""Ensure coordinates are within safe boundaries to prevent triggering
@@ -425,4 +510,8 @@ class PyAutoGUIToolkit(BaseToolkit):
             FunctionTool(self.hotkey),
             FunctionTool(self.mouse_drag),
             FunctionTool(self.scroll),
+            FunctionTool(self.get_som_screenshot),
+            FunctionTool(self.click_element),
+            FunctionTool(self.fill_element),
+            FunctionTool(self.get_interactive_elements),
         ]
