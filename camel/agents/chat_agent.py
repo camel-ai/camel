@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Callable,
     Dict,
     List,
@@ -76,6 +77,7 @@ from camel.types import (
 )
 from camel.types.agents import ToolCallingRecord
 from camel.utils import (
+    dependencies_required,
     get_model_encoding,
     model_from_json_schema,
 )
@@ -1861,7 +1863,8 @@ class ChatAgent(BaseAgent):
 
         return mcp_server
 
-    def to_openai_compatible_server(self):
+    @dependencies_required("fastapi")
+    def to_openai_compatible_server(self) -> Any:
         r"""Create an OpenAI-compatible FastAPI server for this ChatAgent.
 
         Returns:
@@ -1878,27 +1881,20 @@ class ChatAgent(BaseAgent):
             uvicorn.run(app, host="0.0.0.0", port=8000)
             ```
         """
-        try:
-            import asyncio
-            import json
-            import time
+        import asyncio
+        import json
+        import time
 
-            from fastapi import FastAPI
-            from fastapi.responses import JSONResponse, StreamingResponse
-            from pydantic import BaseModel
-        except ImportError as e:
-            raise ImportError(
-                f"Required dependencies for OpenAI-compatible server not "
-                f"found: {e}. Please install them with: "
-                "pip install fastapi uvicorn"
-            ) from e
+        from fastapi import FastAPI
+        from fastapi.responses import JSONResponse, StreamingResponse
+        from pydantic import BaseModel
 
         # Define Pydantic models for request/response
         class ChatMessage(BaseModel):
             role: str
             content: str = ""
             name: Optional[str] = None
-            function_call: Optional[Dict[str, Any]] = None
+            tool_calls: Optional[List[Dict[str, Any]]] = None
 
         app = FastAPI(
             title="CAMEL OpenAI-compatible API",
@@ -1906,7 +1902,9 @@ class ChatAgent(BaseAgent):
         )
 
         @app.post("/v1/chat/completions")
-        async def chat_completions(request_data: dict):
+        async def chat_completions(
+            request_data: dict,
+        ) -> Union[Dict[str, Any], JSONResponse, StreamingResponse]:
             try:
                 # Parse request data manually to avoid Pydantic issues
                 messages = request_data.get("messages", [])
@@ -1938,8 +1936,8 @@ class ChatAgent(BaseAgent):
                             role_name="Assistant", content=msg_content
                         )
                         self.record_message(assistant_msg)
-                    elif msg_role == "function":
-                        # Handle function messages if needed
+                    elif msg_role == "tool":
+                        # Handle tool response messages if needed
                         pass
 
                 # Process tools/functions if provided
@@ -1976,17 +1974,29 @@ class ChatAgent(BaseAgent):
                             finish_reason = "stop"
 
                         # Check for tool calls
-                        function_call_response = None
+                        tool_calls_response = None
                         external_tool_requests = agent_response.info.get(
                             "external_tool_call_requests"
                         )
                         if external_tool_requests:
-                            tool_call = external_tool_requests[0]
-                            function_call_response = {
-                                "name": tool_call.tool_name,
-                                "arguments": json.dumps(tool_call.args),
-                            }
-                            finish_reason = "function_call"
+                            tool_calls_response = []
+                            for tool_call in external_tool_requests:
+                                tool_calls_response.append(
+                                    {
+                                        "id": (
+                                            tool_call.tool_call_id
+                                            or f"call_{int(time.time())}"
+                                        ),
+                                        "type": "function",
+                                        "function": {
+                                            "name": tool_call.tool_name,
+                                            "arguments": json.dumps(
+                                                tool_call.args
+                                            ),
+                                        },
+                                    }
+                                )
+                            finish_reason = "tool_calls"
 
                         usage = agent_response.info.get("token_usage") or {
                             "prompt_tokens": agent_response.info.get(
@@ -2014,10 +2024,10 @@ class ChatAgent(BaseAgent):
                                         "role": "assistant",
                                         "content": (
                                             content
-                                            if not function_call_response
+                                            if not tool_calls_response
                                             else None
                                         ),
-                                        "function_call": function_call_response,  # noqa: E501
+                                        "tool_calls": tool_calls_response,
                                     },
                                     "finish_reason": finish_reason,
                                 }
@@ -2038,7 +2048,9 @@ class ChatAgent(BaseAgent):
                     content={"error": f"Internal server error: {e!s}"},
                 )
 
-        async def _stream_response(message: BaseMessage, request_data: dict):
+        async def _stream_response(
+            message: BaseMessage, request_data: dict
+        ) -> AsyncIterator[str]:
             # Start a separate task for the agent processing
             agent_response = self.step(message)
 
@@ -2091,6 +2103,5 @@ class ChatAgent(BaseAgent):
             }
             yield f"data: {json.dumps(final_chunk)}\n\n"
             yield "data: [DONE]\n\n"
-
 
         return app
