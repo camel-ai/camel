@@ -1325,8 +1325,16 @@ class Workforce(BaseNode):
             )
             return TaskAssignResult(assignments=[])
 
-        result_dict = json.loads(response.msg.content, parse_int=str)
-        return TaskAssignResult(**result_dict)
+        try:
+            result_dict = json.loads(response.msg.content, parse_int=str)
+            return TaskAssignResult(**result_dict)
+        except json.JSONDecodeError as e:
+            logger.error(
+                f"JSON parsing error in task assignment: Invalid response "
+                f"format - {e}. Response content: "
+                f"{response.msg.content[:50]}..."
+            )
+            return TaskAssignResult(assignments=[])
 
     def _validate_assignments(
         self, assignments: List[TaskAssignment], valid_ids: Set[str]
@@ -1550,8 +1558,19 @@ class Workforce(BaseNode):
                 "with various tasks.",
             )
         else:
-            result_dict = json.loads(response.msg.content)
-            new_node_conf = WorkerConf(**result_dict)
+            try:
+                result_dict = json.loads(response.msg.content)
+                new_node_conf = WorkerConf(**result_dict)
+            except json.JSONDecodeError as e:
+                logger.error(
+                    f"JSON parsing error in worker creation: Invalid response "
+                    f"format - {e}. Response content: "
+                    f"{response.msg.content[:100]}..."
+                )
+                raise RuntimeError(
+                    f"Failed to create worker for task {task.id}: "
+                    f"Coordinator agent returned malformed JSON response. "
+                )
 
         new_agent = self._create_new_agent(
             new_node_conf.role,
