@@ -46,8 +46,8 @@ CAMEL-AI supports multiple installation methods to suit different development wo
         - `all`: Includes all features below
         - `model_platforms`: OpenAI, Google, Mistral, Anthropic Claude, Cohere etc.
         - `huggingface`: Transformers, Diffusers, Accelerate, Datasets, PyTorch etc.
-        - `rag`: Sentence Transformers, Qdrant, Milvus, TiDB, BM25, OceanBase, Weaviate etc.
-        - `storage`: Neo4j, Redis, Azure Blob, Google Cloud Storage, AWS S3 etc.
+        - `rag`: Sentence Transformers, Qdrant, Milvus, TiDB, BM25, OceanBase, Weaviate, chroma etc.
+        - `storage`: Neo4j, Redis, Azure Blob, Google Cloud Storage, AWS S3 etc, Pgvector.
         - `web_tools`: DuckDuckGo, Wikipedia, WolframAlpha, Google Maps, Weather API etc.
         - `document_tools`: PDF, Word, OpenAPI, BeautifulSoup, Unstructured etc.
         - `media_tools`: Image Processing, Audio Processing, YouTube Download, FFmpeg etc.

@@ -26,6 +26,7 @@ from camel.toolkits import (
     Crawl4AIToolkit,
     DalleToolkit,
     EdgeOnePagesMCPToolkit,
+    ExcelToolkit,
     FileWriteToolkit,
     FunctionTool,
     # GoogleDriveMCPToolkit,
@@ -183,6 +184,7 @@ def document_agent_factory(
         # *RetrievalToolkit().get_tools(),
         HumanToolkit().ask_human_via_console,
         *MarkItDownToolkit().get_tools(),
+        *ExcelToolkit().get_tools(),
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
@@ -207,7 +209,20 @@ def document_agent_factory(
        - Create tables with headers and rows of data
        - Support for custom templates and slide layouts
 
-    3. Human Interaction:
+    3. Excel Spreadsheet Management:
+       - Extract and analyze content from Excel files (.xlsx, .xls, .csv) 
+       with detailed cell information and markdown formatting
+       - Create new Excel workbooks from scratch with multiple sheets
+       - Perform comprehensive spreadsheet operations including:
+         * Sheet creation, deletion, and data clearing
+         * Cell-level operations (read, write, find specific values)
+         * Row and column manipulation (add, update, delete)
+         * Range operations for bulk data processing
+         * Data export to CSV format for compatibility
+       - Handle complex data structures with proper formatting and validation
+       - Support for both programmatic data entry and manual cell updates
+
+    4. Human Interaction:
        - Ask questions to users and receive their responses
        - Send informative messages to users without requiring responses
 
@@ -217,9 +232,13 @@ def document_agent_factory(
     - Provide clear feedback about document creation and modification processes
     - Ask clarifying questions when user requirements are ambiguous
     - Recommend best practices for document organization and presentation
+    - For Excel files, always provide clear data structure and organization
+    - When creating spreadsheets, consider data relationships and use 
+    appropriate sheet naming conventions
 
     Your goal is to help users efficiently create, modify, and manage their 
-    documents with professional quality and appropriate formatting."""
+    documents with professional quality and appropriate formatting across all 
+    supported formats including advanced spreadsheet functionality."""
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -379,10 +398,16 @@ async def main():
 
         task_id = 'workforce_task'
 
-        # Configure kwargs for all agents to use the same model_backend
-        coordinator_agent_kwargs = {"model": model_backend_reason}
-        task_agent_kwargs = {"model": model_backend_reason}
-        new_worker_agent_kwargs = {"model": model_backend}
+        # Create custom agents for the workforce
+        coordinator_agent = ChatAgent(
+            "You are a helpful coordinator.", model=model_backend_reason
+        )
+        task_agent = ChatAgent(
+            "You are a helpful task planner.", model=model_backend_reason
+        )
+        new_worker_agent = ChatAgent(
+            "You are a helpful worker.", model=model_backend
+        )
 
         # Create agents using factory functions
         search_agent = search_agent_factory(model_backend, task_id)
@@ -396,19 +421,14 @@ async def main():
         )
         multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
 
-        # Configure kwargs for all agents to use the same model_backend
-        coordinator_agent_kwargs = {"model": model_backend_reason}
-        task_agent_kwargs = {"model": model_backend_reason}
-        new_worker_agent_kwargs = {"model": model_backend}
-
         # Create workforce instance before adding workers
         workforce = Workforce(
             'A workforce',
             graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
             share_memory=False,
-            coordinator_agent_kwargs=coordinator_agent_kwargs,
-            task_agent_kwargs=task_agent_kwargs,
-            new_worker_agent_kwargs=new_worker_agent_kwargs,
+            coordinator_agent=coordinator_agent,
+            task_agent=task_agent,
+            new_worker_agent=new_worker_agent,
         )
 
         workforce.add_single_agent_worker(

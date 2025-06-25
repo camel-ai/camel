@@ -19,7 +19,7 @@ import time
 import uuid
 from collections import deque
 from enum import Enum
-from typing import Any, Coroutine, Deque, Dict, List, Optional
+from typing import Any, Coroutine, Deque, Dict, List, Optional, Set, Tuple
 
 from colorama import Fore
 
@@ -37,6 +37,7 @@ from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
+    TaskAssignment,
     TaskAssignResult,
     WorkerConf,
     check_if_running,
@@ -110,27 +111,24 @@ class Workforce(BaseNode):
         children (Optional[List[BaseNode]], optional): List of child nodes
             under this node. Each child node can be a worker node or
             another workforce node. (default: :obj:`None`)
-        coordinator_agent_kwargs (Optional[Dict], optional): Keyword
-            arguments passed directly to the coordinator :obj:`ChatAgent`
-            constructor. The coordinator manages task assignment and failure
-            handling strategies. See :obj:`ChatAgent` documentation
-            for all available parameters.
-            (default: :obj:`None` - uses ModelPlatformType.DEFAULT,
-            ModelType.DEFAULT)
-        task_agent_kwargs (Optional[Dict], optional): Keyword arguments
-            passed directly to the task planning :obj:`ChatAgent` constructor.
-            The task agent handles task decomposition into subtasks and result
-            composition. See :obj:`ChatAgent` documentation for all
-            available parameters.
-            (default: :obj:`None` - uses ModelPlatformType.DEFAULT,
-            ModelType.DEFAULT)
-        new_worker_agent_kwargs (Optional[Dict], optional): Default keyword
-            arguments passed to :obj:`ChatAgent` constructor for workers
-            created dynamically at runtime when existing workers cannot handle
-            failed tasks. See :obj:`ChatAgent` documentation for all
-            available parameters.
-            (default: :obj:`None` - creates workers with SearchToolkit,
-            CodeExecutionToolkit, and ThinkingToolkit)
+        coordinator_agent (Optional[ChatAgent], optional): A custom coordinator
+            agent instance for task assignment and worker creation. If
+            provided, the workforce will create a new agent using this agent's
+            model configuration but with the required system message and
+            functionality.
+            If None, a default agent will be created using DEFAULT model
+            settings. (default: :obj:`None`)
+        task_agent (Optional[ChatAgent], optional): A custom task planning
+            agent instance for task decomposition and composition. If
+            provided, the workforce will create a new agent using this agent's
+            model configuration but with the required system message and tools
+            (TaskPlanningToolkit). If None, a default agent will be created
+            using DEFAULT model settings. (default: :obj:`None`)
+        new_worker_agent (Optional[ChatAgent], optional): A template agent for
+            workers created dynamically at runtime when existing workers cannot
+            handle failed tasks. If None, workers will be created with default
+            settings including SearchToolkit, CodeExecutionToolkit, and
+            ThinkingToolkit. (default: :obj:`None`)
         graceful_shutdown_timeout (float, optional): The timeout in seconds
             for graceful shutdown when a task fails 3 times. During this
             period, the workforce remains active for debugging.
@@ -146,40 +144,59 @@ class Workforce(BaseNode):
             (default: :obj:`False`)
 
     Example:
-        >>> # Configure with custom model and shared memory
         >>> import asyncio
+        >>> from camel.agents import ChatAgent
+        >>> from camel.models import ModelFactory
+        >>> from camel.types import ModelPlatformType, ModelType
+        >>> from camel.tasks import Task
+        >>>
+        >>> # Simple workforce with default agents
+        >>> workforce = Workforce("Research Team")
+        >>>
+        >>> # Workforce with custom model configuration
         >>> model = ModelFactory.create(
-        ...     ModelPlatformType.OPENAI, ModelType.GPT_4O
+        ...     ModelPlatformType.OPENAI, model_type=ModelType.GPT_4O
         ... )
+        >>> coordinator_agent = ChatAgent(model=model)
+        >>> task_agent = ChatAgent(model=model)
+        >>>
         >>> workforce = Workforce(
         ...     "Research Team",
-        ...     coordinator_agent_kwargs={"model": model, "token_limit": 4000},
-        ...     task_agent_kwargs={"model": model, "token_limit": 8000},
-        ...     share_memory=True  # Enable shared memory
+        ...     coordinator_agent=coordinator_agent,
+        ...     task_agent=task_agent,
         ... )
         >>>
         >>> # Process a task
         >>> async def main():
         ...     task = Task(content="Research AI trends", id="1")
-        ...     result = workforce.process_task(task)
+        ...     result = await workforce.process_task_async(task)
         ...     return result
-        >>> asyncio.run(main())
+        >>>
+        >>> result_task = asyncio.run(main())
+
+    Note:
+        When custom coordinator_agent or task_agent are provided, the workforce
+        will preserve the user's system message and append the required
+        workforce coordination or task planning instructions to it. This
+        ensures both the user's intent is preserved and proper workforce
+        functionality is maintained. All other agent configurations (model,
+        memory, tools, etc.) will also be preserved.
     """
 
     def __init__(
         self,
         description: str,
         children: Optional[List[BaseNode]] = None,
-        coordinator_agent_kwargs: Optional[Dict] = None,
-        task_agent_kwargs: Optional[Dict] = None,
-        new_worker_agent_kwargs: Optional[Dict] = None,
+        coordinator_agent: Optional[ChatAgent] = None,
+        task_agent: Optional[ChatAgent] = None,
+        new_worker_agent: Optional[ChatAgent] = None,  # TODO: use MCP Agent
         graceful_shutdown_timeout: float = 15.0,
         share_memory: bool = False,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children or []
-        self.new_worker_agent_kwargs = new_worker_agent_kwargs
+        self.new_worker_agent = new_worker_agent
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
         self.share_memory = share_memory
         self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
@@ -213,58 +230,72 @@ class Workforce(BaseNode):
                     role=role_or_desc,
                 )
 
-        # Warning messages for default model usage
-        if coordinator_agent_kwargs is None:
-            logger.warning(
-                "No coordinator_agent_kwargs provided. Using default "
-                "ChatAgent settings (ModelPlatformType.DEFAULT, "
-                "ModelType.DEFAULT). To customize the coordinator agent "
-                "that assigns tasks and handles failures, pass a dictionary "
-                "with ChatAgent parameters, e.g.: {'model': your_model, "
-                "'tools': your_tools, 'token_limit': 8000}. See ChatAgent "
-                "documentation for all available options."
-            )
-        if task_agent_kwargs is None:
-            logger.warning(
-                "No task_agent_kwargs provided. Using default ChatAgent "
-                "settings (ModelPlatformType.DEFAULT, ModelType.DEFAULT). "
-                "To customize the task planning agent that "
-                "decomposes/composes tasks, pass a dictionary with "
-                "ChatAgent parameters, e.g.: {'model': your_model, "
-                "'token_limit': 16000}. See ChatAgent documentation for "
-                "all available options."
-            )
-        if new_worker_agent_kwargs is None:
-            logger.warning(
-                "No new_worker_agent_kwargs provided. Workers created at "
-                "runtime will use default ChatAgent settings with "
-                "SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. "
-                "To customize runtime worker creation, pass a dictionary "
-                "with ChatAgent parameters, e.g.: {'model': your_model, "
-                "'tools': your_tools}. See ChatAgent documentation for all "
-                "available options."
-            )
-
-        if self.share_memory:
-            logger.info(
-                "Shared memory enabled. All agents will share their complete "
-                "conversation history and function-calling trajectory for "
-                "better context continuity during task handoffs."
-            )
-
+        # Set up coordinator agent with default system message
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
             role_name="Workforce Manager",
-            content="You are coordinating a group of workers. A worker can be "
-            "a group of agents or a single agent. Each worker is "
+            content="You are coordinating a group of workers. A worker "
+            "can be a group of agents or a single agent. Each worker is "
             "created to solve a specific kind of task. Your job "
             "includes assigning tasks to a existing worker, creating "
             "a new worker for a task, etc.",
         )
-        self.coordinator_agent = ChatAgent(
-            coord_agent_sys_msg,
-            **(coordinator_agent_kwargs or {}),
-        )
 
+        if coordinator_agent is None:
+            logger.warning(
+                "No coordinator_agent provided. Using default "
+                "ChatAgent settings (ModelPlatformType.DEFAULT, "
+                "ModelType.DEFAULT) with default system message."
+            )
+            self.coordinator_agent = ChatAgent(coord_agent_sys_msg)
+        else:
+            logger.info(
+                "Custom coordinator_agent provided. Preserving user's "
+                "system message and appending workforce coordination "
+                "instructions to ensure proper functionality."
+            )
+
+            if coordinator_agent.system_message is not None:
+                user_sys_msg_content = coordinator_agent.system_message.content
+                combined_content = (
+                    f"{user_sys_msg_content}\n\n"
+                    f"{coord_agent_sys_msg.content}"
+                )
+                combined_sys_msg = BaseMessage.make_assistant_message(
+                    role_name=coordinator_agent.system_message.role_name,
+                    content=combined_content,
+                )
+            else:
+                combined_sys_msg = coord_agent_sys_msg
+
+            # Create a new agent with the provided agent's configuration
+            # but with the combined system message
+            self.coordinator_agent = ChatAgent(
+                system_message=combined_sys_msg,
+                model=coordinator_agent.model_backend,
+                memory=coordinator_agent.memory,
+                message_window_size=getattr(
+                    coordinator_agent.memory, "window_size", None
+                ),
+                token_limit=getattr(
+                    coordinator_agent.memory.get_context_creator(),
+                    "token_limit",
+                    None,
+                ),
+                output_language=coordinator_agent.output_language,
+                tools=[
+                    tool.func
+                    for tool in coordinator_agent._internal_tools.values()
+                ],
+                external_tools=[
+                    schema
+                    for schema in coordinator_agent._external_tool_schemas.values()  # noqa: E501
+                ],
+                response_terminators=coordinator_agent.response_terminators,
+                max_iteration=coordinator_agent.max_iteration,
+                stop_event=coordinator_agent.stop_event,
+            )
+
+        # Set up task agent with default system message and required tools
         task_sys_msg = BaseMessage.make_assistant_message(
             role_name="Task Planner",
             content="You are going to compose and decompose tasks. Keep "
@@ -274,13 +305,83 @@ class Workforce(BaseNode):
             "of agents. This ensures efficient execution by minimizing "
             "context switching between agents.",
         )
-        _task_agent_kwargs = dict(task_agent_kwargs or {})
-        extra_tools = TaskPlanningToolkit().get_tools()
-        _task_agent_kwargs["tools"] = [
-            *_task_agent_kwargs.get("tools", []),
-            *extra_tools,
-        ]
-        self.task_agent = ChatAgent(task_sys_msg, **_task_agent_kwargs)
+        task_planning_tools = TaskPlanningToolkit().get_tools()
+
+        if task_agent is None:
+            logger.warning(
+                "No task_agent provided. Using default ChatAgent "
+                "settings (ModelPlatformType.DEFAULT, ModelType.DEFAULT) "
+                "with default system message and TaskPlanningToolkit."
+            )
+            self.task_agent = ChatAgent(
+                task_sys_msg,
+                tools=TaskPlanningToolkit().get_tools(),  # type: ignore[arg-type]
+            )
+        else:
+            logger.info(
+                "Custom task_agent provided. Preserving user's "
+                "system message and appending task planning "
+                "instructions to ensure proper functionality."
+            )
+
+            if task_agent.system_message is not None:
+                user_task_sys_msg_content = task_agent.system_message.content
+                combined_task_content = (
+                    f"{user_task_sys_msg_content}\n\n"
+                    f"{task_sys_msg.content}"
+                )
+                combined_task_sys_msg = BaseMessage.make_assistant_message(
+                    role_name=task_agent.system_message.role_name,
+                    content=combined_task_content,
+                )
+            else:
+                combined_task_sys_msg = task_sys_msg
+
+            # Since ChatAgent constructor uses a dictionary with
+            # function names as keys, we don't need to manually deduplicate.
+            combined_tools = [
+                tool.func for tool in task_agent._internal_tools.values()
+            ] + [tool.func for tool in task_planning_tools]
+
+            # Create a new agent with the provided agent's configuration
+            # but with the combined system message and tools
+            self.task_agent = ChatAgent(
+                system_message=combined_task_sys_msg,
+                model=task_agent.model_backend,
+                memory=task_agent.memory,
+                message_window_size=getattr(
+                    task_agent.memory, "window_size", None
+                ),
+                token_limit=getattr(
+                    task_agent.memory.get_context_creator(),
+                    "token_limit",
+                    None,
+                ),
+                output_language=task_agent.output_language,
+                tools=combined_tools,
+                external_tools=[
+                    schema
+                    for schema in task_agent._external_tool_schemas.values()
+                ],
+                response_terminators=task_agent.response_terminators,
+                max_iteration=task_agent.max_iteration,
+                stop_event=task_agent.stop_event,
+            )
+
+        if new_worker_agent is None:
+            logger.info(
+                "No new_worker_agent provided. Workers created at runtime "
+                "will use default ChatAgent settings with SearchToolkit, "
+                "CodeExecutionToolkit, and ThinkingToolkit. To customize "
+                "runtime worker creation, pass a ChatAgent instance."
+            )
+
+        if self.share_memory:
+            logger.info(
+                "Shared memory enabled. All agents will share their complete "
+                "conversation history and function-calling trajectory for "
+                "better context continuity during task handoffs."
+            )
 
     def __repr__(self):
         return (
@@ -1164,6 +1265,195 @@ class Workforce(BaseNode):
             )
         return info
 
+    def _get_valid_worker_ids(self) -> set:
+        r"""Get all valid worker IDs from child nodes.
+
+        Returns:
+            set: Set of valid worker IDs that can be assigned tasks.
+        """
+        valid_worker_ids = {child.node_id for child in self._children}
+        return valid_worker_ids
+
+    def _call_coordinator_for_assignment(
+        self, tasks: List[Task], invalid_ids: Optional[List[str]] = None
+    ) -> TaskAssignResult:
+        r"""Call coordinator agent to assign tasks with optional validation
+        feedback in the case of invalid worker IDs.
+
+        Args:
+            tasks (List[Task]): Tasks to assign.
+            invalid_ids (List[str], optional): Invalid worker IDs from previous
+                attempt (if any).
+
+        Returns:
+            TaskAssignResult: Assignment result from coordinator.
+        """
+        # format tasks information for the prompt
+        tasks_info = ""
+        for task in tasks:
+            tasks_info += f"Task ID: {task.id}\n"
+            tasks_info += f"Content: {task.content}\n"
+            if task.additional_info:
+                tasks_info += f"Additional Info: {task.additional_info}\n"
+            tasks_info += "---\n"
+
+        prompt = str(
+            ASSIGN_TASK_PROMPT.format(
+                tasks_info=tasks_info,
+                child_nodes_info=self._get_child_nodes_info(),
+            )
+        )
+
+        # add feedback if this is a retry
+        if invalid_ids:
+            valid_worker_ids = list(self._get_valid_worker_ids())
+            feedback = (
+                f"VALIDATION ERROR: The following worker IDs are invalid: "
+                f"{invalid_ids}. "
+                f"VALID WORKER IDS: {valid_worker_ids}. "
+                f"Please reassign ONLY the above tasks using these valid IDs."
+            )
+            prompt = prompt + f"\n\n{feedback}"
+
+        response = self.coordinator_agent.step(
+            prompt, response_format=TaskAssignResult
+        )
+
+        if response.msg is None or response.msg.content is None:
+            logger.error(
+                "Coordinator agent returned empty response for task assignment"
+            )
+            return TaskAssignResult(assignments=[])
+
+        result_dict = json.loads(response.msg.content, parse_int=str)
+        return TaskAssignResult(**result_dict)
+
+    def _validate_assignments(
+        self, assignments: List[TaskAssignment], valid_ids: Set[str]
+    ) -> Tuple[List[TaskAssignment], List[TaskAssignment]]:
+        r"""Validate task assignments against valid worker IDs.
+
+        Args:
+            assignments (List[TaskAssignment]): Assignments to validate.
+            valid_ids (Set[str]): Set of valid worker IDs.
+
+        Returns:
+            Tuple[List[TaskAssignment], List[TaskAssignment]]:
+                (valid_assignments, invalid_assignments)
+        """
+        valid_assignments: List[TaskAssignment] = []
+        invalid_assignments: List[TaskAssignment] = []
+
+        for assignment in assignments:
+            if assignment.assignee_id in valid_ids:
+                valid_assignments.append(assignment)
+            else:
+                invalid_assignments.append(assignment)
+
+        return valid_assignments, invalid_assignments
+
+    def _handle_task_assignment_fallbacks(self, tasks: List[Task]) -> List:
+        r"""Create new workers for unassigned tasks as fallback.
+
+        Args:
+            tasks (List[Task]): Tasks that need new workers.
+
+        Returns:
+            List[TaskAssignment]: Assignments for newly created workers.
+        """
+        fallback_assignments = []
+
+        for task in tasks:
+            logger.info(f"Creating new worker for unassigned task {task.id}")
+            new_worker = self._create_worker_node_for_task(task)
+
+            assignment = TaskAssignment(
+                task_id=task.id,
+                assignee_id=new_worker.node_id,
+                dependencies=[],
+            )
+            fallback_assignments.append(assignment)
+
+        return fallback_assignments
+
+    def _handle_assignment_retry_and_fallback(
+        self,
+        invalid_assignments: List[TaskAssignment],
+        tasks: List[Task],
+        valid_worker_ids: Set[str],
+    ) -> List[TaskAssignment]:
+        r"""Called if Coordinator agent fails to assign tasks to valid worker
+        IDs. Handles retry assignment and fallback worker creation for invalid
+        assignments.
+
+        Args:
+            invalid_assignments (List[TaskAssignment]): Invalid assignments to
+                retry.
+            tasks (List[Task]): Original tasks list for task lookup.
+            valid_worker_ids (set): Set of valid worker IDs.
+
+        Returns:
+            List[TaskAssignment]: Final assignments for the invalid tasks.
+        """
+        invalid_ids = [a.assignee_id for a in invalid_assignments]
+        invalid_tasks = [
+            task
+            for task in tasks
+            if any(a.task_id == task.id for a in invalid_assignments)
+        ]
+
+        # handle cases where coordinator returned no assignments at all
+        if not invalid_assignments:
+            invalid_tasks = tasks  # all tasks need assignment
+            logger.warning(
+                f"Coordinator returned no assignments. "
+                f"Retrying assignment for all {len(invalid_tasks)} tasks."
+            )
+        else:
+            logger.warning(
+                f"Invalid worker IDs detected: {invalid_ids}. "
+                f"Retrying assignment for {len(invalid_tasks)} tasks."
+            )
+
+        # retry assignment with feedback
+        retry_result = self._call_coordinator_for_assignment(
+            invalid_tasks, invalid_ids
+        )
+        final_assignments = []
+
+        if retry_result.assignments:
+            retry_valid, retry_invalid = self._validate_assignments(
+                retry_result.assignments, valid_worker_ids
+            )
+            final_assignments.extend(retry_valid)
+
+            # collect tasks that are still unassigned for fallback
+            if retry_invalid:
+                unassigned_tasks = [
+                    task
+                    for task in invalid_tasks
+                    if any(a.task_id == task.id for a in retry_invalid)
+                ]
+            else:
+                unassigned_tasks = []
+        else:
+            # retry failed completely, all invalid tasks need fallback
+            logger.warning("Retry assignment failed")
+            unassigned_tasks = invalid_tasks
+
+        # handle fallback for any remaining unassigned tasks
+        if unassigned_tasks:
+            logger.warning(
+                f"Creating fallback workers for {len(unassigned_tasks)} "
+                f"unassigned tasks"
+            )
+            fallback_assignments = self._handle_task_assignment_fallbacks(
+                unassigned_tasks
+            )
+            final_assignments.extend(fallback_assignments)
+
+        return final_assignments
+
     def _find_assignee(
         self,
         tasks: List[Task],
@@ -1178,39 +1468,41 @@ class Workforce(BaseNode):
                 with their dependencies.
         """
         self.coordinator_agent.reset()
-
-        # Format tasks information for the prompt
-        tasks_info = ""
-        for task in tasks:
-            tasks_info += f"Task ID: {task.id}\n"
-            tasks_info += f"Content: {task.content}\n"
-            if task.additional_info:
-                tasks_info += f"Additional Info: {task.additional_info}\n"
-            tasks_info += "---\n"
-
-        prompt = ASSIGN_TASK_PROMPT.format(
-            tasks_info=tasks_info,
-            child_nodes_info=self._get_child_nodes_info(),
-        )
+        valid_worker_ids = self._get_valid_worker_ids()
 
         logger.debug(
             f"Sending batch assignment request to coordinator "
             f"for {len(tasks)} tasks."
         )
 
-        response = self.coordinator_agent.step(
-            prompt, response_format=TaskAssignResult
-        )
-        if response.msg is None or response.msg.content is None:
-            logger.error(
-                "Coordinator agent returned empty response for task assignment"
-            )
-            # Return empty result as fallback
-            return TaskAssignResult(assignments=[])
+        assignment_result = self._call_coordinator_for_assignment(tasks)
 
-        result_dict = json.loads(response.msg.content, parse_int=str)
-        task_assign_result = TaskAssignResult(**result_dict)
-        return task_assign_result
+        # validate assignments
+        valid_assignments, invalid_assignments = self._validate_assignments(
+            assignment_result.assignments, valid_worker_ids
+        )
+
+        # check if we have assignments for all tasks
+        assigned_task_ids = {
+            a.task_id for a in valid_assignments + invalid_assignments
+        }
+        unassigned_tasks = [t for t in tasks if t.id not in assigned_task_ids]
+
+        # if all assignments are valid and all tasks are assigned, return early
+        if not invalid_assignments and not unassigned_tasks:
+            return TaskAssignResult(assignments=valid_assignments)
+
+        # handle retry and fallback for
+        # invalid assignments and unassigned tasks
+        all_problem_assignments = invalid_assignments
+        retry_and_fallback_assignments = (
+            self._handle_assignment_retry_and_fallback(
+                all_problem_assignments, tasks, valid_worker_ids
+            )
+        )
+        valid_assignments.extend(retry_and_fallback_assignments)
+
+        return TaskAssignResult(assignments=valid_assignments)
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
         # Record the start time when a task is posted
@@ -1294,23 +1586,23 @@ class Workforce(BaseNode):
             content=sys_msg,
         )
 
-        if self.new_worker_agent_kwargs is not None:
-            return ChatAgent(worker_sys_msg, **self.new_worker_agent_kwargs)
+        if self.new_worker_agent is not None:
+            return self.new_worker_agent
+        else:
+            # Default tools for a new agent
+            function_list = [
+                SearchToolkit().search_duckduckgo,
+                *CodeExecutionToolkit().get_tools(),
+                *ThinkingToolkit().get_tools(),
+            ]
 
-        # Default tools for a new agent
-        function_list = [
-            SearchToolkit().search_duckduckgo,
-            *CodeExecutionToolkit().get_tools(),
-            *ThinkingToolkit().get_tools(),
-        ]
+            model = ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+                model_config_dict={"temperature": 0},
+            )
 
-        model = ModelFactory.create(
-            model_platform=ModelPlatformType.DEFAULT,
-            model_type=ModelType.DEFAULT,
-            model_config_dict={"temperature": 0},
-        )
-
-        return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
+            return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
 
     async def _get_returned_task(self) -> Task:
         r"""Get the task that's published by this node and just get returned
@@ -1796,26 +2088,15 @@ class Workforce(BaseNode):
         """
 
         # Create a new instance with the same configuration
-        # Extract the original kwargs from the agents to properly clone them
-        coordinator_kwargs = (
-            getattr(self.coordinator_agent, 'init_kwargs', {}) or {}
-        )
-        task_kwargs = getattr(self.task_agent, 'init_kwargs', {}) or {}
-
         new_instance = Workforce(
             description=self.description,
-            coordinator_agent_kwargs=coordinator_kwargs.copy(),
-            task_agent_kwargs=task_kwargs.copy(),
-            new_worker_agent_kwargs=self.new_worker_agent_kwargs.copy()
-            if self.new_worker_agent_kwargs
+            coordinator_agent=self.coordinator_agent.clone(with_memory),
+            task_agent=self.task_agent.clone(with_memory),
+            new_worker_agent=self.new_worker_agent.clone(with_memory)
+            if self.new_worker_agent
             else None,
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
-        )
-
-        new_instance.task_agent = self.task_agent.clone(with_memory)
-        new_instance.coordinator_agent = self.coordinator_agent.clone(
-            with_memory
         )
 
         for child in self._children:

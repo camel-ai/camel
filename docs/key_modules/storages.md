@@ -59,6 +59,14 @@ The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving
     **WeaviateStorage**
     - For [Weaviate](https://weaviate.io/) (open-source vector engine)
     - Schema-based, semantic search, hybrid queries
+
+    **ChromaStorage**
+    - For [ChromaDB](https://www.trychroma.com/) (AI-native open-source embedding database)  
+    - Simple API, scales from notebook to production
+
+    **PgVectorStorage**
+    - For [PostgreSQL with pgvector](https://github.com/pgvector/pgvector) (open-source vector engine)
+    - Leverages PostgreSQL for vector search
   </Accordion>
 
   <Accordion title="Graph Storages" icon="chart-waterfall">
@@ -240,6 +248,49 @@ Here are practical usage patterns for each storage type—pick the ones you need
     <Tab title="Output">
       ```markdown
       >>> {'key2': 'value2'} 0.5669467095138407
+      ```
+    </Tab>
+  </Tabs>
+</Card>
+
+---
+
+<Card title="ChromaDB Vector Storage" icon="database">
+  <b>Use for:</b> Fastest way to build LLM apps with memory and embeddings.  
+  <b>Perfect for:</b> From prototyping in notebooks to production clusters with the same simple API.
+
+  <Tabs>
+    <Tab title="Python Example">
+      ```python
+      from camel.storages import ChromaStorage, VectorDBQuery, VectorRecord
+      from camel.types import VectorDistance
+
+      # Create ChromaStorage instance with ephemeral (in-memory) client
+      chroma_storage = ChromaStorage(
+          vector_dim=4,
+          collection_name="camel_example_vectors",
+          client_type="ephemeral",  # or "persistent", "http", "cloud"
+          distance=VectorDistance.COSINE,
+      )
+
+      # Add vector records
+      chroma_storage.add([
+          VectorRecord(vector=[-0.1, 0.1, -0.1, 0.1], payload={'key1': 'value1'}),
+          VectorRecord(vector=[-0.1, 0.1, 0.1, 0.1], payload={'key2': 'value2'}),
+      ])
+
+      # Query similar vectors
+      query_results = chroma_storage.query(VectorDBQuery(query_vector=[0.1, 0.2, 0.1, 0.1], top_k=1))
+      for result in query_results:
+          print(result.record.payload, result.similarity)
+
+      # Clear all vectors
+      chroma_storage.clear()
+      ```
+    </Tab>
+    <Tab title="Output">
+      ```markdown
+      >>> {'key2': 'value2'} 0.7834733426570892
       ```
     </Tab>
   </Tabs>

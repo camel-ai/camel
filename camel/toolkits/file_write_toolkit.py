@@ -165,10 +165,28 @@ class FileWriteToolkit(BaseToolkit):
 
             doc = Document(documentclass="article")
             doc.packages.append(Command('usepackage', 'amsmath'))
-
             with doc.create(Section('Generated Content')):
                 for line in content.split('\n'):
                     stripped_line = line.strip()
+
+                    # Skip empty lines
+                    if not stripped_line:
+                        continue
+
+                    # Convert Markdown-like headers
+                    if stripped_line.startswith('## '):
+                        header = stripped_line[3:]
+                        doc.append(NoEscape(r'\subsection*{%s}' % header))
+                        continue
+                    elif stripped_line.startswith('# '):
+                        header = stripped_line[2:]
+                        doc.append(NoEscape(r'\section*{%s}' % header))
+                        continue
+                    elif stripped_line.strip() == '---':
+                        doc.append(NoEscape(r'\hrule'))
+                        continue
+
+                    # Detect standalone math expressions like $...$
                     if (
                         stripped_line.startswith('$')
                         and stripped_line.endswith('$')
@@ -177,10 +195,11 @@ class FileWriteToolkit(BaseToolkit):
                         math_data = stripped_line[1:-1]
                         doc.append(Math(data=math_data))
                     else:
-                        doc.append(NoEscape(line))
+                        doc.append(NoEscape(stripped_line))
                     doc.append(NoEscape(r'\par'))
 
-            doc.generate_pdf(str(file_path), clean_tex=False)
+                doc.generate_pdf(str(file_path), clean_tex=True)
+
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
             try:

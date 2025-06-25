@@ -426,9 +426,11 @@
               "reference/camel.storages.object_storages.base",
               "reference/camel.storages.object_storages.google_cloud",
               "reference/camel.storages.vectordb_storages.base",
+              "reference/camel.storages.vectordb_storages.chroma",
               "reference/camel.storages.vectordb_storages.faiss",
               "reference/camel.storages.vectordb_storages.milvus",
               "reference/camel.storages.vectordb_storages.oceanbase",
+              "reference/camel.storages.vectordb_storages.pgvector",
               "reference/camel.storages.vectordb_storages.qdrant",
               "reference/camel.storages.vectordb_storages.tidb",
               "reference/camel.storages.vectordb_storages.weaviate"
