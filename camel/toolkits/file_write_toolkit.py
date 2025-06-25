@@ -146,7 +146,7 @@ class FileWriteToolkit(BaseToolkit):
         document.save(str(file_path))
         logger.debug(f"Wrote DOCX to {file_path} with default formatting")
 
-    @dependencies_required('pylatex', 'weasyprint', 'markdown')
+    @dependencies_required('pylatex', 'fpdf')
     def _write_pdf_file(
         self, file_path: Path, content: str, use_latex: bool = False
     ) -> None:
@@ -156,12 +156,23 @@ class FileWriteToolkit(BaseToolkit):
             file_path (Path): The target file path.
             content (str): The text content to write.
             use_latex (bool): Whether to use LaTeX for rendering. (requires
-                LaTeX toolchain). If False, uses Markdown and WeasyPrint for
-                Markdown->HTML->PDF rendering.
+                LaTeX toolchain). If False, uses FPDF for simpler PDF
+                generation. (default: :obj:`False`)
+
+        Raises:
+            RuntimeError: If the 'pylatex' or 'fpdf' library is not installed
+                when use_latex=True.
         """
         if use_latex:
-            from pylatex import Command, Document, Math, Section
-            from pylatex.utils import NoEscape
+            from pylatex import (
+                Command,
+                Document,
+                Math,
+                Section,
+            )
+            from pylatex.utils import (
+                NoEscape,
+            )
 
             doc = Document(documentclass="article")
             doc.packages.append(Command('usepackage', 'amsmath'))
@@ -202,50 +213,30 @@ class FileWriteToolkit(BaseToolkit):
 
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
-            try:
-                from bs4 import BeautifulSoup
-                from markdown import markdown as md_to_html
-                from xhtml2pdf import pisa  # type: ignore[import]
+            from fpdf import FPDF
 
-                STYLE = """
-                <style>
-                body {
-                    font-family: Helvetica, sans-serif;
-                    font-size: 12pt;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin: 10px 0;
-                }
-                th, td {
-                    border: 1px solid #666;
-                    padding: 6px 8px;
-                    text-align: left;
-                }
-                th {
-                    background-color: #f0f0f0;
-                }
-                </style>
-                """
+            # Use default formatting values
+            font_family = 'Arial'
+            font_size = 12
+            font_style = ''
+            line_height = 10
+            margin = 10
 
-                html_body = md_to_html(content, extensions=["tables"])
+            pdf = FPDF()
+            pdf.set_margins(margin, margin, margin)
 
-                html_fixed = str(BeautifulSoup(html_body, "html5lib"))
+            pdf.add_page()
+            pdf.set_font(font_family, style=font_style, size=font_size)
 
-                html_source = STYLE + html_fixed
+            # Split content into paragraphs and add them
+            for para in content.split('\n'):
+                if para.strip():  # Skip empty paragraphs
+                    pdf.multi_cell(0, line_height, para)
+                else:
+                    pdf.ln(line_height)  # Add empty line
 
-                with open(file_path, "w+b") as result_file:
-                    pisa_status = pisa.CreatePDF(html_source, dest=result_file)
-
-                    if pisa_status.err:
-                        print("An error occurred!")
-
-                logger.info(f"Wrote PDF to {file_path}")
-
-            except Exception as e:
-                logger.exception("Failed to write PDF.")
-                raise RuntimeError("Failed to generate PDF: " + str(e))
+            pdf.output(str(file_path))
+            logger.debug(f"Wrote PDF to {file_path} with custom formatting")
 
     def _write_csv_file(
         self,
@@ -257,10 +248,9 @@ class FileWriteToolkit(BaseToolkit):
 
         Args:
             file_path (Path): The target file path.
-            content (Union[str, List[List]]): The CSV content
-                as a string or list of lists.
-            encoding (str): Character encoding to use.
-                (default: :obj:`utf-8`)
+            content (Union[str, List[List]]): The CSV content as a string or
+                list of lists.
+            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
         """
         import csv
 
@@ -283,8 +273,7 @@ class FileWriteToolkit(BaseToolkit):
         Args:
             file_path (Path): The target file path.
             content (str): The JSON content as a string.
-            encoding (str): Character encoding to use.
-                (default: :obj:`utf-8`)
+            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
         """
         import json
 
@@ -372,7 +361,7 @@ class FileWriteToolkit(BaseToolkit):
             encoding (Optional[str]): The character encoding to use. (default:
                 :obj: `None`)
             use_latex (bool): For PDF files, whether to use LaTeX rendering
-                (True) or simple PDF rendering (False). (default: :obj:
+                (True) or simple FPDF rendering (False). (default: :obj:
                 `False`)
 
         Returns:
