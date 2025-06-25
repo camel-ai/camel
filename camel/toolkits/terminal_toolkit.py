@@ -187,7 +187,8 @@ class TerminalToolkit(BaseToolkit):
             logger.error(f"Failed to create environment: {e}")
 
     def _create_terminal(self):
-        r"""Create a terminal GUI."""
+        r"""Create a terminal GUI. If GUI creation fails, fallback
+        to file output."""
 
         try:
             import tkinter as tk
@@ -239,7 +240,12 @@ class TerminalToolkit(BaseToolkit):
             self.root.mainloop()
 
         except Exception as e:
-            logger.error(f"Failed to create terminal: {e}")
+            logger.warning(
+                f"Failed to create GUI terminal: {e}, "
+                f"falling back to file output mode"
+            )
+            # Fallback to file output mode when GUI creation fails
+            self._setup_file_output()
             self.terminal_ready.set()
 
     def _update_terminal_output(self, output: str):
@@ -249,8 +255,9 @@ class TerminalToolkit(BaseToolkit):
             output (str): The output to be sent to the agent
         """
         try:
-            # If it is macOS , only write to file
-            if self.is_macos:
+            # If it is macOS or if we have a log_file (fallback mode),
+            # write to file
+            if self.is_macos or hasattr(self, 'log_file'):
                 if hasattr(self, 'log_file'):
                     with open(self.log_file, "a") as f:
                         f.write(output)

@@ -499,54 +499,68 @@ class WorkforceLogger:
 
         tasks_handled_by_worker: Dict[str, int] = {}
 
+        # Helper function to check if a task is the main task (has no parent)
+        def is_main_task(task_id: str) -> bool:
+            return (
+                task_id in self._task_hierarchy
+                and self._task_hierarchy[task_id].get('parent') is None
+            )
+
         for entry in self.log_entries:
             event_type = entry['event_type']
             timestamp = datetime.fromisoformat(entry['timestamp'])
+            task_id = entry.get('task_id', '')
+
             if first_timestamp is None or timestamp < first_timestamp:
                 first_timestamp = timestamp
             if last_timestamp is None or timestamp > last_timestamp:
                 last_timestamp = timestamp
 
             if event_type == 'task_created':
-                kpis['total_tasks_created'] += 1
-                task_creation_timestamps[entry['task_id']] = timestamp
+                # Exclude main task from total count
+                if not is_main_task(task_id):
+                    kpis['total_tasks_created'] += 1
+                task_creation_timestamps[task_id] = timestamp
             elif event_type == 'task_assigned':
-                task_assignment_timestamps[entry['task_id']] = timestamp
+                task_assignment_timestamps[task_id] = timestamp
                 # Queue time tracking has been removed
 
             elif event_type == 'task_started':
                 # Store start time for processing time calculation
-                task_start_times[entry['task_id']] = timestamp.timestamp()
+                task_start_times[task_id] = timestamp.timestamp()
 
             elif event_type == 'task_completed':
-                kpis['total_tasks_completed'] += 1
-                # Count tasks handled by worker
-                if 'worker_id' in entry and entry['worker_id'] is not None:
-                    worker_id = entry['worker_id']
-                    tasks_handled_by_worker[worker_id] = (
-                        tasks_handled_by_worker.get(worker_id, 0) + 1
-                    )
+                # Exclude main task from total count
+                if not is_main_task(task_id):
+                    kpis['total_tasks_completed'] += 1
+                    # Count tasks handled by worker (only for non-main tasks)
+                    if 'worker_id' in entry and entry['worker_id'] is not None:
+                        worker_id = entry['worker_id']
+                        tasks_handled_by_worker[worker_id] = (
+                            tasks_handled_by_worker.get(worker_id, 0) + 1
+                        )
 
-                if entry['task_id'] in task_assignment_timestamps:
+                if task_id in task_assignment_timestamps:
                     completion_time = (
-                        timestamp
-                        - task_assignment_timestamps[entry['task_id']]
+                        timestamp - task_assignment_timestamps[task_id]
                     ).total_seconds()
                     # Store completion time in task hierarchy instead of KPIs
                     # array
-                    if entry['task_id'] in self._task_hierarchy:
-                        self._task_hierarchy[entry['task_id']][
+                    if task_id in self._task_hierarchy:
+                        self._task_hierarchy[task_id][
                             'completion_time_seconds'
                         ] = completion_time
 
             elif event_type == 'task_failed':
-                kpis['total_tasks_failed'] += 1
-                # Count tasks handled by worker (also for failed tasks)
-                if 'worker_id' in entry and entry['worker_id'] is not None:
-                    worker_id = entry['worker_id']
-                    tasks_handled_by_worker[worker_id] = (
-                        tasks_handled_by_worker.get(worker_id, 0) + 1
-                    )
+                # Exclude main task from total count
+                if not is_main_task(task_id):
+                    kpis['total_tasks_failed'] += 1
+                    # Count tasks handled by worker (only for non-main tasks)
+                    if 'worker_id' in entry and entry['worker_id'] is not None:
+                        worker_id = entry['worker_id']
+                        tasks_handled_by_worker[worker_id] = (
+                            tasks_handled_by_worker.get(worker_id, 0) + 1
+                        )
                 error_type = entry['error_type']
                 kpis['error_types_count'][error_type] = (
                     kpis['error_types_count'].get(error_type, 0) + 1
