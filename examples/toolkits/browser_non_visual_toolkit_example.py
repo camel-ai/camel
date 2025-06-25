@@ -64,7 +64,6 @@ If the registration window can be closed, please close it.
 
 async def main() -> None:
     response = await agent.astep(TASK_PROMPT)
-    print(response)
     print("Task:", TASK_PROMPT)
     print(f"Using user data directory: {USER_DATA_DIR}\n")
     print("Response from agent:")
