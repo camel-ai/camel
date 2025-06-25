@@ -209,7 +209,7 @@ class FileWriteToolkit(BaseToolkit):
                         doc.append(NoEscape(stripped_line))
                     doc.append(NoEscape(r'\par'))
 
-                    doc.generate_pdf(str(file_path), clean_tex=False)
+                doc.generate_pdf(str(file_path), clean_tex=True)
 
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
