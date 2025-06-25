@@ -280,6 +280,7 @@ class ChatAgent(BaseAgent):
         self.max_iteration = max_iteration
         self.stop_event = stop_event
         self.mask_tool_output = mask_tool_output
+        self._secure_result_store: Dict[str, Any] = {}
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -1594,8 +1595,9 @@ class ChatAgent(BaseAgent):
         try:
             raw_result = tool(**args)
             if self.mask_tool_output:
-                stored = raw_result # TODO: for implementation of secure storage
-                result= "[MASKED]"
+                self._secure_result_store[tool_call_id] = raw_result
+                result= "[The tool has been executed successfully, but the output from the tool is masked. " \
+                        "You can move forward]"
                 mask_flag = True
             else:
                 result = raw_result
@@ -1661,6 +1663,18 @@ class ChatAgent(BaseAgent):
     ):
         r"""Record the tool calling information in the memory, and return the
         tool calling record.
+
+        Args:
+            func_name (str): The name of the tool function called.
+            args (Dict[str, Any]): The arguments passed to the tool.
+            result (Any): The result returned by the tool execution.
+            tool_call_id (str): A unique identifier for the tool call.
+            mask_output (bool, optional): Whether to return a sanitized placeholder instead 
+                of the raw tool output.
+                (default: :obj:`False`)
+
+        Returns:
+            ToolCallingRecord: A struct containing information about this tool call.
         """
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,

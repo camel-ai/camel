@@ -109,7 +109,7 @@ class FunctionCallingMessage(BaseMessage):
             # This is a function response
             # TODO: Allow for more flexible setting of tool role,
             #  optionally to be the same as assistant messages
-            content = "[MASKED]" if self.mask_output else function_format.format_tool_response(
+            content = function_format.format_tool_response(
                 self.func_name,  # type: ignore[arg-type]
                 self.result,  # type: ignore[arg-type]
             )
@@ -158,7 +158,7 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name."
             )
 
-        result_content = "[MASKED]" if self.mask_output else str(self.result)
+        result_content = str(self.result)
 
         return {
             "role": "tool",
