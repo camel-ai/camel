@@ -398,10 +398,16 @@ async def main():
 
         task_id = 'workforce_task'
 
-        # Configure kwargs for all agents to use the same model_backend
-        coordinator_agent_kwargs = {"model": model_backend_reason}
-        task_agent_kwargs = {"model": model_backend_reason}
-        new_worker_agent_kwargs = {"model": model_backend}
+        # Create custom agents for the workforce
+        coordinator_agent = ChatAgent(
+            "You are a helpful coordinator.", model=model_backend_reason
+        )
+        task_agent = ChatAgent(
+            "You are a helpful task planner.", model=model_backend_reason
+        )
+        new_worker_agent = ChatAgent(
+            "You are a helpful worker.", model=model_backend
+        )
 
         # Create agents using factory functions
         search_agent = search_agent_factory(model_backend, task_id)
@@ -415,19 +421,14 @@ async def main():
         )
         multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
 
-        # Configure kwargs for all agents to use the same model_backend
-        coordinator_agent_kwargs = {"model": model_backend_reason}
-        task_agent_kwargs = {"model": model_backend_reason}
-        new_worker_agent_kwargs = {"model": model_backend}
-
         # Create workforce instance before adding workers
         workforce = Workforce(
             'A workforce',
             graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
             share_memory=False,
-            coordinator_agent_kwargs=coordinator_agent_kwargs,
-            task_agent_kwargs=task_agent_kwargs,
-            new_worker_agent_kwargs=new_worker_agent_kwargs,
+            coordinator_agent=coordinator_agent,
+            task_agent=task_agent,
+            new_worker_agent=new_worker_agent,
         )
 
         workforce.add_single_agent_worker(
