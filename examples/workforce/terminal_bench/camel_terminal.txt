@@ -1,0 +1,20 @@
+CAMEL Terminal Session
+==================================================
+Working Directory: /Users/rishabhyadav/Desktop/camel/examples/workforce/terminal_bench
+==================================================
+
+
+$ cd frotz && ./frotz zork1.z5
+
+Stderr Output:
+/bin/sh: line 0: cd: frotz: No such file or directory
+
+
+$ ls
+
+
+$ ls -a
+.
+..
+.venv
+
