@@ -15,23 +15,11 @@ from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
+import pandas as pd
+
 if TYPE_CHECKING:
     from pandas import DataFrame
     from pandasai import SmartDataframe
-
-try:
-    import pandas as pd
-    from pandas import DataFrame
-
-    PANDAS_AVAILABLE = True
-except ImportError:
-    PANDAS_AVAILABLE = False
-
-if not PANDAS_AVAILABLE:
-    raise ImportError(
-        "The 'pandas' package is required for this module. "
-        "Please install it with: pip install 'camel[pandas]'"
-    )
 
 from .base_loader import BaseLoader
 
