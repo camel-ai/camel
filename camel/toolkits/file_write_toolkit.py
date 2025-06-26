@@ -146,7 +146,7 @@ class FileWriteToolkit(BaseToolkit):
         document.save(str(file_path))
         logger.debug(f"Wrote DOCX to {file_path} with default formatting")
 
-    @dependencies_required('pylatex', 'fpdf')
+    @dependencies_required('pylatex', 'reportlab')
     def _write_pdf_file(
         self, file_path: Path, content: str, use_latex: bool = False
     ) -> None:
@@ -156,12 +156,12 @@ class FileWriteToolkit(BaseToolkit):
             file_path (Path): The target file path.
             content (str): The text content to write.
             use_latex (bool): Whether to use LaTeX for rendering. (requires
-                LaTeX toolchain). If False, uses FPDF for simpler PDF
+                LaTeX toolchain). If False, uses ReportLab for simpler PDF
                 generation. (default: :obj:`False`)
 
         Raises:
-            RuntimeError: If the 'pylatex' or 'fpdf' library is not installed
-                when use_latex=True.
+            RuntimeError: If the 'pylatex' is not installed
+            when use_latex=True.
         """
         if use_latex:
             from pylatex import (
@@ -213,30 +213,439 @@ class FileWriteToolkit(BaseToolkit):
 
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
-            from fpdf import FPDF
+            from reportlab.lib import colors
+            from reportlab.lib.pagesizes import (
+                A4,
+            )
+            from reportlab.lib.styles import (
+                ParagraphStyle,
+                getSampleStyleSheet,
+            )
+            from reportlab.lib.units import (
+                inch,
+            )
+            from reportlab.platypus import (
+                Paragraph,
+                SimpleDocTemplate,
+                Spacer,
+                Table,
+                TableStyle,
+            )
 
-            # Use default formatting values
-            font_family = 'Arial'
-            font_size = 12
-            font_style = ''
-            line_height = 10
-            margin = 10
+            def to_pdf(content):
+                # Initialize PDF document
+                doc = SimpleDocTemplate(
+                    str(file_path),
+                    pagesize=A4,
+                    leftMargin=36,
+                    rightMargin=36,
+                    topMargin=36,
+                    bottomMargin=36,
+                )
 
-            pdf = FPDF()
-            pdf.set_margins(margin, margin, margin)
+                # Set up styles
+                styles = getSampleStyleSheet()
+                title_style = ParagraphStyle(
+                    'DocumentTitle',
+                    parent=styles['Heading1'],
+                    alignment=1,  # Center alignment
+                    spaceAfter=12,
+                    fontSize=16,
+                    leading=20,
+                )
 
-            pdf.add_page()
-            pdf.set_font(font_family, style=font_style, size=font_size)
+                heading2_style = ParagraphStyle(
+                    'Heading2',
+                    parent=styles['Heading2'],
+                    fontSize=14,
+                    leading=18,
+                    spaceAfter=10,
+                )
 
-            # Split content into paragraphs and add them
-            for para in content.split('\n'):
-                if para.strip():  # Skip empty paragraphs
-                    pdf.multi_cell(0, line_height, para)
-                else:
-                    pdf.ln(line_height)  # Add empty line
+                normal_style = ParagraphStyle(
+                    'BodyText',
+                    parent=styles['Normal'],
+                    fontSize=10,
+                    leading=14,
+                    spaceAfter=6,
+                )
 
-            pdf.output(str(file_path))
-            logger.debug(f"Wrote PDF to {file_path} with custom formatting")
+                # Create a paragraph style for table cells with word wrap
+                table_cell_style = ParagraphStyle(
+                    'TableCell',
+                    parent=normal_style,
+                    fontSize=9,
+                    leading=12,
+                    wordWrap='CJK',  # Ensures proper wrapping
+                    alignment=4,  # Justified alignment
+                )
+
+                # Create a paragraph style for table headers
+                table_header_style = ParagraphStyle(
+                    'TableHeader',
+                    parent=normal_style,
+                    fontSize=10,
+                    leading=14,
+                    wordWrap='CJK',
+                    alignment=1,  # Center alignment
+                    fontName='Helvetica-Bold',
+                )
+
+                # Parse markdown content
+                lines = content.strip().split('\n')
+                document_title = "Document"  # Default title
+
+                # Extract document title (if first line is a heading)
+                if lines and lines[0].strip().startswith('# '):
+                    document_title = lines[0].strip()[2:].strip()
+                    lines = lines[1:]
+
+                elements = []
+
+                # Add title
+                elements.append(Paragraph(document_title, title_style))
+                elements.append(Spacer(1, 0.25 * inch))
+
+                # Split document into sections
+                sections = []
+                current_lines = []
+                table_lines = []
+                in_table = False
+                section_title = None
+
+                for line in lines:
+                    # Start of a new section
+                    if line.strip().startswith(
+                        '# '
+                    ) or line.strip().startswith('## '):
+                        # Save previous section if exists
+                        if current_lines:
+                            sections.append(
+                                {
+                                    "title": section_title,
+                                    "content": current_lines,
+                                    "is_table": False,
+                                }
+                            )
+                            current_lines = []
+
+                        # Start new section
+                        if line.strip().startswith('# '):
+                            section_title = line.strip()[2:].strip()
+                        else:
+                            section_title = line.strip()[3:].strip()
+
+                        continue
+
+                    # Check for table lines
+                    if line.strip().startswith('|') and line.strip().endswith(
+                        '|'
+                    ):
+                        if not in_table:
+                            in_table = True
+                            # If we were collecting text, finalize that section
+                            if current_lines:
+                                sections.append(
+                                    {
+                                        "title": section_title,
+                                        "content": current_lines,
+                                        "is_table": False,
+                                    }
+                                )
+                                current_lines = []
+                                section_title = None
+                            table_lines = [line]
+                        else:
+                            table_lines.append(line)
+                    else:
+                        if in_table:
+                            in_table = False
+                            # Process completed table
+                            if table_lines:
+                                sections.append(
+                                    {
+                                        "title": None,
+                                        "content": table_lines,
+                                        "is_table": True,
+                                    }
+                                )
+                                table_lines = []
+                            current_lines = [line]
+                        else:
+                            current_lines.append(line)
+
+                # Add final section
+                if in_table and table_lines:
+                    sections.append(
+                        {
+                            "title": None,
+                            "content": table_lines,
+                            "is_table": True,
+                        }
+                    )
+                elif current_lines:
+                    sections.append(
+                        {
+                            "title": section_title,
+                            "content": current_lines,
+                            "is_table": False,
+                        }
+                    )
+
+                # Process each section
+                for section in sections:
+                    # Add section title if present
+                    if section["title"]:
+                        elements.append(
+                            Paragraph(section["title"], heading2_style)
+                        )
+                        elements.append(Spacer(1, 0.1 * inch))
+
+                    if section["is_table"]:
+                        # Process table content
+                        table_data = []
+                        header_row_found = False
+                        separator_row_idx = None
+
+                        # First identify the separator row (if any)
+                        for i, line in enumerate(section["content"]):
+                            if line.strip().startswith(
+                                '|'
+                            ) and line.strip().endswith('|'):
+                                cells = [
+                                    cell.strip()
+                                    for cell in line.strip()[1:-1].split('|')
+                                ]
+                                # Check for separator row with dashes
+                                if any('-' * 3 in cell for cell in cells):
+                                    separator_row_idx = i
+                                    break
+
+                        # If separator found, the row before it is header
+                        if (
+                            separator_row_idx is not None
+                            and separator_row_idx > 0
+                        ):
+                            header_row_idx = separator_row_idx - 1
+                            header_row_found = True
+                        else:
+                            header_row_idx = (
+                                0  # Assume first row is header if no separator
+                            )
+                            header_row_found = True
+
+                        # Process table rows
+                        for i, line in enumerate(section["content"]):
+                            if line.strip().startswith(
+                                '|'
+                            ) and line.strip().endswith('|'):
+                                cells = [
+                                    cell.strip()
+                                    for cell in line.strip()[1:-1].split('|')
+                                ]
+
+                                # Skip separator row with dashes
+                                if i == separator_row_idx:
+                                    continue
+
+                                # Make sure all cells are wrapped properly
+                                formatted_cells = []
+                                for cell in cells:
+                                    # Headers get special formatting
+                                    if (
+                                        i == header_row_idx
+                                        and header_row_found
+                                    ):
+                                        formatted_cells.append(
+                                            Paragraph(cell, table_header_style)
+                                        )
+                                    else:
+                                        formatted_cells.append(
+                                            Paragraph(cell, table_cell_style)
+                                        )
+
+                                # Ensure consistent column count
+                                if table_data and len(formatted_cells) < len(
+                                    table_data[0]
+                                ):
+                                    formatted_cells.extend(
+                                        [Paragraph('', table_cell_style)]
+                                        * (
+                                            len(table_data[0])
+                                            - len(formatted_cells)
+                                        )
+                                    )
+
+                                table_data.append(formatted_cells)
+
+                        if table_data:
+                            try:
+                                # Standardize column count
+                                max_cols = max(len(row) for row in table_data)
+                                for row in table_data:
+                                    while len(row) < max_cols:
+                                        row.append(
+                                            Paragraph('', table_cell_style)
+                                        )
+
+                                # Calculate dynamic column widths
+                                available_width = doc.width
+
+                                # Start with equal column widths
+                                col_widths = [
+                                    available_width / max_cols
+                                ] * max_cols
+
+                                # Adjust based on content length
+                                content_lengths = [0] * max_cols
+                                for row in table_data:
+                                    for i, cell in enumerate(row):
+                                        if hasattr(cell, 'text'):
+                                            content_lengths[i] = max(
+                                                content_lengths[i],
+                                                min(len(cell.text), 50),
+                                            )  # Cap max influence
+
+                                # Calculate weighted widths with minimum size
+                                if sum(content_lengths) > 0:
+                                    total_content = sum(content_lengths)
+                                    col_widths = [
+                                        max(
+                                            (
+                                                length
+                                                / total_content
+                                                * available_width
+                                            ),
+                                            available_width / max_cols / 2,
+                                        )
+                                        for length in content_lengths
+                                    ]
+
+                                    if sum(col_widths) > available_width:
+                                        scale = available_width / sum(
+                                            col_widths
+                                        )
+                                        col_widths = [
+                                            w * scale for w in col_widths
+                                        ]
+
+                                # Create and style table
+                                table = Table(
+                                    table_data,
+                                    colWidths=col_widths,
+                                    repeatRows=1 if header_row_found else 0,
+                                )
+
+                                table_style = TableStyle(
+                                    [
+                                        # Header styling
+                                        (
+                                            'BACKGROUND',
+                                            (0, 0),
+                                            (-1, 0),
+                                            colors.lightgrey
+                                            if header_row_found
+                                            else colors.white,
+                                        ),
+                                        (
+                                            'TEXTCOLOR',
+                                            (0, 0),
+                                            (-1, 0),
+                                            colors.black,
+                                        ),
+                                        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                                        (
+                                            'FONTNAME',
+                                            (0, 0),
+                                            (-1, 0),
+                                            'Helvetica-Bold'
+                                            if header_row_found
+                                            else 'Helvetica',
+                                        ),
+                                        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                                        # Body styling
+                                        (
+                                            'BACKGROUND',
+                                            (0, 1),
+                                            (-1, -1),
+                                            colors.white,
+                                        ),
+                                        (
+                                            'GRID',
+                                            (0, 0),
+                                            (-1, -1),
+                                            1,
+                                            colors.black,
+                                        ),
+                                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                                        ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                                        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                                        ('TOPPADDING', (0, 0), (-1, -1), 3),
+                                        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                                    ]
+                                )
+
+                                table.setStyle(table_style)
+                                elements.append(table)
+                                elements.append(Spacer(1, 0.3 * inch))
+                            except Exception as e:
+                                logger.warning(
+                                    f"Table formatting failed: {e}. "
+                                    "Using plain text."
+                                )
+                                for line in section["content"]:
+                                    elements.append(
+                                        Paragraph(line.strip(), normal_style)
+                                    )
+                                    elements.append(Spacer(1, 0.05 * inch))
+                    else:
+                        # Process regular text content
+                        for line in section["content"]:
+                            if line.strip():
+                                elements.append(
+                                    Paragraph(line.strip(), normal_style)
+                                )
+                                elements.append(Spacer(1, 0.05 * inch))
+                # Try to build the PDF, with fallback options
+                try:
+                    doc.build(elements)
+                except Exception as e:
+                    # If complex formatting fails, try a simpler approach
+                    logger.warning(
+                        f"Complex PDF rendering failed: {e}. "
+                        "Falling back to simpler format."
+                    )
+                    elements = [
+                        Paragraph(document_title, title_style),
+                        Spacer(1, 0.25 * inch),
+                    ]
+
+                    # Add all content in simpler format
+                    for line in content.strip().split('\n'):
+                        if line.strip():
+                            if line.strip().startswith('# '):
+                                elements.append(
+                                    Paragraph(
+                                        line.strip()[2:], styles['Heading1']
+                                    )
+                                )
+                            elif line.strip().startswith('## '):
+                                elements.append(
+                                    Paragraph(
+                                        line.strip()[3:], styles['Heading2']
+                                    )
+                                )
+                            else:
+                                elements.append(
+                                    Paragraph(line.strip(), styles['Normal'])
+                                )
+                            elements.append(Spacer(1, 0.05 * inch))
+
+                    doc.build(elements)
+
+            to_pdf(content)
+
+            logger.debug(f"Wrote PDF to {file_path} with ReportLab formatting")
 
     def _write_csv_file(
         self,
