@@ -43,7 +43,12 @@ from camel.societies.workforce.utils import (
     check_if_running,
 )
 from camel.societies.workforce.worker import Worker
-from camel.tasks.task import Task, TaskState, validate_task_content
+from camel.tasks.task import (
+    Task,
+    TaskState,
+    is_task_result_insufficient,
+    validate_task_content,
+)
 from camel.toolkits import (
     CodeExecutionToolkit,
     SearchToolkit,
@@ -56,6 +61,12 @@ from camel.utils import dependencies_required
 from .workforce_logger import WorkforceLogger
 
 logger = get_logger(__name__)
+
+# Constants for configuration values
+MAX_TASK_RETRIES = 3
+MAX_PENDING_TASKS_LIMIT = 20
+TASK_TIMEOUT_SECONDS = 180.0
+DEFAULT_WORKER_POOL_SIZE = 10
 
 
 class WorkforceState(Enum):
@@ -216,6 +227,7 @@ class Workforce(BaseNode):
         self._completed_tasks: List[Task] = []
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._main_task_future: Optional[asyncio.Future] = None
+        self._cleanup_task: Optional[asyncio.Task] = None
         # Snapshot throttle support
         self._last_snapshot_time: float = 0.0
         # Minimum seconds between automatic snapshots
@@ -516,6 +528,15 @@ class Workforce(BaseNode):
             self._share_memory_with_agents(shared_memory)
         except Exception as e:
             logger.warning(f"Error synchronizing shared memory: {e}")
+
+    def _cleanup_task_tracking(self, task_id: str) -> None:
+        r"""Clean up tracking data for a task to prevent memory leaks.
+
+        Args:
+            task_id (str): The ID of the task to clean up.
+        """
+        if task_id in self._task_start_times:
+            del self._task_start_times[task_id]
 
     def _decompose_task(self, task: Task) -> List[Task]:
         r"""Decompose the task into subtasks. This method will also set the
@@ -1104,7 +1125,7 @@ class Workforce(BaseNode):
         self,
         description: str,
         worker: ChatAgent,
-        pool_max_size: int = 10,
+        pool_max_size: int = DEFAULT_WORKER_POOL_SIZE,
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses a single agent.
 
@@ -1233,7 +1254,7 @@ class Workforce(BaseNode):
             except RuntimeError:
                 asyncio.run(self._async_reset())
 
-        if hasattr(self, 'logger') and self.metrics_logger is not None:
+        if hasattr(self, 'metrics_logger') and self.metrics_logger is not None:
             self.metrics_logger.reset_task_data()
         else:
             self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
@@ -1516,12 +1537,26 @@ class Workforce(BaseNode):
         # Record the start time when a task is posted
         self._task_start_times[task.id] = time.time()
 
+        task.assigned_worker_id = assignee_id
+
         if self.metrics_logger:
             self.metrics_logger.log_task_started(
                 task_id=task.id, worker_id=assignee_id
             )
-        self._in_flight_tasks += 1
-        await self._channel.post_task(task, self.node_id, assignee_id)
+
+        try:
+            self._in_flight_tasks += 1
+            await self._channel.post_task(task, self.node_id, assignee_id)
+            logger.debug(
+                f"Posted task {task.id} to {assignee_id}. "
+                f"In-flight tasks: {self._in_flight_tasks}"
+            )
+        except Exception as e:
+            # Decrement counter if posting failed
+            self._in_flight_tasks -= 1
+            logger.error(
+                f"Failed to post task {task.id} to {assignee_id}: {e}"
+            )
 
     async def _post_dependency(self, dependency: Task) -> None:
         await self._channel.post_dependency(dependency, self.node_id)
@@ -1580,7 +1615,7 @@ class Workforce(BaseNode):
         new_node = SingleAgentWorker(
             description=new_node_conf.description,
             worker=new_agent,
-            pool_max_size=10,  # TODO: make this configurable
+            pool_max_size=DEFAULT_WORKER_POOL_SIZE,
         )
         new_node.set_channel(self._channel)
 
@@ -1623,7 +1658,7 @@ class Workforce(BaseNode):
 
             return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
 
-    async def _get_returned_task(self) -> Task:
+    async def _get_returned_task(self) -> Optional[Task]:
         r"""Get the task that's published by this node and just get returned
         from the assignee. Includes timeout handling to prevent indefinite
         waiting.
@@ -1632,17 +1667,28 @@ class Workforce(BaseNode):
             # Add timeout to prevent indefinite waiting
             return await asyncio.wait_for(
                 self._channel.get_returned_task_by_publisher(self.node_id),
-                timeout=180.0,  # 3 minute timeout
+                timeout=TASK_TIMEOUT_SECONDS,
             )
-        except asyncio.TimeoutError:
-            logger.warning(
-                f"Timeout waiting for returned task in "
+        except Exception as e:
+            # Decrement in-flight counter to prevent hanging
+            if self._in_flight_tasks > 0:
+                self._in_flight_tasks -= 1
+
+            error_msg = (
+                f"Error getting returned task {e} in "
                 f"workforce {self.node_id}. "
-                f"This may indicate an issue with async tool execution. "
                 f"Current pending tasks: {len(self._pending_tasks)}, "
                 f"In-flight tasks: {self._in_flight_tasks}"
             )
-            raise
+            logger.warning(error_msg)
+
+            if self._pending_tasks and self._assignees:
+                for task in self._pending_tasks:
+                    if task.id in self._assignees:
+                        # Mark this real task as failed
+                        task.set_state(TaskState.FAILED)
+                        return task
+            return None
 
     async def _post_ready_tasks(self) -> None:
         r"""Checks for unassigned tasks, assigns them, and then posts any
@@ -1682,6 +1728,9 @@ class Workforce(BaseNode):
         # Step 2: Iterate through all pending tasks and post those that are
         # ready
         posted_tasks = []
+        # Pre-compute completed task IDs set for O(1) lookups
+        completed_task_ids = {t.id for t in self._completed_tasks}
+
         for task in self._pending_tasks:
             # A task must be assigned to be considered for posting
             if task.id in self._task_dependencies:
@@ -1689,8 +1738,7 @@ class Workforce(BaseNode):
                 # Check if all dependencies for this task are in the completed
                 # set
                 if all(
-                    dep_id in {t.id for t in self._completed_tasks}
-                    for dep_id in dependencies
+                    dep_id in completed_task_ids for dep_id in dependencies
                 ):
                     assignee_id = self._assignees[task.id]
                     logger.debug(
@@ -1712,17 +1760,67 @@ class Workforce(BaseNode):
     async def _handle_failed_task(self, task: Task) -> bool:
         task.failure_count += 1
 
+        # Determine detailed failure information
+        if is_task_result_insufficient(task):
+            failure_reason = "Worker returned unhelpful "
+            f"response: {task.result[:100] if task.result else ''}..."
+        else:
+            failure_reason = "Task marked as failed despite "
+            f"having result: {(task.result or '')[:100]}..."
+
+        # Add context about the worker and task
+        worker_id = task.assigned_worker_id or "unknown"
+        worker_info = f" (assigned to worker: {worker_id})"
+
+        detailed_error = f"{failure_reason}{worker_info}"
+
+        logger.error(
+            f"Task {task.id} failed (attempt "
+            f"{task.failure_count}/3): {detailed_error}"
+        )
+
         if self.metrics_logger:
-            worker_id = self._assignees.get(task.id)
             self.metrics_logger.log_task_failed(
                 task_id=task.id,
                 worker_id=worker_id,
-                error_message=task.result or "Task execution failed",
+                error_message=detailed_error,
                 error_type="TaskFailure",
-                metadata={'failure_count': task.failure_count},
+                metadata={
+                    'failure_count': task.failure_count,
+                    'task_content': task.content,
+                    'result_length': len(task.result) if task.result else 0,
+                },
             )
 
-        if task.failure_count > 3:
+        # Check for immediate halt conditions - return immediately if we
+        # should halt
+        if task.failure_count >= MAX_TASK_RETRIES:
+            logger.error(
+                f"Task {task.id} has exceeded maximum retry attempts "
+                f"({MAX_TASK_RETRIES}). Final failure "
+                f"reason: {detailed_error}. "
+                f"Task content: '{task.content[:100]}...'"
+            )
+            self._cleanup_task_tracking(task.id)
+            # Mark task as completed for dependency tracking before halting
+            self._completed_tasks.append(task)
+            if task.id in self._assignees:
+                await self._channel.archive_task(task.id)
+            return True
+
+        # If too many tasks are failing rapidly, also halt to prevent infinite
+        # loops
+        if len(self._pending_tasks) > MAX_PENDING_TASKS_LIMIT:
+            logger.error(
+                f"Too many pending tasks ({len(self._pending_tasks)} > "
+                f"{MAX_PENDING_TASKS_LIMIT}). Halting to prevent task "
+                f"explosion. Last failed task: {task.id}"
+            )
+            self._cleanup_task_tracking(task.id)
+            # Mark task as completed for dependency tracking before halting
+            self._completed_tasks.append(task)
+            if task.id in self._assignees:
+                await self._channel.archive_task(task.id)
             return True
 
         if task.get_depth() > 3:
@@ -1777,8 +1875,6 @@ class Workforce(BaseNode):
         # Mark task as completed for dependency tracking
         self._completed_tasks.append(task)
 
-        # Post next ready tasks
-
         # Sync shared memory after task completion to share knowledge
         if self.share_memory:
             logger.info(
@@ -1792,7 +1888,7 @@ class Workforce(BaseNode):
 
     async def _handle_completed_task(self, task: Task) -> None:
         if self.metrics_logger:
-            worker_id = self._assignees.get(task.id, "unknown")
+            worker_id = task.assigned_worker_id or "unknown"
             processing_time_seconds = None
             token_usage = None
 
@@ -1801,7 +1897,7 @@ class Workforce(BaseNode):
                 processing_time_seconds = (
                     time.time() - self._task_start_times[task.id]
                 )
-                del self._task_start_times[task.id]  # Prevent memory leaks
+                self._cleanup_task_tracking(task.id)
             elif (
                 task.additional_info is not None
                 and 'processing_time_seconds' in task.additional_info
@@ -1995,8 +2091,19 @@ class Workforce(BaseNode):
                         )
                         self._last_snapshot_time = time.time()
 
-                # Get returned task (this may block until a task is returned)
+                # Get returned task
                 returned_task = await self._get_returned_task()
+
+                # If no task was returned, continue
+                if returned_task is None:
+                    logger.debug(
+                        f"No task returned in workforce {self.node_id}. "
+                        f"Pending: {len(self._pending_tasks)}, "
+                        f"In-flight: {self._in_flight_tasks}"
+                    )
+                    await self._post_ready_tasks()
+                    continue
+
                 self._in_flight_tasks -= 1
 
                 # Check for stop request after getting task
@@ -2006,22 +2113,72 @@ class Workforce(BaseNode):
 
                 # Process the returned task based on its state
                 if returned_task.state == TaskState.DONE:
-                    print(
-                        f"{Fore.CYAN}🎯 Task {returned_task.id} completed "
-                        f"successfully.{Fore.RESET}"
-                    )
-                    await self._handle_completed_task(returned_task)
+                    # Check if the "completed" task actually failed to provide
+                    # useful results
+                    if is_task_result_insufficient(returned_task):
+                        result_preview = (
+                            returned_task.result[:100] + "..."
+                            if returned_task.result
+                            else "No result"
+                        )
+                        logger.warning(
+                            f"Task {returned_task.id} marked as DONE but "
+                            f"result is insufficient. "
+                            f"Treating as failed. Result: '{result_preview}'"
+                        )
+                        returned_task.state = TaskState.FAILED
+                        try:
+                            halt = await self._handle_failed_task(
+                                returned_task
+                            )
+                            if not halt:
+                                continue
+                            print(
+                                f"{Fore.RED}Task {returned_task.id} has "
+                                f"failed for {MAX_TASK_RETRIES} times after "
+                                f"insufficient results, halting the "
+                                f"workforce. Final error: "
+                                f"{returned_task.result or 'Unknown error'}"
+                                f"{Fore.RESET}"
+                            )
+                            await self._graceful_shutdown(returned_task)
+                            break
+                        except Exception as e:
+                            logger.error(
+                                f"Error handling insufficient task result "
+                                f"{returned_task.id}: {e}",
+                                exc_info=True,
+                            )
+                            continue
+                    else:
+                        print(
+                            f"{Fore.CYAN}🎯 Task {returned_task.id} completed "
+                            f"successfully.{Fore.RESET}"
+                        )
+                        await self._handle_completed_task(returned_task)
                 elif returned_task.state == TaskState.FAILED:
-                    halt = await self._handle_failed_task(returned_task)
-                    if not halt:
+                    try:
+                        halt = await self._handle_failed_task(returned_task)
+                        if not halt:
+                            continue
+                        print(
+                            f"{Fore.RED}Task {returned_task.id} has failed "
+                            f"for {MAX_TASK_RETRIES} times, halting "
+                            f"the workforce. Final error: "
+                            f"{returned_task.result or 'Unknown error'}"
+                            f"{Fore.RESET}"
+                        )
+                        # Graceful shutdown instead of immediate break
+                        await self._graceful_shutdown(returned_task)
+                        break
+                    except Exception as e:
+                        logger.error(
+                            f"Error handling failed task "
+                            f"{returned_task.id}: {e}",
+                            exc_info=True,
+                        )
+                        # Continue to prevent hanging
                         continue
-                    print(
-                        f"{Fore.RED}Task {returned_task.id} has failed "
-                        f"for 3 times, halting the workforce.{Fore.RESET}"
-                    )
-                    # Graceful shutdown instead of immediate break
-                    await self._graceful_shutdown(returned_task)
-                    break
                 elif returned_task.state == TaskState.OPEN:
                     # TODO: Add logic for OPEN
                     pass
@@ -2031,7 +2188,18 @@ class Workforce(BaseNode):
                     )
 
             except Exception as e:
-                logger.error(f"Error processing task: {e}")
+                # Decrement in-flight counter to prevent hanging
+                if self._in_flight_tasks > 0:
+                    self._in_flight_tasks -= 1
+
+                logger.error(
+                    f"Error processing task in workforce {self.node_id}: {e}"
+                    f"Workforce state - Pending tasks: "
+                    f"{len(self._pending_tasks)}, "
+                    f"In-flight tasks: {self._in_flight_tasks}, "
+                    f"Completed tasks: {len(self._completed_tasks)}"
+                )
+
                 if self._stop_requested:
                     break
                 # Continue with next iteration unless stop is requested
@@ -2085,11 +2253,38 @@ class Workforce(BaseNode):
         r"""Stop all the child nodes under it. The node itself will be stopped
         by its parent node.
         """
+        # Stop all child nodes first
         for child in self._children:
             if child._running:
                 child.stop()
-        for child_task in self._child_listening_tasks:
-            child_task.cancel()
+
+        # Cancel child listening tasks
+        if self._child_listening_tasks:
+            try:
+                loop = asyncio.get_running_loop()
+                if loop and not loop.is_closed():
+                    # Create graceful cleanup task
+                    async def cleanup():
+                        await asyncio.sleep(0.1)  # Brief grace period
+                        for task in self._child_listening_tasks:
+                            if not task.done():
+                                task.cancel()
+                        await asyncio.gather(
+                            *self._child_listening_tasks,
+                            return_exceptions=True,
+                        )
+
+                    self._cleanup_task = loop.create_task(cleanup())
+                else:
+                    # No active loop, cancel immediately
+                    for task in self._child_listening_tasks:
+                        task.cancel()
+            except (RuntimeError, Exception) as e:
+                # Fallback: cancel immediately
+                logger.debug(f"Exception during task cleanup: {e}")
+                for task in self._child_listening_tasks:
+                    task.cancel()
+
         self._running = False
 
     def clone(self, with_memory: bool = False) -> 'Workforce':
