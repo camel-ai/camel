@@ -533,9 +533,17 @@ class TerminalToolkit(BaseToolkit):
                 # Find the file path after redirection
                 redirect_parts = command.split('>')
                 if len(redirect_parts) > 1:
-                    output_file = (
-                        redirect_parts[1].strip().split()[0].strip('"\'')
-                    )
+                    # Handle >> redirection where the second part might be empty
+                    for i in range(1, len(redirect_parts)):
+                        redirect_content = redirect_parts[i].strip()
+                        if redirect_content:
+                            redirect_tokens = redirect_content.split()
+                            if redirect_tokens:
+                                output_file = redirect_tokens[0].strip('"\'')
+                                break
+                    else:
+                        # No valid redirection target found
+                        return False, "Invalid redirection: no target file specified"
                     if (
                         output_file.startswith('/')
                         or output_file.startswith('\\')
