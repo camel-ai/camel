@@ -18,7 +18,7 @@ import os
 import pandas as pd
 from pandasai.llm import OpenAI  # type: ignore[import-untyped]
 
-from camel.loaders import PandasReader, PandasLoader
+from camel.loaders import PandasLoader, PandasReader
 
 # Create sample data
 sales_by_country = pd.DataFrame(
