@@ -556,11 +556,14 @@ class RolePlaying:
             )
         user_msg = self._reduce_message_options(user_response.msgs)
 
-        # To prevent recording the same memory more than once (once in chat
-        # step and once in role play), and the model generates only one
-        # response when multi-response support is enabled.
+        # To prevent recording missing messages: ChatAgent.step automatically
+        # saves the response to memory only when a single message is returned.
+        # When multi-response support is enabled (n > 1), it is the caller's
+        # responsibility to record the selected message. Therefore, we record
+        # it here after choosing one message via `_reduce_message_options()`.
         if (
             'n' in self.user_agent.model_backend.model_config_dict.keys()
+            and self.user_agent.model_backend.model_config_dict['n'] is not None
             and self.user_agent.model_backend.model_config_dict['n'] > 1
         ):
             self.user_agent.record_message(user_msg)
@@ -579,11 +582,14 @@ class RolePlaying:
             )
         assistant_msg = self._reduce_message_options(assistant_response.msgs)
 
-        # To prevent recording the same memory more than once (once in chat
-        # step and once in role play), and the model generates only one
-        # response when multi-response support is enabled.
+        # To prevent recording missing messages: ChatAgent.step automatically
+        # saves the response to memory only when a single message is returned.
+        # When multi-response support is enabled (n > 1), it is the caller's
+        # responsibility to record the selected message. Therefore, we record
+        # it here after choosing one message via `_reduce_message_options()`.
         if (
             'n' in self.assistant_agent.model_backend.model_config_dict.keys()
+            and self.assistant_agent.model_backend.model_config_dict['n'] is not None
             and self.assistant_agent.model_backend.model_config_dict['n'] > 1
         ):
             self.assistant_agent.record_message(assistant_msg)
@@ -639,11 +645,14 @@ class RolePlaying:
             )
         user_msg = self._reduce_message_options(user_response.msgs)
 
-        # To prevent recording the same memory more than once (once in chat
-        # step and once in role play), and the model generates only one
-        # response when multi-response support is enabled.
+        # To prevent recording missing messages: ChatAgent.step automatically
+        # saves the response to memory only when a single message is returned.
+        # When multi-response support is enabled (n > 1), it is the caller's
+        # responsibility to record the selected message. Therefore, we record
+        # it here after choosing one message via `_reduce_message_options()`.
         if (
             'n' in self.user_agent.model_backend.model_config_dict.keys()
+            and self.user_agent.model_backend.model_config_dict['n'] is not None
             and self.user_agent.model_backend.model_config_dict['n'] > 1
         ):
             self.user_agent.record_message(user_msg)
@@ -662,11 +671,14 @@ class RolePlaying:
             )
         assistant_msg = self._reduce_message_options(assistant_response.msgs)
 
-        # To prevent recording the same memory more than once (once in chat
-        # step and once in role play), and the model generates only one
-        # response when multi-response support is enabled.
+        # To prevent recording missing messages: ChatAgent.step automatically
+        # saves the response to memory only when a single message is returned.
+        # When multi-response support is enabled (n > 1), it is the caller's
+        # responsibility to record the selected message. Therefore, we record
+        # it here after choosing one message via `_reduce_message_options()`.
         if (
             'n' in self.assistant_agent.model_backend.model_config_dict.keys()
+            and self.assistant_agent.model_backend.model_config_dict['n'] is not None
             and self.assistant_agent.model_backend.model_config_dict['n'] > 1
         ):
             self.assistant_agent.record_message(assistant_msg)
