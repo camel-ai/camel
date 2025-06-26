@@ -13,8 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional
 
 from .actions import ActionExecutor
 from .snapshot import PageSnapshot
@@ -35,15 +36,37 @@ class NVBrowserSession:
     It provides a single *Page* instance plus helper utilities (snapshot &
     executor).  Multiple toolkits or agents can reuse this class without
     duplicating Playwright setup code.
+
+    This class is a singleton per event-loop.
     """
 
     # Configuration constants
     DEFAULT_NAVIGATION_TIMEOUT = 10000  # 10 seconds
     NETWORK_IDLE_TIMEOUT = 5000  # 5 seconds
 
+    _sessions: ClassVar[
+        Dict[asyncio.AbstractEventLoop, "NVBrowserSession"]
+    ] = {}
+
+    __initialised: bool
+
+    def __new__(
+        cls, *, headless: bool = True, user_data_dir: Optional[str] = None
+    ):
+        loop = asyncio.get_running_loop()
+        if loop not in cls._sessions:
+            instance = super().__new__(cls)
+            instance.__initialised = False
+            cls._sessions[loop] = instance
+        return cls._sessions[loop]
+
     def __init__(
         self, *, headless: bool = True, user_data_dir: Optional[str] = None
     ):
+        if self.__initialised:
+            return
+        self.__initialised = True
+
         self._headless = headless
         self._user_data_dir = user_data_dir
 
@@ -56,8 +79,6 @@ class NVBrowserSession:
         self.executor: Optional[ActionExecutor] = None
 
         # Protect browser initialisation against concurrent calls
-        import asyncio
-
         self._ensure_lock: "asyncio.Lock" = asyncio.Lock()
 
     # ------------------------------------------------------------------
@@ -122,6 +143,11 @@ class NVBrowserSession:
         r"""Close all browser resources, ensuring cleanup even if some
         operations fail.
         """
+        # The close method will now only close the *current* event-loop's
+        # browser instance.  Use `close_all_sessions` for a full cleanup.
+        await self._close_session()
+
+    async def _close_session(self) -> None:
         errors: list[str] = []
 
         # Close context first (which closes pages)
@@ -157,6 +183,16 @@ class NVBrowserSession:
             logger.warning(
                 "Errors during browser session cleanup: %s", "; ".join(errors)
             )
+
+    @classmethod
+    async def close_all_sessions(cls) -> None:
+        r"""Iterate over all stored sessions and close them."""
+        for loop, session in cls._sessions.items():
+            if loop.is_running():
+                await session._close_session()
+            else:
+                loop.run_until_complete(session._close_session())
+        cls._sessions.clear()
 
     # ------------------------------------------------------------------
     # Convenience wrappers around common actions

@@ -128,26 +128,22 @@ class TerminalToolkit(BaseToolkit):
         """
 
         self.log_file = os.path.join(os.getcwd(), "camel_terminal.txt")
-
-        if os.path.exists(self.log_file):
-            with open(self.log_file, "w") as f:
-                f.truncate(0)
-                f.write("CAMEL Terminal Session\n")
-                f.write("=" * 50 + "\n")
-                f.write(f"Working Directory: {os.getcwd()}\n")
-                f.write("=" * 50 + "\n\n")
-        else:
-            with open(self.log_file, "w") as f:
-                f.write("CAMEL Terminal Session\n")
-                f.write("=" * 50 + "\n")
-                f.write(f"Working Directory: {os.getcwd()}\n")
-                f.write("=" * 50 + "\n\n")
+        self._file_initialized = False
 
         # Inform the user
-        logger.info(f"Terminal output redirected to: {self.log_file}")
+        logger.info(f"Terminal output will be redirected to: {self.log_file}")
 
         def file_update(output: str):
             try:
+                # Initialize file on first write
+                if not self._file_initialized:
+                    with open(self.log_file, "w") as f:
+                        f.write("CAMEL Terminal Session\n")
+                        f.write("=" * 50 + "\n")
+                        f.write(f"Working Directory: {os.getcwd()}\n")
+                        f.write("=" * 50 + "\n\n")
+                    self._file_initialized = True
+
                 # Directly append to the end of the file
                 with open(self.log_file, "a") as f:
                     f.write(output)
@@ -165,6 +161,12 @@ class TerminalToolkit(BaseToolkit):
     def _clone_current_environment(self):
         r"""Create a new Python virtual environment."""
         try:
+            if self.cloned_env_path is None:
+                self._update_terminal_output(
+                    "Error: No environment path specified\n"
+                )
+                return
+
             if os.path.exists(self.cloned_env_path):
                 self._update_terminal_output(
                     f"Using existing environment: {self.cloned_env_path}\n"
