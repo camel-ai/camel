@@ -17,8 +17,8 @@ import os
 
 import pandas as pd
 from pandasai.llm import OpenAI  # type: ignore[import-untyped]
-
-from camel.loaders import PandasReader
+from camel.loaders import PandasLoader
+from camel.loaders.pandas_reader import PandasReader
 
 # Create sample data
 sales_by_country = pd.DataFrame(
@@ -77,6 +77,15 @@ if os.getenv("OPENAI_API_KEY"):
 else:
     print("Skipping LLM example: OPENAI_API_KEY environment variable not set")
 
+# Example 3: Using PandasLoader with an LLM configuration
+print("Example 3: PandasLoader with LLM")
+# Only run this example if OPENAI_API_KEY is set
+reader_with_llm = PandasLoader()
+# With an LLM, load() returns a SmartDataframe
+df_with_llm = reader_with_llm.load(sales_by_country)
+print("Querying data with LLM:")
+print(df_with_llm.chat("Which are the top 5 countries by sales?"))
+
 """
 ===============================================================================
 Example output:
@@ -92,6 +101,17 @@ Top 5 countries by sales:
 1  United Kingdom   3200
 
 Example 2: PandasReader with LLM
+Querying data with LLM:
+===============================================================================
+          country  sales
+9           China   7000
+0   United States   5000
+8           Japan   4500
+3         Germany   4100
+1  United Kingdom   3200
+===============================================================================
+
+Example 3: PandasLoader with LLM
 Querying data with LLM:
 ===============================================================================
           country  sales

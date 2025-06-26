@@ -21,6 +21,7 @@ from camel.loaders import MinerULoader
 
 @pytest.fixture
 def mock_response():
+    r"""mock response for single task"""
     return {
         'data': {
             'task_id': '12345',
@@ -32,6 +33,7 @@ def mock_response():
 
 @pytest.fixture
 def mock_batch_response():
+    r"""mock response for batch task"""
     return {
         'data': {
             'batch_id': 'batch_123',
@@ -54,7 +56,7 @@ def mock_batch_response():
 
 
 def test_initialization():
-    # Test initialization with API key from environment
+    r"""Test initialization with API key from environment"""
     with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
         mineru = MinerULoader(
             config={
@@ -191,24 +193,24 @@ def test_wait_for_completion(mock_sleep, mock_response):
         mineru = MinerULoader()
 
         # Mock get_task_status for single task
-        mineru.get_task_status = Mock(return_value={'state': 'done'})
+        mineru.mineru.get_task_status = Mock(return_value={'state': 'done'})
         result = mineru.wait_for_completion('12345')
         assert result['state'] == 'done'
 
         # Mock get_batch_status for batch task
-        mineru.get_batch_status = Mock(
+        mineru.mineru.get_batch_status = Mock(
             return_value={'extract_result': [{'state': 'done'}]}
         )
         result = mineru.wait_for_completion('batch_123', is_batch=True)
         assert result['extract_result'][0]['state'] == 'done'
 
         # Test timeout
-        mineru.get_task_status = Mock(return_value={'state': 'processing'})
+        mineru.mineru.get_task_status = Mock(return_value={'state': 'processing'})
         with pytest.raises(TimeoutError):
             mineru.wait_for_completion('12345', timeout=0)
 
         # Test task failure
-        mineru.get_task_status = Mock(
+        mineru.mineru.get_task_status = Mock(
             return_value={'state': 'failed', 'err_msg': 'Error'}
         )
         with pytest.raises(RuntimeError):

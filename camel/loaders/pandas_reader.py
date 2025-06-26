@@ -122,7 +122,6 @@ class PandasReader:
         # regular DataFrame
         if "llm" in self.config:
             from pandasai import SmartDataframe
-
             return SmartDataframe(df, config=self.config)
         else:
             return df
@@ -399,54 +398,29 @@ class PandasLoader(BaseLoader):
                 api_token=os.getenv("OPENAI_API_KEY"),
             )
 
-        self._loader_map = {
-            ".csv": pd.read_csv,
-            ".xlsx": pd.read_excel,
-            ".xls": pd.read_excel,
-            ".json": pd.read_json,
-            ".parquet": pd.read_parquet,
-            ".sql": pd.read_sql,
-            ".html": pd.read_html,
-            ".feather": pd.read_feather,
-            ".dta": pd.read_stata,
-            ".sas": pd.read_sas,
-            ".pkl": pd.read_pickle,
-            ".h5": pd.read_hdf,
-            ".orc": pd.read_orc,
-        }
+        # define reader
+        self.reader = PandasReader(config=self.config)
+        self._loader_map = self.reader._PandasReader__LOADER
 
     def load(
         self,
-        source: Union[pd.DataFrame, str],
+        data: Union[pd.DataFrame, str],
         *args: Any,
         **kwargs: Dict[str, Any],
-    ) -> Union["SmartDataframe", "DataFrame"]:
+    ) -> Union["DataFrame", "SmartDataframe"]:
         r"""
         Load the content of a file or DataFrame.
 
         Args:
-            source (Union[pd.DataFrame, str]): The source to load.
+            data (Union[pd.DataFrame, str]): The data to load.
             *args (Any): Additional positional arguments.
             **kwargs (Dict[str, Any]): Additional keyword arguments.
 
         Returns:
-            Union["SmartDataframe", "DataFrame"]: The loaded content.
+            Union[DataFrame, SmartDataframe]: The loaded content.
         """
-        from pandas import DataFrame
-        from pandasai import SmartDataframe
 
-        if isinstance(source, DataFrame):
-            return SmartDataframe(source, config=self.config)
-        file_path = str(source)
-        path = Path(file_path)
-        if not file_path.startswith("http") and not path.exists():
-            raise FileNotFoundError(f"File {file_path} not found")
-
-        suffix = path.suffix.lower()
-        if suffix not in self._loader_map:
-            raise ValueError(f"Unsupported file format: {suffix}")
-        df = self._loader_map[suffix](file_path, *args, **kwargs)
-        return df
+        return self.reader.load(data, *args, **kwargs)
 
     @property
     def supported_formats(self) -> set:
