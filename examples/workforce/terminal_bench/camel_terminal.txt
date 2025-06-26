@@ -4,17 +4,13 @@ Working Directory: /Users/rishabhyadav/Desktop/camel/examples/workforce/terminal
 ==================================================
 
 
-$ cd frotz && ./frotz zork1.z5
-
-Stderr Output:
-/bin/sh: line 0: cd: frotz: No such file or directory
+$ echo "Hello, world!" > hello.txt
 
 
-$ ls
+$ echo "Hello, world!" > hello.txt; echo '' >> hello.txt
 
 
-$ ls -a
-.
-..
-.venv
+$ cat hello.txt
+Hello, world!
+
 
