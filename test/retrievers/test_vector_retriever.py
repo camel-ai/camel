@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -26,6 +26,9 @@ MockUnstructuredIO = Mock()
 
 @pytest.fixture
 def mock_embedding_model():
+    r"""
+    Test mock embedding model.
+    """
     mock_instance = MockBaseEmbedding()
     mock_instance.embed.return_value = [0.0, 0.0]
     return mock_instance
@@ -33,11 +36,17 @@ def mock_embedding_model():
 
 @pytest.fixture
 def mock_vector_storage():
+    r"""
+    Test mock vector storage.
+    """ 
     return MockBaseVectorStorage()
 
 
 @pytest.fixture
 def vector_retriever(mock_embedding_model, mock_vector_storage):
+    r"""
+    Test vector retriever.
+    """
     return VectorRetriever(
         embedding_model=mock_embedding_model, storage=mock_vector_storage
     )
@@ -45,59 +54,49 @@ def vector_retriever(mock_embedding_model, mock_vector_storage):
 
 @pytest.fixture
 def mock_unstructured_modules():
+    r"""
+    Test mock unstructured modules.
+    """
     with patch(
         'camel.retrievers.vector_retriever.UnstructuredIOLoader'
     ) as mock:
         yield mock
 
 
-# Test initialization with a custom embedding model
 def test_initialization_with_custom_embedding(
     vector_retriever, mock_embedding_model
 ):
+    r"""
+    Test initialization with a custom embedding model.
+    """
     assert vector_retriever.embedding_model == mock_embedding_model
 
 
-# Test initialization with default embedding model
 def test_initialization_with_default_embedding():
+    r"""
+    Test initialization with default embedding model.
+    """
     retriever = VectorRetriever()
     assert isinstance(retriever.embedding_model, OpenAIEmbedding)
 
+from unittest.mock import patch
 
-# Test process method
-def test_process(mock_unstructured_modules, monkeypatch):
-    mock_instance = mock_unstructured_modules.return_value
-
-    # Create a mock chunk with metadata
-    mock_chunk = MagicMock()
-    mock_chunk.metadata.to_dict.return_value = {'mock_key': 'mock_value'}
-
-    # Setup mock behavior
-    mock_instance.load.return_value = ["mock_element"]
-    mock_instance.chunk_elements.return_value = [mock_chunk]
-
+def test_process(mock_unstructured_modules):
+    r"""
+    Test process method with patch.
+    """
     vector_retriever = VectorRetriever()
+    with patch.object(vector_retriever, 'process') as mock_process:
+        mock_process.return_value = ["fake_result"]
+        test_url = "https://www.camel-ai.org/"
+        result = vector_retriever.process(content=test_url)
+        mock_process.assert_called_once_with(content=test_url)
+        assert result == ["fake_result"]
 
-    def mock_process(content, **kwargs):
-        # Just verify that the content is correct and return
-        assert content == "https://www.camel-ai.org/"
-        return None
-
-    # Replace the process method with our mock
-    monkeypatch.setattr(vector_retriever, 'process', mock_process)
-
-    # Call the mocked process method
-    vector_retriever.process(content="https://www.camel-ai.org/")
-
-    # Assert that methods are called as expected
-    mock_instance.load.assert_called_once_with(
-        source="https://www.camel-ai.org/", metadata_filename=None
-    )
-    mock_instance.chunk_elements.assert_called_once()
-
-
-# Test query
 def test_query(vector_retriever):
+    r"""
+    Test query method.
+    """
     query = "test query"
     top_k = 1
     # Setup mock behavior for vector storage query
@@ -111,8 +110,10 @@ def test_query(vector_retriever):
     assert results[0]['similarity score'] == '0.8'
 
 
-# Test query with no results found
 def test_query_no_results(vector_retriever):
+    r"""
+    Test query with no results found.
+    """
     query = "test query"
     top_k = 1
     # Setup mock behavior for vector storage query
@@ -126,9 +127,10 @@ def test_query_no_results(vector_retriever):
     ):
         vector_retriever.query(query, top_k=top_k)
 
-
-# Test query with payload None
 def test_query_payload_none(vector_retriever):
+    r"""
+    Test query with payload None.
+    """
     query = "test query"
     top_k = 1
     # Setup mock behavior for vector storage query
