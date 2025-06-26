@@ -10,6 +10,11 @@ class HumanToolkit(BaseToolkit):
 
 A class representing a toolkit for human interaction.
 
+**Note:**
+
+This toolkit should be called to send a tidy message to the user to
+keep them informed.
+
 <a id="camel.toolkits.human_toolkit.HumanToolkit.ask_human_via_console"></a>
 
 ### ask_human_via_console
@@ -44,22 +49,22 @@ credentials, file paths).
 def send_message_to_user(self, message: str):
 ```
 
-Use this tool to send a message to the user to keep them
-informed about your progress, decisions, or actions.
-This is a one-way communication channel from you to the user and does
-not require a response. You should use it to:
-- Announce what you are about to do
-(e.g., "I will now search for papers on GUI Agents.")
-- Report the result of an action
-(e.g., "I have found 15 relevant papers.")
-- State a decision
-(e.g., "I will now analyze the top 10 papers.")
-- Inform the user about your current state if you are performing a
-task.
+Use this tool to send a tidy message to the user in one short
+sentence.
+
+This one-way tool keeps the user informed about your progress,
+decisions, or actions. It does not require a response.
+You should use it to:
+- Announce what you are about to do (e.g., "I will now search for
+papers on GUI Agents.").
+- Report the result of an action (e.g., "I have found 15 relevant
+papers.").
+- State a decision (e.g., "I will now analyze the top 10 papers.").
+- Give a status update during a long-running task.
 
 **Parameters:**
 
-- **message** (str): The message to send to the user.
+- **message** (str): The tidy and informative message for the user.
 
 <a id="camel.toolkits.human_toolkit.HumanToolkit.get_tools"></a>
 
