@@ -176,7 +176,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
             self._agent = None
 
         # Close session
-        await self._session.close()
+        await NVBrowserSession.close_all_sessions()
         return "Browser session closed."
 
     async def visit_page(self, url: str) -> Dict[str, str]:

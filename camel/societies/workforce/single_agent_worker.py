@@ -26,7 +26,7 @@ from camel.agents import ChatAgent
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
-from camel.tasks.task import Task, TaskState, validate_task_content
+from camel.tasks.task import Task, TaskState, is_task_result_insufficient
 
 
 class AgentPool:
@@ -352,14 +352,14 @@ class SingleAgentWorker(Worker):
         if task_result.failed:
             return TaskState.FAILED
 
-        if not validate_task_content(task_result.content, task.id):
+        task.result = task_result.content
+
+        if is_task_result_insufficient(task):
             print(
                 f"{Fore.RED}Task {task.id}: Content validation failed - "
                 f"task marked as failed{Fore.RESET}"
             )
             return TaskState.FAILED
-
-        task.result = task_result.content
         return TaskState.DONE
 
     async def _listen_to_channel(self):
