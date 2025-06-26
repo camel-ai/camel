@@ -19,6 +19,10 @@ if TYPE_CHECKING:
     from pandas import DataFrame
     from pandasai import SmartDataframe
 
+import pandas as pd
+
+from .base_loader import BaseLoader
+
 
 def check_suffix(valid_suffixs: List[str]) -> Callable:
     r"""A decorator to check the file suffix of a given file path.
@@ -75,6 +79,15 @@ class PandasReader:
             ".h5": self.read_hdf,
             ".orc": self.read_orc,
         }
+
+    @property
+    def loader_map(self) -> Dict[str, Callable]:
+        r"""Returns the loader map dictionary.
+
+        Returns:
+            Dict[str, Callable]: The loader map dictionary.
+        """
+        return self.__LOADER
 
     def load(
         self,
@@ -366,3 +379,43 @@ class PandasReader:
         import pandas as pd
 
         return pd.read_orc(file_path, *args, **kwargs)
+
+
+class PandasLoader(BaseLoader):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        r"""Initializes the PandasLoader class.
+
+        Args:
+            config (Optional[Dict[str, Any]], optional): The configuration
+                dictionary that can include LLM API settings for LLM-based
+                processing. If not provided, no LLM will be configured by
+                default. You can customize the LLM configuration by providing
+                a 'llm' key in the config dictionary. (default: :obj:`None`)
+        """
+        super().__init__(config)
+        self.reader = PandasReader(config)
+        self._loader_map = self.reader.loader_map
+
+    def load(
+        self,
+        source: Union["pd.DataFrame", str],
+        *args: Any,
+        **kwargs: Dict[str, Any],
+    ) -> "SmartDataframe":
+        r"""Loads a DataFrame from a source.
+
+        Args:
+            source (Union[pd.DataFrame, str]): The source to load the
+                DataFrame from.
+            *args (Any): Additional positional arguments.
+            **kwargs (Dict[str, Any]): Additional keyword arguments.
+
+        Returns:
+            SmartDataframe: The loaded DataFrame.
+        """
+        return self.reader.load(source, *args, **kwargs)
+
+    @property
+    def supported_formats(self) -> set:
+        r"""Returns the set of supported file formats."""
+        return set(self._loader_map.keys())

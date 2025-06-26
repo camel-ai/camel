@@ -21,7 +21,7 @@ from .jina_url_reader import JinaURLReader
 from .markitdown import MarkItDownLoader
 from .mineru_extractor import MinerU
 from .mistral_reader import MistralReader
-from .pandas_reader import PandasReader
+from .pandas_reader import PandasLoader, PandasReader
 from .scrapegraph_reader import ScrapeGraphAI
 from .unstructured_io import UnstructuredIO
 
@@ -34,6 +34,7 @@ __all__ = [
     'Firecrawl',
     'Apify',
     'PandasReader',
+    'PandasLoader',
     'ChunkrReader',
     'ChunkrReaderConfig',
     'MinerU',

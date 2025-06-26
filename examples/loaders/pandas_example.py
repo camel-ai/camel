@@ -18,7 +18,7 @@ import os
 import pandas as pd
 from pandasai.llm import OpenAI  # type: ignore[import-untyped]
 
-from camel.loaders import PandasReader
+from camel.loaders import PandasReader, PandasLoader
 
 # Create sample data
 sales_by_country = pd.DataFrame(
@@ -77,6 +77,14 @@ if os.getenv("OPENAI_API_KEY"):
 else:
     print("Skipping LLM example: OPENAI_API_KEY environment variable not set")
 
+# Example 3: Using PandasLoader
+print("Example 3: PandasLoader")
+loader = PandasLoader()
+df_loader = loader.load(sales_by_country)
+print(f"Loaded DataFrame shape: {df_loader.shape}")
+print("Top 5 countries by sales:")
+print(df_loader.sort_values(by="sales", ascending=False).head(5))
+print()
 """
 ===============================================================================
 Example output:
@@ -101,4 +109,14 @@ Querying data with LLM:
 3         Germany   4100
 1  United Kingdom   3200
 ===============================================================================
+
+Example 3: PandasLoader
+Loaded DataFrame shape: (10, 2)
+Top 5 countries by sales:
+          country  sales
+9           China   7000
+0   United States   5000
+8           Japan   4500
+3         Germany   4100
+1  United Kingdom   3200
 """
