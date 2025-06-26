@@ -63,8 +63,9 @@ def developer_agent_factory(
 
     system_message = """You are a skilled coding assistant with DIRECT CODE 
     EXECUTION CAPABILITIES. You MUST use the `send_message_to_user` tool to 
-    inform the user of every decision and action you take. This is a mandatory 
-    part of your workflow.
+    inform the user of every decision and action you take. Your message must 
+    be tidy and in one short sentence. This is a mandatory part of your 
+    workflow.
 
     Your capabilities include:
     - WRITE AND EXECUTE code in real-time to solve tasks
@@ -120,7 +121,8 @@ def search_agent_factory(
     information to solve the given task.
     
     You MUST use the `send_message_to_user` tool to inform the user of every 
-    decision and action you take. This is a mandatory part of your workflow.
+    decision and action you take. Your message must be tidy and in one short 
+    sentence. This is a mandatory part of your workflow.
 
     Keep in mind that:
     - For each decision you make and action you take, you must send a message 
@@ -201,7 +203,8 @@ def document_agent_factory(
     system_message = """You are a Document Processing Assistant specialized in 
     creating, modifying, and managing various document formats. You MUST use 
     the `send_message_to_user` tool to inform the user of every decision and 
-    action you take. This is a mandatory part of your workflow.
+    action you take. Your message must be tidy and in one short sentence. 
+    This is a mandatory part of your workflow.
     
     Your capabilities include:
 
@@ -278,7 +281,8 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     system_message = """You are a Multi-Modal Processing Assistant specialized 
     in analyzing and generating various types of media content. You MUST use 
     the `send_message_to_user` tool to inform the user of every decision and 
-    action you take. This is a mandatory part of your workflow.
+    action you take. Your message must be tidy and in one short sentence. 
+    This is a mandatory part of your workflow.
     
     Your capabilities include:
 
@@ -332,8 +336,8 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
             content="""
 You are a Social Media Management Assistant with comprehensive capabilities 
 across multiple platforms. You MUST use the `send_message_to_user` tool to 
-inform the user of every decision and action you take. This is a mandatory 
-part of your workflow.
+inform the user of every decision and action you take. Your message must be 
+tidy and in one short sentence. This is a mandatory part of your workflow.
 
 Your integrated toolkits enable you to:
 
@@ -423,8 +427,9 @@ async def main():
         coordinator_agent = ChatAgent(
             "You are a helpful coordinator. You MUST use the "
             "`send_message_to_user` tool to inform the user of every "
-            "decision and action you take. This is a mandatory part of your "
-            "workflow.",
+            "decision and action you take. Your message must be tidy "
+            "and in one short sentence. This is a mandatory part of "
+            "your workflow.",
             model=model_backend_reason,
             tools=[
                 *HumanToolkit().get_tools(),
@@ -433,8 +438,9 @@ async def main():
         task_agent = ChatAgent(
             "You are a helpful task planner. You MUST use the "
             "`send_message_to_user` tool to inform the user of every "
-            "decision and action you take. This is a mandatory part of your "
-            "workflow.",
+            "decision and action you take. Your message must be tidy "
+            "and in one short sentence. This is a mandatory part of "
+            "your workflow.",
             model=model_backend_reason,
             tools=[
                 *HumanToolkit().get_tools(),
@@ -443,8 +449,8 @@ async def main():
         new_worker_agent = ChatAgent(
             "You are a helpful worker. You MUST use the "
             "`send_message_to_user` tool to inform the user of every "
-            "decision and action you take. This is a mandatory part of your "
-            "workflow.",
+            "decision and action you take. Your message must be tidy and in "
+            "one short sentence. This is a mandatory part of your workflow.",
             model=model_backend,
             tools=[
                 *HumanToolkit().get_tools(),
