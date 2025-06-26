@@ -19,7 +19,19 @@ if TYPE_CHECKING:
     from pandas import DataFrame
     from pandasai import SmartDataframe
 
-import pandas as pd
+try:
+    import pandas as pd
+    from pandas import DataFrame
+
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+
+if not PANDAS_AVAILABLE:
+    raise ImportError(
+        "The 'pandas' package is required for this module. "
+        "Please install it with: pip install 'camel[pandas]'"
+    )
 
 from .base_loader import BaseLoader
 

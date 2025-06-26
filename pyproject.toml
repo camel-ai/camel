@@ -390,6 +390,10 @@ all = [
     "pgvector>=0.2.4,<0.3",
     "chromadb>=0.6.0,<1.0.0",
 ]
+pandas = [
+    "pandas>=2.0.0",
+    "pandasai>=2.0.0",  # 如果使用 pandasai 功能
+]
 
 [project.urls]
 Homepage = "https://www.camel-ai.org/"
