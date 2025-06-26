@@ -632,7 +632,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.70"
+version = "0.2.71a1"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -8276,7 +8276,7 @@ wheels = [
 
 [[package]]
 name = "weaviate-client"
-version = "4.15.3"
+version = "4.15.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "authlib" },
@@ -8288,9 +8288,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "validators" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/96/a3/1c69fd6c7ce176583acd784d35f57e8015c95880a70813f56babe38b00c9/weaviate_client-4.15.3.tar.gz", hash = "sha256:faeff93a4d8baac0a88d9eb42a419689b8f9f79f446e00aa5a7e6f76065ec3fe", size = 663964, upload-time = "2025-06-23T12:53:27.509Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ba/90/1510c0b76abee95a70a828451da0c04445a4bcbabae74bf96f522b0a599d/weaviate_client-4.15.4.tar.gz", hash = "sha256:005e7a6cee52ff4ac66f244a572b5ed98dd0e15bfda380979a88fddf692720df", size = 663413, upload-time = "2025-06-26T07:01:45.545Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8f/8e/4c7060dd9a45036d81ef1102217531b5e727f1cc6576fa5dac9ff9b0b971/weaviate_client-4.15.3-py3-none-any.whl", hash = "sha256:28839ce4117f78fc8a48188c33ce694f83b98ad1f71c4c321aaaef202ac79b6b", size = 433729, upload-time = "2025-06-23T12:53:25.802Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/41/f2662a2860493acc345537a1f8e8dbb3695e485179114e295ffd0ec4909c/weaviate_client-4.15.4-py3-none-any.whl", hash = "sha256:870b73495b8e5849003690f7c36f2795b90765e62482f07ab71275dbd21b271d", size = 432978, upload-time = "2025-06-26T07:01:43.955Z" },
 ]
 
 [[package]]

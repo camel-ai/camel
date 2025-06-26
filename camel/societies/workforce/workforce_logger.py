@@ -488,7 +488,6 @@ class WorkforceLogger:
             'worker_utilization': {},
             'current_pending_tasks': 0,
             'total_workforce_running_time_seconds': 0.0,
-            'avg_task_queue_time_seconds': 0.0,
         }
 
         task_start_times: Dict[str, float] = {}
