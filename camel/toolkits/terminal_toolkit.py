@@ -81,7 +81,7 @@ class TerminalToolkit(BaseToolkit):
         self.terminal_ready = threading.Event()
         self.gui_thread = None
         self.safe_mode = safe_mode
-
+        self._file_initialized = False
         self.cloned_env_path = None
         self.use_shell_mode = use_shell_mode
 
@@ -128,7 +128,6 @@ class TerminalToolkit(BaseToolkit):
         """
 
         self.log_file = os.path.join(os.getcwd(), "camel_terminal.txt")
-        self._file_initialized = False
 
         # Inform the user
         logger.info(f"Terminal output will be redirected to: {self.log_file}")

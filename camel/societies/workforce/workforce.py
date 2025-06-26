@@ -2096,6 +2096,11 @@ class Workforce(BaseNode):
 
                 # If no task was returned, continue
                 if returned_task is None:
+                    logger.debug(
+                        f"No task returned in workforce {self.node_id}. "
+                        f"Pending: {len(self._pending_tasks)}, "
+                        f"In-flight: {self._in_flight_tasks}"
+                    )
                     await self._post_ready_tasks()
                     continue
 

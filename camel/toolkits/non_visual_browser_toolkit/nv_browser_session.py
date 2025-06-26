@@ -17,6 +17,8 @@ import asyncio
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional
 
+from camel.logger import get_logger
+
 from .actions import ActionExecutor
 from .snapshot import PageSnapshot
 
@@ -27,6 +29,9 @@ if TYPE_CHECKING:
         Page,
         Playwright,
     )
+
+
+logger = get_logger(__name__)
 
 
 class NVBrowserSession:
@@ -48,7 +53,7 @@ class NVBrowserSession:
         Dict[asyncio.AbstractEventLoop, "NVBrowserSession"]
     ] = {}
 
-    __initialised: bool
+    _initialized: bool
 
     def __new__(
         cls, *, headless: bool = True, user_data_dir: Optional[str] = None
@@ -56,16 +61,16 @@ class NVBrowserSession:
         loop = asyncio.get_running_loop()
         if loop not in cls._sessions:
             instance = super().__new__(cls)
-            instance.__initialised = False
+            instance._initialized = False
             cls._sessions[loop] = instance
         return cls._sessions[loop]
 
     def __init__(
         self, *, headless: bool = True, user_data_dir: Optional[str] = None
     ):
-        if self.__initialised:
+        if self._initialized:
             return
-        self.__initialised = True
+        self._initialized = True
 
         self._headless = headless
         self._user_data_dir = user_data_dir
@@ -114,10 +119,6 @@ class NVBrowserSession:
             self._browser = await pl.chromium.launch(headless=self._headless)
             self._context = await self._browser.new_context()
 
-        from camel.logger import get_logger
-
-        _dbg_logger = get_logger(__name__)
-
         # Reuse an already open page (persistent context may restore last
         # session)
         if self._context.pages:
@@ -126,7 +127,7 @@ class NVBrowserSession:
             self._page = await self._context.new_page()
 
         # Debug information to help trace concurrency issues
-        _dbg_logger.debug(
+        logger.debug(
             "Session %s created browser=%s context=%s page=%s (url=%s)",
             hex(id(self)),
             hex(id(self._browser)) if self._browser else None,
@@ -177,9 +178,6 @@ class NVBrowserSession:
 
         # Log errors if any occurred during cleanup
         if errors:
-            from camel.logger import get_logger
-
-            logger = get_logger(__name__)
             logger.warning(
                 "Errors during browser session cleanup: %s", "; ".join(errors)
             )
@@ -191,7 +189,15 @@ class NVBrowserSession:
             if loop.is_running():
                 await session._close_session()
             else:
-                loop.run_until_complete(session._close_session())
+                try:
+                    if not loop.is_closed():
+                        loop.run_until_complete(session._close_session())
+                except Exception as e:
+                    logger.warning(
+                        "Failed to close session for loop %s: %s",
+                        hex(id(loop)),
+                        e,
+                    )
         cls._sessions.clear()
 
     # ------------------------------------------------------------------
