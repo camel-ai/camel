@@ -15,6 +15,16 @@ It provides a single *Page* instance plus helper utilities (snapshot &
 executor).  Multiple toolkits or agents can reuse this class without
 duplicating Playwright setup code.
 
+This class is a singleton per event-loop.
+
+<a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession.__new__"></a>
+
+### __new__
+
+```python
+def __new__(cls):
+```
+
 <a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession.__init__"></a>
 
 ### __init__

@@ -139,6 +139,20 @@ def _sync_shared_memory(self):
 
 Synchronize memory across all agents by collecting and sharing.
 
+<a id="camel.societies.workforce.workforce.Workforce._cleanup_task_tracking"></a>
+
+### _cleanup_task_tracking
+
+```python
+def _cleanup_task_tracking(self, task_id: str):
+```
+
+Clean up tracking data for a task to prevent memory leaks.
+
+**Parameters:**
+
+- **task_id** (str): The ID of the task to clean up.
+
 <a id="camel.societies.workforce.workforce.Workforce._decompose_task"></a>
 
 ### _decompose_task
@@ -367,7 +381,7 @@ def add_single_agent_worker(
     self,
     description: str,
     worker: ChatAgent,
-    pool_max_size: int = 10
+    pool_max_size: int = DEFAULT_WORKER_POOL_SIZE
 ):
 ```
 

@@ -69,6 +69,15 @@ directory.
 def download_video(self, url: str):
 ```
 
+Download the video and optionally split it into chunks.
+
+yt-dlp will detect if the video is downloaded automatically so there
+is no need to check if the video exists.
+
+**Parameters:**
+
+- **url** (str): The URL of the video to download.
+
 **Returns:**
 
   str: The path to the downloaded video file.
@@ -104,7 +113,7 @@ dividing the video into equal parts if an integer is provided.
 
 **Parameters:**
 
-- **video_url** (str): The URL of the video to take screenshots.
+- **video_path** (str): The local path or URL of the video to take screenshots.
 - **amount** (int): the amount of evenly split screenshots to capture.
 
 **Returns:**
