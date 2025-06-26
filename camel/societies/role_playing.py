@@ -563,7 +563,8 @@ class RolePlaying:
         # it here after choosing one message via `_reduce_message_options()`.
         if (
             'n' in self.user_agent.model_backend.model_config_dict.keys()
-            and self.user_agent.model_backend.model_config_dict['n'] is not None
+            and self.user_agent.model_backend.model_config_dict['n']
+            is not None
             and self.user_agent.model_backend.model_config_dict['n'] > 1
         ):
             self.user_agent.record_message(user_msg)
@@ -589,7 +590,8 @@ class RolePlaying:
         # it here after choosing one message via `_reduce_message_options()`.
         if (
             'n' in self.assistant_agent.model_backend.model_config_dict.keys()
-            and self.assistant_agent.model_backend.model_config_dict['n'] is not None
+            and self.assistant_agent.model_backend.model_config_dict['n']
+            is not None
             and self.assistant_agent.model_backend.model_config_dict['n'] > 1
         ):
             self.assistant_agent.record_message(assistant_msg)
@@ -652,7 +654,8 @@ class RolePlaying:
         # it here after choosing one message via `_reduce_message_options()`.
         if (
             'n' in self.user_agent.model_backend.model_config_dict.keys()
-            and self.user_agent.model_backend.model_config_dict['n'] is not None
+            and self.user_agent.model_backend.model_config_dict['n']
+            is not None
             and self.user_agent.model_backend.model_config_dict['n'] > 1
         ):
             self.user_agent.record_message(user_msg)
@@ -678,7 +681,8 @@ class RolePlaying:
         # it here after choosing one message via `_reduce_message_options()`.
         if (
             'n' in self.assistant_agent.model_backend.model_config_dict.keys()
-            and self.assistant_agent.model_backend.model_config_dict['n'] is not None
+            and self.assistant_agent.model_backend.model_config_dict['n']
+            is not None
             and self.assistant_agent.model_backend.model_config_dict['n'] > 1
         ):
             self.assistant_agent.record_message(assistant_msg)
