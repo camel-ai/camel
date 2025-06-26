@@ -48,14 +48,15 @@ class PageSnapshot:
         try:
             current_url = self.page.url
 
-            # Serve cached copy (unless diff requested)
-            if (
-                not force_refresh
-                and current_url == self._last_url
-                and self.snapshot_data
-                and not diff_only
-            ):
-                return self.snapshot_data
+            # Previously we skipped regeneration when the URL had not changed
+            # and no explicit refresh was requested. This prevented the agent
+            # from seeing DOM updates that occur without a navigation (e.g.
+            # single-page apps, dynamic games such as Wordle). The early-exit
+            # logic has been removed so that we always capture a *fresh* DOM
+            # snapshot.  If the snapshot happens to be byte-for-byte identical
+            # to the previous one we simply return it after the standard
+            # comparison step below; otherwise callers receive the updated
+            # snapshot even when the URL did not change.
 
             # ensure DOM stability
             await self.page.wait_for_load_state(
