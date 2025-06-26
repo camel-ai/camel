@@ -58,6 +58,9 @@ RUN python3.10 -m pip install --upgrade pip setuptools wheel
 # Install uv using pip instead of the shell script
 RUN pip install uv
 
+# Expose 3000 port for development service
+EXPOSE 3000
+
 # Setup working directory
 WORKDIR /workspace
 
