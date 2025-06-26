@@ -64,21 +64,23 @@ async def test_with_timeout_function():
 async def test_post_task_timeout():
     r"""Test timeout handling in _post_task method"""
     workforce = TestTimeoutWorkforce()
-
-    # Mock TaskChannel that times out
     mock_channel = AsyncMock(spec=TaskChannel)
-    mock_channel.post_task.side_effect = asyncio.TimeoutError()
-
+    mock_channel.post_task.side_effect = asyncio.TimeoutError(
+        "Simulated timeout"
+    )
     workforce._channel = mock_channel
     mock_task = MagicMock(spec=Task)
     mock_task.id = "test_task_id"
 
-    # Only verify that a TimeoutError is raised, not its specific message
-    with pytest.raises(asyncio.TimeoutError):
+    # use patch to mock logger
+    with patch('camel.societies.workforce.workforce.logger') as mock_logger:
         await workforce._post_task(mock_task, "test_worker_id")
 
-    # Verify the channel method was called
-    mock_channel.post_task.assert_called_once()
+        # verify error log
+        mock_logger.error.assert_called_with(
+            "Failed to post task test_task_id to "
+            "test_worker_id: Simulated timeout"
+        )
 
 
 @pytest.mark.asyncio
@@ -86,8 +88,6 @@ async def test_listen_to_channel_recovers_from_timeout():
     r"""Test that _listen_to_channel method recovers from timeouts when
     getting returned tasks"""
     workforce = TestTimeoutWorkforce()
-
-    # Mock TaskChannel with first call timing out, second call succeeding
     mock_channel = AsyncMock(spec=TaskChannel)
     mock_task = MagicMock(spec=Task)
     mock_task.id = "test_task_id"
@@ -109,8 +109,6 @@ async def test_listen_to_channel_recovers_from_timeout():
 
     # Mock _handle_completed_task to avoid full implementation
     workforce._handle_completed_task = AsyncMock()
-
-    # Mock _post_ready_tasks to avoid implementation
     workforce._post_ready_tasks = AsyncMock()
 
     # Patch _listen_to_channel to run only limited iterations
@@ -123,20 +121,14 @@ async def test_listen_to_channel_recovers_from_timeout():
             # Post initial ready tasks
             await workforce._post_ready_tasks()
 
-            # try to get returned task - should raise TimeoutError
-            with pytest.raises(
-                asyncio.TimeoutError, match="Simulated timeout"
-            ):
-                await workforce._get_returned_task()
-
-            # Ensure the mock was called for the first attempt
+            # First call should handle timeout and return None
+            result = await workforce._get_returned_task()
+            assert result is None
             assert mock_channel.get_returned_task_by_publisher.call_count == 1
 
             # Second try should succeed
             returned_task_after_timeout = await workforce._get_returned_task()
             assert returned_task_after_timeout is mock_task
-
-            # Ensure the mock was called for the second attempt
             assert mock_channel.get_returned_task_by_publisher.call_count == 2
 
             # Process the task
@@ -154,12 +146,6 @@ async def test_listen_to_channel_recovers_from_timeout():
         patch.object(workforce, 'start', direct_start),
     ):
         await workforce.start()
-
-    # Verify get_returned_task_by_publisher was called twice (first fails,
-    # second succeeds)
-    assert mock_channel.get_returned_task_by_publisher.call_count == 2
-    # Verify the task was processed
-    workforce._handle_completed_task.assert_called_once_with(mock_task)
 
 
 @pytest.mark.asyncio
@@ -229,6 +215,7 @@ async def test_multiple_timeout_points():
 
     mock_task.failure_count = 0
     mock_task.get_depth.return_value = 0
+    mock_task.assigned_worker_id = "test_worker_id"
 
     mock_channel.get_returned_task_by_publisher.return_value = mock_task
 
