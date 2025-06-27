@@ -18,7 +18,7 @@ Validation modes for different use cases.
 def validate_task_content(
     content: str,
     task_id: str = 'unknown',
-    min_length: int = 5,
+    min_length: int = 1,
     mode: TaskValidationMode = TaskValidationMode.INPUT,
     check_failure_patterns: bool = True
 ):
@@ -32,7 +32,7 @@ standards.
 
 - **content** (str): The task content or result to validate.
 - **task_id** (str): Task ID for logging purposes. (default: :obj:`"unknown"`)
-- **min_length** (int): Minimum content length after stripping whitespace. (default: :obj:`5`)
+- **min_length** (int): Minimum content length after stripping whitespace. (default: :obj:`1`)
 - **mode** (TaskValidationMode): Validation mode - INPUT for task content, OUTPUT for task results. (default: :obj:`TaskValidationMode.INPUT`)
 - **check_failure_patterns** (bool): Whether to check for failure indicators in the content. Only effective in OUTPUT mode. (default: :obj:`True`)
 
