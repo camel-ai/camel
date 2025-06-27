@@ -473,3 +473,53 @@ Here are practical usage patterns for each storage type—pick the ones you need
       ```
       </CodeGroup>
 </Card>
+
+---
+
+<Card title="PgVectorStorage Vector Storage" icon="database">
+  <b>Use for:</b> Storing and querying vectors in PostgreSQL.
+  <b>Perfect for:</b> Leveraging an existing PostgreSQL database for vector search.
+
+  <Tabs>
+    <Tab title="Python Example">
+      ```python
+      from camel.storages import PgVectorStorage, VectorDBQuery, VectorRecord
+
+      # Replace with your PostgreSQL connection details
+      PG_CONN_INFO = {
+          "host": "127.0.0.1",
+          "port": 5432,
+          "user": "postgres",
+          "password": "postgres",
+          "dbname": "postgres",
+      }
+
+      # Create PgVectorStorage instance
+      pg_storage = PgVectorStorage(
+          vector_dim=4,
+          conn_info=PG_CONN_INFO,
+          table_name="camel_example_vectors",
+      )
+
+      # Add vector records
+      pg_storage.add([
+          VectorRecord(vector=[-0.1, 0.1, -0.1, 0.1], payload={'key1': 'value1'}),
+          VectorRecord(vector=[-0.1, 0.1, 0.1, 0.1], payload={'key2': 'value2'}),
+      ])
+
+      # Query similar vectors
+      query_results = pg_storage.query(VectorDBQuery(query_vector=[0.1, 0.2, 0.1, 0.1], top_k=1))
+      for result in query_results:
+          print(result.record.payload, result.similarity)
+
+      # Clear all vectors
+      pg_storage.clear()
+      ```
+    </Tab>
+    <Tab title="Output">
+      ```markdown
+      >>> {'key2': 'value2'} 0.5669467
+      ```
+    </Tab>
+  </Tabs>
+</Card>
