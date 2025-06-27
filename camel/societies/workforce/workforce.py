@@ -407,7 +407,7 @@ class Workforce(BaseNode):
         pause controls once managed by this workforce)."""
         try:
             if getattr(agent, "pause_event", None) is not self._pause_event:
-                setattr(agent, "pause_event", self._pause_event)
+                agent.pause_event = self._pause_event
         except AttributeError:
             # Should not happen, but guard against unexpected objects
             pass
@@ -1697,7 +1697,12 @@ class Workforce(BaseNode):
                 model_config_dict={"temperature": 0},
             )
 
-            return ChatAgent(worker_sys_msg, model=model, tools=function_list, pause_event=self._pause_event)  # type: ignore[arg-type]
+            return ChatAgent(
+                worker_sys_msg,
+                model=model,
+                tools=function_list,
+                pause_event=self._pause_event,
+            )  # type: ignore[arg-type]
 
     async def _get_returned_task(self) -> Optional[Task]:
         r"""Get the task that's published by this node and just get returned

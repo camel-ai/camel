@@ -13,13 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import textwrap
 import threading
-import uuid
-import asyncio
 import time
+import uuid
 from collections import defaultdict
 from pathlib import Path
 from typing import (
