@@ -80,7 +80,7 @@ class JinaRerankerToolkit(BaseToolkit):
             from transformers import AutoModel
 
             self.model = AutoModel.from_pretrained(
-                self.model_name,
+                str(self.model_name),
                 torch_dtype="auto",
                 trust_remote_code=True,
             )
