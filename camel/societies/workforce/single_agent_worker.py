@@ -26,7 +26,7 @@ from camel.agents import ChatAgent
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
-from camel.tasks.task import Task, TaskState, validate_task_content
+from camel.tasks.task import Task, TaskState, is_task_result_insufficient
 
 
 class AgentPool:
@@ -43,8 +43,6 @@ class AgentPool:
             (default: :obj:`10`)
         auto_scale (bool): Whether to automatically scale the pool size.
             (default: :obj:`True`)
-        scale_factor (float): Factor by which to scale the pool when needed.
-            (default: :obj:`1.5`)
         idle_timeout (float): Time in seconds after which idle agents are
             removed. (default: :obj:`180.0`)
     """
@@ -55,13 +53,11 @@ class AgentPool:
         initial_size: int = 1,
         max_size: int = 10,
         auto_scale: bool = True,
-        scale_factor: float = 1.5,
         idle_timeout: float = 180.0,  # 3 minutes
     ):
         self.base_agent = base_agent
         self.max_size = max_size
         self.auto_scale = auto_scale
-        self.scale_factor = scale_factor
         self.idle_timeout = idle_timeout
 
         # Pool management
@@ -284,22 +280,22 @@ class SingleAgentWorker(Worker):
             response = await worker_agent.astep(
                 prompt, response_format=TaskResult
             )
+
+            # Get token usage from the response
+            usage_info = response.info.get("usage") or response.info.get(
+                "token_usage"
+            )
+            total_tokens = usage_info.get("total_tokens", 0)
+
         except Exception as e:
             print(
-                f"{Fore.RED}Error occurred while processing task {task.id}:"
-                f"\n{e}{Fore.RESET}"
+                f"{Fore.RED}Error processing task {task.id}: "
+                f"{type(e).__name__}: {e}{Fore.RESET}"
             )
             return TaskState.FAILED
         finally:
             # Return agent to pool or let it be garbage collected
             await self._return_worker_agent(worker_agent)
-
-        # Get actual token usage from the agent that processed this task
-        try:
-            _, total_token_count = worker_agent.memory.get_context()
-        except Exception:
-            # Fallback if memory context unavailable
-            total_token_count = 0
 
         # Populate additional_info with worker attempt details
         if task.additional_info is None:
@@ -321,7 +317,7 @@ class SingleAgentWorker(Worker):
             f"to process task {task.content}",
             "response_content": response.msg.content,
             "tool_calls": response.info.get("tool_calls"),
-            "total_token_count": total_token_count,
+            "total_tokens": total_tokens,
         }
 
         # Store the worker attempt in additional_info
@@ -330,14 +326,19 @@ class SingleAgentWorker(Worker):
         task.additional_info["worker_attempts"].append(worker_attempt_details)
 
         # Store the actual token usage for this specific task
-        task.additional_info["token_usage"] = {
-            "total_tokens": total_token_count
-        }
+        task.additional_info["token_usage"] = {"total_tokens": total_tokens}
 
-        print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
+        print(f"======\n{Fore.GREEN}Response from {self}:{Fore.RESET}")
 
-        result_dict = json.loads(response.msg.content)
-        task_result = TaskResult(**result_dict)
+        try:
+            result_dict = json.loads(response.msg.content)
+            task_result = TaskResult(**result_dict)
+        except json.JSONDecodeError as e:
+            print(
+                f"{Fore.RED}JSON parsing error for task {task.id}: "
+                f"Invalid response format - {e}{Fore.RESET}"
+            )
+            return TaskState.FAILED
 
         color = Fore.RED if task_result.failed else Fore.GREEN
         print(
@@ -347,14 +348,14 @@ class SingleAgentWorker(Worker):
         if task_result.failed:
             return TaskState.FAILED
 
-        if not validate_task_content(task_result.content, task.id):
+        task.result = task_result.content
+
+        if is_task_result_insufficient(task):
             print(
                 f"{Fore.RED}Task {task.id}: Content validation failed - "
                 f"task marked as failed{Fore.RESET}"
             )
             return TaskState.FAILED
-
-        task.result = task_result.content
         return TaskState.DONE
 
     async def _listen_to_channel(self):

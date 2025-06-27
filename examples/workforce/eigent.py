@@ -21,15 +21,20 @@ from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import (
     AudioAnalysisToolkit,
+    BrowserNonVisualToolkit,
     CodeExecutionToolkit,
+    Crawl4AIToolkit,
     DalleToolkit,
+    EdgeOnePagesMCPToolkit,
+    ExcelToolkit,
     FileWriteToolkit,
     FunctionTool,
+    # GoogleDriveMCPToolkit,
     HumanToolkit,
     ImageAnalysisToolkit,
     LinkedInToolkit,
+    MarkItDownToolkit,
     NotionToolkit,
-    PlaywrightMCPToolkit,
     PPTXToolkit,
     RedditToolkit,
     SearchToolkit,
@@ -40,18 +45,29 @@ from camel.toolkits import (
     WhatsAppToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
+from camel.utils.commons import api_keys_required
 
 
-def developer_agent_factory(model: BaseModelBackend, task_id: str):
+def developer_agent_factory(
+    model: BaseModelBackend,
+    task_id: str,
+    edgeone_pages_mcp_toolkit: EdgeOnePagesMCPToolkit,
+):
     r"""Factory for creating a developer agent."""
     tools = [
-        *TerminalToolkit().get_tools(),
-        HumanToolkit().ask_human_via_console,
+        *HumanToolkit().get_tools(),
+        *TerminalToolkit(clone_current_env=True).get_tools(),
         *CodeExecutionToolkit().get_tools(),
+        *edgeone_pages_mcp_toolkit.get_tools(),
     ]
 
     system_message = """You are a skilled coding assistant with DIRECT CODE 
-    EXECUTION CAPABILITIES. You can:
+    EXECUTION CAPABILITIES. You MUST use the `send_message_to_user` tool to 
+    inform the user of every decision and action you take. Your message must 
+    be tidy and in one short sentence. This is a mandatory part of your 
+    workflow.
+
+    Your capabilities include:
     - WRITE AND EXECUTE code in real-time to solve tasks
     - RUN terminal commands to install packages, process files, or test 
     functionality
@@ -60,10 +76,16 @@ def developer_agent_factory(model: BaseModelBackend, task_id: str):
     needed for efficient solutions
     - IMPLEMENT complete, production-ready code rather than theoretical 
     examples
+    - USE edgeone pages mcp toolkit to create and edit web pages. After you 
+    create a web page, you can ask the search agent to visit it for 
+    verification.
     - DEMONSTRATE results with proper error handling and practical 
     implementation
     - If there's dependency issues when you try to execute code, you should 
-    use the terminal toolkit to install the dependencies."""
+    use the terminal toolkit to install the dependencies.
+    - ASK for human input via the console if you are stuck or need 
+    clarification.
+    """
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -75,33 +97,36 @@ def developer_agent_factory(model: BaseModelBackend, task_id: str):
     )
 
 
-async def search_agent_factory(
+@api_keys_required([(None, 'EXA_API_KEY')])
+def search_agent_factory(
     model: BaseModelBackend,
     task_id: str,
-    playwright_toolkit: PlaywrightMCPToolkit,
 ):
     r"""Factory for creating a search agent, based on user-provided code
-    structure."""
-    search_toolkits = SearchToolkit()
-    # browser_toolkits = AsyncBrowserToolkit()
-    terminal_toolkits = TerminalToolkit()
-    human_toolkits = HumanToolkit()
+    structure.
+    """
     tools = [
-        # FunctionTool(search_toolkits.search_wiki),
-        FunctionTool(search_toolkits.search_google),
-        # FunctionTool(search_toolkits.search_bing),
-        # FunctionTool(search_toolkits.search_baidu),
-        *playwright_toolkit.get_tools(),
-        # *browser_toolkits.get_tools(),
-        *terminal_toolkits.get_tools(),
-        human_toolkits.ask_human_via_console,
-        # Firecrawl().scrape,
+        # FunctionTool(SearchToolkit().search_wiki),
+        FunctionTool(SearchToolkit().search_exa),
+        # FunctionTool(SearchToolkit().search_bing),
+        # FunctionTool(SearchToolkit().search_baidu),
+        *BrowserNonVisualToolkit(headless=False).get_tools(),
+        *TerminalToolkit().get_tools(),
+        *HumanToolkit().get_tools(),
+        *Crawl4AIToolkit().get_tools(),
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
     extract webpage content, simulate browser actions, and provide relevant 
     information to solve the given task.
+    
+    You MUST use the `send_message_to_user` tool to inform the user of every 
+    decision and action you take. Your message must be tidy and in one short 
+    sentence. This is a mandatory part of your workflow.
+
     Keep in mind that:
+    - For each decision you make and action you take, you must send a message 
+    to the user to keep them informed.
     - Do not be overly confident in your own knowledge. Searching can provide 
     a broader perspective and help validate existing knowledge.  
     - If one way fails to provide an answer, try other ways or methods. The 
@@ -146,12 +171,11 @@ Here are some tips that help you perform web search:
     terms step-by-step to find more urls.
 - The results you return do not have to directly answer the original question, 
     you only need to collect relevant information.
-    
-    """
+"""
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
-            role_name="Document Agent",
+            role_name="Search Agent",
             content=system_message,
         ),
         model=model,
@@ -159,19 +183,30 @@ Here are some tips that help you perform web search:
     )
 
 
-def document_agent_factory(model: BaseModelBackend, task_id: str):
+def document_agent_factory(
+    model: BaseModelBackend,
+    task_id: str,
+    # google_drive_mcp_toolkit: GoogleDriveMCPToolkit,
+):
     r"""Factory for creating a document agent, based on user-provided code
     structure."""
     tools = [
         *FileWriteToolkit().get_tools(),
         *PPTXToolkit().get_tools(),
+        # *google_drive_mcp_toolkit.get_tools(),
         # *RetrievalToolkit().get_tools(),
-        HumanToolkit().ask_human_via_console,
+        *HumanToolkit().get_tools(),
+        *MarkItDownToolkit().get_tools(),
+        *ExcelToolkit().get_tools(),
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
-    creating, modifying, and managing various document formats. Your 
-    capabilities include:
+    creating, modifying, and managing various document formats. You MUST use 
+    the `send_message_to_user` tool to inform the user of every decision and 
+    action you take. Your message must be tidy and in one short sentence. 
+    This is a mandatory part of your workflow.
+    
+    Your capabilities include:
 
     1. Document Creation & Editing:
        - Create and write to various file formats including Markdown (.md), 
@@ -191,7 +226,20 @@ def document_agent_factory(model: BaseModelBackend, task_id: str):
        - Create tables with headers and rows of data
        - Support for custom templates and slide layouts
 
-    3. Human Interaction:
+    3. Excel Spreadsheet Management:
+       - Extract and analyze content from Excel files (.xlsx, .xls, .csv) 
+       with detailed cell information and markdown formatting
+       - Create new Excel workbooks from scratch with multiple sheets
+       - Perform comprehensive spreadsheet operations including:
+         * Sheet creation, deletion, and data clearing
+         * Cell-level operations (read, write, find specific values)
+         * Row and column manipulation (add, update, delete)
+         * Range operations for bulk data processing
+         * Data export to CSV format for compatibility
+       - Handle complex data structures with proper formatting and validation
+       - Support for both programmatic data entry and manual cell updates
+
+    4. Human Interaction:
        - Ask questions to users and receive their responses
        - Send informative messages to users without requiring responses
 
@@ -201,9 +249,13 @@ def document_agent_factory(model: BaseModelBackend, task_id: str):
     - Provide clear feedback about document creation and modification processes
     - Ask clarifying questions when user requirements are ambiguous
     - Recommend best practices for document organization and presentation
+    - For Excel files, always provide clear data structure and organization
+    - When creating spreadsheets, consider data relationships and use 
+    appropriate sheet naming conventions
 
     Your goal is to help users efficiently create, modify, and manage their 
-    documents with professional quality and appropriate formatting."""
+    documents with professional quality and appropriate formatting across all 
+    supported formats including advanced spreadsheet functionality."""
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -223,14 +275,19 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
         *DalleToolkit().get_tools(),
-        HumanToolkit().ask_human_via_console,
+        *HumanToolkit().get_tools(),
     ]
 
     system_message = """You are a Multi-Modal Processing Assistant specialized 
-    in analyzing and generating various types of media content. Your 
-    capabilities include:
+    in analyzing and generating various types of media content. You MUST use 
+    the `send_message_to_user` tool to inform the user of every decision and 
+    action you take. Your message must be tidy and in one short sentence. 
+    This is a mandatory part of your workflow.
+    
+    Your capabilities include:
 
-    1. Audio Analysis & Processing:
+    1. Video & Audio Analysis:
+       - Download videos from URLs for analysis.
        - Transcribe speech from audio files to text with high accuracy
        - Answer specific questions about audio content
        - Process audio from both local files and URLs
@@ -276,52 +333,54 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
     return ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Social Medium Agent",
-            content="""You are a Social Media Management Assistant with 
-            comprehensive capabilities across multiple platforms. Your 
-            integrated toolkits enable you to:
+            content="""
+You are a Social Media Management Assistant with comprehensive capabilities 
+across multiple platforms. You MUST use the `send_message_to_user` tool to 
+inform the user of every decision and action you take. Your message must be 
+tidy and in one short sentence. This is a mandatory part of your workflow.
+
+Your integrated toolkits enable you to:
 
 1. WhatsApp Business Management (WhatsAppToolkit):
-   - Send text messages to customers via the WhatsApp Business API
-   - Send template messages for standardized communications
-   - Retrieve business profile information
+   - Send text and template messages to customers via the WhatsApp Business 
+   API.
+   - Retrieve business profile information.
 
 2. Twitter Account Management (TwitterToolkit):
-   - Create tweets with text content (respecting character limits)
-   - Create tweets with polls or as quote tweets
-   - Delete existing tweets
-   - Retrieve user profile information
+   - Create tweets with text content, polls, or as quote tweets.
+   - Delete existing tweets.
+   - Retrieve user profile information.
 
 3. LinkedIn Professional Networking (LinkedInToolkit):
-   - Create posts on LinkedIn (respecting character limits)
-   - Delete existing posts (with user confirmation)
-   - Retrieve authenticated user's profile information
+   - Create posts on LinkedIn.
+   - Delete existing posts.
+   - Retrieve authenticated user's profile information.
 
 4. Reddit Content Analysis (RedditToolkit):
-   - Collect top posts and comments from specified subreddits
-   - Perform sentiment analysis on Reddit comments
-   - Track keyword discussions across multiple subreddits
+   - Collect top posts and comments from specified subreddits.
+   - Perform sentiment analysis on Reddit comments.
+   - Track keyword discussions across multiple subreddits.
 
 5. Notion Workspace Management (NotionToolkit):
-   - List all pages in a Notion workspace
-   - List all users with access to the workspace
-   - Retrieve and extract text content from Notion blocks
+   - List all pages and users in a Notion workspace.
+   - Retrieve and extract text content from Notion blocks.
 
 6. Slack Workspace Interaction (SlackToolkit):
-   - Create new Slack channels (public or private)
-   - Join or leave existing channels
-   - Send and delete messages in channels
-   - Retrieve channel information and message history
+   - Create new Slack channels (public or private).
+   - Join or leave existing channels.
+   - Send and delete messages in channels.
+   - Retrieve channel information and message history.
 
 7. Human Interaction (HumanToolkit):
-   - Ask questions to users via console
-   - Send messages to users via console
+   - Ask questions to users and send messages via console.
 
 When assisting users, always:
-1. Identify which platform's functionality is needed for the task
-2. Check if required API credentials are available before attempting operations
-3. Provide clear explanations of what actions you're taking
-4. Handle rate limits and API restrictions appropriately
-5. Ask clarifying questions when user requests are ambiguous""",
+- Identify which platform's functionality is needed for the task.
+- Check if required API credentials are available before attempting 
+operations.
+- Provide clear explanations of what actions you're taking.
+- Handle rate limits and API restrictions appropriately.
+- Ask clarifying questions when user requests are ambiguous.""",
         ),
         model=model,
         tools=[
@@ -331,20 +390,24 @@ When assisting users, always:
             *RedditToolkit().get_tools(),
             *NotionToolkit().get_tools(),
             *SlackToolkit().get_tools(),
-            HumanToolkit().ask_human_via_console,
+            *HumanToolkit().get_tools(),
         ],
     )
 
 
 async def main():
-    playwright_toolkit = PlaywrightMCPToolkit(timeout=60)  # Create instance
+    edgeone_pages_mcp_toolkit = EdgeOnePagesMCPToolkit()
+    # google_drive_mcp_toolkit = GoogleDriveMCPToolkit(
+    #     credentials_path="path/to/credentials.json"
+    # )
     try:
-        await playwright_toolkit.connect()  # Connect the instance
+        await edgeone_pages_mcp_toolkit.connect()
+        # await google_drive_mcp_toolkit.connect()
 
         # Create a single model backend for all agents
         model_backend = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4_1,
+            model_type=ModelType.GPT_4_1_MINI,
             # model_config_dict={
             #     "max_tokens": 32768,
             # },
@@ -352,36 +415,73 @@ async def main():
 
         model_backend_reason = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4_1,
+            model_type=ModelType.GPT_4_1_MINI,
             # model_config_dict={
-            #    "max_tokens": 32768,
+            #     "max_tokens": 32768,
             # },
         )
 
         task_id = 'workforce_task'
 
-        # Create agents using factory functions
-        search_agent = await search_agent_factory(
-            model_backend, task_id, playwright_toolkit
+        # Create custom agents for the workforce
+        coordinator_agent = ChatAgent(
+            "You are a helpful coordinator. You MUST use the "
+            "`send_message_to_user` tool to inform the user of every "
+            "decision and action you take. Your message must be tidy "
+            "and in one short sentence. This is a mandatory part of "
+            "your workflow.",
+            model=model_backend_reason,
+            tools=[
+                *HumanToolkit().get_tools(),
+            ],
         )
-        developer_agent = developer_agent_factory(model_backend, task_id)
-        document_agent = document_agent_factory(model_backend, task_id)
+        task_agent = ChatAgent(
+            "You are a helpful task planner. You MUST use the "
+            "`send_message_to_user` tool to inform the user of every decision "
+            "and action you take. Each message must be a single, concise "
+            "sentence. This is a mandatory part of your workflow.\n\n"
+            "Carefully examine the user's task. If it's a simple greeting, a "
+            "direct question, or a conversational interaction (like 'hello' "
+            "or 'thank you'), create a single task for a worker to respond "
+            "directly using the `send_message_to_user` tool. For example, if "
+            "the user says 'hello', create a task like: 'Respond to the "
+            "user's greeting directly using the `send_message_to_user` tool.'",
+            model=model_backend_reason,
+            tools=[
+                *HumanToolkit().get_tools(),
+            ],
+        )
+        new_worker_agent = ChatAgent(
+            "You are a helpful worker. You MUST use the "
+            "`send_message_to_user` tool to inform the user of every "
+            "decision and action you take. Your message must be tidy and in "
+            "one short sentence. This is a mandatory part of your workflow.",
+            model=model_backend,
+            tools=[
+                *HumanToolkit().get_tools(),
+            ],
+        )
+
+        # Create agents using factory functions
+        search_agent = search_agent_factory(model_backend, task_id)
+        developer_agent = developer_agent_factory(
+            model_backend, task_id, edgeone_pages_mcp_toolkit
+        )
+        document_agent = document_agent_factory(
+            model_backend,
+            task_id,
+            # google_drive_mcp_toolkit
+        )
         multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
-        # social_medium_agent = social_medium_agent_factory(model_backend,
-        # task_id)
 
-        # Configure kwargs for all agents to use the same model_backend
-        coordinator_agent_kwargs = {"model": model_backend_reason}
-        task_agent_kwargs = {"model": model_backend_reason}
-        new_worker_agent_kwargs = {"model": model_backend}
-
+        # Create workforce instance before adding workers
         workforce = Workforce(
             'A workforce',
             graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
             share_memory=False,
-            coordinator_agent_kwargs=coordinator_agent_kwargs,
-            task_agent_kwargs=task_agent_kwargs,
-            new_worker_agent_kwargs=new_worker_agent_kwargs,
+            coordinator_agent=coordinator_agent,
+            task_agent=task_agent,
+            new_worker_agent=new_worker_agent,
         )
 
         workforce.add_single_agent_worker(
@@ -409,12 +509,11 @@ async def main():
         human_task = Task(
             content=(
                 """
-                I want to read papers about GUI Agent. Please help me find 
-                ten papers, check the detailed content of the papers and help 
-                me write a comparison report, then create a nice slides(pptx) 
-                to introduce the latest research progress of GUI Agent. The 
-                slides should be very comprehensive and 
-                professional.
+I want to read papers about GUI Agent. Please help me find 
+ten papers, check the detailed content of the papers and help 
+me write a comparison report, then create a nice slides(pptx) 
+to introduce the latest research progress of GUI Agent. The 
+slides should be very comprehensive and professional.
                 """
             ),
             id='0',
@@ -436,8 +535,10 @@ async def main():
         print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
         workforce.dump_workforce_logs(log_file_path)
         print(f"Logs dumped. Please check the file: {log_file_path}")
+
     finally:
-        await playwright_toolkit.disconnect()  # Disconnect the same instance
+        await edgeone_pages_mcp_toolkit.disconnect()
+        # await google_drive_mcp_toolkit.disconnect()
 
 
 if __name__ == "__main__":
