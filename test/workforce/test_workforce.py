@@ -319,10 +319,16 @@ def sample_shared_memory():
 @pytest.mark.parametrize("share_memory", [True, False])
 def test_workforce_initialization(mock_model, share_memory):
     r"""Test workforce initialization with different memory configurations"""
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.", model=mock_model
+    )
+    task_agent = ChatAgent("You are a helpful task planner.", model=mock_model)
+
     workforce = Workforce(
         description="Test Workforce",
-        coordinator_agent_kwargs={"model": mock_model},
-        task_agent_kwargs={"model": mock_model},
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
         share_memory=share_memory,
         graceful_shutdown_timeout=2.0,
     )
@@ -335,10 +341,16 @@ def test_shared_memory_operations(
     mock_model, mock_agent, sample_shared_memory
 ):
     r"""Test shared memory collection and synchronization"""
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.", model=mock_model
+    )
+    task_agent = ChatAgent("You are a helpful task planner.", model=mock_model)
+
     workforce = Workforce(
         description="Test Workforce",
-        coordinator_agent_kwargs={"model": mock_model},
-        task_agent_kwargs={"model": mock_model},
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
         share_memory=True,
     )
 
@@ -357,10 +369,16 @@ def test_shared_memory_operations(
 
 def test_cross_agent_memory_access(mock_model, sample_shared_memory):
     r"""Test cross-agent information access after memory sync"""
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.", model=mock_model
+    )
+    task_agent = ChatAgent("You are a helpful task planner.", model=mock_model)
+
     workforce = Workforce(
         description="Test Workforce",
-        coordinator_agent_kwargs={"model": mock_model},
-        task_agent_kwargs={"model": mock_model},
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
         share_memory=True,
     )
 

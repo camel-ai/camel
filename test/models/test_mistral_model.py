@@ -35,6 +35,7 @@ from camel.utils import OpenAITokenCounter
         ModelType.MISTRAL_PIXTRAL_12B,
         ModelType.MISTRAL_MEDIUM_3,
         ModelType.MAGISTRAL_MEDIUM,
+        ModelType.MISTRAL_SMALL_3_2,
     ],
 )
 def test_mistral_model(model_type):

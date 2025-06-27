@@ -80,7 +80,28 @@ class BrowserNonVisualToolkit(BaseToolkit):
                 return
 
             if loop.is_closed():
-                # Event loop already closed → cannot run async cleanup
+                # The default loop is closed, create a *temporary* loop just
+                # for cleanup so that Playwright / asyncio transports are
+                # gracefully shut down.  This avoids noisy warnings such as
+                # "RuntimeError: Event loop is closed" when the program
+                # exits.
+                try:
+                    tmp_loop = asyncio.new_event_loop()
+                    try:
+                        asyncio.set_event_loop(tmp_loop)
+                        tmp_loop.run_until_complete(self.close_browser())
+                    finally:
+                        # Best-effort shutdown of async generators and loop
+                        # itself (Python ≥3.6).
+                        if hasattr(tmp_loop, "shutdown_asyncgens"):
+                            tmp_loop.run_until_complete(
+                                tmp_loop.shutdown_asyncgens()
+                            )
+                        tmp_loop.close()
+                finally:
+                    # Ensure no subsequent get_event_loop() picks up a now
+                    # closed temporary loop.
+                    asyncio.set_event_loop(None)
                 return
 
             if loop.is_running():
@@ -155,7 +176,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
             self._agent = None
 
         # Close session
-        await self._session.close()
+        await NVBrowserSession.close_all_sessions()
         return "Browser session closed."
 
     async def visit_page(self, url: str) -> Dict[str, str]:

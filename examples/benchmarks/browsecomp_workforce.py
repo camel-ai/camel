@@ -51,12 +51,19 @@ You excel at understanding complex queries and finding precise answers.""",
         model=model,
     )
 
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.", model=model
+    )
+    task_agent = ChatAgent("You are a helpful task planner.", model=model)
+    new_worker_agent = ChatAgent("You are a helpful worker.", model=model)
+
     # Create a workforce for BrowseComp tasks
     workforce = Workforce(
         description="BrowseComp Research Team",
-        coordinator_agent_kwargs=dict(model=model),
-        task_agent_kwargs=dict(model=model),
-        new_worker_agent_kwargs=dict(model=model),
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
+        new_worker_agent=new_worker_agent,
     )
 
     # Add workers to the workforce
