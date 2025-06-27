@@ -204,6 +204,7 @@ def test_function_func_message_to_openai_assistant_message(
     ):
         function_result_message.to_openai_assistant_message()
 
+
 def test_masking_in_openai_tool_message():
     msg = FunctionCallingMessage(
         role_name="assistant",
