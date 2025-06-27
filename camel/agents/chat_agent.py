@@ -2043,12 +2043,13 @@ class ChatAgent(BaseAgent):
             args (Dict[str, Any]): The arguments passed to the tool.
             result (Any): The result returned by the tool execution.
             tool_call_id (str): A unique identifier for the tool call.
-            mask_output (bool, optional): Whether to return a sanitized placeholder instead
-                of the raw tool output.
+            mask_output (bool, optional): Whether to return a sanitized
+                placeholder instead of the raw tool output.
                 (default: :obj:`False`)
 
         Returns:
-            ToolCallingRecord: A struct containing information about this tool call.
+            ToolCallingRecord: A struct containing information about this tool
+                call.
         """
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
