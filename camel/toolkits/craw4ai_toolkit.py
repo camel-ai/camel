@@ -31,6 +31,16 @@ class Crawl4AIToolkit(BaseToolkit):
         timeout: Optional[float] = None,
     ):
         super().__init__(timeout=timeout)
+        self._client = None
+
+    async def _get_client(self):
+        r"""Get or create the AsyncWebCrawler client."""
+        if self._client is None:
+            from crawl4ai import AsyncWebCrawler
+
+            self._client = AsyncWebCrawler()
+            await self._client.__aenter__()
+        return self._client
 
     async def scrape(self, url: str) -> str:
         r"""Scrapes a webpage and returns its content.
@@ -47,18 +57,28 @@ class Crawl4AIToolkit(BaseToolkit):
             str: The scraped content of the webpage as a string. If the
                 scraping fails, it will return an error message.
         """
-        from crawl4ai import AsyncWebCrawler, CrawlerRunConfig
+        from crawl4ai import CrawlerRunConfig
 
         try:
-            async with AsyncWebCrawler() as client:
-                config = CrawlerRunConfig(
-                    only_text=True,
-                )
-                content = await client.arun(url, crawler_config=config)
-                return str(content.markdown) if content.markdown else ""
+            client = await self._get_client()
+            config = CrawlerRunConfig(
+                only_text=True,
+            )
+            content = await client.arun(url, crawler_config=config)
+            return str(content.markdown) if content.markdown else ""
         except Exception as e:
             logger.error(f"Error scraping {url}: {e}")
             return f"Error scraping {url}: {e}"
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit - cleanup the client."""
+        if self._client is not None:
+            await self._client.__aexit__(exc_type, exc_val, exc_tb)
+            self._client = None
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the

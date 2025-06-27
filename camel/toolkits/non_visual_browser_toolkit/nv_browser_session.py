@@ -13,8 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional
+
+from camel.logger import get_logger
 
 from .actions import ActionExecutor
 from .snapshot import PageSnapshot
@@ -28,6 +31,9 @@ if TYPE_CHECKING:
     )
 
 
+logger = get_logger(__name__)
+
+
 class NVBrowserSession:
     """Lightweight wrapper around Playwright for non-visual (headless)
     browsing.
@@ -35,15 +41,37 @@ class NVBrowserSession:
     It provides a single *Page* instance plus helper utilities (snapshot &
     executor).  Multiple toolkits or agents can reuse this class without
     duplicating Playwright setup code.
+
+    This class is a singleton per event-loop.
     """
 
     # Configuration constants
     DEFAULT_NAVIGATION_TIMEOUT = 10000  # 10 seconds
     NETWORK_IDLE_TIMEOUT = 5000  # 5 seconds
 
+    _sessions: ClassVar[
+        Dict[asyncio.AbstractEventLoop, "NVBrowserSession"]
+    ] = {}
+
+    _initialized: bool
+
+    def __new__(
+        cls, *, headless: bool = True, user_data_dir: Optional[str] = None
+    ):
+        loop = asyncio.get_running_loop()
+        if loop not in cls._sessions:
+            instance = super().__new__(cls)
+            instance._initialized = False
+            cls._sessions[loop] = instance
+        return cls._sessions[loop]
+
     def __init__(
         self, *, headless: bool = True, user_data_dir: Optional[str] = None
     ):
+        if self._initialized:
+            return
+        self._initialized = True
+
         self._headless = headless
         self._user_data_dir = user_data_dir
 
@@ -56,8 +84,6 @@ class NVBrowserSession:
         self.executor: Optional[ActionExecutor] = None
 
         # Protect browser initialisation against concurrent calls
-        import asyncio
-
         self._ensure_lock: "asyncio.Lock" = asyncio.Lock()
 
     # ------------------------------------------------------------------
@@ -93,10 +119,6 @@ class NVBrowserSession:
             self._browser = await pl.chromium.launch(headless=self._headless)
             self._context = await self._browser.new_context()
 
-        from camel.logger import get_logger
-
-        _dbg_logger = get_logger(__name__)
-
         # Reuse an already open page (persistent context may restore last
         # session)
         if self._context.pages:
@@ -105,7 +127,7 @@ class NVBrowserSession:
             self._page = await self._context.new_page()
 
         # Debug information to help trace concurrency issues
-        _dbg_logger.debug(
+        logger.debug(
             "Session %s created browser=%s context=%s page=%s (url=%s)",
             hex(id(self)),
             hex(id(self._browser)) if self._browser else None,
@@ -122,6 +144,11 @@ class NVBrowserSession:
         r"""Close all browser resources, ensuring cleanup even if some
         operations fail.
         """
+        # The close method will now only close the *current* event-loop's
+        # browser instance.  Use `close_all_sessions` for a full cleanup.
+        await self._close_session()
+
+    async def _close_session(self) -> None:
         errors: list[str] = []
 
         # Close context first (which closes pages)
@@ -151,12 +178,27 @@ class NVBrowserSession:
 
         # Log errors if any occurred during cleanup
         if errors:
-            from camel.logger import get_logger
-
-            logger = get_logger(__name__)
             logger.warning(
                 "Errors during browser session cleanup: %s", "; ".join(errors)
             )
+
+    @classmethod
+    async def close_all_sessions(cls) -> None:
+        r"""Iterate over all stored sessions and close them."""
+        for loop, session in cls._sessions.items():
+            if loop.is_running():
+                await session._close_session()
+            else:
+                try:
+                    if not loop.is_closed():
+                        loop.run_until_complete(session._close_session())
+                except Exception as e:
+                    logger.warning(
+                        "Failed to close session for loop %s: %s",
+                        hex(id(loop)),
+                        e,
+                    )
+        cls._sessions.clear()
 
     # ------------------------------------------------------------------
     # Convenience wrappers around common actions
