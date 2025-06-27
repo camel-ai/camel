@@ -2044,8 +2044,8 @@ class ChatAgent(BaseAgent):
             result (Any): The result returned by the tool execution.
             tool_call_id (str): A unique identifier for the tool call.
             mask_output (bool, optional): Whether to return a sanitized
-            placeholder instead of the raw tool output.
-            (default: :obj:`False`)
+                placeholder instead of the raw tool output.
+                (default: :obj:`False`)
 
         Returns:
             ToolCallingRecord: A struct containing information about

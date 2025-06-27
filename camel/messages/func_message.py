@@ -109,10 +109,13 @@ class FunctionCallingMessage(BaseMessage):
             # This is a function response
             # TODO: Allow for more flexible setting of tool role,
             #  optionally to be the same as assistant messages
-            content = function_format.format_tool_response(
-                self.func_name,  # type: ignore[arg-type]
-                self.result,  # type: ignore[arg-type]
-            )
+            if self.mask_output:
+                content = "[MASKED]"
+            else:
+                content = function_format.format_tool_response(
+                    self.func_name,  # type: ignore[arg-type]
+                    self.result,  # type: ignore[arg-type]
+                )
             return ShareGPTMessage(from_="tool", value=content)  # type: ignore[call-arg]
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
@@ -158,7 +161,10 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name."
             )
 
-        result_content = str(self.result)
+        if self.mask_output:
+            result_content = "[MASKED]"
+        else:
+            result_content = str(self.result)
 
         return {
             "role": "tool",
