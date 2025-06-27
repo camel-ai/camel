@@ -993,7 +993,6 @@ class TerminalToolkit(BaseToolkit):
 
                     _ = self.shell_exec(id, user_cmd)
                     result += "exec result: " + _ + "\n"
-                    print(f"exec result: {_}")
                     logger.info(f"exec result: {_}")
 
             finally:
