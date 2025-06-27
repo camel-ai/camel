@@ -395,6 +395,29 @@ class Workforce(BaseNode):
                 "better context continuity during task handoffs."
             )
 
+        # ------------------------------------------------------------------
+        # Helper for propagating pause control to externally supplied agents
+        # ------------------------------------------------------------------
+
+    def _attach_pause_event_to_agent(self, agent: ChatAgent) -> None:
+        """Ensure the given ChatAgent shares this workforce's pause_event.
+
+        If the agent already has a different pause_event we overwrite it and
+        emit a debug log (it is unlikely an agent needs multiple independent
+        pause controls once managed by this workforce)."""
+        try:
+            if getattr(agent, "pause_event", None) is not self._pause_event:
+                setattr(agent, "pause_event", self._pause_event)
+        except AttributeError:
+            # Should not happen, but guard against unexpected objects
+            pass
+
+    def _ensure_pause_event_in_kwargs(self, kwargs: Optional[Dict]) -> Dict:
+        """Insert pause_event into kwargs dict for ChatAgent construction."""
+        new_kwargs = dict(kwargs) if kwargs else {}
+        new_kwargs.setdefault("pause_event", self._pause_event)
+        return new_kwargs
+
     def __repr__(self):
         return (
             f"Workforce {self.node_id} ({self.description}) - "
@@ -1138,6 +1161,9 @@ class Workforce(BaseNode):
         Returns:
             Workforce: The workforce node itself.
         """
+        # Ensure the worker agent shares this workforce's pause control
+        self._attach_pause_event_to_agent(worker)
+
         worker_node = SingleAgentWorker(
             description=description,
             worker=worker,
@@ -1184,6 +1210,18 @@ class Workforce(BaseNode):
         Returns:
             Workforce: The workforce node itself.
         """
+        # Ensure provided kwargs carry pause_event so that internally created
+        # ChatAgents (assistant/user/summarizer) inherit it.
+        assistant_agent_kwargs = self._ensure_pause_event_in_kwargs(
+            assistant_agent_kwargs
+        )
+        user_agent_kwargs = self._ensure_pause_event_in_kwargs(
+            user_agent_kwargs
+        )
+        summarize_agent_kwargs = self._ensure_pause_event_in_kwargs(
+            summarize_agent_kwargs
+        )
+
         worker_node = RolePlayingWorker(
             description=description,
             assistant_role_name=assistant_role_name,
@@ -1212,6 +1250,9 @@ class Workforce(BaseNode):
         Returns:
             Workforce: The workforce node itself.
         """
+        # Align child workforce's pause_event with this one for unified
+        # control, then propagate to its coordinator/task agents.
+        workforce._pause_event = self._pause_event
         self._children.append(workforce)
         return self
 
@@ -1656,7 +1697,7 @@ class Workforce(BaseNode):
                 model_config_dict={"temperature": 0},
             )
 
-            return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
+            return ChatAgent(worker_sys_msg, model=model, tools=function_list, pause_event=self._pause_event)  # type: ignore[arg-type]
 
     async def _get_returned_task(self) -> Optional[Task]:
         r"""Get the task that's published by this node and just get returned
