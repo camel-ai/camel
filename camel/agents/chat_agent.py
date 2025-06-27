@@ -1596,8 +1596,8 @@ class ChatAgent(BaseAgent):
             raw_result = tool(**args)
             if self.mask_tool_output:
                 self._secure_result_store[tool_call_id] = raw_result
-                result= "[The tool has been executed successfully, but the output from the tool is masked. " \
-                        "You can move forward]"
+                result= "[The tool has been executed successfully, but the output" \
+                        " from the tool is masked. You can move forward]"
                 mask_flag = True
             else:
                 result = raw_result
@@ -1605,7 +1605,7 @@ class ChatAgent(BaseAgent):
         except Exception as e:
             # Capture the error message to prevent framework crash
             error_msg = f"Error executing tool '{func_name}': {e!s}"
-            result = {"error": error_msg}
+            result = f"Tool execution failed: {error_msg}"
             mask_flag = False
             logging.warning(error_msg)
 
