@@ -173,7 +173,7 @@ class ChatAgent(BaseAgent):
         stop_event (Optional[threading.Event], optional): Event to signal
             termination of the agent's operation. When set, the agent will
             terminate its execution. (default: :obj:`None`)
-        mask_tool_output (Optional[bool]): Whether to return a sanitized 
+        mask_tool_output (Optional[bool]): Whether to return a sanitized
             placeholder instead of the raw tool output. (default: :obj:`False`)
     """
 
@@ -1966,8 +1966,10 @@ class ChatAgent(BaseAgent):
             raw_result = tool(**args)
             if self.mask_tool_output:
                 self._secure_result_store[tool_call_id] = raw_result
-                result= "[The tool has been executed successfully, but the output" \
-                        " from the tool is masked. You can move forward]"
+                result = (
+                    "[The tool has been executed successfully, but the output"
+                    " from the tool is masked. You can move forward]"
+                )
                 mask_flag = True
             else:
                 result = raw_result
@@ -1979,7 +1981,9 @@ class ChatAgent(BaseAgent):
             mask_flag = False
             logging.warning(error_msg)
 
-        return self._record_tool_calling(func_name, args, result, tool_call_id, mask_output=mask_flag)
+        return self._record_tool_calling(
+            func_name, args, result, tool_call_id, mask_output=mask_flag
+        )
 
     async def _aexecute_tool(
         self,
@@ -2039,7 +2043,7 @@ class ChatAgent(BaseAgent):
             args (Dict[str, Any]): The arguments passed to the tool.
             result (Any): The result returned by the tool execution.
             tool_call_id (str): A unique identifier for the tool call.
-            mask_output (bool, optional): Whether to return a sanitized placeholder instead 
+            mask_output (bool, optional): Whether to return a sanitized placeholder instead
                 of the raw tool output.
                 (default: :obj:`False`)
 
