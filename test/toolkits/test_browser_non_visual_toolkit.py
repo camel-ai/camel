@@ -295,7 +295,7 @@ class TestBrowserNonVisualToolkit:
 
     @pytest.mark.asyncio
     async def test_get_som_screenshot_success(self, mock_session, mock_page):
-        """Test successful SoM screenshot generation."""
+        """Test successful Set of Marks screenshot generation."""
         # Create a mock image
         mock_image = Image.new('RGB', (100, 100), color='red')
         img_byte_arr = io.BytesIO()
@@ -330,13 +330,13 @@ class TestBrowserNonVisualToolkit:
             result = await toolkit.get_som_screenshot(save_image=False)
 
             assert isinstance(result, ToolResult)
-            assert "SoM screenshot captured successfully" in result.text
+            assert "Set of Marks screenshot captured successfully" in result.text
             assert len(result.images) == 1
             assert result.images[0].startswith("data:image/png;base64,")
 
     @pytest.mark.asyncio
     async def test_get_som_screenshot_pil_not_available(self, mock_session):
-        """Test SoM screenshot when PIL is not available."""
+        """Test Set of Marks screenshot when PIL is not available."""
         with patch(
             'camel.toolkits.non_visual_browser_toolkit.nv_browser_session'
             '.NVBrowserSession',

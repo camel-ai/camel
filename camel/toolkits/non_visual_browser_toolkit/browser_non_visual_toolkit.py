@@ -17,7 +17,7 @@ import datetime
 import io
 import os
 import urllib.parse
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
 from camel.logger import get_logger
 from camel.models import BaseModelBackend
@@ -61,10 +61,12 @@ class BrowserNonVisualToolkit(BaseToolkit):
         r"""Cleanup browser resources on garbage collection."""
         try:
             import sys
+
             if getattr(sys, "is_finalizing", lambda: False)():
                 return
 
             import asyncio
+
             try:
                 loop = asyncio.get_event_loop()
                 if not loop.is_closed() and not loop.is_running():
@@ -77,18 +79,21 @@ class BrowserNonVisualToolkit(BaseToolkit):
     def _load_unified_analyzer(self) -> str:
         r"""Load the unified analyzer JavaScript script."""
         script_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 
-            "unified_analyzer.js"
+            os.path.dirname(os.path.abspath(__file__)), "unified_analyzer.js"
         )
-        
+
         try:
-            with open(script_path, "r", encoding='utf-8', errors='replace') as f:
+            with open(
+                script_path, "r", encoding='utf-8', errors='replace'
+            ) as f:
                 script_content = f.read()
-            
+
             if not script_content.strip():
                 raise ValueError(f"Script is empty: {script_path}")
-            
-            logger.debug(f"Loaded unified analyzer ({len(script_content)} chars)")
+
+            logger.debug(
+                f"Loaded unified analyzer ({len(script_content)} chars)"
+            )
             return script_content
         except FileNotFoundError:
             raise FileNotFoundError(f"Script not found: {script_path}")
@@ -96,7 +101,9 @@ class BrowserNonVisualToolkit(BaseToolkit):
     def _validate_ref(self, ref: str, method_name: str) -> None:
         r"""Validate ref parameter."""
         if not ref or not isinstance(ref, str):
-            raise ValueError(f"{method_name}: 'ref' must be a non-empty string")
+            raise ValueError(
+                f"{method_name}: 'ref' must be a non-empty string"
+            )
 
     async def _ensure_browser(self):
         await self._session.ensure_browser()
@@ -114,17 +121,19 @@ class BrowserNonVisualToolkit(BaseToolkit):
                 return {"elements": {}, "metadata": {"elementCount": 0}}
 
             result = await page.evaluate(self._unified_script)
-            
+
             if not isinstance(result, dict):
                 logger.warning(f"Invalid result type: {type(result)}")
                 return {"elements": {}, "metadata": {"elementCount": 0}}
-            
+
             return result
         except Exception as e:
             logger.warning(f"Error in unified analysis: {e}")
             return {"elements": {}, "metadata": {"elementCount": 0}}
 
-    def _convert_analysis_to_rects(self, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _convert_analysis_to_rects(
+        self, analysis_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         r"""Convert analysis data to rect format for visual marking."""
         rects = {}
         elements = analysis_data.get("elements", {})
@@ -142,7 +151,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
     def _add_set_of_mark(self, image, rects):
         r"""Add visual marks to the image."""
         try:
-            from PIL import Image, ImageDraw, ImageFont
+            from PIL import ImageDraw, ImageFont
         except ImportError:
             logger.warning("PIL not available, returning original image")
             return image
@@ -153,16 +162,20 @@ class BrowserNonVisualToolkit(BaseToolkit):
         # Try to get font
         try:
             font = ImageFont.truetype("arial.ttf", 16)
-        except:
+        except (OSError, IOError):
             try:
                 font = ImageFont.load_default()
-            except:
+            except (OSError, IOError):
                 font = None
 
         # Color scheme
         colors = {
-            "button": "#FF6B6B", "link": "#4ECDC4", "textbox": "#45B7D1",
-            "select": "#96CEB4", "checkbox": "#FECA57", "radio": "#FF9FF3",
+            "button": "#FF6B6B",
+            "link": "#4ECDC4",
+            "textbox": "#45B7D1",
+            "select": "#96CEB4",
+            "checkbox": "#FECA57",
+            "radio": "#FF9FF3",
             "default": "#DDA0DD",
         }
 
@@ -176,28 +189,45 @@ class BrowserNonVisualToolkit(BaseToolkit):
                 width, height = rect.get("width", 0), rect.get("height", 0)
 
                 # Draw rectangle outline
-                draw.rectangle([x, y, x + width, y + height], outline=color, width=2)
+                draw.rectangle(
+                    [x, y, x + width, y + height], outline=color, width=2
+                )
 
                 # Draw reference label
                 label_text = ref
                 if font:
                     bbox = draw.textbbox((0, 0), label_text, font=font)
-                    text_width, text_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
+                    text_width, text_height = (
+                        bbox[2] - bbox[0],
+                        bbox[3] - bbox[1],
+                    )
                 else:
                     text_width, text_height = len(label_text) * 8, 16
 
                 label_x, label_y = max(0, x - 2), max(0, y - text_height - 2)
 
                 # Background and text
-                draw.rectangle([
-                    label_x, label_y, 
-                    label_x + text_width + 4, label_y + text_height + 2
-                ], fill=color)
-                draw.text((label_x + 2, label_y + 1), label_text, fill="white", font=font)
+                draw.rectangle(
+                    [
+                        label_x,
+                        label_y,
+                        label_x + text_width + 4,
+                        label_y + text_height + 2,
+                    ],
+                    fill=color,
+                )
+                draw.text(
+                    (label_x + 2, label_y + 1),
+                    label_text,
+                    fill="white",
+                    font=font,
+                )
 
         return marked_image
 
-    def _format_snapshot_from_analysis(self, analysis_data: Dict[str, Any]) -> str:
+    def _format_snapshot_from_analysis(
+        self, analysis_data: Dict[str, Any]
+    ) -> str:
         r"""Format analysis data into snapshot string."""
         lines = []
         elements = analysis_data.get("elements", {})
@@ -205,7 +235,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
         for ref, element_data in elements.items():
             role = element_data.get("role", "generic")
             name = element_data.get("name", "")
-            
+
             line = f"- {role}"
             if name:
                 line += f' "{name}"'
@@ -221,40 +251,60 @@ class BrowserNonVisualToolkit(BaseToolkit):
 
             if props:
                 line += f" {' '.join(props)}"
-            
+
             line += f" [ref={ref}]"
             lines.append(line)
 
         return "\n".join(lines)
 
-    async def _exec_with_snapshot(self, action: Dict[str, Any]) -> Dict[str, str]:
+    async def _exec_with_snapshot(
+        self, action: Dict[str, Any]
+    ) -> Dict[str, str]:
         r"""Execute action and return result with snapshot comparison."""
-        before_snapshot = await self._session.get_snapshot(force_refresh=True, diff_only=False)
+        before_snapshot = await self._session.get_snapshot(
+            force_refresh=True, diff_only=False
+        )
         result = await self._session.exec_action(action)
-        after_snapshot = await self._session.get_snapshot(force_refresh=True, diff_only=False)
+        after_snapshot = await self._session.get_snapshot(
+            force_refresh=True, diff_only=False
+        )
 
-        snapshot = "snapshot not changed" if before_snapshot == after_snapshot else after_snapshot
+        snapshot = (
+            "snapshot not changed"
+            if before_snapshot == after_snapshot
+            else after_snapshot
+        )
         return {"result": result, "snapshot": snapshot}
 
-    async def _extract_links_by_refs(self, snapshot: str, page, refs: List[str]) -> List[Dict[str, str]]:
+    async def _extract_links_by_refs(
+        self, snapshot: str, page, refs: List[str]
+    ) -> List[Dict[str, str]]:
         r"""Extract multiple links by their reference IDs."""
         import re
-        
+
         found_links = []
         ref_set = set(refs)
         lines = snapshot.split('\n')
-        
+
         for line in lines:
-            link_match = re.search(r'- link\s+"([^"]+)"\s+\[ref=([^\]]+)\]', line)
+            link_match = re.search(
+                r'- link\s+"([^"]+)"\s+\[ref=([^\]]+)\]', line
+            )
             if link_match and link_match.group(2) in ref_set:
                 text, found_ref = link_match.groups()
                 try:
                     url = await self._get_link_url_by_ref(page, found_ref)
-                    found_links.append({"text": text, "ref": found_ref, "url": url or ""})
+                    found_links.append(
+                        {"text": text, "ref": found_ref, "url": url or ""}
+                    )
                 except Exception as e:
-                    logger.warning(f"Failed to get URL for ref {found_ref}: {e}")
-                    found_links.append({"text": text, "ref": found_ref, "url": ""})
-        
+                    logger.warning(
+                        f"Failed to get URL for ref {found_ref}: {e}"
+                    )
+                    found_links.append(
+                        {"text": text, "ref": found_ref, "url": ""}
+                    )
+
         return found_links
 
     async def _get_link_url_by_ref(self, page, ref: str) -> str:
@@ -265,6 +315,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
                 href = await element.get_attribute('href')
                 if href:
                     from urllib.parse import urljoin
+
                     return urljoin(page.url, href)
             return ""
         except Exception as e:
@@ -274,8 +325,10 @@ class BrowserNonVisualToolkit(BaseToolkit):
     def _ensure_agent(self) -> PlaywrightLLMAgent:
         r"""Create PlaywrightLLMAgent on first use."""
         if self.web_agent_model is None:
-            raise RuntimeError("web_agent_model required for high-level task planning")
-        
+            raise RuntimeError(
+                "web_agent_model required for high-level task planning"
+            )
+
         if self._agent is None:
             self._agent = PlaywrightLLMAgent(
                 headless=self._headless,
@@ -286,20 +339,24 @@ class BrowserNonVisualToolkit(BaseToolkit):
 
     # Public API Methods
 
-    async def open_browser(self, start_url: Optional[str] = None) -> Dict[str, str]:
+    async def open_browser(
+        self, start_url: Optional[str] = None
+    ) -> Dict[str, str]:
         r"""Launch browser session.
-        
+
         Args:
             start_url: Optional URL to navigate to after launch.
-            
+
         Returns:
             Dict with "result" and "snapshot" keys.
         """
         await self._session.ensure_browser()
         if start_url:
             return await self.visit_page(start_url)
-        
-        snapshot = await self._session.get_snapshot(force_refresh=True, diff_only=False)
+
+        snapshot = await self._session.get_snapshot(
+            force_refresh=True, diff_only=False
+        )
         return {"result": "Browser session started.", "snapshot": snapshot}
 
     async def close_browser(self) -> str:
@@ -316,10 +373,10 @@ class BrowserNonVisualToolkit(BaseToolkit):
 
     async def visit_page(self, url: str) -> Dict[str, str]:
         r"""Navigate to a URL.
-        
+
         Args:
             url: The URL to navigate to.
-            
+
         Returns:
             Dict with navigation result and page snapshot.
         """
@@ -327,31 +384,37 @@ class BrowserNonVisualToolkit(BaseToolkit):
             raise ValueError("'url' must be a non-empty string")
 
         nav_result = await self._session.visit(url)
-        snapshot = await self._session.get_snapshot(force_refresh=True, diff_only=False)
+        snapshot = await self._session.get_snapshot(
+            force_refresh=True, diff_only=False
+        )
         return {"result": nav_result, "snapshot": snapshot}
 
     async def get_page_snapshot(
         self, *, force_refresh: bool = False, diff_only: bool = False
     ) -> str:
         r"""Capture DOM snapshot.
-        
+
         Args:
             force_refresh: Always re-generate snapshot.
             diff_only: Return only diff from previous snapshot.
-            
+
         Returns:
             Formatted snapshot string.
         """
         analysis_data = await self._get_unified_analysis()
         snapshot_text = analysis_data.get("snapshotText", "")
-        return snapshot_text if snapshot_text else self._format_snapshot_from_analysis(analysis_data)
+        return (
+            snapshot_text
+            if snapshot_text
+            else self._format_snapshot_from_analysis(analysis_data)
+        )
 
     async def get_som_screenshot(self, save_image: bool = True):
         r"""Get screenshot with interactive elements marked.
-        
+
         Args:
             save_image: Whether to save image to cache directory.
-            
+
         Returns:
             ToolResult with screenshot description and base64 image.
         """
@@ -359,8 +422,10 @@ class BrowserNonVisualToolkit(BaseToolkit):
             from PIL import Image
         except ImportError:
             from camel.utils.tool_result import ToolResult
+
             return ToolResult(
-                text="SoM screenshot failed: PIL not available. Install with: pip install Pillow"
+                text="Set of Marks screenshot failed: "
+                "PIL not available. Install with: pip install Pillow"
             )
 
         from camel.utils.tool_result import ToolResult
@@ -369,7 +434,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
         page = await self._require_page()
         image_data = await page.screenshot(timeout=60000)
         image = Image.open(io.BytesIO(image_data))
-        
+
         analysis_data = await self._get_unified_analysis()
         rects = self._convert_analysis_to_rects(analysis_data)
         marked_image = self._add_set_of_mark(image, rects)
@@ -380,7 +445,9 @@ class BrowserNonVisualToolkit(BaseToolkit):
             parsed_url = urllib.parse.urlparse(page.url)
             url_name = sanitize_filename(str(parsed_url.path), max_length=241)
             timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
-            file_path = os.path.join(self.cache_dir, f"{url_name}_{timestamp}_som.png")
+            file_path = os.path.join(
+                self.cache_dir, f"{url_name}_{timestamp}_som.png"
+            )
             marked_image.save(file_path, "PNG")
 
         # Convert to base64
@@ -390,7 +457,10 @@ class BrowserNonVisualToolkit(BaseToolkit):
         img_base64 = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
         img_data_url = f"data:image/png;base64,{img_base64}"
 
-        text_result = f"SoM screenshot captured successfully with {len(rects)} interactive elements marked."
+        text_result = (
+            f"Set of Marks screenshot captured successfully with "
+            f"{len(rects)} interactive elements marked."
+        )
         if file_path:
             text_result += f" Screenshot saved to: {file_path}"
 
@@ -398,15 +468,15 @@ class BrowserNonVisualToolkit(BaseToolkit):
 
     async def click(self, *, ref: str) -> Dict[str, str]:
         r"""Click an element.
-        
+
         Args:
             ref: Element reference ID from page snapshot.
-            
+
         Returns:
             Dict with action result and snapshot.
         """
         self._validate_ref(ref, "click")
-        
+
         analysis = await self._get_unified_analysis()
         elements = analysis.get("elements", {})
         if ref not in elements:
@@ -417,43 +487,43 @@ class BrowserNonVisualToolkit(BaseToolkit):
 
     async def type(self, *, ref: str, text: str) -> Dict[str, str]:
         r"""Type text into an input field.
-        
+
         Args:
             ref: Element reference ID.
             text: Text to type.
-            
+
         Returns:
             Dict with action result.
         """
         self._validate_ref(ref, "type")
         await self._get_unified_analysis()  # Ensure aria-ref attributes
-        
+
         action = {"type": "type", "ref": ref, "text": text}
         return await self._exec_with_snapshot(action)
 
     async def select(self, *, ref: str, value: str) -> Dict[str, str]:
         r"""Select option from dropdown.
-        
+
         Args:
             ref: Select element reference ID.
             value: Option value to select.
-            
+
         Returns:
             Dict with action result.
         """
         self._validate_ref(ref, "select")
         await self._get_unified_analysis()
-        
+
         action = {"type": "select", "ref": ref, "value": value}
         return await self._exec_with_snapshot(action)
 
     async def scroll(self, *, direction: str, amount: int) -> Dict[str, str]:
         r"""Scroll the page.
-        
+
         Args:
             direction: "up" or "down".
             amount: Pixels to scroll.
-            
+
         Returns:
             Dict with action result.
         """
@@ -465,10 +535,10 @@ class BrowserNonVisualToolkit(BaseToolkit):
 
     async def enter(self, *, ref: str) -> Dict[str, str]:
         r"""Press Enter key on an element.
-        
+
         Args:
             ref: Element reference ID.
-            
+
         Returns:
             Dict with action result and snapshot.
         """
@@ -476,12 +546,14 @@ class BrowserNonVisualToolkit(BaseToolkit):
         action = {"type": "enter", "ref": ref}
         return await self._exec_with_snapshot(action)
 
-    async def wait_user(self, timeout_sec: Optional[float] = None) -> Dict[str, str]:
+    async def wait_user(
+        self, timeout_sec: Optional[float] = None
+    ) -> Dict[str, str]:
         r"""Wait for human intervention.
-        
+
         Args:
             timeout_sec: Max wait time in seconds.
-            
+
         Returns:
             Dict with result and current snapshot.
         """
@@ -506,15 +578,17 @@ class BrowserNonVisualToolkit(BaseToolkit):
         except asyncio.TimeoutError:
             result_msg = f"Timeout {timeout_sec}s reached, auto-resumed."
 
-        snapshot = await self._session.get_snapshot(force_refresh=True, diff_only=False)
+        snapshot = await self._session.get_snapshot(
+            force_refresh=True, diff_only=False
+        )
         return {"result": result_msg, "snapshot": snapshot}
 
     async def get_page_links(self, *, ref: List[str]) -> Dict[str, Any]:
         r"""Get specific links by reference IDs.
-        
+
         Args:
             ref: List of link reference IDs.
-            
+
         Returns:
             Dict with links list and snapshot.
         """
@@ -526,19 +600,23 @@ class BrowserNonVisualToolkit(BaseToolkit):
                 return {"links": []}
 
         page = await self._require_page()
-        snapshot = await self._session.get_snapshot(force_refresh=True, diff_only=False)
+        snapshot = await self._session.get_snapshot(
+            force_refresh=True, diff_only=False
+        )
         links = await self._extract_links_by_refs(snapshot, page, ref)
-        
+
         return {"links": links}
 
-    async def solve_task(self, task_prompt: str, start_url: str, max_steps: int = 15) -> str:
+    async def solve_task(
+        self, task_prompt: str, start_url: str, max_steps: int = 15
+    ) -> str:
         r"""Use LLM agent to complete task autonomously.
-        
+
         Args:
             task_prompt: Task description.
             start_url: Starting URL.
             max_steps: Maximum steps to take.
-            
+
         Returns:
             Task completion result.
         """
