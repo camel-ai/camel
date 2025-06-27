@@ -704,59 +704,35 @@ class TerminalToolkit(BaseToolkit):
                 elif command.startswith('pip'):
                     command = command.replace('pip', pip_path, 1)
 
-            if self.is_macos:
-                # Type safe version - macOS uses subprocess.run
-                process = subprocess.run(
-                    command,
-                    shell=True,
-                    cwd=self.working_dir,
-                    capture_output=True,
-                    text=True,
-                    env=os.environ.copy(),
-                )
+            proc = subprocess.Popen(
+                command,
+                shell=True,
+                cwd=self.working_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                universal_newlines=True,
+                env=os.environ.copy(),
+            )
 
-                # Process the output
-                output = process.stdout or ""
-                if process.stderr:
-                    output += f"\nStderr Output:\n{process.stderr}"
+            # Store the process and mark it as running
+            self.shell_sessions[id]["process"] = proc
+            self.shell_sessions[id]["running"] = True
 
-                # Update session information and terminal
-                self.shell_sessions[id]["output"] = output
-                self._update_terminal_output(output + "\n")
+            # Get output
+            stdout, stderr = proc.communicate()
 
-                return output
+            output = stdout or ""
+            if stderr:
+                output += f"\nStderr Output:\n{stderr}"
 
-            else:
-                # Non-macOS systems use the Popen method
-                proc = subprocess.Popen(
-                    command,
-                    shell=True,
-                    cwd=self.working_dir,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    stdin=subprocess.PIPE,
-                    text=True,
-                    bufsize=1,
-                    universal_newlines=True,
-                    env=os.environ.copy(),
-                )
+            # Update session information and terminal
+            self.shell_sessions[id]["output"] = output
+            self._update_terminal_output(output + "\n")
 
-                # Store the process and mark it as running
-                self.shell_sessions[id]["process"] = proc
-                self.shell_sessions[id]["running"] = True
-
-                # Get output
-                stdout, stderr = proc.communicate()
-
-                output = stdout or ""
-                if stderr:
-                    output += f"\nStderr Output:\n{stderr}"
-
-                # Update session information and terminal
-                self.shell_sessions[id]["output"] = output
-                self._update_terminal_output(output + "\n")
-
-                return output
+            return output
 
         except Exception as e:
             error_msg = f"Command execution error: {e!s}"
@@ -960,6 +936,85 @@ class TerminalToolkit(BaseToolkit):
             logger.error(f"Error killing process: {e}")
             return f"Error killing process: {e!s}"
 
+    def ask_user_for_help(self, id: str) -> str:
+        r"""Pause agent automation and hand over the current terminal session
+        to a human operator.
+
+        Args:
+            id (str): Identifier of the shell session that the human will
+                interact with.  If the session does not yet exist it will
+                be created automatically.
+
+        Returns:
+            str: A short status message once the human has relinquished
+                control.
+        """
+
+        # Ensure the session exists so that the human can reuse it
+        if id not in self.shell_sessions:
+            self.shell_sessions[id] = {
+                "process": None,
+                "output": "",
+                "running": False,
+            }
+
+        result: str = ""
+
+        # Inform both the agent and the human
+        takeover_banner = (
+            "\n=== Human takeover requested ===\n"
+            "Type commands directly into this console.  All output will\n"
+            "continue to appear in the normal terminal or log window.\n"
+            "When you are finished type /exit (or press Ctrl-D) to return\n"
+            "control to CAMEL.\n\n"
+        )
+        self._update_terminal_output(takeover_banner)
+
+        # Helper flag + event for coordination
+        done_event = threading.Event()
+
+        def _human_loop() -> None:
+            """Blocking loop that forwards human input to shell_exec."""
+            nonlocal result  # allow thread to update outer variable
+            try:
+                while True:
+                    try:
+                        # Prompt shown only in the real console. Not added
+                        # to toolkit log because _update_terminal_output
+                        # will handle command echo.
+                        user_cmd = input("human> ")
+                        result += "user_cmd: " + user_cmd + "\n"
+                    except EOFError:
+                        # e.g. Ctrl_D / stdin closed, treat as exit.
+                        break
+
+                    if user_cmd.strip() in {"/exit", "exit", "quit"}:
+                        break
+
+                    _ = self.shell_exec(id, user_cmd)
+                    result += "exec result: " + _ + "\n"
+                    print(f"exec result: {_}")
+                    logger.info(f"exec result: {_}")
+
+            finally:
+                # Notify end of takeover
+                finish_msg = (
+                    "\n=== Human takeover ended, "
+                    "returning control to agent ===\n"
+                )
+                self._update_terminal_output(finish_msg)
+                done_event.set()
+
+        # Start interactive thread so that ask_user_for_help can block
+        # until finished without stalling other toolkit activities.
+        t = threading.Thread(target=_human_loop, daemon=True)
+        t.start()
+
+        # Block until human signals completion
+        done_event.wait()
+
+        return result
+
     def __del__(self):
         r"""Clean up resources when the object is being destroyed.
         Terminates all running processes and closes any open file handles.
@@ -1041,4 +1096,5 @@ class TerminalToolkit(BaseToolkit):
             FunctionTool(self.shell_wait),
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
+            FunctionTool(self.ask_user_for_help),
         ]

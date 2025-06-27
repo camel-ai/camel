@@ -212,3 +212,31 @@ usr_msg = "help me use uv pip install pptx, and create a ppt, and show me the"
 camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls']))
+
+usr_msg = (
+    "Use the terminal tool to create a Python file named 'python_file', "
+    "but first, you need to request user help using call_user_for_help. "
+    "The user will assist you with some configurations. "
+    "Then, create the Python file, and finally list the contents of the "
+    "current folder."
+)
+
+# Get response information for checking the processes
+camel_agent.reset()
+response = camel_agent.step(usr_msg)
+print(str(response.info['tool_calls']))
+"""
+===============================================================================
+[ToolCallingRecord(tool_name='call_user_for_help', args={'id': 'session1'}, 
+result='user_cmd: pwd\nexec result: /Users/suntao/Documents/GitHub/camel/
+workspace\n\nuser_cmd: test\nexec result: \n', 
+tool_call_id='call_3m1w6DXqcOLxz5yGlTqPWBH5'), 
+ToolCallingRecord(tool_name='shell_exec', args={'id': 'session1', 'command': 
+'echo "# This is a Python file created with user assistance" > 
+python_file.py'}, result='', tool_call_id='call_amgkYGu6invNYcy6DaaGQh82'), 
+ToolCallingRecord(tool_name='shell_exec', args={'id': 'session1', 'command': 
+'ls -l'}, result='total 8\n-rw-r--r--@ 1 suntao  staff   0 Jun 27 15:56 
+python\n-rw-r--r--@ 1 suntao  staff  53 Jun 27 16:04 python_file.py\n', 
+tool_call_id='call_wUaBYzsgIq1ERiiemCHbdsBo')]
+===============================================================================
+"""
