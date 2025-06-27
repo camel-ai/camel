@@ -47,8 +47,8 @@ class FunctionCallingMessage(BaseMessage):
             (default: :obj:`None`)
         tool_call_id (Optional[str]): The ID of the tool call, if available.
             (default: :obj:`None`)
-        mask_output (Optional[bool]): Whether to return a sanitized placeholder instead 
-            of the raw tool output.
+        mask_output (Optional[bool]): Whether to return a sanitized placeholder
+            instead of the raw tool output.
             (default: :obj:`False`)
     """
 
@@ -165,7 +165,7 @@ class FunctionCallingMessage(BaseMessage):
             "content": result_content,
             "tool_call_id": self.tool_call_id or "null",
         }
-    
+
     def to_dict(self) -> Dict:
         r"""Converts the message to a dictionary.
 
