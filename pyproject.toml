@@ -31,8 +31,6 @@ dependencies = [
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
     "pillow>=10.1.0,<11.0.0",
-    "reportlab>=4.4.2",
-    "types-reportlab>=4.4.1.20250602",
 ]
 
 
