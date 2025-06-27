@@ -23,15 +23,17 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(),  # Console output
-        logging.FileHandler('browser_dom_debug.log'),  # File output
+        logging.StreamHandler(),
     ],
 )
 
 logging.getLogger('camel.agents').setLevel(logging.INFO)
 logging.getLogger('camel.models').setLevel(logging.INFO)
-
-USER_DATA_DIR = r"D:/User_Data"
+logging.getLogger('camel.models').setLevel(logging.INFO)
+logging.getLogger('camel.toolkits.non_visual_browser_toolkit').setLevel(
+    logging.DEBUG
+)
+USER_DATA_DIR = "User_Data"
 
 model_backend = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
@@ -40,7 +42,7 @@ model_backend = ModelFactory.create(
 )
 
 web_toolkit = BrowserNonVisualToolkit(
-    headless=False,
+    headless=False, user_data_dir=USER_DATA_DIR
 )
 
 agent = ChatAgent(
@@ -49,24 +51,28 @@ agent = ChatAgent(
     max_iteration=10,
 )
 
-TASK_PROMPT = """Click "Sign in to Google Account" on Google.
-If a CAPTCHA appears requiring user input, call the wait_user function — 
-wait 5 seconds each time and keep waiting until you detect that the snapshot 
-no longer contains content requiring user action.
-Make sure not to help the user fill in their account or CAPTCHA information.
-Before the task is completed, you must call the tool in every session and 
-use the wait_user function whenever needed.
+TASK_PROMPT = """Play this game: 
+https://www.nytimes.com/games/wordle/index.html
+You need to enter meaningful five-letter words, such as "Apple".
+Before completing the task, do not do anything outside of using the call tool.
+If the game tells you that something is wrong, you must resolve it yourself.
+Also, you must attempt all six tries.
 
+If the registration window can be closed, please close it.
 """
 
 
 async def main() -> None:
     response = await agent.astep(TASK_PROMPT)
-
     print("Task:", TASK_PROMPT)
     print(f"Using user data directory: {USER_DATA_DIR}\n")
     print("Response from agent:")
     print(response.msgs[0].content if response.msgs else "<no response>")
+
+    try:
+        await web_toolkit.close_browser()
+    except Exception as err:
+        logging.warning("Failed to close browser session explicitly: %s", err)
 
 
 if __name__ == "__main__":

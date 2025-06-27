@@ -66,6 +66,15 @@ capabilities
 - **graceful_shutdown_timeout** (float, optional): The timeout in seconds for graceful shutdown when a task fails 3 times. During this period, the workforce remains active for debugging. Set to 0 for immediate shutdown. (default: :obj:`15.0`)
 - **share_memory** (bool, optional): Whether to enable shared memory across SingleAgentWorker instances in the workforce. When enabled, all SingleAgentWorker instances, coordinator agent, and task planning agent will share their complete conversation history and function-calling trajectory, providing better context for task handoffs and continuity. Note: Currently only supports SingleAgentWorker instances; RolePlayingWorker and nested Workforce instances do not participate in memory sharing. (default: :obj:`False`)
 
+**Note:**
+
+When custom coordinator_agent or task_agent are provided, the workforce
+will preserve the user's system message and append the required
+workforce coordination or task planning instructions to it. This
+ensures both the user's intent is preserved and proper workforce
+functionality is maintained. All other agent configurations (model,
+memory, tools, etc.) will also be preserved.
+
 <a id="camel.societies.workforce.workforce.Workforce.__init__"></a>
 
 ### __init__
@@ -129,6 +138,20 @@ def _sync_shared_memory(self):
 ```
 
 Synchronize memory across all agents by collecting and sharing.
+
+<a id="camel.societies.workforce.workforce.Workforce._cleanup_task_tracking"></a>
+
+### _cleanup_task_tracking
+
+```python
+def _cleanup_task_tracking(self, task_id: str):
+```
+
+Clean up tracking data for a task to prevent memory leaks.
+
+**Parameters:**
+
+- **task_id** (str): The ID of the task to clean up.
 
 <a id="camel.societies.workforce.workforce.Workforce._decompose_task"></a>
 
@@ -358,7 +381,7 @@ def add_single_agent_worker(
     self,
     description: str,
     worker: ChatAgent,
-    pool_max_size: int = 10
+    pool_max_size: int = DEFAULT_WORKER_POOL_SIZE
 ):
 ```
 
