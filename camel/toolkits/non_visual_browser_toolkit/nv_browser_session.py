@@ -58,12 +58,11 @@ class NVBrowserSession:
     def __new__(
         cls, *, headless: bool = True, user_data_dir: Optional[str] = None
     ):
-        loop = asyncio.get_running_loop()
-        if loop not in cls._sessions:
-            instance = super().__new__(cls)
-            instance._initialized = False
-            cls._sessions[loop] = instance
-        return cls._sessions[loop]
+        # Defer event loop lookup until we actually need it
+        # This allows creation outside of async context
+        instance = super().__new__(cls)
+        instance._initialized = False
+        return instance
 
     def __init__(
         self, *, headless: bool = True, user_data_dir: Optional[str] = None
@@ -90,6 +89,29 @@ class NVBrowserSession:
     # Browser lifecycle helpers
     # ------------------------------------------------------------------
     async def ensure_browser(self) -> None:
+        # Check if we need to reuse or create a session for this event loop
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            raise RuntimeError("ensure_browser() must be called from within an async context")
+        
+        # Check if there's already a session for this loop
+        if loop in self._sessions and self._sessions[loop] is not self:
+            # Copy the existing session's browser resources
+            existing = self._sessions[loop]
+            if existing._initialized and existing._page is not None:
+                self._playwright = existing._playwright
+                self._browser = existing._browser
+                self._context = existing._context
+                self._page = existing._page
+                self.snapshot = existing.snapshot
+                self.executor = existing.executor
+                self._initialized = True
+                return
+        
+        # Register this instance for the current loop
+        self._sessions[loop] = self
+        
         # Serialise initialisation to avoid race conditions where multiple
         # concurrent coroutine calls create multiple browser instances for
         # the same NVBrowserSession.
@@ -144,8 +166,14 @@ class NVBrowserSession:
         r"""Close all browser resources, ensuring cleanup even if some
         operations fail.
         """
-        # The close method will now only close the *current* event-loop's
-        # browser instance.  Use `close_all_sessions` for a full cleanup.
+        # Remove this session from the sessions dict and close resources
+        try:
+            loop = asyncio.get_running_loop()
+            if loop in self._sessions and self._sessions[loop] is self:
+                del self._sessions[loop]
+        except RuntimeError:
+            pass  # No running loop, that's okay
+        
         await self._close_session()
 
     async def _close_session(self) -> None:

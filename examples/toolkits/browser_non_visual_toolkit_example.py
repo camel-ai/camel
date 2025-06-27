@@ -37,7 +37,7 @@ USER_DATA_DIR = "User_Data"
 
 model_backend = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4_1,
+    model_type=ModelType.GPT_4O,
     model_config_dict={"temperature": 0.0, "top_p": 1},
 )
 
@@ -51,14 +51,9 @@ agent = ChatAgent(
     max_iteration=10,
 )
 
-TASK_PROMPT = """Play this game: 
-https://www.nytimes.com/games/wordle/index.html
-You need to enter meaningful five-letter words, such as "Apple".
-Before completing the task, do not do anything outside of using the call tool.
-If the game tells you that something is wrong, you must resolve it yourself.
-Also, you must attempt all six tries.
-
-If the registration window can be closed, please close it.
+TASK_PROMPT = r"""
+Open Amazon.com, search for a beautiful keyboard, add it to the cart
+, and describe its appearance to me in detail
 """
 
 

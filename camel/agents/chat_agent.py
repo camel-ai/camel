@@ -47,6 +47,7 @@ from camel.agents._utils import (
     handle_logprobs,
     safe_model_dump,
 )
+from camel.utils.tool_result import ToolResult
 from camel.agents.base import BaseAgent
 from camel.memories import (
     AgentMemory,
@@ -285,6 +286,7 @@ class ChatAgent(BaseAgent):
         self.stop_event = stop_event
         self.mask_tool_output = mask_tool_output
         self._secure_result_store: Dict[str, Any] = {}
+        self._pending_images: List[str] = []  # Store images to attach to next user message
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -1133,6 +1135,46 @@ class ChatAgent(BaseAgent):
                 role_name="User", content=input_message
             )
 
+        # Attach any pending images from previous tool calls
+        if self._pending_images:
+            # Convert base64 images to proper format for BaseMessage
+            image_list = []
+            for img_data in self._pending_images:
+                try:
+                    import base64
+                    import io
+                    from PIL import Image
+                    
+                    # Extract base64 data from data URL format
+                    if img_data.startswith("data:image"):
+                        # Format: "data:image/png;base64,iVBORw0KGgo..."
+                        base64_data = img_data.split(',', 1)[1]
+                    else:
+                        # Raw base64 data
+                        base64_data = img_data
+                    
+                    # Decode and create PIL Image
+                    image_bytes = base64.b64decode(base64_data)
+                    pil_image = Image.open(io.BytesIO(image_bytes))
+                    image_list.append(pil_image)
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to convert base64 image to PIL: {e}")
+                    # Skip this image if conversion fails
+                    continue
+            
+            # Only create new message with images if we have valid images
+            if image_list:
+                # Create new message with images attached
+                input_message = BaseMessage.make_user_message(
+                    role_name="User", 
+                    content=input_message.content, 
+                    image_list=image_list
+                )
+            
+            # Clear pending images after processing
+            self._pending_images = []
+
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
@@ -1280,6 +1322,46 @@ class ChatAgent(BaseAgent):
                 role_name="User", content=input_message
             )
 
+        # Attach any pending images from previous tool calls
+        if self._pending_images:
+            # Convert base64 images to proper format for BaseMessage
+            image_list = []
+            for img_data in self._pending_images:
+                try:
+                    import base64
+                    import io
+                    from PIL import Image
+                    
+                    # Extract base64 data from data URL format
+                    if img_data.startswith("data:image"):
+                        # Format: "data:image/png;base64,iVBORw0KGgo..."
+                        base64_data = img_data.split(',', 1)[1]
+                    else:
+                        # Raw base64 data
+                        base64_data = img_data
+                    
+                    # Decode and create PIL Image
+                    image_bytes = base64.b64decode(base64_data)
+                    pil_image = Image.open(io.BytesIO(image_bytes))
+                    image_list.append(pil_image)
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to convert base64 image to PIL: {e}")
+                    # Skip this image if conversion fails
+                    continue
+            
+            # Only create new message with images if we have valid images
+            if image_list:
+                # Create new message with images attached
+                input_message = BaseMessage.make_user_message(
+                    role_name="User", 
+                    content=input_message.content, 
+                    image_list=image_list
+                )
+            
+            # Clear pending images after processing
+            self._pending_images = []
+
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         tool_call_records: List[ToolCallingRecord] = []
@@ -1324,6 +1406,7 @@ class ChatAgent(BaseAgent):
 
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
+                new_images_from_tools = []
                 for tool_call_request in tool_call_requests:
                     if (
                         tool_call_request.tool_name
@@ -1337,10 +1420,57 @@ class ChatAgent(BaseAgent):
                             tool_call_request
                         )
                         tool_call_records.append(tool_call_record)
+                        
+                        # Check if this tool call produced images
+                        if hasattr(tool_call_record, 'images') and tool_call_record.images:
+                            new_images_from_tools.extend(tool_call_record.images)
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
                     break
+
+                # If tools produced images, immediately send them to the model as a user message
+                if new_images_from_tools:
+                    # Convert base64 images to PIL Images following browser_toolkit.py pattern
+                    image_list = []
+                    for img_data in new_images_from_tools:
+                        try:
+                            import base64
+                            import io
+                            from PIL import Image
+                            
+                            # Extract base64 data from data URL format
+                            if img_data.startswith("data:image"):
+                                # Format: "data:image/png;base64,iVBORw0KGgo..."
+                                base64_data = img_data.split(',', 1)[1]
+                            else:
+                                # Raw base64 data
+                                base64_data = img_data
+                            
+                            # Decode and create PIL Image
+                            image_bytes = base64.b64decode(base64_data)
+                            pil_image = Image.open(io.BytesIO(image_bytes))
+                            image_list.append(pil_image)
+                            
+                        except Exception as e:
+                            logger.warning(f"Failed to convert base64 image to PIL for immediate use: {e}")
+                            continue
+                    
+                    # If we have valid images, create a user message with images (like browser_toolkit.py)
+                    if image_list:
+                        # Create a user message with images to provide visual context immediately
+                        image_message = BaseMessage.make_user_message(
+                            role_name="User",
+                            content="[Visual content from tool execution - please analyze and continue]",
+                            image_list=image_list
+                        )
+                        # Add to memory immediately so the next model call can see the images
+                        self.update_memory(image_message, OpenAIBackendRole.USER)
+                    
+                    # Remove from pending images since we're processing them immediately
+                    for img in new_images_from_tools:
+                        if img in self._pending_images:
+                            self._pending_images.remove(img)
 
                 if (
                     self.max_iteration is not None
@@ -1981,9 +2111,22 @@ class ChatAgent(BaseAgent):
             mask_flag = False
             logging.warning(error_msg)
 
-        return self._record_tool_calling(
+        # Check if result is a ToolResult with images
+        images_to_attach = None
+        if isinstance(result, ToolResult):
+            images_to_attach = result.images
+            result = str(result)  # Use string representation for storage
+
+        tool_record = self._record_tool_calling(
             func_name, args, result, tool_call_id, mask_output=mask_flag
         )
+        
+        # Store images for later attachment to next user message
+        if images_to_attach:
+            tool_record.images = images_to_attach
+            self._pending_images.extend(images_to_attach)
+        
+        return tool_record
 
     async def _aexecute_tool(
         self,
@@ -2025,7 +2168,20 @@ class ChatAgent(BaseAgent):
             result = {"error": error_msg}
             logging.warning(error_msg)
 
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+        # Check if result is a ToolResult with images
+        images_to_attach = None
+        if isinstance(result, ToolResult):
+            images_to_attach = result.images
+            result = str(result)  # Use string representation for storage
+
+        tool_record = self._record_tool_calling(func_name, args, result, tool_call_id)
+        
+        # Store images for later attachment to next user message
+        if images_to_attach:
+            tool_record.images = images_to_attach
+            self._pending_images.extend(images_to_attach)
+        
+        return tool_record
 
     def _record_tool_calling(
         self,
