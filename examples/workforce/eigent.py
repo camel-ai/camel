@@ -55,14 +55,19 @@ def developer_agent_factory(
 ):
     r"""Factory for creating a developer agent."""
     tools = [
-        HumanToolkit().ask_human_via_console,
+        *HumanToolkit().get_tools(),
         *TerminalToolkit(clone_current_env=True).get_tools(),
         *CodeExecutionToolkit().get_tools(),
         *edgeone_pages_mcp_toolkit.get_tools(),
     ]
 
     system_message = """You are a skilled coding assistant with DIRECT CODE 
-    EXECUTION CAPABILITIES. You can:
+    EXECUTION CAPABILITIES. You MUST use the `send_message_to_user` tool to 
+    inform the user of every decision and action you take. Your message must 
+    be tidy and in one short sentence. This is a mandatory part of your 
+    workflow.
+
+    Your capabilities include:
     - WRITE AND EXECUTE code in real-time to solve tasks
     - RUN terminal commands to install packages, process files, or test 
     functionality
@@ -79,7 +84,8 @@ def developer_agent_factory(
     - If there's dependency issues when you try to execute code, you should 
     use the terminal toolkit to install the dependencies.
     - ASK for human input via the console if you are stuck or need 
-    clarification."""
+    clarification.
+    """
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -97,7 +103,8 @@ def search_agent_factory(
     task_id: str,
 ):
     r"""Factory for creating a search agent, based on user-provided code
-    structure."""
+    structure.
+    """
     tools = [
         # FunctionTool(SearchToolkit().search_wiki),
         FunctionTool(SearchToolkit().search_exa),
@@ -105,14 +112,21 @@ def search_agent_factory(
         # FunctionTool(SearchToolkit().search_baidu),
         *BrowserNonVisualToolkit(headless=False).get_tools(),
         *TerminalToolkit().get_tools(),
-        HumanToolkit().ask_human_via_console,
+        *HumanToolkit().get_tools(),
         *Crawl4AIToolkit().get_tools(),
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
     extract webpage content, simulate browser actions, and provide relevant 
     information to solve the given task.
+    
+    You MUST use the `send_message_to_user` tool to inform the user of every 
+    decision and action you take. Your message must be tidy and in one short 
+    sentence. This is a mandatory part of your workflow.
+
     Keep in mind that:
+    - For each decision you make and action you take, you must send a message 
+    to the user to keep them informed.
     - Do not be overly confident in your own knowledge. Searching can provide 
     a broader perspective and help validate existing knowledge.  
     - If one way fails to provide an answer, try other ways or methods. The 
@@ -157,8 +171,7 @@ Here are some tips that help you perform web search:
     terms step-by-step to find more urls.
 - The results you return do not have to directly answer the original question, 
     you only need to collect relevant information.
-    
-    """
+"""
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -182,14 +195,18 @@ def document_agent_factory(
         *PPTXToolkit().get_tools(),
         # *google_drive_mcp_toolkit.get_tools(),
         # *RetrievalToolkit().get_tools(),
-        HumanToolkit().ask_human_via_console,
+        *HumanToolkit().get_tools(),
         *MarkItDownToolkit().get_tools(),
         *ExcelToolkit().get_tools(),
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
-    creating, modifying, and managing various document formats. Your 
-    capabilities include:
+    creating, modifying, and managing various document formats. You MUST use 
+    the `send_message_to_user` tool to inform the user of every decision and 
+    action you take. Your message must be tidy and in one short sentence. 
+    This is a mandatory part of your workflow.
+    
+    Your capabilities include:
 
     1. Document Creation & Editing:
        - Create and write to various file formats including Markdown (.md), 
@@ -258,12 +275,16 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
         *DalleToolkit().get_tools(),
-        HumanToolkit().ask_human_via_console,
+        *HumanToolkit().get_tools(),
     ]
 
     system_message = """You are a Multi-Modal Processing Assistant specialized 
-    in analyzing and generating various types of media content. Your 
-    capabilities include:
+    in analyzing and generating various types of media content. You MUST use 
+    the `send_message_to_user` tool to inform the user of every decision and 
+    action you take. Your message must be tidy and in one short sentence. 
+    This is a mandatory part of your workflow.
+    
+    Your capabilities include:
 
     1. Video & Audio Analysis:
        - Download videos from URLs for analysis.
@@ -312,9 +333,13 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
     return ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Social Medium Agent",
-            content="""You are a Social Media Management Assistant with 
-            comprehensive capabilities across multiple platforms. Your 
-            integrated toolkits enable you to:
+            content="""
+You are a Social Media Management Assistant with comprehensive capabilities 
+across multiple platforms. You MUST use the `send_message_to_user` tool to 
+inform the user of every decision and action you take. Your message must be 
+tidy and in one short sentence. This is a mandatory part of your workflow.
+
+Your integrated toolkits enable you to:
 
 1. WhatsApp Business Management (WhatsAppToolkit):
    - Send text and template messages to customers via the WhatsApp Business 
@@ -365,7 +390,7 @@ operations.
             *RedditToolkit().get_tools(),
             *NotionToolkit().get_tools(),
             *SlackToolkit().get_tools(),
-            HumanToolkit().ask_human_via_console,
+            *HumanToolkit().get_tools(),
         ],
     )
 
@@ -400,13 +425,36 @@ async def main():
 
         # Create custom agents for the workforce
         coordinator_agent = ChatAgent(
-            "You are a helpful coordinator.", model=model_backend_reason
+            "You are a helpful coordinator. You MUST use the "
+            "`send_message_to_user` tool to inform the user of every "
+            "decision and action you take. Your message must be tidy "
+            "and in one short sentence. This is a mandatory part of "
+            "your workflow.",
+            model=model_backend_reason,
+            tools=[
+                *HumanToolkit().get_tools(),
+            ],
         )
         task_agent = ChatAgent(
-            "You are a helpful task planner.", model=model_backend_reason
+            "You are a helpful task planner. You MUST use the "
+            "`send_message_to_user` tool to inform the user of every "
+            "decision and action you take. Your message must be tidy "
+            "and in one short sentence. This is a mandatory part of "
+            "your workflow.",
+            model=model_backend_reason,
+            tools=[
+                *HumanToolkit().get_tools(),
+            ],
         )
         new_worker_agent = ChatAgent(
-            "You are a helpful worker.", model=model_backend
+            "You are a helpful worker. You MUST use the "
+            "`send_message_to_user` tool to inform the user of every "
+            "decision and action you take. Your message must be tidy and in "
+            "one short sentence. This is a mandatory part of your workflow.",
+            model=model_backend,
+            tools=[
+                *HumanToolkit().get_tools(),
+            ],
         )
 
         # Create agents using factory functions
