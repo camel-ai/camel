@@ -315,6 +315,31 @@ Terminate a running process in a specified shell session.
 
   str: Status message indicating whether the process was terminated.
 
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.ask_user_for_help"></a>
+
+### ask_user_for_help
+
+```python
+def ask_user_for_help(self, id: str):
+```
+
+Pauses agent execution to ask a human for help in the terminal.
+
+This function should be called when an agent is stuck or needs
+assistance with a task that requires manual intervention (e.g.,
+solving a CAPTCHA or complex debugging). The human will take over the
+specified terminal session to execute commands and then return control
+to the agent.
+
+**Parameters:**
+
+- **id** (str): Identifier of the shell session for the human to interact with. If the session does not yet exist, it will be created automatically.
+
+**Returns:**
+
+  str: A status message indicating that the human has finished,
+including the number of commands executed.
+
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit.__del__"></a>
 
 ### __del__
