@@ -84,6 +84,7 @@ class TerminalToolkit(BaseToolkit):
         self._file_initialized = False
         self.cloned_env_path = None
         self.use_shell_mode = use_shell_mode
+        self._human_takeover_active = False
 
         self.python_executable = sys.executable
         self.is_macos = platform.system() == 'Darwin'
@@ -938,82 +939,167 @@ class TerminalToolkit(BaseToolkit):
             return f"Error killing process: {e!s}"
 
     def ask_user_for_help(self, id: str) -> str:
-        r"""Pause agent automation and hand over the current terminal session
-        to a human operator.
+        r"""Pauses agent execution to ask a human for help in the terminal.
+
+        This function should be called when an agent is stuck or needs
+        assistance with a task that requires manual intervention (e.g.,
+        solving a CAPTCHA or complex debugging). The human will take over the
+        specified terminal session to execute commands and then return control
+        to the agent.
 
         Args:
-            id (str): Identifier of the shell session that the human will
-                interact with.  If the session does not yet exist it will
-                be created automatically.
+            id (str): Identifier of the shell session for the human to
+                interact with. If the session does not yet exist, it will be
+                created automatically.
 
         Returns:
-            str: A short status message once the human has relinquished
-                control.
+            str: A status message indicating that the human has finished,
+                including the number of commands executed.
         """
+        # Input validation
+        if not id or not isinstance(id, str):
+            return "Error: Invalid session ID provided"
 
-        # Ensure the session exists so that the human can reuse it
-        if id not in self.shell_sessions:
-            self.shell_sessions[id] = {
-                "process": None,
-                "output": "",
-                "running": False,
-            }
+        # Prevent concurrent human takeovers
+        if (
+            hasattr(self, '_human_takeover_active')
+            and self._human_takeover_active
+        ):
+            return "Error: Human takeover already in progress"
 
-        result: str = ""
+        try:
+            self._human_takeover_active = True
 
-        # Inform both the agent and the human
-        takeover_banner = (
-            "\n=== Human takeover requested ===\n"
-            "Type commands directly into this console.  All output will\n"
-            "continue to appear in the normal terminal or log window.\n"
-            "When you are finished type /exit (or press Ctrl-D) to return\n"
-            "control to CAMEL.\n\n"
-        )
-        self._update_terminal_output(takeover_banner)
+            # Ensure the session exists so that the human can reuse it
+            if id not in self.shell_sessions:
+                self.shell_sessions[id] = {
+                    "process": None,
+                    "output": "",
+                    "running": False,
+                }
 
-        # Helper flag + event for coordination
-        done_event = threading.Event()
+            command_count = 0
+            error_occurred = False
 
-        def _human_loop() -> None:
-            """Blocking loop that forwards human input to shell_exec."""
-            nonlocal result  # allow thread to update outer variable
-            try:
-                while True:
-                    try:
-                        # Prompt shown only in the real console. Not added
-                        # to toolkit log because _update_terminal_output
-                        # will handle command echo.
-                        user_cmd = input("human> ")
-                        result += "user_cmd: " + user_cmd + "\n"
-                    except EOFError:
-                        # e.g. Ctrl_D / stdin closed, treat as exit.
-                        break
+            # Create clear banner message for user
+            takeover_banner = (
+                f"\n{'='*60}\n"
+                f"🤖 CAMEL Agent needs human help! Session: {id}\n"
+                f"📂 Working directory: {self.working_dir}\n"
+                f"{'='*60}\n"
+                f"💡 Type commands or '/exit' to return control to agent.\n"
+                f"{'='*60}\n"
+            )
 
-                    if user_cmd.strip() in {"/exit", "exit", "quit"}:
-                        break
+            # Print once to console for immediate visibility
+            print(takeover_banner, flush=True)
+            # Log for terminal output tracking
+            self._update_terminal_output(takeover_banner)
 
-                    _ = self.shell_exec(id, user_cmd)
-                    result += "exec result: " + _ + "\n"
-                    logger.info(f"exec result: {_}")
+            # Helper flag + event for coordination
+            done_event = threading.Event()
 
-            finally:
-                # Notify end of takeover
-                finish_msg = (
-                    "\n=== Human takeover ended, "
-                    "returning control to agent ===\n"
+            def _human_loop() -> None:
+                r"""Blocking loop that forwards human input to shell_exec."""
+                nonlocal command_count, error_occurred
+                try:
+                    while True:
+                        try:
+                            # Clear, descriptive prompt for user input
+                            user_cmd = input(f"🧑‍💻 [{id}]> ")
+                            if (
+                                user_cmd.strip()
+                            ):  # Only count non-empty commands
+                                command_count += 1
+                        except EOFError:
+                            # e.g. Ctrl_D / stdin closed, treat as exit.
+                            break
+                        except (KeyboardInterrupt, Exception) as e:
+                            logger.warning(
+                                f"Input error during human takeover: {e}"
+                            )
+                            error_occurred = True
+                            break
+
+                        if user_cmd.strip() in {"/exit", "exit", "quit"}:
+                            break
+
+                        try:
+                            exec_result = self.shell_exec(id, user_cmd)
+                            # Show the result immediately to the user
+                            if exec_result.strip():
+                                print(exec_result)
+                            logger.info(
+                                f"Human command executed: {user_cmd[:50]}..."
+                            )
+                            # Auto-exit after successful command
+                            break
+                        except Exception as e:
+                            error_msg = f"Error executing command: {e}"
+                            logger.error(f"Error executing human command: {e}")
+                            print(error_msg)  # Show error to user immediately
+                            self._update_terminal_output(f"{error_msg}\n")
+                            error_occurred = True
+
+                except Exception as e:
+                    logger.error(f"Unexpected error in human loop: {e}")
+                    error_occurred = True
+                finally:
+                    # Notify completion clearly
+                    finish_msg = (
+                        f"\n{'='*60}\n"
+                        f"✅ Human assistance completed! "
+                        f"Commands: {command_count}\n"
+                        f"🤖 Returning control to CAMEL agent...\n"
+                        f"{'='*60}\n"
+                    )
+                    print(finish_msg, flush=True)
+                    self._update_terminal_output(finish_msg)
+                    done_event.set()
+
+            # Start interactive thread (non-daemon for proper cleanup)
+            thread = threading.Thread(target=_human_loop, daemon=False)
+            thread.start()
+
+            # Block until human signals completion with timeout
+            if done_event.wait(timeout=600):  # 10 minutes timeout
+                thread.join(timeout=10)  # Give thread time to cleanup
+
+                # Generate detailed status message
+                status = "completed successfully"
+                if error_occurred:
+                    status = "completed with some errors"
+
+                result_msg = (
+                    f"Human assistance {status} for session '{id}'. "
+                    f"Total commands executed: {command_count}. "
+                    f"Working directory: {self.working_dir}"
                 )
-                self._update_terminal_output(finish_msg)
-                done_event.set()
+                logger.info(result_msg)
+                return result_msg
+            else:
+                timeout_msg = (
+                    f"Human takeover for session '{id}' timed out after 10 "
+                    "minutes"
+                )
+                logger.warning(timeout_msg)
+                return timeout_msg
 
-        # Start interactive thread so that ask_user_for_help can block
-        # until finished without stalling other toolkit activities.
-        t = threading.Thread(target=_human_loop, daemon=True)
-        t.start()
-
-        # Block until human signals completion
-        done_event.wait()
-
-        return result
+        except Exception as e:
+            error_msg = f"Error during human takeover for session '{id}': {e}"
+            logger.error(error_msg)
+            # Notify user of the error clearly
+            error_banner = (
+                f"\n{'='*60}\n"
+                f"❌ Error in human takeover! Session: {id}\n"
+                f"❗ {e}\n"
+                f"{'='*60}\n"
+            )
+            print(error_banner, flush=True)
+            return error_msg
+        finally:
+            # Always reset the flag
+            self._human_takeover_active = False
 
     def __del__(self):
         r"""Clean up resources when the object is being destroyed.
