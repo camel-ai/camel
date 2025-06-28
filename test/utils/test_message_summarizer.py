@@ -19,12 +19,12 @@ import pytest
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.types import ModelType
-from camel.utils.message_summarizer import MessageSummarizer, SummarySchema
+from camel.utils.message_summarizer import MessageSummarizer, MessageSummary
 
 
 @pytest.fixture
 def sample_messages() -> List[BaseMessage]:
-    """Create a list of sample messages for testing."""
+    r"""Create a list of sample messages for testing."""
     return [
         BaseMessage.make_user_message(
             role_name="User",
@@ -56,21 +56,21 @@ def sample_messages() -> List[BaseMessage]:
 
 @pytest.fixture
 def mock_model_backend():
-    """Create a mock model backend for testing."""
+    r"""Create a mock model backend for testing."""
     mock_backend = Mock(spec=BaseModelBackend)
     mock_backend.model_type = ModelType.GPT_4O_MINI
     return mock_backend
 
 
 def test_message_summarizer_initialization(mock_model_backend):
-    """Test the initialization of MessageSummarizer."""
+    r"""Test the initialization of MessageSummarizer."""
     # Test with custom model backend
     summarizer = MessageSummarizer(model_backend=mock_model_backend)
     assert summarizer.model_backend is mock_model_backend
 
 
 def test_summarize_empty_messages(mock_model_backend):
-    """Test summarizing an empty list of messages raises ValueError."""
+    r"""Test summarizing an empty list of messages raises ValueError."""
     summarizer = MessageSummarizer(model_backend=mock_model_backend)
     with pytest.raises(
         ValueError, match="Cannot summarize an empty list of messages"
@@ -79,7 +79,7 @@ def test_summarize_empty_messages(mock_model_backend):
 
 
 def test_summarize_single_message(mock_model_backend):
-    """Test summarizing a single message."""
+    r"""Test summarizing a single message."""
     message = BaseMessage.make_user_message(
         role_name="User",
         content="Let's build a Python web application.",
@@ -89,31 +89,33 @@ def test_summarize_single_message(mock_model_backend):
     # Mock the agent.step method to return a structured response
     mock_response = Mock()
     mock_msg = Mock()
-    mock_parsed = Mock()
-    mock_parsed.model_dump.return_value = {
-        "roles": ["User"],
-        "key_entities": ["Python", "web application"],
-        "decisions": ["Build a web application"],
-        "task_progress": "Planning phase",
-        "context": "User wants to build a Python web application",
-    }
-    mock_msg.parsed = mock_parsed
+    mock_summary = MessageSummary(
+        summary="User wants to build a Python web application.",
+        participants=["User"],
+        key_topics_and_entities=["Python", "web application"],
+        decisions_and_outcomes=["Build a web application"],
+        action_items=[],
+        progress_on_main_task="Planning phase",
+    )
+    mock_msg.parsed = mock_summary
     mock_response.msg = mock_msg
     summarizer.agent.step = Mock(return_value=mock_response)
 
     summary = summarizer.summarize([message])
-    print(f"\n~~Summary3: {summary}")
 
-    assert isinstance(summary, SummarySchema)
-    assert "User" in summary.roles
-    assert any("Python" in entity for entity in summary.key_entities)
+    assert isinstance(summary, MessageSummary)
+    assert "User" in summary.participants
     assert any(
-        "web application" in entity.lower() for entity in summary.key_entities
+        "Python" in entity for entity in summary.key_topics_and_entities
+    )
+    assert any(
+        "web application" in entity.lower()
+        for entity in summary.key_topics_and_entities
     )
 
 
 def test_summarize_with_special_characters(mock_model_backend):
-    """Test summarizing messages with special characters."""
+    r"""Test summarizing messages with special characters."""
     messages = [
         BaseMessage.make_user_message(
             role_name="User",
@@ -135,32 +137,34 @@ def test_summarize_with_special_characters(mock_model_backend):
     # Mock the agent.step method to return a structured response
     mock_response = Mock()
     mock_msg = Mock()
-    mock_parsed = Mock()
-    mock_parsed.model_dump.return_value = {
-        "roles": ["User", "Assistant"],
-        "key_entities": ["API endpoints", "Flask", "@app.route"],
-        "decisions": ["Implement API endpoints"],
-        "task_progress": "Designing API structure",
-        "context": "Discussion about API endpoints and Flask implementation",
-    }
-    mock_msg.parsed = mock_parsed
+    mock_summary = MessageSummary(
+        summary="Discussion about API endpoints and Flask implementation.",
+        participants=["User", "Assistant"],
+        key_topics_and_entities=["API endpoints", "Flask", "@app.route"],
+        decisions_and_outcomes=["Implement API endpoints"],
+        action_items=[],
+        progress_on_main_task="Designing API structure",
+    )
+    mock_msg.parsed = mock_summary
     mock_response.msg = mock_msg
     summarizer.agent.step = Mock(return_value=mock_response)
 
     summary = summarizer.summarize(messages)
-    print(f"\n~~Summary4: {summary}")
 
-    assert isinstance(summary, SummarySchema)
-    assert "User" in summary.roles
-    assert "Assistant" in summary.roles
-    assert any("api" in entity.lower() for entity in summary.key_entities)
+    assert isinstance(summary, MessageSummary)
+    assert "User" in summary.participants
+    assert "Assistant" in summary.participants
     assert any(
-        "endpoints" in entity.lower() for entity in summary.key_entities
+        "api" in entity.lower() for entity in summary.key_topics_and_entities
+    )
+    assert any(
+        "endpoints" in entity.lower()
+        for entity in summary.key_topics_and_entities
     )
 
 
 def test_message_summarizer_with_custom_model_backend():
-    """Test MessageSummarizer with a custom model backend."""
+    r"""Test MessageSummarizer with a custom model backend."""
     # Create a mock model backend
     mock_backend = Mock(spec=BaseModelBackend)
     mock_backend.model_type = ModelType.GPT_4_1_MINI
@@ -177,70 +181,73 @@ def test_message_summarizer_with_custom_model_backend():
     # Mock the agent.step method
     mock_response = Mock()
     mock_msg = Mock()
-    mock_parsed = Mock()
-    mock_parsed.model_dump.return_value = {
-        "roles": ["User"],
-        "key_entities": ["Test message"],
-        "decisions": ["Testing custom backend"],
-        "task_progress": "Testing phase",
-        "context": "Testing custom model backend functionality",
-    }
-    mock_msg.parsed = mock_parsed
+    mock_summary = MessageSummary(
+        summary="Testing custom model backend functionality.",
+        participants=["User"],
+        key_topics_and_entities=["Test message"],
+        decisions_and_outcomes=["Testing custom backend"],
+        action_items=[],
+        progress_on_main_task="Testing phase",
+    )
+    mock_msg.parsed = mock_summary
     mock_response.msg = mock_msg
     summarizer.agent.step = Mock(return_value=mock_response)
 
     summary = summarizer.summarize([message])
-    assert isinstance(summary, SummarySchema)
+    assert isinstance(summary, MessageSummary)
 
 
 def test_summarize_messages(
     sample_messages: List[BaseMessage], mock_model_backend
 ):
-    """Test the summarize method with sample messages."""
+    r"""Test the summarize method with sample messages."""
     summarizer = MessageSummarizer(model_backend=mock_model_backend)
 
     # Mock the agent.step method to return a structured response
     mock_response = Mock()
     mock_msg = Mock()
-    mock_parsed = Mock()
-    mock_parsed.model_dump.return_value = {
-        "roles": ["User", "Assistant"],
-        "key_entities": ["Flask", "Python", "web framework", "SQLAlchemy"],
-        "decisions": [
+    mock_summary = MessageSummary(
+        summary="Discussion about building a Python web application with "
+        "Flask.",
+        participants=["User", "Assistant"],
+        key_topics_and_entities=[
+            "Flask",
+            "Python",
+            "web framework",
+            "SQLAlchemy",
+        ],
+        decisions_and_outcomes=[
             "Use Flask for web framework",
             "Include SQLAlchemy for ORM",
         ],
-        "task_progress": "Planning and setup phase",
-        "context": (
-            "Discussion about building a Python web application" " with Flask"
-        ),
-    }
-    mock_msg.parsed = mock_parsed
+        action_items=[],
+        progress_on_main_task="Planning and setup phase",
+    )
+    mock_msg.parsed = mock_summary
     mock_response.msg = mock_msg
     summarizer.agent.step = Mock(return_value=mock_response)
 
     summary = summarizer.summarize(sample_messages)
-    print(f"\n~~Summary for test_summarize_messages: {summary}")
 
     # Verify the summary structure
-    assert isinstance(summary, SummarySchema)
-    assert isinstance(summary.roles, list)
-    assert isinstance(summary.key_entities, list)
-    assert isinstance(summary.decisions, list)
-    assert isinstance(summary.task_progress, str)
-    assert isinstance(summary.context, str)
+    assert isinstance(summary, MessageSummary)
+    assert isinstance(summary.participants, list)
+    assert isinstance(summary.key_topics_and_entities, list)
+    assert isinstance(summary.decisions_and_outcomes, list)
+    assert isinstance(summary.progress_on_main_task, str)
+    assert isinstance(summary.action_items, list)
 
     # Verify content
-    assert len(summary.roles) > 0
-    assert len(summary.key_entities) > 0
-    assert len(summary.decisions) > 0
-    assert len(summary.task_progress) > 0
-    assert len(summary.context) > 0
+    assert len(summary.participants) > 0
+    assert len(summary.key_topics_and_entities) > 0
+    assert len(summary.decisions_and_outcomes) > 0
+    assert len(summary.progress_on_main_task) > 0
+    assert len(summary.summary) > 0
 
     # Verify specific content based on sample messages
-    assert "User" in summary.roles
-    assert "Assistant" in summary.roles
-    assert any("Flask" in entity for entity in summary.key_entities)
+    assert "User" in summary.participants
+    assert "Assistant" in summary.participants
+    assert any("Flask" in entity for entity in summary.key_topics_and_entities)
 
 
 if __name__ == "__main__":

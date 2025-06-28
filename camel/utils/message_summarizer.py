@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
@@ -21,40 +21,43 @@ from camel.models import BaseModelBackend, ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 
-class SummarySchema(BaseModel):
+class MessageSummary(BaseModel):
     r"""Schema for structured message summaries.
 
     Attributes:
-        roles (List[str]): The roles involved in the conversation.
-        key_entities (List[str]): Important entities/concepts discussed.
-        decisions (List[str]): Key decisions or conclusions reached.
-        task_progress (str): Summary of progress made on the main task.
-        context (str): Additional relevant contextual information.
+        summary (str): A brief, one-sentence summary of the conversation.
+        participants (List[str]): The roles of participants involved.
+        key_topics_and_entities (List[str]): Important topics, concepts, and
+            entities discussed.
+        decisions_and_outcomes (List[str]): Key decisions, conclusions, or
+            outcomes reached.
+        action_items (List[str]): A list of specific tasks or actions to be
+            taken, with assignees if mentioned.
+        progress_on_main_task (str): A summary of progress made on the
+            primary task.
     """
 
-    roles: List[str]
-    key_entities: List[str]
-    decisions: List[str]
-    task_progress: str
-    context: str
-
-
-class SummaryResponseSchema(BaseModel):
-    r"""Schema for the model's structured summary response.
-
-    Attributes:
-        roles (List[str]): List of roles involved in the conversation.
-        key_entities (List[str]): List of important entities discussed.
-        decisions (List[str]): List of key decisions or conclusions reached.
-        task_progress (str): Summary of progress made on the main task.
-        context (str): Additional relevant contextual information.
-    """
-
-    roles: List[str]
-    key_entities: List[str]
-    decisions: List[str]
-    task_progress: str
-    context: str
+    summary: str = Field(
+        description="A brief, one-sentence summary of the conversation."
+    )
+    participants: List[str] = Field(
+        description="The roles of participants involved."
+    )
+    key_topics_and_entities: List[str] = Field(
+        description="Important topics, concepts, and entities discussed."
+    )
+    decisions_and_outcomes: List[str] = Field(
+        description="Key decisions, conclusions, or outcomes reached."
+    )
+    action_items: List[str] = Field(
+        description=(
+            "A list of specific tasks or actions to be taken, with assignees "
+            "if mentioned."
+        )
+    )
+    progress_on_main_task: str = Field(
+        description="A summary of progress made on the primary task."
+    )
 
 
 class MessageSummarizer:
@@ -80,36 +83,42 @@ class MessageSummarizer:
         self.agent = ChatAgent(
             BaseMessage.make_assistant_message(
                 role_name="Message Summarizer",
-                content="You are a skilled conversation summarizer. "
-                "Your task is to analyze chat messages and "
-                "create structured summaries that "
-                "capture:\n"
-                "- The key roles involved\n"
-                "- Important entities and concepts discussed\n"
-                "- Key decisions or conclusions reached\n"
-                "- Progress made on the main task\n"
-                "- Relevant contextual information\n\n"
-                "Provide summaries that are concise while "
-                "preserving critical information.",
+                content=(
+                    "You are an expert conversation summarizer. Your task is "
+                    "to analyze chat messages and create a structured summary "
+                    "in JSON format. The summary should capture:\n"
+                    "- summary: A brief, one-sentence summary of the "
+                    "conversation.\n"
+                    "- participants: The roles of participants involved.\n"
+                    "- key_topics_and_entities: Important topics, concepts, "
+                    "and entities discussed.\n"
+                    "- decisions_and_outcomes: Key decisions, conclusions, or "
+                    "outcomes reached.\n"
+                    "- action_items: A list of specific tasks or actions to "
+                    "be taken, with assignees if mentioned.\n"
+                    "- progress_on_main_task: A summary of progress made on "
+                    "the primary task.\n\n"
+                    "Your response must be a JSON object that strictly "
+                    "adheres to this structure. Be concise and accurate."
+                ),
             ),
             model=self.model_backend,
         )
 
-    def summarize(self, messages: List[BaseMessage]) -> SummarySchema:
+    def summarize(self, messages: List[BaseMessage]) -> MessageSummary:
         r"""Generate a structured summary of the provided messages.
 
         Args:
             messages (List[BaseMessage]): List of messages to summarize.
 
         Returns:
-            SummarySchema: Structured summary of the conversation.
+            MessageSummary: Structured summary of the conversation.
 
         Raises:
             ValueError: If the messages list is empty or if the model's
             response cannot be parsed as valid JSON.
         """
-        # When messages is empty
-        if len(messages) == 0:
+        if not messages:
             raise ValueError("Cannot summarize an empty list of messages.")
 
         # Construct prompt from messages
@@ -117,27 +126,23 @@ class MessageSummarizer:
             f"{msg.role_name}: {msg.content}" for msg in messages
         )
         prompt = (
-            "Please analyze these messages and provide a structured summary:\n"
-            + message_text
-            + "\n\nYour response must be a JSON object with these fields:\n"
-            "- roles: list of roles involved\n"
-            "- key_entities: list of important entities/concepts\n"
-            "- decisions: list of key decisions made\n"
-            "- task_progress: summary of progress on main task\n"
-            "- context: additional relevant context"
+            "Please analyze the following chat messages and generate a "
+            "structured summary.\n\n"
+            f"MESSAGES:\n\"\"\"\n{message_text}\n\"\"\"\n\n"
+            "Your response must be a JSON object that strictly adheres to the "
+            "required format."
         )
 
         # Get structured summary from model with forced JSON response
-        response = self.agent.step(
-            prompt, response_format=SummaryResponseSchema
-        )
-        try:
-            # The response should already be validated and parsed by the model
-            parsed_response = response.msg.parsed
-            if parsed_response is None:
-                raise ValueError(
-                    "Failed to parse response into structured format"
-                )
-            return SummarySchema(**parsed_response.model_dump())
-        except Exception as e:
-            raise ValueError(f"Response validation failed: {e!s}")
+        response = self.agent.step(prompt, response_format=MessageSummary)
+
+        if response.msg is None or response.msg.parsed is None:
+            raise ValueError(
+                "Failed to get a structured summary from the model."
+            )
+
+        summary = response.msg.parsed
+        if not isinstance(summary, MessageSummary):
+            raise ValueError("The parsed response is not a MessageSummary.")
+
+        return summary
