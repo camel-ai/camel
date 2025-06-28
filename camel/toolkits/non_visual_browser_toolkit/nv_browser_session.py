@@ -93,8 +93,12 @@ class NVBrowserSession:
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
-            raise RuntimeError("ensure_browser() must be called from within an async context")
-        
+            raise RuntimeError(
+                "ensure_browser() "
+                "must be called "
+                "from within an async context"
+            )
+
         # Check if there's already a session for this loop
         if loop in self._sessions and self._sessions[loop] is not self:
             # Copy the existing session's browser resources
@@ -108,10 +112,10 @@ class NVBrowserSession:
                 self.executor = existing.executor
                 self._initialized = True
                 return
-        
+
         # Register this instance for the current loop
         self._sessions[loop] = self
-        
+
         # Serialise initialisation to avoid race conditions where multiple
         # concurrent coroutine calls create multiple browser instances for
         # the same NVBrowserSession.
@@ -173,7 +177,7 @@ class NVBrowserSession:
                 del self._sessions[loop]
         except RuntimeError:
             pass  # No running loop, that's okay
-        
+
         await self._close_session()
 
     async def _close_session(self) -> None:

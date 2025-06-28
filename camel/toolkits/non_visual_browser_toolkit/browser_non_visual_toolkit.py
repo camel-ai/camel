@@ -753,7 +753,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
                 logger.info(f"User input received " f"after {wait_time:.2f}s")
                 result_msg = "User resumed."
         except asyncio.TimeoutError:
-            wait_time = timeout_sec
+            wait_time = timeout_sec or 0.0
             logger.info(
                 f"User input timeout reached "
                 f"after {wait_time}s, auto-resuming"
