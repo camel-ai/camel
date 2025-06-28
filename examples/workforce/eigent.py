@@ -15,6 +15,7 @@
 import asyncio
 
 from camel.agents.chat_agent import ChatAgent
+from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
@@ -47,6 +48,34 @@ from camel.toolkits import (
 from camel.types import ModelPlatformType, ModelType
 from camel.utils.commons import api_keys_required
 
+logger = get_logger(__name__)
+
+
+def send_message_to_user(message: str) -> None:
+    r"""Use this tool to send a tidy message to the user, including a
+    short title and a one-sentence description.
+
+    This one-way tool keeps the user informed about your progress,
+    decisions, or actions. It does not require a response.
+    You should use it to:
+    - Announce what you are about to do (e.g.,
+        'Starting Task\nSearching for papers on
+        GUI Agents.').
+    - Report the result of an action (e.g.,
+        'Search Complete\nFound 15 relevant
+        papers.').
+    - State a decision (e.g.,
+        'Next Step\nAnalyzing the top 10
+        papers.').
+    - Give a status update during a long-running task.
+
+    Args:
+        message (str): The tidy and informative message for the user,
+            which should contain a title and a description.
+    """
+    print(f"\nAgent Message:\n{message}")
+    logger.info(f"\nAgent Message:\n{message}")
+
 
 def developer_agent_factory(
     model: BaseModelBackend,
@@ -55,7 +84,8 @@ def developer_agent_factory(
 ):
     r"""Factory for creating a developer agent."""
     tools = [
-        *HumanToolkit().get_tools(),
+        send_message_to_user,
+        HumanToolkit().ask_human_via_console,
         *TerminalToolkit(clone_current_env=True).get_tools(),
         *CodeExecutionToolkit().get_tools(),
         *edgeone_pages_mcp_toolkit.get_tools(),
@@ -64,8 +94,8 @@ def developer_agent_factory(
     system_message = """You are a skilled coding assistant with DIRECT CODE 
     EXECUTION CAPABILITIES. You MUST use the `send_message_to_user` tool to 
     inform the user of every decision and action you take. Your message must 
-    be tidy and in one short sentence. This is a mandatory part of your 
-    workflow.
+    include a short title and a one-sentence description. This is a 
+    mandatory part of your workflow.
 
     Your capabilities include:
     - WRITE AND EXECUTE code in real-time to solve tasks
@@ -112,7 +142,8 @@ def search_agent_factory(
         # FunctionTool(SearchToolkit().search_baidu),
         *BrowserNonVisualToolkit(headless=False).get_tools(),
         *TerminalToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        send_message_to_user,
+        HumanToolkit().ask_human_via_console,
         *Crawl4AIToolkit().get_tools(),
     ]
 
@@ -121,8 +152,9 @@ def search_agent_factory(
     information to solve the given task.
     
     You MUST use the `send_message_to_user` tool to inform the user of every 
-    decision and action you take. Your message must be tidy and in one short 
-    sentence. This is a mandatory part of your workflow.
+    decision and action you take. Your message must include a short title 
+    and a one-sentence description. This is a mandatory part of your 
+    workflow.
 
     Keep in mind that:
     - For each decision you make and action you take, you must send a message 
@@ -195,7 +227,8 @@ def document_agent_factory(
         *PPTXToolkit().get_tools(),
         # *google_drive_mcp_toolkit.get_tools(),
         # *RetrievalToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        send_message_to_user,
+        HumanToolkit().ask_human_via_console,
         *MarkItDownToolkit().get_tools(),
         *ExcelToolkit().get_tools(),
     ]
@@ -203,8 +236,8 @@ def document_agent_factory(
     system_message = """You are a Document Processing Assistant specialized in 
     creating, modifying, and managing various document formats. You MUST use 
     the `send_message_to_user` tool to inform the user of every decision and 
-    action you take. Your message must be tidy and in one short sentence. 
-    This is a mandatory part of your workflow.
+    action you take. Your message must include a short title and a 
+    one-sentence description. This is a mandatory part of your workflow.
     
     Your capabilities include:
 
@@ -275,14 +308,15 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
         *DalleToolkit().get_tools(),
-        *HumanToolkit().get_tools(),
+        send_message_to_user,
+        HumanToolkit().ask_human_via_console,
     ]
 
     system_message = """You are a Multi-Modal Processing Assistant specialized 
     in analyzing and generating various types of media content. You MUST use 
     the `send_message_to_user` tool to inform the user of every decision and 
-    action you take. Your message must be tidy and in one short sentence. 
-    This is a mandatory part of your workflow.
+    action you take. Your message must include a short title and a 
+    one-sentence description. This is a mandatory part of your workflow.
     
     Your capabilities include:
 
@@ -336,8 +370,9 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
             content="""
 You are a Social Media Management Assistant with comprehensive capabilities 
 across multiple platforms. You MUST use the `send_message_to_user` tool to 
-inform the user of every decision and action you take. Your message must be 
-tidy and in one short sentence. This is a mandatory part of your workflow.
+inform the user of every decision and action you take. Your message must 
+include a short title and a one-sentence description. This is a mandatory 
+part of your workflow.
 
 Your integrated toolkits enable you to:
 
@@ -390,7 +425,8 @@ operations.
             *RedditToolkit().get_tools(),
             *NotionToolkit().get_tools(),
             *SlackToolkit().get_tools(),
-            *HumanToolkit().get_tools(),
+            send_message_to_user,
+            HumanToolkit().ask_human_via_console,
         ],
     )
 
@@ -427,33 +463,35 @@ async def main():
         coordinator_agent = ChatAgent(
             "You are a helpful coordinator. You MUST use the "
             "`send_message_to_user` tool to inform the user of every "
-            "decision and action you take. Your message must be tidy "
-            "and in one short sentence. This is a mandatory part of "
-            "your workflow.",
+            "decision and action you take. Your message must include a short "
+            "title and a one-sentence description. This is a mandatory part "
+            "of your workflow.",
             model=model_backend_reason,
             tools=[
-                *HumanToolkit().get_tools(),
+                send_message_to_user,
             ],
         )
         task_agent = ChatAgent(
             "You are a helpful task planner. You MUST use the "
-            "`send_message_to_user` tool to inform the user of every "
-            "decision and action you take. Your message must be tidy "
-            "and in one short sentence. This is a mandatory part of "
-            "your workflow.",
+            "`send_message_to_user` tool to inform the user of every decision "
+            "and action you take. Your message must include a short title and "
+            "a one-sentence description. This is a mandatory part of your "
+            "workflow.",
             model=model_backend_reason,
             tools=[
-                *HumanToolkit().get_tools(),
+                send_message_to_user,
             ],
         )
         new_worker_agent = ChatAgent(
             "You are a helpful worker. You MUST use the "
             "`send_message_to_user` tool to inform the user of every "
-            "decision and action you take. Your message must be tidy and in "
-            "one short sentence. This is a mandatory part of your workflow.",
+            "decision and action you take. Your message must include a short "
+            "title and a one-sentence description. This is a mandatory part "
+            "of your workflow.",
             model=model_backend,
             tools=[
-                *HumanToolkit().get_tools(),
+                send_message_to_user,
+                HumanToolkit().ask_human_via_console,
             ],
         )
 
