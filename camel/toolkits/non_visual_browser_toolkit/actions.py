@@ -70,62 +70,34 @@ class ActionExecutor:
         if not (ref or text or selector):
             return "Error: click requires ref/text/selector"
 
+        # Build strategies in priority order: ref > selector > text
         strategies = []
+        if ref:
+            strategies.append(f"[aria-ref='{ref}']")
         if selector:
             strategies.append(selector)
         if text:
             strategies.append(f'text="{text}"')
-        if ref:
-            strategies.append(f"[aria-ref='{ref}']")
 
-        # Track the last error for better error reporting
-        last_error = None
-
+        # Strategy 1: Try Playwright force click for each selector
         for sel in strategies:
             try:
-                # Check if element exists first
-                locator = self.page.locator(sel)
-                count = await locator.count()
-
-                if count > 0:
-                    # Try multiple click strategies
-                    click_strategies = [
-                        # Strategy 1: Standard click
-                        lambda: self.page.click(sel, timeout=self.SHORT_TIMEOUT),
-                        # Strategy 2: Force click (ignores actionability checks)
-                        lambda: self.page.click(sel, timeout=self.SHORT_TIMEOUT, force=True),
-                        # Strategy 3: Click on first element if multiple found
-                        lambda: locator.first.click(timeout=self.SHORT_TIMEOUT),
-                        # Strategy 4: JavaScript click as fallback
-                        lambda: locator.first.evaluate("el => el.click()"),
-                    ]
-
-                    for i, click_strategy in enumerate(click_strategies):
-                        try:
-                            await click_strategy()
-                            strategy_name = ["standard", "force", "first", "javascript"][i]
-                            return f"Clicked element via {sel} (using {strategy_name} click)"
-                        except Exception as click_error:
-                            last_error = click_error
-                            # Continue to next strategy
-                            continue
-
-                    # If all click strategies failed for this selector, try next selector
-                    continue
-                else:
-                    last_error = f"No elements found with selector: {sel}"
-            except Exception as selector_error:
-                last_error = selector_error
+                if await self.page.locator(sel).count() > 0:
+                    await self.page.click(sel, timeout=5000, force=True)
+                    return f"Clicked element via force: {sel}"
+            except Exception:
                 continue
 
-        # Provide more detailed error information
-        error_msg = "Error: Could not click element"
-        if last_error:
-            error_msg += f" - Last error: {last_error}"
-        if ref:
-            error_msg += f" - Element ref: {ref}"
+        # Strategy 2: Try JavaScript click as fallback
+        for sel in strategies:
+            try:
+                await self.page.locator(sel).first.evaluate("el => el.click()")
+                await asyncio.sleep(0.1)  # Brief wait for effects
+                return f"Clicked element via JS: {sel}"
+            except Exception:
+                continue
 
-        return error_msg
+        return "Error: All click strategies failed"
 
     async def _type(self, action: Dict[str, Any]) -> str:
         ref = action.get("ref")
@@ -213,12 +185,23 @@ class ActionExecutor:
 
     # utilities
     async def _wait_dom_stable(self) -> None:
+        """Wait for DOM to become stable before executing actions."""
         try:
+            # Wait for basic DOM content loading
             await self.page.wait_for_load_state(
                 'domcontentloaded', timeout=self.SHORT_TIMEOUT
             )
+
+            # Try to wait for network idle briefly
+            try:
+                await self.page.wait_for_load_state(
+                    'networkidle', timeout=1000
+                )
+            except Exception:
+                pass  # Network idle is optional
+
         except Exception:
-            pass
+            pass  # Don't fail if wait times out
 
     # static helpers
     @staticmethod

@@ -52,8 +52,10 @@ agent = ChatAgent(
 )
 
 TASK_PROMPT = r"""
-Open Amazon.com, search for a beautiful keyboard, add it to the cart
-, and describe its appearance to me in detail
+Open Amazon.com, search for a beautiful keyboard, 
+click it and add it to the cart
+and use get_som_screenshot to see the final 
+picture of keyboard and describe its appearance
 """
 
 
@@ -67,7 +69,9 @@ async def main() -> None:
     try:
         await web_toolkit.close_browser()
     except Exception as err:
-        logging.warning("Failed to close browser session explicitly: %s", err)
+        logging.warning(
+            "Failed to close " "browser session explicitly: %s", err
+        )
 
 
 if __name__ == "__main__":

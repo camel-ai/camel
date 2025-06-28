@@ -112,6 +112,33 @@ class BrowserNonVisualToolkit(BaseToolkit):
         await self._session.ensure_browser()
         return await self._session.get_page()
 
+    async def _wait_for_page_stability(self):
+        """Wait for page to become stable
+        after actions that might trigger updates."""
+        page = await self._require_page()
+        import asyncio
+
+        try:
+            # Wait for DOM content to be loaded
+            await page.wait_for_load_state('domcontentloaded', timeout=3000)
+            logger.debug("DOM content loaded")
+
+            # Try to wait for network idle (important for AJAX/SPA)
+            try:
+                await page.wait_for_load_state('networkidle', timeout=2000)
+                logger.debug("Network idle achieved")
+            except Exception:
+                logger.debug("Network idle timeout - continuing anyway")
+
+            # Additional small delay for JavaScript execution
+            await asyncio.sleep(0.5)
+            logger.debug("Page stability wait completed")
+
+        except Exception as e:
+            logger.debug(
+                f"Page stability wait failed:" f" {e} - continuing anyway"
+            )
+
     async def _get_unified_analysis(self) -> Dict[str, Any]:
         r"""Get unified analysis data from the page."""
         page = await self._require_page()
@@ -261,19 +288,77 @@ class BrowserNonVisualToolkit(BaseToolkit):
         self, action: Dict[str, Any]
     ) -> Dict[str, str]:
         r"""Execute action and return result with snapshot comparison."""
+        import time
+
+        # Log action execution start
+        action_type = action.get("type", "unknown")
+        logger.info(f"Executing action: {action_type}")
+
+        # Get before snapshot
+        logger.info("Capturing pre-action snapshot...")
+        snapshot_start = time.time()
         before_snapshot = await self._session.get_snapshot(
             force_refresh=True, diff_only=False
         )
+        snapshot_time = time.time() - snapshot_start
+        logger.info(f"Pre-action snapshot captured in {snapshot_time:.2f}s")
+
+        # Execute action
+        logger.info(f"Executing {action_type} action...")
+        action_start = time.time()
         result = await self._session.exec_action(action)
+        action_time = time.time() - action_start
+        logger.info(f"Action {action_type} completed in {action_time:.2f}s")
+
+        # Wait for page stability after action (especially important for click)
+        if action_type in ["click", "type", "select", "enter"]:
+            logger.info(
+                f"Waiting for page stability " f"after {action_type}..."
+            )
+            stability_start = time.time()
+            await self._wait_for_page_stability()
+            stability_time = time.time() - stability_start
+            logger.info(
+                f"Page stability wait " f"completed in {stability_time:.2f}s"
+            )
+
+        # Get after snapshot
+        logger.info("Capturing post-action snapshot...")
+        snapshot_start = time.time()
         after_snapshot = await self._session.get_snapshot(
             force_refresh=True, diff_only=False
         )
-
-        snapshot = (
-            "snapshot not changed"
-            if before_snapshot == after_snapshot
-            else after_snapshot
+        snapshot_time = time.time() - snapshot_start
+        logger.info(
+            f"Post-action snapshot " f"captured in {snapshot_time:.2f}s"
         )
+
+        # Check for snapshot quality and log warnings
+        if before_snapshot == after_snapshot:
+            snapshot = "snapshot not changed"
+            logger.debug("Page snapshot unchanged after action")
+        else:
+            snapshot = after_snapshot
+            # Check if snapshot is empty or problematic
+            if "<empty>" in after_snapshot:
+                logger.warning(
+                    f"Action {action_type} resulted "
+                    f"in empty snapshot - "
+                    f"page may still be loading"
+                )
+            elif len(after_snapshot.strip()) < 50:
+                logger.warning(
+                    f"Action {action_type} resulted "
+                    f"in very short snapshot:"
+                    f" {len(after_snapshot)} chars"
+                )
+            else:
+                logger.debug(
+                    f"Action {action_type} resulted "
+                    f"in updated snapshot: "
+                    f"{len(after_snapshot)} chars"
+                )
+
         return {"result": result, "snapshot": snapshot}
 
     async def _extract_links_by_refs(
@@ -350,13 +435,27 @@ class BrowserNonVisualToolkit(BaseToolkit):
         Returns:
             Dict with "result" and "snapshot" keys.
         """
+        import time
+
+        logger.info("Starting browser session...")
+
+        browser_start = time.time()
         await self._session.ensure_browser()
+        browser_time = time.time() - browser_start
+        logger.info(f"Browser session started in {browser_time:.2f}s")
+
         if start_url:
+            logger.info(f"Auto-navigating to start URL: {start_url}")
             return await self.visit_page(start_url)
 
+        logger.info("Capturing initial browser snapshot...")
+        snapshot_start = time.time()
         snapshot = await self._session.get_snapshot(
             force_refresh=True, diff_only=False
         )
+        snapshot_time = time.time() - snapshot_start
+        logger.info(f"Initial snapshot captured in {snapshot_time:.2f}s")
+
         return {"result": "Browser session started.", "snapshot": snapshot}
 
     async def close_browser(self) -> str:
@@ -383,10 +482,25 @@ class BrowserNonVisualToolkit(BaseToolkit):
         if not url or not isinstance(url, str):
             raise ValueError("'url' must be a non-empty string")
 
+        import time
+
+        logger.info(f"Navigating to URL: {url}")
+
+        # Navigate to page
+        nav_start = time.time()
         nav_result = await self._session.visit(url)
+        nav_time = time.time() - nav_start
+        logger.info(f"Page navigation completed in {nav_time:.2f}s")
+
+        # Get snapshot
+        logger.info("Capturing page snapshot after navigation...")
+        snapshot_start = time.time()
         snapshot = await self._session.get_snapshot(
             force_refresh=True, diff_only=False
         )
+        snapshot_time = time.time() - snapshot_start
+        logger.info(f"Navigation snapshot captured in {snapshot_time:.2f}s")
+
         return {"result": nav_result, "snapshot": snapshot}
 
     async def get_page_snapshot(
@@ -401,7 +515,20 @@ class BrowserNonVisualToolkit(BaseToolkit):
         Returns:
             Formatted snapshot string.
         """
+        import time
+
+        logger.info(
+            f"Capturing page snapshot "
+            f"(force_refresh={force_refresh}, diff_only={diff_only})"
+        )
+
+        analysis_start = time.time()
         analysis_data = await self._get_unified_analysis()
+        analysis_time = time.time() - analysis_start
+        logger.info(
+            f"Page snapshot analysis " f"completed in {analysis_time:.2f}s"
+        )
+
         snapshot_text = analysis_data.get("snapshotText", "")
         return (
             snapshot_text
@@ -409,14 +536,26 @@ class BrowserNonVisualToolkit(BaseToolkit):
             else self._format_snapshot_from_analysis(analysis_data)
         )
 
-    async def get_som_screenshot(self, save_image: bool = True):
-        r"""Get screenshot with interactive elements marked.
+    async def get_som_screenshot(self):
+        r"""Capture webpage screenshot with
+        interactive elements visually marked.
 
-        Args:
-            save_image: Whether to save image to cache directory.
+        This method provides visual information
+        about the current webpage by:
+        - Taking a full-page screenshot
+        - Marking all interactive elements with colored boxes and reference IDs
+        - Saving the annotated image to cache for agent analysis
+        - Returning the visual data for agent's understanding of page layout
+
+        Only use this method when visual
+        information is needed. In most cases,
+        actions can be taken based on the DOM's snapshot alone.
 
         Returns:
-            ToolResult with screenshot description and base64 image.
+            ToolResult: Contains description
+            and base64-encoded screenshot image
+                with visual element markings for agent analysis.
+
         """
         try:
             from PIL import Image
@@ -432,23 +571,46 @@ class BrowserNonVisualToolkit(BaseToolkit):
 
         # Get screenshot and analysis
         page = await self._require_page()
-        image_data = await page.screenshot(timeout=60000)
+
+        # Log screenshot timeout start
+        screenshot_timeout_ms = 60000
+        logger.info(
+            f"Starting screenshot capture"
+            f"with timeout: {screenshot_timeout_ms}ms (60s)"
+        )
+
+        import time
+
+        start_time = time.time()
+        image_data = await page.screenshot(timeout=screenshot_timeout_ms)
+        screenshot_time = time.time() - start_time
+
+        logger.info(f"Screenshot capture completed in {screenshot_time:.2f}s")
         image = Image.open(io.BytesIO(image_data))
 
+        # Log unified analysis start
+        logger.info("Starting unified page analysis...")
+        analysis_start_time = time.time()
         analysis_data = await self._get_unified_analysis()
+        analysis_time = time.time() - analysis_start_time
+        logger.info(f"Unified page analysis completed in {analysis_time:.2f}s")
+
+        # Log image processing
+        logger.info("Processing visual marks on screenshot...")
+        mark_start_time = time.time()
         rects = self._convert_analysis_to_rects(analysis_data)
         marked_image = self._add_set_of_mark(image, rects)
+        mark_time = time.time() - mark_start_time
+        logger.info(f"Visual marks processing completed in {mark_time:.2f}s")
 
-        # Save if requested
-        file_path = None
-        if save_image:
-            parsed_url = urllib.parse.urlparse(page.url)
-            url_name = sanitize_filename(str(parsed_url.path), max_length=241)
-            timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
-            file_path = os.path.join(
-                self.cache_dir, f"{url_name}_{timestamp}_som.png"
-            )
-            marked_image.save(file_path, "PNG")
+        # Save screenshot to cache directory
+        parsed_url = urllib.parse.urlparse(page.url)
+        url_name = sanitize_filename(str(parsed_url.path), max_length=241)
+        timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
+        file_path = os.path.join(
+            self.cache_dir, f"{url_name}_{timestamp}_som.png"
+        )
+        marked_image.save(file_path, "PNG")
 
         # Convert to base64
         img_buffer = io.BytesIO()
@@ -458,11 +620,9 @@ class BrowserNonVisualToolkit(BaseToolkit):
         img_data_url = f"data:image/png;base64,{img_base64}"
 
         text_result = (
-            f"Set of Marks screenshot captured successfully with "
-            f"{len(rects)} interactive elements marked."
+            f"Visual webpage screenshot "
+            f"captured with {len(rects)} interactive elements"
         )
-        if file_path:
-            text_result += f" Screenshot saved to: {file_path}"
 
         return ToolResult(text=text_result, images=[img_data_url])
 
@@ -480,6 +640,9 @@ class BrowserNonVisualToolkit(BaseToolkit):
         analysis = await self._get_unified_analysis()
         elements = analysis.get("elements", {})
         if ref not in elements:
+            logger.error(
+                f"Error: Element reference '{ref}' not found in {elements}"
+            )
             return {"result": f"Error: Element reference '{ref}' not found"}
 
         action = {"type": "click", "ref": ref}
@@ -570,12 +733,31 @@ class BrowserNonVisualToolkit(BaseToolkit):
 
         try:
             if timeout_sec is not None:
+                logger.info(
+                    f"Waiting for user input with timeout: {timeout_sec}s"
+                )
+                import time
+
+                start_time = time.time()
                 await asyncio.wait_for(_await_enter(), timeout=timeout_sec)
+                wait_time = time.time() - start_time
+                logger.info(f"User input received after {wait_time:.2f}s")
                 result_msg = "User resumed."
             else:
+                logger.info("Waiting for user " "input (no timeout)")
+                import time
+
+                start_time = time.time()
                 await _await_enter()
+                wait_time = time.time() - start_time
+                logger.info(f"User input received " f"after {wait_time:.2f}s")
                 result_msg = "User resumed."
         except asyncio.TimeoutError:
+            wait_time = timeout_sec
+            logger.info(
+                f"User input timeout reached "
+                f"after {wait_time}s, auto-resuming"
+            )
             result_msg = f"Timeout {timeout_sec}s reached, auto-resumed."
 
         snapshot = await self._session.get_snapshot(

@@ -327,10 +327,10 @@ class TestBrowserNonVisualToolkit:
         ):
             toolkit = BrowserNonVisualToolkit()
 
-            result = await toolkit.get_som_screenshot(save_image=False)
+            result = await toolkit.get_som_screenshot()
 
             assert isinstance(result, ToolResult)
-            assert "Set of Marks screenshot captured successfully" in result.text
+            assert "Visual webpage screenshot captured" in result.text
             assert len(result.images) == 1
             assert result.images[0].startswith("data:image/png;base64,")
 
