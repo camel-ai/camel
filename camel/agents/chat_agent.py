@@ -1305,9 +1305,7 @@ class ChatAgent(BaseAgent):
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
                 while not self.pause_event.is_set():
-                    print("pause_event is not set")
-                    time.sleep(0.001)
-            print("pause_event is set")
+                    await self.pause_event.wait()
             try:
                 openai_messages, num_tokens = self.memory.get_context()
                 accumulated_context_tokens += num_tokens
