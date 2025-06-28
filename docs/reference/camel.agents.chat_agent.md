@@ -780,8 +780,8 @@ tool calling record.
 
 **Returns:**
 
-  ToolCallingRecord: A struct containing information about this tool
-call.
+  ToolCallingRecord: A struct containing information about
+this tool call.
 
 <a id="camel.agents.chat_agent.ChatAgent.get_usage_dict"></a>
 
