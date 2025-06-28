@@ -437,10 +437,15 @@ async def main():
         )
         task_agent = ChatAgent(
             "You are a helpful task planner. You MUST use the "
-            "`send_message_to_user` tool to inform the user of every "
-            "decision and action you take. Your message must be tidy "
-            "and in one short sentence. This is a mandatory part of "
-            "your workflow.",
+            "`send_message_to_user` tool to inform the user of every decision "
+            "and action you take. Each message must be a single, concise "
+            "sentence. This is a mandatory part of your workflow.\n\n"
+            "Carefully examine the user's task. If it's a simple greeting, a "
+            "direct question, or a conversational interaction (like 'hello' "
+            "or 'thank you'), create a single task for a worker to respond "
+            "directly using the `send_message_to_user` tool. For example, if "
+            "the user says 'hello', create a task like: 'Respond to the "
+            "user's greeting directly using the `send_message_to_user` tool.'",
             model=model_backend_reason,
             tools=[
                 *HumanToolkit().get_tools(),

@@ -84,6 +84,7 @@ class TerminalToolkit(BaseToolkit):
         self._file_initialized = False
         self.cloned_env_path = None
         self.use_shell_mode = use_shell_mode
+        self._human_takeover_active = False
 
         self.python_executable = sys.executable
         self.is_macos = platform.system() == 'Darwin'
@@ -705,59 +706,35 @@ class TerminalToolkit(BaseToolkit):
                 elif command.startswith('pip'):
                     command = command.replace('pip', pip_path, 1)
 
-            if self.is_macos:
-                # Type safe version - macOS uses subprocess.run
-                process = subprocess.run(
-                    command,
-                    shell=True,
-                    cwd=self.working_dir,
-                    capture_output=True,
-                    text=True,
-                    env=os.environ.copy(),
-                )
+            proc = subprocess.Popen(
+                command,
+                shell=True,
+                cwd=self.working_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                universal_newlines=True,
+                env=os.environ.copy(),
+            )
 
-                # Process the output
-                output = process.stdout or ""
-                if process.stderr:
-                    output += f"\nStderr Output:\n{process.stderr}"
+            # Store the process and mark it as running
+            self.shell_sessions[id]["process"] = proc
+            self.shell_sessions[id]["running"] = True
 
-                # Update session information and terminal
-                self.shell_sessions[id]["output"] = output
-                self._update_terminal_output(output + "\n")
+            # Get output
+            stdout, stderr = proc.communicate()
 
-                return output
+            output = stdout or ""
+            if stderr:
+                output += f"\nStderr Output:\n{stderr}"
 
-            else:
-                # Non-macOS systems use the Popen method
-                proc = subprocess.Popen(
-                    command,
-                    shell=True,
-                    cwd=self.working_dir,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    stdin=subprocess.PIPE,
-                    text=True,
-                    bufsize=1,
-                    universal_newlines=True,
-                    env=os.environ.copy(),
-                )
+            # Update session information and terminal
+            self.shell_sessions[id]["output"] = output
+            self._update_terminal_output(output + "\n")
 
-                # Store the process and mark it as running
-                self.shell_sessions[id]["process"] = proc
-                self.shell_sessions[id]["running"] = True
-
-                # Get output
-                stdout, stderr = proc.communicate()
-
-                output = stdout or ""
-                if stderr:
-                    output += f"\nStderr Output:\n{stderr}"
-
-                # Update session information and terminal
-                self.shell_sessions[id]["output"] = output
-                self._update_terminal_output(output + "\n")
-
-                return output
+            return output
 
         except Exception as e:
             error_msg = f"Command execution error: {e!s}"
@@ -961,6 +938,169 @@ class TerminalToolkit(BaseToolkit):
             logger.error(f"Error killing process: {e}")
             return f"Error killing process: {e!s}"
 
+    def ask_user_for_help(self, id: str) -> str:
+        r"""Pauses agent execution to ask a human for help in the terminal.
+
+        This function should be called when an agent is stuck or needs
+        assistance with a task that requires manual intervention (e.g.,
+        solving a CAPTCHA or complex debugging). The human will take over the
+        specified terminal session to execute commands and then return control
+        to the agent.
+
+        Args:
+            id (str): Identifier of the shell session for the human to
+                interact with. If the session does not yet exist, it will be
+                created automatically.
+
+        Returns:
+            str: A status message indicating that the human has finished,
+                including the number of commands executed.
+        """
+        # Input validation
+        if not id or not isinstance(id, str):
+            return "Error: Invalid session ID provided"
+
+        # Prevent concurrent human takeovers
+        if (
+            hasattr(self, '_human_takeover_active')
+            and self._human_takeover_active
+        ):
+            return "Error: Human takeover already in progress"
+
+        try:
+            self._human_takeover_active = True
+
+            # Ensure the session exists so that the human can reuse it
+            if id not in self.shell_sessions:
+                self.shell_sessions[id] = {
+                    "process": None,
+                    "output": "",
+                    "running": False,
+                }
+
+            command_count = 0
+            error_occurred = False
+
+            # Create clear banner message for user
+            takeover_banner = (
+                f"\n{'='*60}\n"
+                f"🤖 CAMEL Agent needs human help! Session: {id}\n"
+                f"📂 Working directory: {self.working_dir}\n"
+                f"{'='*60}\n"
+                f"💡 Type commands or '/exit' to return control to agent.\n"
+                f"{'='*60}\n"
+            )
+
+            # Print once to console for immediate visibility
+            print(takeover_banner, flush=True)
+            # Log for terminal output tracking
+            self._update_terminal_output(takeover_banner)
+
+            # Helper flag + event for coordination
+            done_event = threading.Event()
+
+            def _human_loop() -> None:
+                r"""Blocking loop that forwards human input to shell_exec."""
+                nonlocal command_count, error_occurred
+                try:
+                    while True:
+                        try:
+                            # Clear, descriptive prompt for user input
+                            user_cmd = input(f"🧑‍💻 [{id}]> ")
+                            if (
+                                user_cmd.strip()
+                            ):  # Only count non-empty commands
+                                command_count += 1
+                        except EOFError:
+                            # e.g. Ctrl_D / stdin closed, treat as exit.
+                            break
+                        except (KeyboardInterrupt, Exception) as e:
+                            logger.warning(
+                                f"Input error during human takeover: {e}"
+                            )
+                            error_occurred = True
+                            break
+
+                        if user_cmd.strip() in {"/exit", "exit", "quit"}:
+                            break
+
+                        try:
+                            exec_result = self.shell_exec(id, user_cmd)
+                            # Show the result immediately to the user
+                            if exec_result.strip():
+                                print(exec_result)
+                            logger.info(
+                                f"Human command executed: {user_cmd[:50]}..."
+                            )
+                            # Auto-exit after successful command
+                            break
+                        except Exception as e:
+                            error_msg = f"Error executing command: {e}"
+                            logger.error(f"Error executing human command: {e}")
+                            print(error_msg)  # Show error to user immediately
+                            self._update_terminal_output(f"{error_msg}\n")
+                            error_occurred = True
+
+                except Exception as e:
+                    logger.error(f"Unexpected error in human loop: {e}")
+                    error_occurred = True
+                finally:
+                    # Notify completion clearly
+                    finish_msg = (
+                        f"\n{'='*60}\n"
+                        f"✅ Human assistance completed! "
+                        f"Commands: {command_count}\n"
+                        f"🤖 Returning control to CAMEL agent...\n"
+                        f"{'='*60}\n"
+                    )
+                    print(finish_msg, flush=True)
+                    self._update_terminal_output(finish_msg)
+                    done_event.set()
+
+            # Start interactive thread (non-daemon for proper cleanup)
+            thread = threading.Thread(target=_human_loop, daemon=False)
+            thread.start()
+
+            # Block until human signals completion with timeout
+            if done_event.wait(timeout=600):  # 10 minutes timeout
+                thread.join(timeout=10)  # Give thread time to cleanup
+
+                # Generate detailed status message
+                status = "completed successfully"
+                if error_occurred:
+                    status = "completed with some errors"
+
+                result_msg = (
+                    f"Human assistance {status} for session '{id}'. "
+                    f"Total commands executed: {command_count}. "
+                    f"Working directory: {self.working_dir}"
+                )
+                logger.info(result_msg)
+                return result_msg
+            else:
+                timeout_msg = (
+                    f"Human takeover for session '{id}' timed out after 10 "
+                    "minutes"
+                )
+                logger.warning(timeout_msg)
+                return timeout_msg
+
+        except Exception as e:
+            error_msg = f"Error during human takeover for session '{id}': {e}"
+            logger.error(error_msg)
+            # Notify user of the error clearly
+            error_banner = (
+                f"\n{'='*60}\n"
+                f"❌ Error in human takeover! Session: {id}\n"
+                f"❗ {e}\n"
+                f"{'='*60}\n"
+            )
+            print(error_banner, flush=True)
+            return error_msg
+        finally:
+            # Always reset the flag
+            self._human_takeover_active = False
+
     def __del__(self):
         r"""Clean up resources when the object is being destroyed.
         Terminates all running processes and closes any open file handles.
@@ -1042,4 +1182,5 @@ class TerminalToolkit(BaseToolkit):
             FunctionTool(self.shell_wait),
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
+            FunctionTool(self.ask_user_for_help),
         ]

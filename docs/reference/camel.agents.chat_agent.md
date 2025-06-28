@@ -23,6 +23,7 @@ Class for managing conversations of CAMEL Chat Agents.
 - **max_iteration** (Optional[int], optional): Maximum number of model calling iterations allowed per step. If `None` (default), there's no explicit limit. If `1`, it performs a single model call. If `N > 1`, it allows up to N model calls. (default: :obj:`None`)
 - **agent_id** (str, optional): The ID of the agent. If not provided, a random UUID will be generated. (default: :obj:`None`)
 - **stop_event** (Optional[threading.Event], optional): Event to signal termination of the agent's operation. When set, the agent will terminate its execution. (default: :obj:`None`)
+- **mask_tool_output** (Optional[bool]): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
 
 <a id="camel.agents.chat_agent.ChatAgent.__init__"></a>
 
@@ -43,7 +44,8 @@ def __init__(
     scheduling_strategy: str = 'round_robin',
     max_iteration: Optional[int] = None,
     agent_id: Optional[str] = None,
-    stop_event: Optional[threading.Event] = None
+    stop_event: Optional[threading.Event] = None,
+    mask_tool_output: bool = False
 ):
 ```
 
@@ -760,12 +762,26 @@ def _record_tool_calling(
     func_name: str,
     args: Dict[str, Any],
     result: Any,
-    tool_call_id: str
+    tool_call_id: str,
+    mask_output: bool = False
 ):
 ```
 
 Record the tool calling information in the memory, and return the
 tool calling record.
+
+**Parameters:**
+
+- **func_name** (str): The name of the tool function called.
+- **args** (Dict[str, Any]): The arguments passed to the tool.
+- **result** (Any): The result returned by the tool execution.
+- **tool_call_id** (str): A unique identifier for the tool call.
+- **mask_output** (bool, optional): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
+
+**Returns:**
+
+  ToolCallingRecord: A struct containing information about this tool
+call.
 
 <a id="camel.agents.chat_agent.ChatAgent.get_usage_dict"></a>
 
