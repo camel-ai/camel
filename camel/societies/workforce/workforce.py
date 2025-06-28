@@ -258,7 +258,9 @@ class Workforce(BaseNode):
                 "ChatAgent settings (ModelPlatformType.DEFAULT, "
                 "ModelType.DEFAULT) with default system message."
             )
-            self.coordinator_agent = ChatAgent(coord_agent_sys_msg)
+            self.coordinator_agent = ChatAgent(
+                coord_agent_sys_msg, pause_event=self._pause_event
+            )
         else:
             logger.info(
                 "Custom coordinator_agent provided. Preserving user's "
@@ -305,6 +307,7 @@ class Workforce(BaseNode):
                 response_terminators=coordinator_agent.response_terminators,
                 max_iteration=coordinator_agent.max_iteration,
                 stop_event=coordinator_agent.stop_event,
+                pause_event=self._pause_event,
             )
 
         # Set up task agent with default system message and required tools
@@ -328,6 +331,7 @@ class Workforce(BaseNode):
             self.task_agent = ChatAgent(
                 task_sys_msg,
                 tools=TaskPlanningToolkit().get_tools(),  # type: ignore[arg-type]
+                pause_event=self._pause_event,
             )
         else:
             logger.info(
@@ -378,6 +382,7 @@ class Workforce(BaseNode):
                 response_terminators=task_agent.response_terminators,
                 max_iteration=task_agent.max_iteration,
                 stop_event=task_agent.stop_event,
+                pause_event=self._pause_event,
             )
 
         if new_worker_agent is None:
@@ -400,20 +405,31 @@ class Workforce(BaseNode):
         # ------------------------------------------------------------------
 
     def _attach_pause_event_to_agent(self, agent: ChatAgent) -> None:
-        """Ensure the given ChatAgent shares this workforce's pause_event.
+        r"""Ensure the given ChatAgent shares this workforce's pause_event.
 
         If the agent already has a different pause_event we overwrite it and
         emit a debug log (it is unlikely an agent needs multiple independent
         pause controls once managed by this workforce)."""
         try:
-            if getattr(agent, "pause_event", None) is not self._pause_event:
+            existing_pause_event = getattr(agent, "pause_event", None)
+            if existing_pause_event is not self._pause_event:
+                if existing_pause_event is not None:
+                    logger.debug(
+                        f"Overriding pause_event for agent {agent.agent_id} "
+                        f"(had different pause_event: "
+                        f"{id(existing_pause_event)} "
+                        f"-> {id(self._pause_event)})"
+                    )
                 agent.pause_event = self._pause_event
         except AttributeError:
             # Should not happen, but guard against unexpected objects
-            pass
+            logger.warning(
+                f"Cannot attach pause_event to object {type(agent)} - "
+                f"missing pause_event attribute"
+            )
 
     def _ensure_pause_event_in_kwargs(self, kwargs: Optional[Dict]) -> Dict:
-        """Insert pause_event into kwargs dict for ChatAgent construction."""
+        r"""Insert pause_event into kwargs dict for ChatAgent construction."""
         new_kwargs = dict(kwargs) if kwargs else {}
         new_kwargs.setdefault("pause_event", self._pause_event)
         return new_kwargs
@@ -1253,6 +1269,8 @@ class Workforce(BaseNode):
         # Align child workforce's pause_event with this one for unified
         # control, then propagate to its coordinator/task agents.
         workforce._pause_event = self._pause_event
+        self._attach_pause_event_to_agent(workforce.coordinator_agent)
+        self._attach_pause_event_to_agent(workforce.task_agent)
         self._children.append(workforce)
         return self
 
@@ -1286,14 +1304,17 @@ class Workforce(BaseNode):
         # Handle asyncio.Event in a thread-safe way
         if self._loop and not self._loop.is_closed():
             # If we have a loop, use it to set the event safely
-            asyncio.run_coroutine_threadsafe(
-                self._async_reset(), self._loop
-            ).result()
-        else:
             try:
-                self._reset_task = asyncio.create_task(self._async_reset())
-            except RuntimeError:
-                asyncio.run(self._async_reset())
+                asyncio.run_coroutine_threadsafe(
+                    self._async_reset(), self._loop
+                ).result()
+            except RuntimeError as e:
+                logger.warning(f"Failed to reset via existing loop: {e}")
+                # Fallback to direct event manipulation
+                self._pause_event.set()
+        else:
+            # No active loop, directly set the event
+            self._pause_event.set()
 
         if hasattr(self, 'metrics_logger') and self.metrics_logger is not None:
             self.metrics_logger.reset_task_data()

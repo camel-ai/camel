@@ -177,8 +177,8 @@ class ChatAgent(BaseAgent):
             terminate its execution. (default: :obj:`None`)
         mask_tool_output (Optional[bool]): Whether to return a sanitized
             placeholder instead of the raw tool output. (default: :obj:`False`)
-        pause_event (Optional["asyncio.Event"]): Event to signal pause of the
-            agent's operation. When set, the agent will pause its execution.
+        pause_event (Optional[asyncio.Event]): Event to signal pause of the
+            agent's operation. When clear, the agent will pause its execution.
             (default: :obj:`None`)
     """
 
@@ -214,7 +214,7 @@ class ChatAgent(BaseAgent):
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
         mask_tool_output: bool = False,
-        pause_event: Optional["asyncio.Event"] = None,
+        pause_event: Optional[asyncio.Event] = None,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -1310,8 +1310,7 @@ class ChatAgent(BaseAgent):
         iteration_count = 0
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
-                while not self.pause_event.is_set():
-                    await self.pause_event.wait()
+                await self.pause_event.wait()
             try:
                 openai_messages, num_tokens = self.memory.get_context()
                 accumulated_context_tokens += num_tokens
@@ -1357,8 +1356,7 @@ class ChatAgent(BaseAgent):
                             self.pause_event is not None
                             and not self.pause_event.is_set()
                         ):
-                            while not self.pause_event.is_set():
-                                await self.pause_event.wait()
+                            await self.pause_event.wait()
                         tool_call_record = await self._aexecute_tool(
                             tool_call_request
                         )
