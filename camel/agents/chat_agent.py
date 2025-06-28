@@ -1158,7 +1158,8 @@ class ChatAgent(BaseAgent):
                     # Decode and create PIL Image
                     image_bytes = base64.b64decode(base64_data)
                     pil_image = Image.open(io.BytesIO(image_bytes))
-                    image_list.append(pil_image)
+                    pil_image_step: Image.Image = pil_image.convert('RGB')
+                    image_list.append(pil_image_step)
 
                 except Exception as e:
                     logger.warning(
@@ -1348,7 +1349,8 @@ class ChatAgent(BaseAgent):
                     # Decode and create PIL Image
                     image_bytes = base64.b64decode(base64_data)
                     pil_image = Image.open(io.BytesIO(image_bytes))
-                    image_list.append(pil_image)
+                    pil_image_astep: Image.Image = pil_image.convert('RGB')
+                    image_list.append(pil_image_astep)
 
                 except Exception as e:
                     logger.warning(
@@ -1465,7 +1467,12 @@ class ChatAgent(BaseAgent):
                             # Decode and create PIL Image
                             image_bytes = base64.b64decode(base64_data)
                             pil_image = Image.open(io.BytesIO(image_bytes))
-                            image_list.append(pil_image)
+                            # Convert to ensure proper
+                            # Image.Image type for compatibility
+                            pil_image_tool_result: Image.Image = (
+                                pil_image.convert('RGB')
+                            )
+                            image_list.append(pil_image_tool_result)
 
                         except Exception as e:
                             logger.warning(
