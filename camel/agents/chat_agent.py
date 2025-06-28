@@ -2234,8 +2234,8 @@ class ChatAgent(BaseAgent):
                 (default: :obj:`False`)
 
         Returns:
-            ToolCallingRecord: A struct containing information about this tool
-                call.
+            ToolCallingRecord: A struct containing information about
+            this tool call.
         """
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
