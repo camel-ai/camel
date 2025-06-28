@@ -1200,7 +1200,10 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
-                        if self.pause_event is not None and not self.pause_event.is_set():
+                        if (
+                            self.pause_event is not None
+                            and not self.pause_event.is_set()
+                        ):
                             while not self.pause_event.is_set():
                                 time.sleep(0.001)
                         tool_call_records.append(
@@ -1350,7 +1353,10 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
-                        if self.pause_event is not None and not self.pause_event.is_set():
+                        if (
+                            self.pause_event is not None
+                            and not self.pause_event.is_set()
+                        ):
                             while not self.pause_event.is_set():
                                 await self.pause_event.wait()
                         tool_call_record = await self._aexecute_tool(
