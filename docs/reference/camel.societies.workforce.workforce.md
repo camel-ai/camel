@@ -92,6 +92,30 @@ def __init__(
 ):
 ```
 
+<a id="camel.societies.workforce.workforce.Workforce._attach_pause_event_to_agent"></a>
+
+### _attach_pause_event_to_agent
+
+```python
+def _attach_pause_event_to_agent(self, agent: ChatAgent):
+```
+
+Ensure the given ChatAgent shares this workforce's pause_event.
+
+If the agent already has a different pause_event we overwrite it and
+emit a debug log (it is unlikely an agent needs multiple independent
+pause controls once managed by this workforce).
+
+<a id="camel.societies.workforce.workforce.Workforce._ensure_pause_event_in_kwargs"></a>
+
+### _ensure_pause_event_in_kwargs
+
+```python
+def _ensure_pause_event_in_kwargs(self, kwargs: Optional[Dict]):
+```
+
+Insert pause_event into kwargs dict for ChatAgent construction.
+
 <a id="camel.societies.workforce.workforce.Workforce.__repr__"></a>
 
 ### __repr__
