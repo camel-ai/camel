@@ -171,7 +171,8 @@ class ActionExecutor:
             # Safely convert amount to integer and clamp to reasonable range
             amount_int = int(amount)
             amount_int = max(
-                -self.MAX_SCROLL_AMOUNT, min(self.MAX_SCROLL_AMOUNT, amount_int)
+                -self.MAX_SCROLL_AMOUNT,
+                min(self.MAX_SCROLL_AMOUNT, amount_int),
             )  # Clamp to MAX_SCROLL_AMOUNT range
         except (ValueError, TypeError):
             return "Error: amount must be a valid number"

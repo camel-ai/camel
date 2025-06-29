@@ -41,11 +41,41 @@ model_backend = ModelFactory.create(
     model_config_dict={"temperature": 0.0, "top_p": 1},
 )
 
-web_toolkit = HybridBrowserToolkit(headless=False, user_data_dir=USER_DATA_DIR)
+# Example 1: Use default tools (basic functionality)
+# web_toolkit_default = HybridBrowserToolkit(
+#     headless=False,
+#     user_data_dir=USER_DATA_DIR
+# )
+# print(f"Default tools: {web_toolkit_default.enabled_tools}")
 
+# Example 2: Use all available tools
+# web_toolkit_all = HybridBrowserToolkit(
+#     headless=False,
+#     user_data_dir=USER_DATA_DIR,
+#     enabled_tools=HybridBrowserToolkit.ALL_TOOLS
+# )
+# print(f"All tools: {web_toolkit_all.enabled_tools}")
+
+# Example 3: Use custom tools selection
+custom_tools = [
+    "open_browser",
+    "close_browser",
+    "visit_page",
+    "get_som_screenshot",  # Add screenshot capability
+    "click",
+    "type",
+]
+
+web_toolkit_custom = HybridBrowserToolkit(
+    headless=False, user_data_dir=USER_DATA_DIR, enabled_tools=custom_tools
+)
+print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
+
+
+# Use the custom toolkit for the actual task
 agent = ChatAgent(
     model=model_backend,
-    tools=[*web_toolkit.get_tools()],
+    tools=[*web_toolkit_custom.get_tools()],
     max_iteration=10,
 )
 
@@ -60,12 +90,13 @@ picture of keyboard and describe its appearance
 async def main() -> None:
     response = await agent.astep(TASK_PROMPT)
     print("Task:", TASK_PROMPT)
-    print(f"Using user data directory: {USER_DATA_DIR}\n")
-    print("Response from agent:")
+    print(f"Using user data directory: {USER_DATA_DIR}")
+    print(f"Enabled tools: {web_toolkit_custom.enabled_tools}")
+    print("\nResponse from agent:")
     print(response.msgs[0].content if response.msgs else "<no response>")
 
     try:
-        await web_toolkit.close_browser()
+        await web_toolkit_custom.close_browser()
     except Exception as err:
         logging.warning(
             "Failed to close " "browser session explicitly: %s", err

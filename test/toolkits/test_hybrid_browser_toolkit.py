@@ -1142,29 +1142,24 @@ class TestHybridBrowserToolkit:
                 assert "snapshot" in result
 
     def test_get_tools(self, sync_browser_toolkit):
-        """Test getting available tools."""
+        """Test getting available tools with default configuration."""
         toolkit = sync_browser_toolkit
 
         tools = toolkit.get_tools()
 
-        assert len(tools) == 11  # Base tools without solve_task
+        # Default tools should be 5 tools (updated default configuration)
+        assert len(tools) == 5
         tool_names = [tool.func.__name__ for tool in tools]
 
-        expected_tools = [
+        expected_default_tools = [
             'open_browser',
             'close_browser',
             'visit_page',
-            'get_page_snapshot',
-            'get_som_screenshot',
-            'get_page_links',
             'click',
             'type',
-            'select',
-            'scroll',
-            'wait_user',
         ]
 
-        for expected_tool in expected_tools:
+        for expected_tool in expected_default_tools:
             assert expected_tool in tool_names
 
     def test_get_tools_with_web_agent_model(self, sync_browser_toolkit):
@@ -1177,10 +1172,81 @@ class TestHybridBrowserToolkit:
 
         tools = toolkit.get_tools()
 
-        assert (
-            len(tools) >= 11
-        )  # Should include base tools, might include solve_task
-        # solve_task might be included if web_agent_model is set
+        # Default tools should be 5, even with web_agent_model set
+        # unless solve_task is explicitly enabled
+        assert len(tools) == 5
+        tool_names = [tool.func.__name__ for tool in tools]
+        
+        # Should not automatically include solve_task unless explicitly enabled
+        assert 'solve_task' not in tool_names
+
+    def test_get_tools_with_solve_task_enabled(self):
+        """Test getting tools when solve_task is explicitly enabled."""
+        mock_model = MagicMock()
+        
+        with (
+            patch(
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                return_value=AsyncMock(),
+            ),
+            patch(
+                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
+                return_value='mock_script_path',
+            ),
+            patch(
+                'builtins.open',
+                mock_open(read_data="console.log('mock script');"),
+            ),
+        ):
+            toolkit = HybridBrowserToolkit(
+                headless=True,
+                web_agent_model=mock_model,
+                enabled_tools=['open_browser', 'close_browser', 'solve_task']
+            )
+
+            tools = toolkit.get_tools()
+            tool_names = [tool.func.__name__ for tool in tools]
+
+            assert len(tools) == 3
+            assert 'solve_task' in tool_names
+            assert 'open_browser' in tool_names
+            assert 'close_browser' in tool_names
+
+    def test_get_tools_custom_selection(self):
+        """Test getting tools with custom tool selection."""
+        custom_tools = [
+            'open_browser', 
+            'visit_page', 
+            'get_som_screenshot', 
+            'click', 
+            'scroll'
+        ]
+        
+        with (
+            patch(
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                return_value=AsyncMock(),
+            ),
+            patch(
+                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
+                return_value='mock_script_path',
+            ),
+            patch(
+                'builtins.open',
+                mock_open(read_data="console.log('mock script');"),
+            ),
+        ):
+            toolkit = HybridBrowserToolkit(
+                headless=True,
+                enabled_tools=custom_tools
+            )
+
+            tools = toolkit.get_tools()
+            tool_names = [tool.func.__name__ for tool in tools]
+
+            assert len(tools) == 5
+            for expected_tool in custom_tools:
+                assert expected_tool in tool_names
 
     def test_convert_analysis_to_rects(self, sync_browser_toolkit):
         """Test converting analysis data to rect format."""

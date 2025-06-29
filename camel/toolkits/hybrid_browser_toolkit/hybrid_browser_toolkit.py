@@ -18,7 +18,7 @@ import io
 import os
 import time
 import urllib.parse
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
 from camel.logger import get_logger
 from camel.models import BaseModelBackend
@@ -49,13 +49,40 @@ class HybridBrowserToolkit(BaseToolkit):
     PAGE_STABILITY_TIMEOUT = 3000  # 3 seconds for DOM stability
     NETWORK_IDLE_TIMEOUT = 2000  # 2 seconds for network idle
 
+    # Default tool list - core browser functionality
+    DEFAULT_TOOLS: ClassVar[List[str]] = [
+        "open_browser",
+        "close_browser",
+        "visit_page",
+        "click",
+        "type",
+    ]
+
+    # All available tools
+    ALL_TOOLS: ClassVar[List[str]] = [
+        "open_browser",
+        "close_browser",
+        "visit_page",
+        "get_page_snapshot",
+        "get_som_screenshot",
+        "get_page_links",
+        "click",
+        "type",
+        "select",
+        "scroll",
+        "enter",
+        "wait_user",
+        "solve_task",
+    ]
+
     def __init__(
         self,
         *,
         headless: bool = True,
         user_data_dir: Optional[str] = None,
         web_agent_model: Optional[BaseModelBackend] = None,
-        cache_dir: Optional[str] = None,
+        cache_dir: str = "tmp/",
+        enabled_tools: Optional[List[str]] = None,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -72,13 +99,36 @@ class HybridBrowserToolkit(BaseToolkit):
                 Defaults to `None`.
             cache_dir (str): The directory to store cached files, such as
                 screenshots. Defaults to `"tmp/"`.
+            enabled_tools (Optional[List[str]]): List of tool names to enable.
+                If None, uses DEFAULT_TOOLS. Available tools: open_browser,
+                close_browser, visit_page, get_page_snapshot,
+                get_som_screenshot, get_page_links, click, type, select,
+                scroll, enter, wait_user, solve_task.
+                Defaults to `None`.
         """
         super().__init__()
         self._headless = headless
         self._user_data_dir = user_data_dir
         self.web_agent_model = web_agent_model
-        self.cache_dir = cache_dir or "tmp/"
+        self.cache_dir = cache_dir
         os.makedirs(self.cache_dir, exist_ok=True)
+
+        # Configure enabled tools
+        if enabled_tools is None:
+            self.enabled_tools = self.DEFAULT_TOOLS.copy()
+        else:
+            # Validate enabled tools
+            invalid_tools = [
+                tool for tool in enabled_tools if tool not in self.ALL_TOOLS
+            ]
+            if invalid_tools:
+                raise ValueError(
+                    f"Invalid tools specified: {invalid_tools}. "
+                    f"Available tools: {self.ALL_TOOLS}"
+                )
+            self.enabled_tools = enabled_tools.copy()
+
+        logger.info(f"Enabled tools: {self.enabled_tools}")
 
         # Core components
         self._session = NVBrowserSession(
@@ -535,7 +585,10 @@ class HybridBrowserToolkit(BaseToolkit):
                   elements after the new page has loaded.
         """
         if not url or not isinstance(url, str):
-            raise ValueError("'url' must be a non-empty string")
+            return {
+                "result": "Error: 'url' must be a non-empty string",
+                "snapshot": "",
+            }
 
         logger.info(f"Navigating to URL: {url}")
 
@@ -697,7 +750,8 @@ class HybridBrowserToolkit(BaseToolkit):
         if ref not in elements:
             available_refs = list(elements.keys())
             logger.error(
-                f"Error: Element reference '{ref}' not found. Available refs: {available_refs}"
+                f"Error: Element reference '{ref}' not found. "
+                f"Available refs: {available_refs}"
             )
             return {
                 "result": f"Error: Element reference '{ref}' not found. "
@@ -760,7 +814,10 @@ class HybridBrowserToolkit(BaseToolkit):
                 - "snapshot": A new snapshot of the page after scrolling.
         """
         if direction not in ("up", "down"):
-            raise ValueError("direction must be 'up' or 'down'")
+            return {
+                "result": "Error: direction must be 'up' or 'down'",
+                "snapshot": "",
+            }
 
         action = {"type": "scroll", "direction": direction, "amount": amount}
         return await self._exec_with_snapshot(action)
@@ -905,22 +962,39 @@ class HybridBrowserToolkit(BaseToolkit):
         return "Task processing finished - see stdout for detailed trace."
 
     def get_tools(self) -> List[FunctionTool]:
-        r"""Get available function tools."""
-        base_tools = [
-            FunctionTool(self.open_browser),
-            FunctionTool(self.close_browser),
-            FunctionTool(self.visit_page),
-            FunctionTool(self.get_page_snapshot),
-            FunctionTool(self.get_som_screenshot),
-            FunctionTool(self.get_page_links),
-            FunctionTool(self.click),
-            FunctionTool(self.type),
-            FunctionTool(self.select),
-            FunctionTool(self.scroll),
-            FunctionTool(self.wait_user),
-        ]
+        r"""Get available function tools
+        based on enabled_tools configuration."""
+        # Map tool names to their corresponding methods
+        tool_map = {
+            "open_browser": self.open_browser,
+            "close_browser": self.close_browser,
+            "visit_page": self.visit_page,
+            "get_page_snapshot": self.get_page_snapshot,
+            "get_som_screenshot": self.get_som_screenshot,
+            "get_page_links": self.get_page_links,
+            "click": self.click,
+            "type": self.type,
+            "select": self.select,
+            "scroll": self.scroll,
+            "enter": self.enter,
+            "wait_user": self.wait_user,
+            "solve_task": self.solve_task,
+        }
 
-        if self.web_agent_model is not None:
-            base_tools.append(FunctionTool(self.solve_task))
+        enabled_tools = []
 
-        return base_tools
+        for tool_name in self.enabled_tools:
+            if tool_name == "solve_task" and self.web_agent_model is None:
+                logger.warning(
+                    f"Tool '{tool_name}' is enabled but web_agent_model "
+                    f"is not provided. Skipping this tool."
+                )
+                continue
+
+            if tool_name in tool_map:
+                enabled_tools.append(FunctionTool(tool_map[tool_name]))
+            else:
+                logger.warning(f"Unknown tool name: {tool_name}")
+
+        logger.info(f"Returning {len(enabled_tools)} enabled tools")
+        return enabled_tools
