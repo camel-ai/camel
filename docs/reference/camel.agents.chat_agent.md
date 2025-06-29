@@ -24,6 +24,7 @@ Class for managing conversations of CAMEL Chat Agents.
 - **agent_id** (str, optional): The ID of the agent. If not provided, a random UUID will be generated. (default: :obj:`None`)
 - **stop_event** (Optional[threading.Event], optional): Event to signal termination of the agent's operation. When set, the agent will terminate its execution. (default: :obj:`None`)
 - **mask_tool_output** (Optional[bool]): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
+- **pause_event** (Optional[asyncio.Event]): Event to signal pause of the agent's operation. When clear, the agent will pause its execution. (default: :obj:`None`)
 
 <a id="camel.agents.chat_agent.ChatAgent.__init__"></a>
 
@@ -45,7 +46,8 @@ def __init__(
     max_iteration: Optional[int] = None,
     agent_id: Optional[str] = None,
     stop_event: Optional[threading.Event] = None,
-    mask_tool_output: bool = False
+    mask_tool_output: bool = False,
+    pause_event: Optional[asyncio.Event] = None
 ):
 ```
 
