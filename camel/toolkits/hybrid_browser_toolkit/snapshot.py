@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -64,7 +64,17 @@ class PageSnapshot:
             )
 
             logger.debug("Capturing page snapshot …")
-            snapshot_text = await self._get_snapshot_direct()
+            snapshot_result = await self._get_snapshot_direct()
+
+            # Extract snapshot text from the unified analyzer result
+            if (
+                isinstance(snapshot_result, dict)
+                and 'snapshotText' in snapshot_result
+            ):
+                snapshot_text = snapshot_result['snapshotText']
+            else:
+                snapshot_text = snapshot_result
+
             formatted = self._format_snapshot(snapshot_text or "<empty>")
 
             output = formatted
@@ -99,7 +109,9 @@ class PageSnapshot:
     # ------------------------------------------------------------------
     _snapshot_js_cache: Optional[str] = None  # class-level cache
 
-    async def _get_snapshot_direct(self) -> Optional[str]:
+    async def _get_snapshot_direct(
+        self,
+    ) -> Optional[Union[str, Dict[str, Any]]]:
         r"""Evaluate the snapshot-extraction JS with simple retry logic.
 
         Playwright throws *Execution context was destroyed* when a new page
@@ -110,7 +122,7 @@ class PageSnapshot:
 
         # Load JS once and cache it at class level
         if PageSnapshot._snapshot_js_cache is None:
-            js_path = Path(__file__).parent / "snapshot.js"
+            js_path = Path(__file__).parent / "unified_analyzer.js"
             PageSnapshot._snapshot_js_cache = js_path.read_text(
                 encoding="utf-8"
             )

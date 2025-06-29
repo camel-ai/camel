@@ -1,6 +1,6 @@
-<a id="camel.toolkits.non_visual_browser_toolkit.agent"></a>
+<a id="camel.toolkits.hybrid_browser_toolkit.agent"></a>
 
-<a id="camel.toolkits.non_visual_browser_toolkit.agent.PlaywrightLLMAgent"></a>
+<a id="camel.toolkits.hybrid_browser_toolkit.agent.PlaywrightLLMAgent"></a>
 
 ## PlaywrightLLMAgent
 
@@ -10,7 +10,7 @@ class PlaywrightLLMAgent:
 
 High-level orchestration: snapshot ↔ LLM ↔ action executor.
 
-<a id="camel.toolkits.non_visual_browser_toolkit.agent.PlaywrightLLMAgent.__init__"></a>
+<a id="camel.toolkits.hybrid_browser_toolkit.agent.PlaywrightLLMAgent.__init__"></a>
 
 ### __init__
 
@@ -18,7 +18,7 @@ High-level orchestration: snapshot ↔ LLM ↔ action executor.
 def __init__(self):
 ```
 
-<a id="camel.toolkits.non_visual_browser_toolkit.agent.PlaywrightLLMAgent._get_chat_agent"></a>
+<a id="camel.toolkits.hybrid_browser_toolkit.agent.PlaywrightLLMAgent._get_chat_agent"></a>
 
 ### _get_chat_agent
 
@@ -28,7 +28,7 @@ def _get_chat_agent(self):
 
 Get or create the ChatAgent instance.
 
-<a id="camel.toolkits.non_visual_browser_toolkit.agent.PlaywrightLLMAgent._safe_parse_json"></a>
+<a id="camel.toolkits.hybrid_browser_toolkit.agent.PlaywrightLLMAgent._safe_parse_json"></a>
 
 ### _safe_parse_json
 
@@ -39,7 +39,7 @@ def _safe_parse_json(self, content: str):
 Safely parse JSON from LLM response with multiple fallback
 strategies.
 
-<a id="camel.toolkits.non_visual_browser_toolkit.agent.PlaywrightLLMAgent._llm_call"></a>
+<a id="camel.toolkits.hybrid_browser_toolkit.agent.PlaywrightLLMAgent._llm_call"></a>
 
 ### _llm_call
 
