@@ -15,22 +15,21 @@
 import io
 import os
 import shutil
-import sys
 from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
 from PIL import Image
 
+# Import the modules directly without global sys.modules mocking
+from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
+from camel.utils.tool_result import ToolResult
 
-# Comprehensive Playwright mocking - must be done before any imports
-def setup_comprehensive_playwright_mock():
-    """Set up comprehensive mocking for all Playwright components."""
-    # Mock the main playwright module
-    mock_playwright_module = MagicMock()
+TEST_URL = "https://example.com"
+TEST_FILE_URL = "file:///test.html"
 
-    # Mock async_api submodule
-    mock_async_api = MagicMock()
 
+def create_mock_playwright_objects():
+    """Create mock playwright objects for testing."""
     # Create comprehensive mock objects
     mock_page = AsyncMock()
     mock_page.url = "https://example.com"
@@ -65,10 +64,8 @@ def setup_comprehensive_playwright_mock():
 
     mock_playwright_instance = AsyncMock()
     mock_playwright_instance.chromium = mock_chromium
-    mock_playwright_instance.firefox = (
-        mock_chromium  # Use same mock for firefox
-    )
-    mock_playwright_instance.webkit = mock_chromium  # Use same mock for webkit
+    mock_playwright_instance.firefox = mock_chromium
+    mock_playwright_instance.webkit = mock_chromium
     mock_playwright_instance.stop = AsyncMock()
 
     # Mock the async_playwright context manager
@@ -81,64 +78,44 @@ def setup_comprehensive_playwright_mock():
     # Mock the async_playwright function
     mock_async_playwright = MagicMock(return_value=mock_async_playwright_cm)
 
-    # Set up all the mocks in async_api
-    mock_async_api.async_playwright = mock_async_playwright
-    mock_async_api.Page = MagicMock()
-    mock_async_api.Browser = MagicMock()
-    mock_async_api.BrowserContext = MagicMock()
-    mock_async_api.Playwright = MagicMock()
-    mock_async_api.TimeoutError = TimeoutError
-
-    # Set up the main module
-    mock_playwright_module.async_api = mock_async_api
-    mock_playwright_module._impl = MagicMock()
-    mock_playwright_module._impl._errors = MagicMock()
-    mock_playwright_module._impl._errors.Error = Exception
-    mock_playwright_module._impl._errors.TimeoutError = TimeoutError
-
-    # Install the mocks in sys.modules
-    sys.modules['playwright'] = mock_playwright_module
-    sys.modules['playwright.async_api'] = mock_async_api
-    sys.modules['playwright._impl'] = mock_playwright_module._impl
-    sys.modules['playwright._impl._errors'] = (
-        mock_playwright_module._impl._errors
-    )
-
     return (
-        mock_playwright_module,
-        mock_async_api,
+        mock_async_playwright,
+        mock_playwright_instance,
         mock_page,
         mock_context,
         mock_browser,
     )
 
 
-# Set up mocks before any other imports
-mock_playwright, mock_async_api, mock_page, mock_context, mock_browser = (
-    setup_comprehensive_playwright_mock()
-)
+# Create global mock objects for backward compatibility
+(
+    mock_async_playwright,
+    mock_playwright_instance,
+    mock_page,
+    mock_context,
+    mock_browser,
+) = create_mock_playwright_objects()
 
-# ruff: noqa: I001
-from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit  # noqa: E402
-from camel.utils.tool_result import ToolResult  # noqa: E402
 
-TEST_URL = "https://example.com"
-TEST_FILE_URL = "file:///test.html"
+@pytest.fixture(scope="function")
+def mock_playwright_setup():
+    """Set up playwright mocks for individual tests."""
+    return create_mock_playwright_objects()
 
 
 @pytest.fixture(autouse=True)
 def mock_browser_dependencies():
-    """Mock all browser-related dependencies globally."""
+    """Mock all browser-related dependencies for each test."""
     with (
         patch('os.makedirs'),
         patch('os.path.exists', return_value=True),
         patch(
             'playwright.async_api.async_playwright',
-            return_value=mock_async_api.async_playwright(),
+            return_value=mock_async_playwright(),
         ),
         patch(
             'camel.toolkits.hybrid_browser_toolkit.browser_session.async_playwright',
-            return_value=mock_async_api.async_playwright(),
+            return_value=mock_async_playwright(),
             create=True,
         ),
         patch(
@@ -1176,14 +1153,14 @@ class TestHybridBrowserToolkit:
         # unless solve_task is explicitly enabled
         assert len(tools) == 5
         tool_names = [tool.func.__name__ for tool in tools]
-        
+
         # Should not automatically include solve_task unless explicitly enabled
         assert 'solve_task' not in tool_names
 
     def test_get_tools_with_solve_task_enabled(self):
         """Test getting tools when solve_task is explicitly enabled."""
         mock_model = MagicMock()
-        
+
         with (
             patch(
                 'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
@@ -1201,7 +1178,7 @@ class TestHybridBrowserToolkit:
             toolkit = HybridBrowserToolkit(
                 headless=True,
                 web_agent_model=mock_model,
-                enabled_tools=['open_browser', 'close_browser', 'solve_task']
+                enabled_tools=['open_browser', 'close_browser', 'solve_task'],
             )
 
             tools = toolkit.get_tools()
@@ -1215,13 +1192,13 @@ class TestHybridBrowserToolkit:
     def test_get_tools_custom_selection(self):
         """Test getting tools with custom tool selection."""
         custom_tools = [
-            'open_browser', 
-            'visit_page', 
-            'get_som_screenshot', 
-            'click', 
-            'scroll'
+            'open_browser',
+            'visit_page',
+            'get_som_screenshot',
+            'click',
+            'scroll',
         ]
-        
+
         with (
             patch(
                 'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
@@ -1237,8 +1214,7 @@ class TestHybridBrowserToolkit:
             ),
         ):
             toolkit = HybridBrowserToolkit(
-                headless=True,
-                enabled_tools=custom_tools
+                headless=True, enabled_tools=custom_tools
             )
 
             tools = toolkit.get_tools()
