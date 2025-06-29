@@ -146,23 +146,25 @@ class FileWriteToolkit(BaseToolkit):
         document.save(str(file_path))
         logger.debug(f"Wrote DOCX to {file_path} with default formatting")
 
-    @dependencies_required('pylatex', 'fpdf')
+    @dependencies_required('pylatex', 'pymupdf')
     def _write_pdf_file(
-        self, file_path: Path, content: str, use_latex: bool = False
+        self,
+        file_path: Path,
+        title: str,
+        content: str,
+        use_latex: bool = False,
     ) -> None:
         r"""Write text content to a PDF file with default formatting.
 
         Args:
             file_path (Path): The target file path.
+            title (str): The title of the document.
             content (str): The text content to write.
             use_latex (bool): Whether to use LaTeX for rendering. (requires
-                LaTeX toolchain). If False, uses FPDF for simpler PDF
+                LaTeX toolchain). If False, uses PyMuPDF for simpler PDF
                 generation. (default: :obj:`False`)
-
-        Raises:
-            RuntimeError: If the 'pylatex' or 'fpdf' library is not installed
-                when use_latex=True.
         """
+        # TODO: table generation need to be improved
         if use_latex:
             from pylatex import (
                 Command,
@@ -213,30 +215,105 @@ class FileWriteToolkit(BaseToolkit):
 
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
-            from fpdf import FPDF
+            import pymupdf
 
-            # Use default formatting values
-            font_family = 'Arial'
-            font_size = 12
-            font_style = ''
-            line_height = 10
-            margin = 10
+            # Create a new PDF document
+            doc = pymupdf.open()
 
-            pdf = FPDF()
-            pdf.set_margins(margin, margin, margin)
+            # Add a page
+            page = doc.new_page()
 
-            pdf.add_page()
-            pdf.set_font(font_family, style=font_style, size=font_size)
+            # Process the content
+            lines = content.strip().split('\n')
+            document_title = title
 
-            # Split content into paragraphs and add them
-            for para in content.split('\n'):
-                if para.strip():  # Skip empty paragraphs
-                    pdf.multi_cell(0, line_height, para)
+            # Create a TextWriter for writing text to the page
+            text_writer = pymupdf.TextWriter(page.rect)
+
+            # Define fonts
+            normal_font = pymupdf.Font(
+                "helv"
+            )  # Standard font with multilingual support
+            bold_font = pymupdf.Font("helv")
+
+            # Start position for text
+            y_pos = 50
+            x_pos = 50
+
+            # Add title
+            text_writer.fill_textbox(
+                pymupdf.Rect(
+                    x_pos, y_pos, page.rect.width - x_pos, y_pos + 30
+                ),
+                document_title,
+                fontsize=16,
+            )
+            y_pos += 40
+
+            # Process content
+            for line in lines:
+                stripped_line = line.strip()
+
+                # Skip empty lines but add some space
+                if not stripped_line:
+                    y_pos += 10
+                    continue
+
+                # Handle headers
+                if stripped_line.startswith('## '):
+                    text_writer.fill_textbox(
+                        pymupdf.Rect(
+                            x_pos, y_pos, page.rect.width - x_pos, y_pos + 20
+                        ),
+                        stripped_line[3:].strip(),
+                        font=bold_font,
+                        fontsize=14,
+                    )
+                    y_pos += 25
+                elif stripped_line.startswith('# '):
+                    text_writer.fill_textbox(
+                        pymupdf.Rect(
+                            x_pos, y_pos, page.rect.width - x_pos, y_pos + 25
+                        ),
+                        stripped_line[2:].strip(),
+                        font=bold_font,
+                        fontsize=16,
+                    )
+                    y_pos += 30
+                # Handle horizontal rule
+                elif stripped_line == '---':
+                    page.draw_line(
+                        pymupdf.Point(x_pos, y_pos + 5),
+                        pymupdf.Point(page.rect.width - x_pos, y_pos + 5),
+                    )
+                    y_pos += 15
+                # Regular text
                 else:
-                    pdf.ln(line_height)  # Add empty line
+                    # Check if we need a new page
+                    if y_pos > page.rect.height - 50:
+                        text_writer.write_text(page)
+                        page = doc.new_page()
+                        text_writer = pymupdf.TextWriter(page.rect)
+                        y_pos = 50
 
-            pdf.output(str(file_path))
-            logger.debug(f"Wrote PDF to {file_path} with custom formatting")
+                    # Add text to the current page
+                    text_writer.fill_textbox(
+                        pymupdf.Rect(
+                            x_pos, y_pos, page.rect.width - x_pos, y_pos + 15
+                        ),
+                        stripped_line,
+                        font=normal_font,
+                    )
+                    y_pos += 15
+
+            # Write the accumulated text to the last page
+            text_writer.write_text(page)
+
+            # Save the PDF
+            doc.save(str(file_path))
+            doc.close()
+
+            logger.debug(f"Wrote PDF to {file_path} with PyMuPDF formatting")
 
     def _write_csv_file(
         self,
@@ -338,6 +415,7 @@ class FileWriteToolkit(BaseToolkit):
 
     def write_to_file(
         self,
+        title: str,
         content: Union[str, List[List[str]]],
         filename: str,
         encoding: Optional[str] = None,
@@ -351,6 +429,7 @@ class FileWriteToolkit(BaseToolkit):
         and HTML (.html, .htm).
 
         Args:
+            title (str): The title of the document.
             content (Union[str, List[List[str]]]): The content to write to the
                 file. Content format varies by file type:
                 - Text formats (txt, md, html, yaml): string
@@ -388,7 +467,7 @@ class FileWriteToolkit(BaseToolkit):
                 self._write_docx_file(file_path, str(content))
             elif extension == ".pdf":
                 self._write_pdf_file(
-                    file_path, str(content), use_latex=use_latex
+                    file_path, title, str(content), use_latex=use_latex
                 )
             elif extension == ".csv":
                 self._write_csv_file(
