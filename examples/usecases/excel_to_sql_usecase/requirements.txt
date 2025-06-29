@@ -1,0 +1,5 @@
+camel-ai[all]
+python-dotenv
+sqlite3
+pandas
+openpyxl
