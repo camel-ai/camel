@@ -148,21 +148,23 @@ class FileWriteToolkit(BaseToolkit):
 
     @dependencies_required('pylatex', 'pymupdf')
     def _write_pdf_file(
-        self, file_path: Path, content: str, use_latex: bool = False
+        self,
+        file_path: Path,
+        title: str,
+        content: str,
+        use_latex: bool = False,
     ) -> None:
         r"""Write text content to a PDF file with default formatting.
 
         Args:
             file_path (Path): The target file path.
+            title (str): The title of the document.
             content (str): The text content to write.
             use_latex (bool): Whether to use LaTeX for rendering. (requires
                 LaTeX toolchain). If False, uses PyMuPDF for simpler PDF
                 generation. (default: :obj:`False`)
-
-        Raises:
-            RuntimeError: If the 'pylatex' is not installed
-            when use_latex=True.
         """
+        # TODO: table generation need to be improved
         if use_latex:
             from pylatex import (
                 Command,
@@ -213,7 +215,7 @@ class FileWriteToolkit(BaseToolkit):
 
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
-            import pymupdf  # type: ignore[import-untyped]
+            import pymupdf
 
             # Create a new PDF document
             doc = pymupdf.open()
@@ -223,12 +225,7 @@ class FileWriteToolkit(BaseToolkit):
 
             # Process the content
             lines = content.strip().split('\n')
-            document_title = "Document"  # Default title
-
-            # Extract document title (if first line is a heading)
-            if lines and lines[0].strip().startswith('# '):
-                document_title = lines[0].strip()[2:].strip()
-                lines = lines[1:]
+            document_title = title
 
             # Create a TextWriter for writing text to the page
             text_writer = pymupdf.TextWriter(page.rect)
@@ -418,6 +415,7 @@ class FileWriteToolkit(BaseToolkit):
 
     def write_to_file(
         self,
+        title: str,
         content: Union[str, List[List[str]]],
         filename: str,
         encoding: Optional[str] = None,
@@ -431,6 +429,7 @@ class FileWriteToolkit(BaseToolkit):
         and HTML (.html, .htm).
 
         Args:
+            title (str): The title of the document.
             content (Union[str, List[List[str]]]): The content to write to the
                 file. Content format varies by file type:
                 - Text formats (txt, md, html, yaml): string
@@ -468,7 +467,7 @@ class FileWriteToolkit(BaseToolkit):
                 self._write_docx_file(file_path, str(content))
             elif extension == ".pdf":
                 self._write_pdf_file(
-                    file_path, str(content), use_latex=use_latex
+                    file_path, title, str(content), use_latex=use_latex
                 )
             elif extension == ".csv":
                 self._write_csv_file(
