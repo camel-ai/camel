@@ -13,10 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import textwrap
 import threading
+import time
 import uuid
 from collections import defaultdict
 from pathlib import Path
@@ -176,6 +178,9 @@ class ChatAgent(BaseAgent):
             terminate its execution. (default: :obj:`None`)
         mask_tool_output (Optional[bool]): Whether to return a sanitized
             placeholder instead of the raw tool output. (default: :obj:`False`)
+        pause_event (Optional[asyncio.Event]): Event to signal pause of the
+            agent's operation. When clear, the agent will pause its execution.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -210,6 +215,7 @@ class ChatAgent(BaseAgent):
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
         mask_tool_output: bool = False,
+        pause_event: Optional[asyncio.Event] = None,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -289,6 +295,7 @@ class ChatAgent(BaseAgent):
         self._pending_images: List[str] = []
         self._image_retry_count: Dict[str, int] = {}
         # Store images to attach to next user message
+        self.pause_event = pause_event
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -1164,6 +1171,10 @@ class ChatAgent(BaseAgent):
         iteration_count = 0
 
         while True:
+            if self.pause_event is not None and not self.pause_event.is_set():
+                while not self.pause_event.is_set():
+                    time.sleep(0.001)
+
             try:
                 openai_messages, num_tokens = self.memory.get_context()
                 accumulated_context_tokens += num_tokens
@@ -1205,6 +1216,12 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
+                        if (
+                            self.pause_event is not None
+                            and not self.pause_event.is_set()
+                        ):
+                            while not self.pause_event.is_set():
+                                time.sleep(0.001)
                         tool_call_records.append(
                             self._execute_tool(tool_call_request)
                         )
@@ -1318,6 +1335,8 @@ class ChatAgent(BaseAgent):
         step_token_usage = self._create_token_usage_tracker()
         iteration_count = 0
         while True:
+            if self.pause_event is not None and not self.pause_event.is_set():
+                await self.pause_event.wait()
             try:
                 openai_messages, num_tokens = self.memory.get_context()
                 accumulated_context_tokens += num_tokens
@@ -1360,6 +1379,11 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
+                        if (
+                            self.pause_event is not None
+                            and not self.pause_event.is_set()
+                        ):
+                            await self.pause_event.wait()
                         tool_call_record = await self._aexecute_tool(
                             tool_call_request
                         )
@@ -2454,6 +2478,7 @@ class ChatAgent(BaseAgent):
             ),
             max_iteration=self.max_iteration,
             stop_event=self.stop_event,
+            pause_event=self.pause_event,
         )
 
         # Copy memory if requested
