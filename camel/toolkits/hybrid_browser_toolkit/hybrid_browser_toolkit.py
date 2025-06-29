@@ -18,7 +18,7 @@ import io
 import os
 import time
 import urllib.parse
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, Callable, ClassVar, Dict, List, Optional, cast
 
 from camel.logger import get_logger
 from camel.models import BaseModelBackend
@@ -992,7 +992,9 @@ class HybridBrowserToolkit(BaseToolkit):
                 continue
 
             if tool_name in tool_map:
-                enabled_tools.append(FunctionTool(tool_map[tool_name]))
+                enabled_tools.append(
+                    FunctionTool(cast(Callable, tool_map[tool_name]))
+                )
             else:
                 logger.warning(f"Unknown tool name: {tool_name}")
 

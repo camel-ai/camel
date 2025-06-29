@@ -1176,14 +1176,14 @@ class TestHybridBrowserToolkit:
         # unless solve_task is explicitly enabled
         assert len(tools) == 5
         tool_names = [tool.func.__name__ for tool in tools]
-        
+
         # Should not automatically include solve_task unless explicitly enabled
         assert 'solve_task' not in tool_names
 
     def test_get_tools_with_solve_task_enabled(self):
         """Test getting tools when solve_task is explicitly enabled."""
         mock_model = MagicMock()
-        
+
         with (
             patch(
                 'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
@@ -1201,7 +1201,7 @@ class TestHybridBrowserToolkit:
             toolkit = HybridBrowserToolkit(
                 headless=True,
                 web_agent_model=mock_model,
-                enabled_tools=['open_browser', 'close_browser', 'solve_task']
+                enabled_tools=['open_browser', 'close_browser', 'solve_task'],
             )
 
             tools = toolkit.get_tools()
@@ -1215,13 +1215,13 @@ class TestHybridBrowserToolkit:
     def test_get_tools_custom_selection(self):
         """Test getting tools with custom tool selection."""
         custom_tools = [
-            'open_browser', 
-            'visit_page', 
-            'get_som_screenshot', 
-            'click', 
-            'scroll'
+            'open_browser',
+            'visit_page',
+            'get_som_screenshot',
+            'click',
+            'scroll',
         ]
-        
+
         with (
             patch(
                 'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
@@ -1237,8 +1237,7 @@ class TestHybridBrowserToolkit:
             ),
         ):
             toolkit = HybridBrowserToolkit(
-                headless=True,
-                enabled_tools=custom_tools
+                headless=True, enabled_tools=custom_tools
             )
 
             tools = toolkit.get_tools()
