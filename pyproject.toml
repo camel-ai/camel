@@ -125,7 +125,6 @@ document_tools = [
     "tabulate>=0.9.0",
     "openpyxl>=3.1.5",
     "docx>=0.2.4",
-    "reportlab>=4.0.0",
     "crawl4ai>=0.3.745",
     "markitdown==0.1.1",
     "pylatex>=1.4.2",

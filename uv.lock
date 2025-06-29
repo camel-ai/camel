@@ -850,7 +850,6 @@ document-tools = [
     { name = "pylatex" },
     { name = "pymupdf" },
     { name = "python-pptx" },
-    { name = "reportlab" },
     { name = "tabulate" },
     { name = "unstructured" },
     { name = "xls2xlsx" },
@@ -1236,7 +1235,6 @@ requires-dist = [
     { name = "redis", marker = "extra == 'storage'", specifier = ">=5.0.6,<6" },
     { name = "reka-api", marker = "extra == 'all'", specifier = ">=3.0.8,<4" },
     { name = "reka-api", marker = "extra == 'model-platforms'", specifier = ">=3.0.8,<4" },
-    { name = "reportlab", marker = "extra == 'document-tools'", specifier = ">=4.0.0" },
     { name = "requests-oauthlib", marker = "extra == 'all'", specifier = ">=1.3.1,<2" },
     { name = "requests-oauthlib", marker = "extra == 'owl'", specifier = ">=1.3.1,<2" },
     { name = "requests-oauthlib", marker = "extra == 'web-tools'", specifier = ">=1.3.1,<2" },
@@ -6558,19 +6556,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e4/74/6a3ffefc23762304df140a2aef86cbbb69006e3fe712e9b27bd492dfd89a/reka_api-3.2.0.tar.gz", hash = "sha256:94ee46ad841a64741bef86ff4f71af97d9283020e20152e722891d3cb593d0e9", size = 27231, upload-time = "2024-09-30T22:42:47.613Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f4/e7/d4b4724b9b2a2b710d0823bbded93e8480ce5b790291d47c72218666860a/reka_api-3.2.0-py3-none-any.whl", hash = "sha256:e4ded9df9690f0753d97bd99959aa079bac57272b9d2e1f46ec1415d39984d3f", size = 45515, upload-time = "2024-09-30T22:42:46.507Z" },
-]
-
-[[package]]
-name = "reportlab"
-version = "4.4.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "charset-normalizer" },
-    { name = "pillow" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ec/9b/3483c7e4ad33d15f22d528872439e5bc92485814d7e7d10dbc3130368a83/reportlab-4.4.2.tar.gz", hash = "sha256:fc6283048ddd0781a9db1d671715990e6aa059c8d40ec9baf34294c4bd583a36", size = 3509063, upload-time = "2025-06-18T12:20:19.526Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9f/74/ed990bc9586605d4e46f6b0e0b978a5b8e757aa599e39664bee26d6dc666/reportlab-4.4.2-py3-none-any.whl", hash = "sha256:58e11be387457928707c12153b7e41e52533a5da3f587b15ba8f8fd0805c6ee2", size = 1953624, upload-time = "2025-06-18T12:20:16.152Z" },
 ]
 
 [[package]]
