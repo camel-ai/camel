@@ -562,6 +562,7 @@
               "reference/camel.utils.langfuse",
               "reference/camel.utils.mcp",
               "reference/camel.utils.mcp_client",
+              "reference/camel.utils.message_summarizer",
               "reference/camel.utils.response_format",
               "reference/camel.utils.token_counting",
               "reference/camel.utils.chunker.base",

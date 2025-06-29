@@ -41,7 +41,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **Mistral AI**   | mistral-large-latest, pixtral-12b-2409<br/>ministral-8b-latest, ministral-3b-latest<br/>open-mistral-nemo, codestral-latest<br/>open-mistral-7b, open-mixtral-8x7b<br/>open-mixtral-8x22b, open-codestral-mamba<br/>magistral-medium-2506, mistral-small-2506 |
 | **Moonshot**     | moonshot-v1-8k<br/>moonshot-v1-32k<br/>moonshot-v1-128k |
 | **Anthropic**    | claude-2.1, claude-2.0, claude-instant-1.2<br/>claude-3-opus-latest, claude-3-sonnet-20240229, claude-3-haiku-20240307<br/>claude-3-5-sonnet-latest, claude-3-5-haiku-latest |
-| **Gemini**       | gemini-2.5-flash-preview-04-17, gemini-2.5-pro-preview-06-05<br/>gemini-2.0-flash, gemini-2.0-flash-exp, gemini-2.0-flash-thinking-exp<br/>gemini-2.0-pro-exp-02-05, gemini-2.0-flash-lite, gemini-2.0-flash-lite-preview-02-05<br/>gemini-1.5-flash, gemini-1.5-pro |
+| **Gemini**       | gemini-2.5-pro, gemini-2.5-flash<br/>gemini-2.0-flash, gemini-2.0-flash-thinking<br/> gemini-2.0-flash-lite|
 | **Lingyiwanwu**  | yi-lightning, yi-large, yi-medium<br/>yi-large-turbo, yi-vision, yi-medium-200k<br/>yi-spark, yi-large-rag, yi-large-fc |
 | **Qwen**         | qwq-32b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long<br/>qwen-vl-max, qwen-vl-plus, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo<br/>qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
 | **DeepSeek**     | deepseek-chat<br/>deepseek-reasoner |
