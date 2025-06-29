@@ -258,9 +258,7 @@ class Workforce(BaseNode):
                 "ChatAgent settings (ModelPlatformType.DEFAULT, "
                 "ModelType.DEFAULT) with default system message."
             )
-            self.coordinator_agent = ChatAgent(
-                coord_agent_sys_msg, pause_event=self._pause_event
-            )
+            self.coordinator_agent = ChatAgent(coord_agent_sys_msg)
         else:
             logger.info(
                 "Custom coordinator_agent provided. Preserving user's "
@@ -307,7 +305,6 @@ class Workforce(BaseNode):
                 response_terminators=coordinator_agent.response_terminators,
                 max_iteration=coordinator_agent.max_iteration,
                 stop_event=coordinator_agent.stop_event,
-                pause_event=self._pause_event,
             )
 
         # Set up task agent with default system message and required tools
@@ -331,7 +328,6 @@ class Workforce(BaseNode):
             self.task_agent = ChatAgent(
                 task_sys_msg,
                 tools=TaskPlanningToolkit().get_tools(),  # type: ignore[arg-type]
-                pause_event=self._pause_event,
             )
         else:
             logger.info(
@@ -382,7 +378,6 @@ class Workforce(BaseNode):
                 response_terminators=task_agent.response_terminators,
                 max_iteration=task_agent.max_iteration,
                 stop_event=task_agent.stop_event,
-                pause_event=self._pause_event,
             )
 
         if new_worker_agent is None:
@@ -1267,10 +1262,8 @@ class Workforce(BaseNode):
             Workforce: The workforce node itself.
         """
         # Align child workforce's pause_event with this one for unified
-        # control, then propagate to its coordinator/task agents.
+        # control of worker agents only.
         workforce._pause_event = self._pause_event
-        self._attach_pause_event_to_agent(workforce.coordinator_agent)
-        self._attach_pause_event_to_agent(workforce.task_agent)
         self._children.append(workforce)
         return self
 
