@@ -16,6 +16,7 @@ import base64
 import datetime
 import io
 import os
+import time
 import urllib.parse
 from typing import Any, Dict, List, Optional
 
@@ -24,16 +25,29 @@ from camel.models import BaseModelBackend
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import sanitize_filename
+from camel.utils.commons import dependencies_required
 
 from .agent import PlaywrightLLMAgent
-from .nv_browser_session import NVBrowserSession
+from .browser_session import NVBrowserSession
 
 logger = get_logger(__name__)
 
 
-class BrowserNonVisualToolkit(BaseToolkit):
-    r"""A lightweight, non-visual browser toolkit exposing primitive
-    Playwright actions as CAMEL FunctionTools."""
+class HybirdBrowserToolkit(BaseToolkit):
+    r"""A hybrid browser toolkit that combines non-visual, DOM-based browser
+    automation with visual, screenshot-based capabilities.
+
+    This toolkit exposes a set of actions as CAMEL FunctionTools for agents
+    to interact with web pages. It can operate in headless mode and supports
+    both programmatic control of browser actions (like clicking and typing)
+    and visual analysis of the page layout through screenshots with marked
+    interactive elements.
+    """
+
+    # Configuration constants
+    DEFAULT_SCREENSHOT_TIMEOUT = 60000  # 60 seconds for screenshots
+    PAGE_STABILITY_TIMEOUT = 3000  # 3 seconds for DOM stability
+    NETWORK_IDLE_TIMEOUT = 2000  # 2 seconds for network idle
 
     def __init__(
         self,
@@ -41,13 +55,29 @@ class BrowserNonVisualToolkit(BaseToolkit):
         headless: bool = True,
         user_data_dir: Optional[str] = None,
         web_agent_model: Optional[BaseModelBackend] = None,
-        cache_dir: Optional[str] = None,
+        cache_dir: str = "tmp/",
     ) -> None:
+        r"""Initialize the HybirdBrowserToolkit.
+
+        Args:
+            headless (bool): Whether to run the browser in headless mode.
+                Defaults to `True`.
+            user_data_dir (Optional[str]): Path to a directory for storing
+                browser data like cookies and local storage. Useful for
+                maintaining sessions across runs. Defaults to `None` (a
+                temporary directory is used).
+            web_agent_model (Optional[BaseModelBackend]): The language model
+                backend to use for the high-level `solve_task` agent. This is
+                required only if you plan to use `solve_task`.
+                Defaults to `None`.
+            cache_dir (str): The directory to store cached files, such as
+                screenshots. Defaults to `"tmp/"`.
+        """
         super().__init__()
         self._headless = headless
         self._user_data_dir = user_data_dir
         self.web_agent_model = web_agent_model
-        self.cache_dir = "tmp/" if cache_dir is None else cache_dir
+        self.cache_dir = cache_dir
         os.makedirs(self.cache_dir, exist_ok=True)
 
         # Core components
@@ -113,19 +143,24 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return await self._session.get_page()
 
     async def _wait_for_page_stability(self):
-        """Wait for page to become stable
-        after actions that might trigger updates."""
+        r"""Wait for page to become stable after actions that might trigger
+        updates.
+        """
         page = await self._require_page()
         import asyncio
 
         try:
             # Wait for DOM content to be loaded
-            await page.wait_for_load_state('domcontentloaded', timeout=3000)
+            await page.wait_for_load_state(
+                'domcontentloaded', timeout=self.PAGE_STABILITY_TIMEOUT
+            )
             logger.debug("DOM content loaded")
 
             # Try to wait for network idle (important for AJAX/SPA)
             try:
-                await page.wait_for_load_state('networkidle', timeout=2000)
+                await page.wait_for_load_state(
+                    'networkidle', timeout=self.NETWORK_IDLE_TIMEOUT
+                )
                 logger.debug("Network idle achieved")
             except Exception:
                 logger.debug("Network idle timeout - continuing anyway")
@@ -136,7 +171,7 @@ class BrowserNonVisualToolkit(BaseToolkit):
 
         except Exception as e:
             logger.debug(
-                f"Page stability wait failed:" f" {e} - continuing anyway"
+                f"Page stability wait failed: {e} - continuing anyway"
             )
 
     async def _get_unified_analysis(self) -> Dict[str, Any]:
@@ -288,7 +323,6 @@ class BrowserNonVisualToolkit(BaseToolkit):
         self, action: Dict[str, Any]
     ) -> Dict[str, str]:
         r"""Execute action and return result with snapshot comparison."""
-        import time
 
         # Log action execution start
         action_type = action.get("type", "unknown")
@@ -427,16 +461,24 @@ class BrowserNonVisualToolkit(BaseToolkit):
     async def open_browser(
         self, start_url: Optional[str] = None
     ) -> Dict[str, str]:
-        r"""Launch browser session.
+        r"""Launches a new browser session, making it ready for web automation.
+
+        This method initializes the underlying browser instance. If a
+        `start_url` is provided, it will also navigate to that URL.
 
         Args:
-            start_url: Optional URL to navigate to after launch.
+            start_url (Optional[str]): The initial URL to navigate to after the
+                browser is launched. If not provided, the browser will start
+                with a blank page.
 
         Returns:
-            Dict with "result" and "snapshot" keys.
+            Dict[str, str]: A dictionary containing:
+                - "result": A string confirming that the browser session has
+                  started.
+                - "snapshot": A textual representation of the current page's
+                  interactive elements. This snapshot is crucial for
+                  identifying elements for subsequent actions.
         """
-        import time
-
         logger.info("Starting browser session...")
 
         browser_start = time.time()
@@ -459,7 +501,15 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return {"result": "Browser session started.", "snapshot": snapshot}
 
     async def close_browser(self) -> str:
-        r"""Close browser session and free resources."""
+        r"""Closes the current browser session and releases all associated
+        resources.
+
+        This should be called at the end of a web automation task to ensure a
+        clean shutdown of the browser instance.
+
+        Returns:
+            str: A confirmation message indicating the session is closed.
+        """
         if self._agent is not None:
             try:
                 await self._agent.close()
@@ -471,18 +521,21 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return "Browser session closed."
 
     async def visit_page(self, url: str) -> Dict[str, str]:
-        r"""Navigate to a URL.
+        r"""Navigates the current browser page to a specified URL.
 
         Args:
-            url: The URL to navigate to.
+            url (str): The web address to load in the browser. Must be a
+                valid URL.
 
         Returns:
-            Dict with navigation result and page snapshot.
+            Dict[str, str]: A dictionary containing:
+                - "result": A message indicating the outcome of the navigation,
+                  e.g., "Navigation successful.".
+                - "snapshot": A new textual snapshot of the page's interactive
+                  elements after the new page has loaded.
         """
         if not url or not isinstance(url, str):
-            raise ValueError("'url' must be a non-empty string")
-
-        import time
+            return {"result": "Error: 'url' must be a non-empty string"}
 
         logger.info(f"Navigating to URL: {url}")
 
@@ -503,24 +556,25 @@ class BrowserNonVisualToolkit(BaseToolkit):
 
         return {"result": nav_result, "snapshot": snapshot}
 
-    async def get_page_snapshot(
-        self, *, force_refresh: bool = False, diff_only: bool = False
-    ) -> str:
-        r"""Capture DOM snapshot.
+    async def get_page_snapshot(self) -> str:
+        r"""Captures a textual representation of the current page's content.
 
-        Args:
-            force_refresh: Always re-generate snapshot.
-            diff_only: Return only diff from previous snapshot.
+        This "snapshot" provides a simplified view of the DOM, focusing on
+        interactive elements like links, buttons, and input fields. Each
+        element is assigned a unique reference ID (`ref`) that can be used in
+        other actions like `click` or `type`.
+
+        The snapshot is useful for understanding the page structure and
+        identifying elements to interact with without needing to parse raw
+        HTML. A new snapshot is generated on each call.
 
         Returns:
-            Formatted snapshot string.
+            str: A formatted string representing the interactive elements on
+                the page. For example:
+                '- link "Sign In" [ref=1]'
+                '- textbox "Username" [ref=2]'
         """
-        import time
-
-        logger.info(
-            f"Capturing page snapshot "
-            f"(force_refresh={force_refresh}, diff_only={diff_only})"
-        )
+        logger.info("Capturing page snapshot")
 
         analysis_start = time.time()
         analysis_data = await self._get_unified_analysis()
@@ -536,36 +590,31 @@ class BrowserNonVisualToolkit(BaseToolkit):
             else self._format_snapshot_from_analysis(analysis_data)
         )
 
+    @dependencies_required('PIL')
     async def get_som_screenshot(self):
-        r"""Capture webpage screenshot with
-        interactive elements visually marked.
+        r"""Captures a screenshot of the current webpage and visually marks all
+        interactive elements. "SoM" stands for "Set of Marks".
 
-        This method provides visual information
-        about the current webpage by:
-        - Taking a full-page screenshot
-        - Marking all interactive elements with colored boxes and reference IDs
-        - Saving the annotated image to cache for agent analysis
-        - Returning the visual data for agent's understanding of page layout
+        This method is essential for tasks requiring visual understanding of
+        the page layout. It works by:
+        1. Taking a full-page screenshot.
+        2. Identifying all interactive elements (buttons, links, inputs, etc.).
+        3. Drawing colored boxes and reference IDs (`ref`) over these elements
+           on the screenshot.
+        4. Saving the annotated image to a cache directory.
+        5. Returning the image as a base64-encoded string along with a summary.
 
-        Only use this method when visual
-        information is needed. In most cases,
-        actions can be taken based on the DOM's snapshot alone.
+        Use this when the textual snapshot from `get_page_snapshot` is
+        insufficient and visual context is needed to decide the next action.
 
         Returns:
-            ToolResult: Contains description
-            and base64-encoded screenshot image
-                with visual element markings for agent analysis.
-
+            ToolResult: An object containing:
+                - `text`: A summary string, e.g., "Visual webpage screenshot
+                  captured with 42 interactive elements".
+                - `images`: A list containing a single base64-encoded PNG image
+                  as a data URL.
         """
-        try:
-            from PIL import Image
-        except ImportError:
-            from camel.utils.tool_result import ToolResult
-
-            return ToolResult(
-                text="Set of Marks screenshot failed: "
-                "PIL not available. Install with: pip install Pillow"
-            )
+        from PIL import Image
 
         from camel.utils.tool_result import ToolResult
 
@@ -573,16 +622,15 @@ class BrowserNonVisualToolkit(BaseToolkit):
         page = await self._require_page()
 
         # Log screenshot timeout start
-        screenshot_timeout_ms = 60000
         logger.info(
             f"Starting screenshot capture"
-            f"with timeout: {screenshot_timeout_ms}ms (60s)"
+            f"with timeout: {self.DEFAULT_SCREENSHOT_TIMEOUT}ms"
         )
 
-        import time
-
         start_time = time.time()
-        image_data = await page.screenshot(timeout=screenshot_timeout_ms)
+        image_data = await page.screenshot(
+            timeout=self.DEFAULT_SCREENSHOT_TIMEOUT
+        )
         screenshot_time = time.time() - start_time
 
         logger.info(f"Screenshot capture completed in {screenshot_time:.2f}s")
@@ -627,13 +675,20 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return ToolResult(text=text_result, images=[img_data_url])
 
     async def click(self, *, ref: str) -> Dict[str, str]:
-        r"""Click an element.
+        r"""Clicks on an interactive element on the page.
 
         Args:
-            ref: Element reference ID from page snapshot.
+            ref (str): The reference ID of the element to click. This ID is
+                obtained from the page snapshot (see `get_page_snapshot` or
+                `get_som_screenshot`).
 
         Returns:
-            Dict with action result and snapshot.
+            Dict[str, str]: A dictionary containing:
+                - "result": A message confirming the click action.
+                - "snapshot": A new textual snapshot of the page after the
+                  click, which may have changed as a result of the action. If
+                  the snapshot is unchanged, it will be the string "snapshot
+                  not changed".
         """
         self._validate_ref(ref, "click")
 
@@ -643,20 +698,26 @@ class BrowserNonVisualToolkit(BaseToolkit):
             logger.error(
                 f"Error: Element reference '{ref}' not found in {elements}"
             )
-            return {"result": f"Error: Element reference '{ref}' not found"}
+            return {
+                "result": f"Error: Element reference '{ref}' not found "
+                f"in {elements}"
+            }
 
         action = {"type": "click", "ref": ref}
         return await self._exec_with_snapshot(action)
 
     async def type(self, *, ref: str, text: str) -> Dict[str, str]:
-        r"""Type text into an input field.
+        r"""Types text into an input field, such as a textbox or search bar.
 
         Args:
-            ref: Element reference ID.
-            text: Text to type.
+            ref (str): The reference ID of the input element.
+            text (str): The text to be typed into the element.
 
         Returns:
-            Dict with action result.
+            Dict[str, str]: A dictionary containing:
+                - "result": A message confirming the type action.
+                - "snapshot": A new textual snapshot of the page after the
+                  text has been entered.
         """
         self._validate_ref(ref, "type")
         await self._get_unified_analysis()  # Ensure aria-ref attributes
@@ -665,14 +726,18 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return await self._exec_with_snapshot(action)
 
     async def select(self, *, ref: str, value: str) -> Dict[str, str]:
-        r"""Select option from dropdown.
+        r"""Selects an option from a dropdown (`<select>`) element.
 
         Args:
-            ref: Select element reference ID.
-            value: Option value to select.
+            ref (str): The reference ID of the `<select>` element.
+            value (str): The value of the `<option>` to be selected. This
+                should match the `value` attribute of the option, not the
+                visible text.
 
         Returns:
-            Dict with action result.
+            Dict[str, str]: A dictionary containing:
+                - "result": A message confirming the select action.
+                - "snapshot": A new snapshot of the page after the selection.
         """
         self._validate_ref(ref, "select")
         await self._get_unified_analysis()
@@ -681,14 +746,17 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return await self._exec_with_snapshot(action)
 
     async def scroll(self, *, direction: str, amount: int) -> Dict[str, str]:
-        r"""Scroll the page.
+        r"""Scrolls the page window up or down by a specified amount.
 
         Args:
-            direction: "up" or "down".
-            amount: Pixels to scroll.
+            direction (str): The direction to scroll. Must be either 'up' or
+                'down'.
+            amount (int): The number of pixels to scroll.
 
         Returns:
-            Dict with action result.
+            Dict[str, str]: A dictionary containing:
+                - "result": A confirmation of the scroll action.
+                - "snapshot": A new snapshot of the page after scrolling.
         """
         if direction not in ("up", "down"):
             return {"result": "Error: direction must be 'up' or 'down'"}
@@ -697,13 +765,18 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return await self._exec_with_snapshot(action)
 
     async def enter(self, *, ref: str) -> Dict[str, str]:
-        r"""Press Enter key on an element.
+        r"""Simulates pressing the Enter key on a specific element.
+
+        This is often used to submit forms after filling them out.
 
         Args:
-            ref: Element reference ID.
+            ref (str): The reference ID of the element to press Enter on.
 
         Returns:
-            Dict with action result and snapshot.
+            Dict[str, str]: A dictionary containing:
+                - "result": A confirmation of the action.
+                - "snapshot": A new page snapshot, as this action often
+                  triggers navigation or page updates.
         """
         self._validate_ref(ref, "enter")
         action = {"type": "enter", "ref": ref}
@@ -712,13 +785,22 @@ class BrowserNonVisualToolkit(BaseToolkit):
     async def wait_user(
         self, timeout_sec: Optional[float] = None
     ) -> Dict[str, str]:
-        r"""Wait for human intervention.
+        r"""Pauses the agent's execution and waits for human intervention.
+
+        This is useful for tasks that require manual steps, like solving a
+        CAPTCHA. The agent will print a message to the console and wait
+        until the user presses the Enter key.
 
         Args:
-            timeout_sec: Max wait time in seconds.
+            timeout_sec (Optional[float]): The maximum time to wait in
+                seconds. If the timeout is reached, the agent will resume
+                automatically. If `None`, it will wait indefinitely.
 
         Returns:
-            Dict with result and current snapshot.
+            Dict[str, str]: A dictionary containing:
+                - "result": A message indicating how the wait ended (e.g.,
+                  "User resumed." or "Timeout... reached, auto-resumed.").
+                - "snapshot": The current page snapshot after the wait.
         """
         import asyncio
 
@@ -736,8 +818,6 @@ class BrowserNonVisualToolkit(BaseToolkit):
                 logger.info(
                     f"Waiting for user input with timeout: {timeout_sec}s"
                 )
-                import time
-
                 start_time = time.time()
                 await asyncio.wait_for(_await_enter(), timeout=timeout_sec)
                 wait_time = time.time() - start_time
@@ -745,8 +825,6 @@ class BrowserNonVisualToolkit(BaseToolkit):
                 result_msg = "User resumed."
             else:
                 logger.info("Waiting for user " "input (no timeout)")
-                import time
-
                 start_time = time.time()
                 await _await_enter()
                 wait_time = time.time() - start_time
@@ -766,13 +844,20 @@ class BrowserNonVisualToolkit(BaseToolkit):
         return {"result": result_msg, "snapshot": snapshot}
 
     async def get_page_links(self, *, ref: List[str]) -> Dict[str, Any]:
-        r"""Get specific links by reference IDs.
+        r"""Retrieves the full URLs for a given list of link reference IDs.
+
+        This is useful when you need to know the destination of a link before
+        clicking it.
 
         Args:
-            ref: List of link reference IDs.
+            ref (List[str]): A list of reference IDs for link elements,
+                obtained from a page snapshot.
 
         Returns:
-            Dict with links list and snapshot.
+            Dict[str, Any]: A dictionary containing:
+                - "links": A list of dictionaries, where each dictionary
+                  represents a found link and has "text", "ref", and "url"
+                  keys.
         """
         if not ref or not isinstance(ref, list):
             return {"links": []}
@@ -792,15 +877,26 @@ class BrowserNonVisualToolkit(BaseToolkit):
     async def solve_task(
         self, task_prompt: str, start_url: str, max_steps: int = 15
     ) -> str:
-        r"""Use LLM agent to complete task autonomously.
+        r"""Uses a high-level LLM agent to autonomously complete a task.
+
+        This function delegates control to another agent that can reason about
+        a task, break it down into steps, and execute browser actions to
+        achieve the goal. It is suitable for complex, multi-step tasks.
+
+        Note: `web_agent_model` must be provided during the toolkit's
+        initialization to use this function.
 
         Args:
-            task_prompt: Task description.
-            start_url: Starting URL.
-            max_steps: Maximum steps to take.
+            task_prompt (str): A natural language description of the task to
+                be completed (e.g., "log into my account on example.com").
+            start_url (str): The URL to start the task from.
+            max_steps (int): The maximum number of steps the agent is allowed
+                to take before stopping.
 
         Returns:
-            Task completion result.
+            str: A summary message indicating that the task processing has
+                finished. The detailed trace of the agent's actions will be
+                printed to the standard output.
         """
         agent = self._ensure_agent()
         await agent.navigate(start_url)

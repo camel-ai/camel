@@ -24,6 +24,7 @@ class ActionExecutor:
     # Configuration constants
     DEFAULT_TIMEOUT = 5000  # 5 seconds
     SHORT_TIMEOUT = 2000  # 2 seconds
+    MAX_SCROLL_AMOUNT = 5000  # Maximum scroll distance in pixels
 
     def __init__(self, page: "Page"):
         self.page = page
@@ -32,6 +33,7 @@ class ActionExecutor:
     # Public helpers
     # ------------------------------------------------------------------
     async def execute(self, action: Dict[str, Any]) -> str:
+        r"""Execute an action and return the result description."""
         if not action:
             return "No action to execute"
 
@@ -64,6 +66,7 @@ class ActionExecutor:
     # Internal handlers
     # ------------------------------------------------------------------
     async def _click(self, action: Dict[str, Any]) -> str:
+        r"""Handle click actions with multiple fallback strategies."""
         ref = action.get("ref")
         text = action.get("text")
         selector = action.get("selector")
@@ -83,7 +86,9 @@ class ActionExecutor:
         for sel in strategies:
             try:
                 if await self.page.locator(sel).count() > 0:
-                    await self.page.click(sel, timeout=5000, force=True)
+                    await self.page.click(
+                        sel, timeout=self.DEFAULT_TIMEOUT, force=True
+                    )
                     return f"Clicked element via force: {sel}"
             except Exception:
                 continue
@@ -100,6 +105,7 @@ class ActionExecutor:
         return "Error: All click strategies failed"
 
     async def _type(self, action: Dict[str, Any]) -> str:
+        r"""Handle typing text into input fields."""
         ref = action.get("ref")
         selector = action.get("selector")
         text = action.get("text", "")
@@ -113,6 +119,7 @@ class ActionExecutor:
             return f"Type failed: {exc}"
 
     async def _select(self, action: Dict[str, Any]) -> str:
+        r"""Handle selecting options from dropdowns."""
         ref = action.get("ref")
         selector = action.get("selector")
         value = action.get("value", "")
@@ -128,8 +135,9 @@ class ActionExecutor:
             return f"Select failed: {exc}"
 
     async def _wait(self, action: Dict[str, Any]) -> str:
+        r"""Handle wait actions."""
         if "timeout" in action:
-            ms = action["timeout"]
+            ms = int(action["timeout"])
             await asyncio.sleep(ms / 1000)
             return f"Waited {ms}ms"
         if "selector" in action:
@@ -141,6 +149,7 @@ class ActionExecutor:
         return "Error: wait requires timeout/selector"
 
     async def _extract(self, action: Dict[str, Any]) -> str:
+        r"""Handle text extraction from elements."""
         ref = action.get("ref")
         if not ref:
             return "Error: extract requires ref"
@@ -150,6 +159,7 @@ class ActionExecutor:
         return f"Extracted: {txt[:100] if txt else 'None'}"
 
     async def _scroll(self, action: Dict[str, Any]) -> str:
+        r"""Handle page scrolling with safe parameter validation."""
         direction = action.get("direction", "down")
         amount = action.get("amount", 300)
 
@@ -168,11 +178,14 @@ class ActionExecutor:
 
         # Use safe evaluation with bound parameters
         scroll_offset = amount_int if direction == "down" else -amount_int
-        await self.page.evaluate(f"window.scrollBy(0, {scroll_offset})")
+        await self.page.evaluate(
+            "offset => window.scrollBy(0, offset)", scroll_offset
+        )
         await asyncio.sleep(0.5)
         return f"Scrolled {direction} by {abs(amount_int)}px"
 
     async def _enter(self, action: Dict[str, Any]) -> str:
+        r"""Handle Enter key press actions."""
         ref = action.get("ref")
         selector = action.get("selector")
         if ref:
@@ -185,7 +198,7 @@ class ActionExecutor:
 
     # utilities
     async def _wait_dom_stable(self) -> None:
-        """Wait for DOM to become stable before executing actions."""
+        r"""Wait for DOM to become stable before executing actions."""
         try:
             # Wait for basic DOM content loading
             await self.page.wait_for_load_state(
@@ -195,7 +208,7 @@ class ActionExecutor:
             # Try to wait for network idle briefly
             try:
                 await self.page.wait_for_load_state(
-                    'networkidle', timeout=1000
+                    'networkidle', timeout=self.SHORT_TIMEOUT
                 )
             except Exception:
                 pass  # Network idle is optional
@@ -206,6 +219,7 @@ class ActionExecutor:
     # static helpers
     @staticmethod
     def should_update_snapshot(action: Dict[str, Any]) -> bool:
+        r"""Determine if an action requires a snapshot update."""
         change_types = {
             "click",
             "type",

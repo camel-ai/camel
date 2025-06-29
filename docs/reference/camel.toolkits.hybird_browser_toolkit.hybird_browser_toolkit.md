@@ -1,17 +1,17 @@
-<a id="camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit"></a>
+<a id="camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit"></a>
 
-<a id="camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.BrowserNonVisualToolkit"></a>
+<a id="camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.HybirdBrowserToolkit"></a>
 
-## BrowserNonVisualToolkit
+## HybirdBrowserToolkit
 
 ```python
-class BrowserNonVisualToolkit(BaseToolkit):
+class HybirdBrowserToolkit(BaseToolkit):
 ```
 
 A lightweight, *non-visual* browser toolkit exposing primitive
 Playwright actions as CAMEL `FunctionTool`s.
 
-<a id="camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.BrowserNonVisualToolkit.__init__"></a>
+<a id="camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.HybirdBrowserToolkit.__init__"></a>
 
 ### __init__
 
@@ -19,7 +19,7 @@ Playwright actions as CAMEL `FunctionTool`s.
 def __init__(self):
 ```
 
-<a id="camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.BrowserNonVisualToolkit.__del__"></a>
+<a id="camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.HybirdBrowserToolkit.__del__"></a>
 
 ### __del__
 
@@ -39,7 +39,7 @@ as `ImportError: sys.meta_path is None` or
 carried out, we silently ignore the failure instead of polluting
 stderr on program exit.
 
-<a id="camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.BrowserNonVisualToolkit._validate_ref"></a>
+<a id="camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.HybirdBrowserToolkit._validate_ref"></a>
 
 ### _validate_ref
 
@@ -49,7 +49,7 @@ def _validate_ref(self, ref: str, method_name: str):
 
 Validate that ref parameter is a non-empty string.
 
-<a id="camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.BrowserNonVisualToolkit._ensure_agent"></a>
+<a id="camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.HybirdBrowserToolkit._ensure_agent"></a>
 
 ### _ensure_agent
 
@@ -60,7 +60,7 @@ def _ensure_agent(self):
 Create PlaywrightLLMAgent on first use if `web_agent_model`
 provided.
 
-<a id="camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.BrowserNonVisualToolkit.get_tools"></a>
+<a id="camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.HybirdBrowserToolkit.get_tools"></a>
 
 ### get_tools
 

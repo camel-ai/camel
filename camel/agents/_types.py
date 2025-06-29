@@ -33,7 +33,6 @@ class ModelResponse(BaseModel):
     r"""The response from the model."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    # noqa:ruff:E501
     response: Union[
         ChatCompletion,
         Stream[ChatCompletionChunk],

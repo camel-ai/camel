@@ -119,7 +119,7 @@ mock_playwright, mock_async_api, mock_page, mock_context, mock_browser = (
 )
 
 # ruff: noqa: I001
-from camel.toolkits.non_visual_browser_toolkit import BrowserNonVisualToolkit  # noqa: E402
+from camel.toolkits.hybird_browser_toolkit import HybirdBrowserToolkit  # noqa: E402
 from camel.utils.tool_result import ToolResult  # noqa: E402
 
 TEST_URL = "https://example.com"
@@ -137,7 +137,7 @@ def mock_browser_dependencies():
             return_value=mock_async_api.async_playwright(),
         ),
         patch(
-            'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.async_playwright',
+            'camel.toolkits.hybird_browser_toolkit.browser_session.async_playwright',
             return_value=mock_async_api.async_playwright(),
             create=True,
         ),
@@ -151,7 +151,7 @@ def mock_browser_dependencies():
 
 @pytest.fixture(scope="function")
 async def browser_toolkit_fixture():
-    """Create a BrowserNonVisualToolkit instance for testing."""
+    """Create a HybirdBrowserToolkit instance for testing."""
     mock_session = AsyncMock()
     mock_session.ensure_browser = AsyncMock()
     mock_session.get_page = AsyncMock(return_value=mock_page)
@@ -166,18 +166,18 @@ async def browser_toolkit_fixture():
 
     with (
         patch(
-            'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+            'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
             return_value=mock_session,
         ),
         patch(
-            'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+            'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
             return_value='mock_script_path',
         ),
         patch(
             'builtins.open', mock_open(read_data="console.log('mock script');")
         ),
     ):
-        toolkit = BrowserNonVisualToolkit(headless=True)
+        toolkit = HybirdBrowserToolkit(headless=True)
         toolkit._session = mock_session  # Ensure the mock session is used
         yield toolkit
 
@@ -227,7 +227,7 @@ def mock_page_fixture():
 
 @pytest.fixture(scope="function")
 def sync_browser_toolkit():
-    """Create a BrowserNonVisualToolkit instance for synchronous testing."""
+    """Create a HybirdBrowserToolkit instance for synchronous testing."""
     mock_session = AsyncMock()
     mock_session.ensure_browser = AsyncMock()
     mock_session.get_page = AsyncMock(return_value=mock_page)
@@ -242,31 +242,31 @@ def sync_browser_toolkit():
 
     with (
         patch(
-            'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+            'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
             return_value=mock_session,
         ),
         patch(
-            'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+            'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
             return_value='mock_script_path',
         ),
         patch(
             'builtins.open', mock_open(read_data="console.log('mock script');")
         ),
     ):
-        toolkit = BrowserNonVisualToolkit(headless=True)
+        toolkit = HybirdBrowserToolkit(headless=True)
         toolkit._session = mock_session  # Ensure the mock session is used
         return toolkit
 
 
-class TestBrowserNonVisualToolkit:
-    """Test cases for BrowserNonVisualToolkit."""
+class TestHybirdBrowserToolkit:
+    """Test cases for HybirdBrowserToolkit."""
 
     def test_init_default_params(self):
         """Test initialization with default parameters."""
         mock_session = AsyncMock()
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session'
+                'camel.toolkits.hybird_browser_toolkit.browser_session'
                 '.NVBrowserSession',
                 return_value=mock_session,
             ),
@@ -277,7 +277,7 @@ class TestBrowserNonVisualToolkit:
             patch('os.path.exists', return_value=True),
             patch('os.makedirs'),
         ):
-            toolkit = BrowserNonVisualToolkit()
+            toolkit = HybirdBrowserToolkit()
 
             assert toolkit._headless is True
             assert toolkit._user_data_dir is None
@@ -294,7 +294,7 @@ class TestBrowserNonVisualToolkit:
         mock_session = AsyncMock()
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session'
+                'camel.toolkits.hybird_browser_toolkit.browser_session'
                 '.NVBrowserSession',
                 return_value=mock_session,
             ),
@@ -305,7 +305,7 @@ class TestBrowserNonVisualToolkit:
             patch('os.path.exists', return_value=True),
             patch('os.makedirs'),
         ):
-            toolkit = BrowserNonVisualToolkit(
+            toolkit = HybirdBrowserToolkit(
                 headless=False,
                 user_data_dir=test_user_data_dir,
             )
@@ -322,7 +322,7 @@ class TestBrowserNonVisualToolkit:
         """Test successful loading of unified analyzer script."""
         mock_session = AsyncMock()
         with patch(
-            'camel.toolkits.non_visual_browser_toolkit.nv_browser_session'
+            'camel.toolkits.hybird_browser_toolkit.browser_session'
             '.NVBrowserSession',
             return_value=mock_session,
         ):
@@ -334,14 +334,14 @@ class TestBrowserNonVisualToolkit:
                     patch('os.makedirs'),
                     patch('os.path.exists', return_value=True),
                 ):
-                    toolkit = BrowserNonVisualToolkit()
+                    toolkit = HybirdBrowserToolkit()
                     assert "console.log('test');" in toolkit._unified_script
 
     def test_load_unified_analyzer_file_not_found(self):
         """Test handling of missing unified analyzer script."""
         mock_session = AsyncMock()
         with patch(
-            'camel.toolkits.non_visual_browser_toolkit.nv_browser_session'
+            'camel.toolkits.hybird_browser_toolkit.browser_session'
             '.NVBrowserSession',
             return_value=mock_session,
         ):
@@ -351,14 +351,14 @@ class TestBrowserNonVisualToolkit:
                 patch('os.path.exists', return_value=True),
             ):
                 with pytest.raises(FileNotFoundError):
-                    BrowserNonVisualToolkit()
+                    HybirdBrowserToolkit()
 
     def test_validate_ref_valid(self):
         """Test ref validation with valid input."""
         mock_session = AsyncMock()
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session'
+                'camel.toolkits.hybird_browser_toolkit.browser_session'
                 '.NVBrowserSession',
                 return_value=mock_session,
             ),
@@ -369,7 +369,7 @@ class TestBrowserNonVisualToolkit:
             patch('os.makedirs'),
             patch('os.path.exists', return_value=True),
         ):
-            toolkit = BrowserNonVisualToolkit()
+            toolkit = HybirdBrowserToolkit()
             # Should not raise exception
             toolkit._validate_ref("e1", "test_method")
 
@@ -378,7 +378,7 @@ class TestBrowserNonVisualToolkit:
         mock_session = AsyncMock()
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session'
+                'camel.toolkits.hybird_browser_toolkit.browser_session'
                 '.NVBrowserSession',
                 return_value=mock_session,
             ),
@@ -389,7 +389,7 @@ class TestBrowserNonVisualToolkit:
             patch('os.makedirs'),
             patch('os.path.exists', return_value=True),
         ):
-            toolkit = BrowserNonVisualToolkit()
+            toolkit = HybirdBrowserToolkit()
 
             # Test with empty string
             with pytest.raises(ValueError):
@@ -412,11 +412,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -424,7 +424,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             result = await toolkit.open_browser()
@@ -449,11 +449,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -461,7 +461,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             # Mock visit_page method
@@ -494,11 +494,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -506,7 +506,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             result = await toolkit.close_browser()
@@ -530,11 +530,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -542,7 +542,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             result = await toolkit.visit_page(TEST_URL)
@@ -567,11 +567,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -579,11 +579,14 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
-            with pytest.raises(ValueError):
-                await toolkit.visit_page("")
+            result = await toolkit.visit_page("")
+            assert "Error" in result.get("result", "")
+            assert "'url' must be a non-empty string" in result.get(
+                "result", ""
+            )
 
     @pytest.mark.asyncio
     async def test_get_page_snapshot(self):
@@ -602,11 +605,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -614,7 +617,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             # Mock unified analysis
@@ -647,11 +650,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -659,7 +662,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             # Create a mock image
@@ -710,11 +713,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -722,7 +725,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             # Create a mock image for the screenshot
@@ -762,11 +765,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -774,7 +777,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             # Mock the _get_unified_analysis method to include e1 element
@@ -805,11 +808,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -817,7 +820,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             with pytest.raises(ValueError):
@@ -840,11 +843,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -852,7 +855,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             result = await toolkit.type(
@@ -879,11 +882,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -891,7 +894,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             result = await toolkit.select(
@@ -918,11 +921,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -930,7 +933,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             result = await toolkit.scroll(direction="down", amount=100)
@@ -955,11 +958,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -967,7 +970,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             result = await toolkit.scroll(
@@ -994,11 +997,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -1006,7 +1009,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             # Mock page evaluate to return links
@@ -1038,11 +1041,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -1050,7 +1053,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             result = await toolkit.get_page_links(ref=[])
@@ -1073,11 +1076,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -1085,7 +1088,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             # Mock user input
@@ -1112,11 +1115,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -1124,7 +1127,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             # Mock asyncio.wait_for to simulate timeout
@@ -1281,11 +1284,11 @@ class TestBrowserNonVisualToolkit:
 
         with (
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession',
+                'camel.toolkits.hybird_browser_toolkit.browser_session.NVBrowserSession',
                 return_value=mock_session,
             ),
             patch(
-                'camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit.os.path.join',
+                'camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit.os.path.join',
                 return_value='mock_script_path',
             ),
             patch(
@@ -1293,7 +1296,7 @@ class TestBrowserNonVisualToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = BrowserNonVisualToolkit(headless=True)
+            toolkit = HybirdBrowserToolkit(headless=True)
             toolkit._session = mock_session
 
             # Test a simple async operation

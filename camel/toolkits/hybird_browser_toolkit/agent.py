@@ -12,24 +12,24 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
-import logging
 import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from camel.logger import get_logger
 from camel.models import BaseModelBackend, ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 from .actions import ActionExecutor
-from .nv_browser_session import NVBrowserSession
+from .browser_session import NVBrowserSession
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PlaywrightLLMAgent:
-    """High-level orchestration: snapshot ↔ LLM ↔ action executor."""
+    r"""High-level orchestration: snapshot ↔ LLM ↔ action executor."""
 
     # System prompt as class constant to avoid recreation
     SYSTEM_PROMPT = """
@@ -90,8 +90,8 @@ what was accomplished
         self.action_history: List[Dict[str, Any]] = []
         if model_backend is None:
             model_backend = ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_4O_MINI,
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
                 model_config_dict={"temperature": 0, "top_p": 1},
             )
         self.model_backend = model_backend
@@ -99,16 +99,19 @@ what was accomplished
         self._chat_agent: Optional[ChatAgent] = None
 
     async def navigate(self, url: str) -> str:
+        r"""Navigate to a URL and return the snapshot."""
         try:
             # NVBrowserSession handles waits internally
             logger.debug("Navigated to URL: %s", url)
             await self._session.visit(url)
             return await self._session.get_snapshot(force_refresh=True)
         except Exception as exc:
-            return f"Error: could not navigate - {exc}"
+            error_msg = f"Error: could not navigate to {url} - {exc}"
+            logger.error(error_msg)
+            return error_msg
 
     def _get_chat_agent(self) -> "ChatAgent":
-        """Get or create the ChatAgent instance."""
+        r"""Get or create the ChatAgent instance."""
         from camel.agents import ChatAgent
 
         if self._chat_agent is None:
@@ -165,12 +168,16 @@ what was accomplished
         logger.warning(
             "Could not parse JSON from LLM response: %s", content[:200]
         )
+        return self._get_fallback_response("Parsing error")
+
+    def _get_fallback_response(self, error_msg: str) -> Dict[str, Any]:
+        r"""Generate a fallback response structure."""
         return {
-            "plan": ["Could not parse response"],
+            "plan": [f"Could not parse response: {error_msg}"],
             "action": {
                 "type": "finish",
                 "ref": None,
-                "summary": "Parsing error",
+                "summary": f"Parsing error: {error_msg}",
             },
         }
 
@@ -181,7 +188,7 @@ what was accomplished
         is_initial: bool,
         history: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        """Call the LLM (via CAMEL ChatAgent) to get plan & next action."""
+        r"""Call the LLM (via CAMEL ChatAgent) to get plan & next action."""
         # Build user message
         if is_initial:
             user_content = f"Snapshot:\n{snapshot}\n\nTask: {prompt}"
@@ -208,6 +215,7 @@ what was accomplished
         return self._safe_parse_json(content)
 
     async def process_command(self, prompt: str, max_steps: int = 15):
+        r"""Process a command using LLM-guided browser automation."""
         # initial full snapshot
         full_snapshot = await self._session.get_snapshot()
         assert self._session.snapshot is not None
@@ -270,9 +278,11 @@ what was accomplished
         logger.info("Process completed with %d steps", steps)
 
     async def _run_action(self, action: Dict[str, Any]) -> str:
+        r"""Execute a single action and return the result."""
         if action.get("type") == "navigate":
             return await self.navigate(action.get("url", ""))
         return await self._session.exec_action(action)
 
     async def close(self):
+        r"""Clean up browser session and resources."""
         await self._session.close()

@@ -515,11 +515,11 @@
               "reference/camel.toolkits.whatsapp_toolkit",
               "reference/camel.toolkits.wolfram_alpha_toolkit",
               "reference/camel.toolkits.zapier_toolkit",
-              "reference/camel.toolkits.non_visual_browser_toolkit.actions",
-              "reference/camel.toolkits.non_visual_browser_toolkit.agent",
-              "reference/camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit",
-              "reference/camel.toolkits.non_visual_browser_toolkit.nv_browser_session",
-              "reference/camel.toolkits.non_visual_browser_toolkit.snapshot"
+              "reference/camel.toolkits.hybird_browser_toolkit.actions",
+              "reference/camel.toolkits.hybird_browser_toolkit.agent",
+              "reference/camel.toolkits.hybird_browser_toolkit.hybird_browser_toolkit",
+              "reference/camel.toolkits.hybird_browser_toolkit.browser_session",
+              "reference/camel.toolkits.hybird_browser_toolkit.snapshot"
             ]
           },
           {

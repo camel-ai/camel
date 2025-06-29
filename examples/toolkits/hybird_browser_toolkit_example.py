@@ -16,7 +16,7 @@ import logging
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.toolkits import BrowserNonVisualToolkit
+from camel.toolkits import HybirdBrowserToolkit
 from camel.types import ModelPlatformType, ModelType
 
 logging.basicConfig(
@@ -30,7 +30,7 @@ logging.basicConfig(
 logging.getLogger('camel.agents').setLevel(logging.INFO)
 logging.getLogger('camel.models').setLevel(logging.INFO)
 logging.getLogger('camel.models').setLevel(logging.INFO)
-logging.getLogger('camel.toolkits.non_visual_browser_toolkit').setLevel(
+logging.getLogger('camel.toolkits.hybird_browser_toolkit').setLevel(
     logging.DEBUG
 )
 USER_DATA_DIR = "User_Data"
@@ -41,9 +41,7 @@ model_backend = ModelFactory.create(
     model_config_dict={"temperature": 0.0, "top_p": 1},
 )
 
-web_toolkit = BrowserNonVisualToolkit(
-    headless=False, user_data_dir=USER_DATA_DIR
-)
+web_toolkit = HybirdBrowserToolkit(headless=False, user_data_dir=USER_DATA_DIR)
 
 agent = ChatAgent(
     model=model_backend,
