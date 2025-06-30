@@ -533,7 +533,18 @@ class BaseMessage:
             OpenAIAssistantMessage: The converted :obj:`OpenAIAssistantMessage`
                 object.
         """
-        return {"role": "assistant", "content": self.content}
+        message_dict: Dict[str, Any] = {
+            "role": "assistant",
+            "content": self.content,
+        }
+
+        # Check if meta_dict contains tool_calls
+        if self.meta_dict and "tool_calls" in self.meta_dict:
+            tool_calls = self.meta_dict["tool_calls"]
+            if tool_calls:
+                message_dict["tool_calls"] = tool_calls
+
+        return message_dict  # type: ignore[return-value]
 
     def to_dict(self) -> Dict:
         r"""Converts the message to a dictionary.

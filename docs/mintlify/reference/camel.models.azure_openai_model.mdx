@@ -87,6 +87,8 @@ Runs inference of Azure OpenAI chat completion.
   Union[ChatCompletion, Stream[ChatCompletionChunk]]:
 `ChatCompletion` in the non-stream mode, or
 `Stream[ChatCompletionChunk]` in the stream mode.
+`ChatCompletionStreamManager[BaseModel]` for
+structured output streaming.
 
 <a id="camel.models.azure_openai_model.AzureOpenAIModel._request_chat_completion"></a>
 
@@ -112,6 +114,23 @@ def _request_parse(
     tools: Optional[List[Dict[str, Any]]] = None
 ):
 ```
+
+<a id="camel.models.azure_openai_model.AzureOpenAIModel._request_stream_parse"></a>
+
+### _request_stream_parse
+
+```python
+def _request_stream_parse(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Type[BaseModel],
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+Request streaming structured output parsing.
+
+Note: This uses OpenAI's beta streaming API for structured outputs.
 
 <a id="camel.models.azure_openai_model.AzureOpenAIModel.check_model_config"></a>
 
