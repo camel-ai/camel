@@ -1,0 +1,33 @@
+const axios = require('axios');
+
+function pxToIn(px) { return px / 96; }
+
+function rgbaToPptxFill(rgbaStr) {
+  const match = rgbaStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
+  if (!match) return { color: "000000" };
+  const r = parseInt(match[1]).toString(16).padStart(2, '0');
+  const g = parseInt(match[2]).toString(16).padStart(2, '0');
+  const b = parseInt(match[3]).toString(16).padStart(2, '0');
+  const alpha = parseFloat(match[4]);
+  const transparency = Math.round((1 - alpha) * 100);
+  return { color: `${r}${g}${b}`, transparency };
+}
+
+async function toBase64(url) {
+  try {
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    const base64 = Buffer.from(response.data, 'binary').toString('base64');
+    // Try to infer mime type from url extension
+    let mime = 'image/jpeg';
+    if (url.endsWith('.png')) mime = 'image/png';
+    else if (url.endsWith('.gif')) mime = 'image/gif';
+    // Debug: log the first 100 chars
+    console.log(`Base64 for ${url}:`, base64.substring(0, 100));
+    return { base64, mime };
+  } catch (err) {
+    console.error('Failed to download or convert image:', url, err);
+    throw err;
+  }
+}
+
+module.exports = { pxToIn, rgbaToPptxFill, toBase64 };
