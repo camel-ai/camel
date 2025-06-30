@@ -1,6 +1,6 @@
-<a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session"></a>
+<a id="camel.toolkits.hybrid_browser_toolkit.browser_session"></a>
 
-<a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession"></a>
+<a id="camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession"></a>
 
 ## NVBrowserSession
 
@@ -17,7 +17,7 @@ duplicating Playwright setup code.
 
 This class is a singleton per event-loop.
 
-<a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession.__new__"></a>
+<a id="camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession.__new__"></a>
 
 ### __new__
 
@@ -25,7 +25,7 @@ This class is a singleton per event-loop.
 def __new__(cls):
 ```
 
-<a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession.__init__"></a>
+<a id="camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession.__init__"></a>
 
 ### __init__
 

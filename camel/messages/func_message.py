@@ -47,12 +47,16 @@ class FunctionCallingMessage(BaseMessage):
             (default: :obj:`None`)
         tool_call_id (Optional[str]): The ID of the tool call, if available.
             (default: :obj:`None`)
+        mask_output (Optional[bool]): Whether to return a sanitized placeholder
+            instead of the raw tool output.
+            (default: :obj:`False`)
     """
 
     func_name: Optional[str] = None
     args: Optional[Dict] = None
     result: Optional[Any] = None
     tool_call_id: Optional[str] = None
+    mask_output: Optional[bool] = False
 
     def to_openai_message(
         self,
@@ -105,10 +109,13 @@ class FunctionCallingMessage(BaseMessage):
             # This is a function response
             # TODO: Allow for more flexible setting of tool role,
             #  optionally to be the same as assistant messages
-            content = function_format.format_tool_response(
-                self.func_name,  # type: ignore[arg-type]
-                self.result,  # type: ignore[arg-type]
-            )
+            if self.mask_output:
+                content = "[MASKED]"
+            else:
+                content = function_format.format_tool_response(
+                    self.func_name,  # type: ignore[arg-type]
+                    self.result,  # type: ignore[arg-type]
+                )
             return ShareGPTMessage(from_="tool", value=content)  # type: ignore[call-arg]
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
@@ -154,10 +161,30 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name."
             )
 
-        result_content = str(self.result)
+        if self.mask_output:
+            result_content = "[MASKED]"
+        else:
+            result_content = str(self.result)
 
         return {
             "role": "tool",
             "content": result_content,
             "tool_call_id": self.tool_call_id or "null",
         }
+
+    def to_dict(self) -> Dict:
+        r"""Converts the message to a dictionary.
+
+        Returns:
+            dict: The converted dictionary.
+        """
+        base = super().to_dict()
+        base["func_name"] = self.func_name
+        if self.args is not None:
+            base["args"] = self.args
+        if self.result is not None:
+            base["result"] = self.result
+        if self.tool_call_id is not None:
+            base["tool_call_id"] = self.tool_call_id
+        base["mask_output"] = self.mask_output
+        return base
