@@ -39,6 +39,16 @@ def _safe_parse_json(self, content: str):
 Safely parse JSON from LLM response with multiple fallback
 strategies.
 
+<a id="camel.toolkits.hybrid_browser_toolkit.agent.PlaywrightLLMAgent._get_fallback_response"></a>
+
+### _get_fallback_response
+
+```python
+def _get_fallback_response(self, error_msg: str):
+```
+
+Generate a fallback response structure.
+
 <a id="camel.toolkits.hybrid_browser_toolkit.agent.PlaywrightLLMAgent._llm_call"></a>
 
 ### _llm_call
