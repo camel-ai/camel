@@ -1,6 +1,13 @@
 (() => {
-    // Playwright's snapshot logic focuses on semantics and visibility, not arbitrary limits.
-    // We will first build a semantic tree in memory, then render it.
+    // Unified analyzer that combines visual and structural analysis
+    // Preserves complete snapshot.js logic while adding visual coordinate information
+
+    let refCounter = 1;
+    function generateRef() {
+        return `e${refCounter++}`;
+    }
+
+    // === Complete snapshot.js logic preservation ===
 
     function isVisible(node) {
         if (node.nodeType !== Node.ELEMENT_NODE) return true;
@@ -70,13 +77,9 @@
         return result;
     }
 
-    let refCounter = 1;
-    function generateRef() {
-        return `e${refCounter++}`;
-    }
-
     /**
      * Phase 1: Build an in-memory representation of the accessibility tree.
+     * Complete preservation of snapshot.js buildAriaTree logic
      */
     function buildAriaTree(rootElement) {
         const visited = new Set();
@@ -153,9 +156,34 @@
                 }
             }
 
-            // FIX: If an element's name is the same as its only text child, remove the redundant child.
-            if (ariaNode && ariaNode.children.length === 1 && typeof ariaNode.children[0] === 'string' && ariaNode.name === ariaNode.children[0]) {
-                ariaNode.children = [];
+            // FIX: Remove redundant text children that match the element's name
+            if (ariaNode && ariaNode.children.length > 0) {
+                // Remove text children that are the same as the parent's name or are contained in it
+                ariaNode.children = ariaNode.children.filter(child => {
+                    if (typeof child === 'string') {
+                        const childText = child.trim();
+                        const parentName = ariaNode.name.trim();
+
+                        // Remove if text child exactly matches parent name
+                        if (childText === parentName) {
+                            return false;
+                        }
+
+                        // Also remove if the child text is completely contained in parent name
+                        // and represents a significant portion (to avoid removing important partial text)
+                        if (childText.length > 3 && parentName.includes(childText)) {
+                            return false;
+                        }
+
+                        return true;
+                    }
+                    return true;
+                });
+
+                // If after filtering, we have only one text child that equals the name, remove it
+                if (ariaNode.children.length === 1 && typeof ariaNode.children[0] === 'string' && ariaNode.name === ariaNode.children[0]) {
+                    ariaNode.children = [];
+                }
             }
         }
 
@@ -166,7 +194,7 @@
 
     /**
      * Phase 2: Normalize the tree by removing redundant generic wrappers.
-     * This is a key optimization in Playwright to simplify the structure.
+     * Complete preservation of snapshot.js normalizeTree logic
      */
     function normalizeTree(node) {
         if (typeof node === 'string') return [node];
@@ -178,6 +206,24 @@
         node.children = newChildren;
 
         // Remove child elements that have the same name as their parent
+        const filteredChildren = [];
+        for (const child of node.children) {
+            if (typeof child !== 'string' && child.name && node.name) {
+                const childName = child.name.trim();
+                const parentName = node.name.trim();
+                if (childName === parentName) {
+                    // If child has same name as parent, merge its children into parent
+                    filteredChildren.push(...(child.children || []));
+                } else {
+                    filteredChildren.push(child);
+                }
+            } else {
+                filteredChildren.push(child);
+            }
+        }
+        node.children = filteredChildren;
+
+        // Also handle the case where we have only one child with same name
         if (node.children.length === 1 && typeof node.children[0] !== 'string') {
             const child = node.children[0];
             if (child.name && node.name && child.name.trim() === node.name.trim()) {
@@ -195,9 +241,9 @@
         return [node];
     }
 
-
     /**
      * Phase 3: Render the normalized tree into the final string format.
+     * Complete preservation of snapshot.js renderTree logic
      */
     function renderTree(node, indent = '') {
         const lines = [];
@@ -263,6 +309,116 @@
         return lines;
     }
 
-    const outputLines = processDocument(document);
-    return outputLines.join('\n');
+    // === Visual analysis functions from page_script.js ===
+
+    // From page_script.js - check if element is topmost at coordinates
+    function isTopmost(element, x, y) {
+        let hit = document.elementFromPoint(x, y);
+        if (hit === null) return true;
+
+        while (hit) {
+            if (hit == element) return true;
+            hit = hit.parentNode;
+        }
+        return false;
+    }
+
+    // From page_script.js - get visual coordinates
+    function getElementCoordinates(element) {
+        let rects = element.getClientRects();
+        let scale = window.devicePixelRatio || 1;
+        let validRects = [];
+
+        for (const rect of rects) {
+            let x = rect.left + rect.width / 2;
+            let y = rect.top + rect.height / 2;
+            if (isTopmost(element, x, y)) {
+                validRects.push({
+                    x: rect.x * scale,
+                    y: rect.y * scale,
+                    width: rect.width * scale,
+                    height: rect.height * scale,
+                    top: rect.top * scale,
+                    left: rect.left * scale,
+                    right: rect.right * scale,
+                    bottom: rect.bottom * scale
+                });
+            }
+        }
+
+        return validRects;
+    }
+
+    // === Unified analysis function ===
+
+    function collectElementsFromTree(node, elementsMap) {
+        if (typeof node === 'string') return;
+
+        if (node.element && node.ref) {
+            // Get visual coordinates for this element
+            const coordinates = getElementCoordinates(node.element);
+
+            // Store comprehensive element information
+            elementsMap[node.ref] = {
+                // Structural information (preserved from snapshot.js)
+                role: node.role,
+                name: node.name,
+                tagName: node.element.tagName.toLowerCase(),
+                disabled: node.disabled,
+                checked: node.checked,
+                expanded: node.expanded,
+
+                // Visual information (from page_script.js)
+                coordinates: coordinates,
+
+                // Additional metadata
+                href: node.element.href || null,
+                value: node.element.value || null,
+                placeholder: node.element.placeholder || null,
+                scrollable: node.element.scrollHeight > node.element.clientHeight
+            };
+        }
+
+        // Recursively process children
+        if (node.children) {
+            for (const child of node.children) {
+                collectElementsFromTree(child, elementsMap);
+            }
+        }
+    }
+
+    function analyzePageElements() {
+        // Generate the complete structured snapshot using original snapshot.js logic
+        const outputLines = processDocument(document);
+        const snapshotText = outputLines.join('\n');
+
+        // Build the tree again to collect element information with visual data
+        textCache.clear();
+        refCounter = 1; // Reset counter to match snapshot generation
+        let tree = buildAriaTree(document.body);
+        [tree] = normalizeTree(tree);
+
+        const elementsMap = {};
+        collectElementsFromTree(tree, elementsMap);
+
+        const result = {
+            url: window.location.href,
+            elements: elementsMap,
+            snapshotText: snapshotText,
+            metadata: {
+                timestamp: new Date().toISOString(),
+                elementCount: Object.keys(elementsMap).length,
+                screenInfo: {
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                    devicePixelRatio: window.devicePixelRatio || 1
+                }
+            }
+        };
+
+        return result;
+    }
+
+    // Execute analysis and return result
+    return analyzePageElements();
 })();

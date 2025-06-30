@@ -22,7 +22,6 @@ from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import (
     AudioAnalysisToolkit,
-    BrowserNonVisualToolkit,
     CodeExecutionToolkit,
     Crawl4AIToolkit,
     DalleToolkit,
@@ -32,6 +31,7 @@ from camel.toolkits import (
     FunctionTool,
     # GoogleDriveMCPToolkit,
     HumanToolkit,
+    HybridBrowserToolkit,
     ImageAnalysisToolkit,
     LinkedInToolkit,
     MarkItDownToolkit,
@@ -140,7 +140,7 @@ def search_agent_factory(
         FunctionTool(SearchToolkit().search_exa),
         # FunctionTool(SearchToolkit().search_bing),
         # FunctionTool(SearchToolkit().search_baidu),
-        *BrowserNonVisualToolkit(headless=False).get_tools(),
+        *HybridBrowserToolkit(headless=False).get_tools(),
         *TerminalToolkit().get_tools(),
         send_message_to_user,
         HumanToolkit().ask_human_via_console,

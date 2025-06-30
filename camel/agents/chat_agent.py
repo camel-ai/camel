@@ -85,6 +85,7 @@ from camel.utils import (
     model_from_json_schema,
 )
 from camel.utils.commons import dependencies_required
+from camel.utils.tool_result import ToolResult
 
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
@@ -291,12 +292,17 @@ class ChatAgent(BaseAgent):
         self.stop_event = stop_event
         self.mask_tool_output = mask_tool_output
         self._secure_result_store: Dict[str, Any] = {}
+        self._pending_images: List[str] = []
+        self._image_retry_count: Dict[str, int] = {}
+        # Store images to attach to next user message
         self.pause_event = pause_event
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
+        self._pending_images = []
+        self._image_retry_count = {}
         for terminator in self.response_terminators:
             terminator.reset()
 
@@ -1140,6 +1146,16 @@ class ChatAgent(BaseAgent):
                 role_name="User", content=input_message
             )
 
+        # Attach any pending images from previous tool calls
+        image_list = self._process_pending_images()
+        if image_list:
+            # Create new message with images attached
+            input_message = BaseMessage.make_user_message(
+                role_name="User",
+                content=input_message.content,
+                image_list=image_list,
+            )
+
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
@@ -1297,6 +1313,16 @@ class ChatAgent(BaseAgent):
                 role_name="User", content=input_message
             )
 
+        # Attach any pending images from previous tool calls
+        image_list = self._process_pending_images()
+        if image_list:
+            # Create new message with images attached
+            input_message = BaseMessage.make_user_message(
+                role_name="User",
+                content=input_message.content,
+                image_list=image_list,
+            )
+
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         tool_call_records: List[ToolCallingRecord] = []
@@ -1343,6 +1369,7 @@ class ChatAgent(BaseAgent):
 
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
+                new_images_from_tools = []
                 for tool_call_request in tool_call_requests:
                     if (
                         tool_call_request.tool_name
@@ -1362,9 +1389,71 @@ class ChatAgent(BaseAgent):
                         )
                         tool_call_records.append(tool_call_record)
 
+                        # Check if this tool call produced images
+                        if (
+                            hasattr(tool_call_record, 'images')
+                            and tool_call_record.images
+                        ):
+                            new_images_from_tools.extend(
+                                tool_call_record.images
+                            )
+
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
                     break
+
+                # If tools produced images
+                # send them to the model as a user message
+                if new_images_from_tools:
+                    # Convert base64 images to PIL Images
+                    image_list = []
+                    for img_data in new_images_from_tools:
+                        try:
+                            import base64
+                            import io
+
+                            from PIL import Image
+
+                            # Extract base64 data from data URL format
+                            if img_data.startswith("data:image"):
+                                # Format:
+                                # "data:image/png;base64,iVBORw0KGgo..."
+                                base64_data = img_data.split(',', 1)[1]
+                            else:
+                                # Raw base64 data
+                                base64_data = img_data
+
+                            # Decode and create PIL Image
+                            image_bytes = base64.b64decode(base64_data)
+                            pil_image = Image.open(io.BytesIO(image_bytes))
+                            # Convert to ensure proper
+                            # Image.Image type for compatibility
+                            pil_image_tool_result: Image.Image = (
+                                pil_image.convert('RGB')
+                            )
+                            image_list.append(pil_image_tool_result)
+
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to convert "
+                                f"base64 image to PIL for immediate use: {e}"
+                            )
+                            continue
+
+                    # If we have valid images
+                    # create a user message with images
+                    if image_list:
+                        # Create a user message with images
+                        # to provide visual context immediately
+                        image_message = BaseMessage.make_user_message(
+                            role_name="User",
+                            content="[Visual content from tool execution - please analyze and continue]",  # noqa: E501
+                            image_list=image_list,
+                        )
+
+                        self.update_memory(
+                            image_message, OpenAIBackendRole.USER
+                        )
 
                 if (
                     self.max_iteration is not None
@@ -1452,6 +1541,69 @@ class ChatAgent(BaseAgent):
             info=info,
         )
 
+    def _process_pending_images(self) -> List:
+        r"""Process pending images with retry logic and return PIL Image list.
+
+        Returns:
+            List: List of successfully converted PIL Images.
+        """
+        if not self._pending_images:
+            return []
+
+        image_list = []
+        successfully_processed = []
+        failed_images = []
+
+        for img_data in self._pending_images:
+            # Track retry count
+            retry_count = self._image_retry_count.get(img_data, 0)
+
+            # Remove images that have failed too many times (max 3 attempts)
+            if retry_count >= 3:
+                failed_images.append(img_data)
+                logger.warning(
+                    f"Removing image after {retry_count} failed attempts"
+                )
+                continue
+
+            try:
+                import base64
+                import io
+
+                from PIL import Image
+
+                # Extract base64 data from data URL format
+                if img_data.startswith("data:image"):
+                    # Format: "data:image/png;base64,iVBORw0KGgo..."
+                    base64_data = img_data.split(',', 1)[1]
+                else:
+                    # Raw base64 data
+                    base64_data = img_data
+
+                # Decode and create PIL Image
+                image_bytes = base64.b64decode(base64_data)
+                pil_image = Image.open(io.BytesIO(image_bytes))
+                pil_image_converted: Image.Image = pil_image.convert('RGB')
+                image_list.append(pil_image_converted)
+                successfully_processed.append(img_data)
+
+            except Exception as e:
+                # Increment retry count for failed conversion
+                self._image_retry_count[img_data] = retry_count + 1
+                logger.warning(
+                    f"Failed to convert base64 image to PIL "
+                    f"(attempt {retry_count + 1}/3): {e}"
+                )
+                continue
+
+        # Clean up processed and failed images
+        for img in successfully_processed + failed_images:
+            self._pending_images.remove(img)
+            # Clean up retry count for processed/removed images
+            self._image_retry_count.pop(img, None)
+
+        return image_list
+
     def _record_final_output(self, output_messages: List[BaseMessage]) -> None:
         r"""Log final messages or warnings about multiple responses."""
         if len(output_messages) == 1:
@@ -1461,6 +1613,61 @@ class ChatAgent(BaseAgent):
                 "Multiple messages returned in `step()`. Record "
                 "selected message manually using `record_message()`."
             )
+
+    def _is_vision_error(self, exc: Exception) -> bool:
+        r"""Check if the exception is likely related to vision/image is not
+        supported by the model."""
+        # TODO: more robust vision error detection
+        error_msg = str(exc).lower()
+        vision_keywords = [
+            'vision',
+            'image',
+            'multimodal',
+            'unsupported',
+            'invalid content type',
+            'image_url',
+            'visual',
+        ]
+        return any(keyword in error_msg for keyword in vision_keywords)
+
+    def _has_images(self, messages: List[OpenAIMessage]) -> bool:
+        r"""Check if any message contains images."""
+        for msg in messages:
+            content = msg.get('content')
+            if isinstance(content, list):
+                for item in content:
+                    if (
+                        isinstance(item, dict)
+                        and item.get('type') == 'image_url'
+                    ):
+                        return True
+        return False
+
+    def _strip_images_from_messages(
+        self, messages: List[OpenAIMessage]
+    ) -> List[OpenAIMessage]:
+        r"""Remove images from messages, keeping only text content."""
+        stripped_messages = []
+        for msg in messages:
+            content = msg.get('content')
+            if isinstance(content, list):
+                # Extract only text content from multimodal messages
+                text_content = ""
+                for item in content:
+                    if isinstance(item, dict) and item.get('type') == 'text':
+                        text_content += item.get('text', '')
+
+                # Create new message with only text content
+                new_msg = msg.copy()
+                new_msg['content'] = (
+                    text_content
+                    or "[Image content removed - model doesn't support vision]"
+                )
+                stripped_messages.append(new_msg)
+            else:
+                # Regular text message, keep as is
+                stripped_messages.append(msg)
+        return stripped_messages
 
     def _get_model_response(
         self,
@@ -1477,13 +1684,33 @@ class ChatAgent(BaseAgent):
                 openai_messages, response_format, tool_schemas or None
             )
         except Exception as exc:
-            logger.error(
-                f"An error occurred while running model "
-                f"{self.model_backend.model_type}, "
-                f"index: {self.model_backend.current_model_index}",
-                exc_info=exc,
-            )
-            error_info = str(exc)
+            # Try again without images if the error might be vision-related
+            if self._is_vision_error(exc) and self._has_images(
+                openai_messages
+            ):
+                logger.warning(
+                    "Model appears to not support vision. Retrying without images."  # noqa: E501
+                )
+                try:
+                    stripped_messages = self._strip_images_from_messages(
+                        openai_messages
+                    )
+                    response = self.model_backend.run(
+                        stripped_messages,
+                        response_format,
+                        tool_schemas or None,
+                    )
+                except Exception:
+                    pass  # Fall through to original error handling
+
+            if not response:
+                logger.error(
+                    f"An error occurred while running model "
+                    f"{self.model_backend.model_type}, "
+                    f"index: {self.model_backend.current_model_index}",
+                    exc_info=exc,
+                )
+                error_info = str(exc)
 
         if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
@@ -1525,13 +1752,33 @@ class ChatAgent(BaseAgent):
                 openai_messages, response_format, tool_schemas or None
             )
         except Exception as exc:
-            logger.error(
-                f"An error occurred while running model "
-                f"{self.model_backend.model_type}, "
-                f"index: {self.model_backend.current_model_index}",
-                exc_info=exc,
-            )
-            error_info = str(exc)
+            # Try again without images if the error might be vision-related
+            if self._is_vision_error(exc) and self._has_images(
+                openai_messages
+            ):
+                logger.warning(
+                    "Model appears to not support vision. Retrying without images."  # noqa: E501
+                )
+                try:
+                    stripped_messages = self._strip_images_from_messages(
+                        openai_messages
+                    )
+                    response = await self.model_backend.arun(
+                        stripped_messages,
+                        response_format,
+                        tool_schemas or None,
+                    )
+                except Exception:
+                    pass  # Fall through to original error handling
+
+            if not response:
+                logger.error(
+                    f"An error occurred while running model "
+                    f"{self.model_backend.model_type}, "
+                    f"index: {self.model_backend.current_model_index}",
+                    exc_info=exc,
+                )
+                error_info = str(exc)
 
         if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
@@ -2005,9 +2252,25 @@ class ChatAgent(BaseAgent):
             mask_flag = False
             logging.warning(error_msg)
 
-        return self._record_tool_calling(
+        # Check if result is a ToolResult with images
+        images_to_attach = None
+        if isinstance(result, ToolResult):
+            images_to_attach = result.images
+            result = str(result)  # Use string representation for storage
+
+        tool_record = self._record_tool_calling(
             func_name, args, result, tool_call_id, mask_output=mask_flag
         )
+
+        # Store images for later attachment to next user message
+        if images_to_attach:
+            tool_record.images = images_to_attach
+            # Add images with duplicate prevention
+            for img in images_to_attach:
+                if img not in self._pending_images:
+                    self._pending_images.append(img)
+
+        return tool_record
 
     async def _aexecute_tool(
         self,
@@ -2049,7 +2312,25 @@ class ChatAgent(BaseAgent):
             result = {"error": error_msg}
             logging.warning(error_msg)
 
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+        # Check if result is a ToolResult with images
+        images_to_attach = None
+        if isinstance(result, ToolResult):
+            images_to_attach = result.images
+            result = str(result)  # Use string representation for storage
+
+        tool_record = self._record_tool_calling(
+            func_name, args, result, tool_call_id
+        )
+
+        # Store images for later attachment to next user message
+        if images_to_attach:
+            tool_record.images = images_to_attach
+            # Add images with duplicate prevention
+            for img in images_to_attach:
+                if img not in self._pending_images:
+                    self._pending_images.append(img)
+
+        return tool_record
 
     def _record_tool_calling(
         self,

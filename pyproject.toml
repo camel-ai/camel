@@ -601,4 +601,4 @@ skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolki
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
-ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,'
+ignore-words-list = 'ans,datas,rouge,doubleClick,OCE,ACI,aci,Pinter,SoM,'
