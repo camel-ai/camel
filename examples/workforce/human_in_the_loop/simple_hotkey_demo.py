@@ -132,10 +132,10 @@ def simple_intervention_menu(workforce: Workforce):
                 return False
 
             else:
-                print("❌ Invalid choice. Please enter 1-6.")
+                print("❌ Invalid choice. Please enter 1-5.")
 
         except (KeyboardInterrupt, EOFError):
-            print("\n🔄 Enter 5 to resume or 6 to stop")
+            print("\n🔄 Enter 4 to resume or 5 to stop")
 
 
 def main():

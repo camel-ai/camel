@@ -119,6 +119,7 @@ Write text content to a DOCX file with default formatting.
 def _write_pdf_file(
     self,
     file_path: Path,
+    title: str,
     content: str,
     use_latex: bool = False
 ):
@@ -129,8 +130,9 @@ Write text content to a PDF file with default formatting.
 **Parameters:**
 
 - **file_path** (Path): The target file path.
+- **title** (str): The title of the document.
 - **content** (str): The text content to write.
-- **use_latex** (bool): Whether to use LaTeX for rendering. (requires LaTeX toolchain). If False, uses FPDF for simpler PDF generation. (default: :obj:`False`)
+- **use_latex** (bool): Whether to use LaTeX for rendering. (requires LaTeX toolchain). If False, uses PyMuPDF for simpler PDF generation. (default: :obj:`False`)
 
 <a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_csv_file"></a>
 
@@ -244,6 +246,7 @@ Write text content to a Markdown file.
 ```python
 def write_to_file(
     self,
+    title: str,
     content: Union[str, List[List[str]]],
     filename: str,
     encoding: Optional[str] = None,
@@ -260,6 +263,7 @@ and HTML (.html, .htm).
 
 **Parameters:**
 
+- **title** (str): The title of the document.
 - **content** (Union[str, List[List[str]]]): The content to write to the file. Content format varies by file type: - Text formats (txt, md, html, yaml): string - CSV: string or list of lists - JSON: string or serializable object
 - **filename** (str): The name or path of the file. If a relative path is supplied, it is resolved to self.output_dir.
 - **encoding** (Optional[str]): The character encoding to use. (default: :obj: `None`)

@@ -60,26 +60,29 @@ actions, and provide relevant information to solve the given task.
     tools=[FunctionTool(browser_simulator_toolkit.browse_url)],
 )
 
-task_agent_kwargs = {
-    "model": ModelFactory.create(
+# Create custom agents for the workforce
+task_agent = ChatAgent(
+    "You are a helpful task planner.",
+    model=ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O,
         model_config_dict={"temperature": 0},
-    )
-}
+    ),
+)
 
-coordinator_agent_kwargs = {
-    "model": ModelFactory.create(
+coordinator_agent = ChatAgent(
+    "You are a helpful coordinator.",
+    model=ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O,
         model_config_dict={"temperature": 0},
-    )
-}
+    ),
+)
 
 workforce = Workforce(
     "Gaia Workforce",
-    task_agent_kwargs=task_agent_kwargs,
-    coordinator_agent_kwargs=coordinator_agent_kwargs,
+    task_agent=task_agent,
+    coordinator_agent=coordinator_agent,
 )
 
 workforce.add_single_agent_worker(
