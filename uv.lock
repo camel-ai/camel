@@ -1032,7 +1032,7 @@ requires-dist = [
     { name = "cohere", marker = "extra == 'model-platforms'", specifier = ">=5.11.0,<6" },
     { name = "cohere", marker = "extra == 'rag'", specifier = ">=5.11.0,<6" },
     { name = "colorama", specifier = ">=0.4.6,<0.5" },
-    { name = "crawl4ai", marker = "extra == 'all'", specifier = ">=0.3.745" },
+    { name = "crawl4ai", marker = "extra == 'all'", specifier = ">=0.4.0" },
     { name = "crawl4ai", marker = "extra == 'document-tools'", specifier = ">=0.3.745" },
     { name = "crawl4ai", marker = "extra == 'owl'", specifier = ">=0.3.745" },
     { name = "crawl4ai", marker = "extra == 'rag'", specifier = ">=0.3.745" },
