@@ -19,7 +19,7 @@ import pandas as pd  # type: ignore[import-untyped]
 import pytest
 from pandasai.llm import OpenAI  # type: ignore[import-untyped]
 
-from camel.loaders import PandasReader
+from camel.loaders import PandasLoader, PandasReader
 
 
 def test_load_dataframe():
@@ -160,3 +160,17 @@ def test_with_llm():
         resp = df.chat("Which country has the highest sales?")
         # The response format can vary, so we just check that we got something
         assert resp is not None
+
+
+def test_pandas_loader():
+    r"""Test the PandasLoader class."""
+    loader = PandasLoader()
+    sales_by_country = {
+        "country": ["United States", "United Kingdom", "China"],
+        "sales": [5000, 3200, 7000],
+    }
+    df = loader.load(pd.DataFrame(sales_by_country))
+    assert isinstance(df, pd.DataFrame)
+    assert "country" in df.columns
+    assert "sales" in df.columns
+    assert df["sales"].sum() == 15200
