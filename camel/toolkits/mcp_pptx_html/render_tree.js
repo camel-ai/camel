@@ -1,6 +1,5 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
-
 async function extractRenderTreeFromHtml(html) {
   const browser = await puppeteer.launch({ headless: 'new' });
   const page = await browser.newPage();
@@ -8,6 +7,7 @@ async function extractRenderTreeFromHtml(html) {
   await page.setViewport({ width: 1280, height: 720 });
   const { elements, debug } = await page.evaluate(() => {
     const debug = [];
+   
     function extract(el) {
       const rect = el.getBoundingClientRect();
       const styles = window.getComputedStyle(el);
@@ -29,7 +29,7 @@ async function extractRenderTreeFromHtml(html) {
       for (const child of el.children) {
         children.push(extract(child));
       }
-      if (el.tagName === 'DIV') {
+      if (el.tagName === 'DIV' || el.tagName === 'UL' || el.tagName === 'OL' || el.tagName === 'LI') {
         function pxToIn(px) { return px ? parseFloat(px) / 96 : 0; }
         // Manually extract each border radius corner
         const borderRadius = {
@@ -66,7 +66,13 @@ async function extractRenderTreeFromHtml(html) {
           style: styles.borderStyle || undefined
         };
         const rotate = el.getAttribute('data-rotate') ? parseFloat(el.getAttribute('data-rotate')) : 0;
-        const shadow = styles.boxShadow !== 'none' ? styles.boxShadow : undefined;
+        const shadow = {
+          type: 'outer',
+          color: '#000000', // fallback to black, or parse from boxShadow if needed
+          blur: 70,
+          opacity: 1,
+          offsetY: 0
+        };
 
         return {
           tag: el.tagName,
@@ -79,7 +85,7 @@ async function extractRenderTreeFromHtml(html) {
           rectRadius,
           borderRadius,
           rotate,
-          shadow,
+          // shadow,
           rect: {
             x: rect.x,
             y: rect.y,
@@ -254,9 +260,8 @@ async function extractRenderTreeFromHtml(html) {
               type: 'outer',
               color: rgbToHex(`rgb(${match[1]}, ${match[2]}, ${match[3]})`),
               opacity: parseFloat(match[4]),
-              blurRadius: parseFloat(match[7]),
-              offsetX: parseFloat(match[5]),
-              offsetY: parseFloat(match[6])
+              blur: parseFloat(match[7]),
+              offset: parseFloat(match[5]),
             };
           }
         }
@@ -320,8 +325,8 @@ async function extractRenderTreeFromHtml(html) {
           rect: {
             x: rect.x,
             y: rect.y,
-            width: rect.width,
-            height: rect.height,
+            width: rect.width + 30,
+            height: rect.height + 0,
             top: rect.top,
             left: rect.left,
             right: rect.right,
