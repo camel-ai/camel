@@ -395,6 +395,40 @@ class Workforce(BaseNode):
                 "better context continuity during task handoffs."
             )
 
+        # ------------------------------------------------------------------
+        # Helper for propagating pause control to externally supplied agents
+        # ------------------------------------------------------------------
+
+    def _attach_pause_event_to_agent(self, agent: ChatAgent) -> None:
+        r"""Ensure the given ChatAgent shares this workforce's pause_event.
+
+        If the agent already has a different pause_event we overwrite it and
+        emit a debug log (it is unlikely an agent needs multiple independent
+        pause controls once managed by this workforce)."""
+        try:
+            existing_pause_event = getattr(agent, "pause_event", None)
+            if existing_pause_event is not self._pause_event:
+                if existing_pause_event is not None:
+                    logger.debug(
+                        f"Overriding pause_event for agent {agent.agent_id} "
+                        f"(had different pause_event: "
+                        f"{id(existing_pause_event)} "
+                        f"-> {id(self._pause_event)})"
+                    )
+                agent.pause_event = self._pause_event
+        except AttributeError:
+            # Should not happen, but guard against unexpected objects
+            logger.warning(
+                f"Cannot attach pause_event to object {type(agent)} - "
+                f"missing pause_event attribute"
+            )
+
+    def _ensure_pause_event_in_kwargs(self, kwargs: Optional[Dict]) -> Dict:
+        r"""Insert pause_event into kwargs dict for ChatAgent construction."""
+        new_kwargs = dict(kwargs) if kwargs else {}
+        new_kwargs.setdefault("pause_event", self._pause_event)
+        return new_kwargs
+
     def __repr__(self):
         return (
             f"Workforce {self.node_id} ({self.description}) - "
@@ -1138,6 +1172,9 @@ class Workforce(BaseNode):
         Returns:
             Workforce: The workforce node itself.
         """
+        # Ensure the worker agent shares this workforce's pause control
+        self._attach_pause_event_to_agent(worker)
+
         worker_node = SingleAgentWorker(
             description=description,
             worker=worker,
@@ -1184,6 +1221,18 @@ class Workforce(BaseNode):
         Returns:
             Workforce: The workforce node itself.
         """
+        # Ensure provided kwargs carry pause_event so that internally created
+        # ChatAgents (assistant/user/summarizer) inherit it.
+        assistant_agent_kwargs = self._ensure_pause_event_in_kwargs(
+            assistant_agent_kwargs
+        )
+        user_agent_kwargs = self._ensure_pause_event_in_kwargs(
+            user_agent_kwargs
+        )
+        summarize_agent_kwargs = self._ensure_pause_event_in_kwargs(
+            summarize_agent_kwargs
+        )
+
         worker_node = RolePlayingWorker(
             description=description,
             assistant_role_name=assistant_role_name,
@@ -1212,6 +1261,9 @@ class Workforce(BaseNode):
         Returns:
             Workforce: The workforce node itself.
         """
+        # Align child workforce's pause_event with this one for unified
+        # control of worker agents only.
+        workforce._pause_event = self._pause_event
         self._children.append(workforce)
         return self
 
@@ -1245,14 +1297,17 @@ class Workforce(BaseNode):
         # Handle asyncio.Event in a thread-safe way
         if self._loop and not self._loop.is_closed():
             # If we have a loop, use it to set the event safely
-            asyncio.run_coroutine_threadsafe(
-                self._async_reset(), self._loop
-            ).result()
-        else:
             try:
-                self._reset_task = asyncio.create_task(self._async_reset())
-            except RuntimeError:
-                asyncio.run(self._async_reset())
+                asyncio.run_coroutine_threadsafe(
+                    self._async_reset(), self._loop
+                ).result()
+            except RuntimeError as e:
+                logger.warning(f"Failed to reset via existing loop: {e}")
+                # Fallback to direct event manipulation
+                self._pause_event.set()
+        else:
+            # No active loop, directly set the event
+            self._pause_event.set()
 
         if hasattr(self, 'metrics_logger') and self.metrics_logger is not None:
             self.metrics_logger.reset_task_data()
@@ -1656,7 +1711,12 @@ class Workforce(BaseNode):
                 model_config_dict={"temperature": 0},
             )
 
-            return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
+            return ChatAgent(
+                worker_sys_msg,
+                model=model,
+                tools=function_list,  # type: ignore[arg-type]
+                pause_event=self._pause_event,
+            )
 
     async def _get_returned_task(self) -> Optional[Task]:
         r"""Get the task that's published by this node and just get returned

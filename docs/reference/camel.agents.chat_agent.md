@@ -24,6 +24,7 @@ Class for managing conversations of CAMEL Chat Agents.
 - **agent_id** (str, optional): The ID of the agent. If not provided, a random UUID will be generated. (default: :obj:`None`)
 - **stop_event** (Optional[threading.Event], optional): Event to signal termination of the agent's operation. When set, the agent will terminate its execution. (default: :obj:`None`)
 - **mask_tool_output** (Optional[bool]): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
+- **pause_event** (Optional[asyncio.Event]): Event to signal pause of the agent's operation. When clear, the agent will pause its execution. (default: :obj:`None`)
 
 <a id="camel.agents.chat_agent.ChatAgent.__init__"></a>
 
@@ -45,7 +46,8 @@ def __init__(
     max_iteration: Optional[int] = None,
     agent_id: Optional[str] = None,
     stop_event: Optional[threading.Event] = None,
-    mask_tool_output: bool = False
+    mask_tool_output: bool = False,
+    pause_event: Optional[asyncio.Event] = None
 ):
 ```
 
@@ -554,6 +556,18 @@ def _convert_to_chatagent_response(
 
 Parse the final model response into the chat agent response.
 
+<a id="camel.agents.chat_agent.ChatAgent._process_pending_images"></a>
+
+### _process_pending_images
+
+```python
+def _process_pending_images(self):
+```
+
+**Returns:**
+
+  List: List of successfully converted PIL Images.
+
 <a id="camel.agents.chat_agent.ChatAgent._record_final_output"></a>
 
 ### _record_final_output
@@ -563,6 +577,37 @@ def _record_final_output(self, output_messages: List[BaseMessage]):
 ```
 
 Log final messages or warnings about multiple responses.
+
+<a id="camel.agents.chat_agent.ChatAgent._is_vision_error"></a>
+
+### _is_vision_error
+
+```python
+def _is_vision_error(self, exc: Exception):
+```
+
+Check if the exception is likely related to vision/image is not
+supported by the model.
+
+<a id="camel.agents.chat_agent.ChatAgent._has_images"></a>
+
+### _has_images
+
+```python
+def _has_images(self, messages: List[OpenAIMessage]):
+```
+
+Check if any message contains images.
+
+<a id="camel.agents.chat_agent.ChatAgent._strip_images_from_messages"></a>
+
+### _strip_images_from_messages
+
+```python
+def _strip_images_from_messages(self, messages: List[OpenAIMessage]):
+```
+
+Remove images from messages, keeping only text content.
 
 <a id="camel.agents.chat_agent.ChatAgent._get_model_response"></a>
 
@@ -780,8 +825,8 @@ tool calling record.
 
 **Returns:**
 
-  ToolCallingRecord: A struct containing information about this tool
-call.
+  ToolCallingRecord: A struct containing information about
+this tool call.
 
 <a id="camel.agents.chat_agent.ChatAgent.get_usage_dict"></a>
 
