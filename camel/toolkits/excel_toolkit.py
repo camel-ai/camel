@@ -13,9 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 # Enables postponed evaluation of annotations (for string-based type hints)
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, List, Optional
+import os
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -24,7 +23,7 @@ from camel.utils import MCPServer
 
 # Import only for type hints (not executed at runtime)
 if TYPE_CHECKING:
-    import pandas as pd
+    from pandas import DataFrame
 
 logger = get_logger(__name__)
 
@@ -42,6 +41,7 @@ class ExcelToolkit(BaseToolkit):
     def __init__(
         self,
         timeout: Optional[float] = None,
+        file_path: Optional[str] = None,
     ):
         r"""Initializes a new instance of the ExcelToolkit class.
 
@@ -49,14 +49,38 @@ class ExcelToolkit(BaseToolkit):
             timeout (Optional[float]): The timeout value for API requests
                 in seconds. If None, no timeout is applied.
                 (default: :obj:`None`)
+            file_path (Optional[str]): Path to an existing Excel file to load.
+                (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
+        self.file_path = file_path
+        self.wb = None
+        if file_path and os.path.exists(file_path):
+            from openpyxl import load_workbook
 
-    def _convert_to_markdown(self, df: pd.DataFrame) -> str:
+            self.wb = load_workbook(file_path)
+
+    def _validate_file_path(self, file_path: str) -> bool:
+        r"""Validate file path for security.
+
+        Args:
+            file_path (str): The file path to validate.
+
+        Returns:
+            bool: True if path is safe, False otherwise.
+        """
+        normalized_path = os.path.normpath(file_path)
+
+        if '..' in normalized_path.split(os.path.sep):
+            return False
+
+        return True
+
+    def _convert_to_markdown(self, df: "DataFrame") -> str:
         r"""Convert DataFrame to Markdown format table.
 
         Args:
-            df (pd.DataFrame): DataFrame containing the Excel data.
+            df (DataFrame): DataFrame containing the Excel data.
 
         Returns:
             str: Markdown formatted table.
@@ -67,14 +91,22 @@ class ExcelToolkit(BaseToolkit):
         return str(md_table)
 
     def extract_excel_content(self, document_path: str) -> str:
-        r"""Extract detailed cell information from an Excel file, including
-        multiple sheets.
+        r"""Extract and analyze the full content of an Excel file (.xlsx/.xls/.
+        csv).
+
+        Use this tool to read and understand the structure and content of
+        Excel files. This is typically the first step when working with
+        existing Excel files.
 
         Args:
-            document_path (str): The path of the Excel file.
+            document_path (str): The file path to the Excel file.
 
         Returns:
-            str: Extracted excel information, including details of each sheet.
+            str: A comprehensive report containing:
+                - Sheet names and their content in markdown table format
+                - Detailed cell information including values, colors, and
+                    positions
+                - Formatted data that's easy to understand and analyze
         """
         import pandas as pd
         from openpyxl import load_workbook
@@ -84,6 +116,9 @@ class ExcelToolkit(BaseToolkit):
             f"Calling extract_excel_content with document_path"
             f": {document_path}"
         )
+
+        if not self._validate_file_path(document_path):
+            return "Error: Invalid file path."
 
         if not (
             document_path.endswith("xls")
@@ -95,6 +130,9 @@ class ExcelToolkit(BaseToolkit):
                 f"Failed to process file {document_path}: "
                 f"It is not excel format. Please try other ways."
             )
+
+        if not os.path.exists(document_path):
+            return f"Error: File {document_path} does not exist."
 
         if document_path.endswith("csv"):
             try:
@@ -111,64 +149,74 @@ class ExcelToolkit(BaseToolkit):
             x2x.to_xlsx(output_path)
             document_path = output_path
 
-        # Load the Excel workbook
-        wb = load_workbook(document_path, data_only=True)
-        sheet_info_list = []
+        try:
+            # Load the Excel workbook
+            wb = load_workbook(document_path, data_only=True)
+            sheet_info_list = []
 
-        # Iterate through all sheets
-        for sheet in wb.sheetnames:
-            ws = wb[sheet]
-            cell_info_list = []
+            # Iterate through all sheets
+            for sheet in wb.sheetnames:
+                ws = wb[sheet]
+                cell_info_list = []
 
-            for row in ws.iter_rows():
-                for cell in row:
-                    row_num = cell.row
-                    col_letter = cell.column_letter
+                for row in ws.iter_rows():
+                    for cell in row:
+                        # Skip cells that don't have proper coordinates (like
+                        # merged cells)
+                        if (
+                            not hasattr(cell, 'column_letter')
+                            or cell.value is None
+                        ):
+                            continue
 
-                    cell_value = cell.value
+                        row_num = cell.row
+                        # Use getattr with fallback for column_letter
+                        col_letter = getattr(cell, 'column_letter', 'A')
 
-                    font_color = None
-                    if (
-                        cell.font
-                        and cell.font.color
-                        and "rgb=None" not in str(cell.font.color)
-                    ):  # Handle font color
-                        font_color = cell.font.color.rgb
+                        cell_value = cell.value
 
-                    fill_color = None
-                    if (
-                        cell.fill
-                        and cell.fill.fgColor
-                        and "rgb=None" not in str(cell.fill.fgColor)
-                    ):  # Handle fill color
-                        fill_color = cell.fill.fgColor.rgb
+                        font_color = None
+                        if (
+                            cell.font
+                            and cell.font.color
+                            and "rgb=None" not in str(cell.font.color)
+                        ):  # Handle font color
+                            font_color = cell.font.color.rgb
 
-                    cell_info_list.append(
-                        {
-                            "index": f"{row_num}{col_letter}",
-                            "value": cell_value,
-                            "font_color": font_color,
-                            "fill_color": fill_color,
-                        }
-                    )
+                        fill_color = None
+                        if (
+                            cell.fill
+                            and cell.fill.fgColor
+                            and "rgb=None" not in str(cell.fill.fgColor)
+                        ):  # Handle fill color
+                            fill_color = cell.fill.fgColor.rgb
 
-            # Convert the sheet to a DataFrame and then to markdown
-            sheet_df = pd.read_excel(
-                document_path, sheet_name=sheet, engine='openpyxl'
-            )
-            markdown_content = self._convert_to_markdown(sheet_df)
+                        cell_info_list.append(
+                            {
+                                "index": f"{row_num}{col_letter}",
+                                "value": cell_value,
+                                "font_color": font_color,
+                                "fill_color": fill_color,
+                            }
+                        )
 
-            # Collect all information for the sheet
-            sheet_info = {
-                "sheet_name": sheet,
-                "cell_info_list": cell_info_list,
-                "markdown_content": markdown_content,
-            }
-            sheet_info_list.append(sheet_info)
+                # Convert the sheet to a DataFrame and then to markdown
+                sheet_df = pd.read_excel(
+                    document_path, sheet_name=sheet, engine='openpyxl'
+                )
+                markdown_content = self._convert_to_markdown(sheet_df)
 
-        result_str = ""
-        for sheet_info in sheet_info_list:
-            result_str += f"""
+                # Collect all information for the sheet
+                sheet_info = {
+                    "sheet_name": sheet,
+                    "cell_info_list": cell_info_list,
+                    "markdown_content": markdown_content,
+                }
+                sheet_info_list.append(sheet_info)
+
+            result_str = ""
+            for sheet_info in sheet_info_list:
+                result_str += f"""
             Sheet Name: {sheet_info['sheet_name']}
             Cell information list:
             {sheet_info['cell_info_list']}
@@ -179,7 +227,682 @@ class ExcelToolkit(BaseToolkit):
             {'-'*40}
             """
 
-        return result_str
+            return result_str
+        except Exception as e:
+            logger.error(f"Failed to process Excel file {document_path}: {e}")
+            return f"Failed to process Excel file {document_path}: {e}"
+
+    def _save_workbook(self, file_path: Optional[str] = None) -> str:
+        r"""Save the current workbook to file.
+
+        Args:
+            file_path (Optional[str]): The path to save the workbook.
+                If None, uses self.file_path.
+
+        Returns:
+            str: Success or error message.
+        """
+        if not self.wb:
+            return "Error: No workbook loaded to save."
+
+        save_path = file_path or self.file_path
+        if not save_path:
+            return "Error: No file path specified for saving."
+
+        if not self._validate_file_path(save_path):
+            return "Error: Invalid file path for saving."
+
+        try:
+            self.wb.save(save_path)
+            return f"Workbook saved successfully to {save_path}"
+        except Exception as e:
+            logger.error(f"Failed to save workbook: {e}")
+            return f"Error: Failed to save workbook: {e}"
+
+    def create_workbook(
+        self,
+        file_path: str,
+        sheet_name: Optional[str] = None,
+        data: Optional[List[List[Union[str, int, float, None]]]] = None,
+    ) -> str:
+        r"""Create a new Excel workbook from scratch.
+
+        Use this when you need to create a new Excel file. This sets up the
+        toolkit to work with the new file and optionally adds initial data.
+
+        Args:
+            file_path (str): Where to save the new Excel file. Must end with .
+                xlsx.
+            sheet_name (Optional[str]): Name for the first sheet. If None,
+                creates "Sheet1". (default: :obj:`None`)
+            data (Optional[List[List[Union[str, int, float, None]]]]): Initial
+                data as rows. Each inner list is one row. (default:
+                :obj:`None`)
+
+        Returns:
+            str: Success confirmation message or error details
+        """
+        from openpyxl import Workbook
+
+        if not self._validate_file_path(file_path):
+            return "Error: Invalid file path."
+
+        try:
+            # Create a new workbook
+            wb = Workbook()
+            self.wb = wb
+            self.file_path = file_path
+
+            # Handle sheet creation safely
+            if sheet_name:
+                # Remove the default sheet safely
+                default_sheet = wb.active
+                if default_sheet is not None:
+                    wb.remove(default_sheet)
+                ws = wb.create_sheet(sheet_name)
+            else:
+                ws = wb.active
+                if ws is not None and sheet_name is None:
+                    sheet_name = "Sheet1"
+                    ws.title = sheet_name
+
+            # Add data if provided
+            if data and ws is not None:
+                for row in data:
+                    ws.append(row)
+
+            # Save the workbook to the specified file path
+            wb.save(file_path)
+
+            return f"Workbook created successfully at {file_path}"
+        except Exception as e:
+            logger.error(f"Failed to create workbook: {e}")
+            return f"Error: Failed to create workbook: {e}"
+
+    def delete_workbook(self, file_path: Optional[str] = None) -> str:
+        r"""Delete a spreadsheet file.
+
+        Args:
+            file_path (Optional[str]): The path of the file to delete.
+                If None, uses self.file_path.
+
+        Returns:
+            str: Success message.
+        """
+        target_path = file_path or self.file_path
+        if not target_path:
+            return "Error: No file path specified for deletion."
+
+        if not self._validate_file_path(target_path):
+            return "Error: Invalid file path."
+
+        if not os.path.exists(target_path):
+            return f"File {target_path} does not exist."
+
+        try:
+            os.remove(target_path)
+            if target_path == self.file_path:
+                self.wb = None
+                self.file_path = None
+            return f"Workbook {target_path} deleted successfully."
+        except Exception as e:
+            logger.error(f"Failed to delete workbook: {e}")
+            return f"Failed to delete workbook {target_path}: {e}"
+
+    def create_sheet(
+        self,
+        sheet_name: str,
+        data: Optional[List[List[Union[str, int, float, None]]]] = None,
+    ) -> str:
+        r"""Create a new sheet with the given sheet name and data.
+
+        Args:
+            sheet_name (str): The name of the sheet to create.
+            data (Optional[List[List[Union[str, int, float, None]]]]):
+                The data to write to the sheet.
+
+        Returns:
+            str: Success message.
+        """
+        if not self.wb:
+            return (
+                "Error: Workbook not initialized. "
+                "Please create a workbook first."
+            )
+
+        if sheet_name in self.wb.sheetnames:
+            return f"Error: Sheet {sheet_name} already exists."
+
+        try:
+            ws = self.wb.create_sheet(sheet_name)
+            if data:
+                for row in data:
+                    ws.append(row)
+
+            save_result = self._save_workbook()
+            if save_result.startswith("Error"):
+                return save_result
+            return f"Sheet {sheet_name} created successfully."
+        except Exception as e:
+            logger.error(f"Failed to create sheet: {e}")
+            return f"Error: Failed to create sheet {sheet_name}: {e}"
+
+    def delete_sheet(self, sheet_name: str) -> str:
+        r"""Delete a sheet from the workbook.
+
+        Args:
+            sheet_name (str): The name of the sheet to delete.
+
+        Returns:
+            str: Success message.
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Sheet {sheet_name} does not exist."
+
+        if len(self.wb.sheetnames) == 1:
+            return "Cannot delete the last remaining sheet in the workbook."
+
+        try:
+            ws = self.wb[sheet_name]
+            self.wb.remove(ws)
+            save_result = self._save_workbook()
+            if save_result.startswith("Error"):
+                return save_result
+            return f"Sheet {sheet_name} deleted successfully."
+        except Exception as e:
+            logger.error(f"Failed to delete sheet: {e}")
+            return f"Error: Failed to delete sheet {sheet_name}: {e}"
+
+    def clear_sheet(self, sheet_name: str) -> str:
+        r"""Clear all data from a sheet.
+
+        Args:
+            sheet_name (str): The name of the sheet to clear.
+
+        Returns:
+            str: Success message.
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Sheet {sheet_name} does not exist."
+
+        try:
+            ws = self.wb[sheet_name]
+
+            # Clear all cells
+            for row in ws.iter_rows():
+                for cell in row:
+                    cell.value = None
+
+            save_result = self._save_workbook()
+            if save_result.startswith("Error"):
+                return save_result
+            return f"Sheet {sheet_name} cleared successfully."
+        except Exception as e:
+            logger.error(f"Failed to clear sheet: {e}")
+            return f"Error: Failed to clear sheet {sheet_name}: {e}"
+
+    def delete_rows(
+        self, sheet_name: str, start_row: int, end_row: Optional[int] = None
+    ) -> str:
+        r"""Delete rows from a sheet.
+
+        Use this to remove unwanted rows. You can delete single rows or ranges.
+
+        Args:
+            sheet_name (str): Name of the sheet to modify.
+            start_row (int): Starting row number to delete (1-based, where 1
+                is first row).
+            end_row (Optional[int]): Ending row number to delete (1-based).
+                If None, deletes only start_row. (default: :obj:`None`)
+
+        Returns:
+            str: Success confirmation message or error details
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Sheet {sheet_name} does not exist."
+
+        ws = self.wb[sheet_name]
+
+        if end_row is None:
+            end_row = start_row
+
+        # Delete rows (openpyxl uses 1-based indexing)
+        num_rows = end_row - start_row + 1
+        ws.delete_rows(start_row, num_rows)
+
+        self._save_workbook()
+        return (
+            f"Deleted rows {start_row} to {end_row} from sheet "
+            f"{sheet_name} successfully."
+        )
+
+    def delete_columns(
+        self, sheet_name: str, start_col: int, end_col: Optional[int] = None
+    ) -> str:
+        r"""Delete columns from a sheet.
+
+        Use this to remove unwanted columns. You can delete single columns or
+        ranges.
+
+        Args:
+            sheet_name (str): Name of the sheet to modify.
+            start_col (int): Starting column number to delete (1-based, where
+                1 is column A).
+            end_col (Optional[int]): Ending column number to delete (1-based).
+                If None, deletes only start_col. (default: :obj:`None`)
+
+        Returns:
+            str: Success confirmation message or error details
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Sheet {sheet_name} does not exist."
+
+        ws = self.wb[sheet_name]
+
+        if end_col is None:
+            end_col = start_col
+
+        # Delete columns (openpyxl uses 1-based indexing)
+        num_cols = end_col - start_col + 1
+        ws.delete_cols(start_col, num_cols)
+
+        self._save_workbook()
+        return (
+            f"Deleted columns {start_col} to {end_col} from sheet "
+            f"{sheet_name} successfully."
+        )
+
+    def get_cell_value(
+        self, sheet_name: str, cell_reference: str
+    ) -> Union[str, int, float, None]:
+        r"""Get the value from a specific cell.
+
+        Use this to read a single cell's value. Useful for checking specific
+        data points or getting values for calculations.
+
+        Args:
+            sheet_name (str): Name of the sheet containing the cell.
+            cell_reference (str): Excel-style cell reference (column letter +
+                row number).
+
+        Returns:
+            Union[str, int, float, None]: The cell's value or error message
+                Returns None for empty cells.
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Error: Sheet {sheet_name} does not exist."
+
+        ws = self.wb[sheet_name]
+        return ws[cell_reference].value
+
+    def set_cell_value(
+        self,
+        sheet_name: str,
+        cell_reference: str,
+        value: Union[str, int, float, None],
+    ) -> str:
+        r"""Set the value of a specific cell.
+
+        Use this to update individual cells with new values. Useful for
+        corrections, calculations, or updating specific data points.
+
+        Args:
+            sheet_name (str): Name of the sheet containing the cell.
+            cell_reference (str): Excel-style cell reference (column letter +
+                row number).
+            value (Union[str, int, float, None]): New value for the cell.
+                (default: :obj:`None`)
+
+        Returns:
+            str: Success confirmation message or error details.
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Sheet {sheet_name} does not exist."
+
+        try:
+            ws = self.wb[sheet_name]
+            # Handle None values properly - openpyxl doesn't accept None
+            # directly
+            if value is None:
+                ws[cell_reference].value = None
+            else:
+                ws[cell_reference] = value
+            save_result = self._save_workbook()
+            if save_result.startswith("Error"):
+                return save_result
+            return (
+                f"Cell {cell_reference} updated successfully in sheet "
+                f"{sheet_name}."
+            )
+        except Exception as e:
+            logger.error(f"Failed to set cell value: {e}")
+            return f"Error: Failed to set cell value: {e}"
+
+    def get_column_data(
+        self, sheet_name: str, column: Union[int, str]
+    ) -> Union[List[Union[str, int, float, None]], str]:
+        r"""Get all data from a specific column.
+
+        Use this to extract all values from a column for analysis or
+        processing.
+
+        Args:
+            sheet_name (str): Name of the sheet to read from.
+            column (Union[int, str]): Column identifier - either number
+                (1-based) or letter.
+
+        Returns:
+            Union[List[Union[str, int, float, None]], str]:
+                List of all non-empty values in the column or error message
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Error: Sheet {sheet_name} does not exist."
+
+        ws = self.wb[sheet_name]
+
+        if isinstance(column, str):
+            col_letter = column.upper()
+        else:
+            from openpyxl.utils import (  # type: ignore[import]
+                get_column_letter,
+            )
+
+            col_letter = get_column_letter(column)
+
+        column_data = []
+        for cell in ws[col_letter]:
+            if cell.value is not None:
+                column_data.append(cell.value)
+
+        return column_data
+
+    def find_cells(
+        self,
+        sheet_name: str,
+        search_value: Union[str, int, float],
+        search_column: Optional[Union[int, str]] = None,
+    ) -> Union[List[str], str]:
+        r"""Find cells containing a specific value.
+
+        Use this to locate where specific data appears in the sheet.
+
+        Args:
+            sheet_name (str): Name of the sheet to search in.
+            search_value (Union[str, int, float]): Value to search for.
+            search_column (Optional[Union[int, str]]): Limit search to
+                specific column. If None, searches entire sheet. (default:
+                :obj:`None`)
+
+        Returns:
+            Union[List[str], str]: List of cell references (like "A5", "B12")
+                where the value was found, or error message.
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Error: Sheet {sheet_name} does not exist."
+
+        ws = self.wb[sheet_name]
+        found_cells = []
+
+        if search_column:
+            # Search in specific column
+            if isinstance(search_column, str):
+                col_letter = search_column.upper()
+                for cell in ws[col_letter]:
+                    if cell.value == search_value:
+                        found_cells.append(cell.coordinate)
+            else:
+                from openpyxl.utils import (  # type: ignore[import]
+                    get_column_letter,
+                )
+
+                col_letter = get_column_letter(search_column)
+                for cell in ws[col_letter]:
+                    if cell.value == search_value:
+                        found_cells.append(cell.coordinate)
+        else:
+            # Search entire sheet
+            for row in ws.iter_rows():
+                for cell in row:
+                    if cell.value == search_value:
+                        found_cells.append(cell.coordinate)
+
+        return found_cells
+
+    def get_range_values(
+        self, sheet_name: str, cell_range: str
+    ) -> Union[List[List[Union[str, int, float, None]]], str]:
+        r"""Get values from a specific range of cells.
+
+        Use this to read a rectangular block of cells at once.
+
+        Args:
+            sheet_name (str): Name of the sheet to read from.
+            cell_range (str): Range in Excel format (start:end).
+
+        Returns:
+            Union[List[List[Union[str, int, float, None]]], str]:
+                2D list where each inner list is a row of cell values, or
+                error message.
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Error: Sheet {sheet_name} does not exist."
+
+        ws = self.wb[sheet_name]
+        range_values = []
+
+        for row in ws[cell_range]:
+            row_values = []
+            for cell in row:
+                row_values.append(cell.value)
+            range_values.append(row_values)
+
+        return range_values
+
+    def set_range_values(
+        self,
+        sheet_name: str,
+        cell_range: str,
+        values: List[List[Union[str, int, float, None]]],
+    ) -> str:
+        r"""Set values for a specific range of cells.
+
+        Use this to update multiple cells at once with a 2D array of data.
+
+        Args:
+            sheet_name (str): Name of the sheet to modify.
+            cell_range (str): Range in Excel format to update.
+            values (List[List[Union[str, int, float, None]]]): 2D array of
+                values. Each inner list represents a row.
+
+        Returns:
+            str: Success confirmation message or error details.
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Error: Sheet {sheet_name} does not exist."
+
+        ws = self.wb[sheet_name]
+
+        # Get the range
+        cell_range_obj = ws[cell_range]
+
+        # If it's a single row or column, convert to 2D format
+        if not isinstance(cell_range_obj[0], tuple):
+            cell_range_obj = [cell_range_obj]
+
+        for row_idx, row in enumerate(cell_range_obj):
+            if row_idx < len(values):
+                for col_idx, cell in enumerate(row):
+                    if col_idx < len(values[row_idx]):
+                        cell.value = values[row_idx][col_idx]
+
+        self._save_workbook()
+        return f"Values set for range {cell_range} in sheet {sheet_name}."
+
+    def export_sheet_to_csv(self, sheet_name: str, csv_path: str) -> str:
+        r"""Export a specific sheet to CSV format.
+
+        Use this to convert Excel sheets to CSV files for compatibility or
+        data exchange.
+
+        Args:
+            sheet_name (str): Name of the sheet to export.
+            csv_path (str): File path where CSV will be saved.
+
+        Returns:
+            str: Success confirmation message or error details.
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Error: Sheet {sheet_name} does not exist."
+
+        import pandas as pd
+
+        # Read the specific sheet
+        df = pd.read_excel(self.file_path, sheet_name=sheet_name)
+        df.to_csv(csv_path, index=False)
+
+        return f"Sheet {sheet_name} exported to CSV: {csv_path}"
+
+    def get_rows(
+        self,
+        sheet_name: str,
+        start_row: Optional[int] = None,
+        end_row: Optional[int] = None,
+    ) -> Union[List[List[Union[str, int, float, None]]], str]:
+        r"""Retrieve rows of data from a sheet.
+
+        Use this to read data from a sheet. You can get all rows or specify a
+        range. Returns actual data as lists, making it easy to process
+        programmatically.
+
+        Args:
+            sheet_name (str): Name of the sheet to read from.
+            start_row (Optional[int]): First row to read (1-based). If None,
+                starts from row 1. (default: :obj:`None`)
+            end_row (Optional[int]): Last row to read (1-based). If None,
+                reads to the end. (default: :obj:`None`)
+
+        Returns:
+            Union[List[List[Union[str, int, float, None]]], str]:
+                List of rows (each row is a list of cell values) or error
+                message.
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Error: Sheet {sheet_name} does not exist."
+
+        ws = self.wb[sheet_name]
+        rows = []
+
+        # Get all rows with data
+        for row in ws.iter_rows(
+            min_row=start_row, max_row=end_row, values_only=True
+        ):
+            # Skip completely empty rows
+            if any(cell is not None for cell in row):
+                rows.append(list(row))
+
+        return rows
+
+    def append_row(
+        self,
+        sheet_name: str,
+        row_data: List[Union[str, int, float, None]],
+    ) -> str:
+        r"""Add a single row to the end of a sheet.
+
+        Use this to add one row of data to the end of existing content.
+        For multiple rows, use multiple calls to this function.
+
+        Args:
+            sheet_name (str): Name of the target sheet.
+            row_data (List[Union[str, int, float, None]]): Single row of data
+                to add.
+
+        Returns:
+            str: Success confirmation message or error details.
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+        if sheet_name not in self.wb.sheetnames:
+            return f"Error: Sheet {sheet_name} does not exist."
+        ws = self.wb[sheet_name]
+        ws.append(row_data)
+        self._save_workbook()
+        return f"Row appended to sheet {sheet_name} successfully."
+
+    def update_row(
+        self,
+        sheet_name: str,
+        row_number: int,
+        row_data: List[Union[str, int, float, None]],
+    ) -> str:
+        r"""Update a specific row in the sheet.
+
+        Use this to replace all data in a specific row with new values.
+
+        Args:
+            sheet_name (str): Name of the sheet to modify.
+            row_number (int): The row number to update (1-based, where 1 is
+                first row).
+            row_data (List[Union[str, int, float, None]]): New data for the
+                entire row.
+
+        Returns:
+            str: Success confirmation message or error details.
+        """
+        if not self.wb:
+            return "Error: Workbook not initialized."
+
+        if sheet_name not in self.wb.sheetnames:
+            return f"Sheet {sheet_name} does not exist."
+
+        ws = self.wb[sheet_name]
+
+        # Clear the existing row first
+        for col_idx in range(1, ws.max_column + 1):
+            ws.cell(row=row_number, column=col_idx).value = None
+
+        # Set new values
+        for col_idx, value in enumerate(row_data, 1):
+            ws.cell(row=row_number, column=col_idx).value = value
+
+        self._save_workbook()
+        return f"Row {row_number} updated in sheet {sheet_name} successfully."
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
@@ -190,5 +913,27 @@ class ExcelToolkit(BaseToolkit):
                 the functions in the toolkit.
         """
         return [
+            # File operations
             FunctionTool(self.extract_excel_content),
+            FunctionTool(self.create_workbook),
+            FunctionTool(self.delete_workbook),
+            FunctionTool(self.export_sheet_to_csv),
+            # Sheet operations
+            FunctionTool(self.create_sheet),
+            FunctionTool(self.delete_sheet),
+            FunctionTool(self.clear_sheet),
+            # Data reading
+            FunctionTool(self.get_rows),
+            FunctionTool(self.get_cell_value),
+            FunctionTool(self.get_column_data),
+            FunctionTool(self.get_range_values),
+            FunctionTool(self.find_cells),
+            # Data writing
+            FunctionTool(self.append_row),
+            FunctionTool(self.update_row),
+            FunctionTool(self.set_cell_value),
+            FunctionTool(self.set_range_values),
+            # Structure modification
+            FunctionTool(self.delete_rows),
+            FunctionTool(self.delete_columns),
         ]

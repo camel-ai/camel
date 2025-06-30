@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+from collections import deque
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -72,12 +73,15 @@ async def test_post_task_timeout():
     mock_task = MagicMock(spec=Task)
     mock_task.id = "test_task_id"
 
-    # Only verify that a TimeoutError is raised, not its specific message
-    with pytest.raises(asyncio.TimeoutError):
-        await workforce._post_task(mock_task, "test_worker_id")
+    # Since _post_task catches TimeoutError and doesn't re-raise it,
+    # we should test that it completes without raising an exception
+    # and that the in_flight_tasks counter is properly decremented
+    workforce._in_flight_tasks = 0
+    await workforce._post_task(mock_task, "test_worker_id")
 
     # Verify the channel method was called
     mock_channel.post_task.assert_called_once()
+    assert workforce._in_flight_tasks == 0
 
 
 @pytest.mark.asyncio
@@ -122,18 +126,22 @@ async def test_listen_to_channel_recovers_from_timeout():
             # Post initial ready tasks
             await workforce._post_ready_tasks()
 
-            # First try to get returned task - should timeout
-            try:
-                returned_task = await workforce._get_returned_task()
-                raise asyncio.TimeoutError("Simulated timeout")
-            except asyncio.TimeoutError:
-                # This is expected
-                pass
+            returned_task_first = await workforce._get_returned_task()
+            assert returned_task_first is None  # Should return None on timeout
+
+            # Ensure the mock was called for the first attempt
+            assert mock_channel.get_returned_task_by_publisher.call_count == 1
 
             # Second try should succeed
-            returned_task = await workforce._get_returned_task()
+            returned_task_after_timeout = await workforce._get_returned_task()
+            assert returned_task_after_timeout is mock_task
+
+            # Ensure the mock was called for the second attempt
+            assert mock_channel.get_returned_task_by_publisher.call_count == 2
+
             # Process the task
-            await workforce._handle_completed_task(returned_task)
+            await workforce._handle_completed_task(returned_task_after_timeout)
+            workforce._handle_completed_task.assert_called_once_with(mock_task)
 
         finally:
             workforce._running = False
@@ -215,17 +223,23 @@ async def test_multiple_timeout_points():
     mock_task = MagicMock(spec=Task)
     mock_task.id = "test_task_id"
     mock_task.state = TaskState.FAILED
+    mock_task.content = "Test task content"
+    mock_task.additional_info = {}
+    mock_task.result = "Mock task failed"
+    mock_task.assigned_worker_id = "test_worker_id"
 
     mock_task.failure_count = 0
+    mock_task.get_depth.return_value = 0
 
     mock_channel.get_returned_task_by_publisher.return_value = mock_task
 
-    # Make _handle_failed_task timeout
-    mock_channel.remove_task.side_effect = asyncio.TimeoutError()
+    # Make _handle_failed_task timeout on channel operation
+    mock_channel.archive_task.side_effect = asyncio.TimeoutError()
 
     workforce._channel = mock_channel
     workforce._task = mock_task
-    workforce._pending_tasks = [mock_task]
+    workforce._pending_tasks = deque([mock_task])
+    workforce._assignees = {mock_task.id: "test_worker_id"}
 
     # Patch _listen_to_channel to handle one task with the timeout
     async def patched_listen():
@@ -237,13 +251,8 @@ async def test_multiple_timeout_points():
             # Get task - should succeed
             returned_task = await workforce._get_returned_task()
 
-            # Handle failed task - should timeout during remove_task
-            try:
+            with pytest.raises(asyncio.TimeoutError):
                 await workforce._handle_failed_task(returned_task)
-                raise AssertionError("Should have timed out on first attempt")
-            except asyncio.TimeoutError:
-                # This is expected
-                pass
 
         finally:
             workforce._running = False
@@ -262,8 +271,8 @@ async def test_multiple_timeout_points():
 
     # Verify get_returned_task_by_publisher was called
     mock_channel.get_returned_task_by_publisher.assert_called_once()
-    # Verify remove_task was called (this is where the timeout occurred)
-    mock_channel.remove_task.assert_called_once_with(mock_task.id)
+    # Verify archive_task was called (this is where the timeout occurred)
+    mock_channel.archive_task.assert_called_once_with(mock_task.id)
 
 
 @pytest.fixture
@@ -306,10 +315,16 @@ def sample_shared_memory():
 @pytest.mark.parametrize("share_memory", [True, False])
 def test_workforce_initialization(mock_model, share_memory):
     r"""Test workforce initialization with different memory configurations"""
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.", model=mock_model
+    )
+    task_agent = ChatAgent("You are a helpful task planner.", model=mock_model)
+
     workforce = Workforce(
         description="Test Workforce",
-        coordinator_agent_kwargs={"model": mock_model},
-        task_agent_kwargs={"model": mock_model},
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
         share_memory=share_memory,
         graceful_shutdown_timeout=2.0,
     )
@@ -322,10 +337,16 @@ def test_shared_memory_operations(
     mock_model, mock_agent, sample_shared_memory
 ):
     r"""Test shared memory collection and synchronization"""
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.", model=mock_model
+    )
+    task_agent = ChatAgent("You are a helpful task planner.", model=mock_model)
+
     workforce = Workforce(
         description="Test Workforce",
-        coordinator_agent_kwargs={"model": mock_model},
-        task_agent_kwargs={"model": mock_model},
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
         share_memory=True,
     )
 
@@ -344,10 +365,16 @@ def test_shared_memory_operations(
 
 def test_cross_agent_memory_access(mock_model, sample_shared_memory):
     r"""Test cross-agent information access after memory sync"""
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.", model=mock_model
+    )
+    task_agent = ChatAgent("You are a helpful task planner.", model=mock_model)
+
     workforce = Workforce(
         description="Test Workforce",
-        coordinator_agent_kwargs={"model": mock_model},
-        task_agent_kwargs={"model": mock_model},
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
         share_memory=True,
     )
 

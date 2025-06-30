@@ -14,6 +14,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from openai import AsyncStream, Stream
+from openai.types.chat import ChatCompletionChunk
 from pydantic import BaseModel, ConfigDict
 
 from camel.messages import BaseMessage
@@ -32,8 +33,11 @@ class ModelResponse(BaseModel):
     r"""The response from the model."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    response: Union[ChatCompletion, Stream, AsyncStream]
+    response: Union[
+        ChatCompletion,
+        Stream[ChatCompletionChunk],
+        AsyncStream[ChatCompletionChunk],
+    ]
     tool_call_requests: Optional[List[ToolCallRequest]]
     output_messages: List[BaseMessage]
     finish_reasons: List[str]

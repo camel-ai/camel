@@ -13,10 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import textwrap
 import threading
+import time
 import uuid
 from collections import defaultdict
 from pathlib import Path
@@ -54,7 +56,11 @@ from camel.memories import (
     MemoryRecord,
     ScoreBasedContextCreator,
 )
-from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
+from camel.messages import (
+    BaseMessage,
+    FunctionCallingMessage,
+    OpenAIMessage,
+)
 from camel.models import (
     BaseModelBackend,
     ModelFactory,
@@ -79,6 +85,7 @@ from camel.utils import (
     model_from_json_schema,
 )
 from camel.utils.commons import dependencies_required
+from camel.utils.tool_result import ToolResult
 
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
@@ -169,6 +176,11 @@ class ChatAgent(BaseAgent):
         stop_event (Optional[threading.Event], optional): Event to signal
             termination of the agent's operation. When set, the agent will
             terminate its execution. (default: :obj:`None`)
+        mask_tool_output (Optional[bool]): Whether to return a sanitized
+            placeholder instead of the raw tool output. (default: :obj:`False`)
+        pause_event (Optional[asyncio.Event]): Event to signal pause of the
+            agent's operation. When clear, the agent will pause its execution.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -202,6 +214,8 @@ class ChatAgent(BaseAgent):
         max_iteration: Optional[int] = None,
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
+        mask_tool_output: bool = False,
+        pause_event: Optional[asyncio.Event] = None,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -276,11 +290,19 @@ class ChatAgent(BaseAgent):
         self.response_terminators = response_terminators or []
         self.max_iteration = max_iteration
         self.stop_event = stop_event
+        self.mask_tool_output = mask_tool_output
+        self._secure_result_store: Dict[str, Any] = {}
+        self._pending_images: List[str] = []
+        self._image_retry_count: Dict[str, int] = {}
+        # Store images to attach to next user message
+        self.pause_event = pause_event
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
+        self._pending_images = []
+        self._image_retry_count = {}
         for terminator in self.response_terminators:
             terminator.reset()
 
@@ -402,7 +424,10 @@ class ChatAgent(BaseAgent):
             # List of tuples (platform, type)
             resolved_models_list = []
             for model_spec in model_list:
-                platform, type_ = model_spec[0], model_spec[1]  # type: ignore[index]
+                platform, type_ = (  # type: ignore[index]
+                    model_spec[0],
+                    model_spec[1],
+                )
                 resolved_models_list.append(
                     ModelFactory.create(
                         model_platform=platform, model_type=type_
@@ -512,26 +537,171 @@ class ChatAgent(BaseAgent):
     ) -> None:
         r"""Updates the agent memory with a new message.
 
+        If the single *message* exceeds the model's context window, it will
+        be **automatically split into multiple smaller chunks** before being
+        written into memory. This prevents later failures in
+        `ScoreBasedContextCreator` where an over-sized message cannot fit
+        into the available token budget at all.
+
+        This slicing logic handles both regular text messages (in the
+        `content` field) and long tool call results (in the `result` field of
+        a `FunctionCallingMessage`).
+
         Args:
             message (BaseMessage): The new message to add to the stored
                 messages.
             role (OpenAIBackendRole): The backend role type.
             timestamp (Optional[float], optional): Custom timestamp for the
-                memory record. If None, current timestamp will be used.
+                memory record. If `None`, the current time will be used.
                 (default: :obj:`None`)
+                    (default: obj:`None`)
         """
+        import math
         import time
+        import uuid as _uuid
 
-        self.memory.write_record(
-            MemoryRecord(
-                message=message,
-                role_at_backend=role,
-                timestamp=timestamp
-                if timestamp is not None
-                else time.time_ns() / 1_000_000_000,  # Nanosecond precision
-                agent_id=self.agent_id,
+        # 1. Helper to write a record to memory
+        def _write_single_record(
+            message: BaseMessage, role: OpenAIBackendRole, timestamp: float
+        ):
+            self.memory.write_record(
+                MemoryRecord(
+                    message=message,
+                    role_at_backend=role,
+                    timestamp=timestamp,
+                    agent_id=self.agent_id,
+                )
             )
+
+        base_ts = (
+            timestamp
+            if timestamp is not None
+            else time.time_ns() / 1_000_000_000
         )
+
+        # 2. Get token handling utilities, fallback if unavailable
+        try:
+            context_creator = self.memory.get_context_creator()
+            token_counter = context_creator.token_counter
+            token_limit = context_creator.token_limit
+        except AttributeError:
+            _write_single_record(message, role, base_ts)
+            return
+
+        # 3. Check if slicing is necessary
+        try:
+            current_tokens = token_counter.count_tokens_from_messages(
+                [message.to_openai_message(role)]
+            )
+            _, ctx_tokens = self.memory.get_context()
+            remaining_budget = max(0, token_limit - ctx_tokens)
+
+            if current_tokens <= remaining_budget:
+                _write_single_record(message, role, base_ts)
+                return
+        except Exception as e:
+            logger.warning(
+                f"Token calculation failed before chunking, "
+                f"writing message as-is. Error: {e}"
+            )
+            _write_single_record(message, role, base_ts)
+            return
+
+        # 4. Perform slicing
+        logger.warning(
+            f"Message with {current_tokens} tokens exceeds remaining budget "
+            f"of {remaining_budget}. Slicing into smaller chunks."
+        )
+
+        text_to_chunk: Optional[str] = None
+        is_function_result = False
+
+        if isinstance(message, FunctionCallingMessage) and isinstance(
+            message.result, str
+        ):
+            text_to_chunk = message.result
+            is_function_result = True
+        elif isinstance(message.content, str):
+            text_to_chunk = message.content
+
+        if not text_to_chunk or not text_to_chunk.strip():
+            _write_single_record(message, role, base_ts)
+            return
+        # Encode the entire text to get a list of all token IDs
+        try:
+            all_token_ids = token_counter.encode(text_to_chunk)
+        except Exception as e:
+            logger.error(f"Failed to encode text for chunking: {e}")
+            _write_single_record(message, role, base_ts)  # Fallback
+            return
+
+        if not all_token_ids:
+            _write_single_record(message, role, base_ts)  # Nothing to chunk
+            return
+
+        # 1.  Base chunk size: one-tenth of the smaller of (a) total token
+        # limit and (b) current remaining budget.  This prevents us from
+        # creating chunks that are guaranteed to overflow the
+        # immediate context window.
+        base_chunk_size = max(1, remaining_budget) // 10
+
+        # 2.  Each chunk gets a textual prefix such as:
+        #        "[chunk 3/12 of a long message]\n"
+        #     The prefix itself consumes tokens, so if we do not subtract its
+        #     length the *total* tokens of the outgoing message (prefix + body)
+        #     can exceed the intended bound.  We estimate the prefix length
+        #     with a representative example that is safely long enough for the
+        #     vast majority of cases (three-digit indices).
+        sample_prefix = "[chunk 1/1000 of a long message]\n"
+        prefix_token_len = len(token_counter.encode(sample_prefix))
+
+        # 3.  The real capacity for the message body is therefore the base
+        #     chunk size minus the prefix length.  Fallback to at least one
+        #     token to avoid zero or negative sizes.
+        chunk_body_limit = max(1, base_chunk_size - prefix_token_len)
+
+        # 4.  Calculate how many chunks we will need with this body size.
+        num_chunks = math.ceil(len(all_token_ids) / chunk_body_limit)
+        group_id = str(_uuid.uuid4())
+
+        for i in range(num_chunks):
+            start_idx = i * chunk_body_limit
+            end_idx = start_idx + chunk_body_limit
+            chunk_token_ids = all_token_ids[start_idx:end_idx]
+
+            chunk_body = token_counter.decode(chunk_token_ids)
+
+            prefix = f"[chunk {i + 1}/{num_chunks} of a long message]\n"
+            new_body = prefix + chunk_body
+
+            if is_function_result and isinstance(
+                message, FunctionCallingMessage
+            ):
+                new_msg: BaseMessage = FunctionCallingMessage(
+                    role_name=message.role_name,
+                    role_type=message.role_type,
+                    meta_dict=message.meta_dict,
+                    content=message.content,
+                    func_name=message.func_name,
+                    args=message.args,
+                    result=new_body,
+                    tool_call_id=message.tool_call_id,
+                )
+            else:
+                new_msg = message.create_new_instance(new_body)
+
+            meta = (new_msg.meta_dict or {}).copy()
+            meta.update(
+                {
+                    "chunk_idx": i + 1,
+                    "chunk_total": num_chunks,
+                    "chunk_group_id": group_id,
+                }
+            )
+            new_msg.meta_dict = meta
+
+            # Increment timestamp slightly to maintain order
+            _write_single_record(new_msg, role, base_ts + i * 1e-6)
 
     def load_memory(self, memory: AgentMemory) -> None:
         r"""Load the provided memory into the agent.
@@ -652,9 +822,19 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the current system
         message.
         """
+        import time
+
         self.memory.clear()
+        # avoid UserWarning: The `ChatHistoryMemory` is empty.
         if self.system_message is not None:
-            self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
+            self.memory.write_record(
+                MemoryRecord(
+                    message=self.system_message,
+                    role_at_backend=OpenAIBackendRole.SYSTEM,
+                    timestamp=time.time_ns() / 1_000_000_000,
+                    agent_id=self.agent_id,
+                )
+            )
 
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
@@ -686,6 +866,185 @@ class ChatAgent(BaseAgent):
             return True
         except ValidationError:
             return False
+
+    def _check_tools_strict_compatibility(self) -> bool:
+        r"""Check if all tools are compatible with OpenAI strict mode.
+
+        Returns:
+            bool: True if all tools are strict mode compatible,
+                False otherwise.
+        """
+        tool_schemas = self._get_full_tool_schemas()
+        for schema in tool_schemas:
+            if not schema.get("function", {}).get("strict", True):
+                return False
+        return True
+
+    def _convert_response_format_to_prompt(
+        self, response_format: Type[BaseModel]
+    ) -> str:
+        r"""Convert a Pydantic response format to a prompt instruction.
+
+        Args:
+            response_format (Type[BaseModel]): The Pydantic model class.
+
+        Returns:
+            str: A prompt instruction requesting the specific format.
+        """
+        try:
+            # Get the JSON schema from the Pydantic model
+            schema = response_format.model_json_schema()
+
+            # Create a prompt based on the schema
+            format_instruction = (
+                "\n\nPlease respond in the following JSON format:\n" "{\n"
+            )
+
+            properties = schema.get("properties", {})
+            for field_name, field_info in properties.items():
+                field_type = field_info.get("type", "string")
+                description = field_info.get("description", "")
+
+                if field_type == "array":
+                    format_instruction += (
+                        f'    "{field_name}": ["array of values"]'
+                    )
+                elif field_type == "object":
+                    format_instruction += f'    "{field_name}": {{"object"}}'
+                elif field_type == "boolean":
+                    format_instruction += f'    "{field_name}": true'
+                elif field_type == "number":
+                    format_instruction += f'    "{field_name}": 0'
+                else:
+                    format_instruction += f'    "{field_name}": "string value"'
+
+                if description:
+                    format_instruction += f'  // {description}'
+
+                # Add comma if not the last item
+                if field_name != list(properties.keys())[-1]:
+                    format_instruction += ","
+                format_instruction += "\n"
+
+            format_instruction += "}"
+            return format_instruction
+
+        except Exception as e:
+            logger.warning(
+                f"Failed to convert response_format to prompt: {e}. "
+                f"Using generic format instruction."
+            )
+            return (
+                "\n\nPlease respond in a structured JSON format "
+                "that matches the requested schema."
+            )
+
+    def _handle_response_format_with_non_strict_tools(
+        self,
+        input_message: Union[BaseMessage, str],
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> Tuple[Union[BaseMessage, str], Optional[Type[BaseModel]], bool]:
+        r"""Handle response format when tools are not strict mode compatible.
+
+        Args:
+            input_message: The original input message.
+            response_format: The requested response format.
+
+        Returns:
+            Tuple: (modified_message, modified_response_format,
+                   used_prompt_formatting)
+        """
+        if response_format is None:
+            return input_message, response_format, False
+
+        # Check if tools are strict mode compatible
+        if self._check_tools_strict_compatibility():
+            return input_message, response_format, False
+
+        # Tools are not strict compatible, convert to prompt
+        logger.info(
+            "Non-strict tools detected. Converting response_format to "
+            "prompt-based formatting."
+        )
+
+        format_prompt = self._convert_response_format_to_prompt(
+            response_format
+        )
+
+        # Modify the message to include format instruction
+        modified_message: Union[BaseMessage, str]
+        if isinstance(input_message, str):
+            modified_message = input_message + format_prompt
+        else:
+            modified_message = input_message.create_new_instance(
+                input_message.content + format_prompt
+            )
+
+        # Return None for response_format to avoid strict mode conflicts
+        # and True to indicate we used prompt formatting
+        return modified_message, None, True
+
+    def _apply_prompt_based_parsing(
+        self,
+        response: ModelResponse,
+        original_response_format: Type[BaseModel],
+    ) -> None:
+        r"""Apply manual parsing when using prompt-based formatting.
+
+        Args:
+            response: The model response to parse.
+            original_response_format: The original response format class.
+        """
+        for message in response.output_messages:
+            if message.content:
+                try:
+                    # Try to extract JSON from the response content
+                    import json
+                    import re
+
+                    from pydantic import ValidationError
+
+                    # Try to find JSON in the content
+                    content = message.content.strip()
+
+                    # Try direct parsing first
+                    try:
+                        parsed_json = json.loads(content)
+                        message.parsed = (
+                            original_response_format.model_validate(
+                                parsed_json
+                            )
+                        )
+                        continue
+                    except (json.JSONDecodeError, ValidationError):
+                        pass
+
+                    # Try to extract JSON from text
+                    json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+                    json_matches = re.findall(json_pattern, content, re.DOTALL)
+
+                    for json_str in json_matches:
+                        try:
+                            parsed_json = json.loads(json_str)
+                            message.parsed = (
+                                original_response_format.model_validate(
+                                    parsed_json
+                                )
+                            )
+                            # Update content to just the JSON for consistency
+                            message.content = json.dumps(parsed_json)
+                            break
+                        except (json.JSONDecodeError, ValidationError):
+                            continue
+
+                    if not message.parsed:
+                        logger.warning(
+                            f"Failed to parse JSON from response: "
+                            f"{content[:100]}..."
+                        )
+
+                except Exception as e:
+                    logger.warning(f"Error during prompt-based parsing: {e}")
 
     def _format_response_if_needed(
         self,
@@ -773,10 +1132,28 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        # Handle response format compatibility with non-strict tools
+        original_response_format = response_format
+        input_message, response_format, used_prompt_formatting = (
+            self._handle_response_format_with_non_strict_tools(
+                input_message, response_format
+            )
+        )
+
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
                 role_name="User", content=input_message
+            )
+
+        # Attach any pending images from previous tool calls
+        image_list = self._process_pending_images()
+        if image_list:
+            # Create new message with images attached
+            input_message = BaseMessage.make_user_message(
+                role_name="User",
+                content=input_message.content,
+                image_list=image_list,
             )
 
         # Add user input to memory
@@ -794,6 +1171,10 @@ class ChatAgent(BaseAgent):
         iteration_count = 0
 
         while True:
+            if self.pause_event is not None and not self.pause_event.is_set():
+                while not self.pause_event.is_set():
+                    time.sleep(0.001)
+
             try:
                 openai_messages, num_tokens = self.memory.get_context()
                 accumulated_context_tokens += num_tokens
@@ -835,6 +1216,12 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
+                        if (
+                            self.pause_event is not None
+                            and not self.pause_event.is_set()
+                        ):
+                            while not self.pause_event.is_set():
+                                time.sleep(0.001)
                         tool_call_records.append(
                             self._execute_tool(tool_call_request)
                         )
@@ -855,6 +1242,13 @@ class ChatAgent(BaseAgent):
             break
 
         self._format_response_if_needed(response, response_format)
+
+        # Apply manual parsing if we used prompt-based formatting
+        if used_prompt_formatting and original_response_format:
+            self._apply_prompt_based_parsing(
+                response, original_response_format
+            )
+
         self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
@@ -906,9 +1300,27 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        # Handle response format compatibility with non-strict tools
+        original_response_format = response_format
+        input_message, response_format, used_prompt_formatting = (
+            self._handle_response_format_with_non_strict_tools(
+                input_message, response_format
+            )
+        )
+
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
                 role_name="User", content=input_message
+            )
+
+        # Attach any pending images from previous tool calls
+        image_list = self._process_pending_images()
+        if image_list:
+            # Create new message with images attached
+            input_message = BaseMessage.make_user_message(
+                role_name="User",
+                content=input_message.content,
+                image_list=image_list,
             )
 
         self.update_memory(input_message, OpenAIBackendRole.USER)
@@ -923,6 +1335,8 @@ class ChatAgent(BaseAgent):
         step_token_usage = self._create_token_usage_tracker()
         iteration_count = 0
         while True:
+            if self.pause_event is not None and not self.pause_event.is_set():
+                await self.pause_event.wait()
             try:
                 openai_messages, num_tokens = self.memory.get_context()
                 accumulated_context_tokens += num_tokens
@@ -939,6 +1353,11 @@ class ChatAgent(BaseAgent):
             )
             iteration_count += 1
 
+            # Accumulate API token usage
+            self._update_token_usage_tracker(
+                step_token_usage, response.usage_dict
+            )
+
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
@@ -950,6 +1369,7 @@ class ChatAgent(BaseAgent):
 
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
+                new_images_from_tools = []
                 for tool_call_request in tool_call_requests:
                     if (
                         tool_call_request.tool_name
@@ -959,14 +1379,81 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
+                        if (
+                            self.pause_event is not None
+                            and not self.pause_event.is_set()
+                        ):
+                            await self.pause_event.wait()
                         tool_call_record = await self._aexecute_tool(
                             tool_call_request
                         )
                         tool_call_records.append(tool_call_record)
 
+                        # Check if this tool call produced images
+                        if (
+                            hasattr(tool_call_record, 'images')
+                            and tool_call_record.images
+                        ):
+                            new_images_from_tools.extend(
+                                tool_call_record.images
+                            )
+
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
                     break
+
+                # If tools produced images
+                # send them to the model as a user message
+                if new_images_from_tools:
+                    # Convert base64 images to PIL Images
+                    image_list = []
+                    for img_data in new_images_from_tools:
+                        try:
+                            import base64
+                            import io
+
+                            from PIL import Image
+
+                            # Extract base64 data from data URL format
+                            if img_data.startswith("data:image"):
+                                # Format:
+                                # "data:image/png;base64,iVBORw0KGgo..."
+                                base64_data = img_data.split(',', 1)[1]
+                            else:
+                                # Raw base64 data
+                                base64_data = img_data
+
+                            # Decode and create PIL Image
+                            image_bytes = base64.b64decode(base64_data)
+                            pil_image = Image.open(io.BytesIO(image_bytes))
+                            # Convert to ensure proper
+                            # Image.Image type for compatibility
+                            pil_image_tool_result: Image.Image = (
+                                pil_image.convert('RGB')
+                            )
+                            image_list.append(pil_image_tool_result)
+
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to convert "
+                                f"base64 image to PIL for immediate use: {e}"
+                            )
+                            continue
+
+                    # If we have valid images
+                    # create a user message with images
+                    if image_list:
+                        # Create a user message with images
+                        # to provide visual context immediately
+                        image_message = BaseMessage.make_user_message(
+                            role_name="User",
+                            content="[Visual content from tool execution - please analyze and continue]",  # noqa: E501
+                            image_list=image_list,
+                        )
+
+                        self.update_memory(
+                            image_message, OpenAIBackendRole.USER
+                        )
 
                 if (
                     self.max_iteration is not None
@@ -980,13 +1467,14 @@ class ChatAgent(BaseAgent):
             break
 
         await self._aformat_response_if_needed(response, response_format)
+
+        # Apply manual parsing if we used prompt-based formatting
+        if used_prompt_formatting and original_response_format:
+            self._apply_prompt_based_parsing(
+                response, original_response_format
+            )
+
         self._record_final_output(response.output_messages)
-
-        # Create token usage tracker for this step
-        step_token_usage = self._create_token_usage_tracker()
-
-        # Update with response usage
-        self._update_token_usage_tracker(step_token_usage, response.usage_dict)
 
         return self._convert_to_chatagent_response(
             response,
@@ -1053,6 +1541,69 @@ class ChatAgent(BaseAgent):
             info=info,
         )
 
+    def _process_pending_images(self) -> List:
+        r"""Process pending images with retry logic and return PIL Image list.
+
+        Returns:
+            List: List of successfully converted PIL Images.
+        """
+        if not self._pending_images:
+            return []
+
+        image_list = []
+        successfully_processed = []
+        failed_images = []
+
+        for img_data in self._pending_images:
+            # Track retry count
+            retry_count = self._image_retry_count.get(img_data, 0)
+
+            # Remove images that have failed too many times (max 3 attempts)
+            if retry_count >= 3:
+                failed_images.append(img_data)
+                logger.warning(
+                    f"Removing image after {retry_count} failed attempts"
+                )
+                continue
+
+            try:
+                import base64
+                import io
+
+                from PIL import Image
+
+                # Extract base64 data from data URL format
+                if img_data.startswith("data:image"):
+                    # Format: "data:image/png;base64,iVBORw0KGgo..."
+                    base64_data = img_data.split(',', 1)[1]
+                else:
+                    # Raw base64 data
+                    base64_data = img_data
+
+                # Decode and create PIL Image
+                image_bytes = base64.b64decode(base64_data)
+                pil_image = Image.open(io.BytesIO(image_bytes))
+                pil_image_converted: Image.Image = pil_image.convert('RGB')
+                image_list.append(pil_image_converted)
+                successfully_processed.append(img_data)
+
+            except Exception as e:
+                # Increment retry count for failed conversion
+                self._image_retry_count[img_data] = retry_count + 1
+                logger.warning(
+                    f"Failed to convert base64 image to PIL "
+                    f"(attempt {retry_count + 1}/3): {e}"
+                )
+                continue
+
+        # Clean up processed and failed images
+        for img in successfully_processed + failed_images:
+            self._pending_images.remove(img)
+            # Clean up retry count for processed/removed images
+            self._image_retry_count.pop(img, None)
+
+        return image_list
+
     def _record_final_output(self, output_messages: List[BaseMessage]) -> None:
         r"""Log final messages or warnings about multiple responses."""
         if len(output_messages) == 1:
@@ -1062,6 +1613,61 @@ class ChatAgent(BaseAgent):
                 "Multiple messages returned in `step()`. Record "
                 "selected message manually using `record_message()`."
             )
+
+    def _is_vision_error(self, exc: Exception) -> bool:
+        r"""Check if the exception is likely related to vision/image is not
+        supported by the model."""
+        # TODO: more robust vision error detection
+        error_msg = str(exc).lower()
+        vision_keywords = [
+            'vision',
+            'image',
+            'multimodal',
+            'unsupported',
+            'invalid content type',
+            'image_url',
+            'visual',
+        ]
+        return any(keyword in error_msg for keyword in vision_keywords)
+
+    def _has_images(self, messages: List[OpenAIMessage]) -> bool:
+        r"""Check if any message contains images."""
+        for msg in messages:
+            content = msg.get('content')
+            if isinstance(content, list):
+                for item in content:
+                    if (
+                        isinstance(item, dict)
+                        and item.get('type') == 'image_url'
+                    ):
+                        return True
+        return False
+
+    def _strip_images_from_messages(
+        self, messages: List[OpenAIMessage]
+    ) -> List[OpenAIMessage]:
+        r"""Remove images from messages, keeping only text content."""
+        stripped_messages = []
+        for msg in messages:
+            content = msg.get('content')
+            if isinstance(content, list):
+                # Extract only text content from multimodal messages
+                text_content = ""
+                for item in content:
+                    if isinstance(item, dict) and item.get('type') == 'text':
+                        text_content += item.get('text', '')
+
+                # Create new message with only text content
+                new_msg = msg.copy()
+                new_msg['content'] = (
+                    text_content
+                    or "[Image content removed - model doesn't support vision]"
+                )
+                stripped_messages.append(new_msg)
+            else:
+                # Regular text message, keep as is
+                stripped_messages.append(msg)
+        return stripped_messages
 
     def _get_model_response(
         self,
@@ -1078,13 +1684,33 @@ class ChatAgent(BaseAgent):
                 openai_messages, response_format, tool_schemas or None
             )
         except Exception as exc:
-            logger.error(
-                f"An error occurred while running model "
-                f"{self.model_backend.model_type}, "
-                f"index: {self.model_backend.current_model_index}",
-                exc_info=exc,
-            )
-            error_info = str(exc)
+            # Try again without images if the error might be vision-related
+            if self._is_vision_error(exc) and self._has_images(
+                openai_messages
+            ):
+                logger.warning(
+                    "Model appears to not support vision. Retrying without images."  # noqa: E501
+                )
+                try:
+                    stripped_messages = self._strip_images_from_messages(
+                        openai_messages
+                    )
+                    response = self.model_backend.run(
+                        stripped_messages,
+                        response_format,
+                        tool_schemas or None,
+                    )
+                except Exception:
+                    pass  # Fall through to original error handling
+
+            if not response:
+                logger.error(
+                    f"An error occurred while running model "
+                    f"{self.model_backend.model_type}, "
+                    f"index: {self.model_backend.current_model_index}",
+                    exc_info=exc,
+                )
+                error_info = str(exc)
 
         if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
@@ -1126,13 +1752,33 @@ class ChatAgent(BaseAgent):
                 openai_messages, response_format, tool_schemas or None
             )
         except Exception as exc:
-            logger.error(
-                f"An error occurred while running model "
-                f"{self.model_backend.model_type}, "
-                f"index: {self.model_backend.current_model_index}",
-                exc_info=exc,
-            )
-            error_info = str(exc)
+            # Try again without images if the error might be vision-related
+            if self._is_vision_error(exc) and self._has_images(
+                openai_messages
+            ):
+                logger.warning(
+                    "Model appears to not support vision. Retrying without images."  # noqa: E501
+                )
+                try:
+                    stripped_messages = self._strip_images_from_messages(
+                        openai_messages
+                    )
+                    response = await self.model_backend.arun(
+                        stripped_messages,
+                        response_format,
+                        tool_schemas or None,
+                    )
+                except Exception:
+                    pass  # Fall through to original error handling
+
+            if not response:
+                logger.error(
+                    f"An error occurred while running model "
+                    f"{self.model_backend.model_type}, "
+                    f"index: {self.model_backend.current_model_index}",
+                    exc_info=exc,
+                )
+                error_info = str(exc)
 
         if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
@@ -1588,14 +2234,43 @@ class ChatAgent(BaseAgent):
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
         try:
-            result = tool(**args)
+            raw_result = tool(**args)
+            if self.mask_tool_output:
+                self._secure_result_store[tool_call_id] = raw_result
+                result = (
+                    "[The tool has been executed successfully, but the output"
+                    " from the tool is masked. You can move forward]"
+                )
+                mask_flag = True
+            else:
+                result = raw_result
+                mask_flag = False
         except Exception as e:
             # Capture the error message to prevent framework crash
             error_msg = f"Error executing tool '{func_name}': {e!s}"
-            result = {"error": error_msg}
+            result = f"Tool execution failed: {error_msg}"
+            mask_flag = False
             logging.warning(error_msg)
 
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+        # Check if result is a ToolResult with images
+        images_to_attach = None
+        if isinstance(result, ToolResult):
+            images_to_attach = result.images
+            result = str(result)  # Use string representation for storage
+
+        tool_record = self._record_tool_calling(
+            func_name, args, result, tool_call_id, mask_output=mask_flag
+        )
+
+        # Store images for later attachment to next user message
+        if images_to_attach:
+            tool_record.images = images_to_attach
+            # Add images with duplicate prevention
+            for img in images_to_attach:
+                if img not in self._pending_images:
+                    self._pending_images.append(img)
+
+        return tool_record
 
     async def _aexecute_tool(
         self,
@@ -1637,7 +2312,25 @@ class ChatAgent(BaseAgent):
             result = {"error": error_msg}
             logging.warning(error_msg)
 
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
+        # Check if result is a ToolResult with images
+        images_to_attach = None
+        if isinstance(result, ToolResult):
+            images_to_attach = result.images
+            result = str(result)  # Use string representation for storage
+
+        tool_record = self._record_tool_calling(
+            func_name, args, result, tool_call_id
+        )
+
+        # Store images for later attachment to next user message
+        if images_to_attach:
+            tool_record.images = images_to_attach
+            # Add images with duplicate prevention
+            for img in images_to_attach:
+                if img not in self._pending_images:
+                    self._pending_images.append(img)
+
+        return tool_record
 
     def _record_tool_calling(
         self,
@@ -1645,9 +2338,23 @@ class ChatAgent(BaseAgent):
         args: Dict[str, Any],
         result: Any,
         tool_call_id: str,
+        mask_output: bool = False,
     ):
         r"""Record the tool calling information in the memory, and return the
         tool calling record.
+
+        Args:
+            func_name (str): The name of the tool function called.
+            args (Dict[str, Any]): The arguments passed to the tool.
+            result (Any): The result returned by the tool execution.
+            tool_call_id (str): A unique identifier for the tool call.
+            mask_output (bool, optional): Whether to return a sanitized
+                placeholder instead of the raw tool output.
+                (default: :obj:`False`)
+
+        Returns:
+            ToolCallingRecord: A struct containing information about
+            this tool call.
         """
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -1666,6 +2373,7 @@ class ChatAgent(BaseAgent):
             func_name=func_name,
             result=result,
             tool_call_id=tool_call_id,
+            mask_output=mask_output,
         )
 
         # Use precise timestamps to ensure correct ordering
@@ -1760,14 +2468,17 @@ class ChatAgent(BaseAgent):
                 self.memory.get_context_creator(), "token_limit", None
             ),
             output_language=self._output_language,
-            tools=list(self._internal_tools.values()),
+            tools=[tool.func for tool in self._internal_tools.values()],
             external_tools=[
                 schema for schema in self._external_tool_schemas.values()
             ],
             response_terminators=self.response_terminators,
-            scheduling_strategy=self.model_backend.scheduling_strategy.__name__,
+            scheduling_strategy=(
+                self.model_backend.scheduling_strategy.__name__
+            ),
             max_iteration=self.max_iteration,
             stop_event=self.stop_event,
+            pause_event=self.pause_event,
         )
 
         # Copy memory if requested
