@@ -154,13 +154,6 @@ class TestMCPClient:
         assert client.config.command == "npx"
         assert client.config.args == ["test"]
 
-    def test_init_with_client_info(self):
-        """Test MCPClient initialization with client info."""
-        config = ServerConfig(command="npx", args=["test"])
-        client_info = types.Implementation(name="test-client", version="1.0.0")
-        client = MCPClient(config, client_info=client_info)
-        assert client.client_info == client_info
-
     def test_init_with_invalid_config(self):
         """Test MCPClient initialization with invalid config."""
         with pytest.raises(ValueError):
@@ -223,13 +216,6 @@ class TestCreateMCPClient:
         client = create_mcp_client(config)
         assert isinstance(client, MCPClient)
         assert client.config == config
-
-    def test_create_with_client_info(self):
-        """Test creating client with client_info parameter."""
-        config_dict = {"command": "npx", "args": ["test"]}
-        client_info = types.Implementation(name="test", version="1.0")
-        client = create_mcp_client(config_dict, client_info=client_info)
-        assert client.client_info == client_info
 
 
 class TestCreateMCPClientFromConfigFile:
@@ -352,11 +338,9 @@ class TestCreateMCPClientFromConfigFile:
             config_path = f.name
 
         try:
-            client_info = types.Implementation(name="test", version="1.0")
-            client = create_mcp_client_from_config_file(
-                config_path, "test", client_info=client_info
+            _ = create_mcp_client_from_config_file(
+                config_path, "test",
             )
-            assert client.client_info == client_info
         finally:
             Path(config_path).unlink()
 
@@ -496,29 +480,6 @@ class TestEdgeCases:
             ValueError, match="Either 'command'.*or 'url'.*must be provided"
         ):
             ServerConfig(url="")
-
-    def test_client_initialization_variations(self):
-        """Test different ways to initialize the client."""
-        # Test with minimal config
-        client1 = MCPClient({"command": "test"})
-        assert client1.config.command == "test"
-
-        # Test with comprehensive config
-        client2 = MCPClient(
-            {
-                "url": "wss://api.example.com/mcp",
-                "timeout": 120.0,
-                "sse_read_timeout": 600.0,
-            }
-        )
-        assert client2.config.url == "wss://api.example.com/mcp"
-        assert client2.config.timeout == 120.0
-
-        # Test with client_info
-        client_info = types.Implementation(name="test", version="2.0")
-        client3 = MCPClient({"command": "test"}, client_info=client_info)
-        assert client3.client_info.name == "test"
-        assert client3.client_info.version == "2.0"
 
 
 if __name__ == "__main__":

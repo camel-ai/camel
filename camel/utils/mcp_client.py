@@ -168,9 +168,6 @@ class MCPClient:
             as either a :obj:`ServerConfig` object or a dictionary that will
             be converted to a :obj:`ServerConfig`. The configuration determines
             the transport type and connection parameters.
-        client_info (Optional[types.Implementation], optional): Client
-            implementation information to send to the server during
-            initialization. (default: :obj:`None`)
         timeout (Optional[float], optional): Timeout for waiting for messages
             from the server in seconds. (default: :obj:`10.0`)
 
@@ -209,15 +206,12 @@ class MCPClient:
 
     Attributes:
         config (ServerConfig): The server configuration object.
-        client_info (Optional[types.Implementation]): Client implementation
-            information.
         read_timeout_seconds (timedelta): Timeout for reading from the server.
     """
 
     def __init__(
         self,
         config: Union[ServerConfig, Dict[str, Any]],
-        client_info: Optional[types.Implementation] = None,
         timeout: Optional[float] = 10.0,
     ):
         # Convert dict config to ServerConfig if needed
@@ -229,7 +223,6 @@ class MCPClient:
         # Validate transport type early (this will raise ValueError if invalid)
         _ = self.config.transport_type
 
-        self.client_info = client_info
         self.read_timeout_seconds = timedelta(seconds=timeout or 10.0)
 
         self._session: Optional[ClientSession] = None
@@ -271,7 +264,6 @@ class MCPClient:
             self._session = ClientSession(
                 read_stream=read_stream,
                 write_stream=write_stream,
-                client_info=self.client_info,
                 read_timeout_seconds=self.read_timeout_seconds,
             )
 
@@ -913,7 +905,7 @@ def create_mcp_client(
             dictionary is provided, it will be automatically converted to
             a :obj:`ServerConfig`.
         **kwargs: Additional keyword arguments passed to the :obj:`MCPClient`
-            constructor, such as :obj:`client_info`, :obj:`timeout`.
+            constructor, such as :obj:`timeout`.
 
     Returns:
         MCPClient: A configured :obj:`MCPClient` instance ready for use as
