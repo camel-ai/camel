@@ -64,10 +64,11 @@ async def test_with_timeout_function():
 async def test_post_task_timeout():
     r"""Test timeout handling in _post_task method"""
     workforce = TestTimeoutWorkforce()
+
+    # Mock TaskChannel that times out
     mock_channel = AsyncMock(spec=TaskChannel)
-    mock_channel.post_task.side_effect = asyncio.TimeoutError(
-        "Simulated timeout"
-    )
+    mock_channel.post_task.side_effect = asyncio.TimeoutError()
+
     workforce._channel = mock_channel
     mock_task = MagicMock(spec=Task)
     mock_task.id = "test_task_id"
@@ -88,6 +89,8 @@ async def test_listen_to_channel_recovers_from_timeout():
     r"""Test that _listen_to_channel method recovers from timeouts when
     getting returned tasks"""
     workforce = TestTimeoutWorkforce()
+
+    # Mock TaskChannel with first call timing out, second call succeeding
     mock_channel = AsyncMock(spec=TaskChannel)
     mock_task = MagicMock(spec=Task)
     mock_task.id = "test_task_id"
@@ -109,6 +112,8 @@ async def test_listen_to_channel_recovers_from_timeout():
 
     # Mock _handle_completed_task to avoid full implementation
     workforce._handle_completed_task = AsyncMock()
+
+    # Mock _post_ready_tasks to avoid implementation
     workforce._post_ready_tasks = AsyncMock()
 
     # Patch _listen_to_channel to run only limited iterations
@@ -130,6 +135,8 @@ async def test_listen_to_channel_recovers_from_timeout():
             # Second try should succeed
             returned_task_after_timeout = await workforce._get_returned_task()
             assert returned_task_after_timeout is mock_task
+
+            # Ensure the mock was called for the second attempt
             assert mock_channel.get_returned_task_by_publisher.call_count == 2
 
             # Process the task
@@ -147,6 +154,12 @@ async def test_listen_to_channel_recovers_from_timeout():
         patch.object(workforce, 'start', direct_start),
     ):
         await workforce.start()
+
+    # Verify get_returned_task_by_publisher was called twice (first fails,
+    # second succeeds)
+    assert mock_channel.get_returned_task_by_publisher.call_count == 2
+    # Verify the task was processed
+    workforce._handle_completed_task.assert_called_once_with(mock_task)
 
 
 @pytest.mark.asyncio
@@ -217,7 +230,6 @@ async def test_multiple_timeout_points():
 
     mock_task.failure_count = 0
     mock_task.get_depth.return_value = 0
-    mock_task.assigned_worker_id = "test_worker_id"
 
     mock_channel.get_returned_task_by_publisher.return_value = mock_task
 
