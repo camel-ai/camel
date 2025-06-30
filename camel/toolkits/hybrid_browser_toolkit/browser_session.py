@@ -57,13 +57,12 @@ class NVBrowserSession:
 
     def __new__(
         cls, *, headless: bool = True, user_data_dir: Optional[str] = None
-    ):
-        loop = asyncio.get_running_loop()
-        if loop not in cls._sessions:
-            instance = super().__new__(cls)
-            instance._initialized = False
-            cls._sessions[loop] = instance
-        return cls._sessions[loop]
+    ) -> "NVBrowserSession":
+        # Defer event loop lookup until we actually need it
+        # This allows creation outside of async context
+        instance = super().__new__(cls)
+        instance._initialized = False
+        return instance
 
     def __init__(
         self, *, headless: bool = True, user_data_dir: Optional[str] = None
@@ -90,6 +89,47 @@ class NVBrowserSession:
     # Browser lifecycle helpers
     # ------------------------------------------------------------------
     async def ensure_browser(self) -> None:
+        r"""Ensure browser is ready, implementing singleton pattern per event
+        loop.
+        """
+        # Check if we need to reuse or create a session for this event loop
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError as e:
+            raise RuntimeError(
+                "ensure_browser() must be called from within an async context"
+            ) from e
+
+        # Check if there's already a session for this loop
+        if loop in self._sessions and self._sessions[loop] is not self:
+            # Copy the existing session's browser resources
+            existing = self._sessions[loop]
+            # Wait for existing session to be fully initialized
+            async with existing._ensure_lock:
+                if (
+                    existing._initialized
+                    and existing._page is not None
+                    and existing._playwright is not None
+                ):
+                    try:
+                        # Verify the page is still responsive
+                        await existing._page.title()
+                        self._playwright = existing._playwright
+                        self._browser = existing._browser
+                        self._context = existing._context
+                        self._page = existing._page
+                        self.snapshot = existing.snapshot
+                        self.executor = existing.executor
+                        self._initialized = True
+                        return
+                    except Exception:
+                        # Existing session is broken, continue with new
+                        # initialization
+                        pass
+
+        # Register this instance for the current loop
+        self._sessions[loop] = self
+
         # Serialise initialisation to avoid race conditions where multiple
         # concurrent coroutine calls create multiple browser instances for
         # the same NVBrowserSession.
@@ -98,6 +138,7 @@ class NVBrowserSession:
 
     # Moved original logic to helper
     async def _ensure_browser_inner(self) -> None:
+        r"""Internal browser initialization logic."""
         from playwright.async_api import async_playwright
 
         if self._page is not None:
@@ -144,11 +185,23 @@ class NVBrowserSession:
         r"""Close all browser resources, ensuring cleanup even if some
         operations fail.
         """
-        # The close method will now only close the *current* event-loop's
-        # browser instance.  Use `close_all_sessions` for a full cleanup.
+        # Remove this session from the sessions dict and close resources
+        try:
+            loop = asyncio.get_running_loop()
+            if loop in self._sessions and self._sessions[loop] is self:
+                del self._sessions[loop]
+        except RuntimeError:
+            pass  # No running loop, that's okay
+
+        # Clean up any stale loop references
+        stale_loops = [loop for loop in self._sessions if loop.is_closed()]
+        for loop in stale_loops:
+            del self._sessions[loop]
+
         await self._close_session()
 
     async def _close_session(self) -> None:
+        r"""Internal session cleanup with comprehensive error handling."""
         errors: list[str] = []
 
         # Close context first (which closes pages)
@@ -204,6 +257,7 @@ class NVBrowserSession:
     # Convenience wrappers around common actions
     # ------------------------------------------------------------------
     async def visit(self, url: str) -> str:
+        r"""Navigate to a URL with proper error handling."""
         await self.ensure_browser()
         assert self._page is not None
 
@@ -233,7 +287,7 @@ class NVBrowserSession:
             force_refresh=force_refresh, diff_only=diff_only
         )
 
-    async def exec_action(self, action: dict[str, Any]) -> str:
+    async def exec_action(self, action: Dict[str, Any]) -> str:
         await self.ensure_browser()
         assert self.executor is not None
         return await self.executor.execute(action)

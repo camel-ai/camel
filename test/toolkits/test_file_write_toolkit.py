@@ -70,7 +70,7 @@ def test_write_to_file_text(file_write_toolkit):
     filename = "test.txt"
 
     result = file_write_toolkit.write_to_file(
-        title="Test Document", content=content, filename=filename
+        "Test Document", content, filename
     )
 
     # Check the result message
@@ -92,7 +92,7 @@ def test_write_to_file_markdown(file_write_toolkit):
     filename = "test.md"
 
     result = file_write_toolkit.write_to_file(
-        title="Test Markdown", content=content, filename=filename
+        "Markdown Document", content, filename
     )
 
     # Check the result message
@@ -113,9 +113,7 @@ def test_write_to_file_json(file_write_toolkit):
     data = {"name": "John", "age": 30, "city": "New York"}
     filename = "test.json"
 
-    result = file_write_toolkit.write_to_file(
-        title="Test JSON", content=json.dumps(data), filename=filename
-    )
+    result = file_write_toolkit.write_to_file("JSON Document", data, filename)
 
     # Check the result message
     assert "successfully written" in result
@@ -135,9 +133,7 @@ def test_write_to_file_yaml(file_write_toolkit):
     data = {"name": "John", "age": 30, "city": "New York"}
     filename = "test.yaml"
 
-    result = file_write_toolkit.write_to_file(
-        title="Test YAML", content=yaml.dump(data), filename=filename
-    )
+    result = file_write_toolkit.write_to_file("YAML Document", data, filename)
 
     # Check the result message
     assert "successfully written" in result
@@ -158,7 +154,7 @@ def test_write_to_file_csv_string(file_write_toolkit):
     filename = "test.csv"
 
     result = file_write_toolkit.write_to_file(
-        title="Test CSV", content=content, filename=filename
+        "CSV Document", content, filename
     )
 
     # Check the result message
@@ -184,7 +180,7 @@ def test_write_to_file_csv_list(file_write_toolkit):
     filename = "test_list.csv"
 
     result = file_write_toolkit.write_to_file(
-        title="Test CSV List", content=content, filename=filename
+        "CSV List Document", content, filename
     )
 
     # Check the result message
@@ -209,7 +205,7 @@ def test_write_to_file_html(file_write_toolkit):
     filename = "test.html"
 
     result = file_write_toolkit.write_to_file(
-        title="Test HTML", content=content, filename=filename
+        "HTML Document", content, filename
     )
 
     # Check the result message
@@ -233,7 +229,7 @@ def test_write_to_file_no_extension(file_write_toolkit):
     filename = "test_no_extension"
 
     result = file_write_toolkit.write_to_file(
-        title="No Extension Test", content=content, filename=filename
+        "Default Format Document", content, filename
     )
 
     # Check the result message
@@ -257,10 +253,7 @@ def test_write_to_file_custom_encoding(file_write_toolkit):
     encoding = "latin-1"
 
     result = file_write_toolkit.write_to_file(
-        title="Spanish Content",
-        content=content,
-        filename=filename,
-        encoding=encoding,
+        "Custom Encoding Document", content, filename, encoding=encoding
     )
 
     # Check the result message
@@ -283,7 +276,7 @@ def test_write_to_file_nested_directory(file_write_toolkit):
     filename = "nested/dir/test.txt"
 
     result = file_write_toolkit.write_to_file(
-        title="Nested Directory Test", content=content, filename=filename
+        "Nested Directory Document", content, filename
     )
 
     # Check the result message
@@ -305,9 +298,7 @@ def test_write_to_file_absolute_path(temp_dir):
     content = "Content with absolute path"
     filename = os.path.join(temp_dir, "absolute_path.txt")
 
-    result = toolkit.write_to_file(
-        title="Absolute Path Test", content=content, filename=filename
-    )
+    result = toolkit.write_to_file("Absolute Path Document", content, filename)
 
     # Check the result message
     assert "successfully written" in result
