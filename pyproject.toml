@@ -31,6 +31,7 @@ dependencies = [
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
     "pillow>=10.1.0,<11.0.0",
+    "weasyprint>=65.1",
 ]
 
 
@@ -524,6 +525,7 @@ module = [
     "google_auth_oauthlib.flow",
     "googleapiclient.discovery",
     "mistralai",
+    "mistralai.*",
     "cohere",
     "fish-audio-sdk",
     "reka-api",

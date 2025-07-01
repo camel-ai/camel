@@ -146,12 +146,13 @@ class FileWriteToolkit(BaseToolkit):
         document.save(str(file_path))
         logger.debug(f"Wrote DOCX to {file_path} with default formatting")
 
-    @dependencies_required('pylatex', 'pymupdf')
+    @dependencies_required('pylatex', 'weasyprint')
     def _write_pdf_file(
         self,
         file_path: Path,
         title: str,
         content: str,
+        css_style: str,
         use_latex: bool = False,
     ) -> None:
         r"""Write text content to a PDF file with default formatting.
@@ -159,9 +160,9 @@ class FileWriteToolkit(BaseToolkit):
         Args:
             file_path (Path): The target file path.
             title (str): The title of the document.
-            content (str): The text content to write.
+            content (str): The html with css style content to write
             use_latex (bool): Whether to use LaTeX for rendering. (requires
-                LaTeX toolchain). If False, uses PyMuPDF for simpler PDF
+                LaTeX toolchain). If False, uses WeasyPrint for simpler PDF
                 generation. (default: :obj:`False`)
         """
         # TODO: table generation need to be improved
@@ -178,7 +179,7 @@ class FileWriteToolkit(BaseToolkit):
 
             doc = Document(documentclass="article")
             doc.packages.append(Command('usepackage', 'amsmath'))
-            with doc.create(Section('Generated Content')):
+            with doc.create(Section(title)):
                 for line in content.split('\n'):
                     stripped_line = line.strip()
 
@@ -215,105 +216,16 @@ class FileWriteToolkit(BaseToolkit):
 
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
-            import pymupdf
+            from weasyprint import CSS, HTML  # type: ignore[import-untyped]
 
-            # Create a new PDF document
-            doc = pymupdf.open()
-
-            # Add a page
-            page = doc.new_page()
-
-            # Process the content
-            lines = content.strip().split('\n')
-            document_title = title
-
-            # Create a TextWriter for writing text to the page
-            text_writer = pymupdf.TextWriter(page.rect)
-
-            # Define fonts
-            normal_font = pymupdf.Font(
-                "helv"
-            )  # Standard font with multilingual support
-            bold_font = pymupdf.Font("helv")
-
-            # Start position for text
-            y_pos = 50
-            x_pos = 50
-
-            # Add title
-            text_writer.fill_textbox(
-                pymupdf.Rect(
-                    x_pos, y_pos, page.rect.width - x_pos, y_pos + 30
-                ),
-                document_title,
-                fontsize=16,
+            # Apply CSS to the HTML content
+            HTML(string=content).write_pdf(
+                str(file_path), stylesheets=[CSS(string=css_style)]
             )
-            y_pos += 40
 
-            # Process content
-            for line in lines:
-                stripped_line = line.strip()
-
-                # Skip empty lines but add some space
-                if not stripped_line:
-                    y_pos += 10
-                    continue
-
-                # Handle headers
-                if stripped_line.startswith('## '):
-                    text_writer.fill_textbox(
-                        pymupdf.Rect(
-                            x_pos, y_pos, page.rect.width - x_pos, y_pos + 20
-                        ),
-                        stripped_line[3:].strip(),
-                        font=bold_font,
-                        fontsize=14,
-                    )
-                    y_pos += 25
-                elif stripped_line.startswith('# '):
-                    text_writer.fill_textbox(
-                        pymupdf.Rect(
-                            x_pos, y_pos, page.rect.width - x_pos, y_pos + 25
-                        ),
-                        stripped_line[2:].strip(),
-                        font=bold_font,
-                        fontsize=16,
-                    )
-                    y_pos += 30
-                # Handle horizontal rule
-                elif stripped_line == '---':
-                    page.draw_line(
-                        pymupdf.Point(x_pos, y_pos + 5),
-                        pymupdf.Point(page.rect.width - x_pos, y_pos + 5),
-                    )
-                    y_pos += 15
-                # Regular text
-                else:
-                    # Check if we need a new page
-                    if y_pos > page.rect.height - 50:
-                        text_writer.write_text(page)
-                        page = doc.new_page()
-                        text_writer = pymupdf.TextWriter(page.rect)
-                        y_pos = 50
-
-                    # Add text to the current page
-                    text_writer.fill_textbox(
-                        pymupdf.Rect(
-                            x_pos, y_pos, page.rect.width - x_pos, y_pos + 15
-                        ),
-                        stripped_line,
-                        font=normal_font,
-                    )
-                    y_pos += 15
-
-            # Write the accumulated text to the last page
-            text_writer.write_text(page)
-
-            # Save the PDF
-            doc.save(str(file_path))
-            doc.close()
-
-            logger.debug(f"Wrote PDF to {file_path} with PyMuPDF formatting")
+            logger.debug(
+                f"Wrote PDF to {file_path} with enhanced WeasyPrint formatting"
+            )
 
     def _write_csv_file(
         self,
@@ -420,6 +332,7 @@ class FileWriteToolkit(BaseToolkit):
         filename: str,
         encoding: Optional[str] = None,
         use_latex: bool = False,
+        css_style: str = "",
     ) -> str:
         r"""Write the given content to a file.
 
@@ -435,6 +348,7 @@ class FileWriteToolkit(BaseToolkit):
                 - Text formats (txt, md, html, yaml): string
                 - CSV: string or list of lists
                 - JSON: string or serializable object
+                - PDF: full html content with special css style
             filename (str): The name or path of the file. If a relative path is
                 supplied, it is resolved to self.output_dir.
             encoding (Optional[str]): The character encoding to use. (default:
@@ -442,6 +356,8 @@ class FileWriteToolkit(BaseToolkit):
             use_latex (bool): For PDF files, whether to use LaTeX rendering
                 (True) or simple FPDF rendering (False). (default: :obj:
                 `False`)
+            css_style (str): The css style to apply to the PDF file. (default:
+                :obj: `""`)
 
         Returns:
             str: A message indicating success or error details.
@@ -467,7 +383,11 @@ class FileWriteToolkit(BaseToolkit):
                 self._write_docx_file(file_path, str(content))
             elif extension == ".pdf":
                 self._write_pdf_file(
-                    file_path, title, str(content), use_latex=use_latex
+                    file_path,
+                    title,
+                    str(content),
+                    css_style,
+                    use_latex=use_latex,
                 )
             elif extension == ".csv":
                 self._write_csv_file(
