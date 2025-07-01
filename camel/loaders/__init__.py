@@ -21,15 +21,9 @@ from .jina_url_reader import JinaURLReader
 from .markitdown import MarkItDownLoader
 from .mineru_extractor import MinerU
 from .mistral_reader import MistralReader
+from .pandas_reader import PandasLoader, PandasReader
 from .scrapegraph_reader import ScrapeGraphAI
 from .unstructured_io import UnstructuredIO
-
-try:
-    from .pandas_reader import PandasLoader, PandasReader
-
-    PANDAS_AVAILABLE = True
-except ImportError:
-    PANDAS_AVAILABLE = False
 
 __all__ = [
     'File',
@@ -49,6 +43,3 @@ __all__ = [
     'ScrapeGraphAI',
     'MistralReader',
 ]
-
-if PANDAS_AVAILABLE:
-    __all__.extend(['PandasLoader', 'PandasReader'])
