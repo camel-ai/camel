@@ -11,9 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import base64
-import os
-
 import pytest
 from PIL import Image
 
@@ -25,24 +22,6 @@ def image_toolkit():
     return OpenAIImageToolkit()
 
 
-@pytest.fixture
-def test_image_path():
-    # Prepare the path for the test image
-    test_image_path = 'test_image.png'
-    # Create a test image file (or ensure it exists for the test)
-    with open(test_image_path, 'wb') as f:
-        f.write(b'This is a test image placeholder content.')
-
-    # Provide the path to the temp file for the test to use
-    yield test_image_path
-
-    # Teardown: Clean up the temporary file
-    try:
-        os.remove(test_image_path)
-    except OSError as e:
-        print(f"Error: {e.strerror}")
-
-
 def test_base64_to_image_valid(image_toolkit):
     valid_base64_string = "iVBORw0KGgoAAAANSUhEUgAAAAUA\
                             AAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO\
@@ -52,6 +31,7 @@ def test_base64_to_image_valid(image_toolkit):
 
     image = image_toolkit.base64_to_image(valid_base64_string)
 
+    # test base64 converts to image
     assert isinstance(
         image, Image.Image
     ), "The function should return a PIL Image object"
@@ -62,36 +42,19 @@ def test_base64_to_image_invalid(image_toolkit):
 
     image = image_toolkit.base64_to_image(invalid_base64_string)
 
-    # Check response is None
+    # check response is None
     assert (
         image is None
     ), "The function should return None for an invalid base64 string"
 
 
-def test_image_path_to_base64(test_image_path, image_toolkit):
-    # Obtain the Base64 encoded string of the test image
-    base64_encoded_string = image_toolkit.image_path_to_base64(test_image_path)
-    # Decode the Base64 string back to binary data for validation
-    decoded_binary_data = base64.b64decode(base64_encoded_string)
-    # Verify if the decoded data matches the original binary content of
-    # the test image
-    with open(test_image_path, 'rb') as f:
-        original_binary_data = f.read()
+def test_toolkit_initialization_and_tools(image_toolkit):
+    # test that toolkit initializes properly
+    assert image_toolkit is not None
 
+    # test that only generate_image tool is available
+    tools = image_toolkit.get_tools()
+    assert len(tools) == 1, "Should only have one tool available"
     assert (
-        decoded_binary_data == original_binary_data
-    ), "The Base64 encoded string does not match the original image content."
-
-
-def test_image_to_base64_with_invalid_input(image_toolkit):
-    # Intentionally pass a non-image object to simulate an error condition
-    invalid_input = "This is not an image"
-
-    # Expect the function to return an error message when an error occurs
-    # during encoding
-    result = image_toolkit.image_to_base64(invalid_input)
-
-    # Assert that the function correctly returns an error message for invalid
-    # inputs
-    assert "An error occurred:" in result
-    assert "'str' object has no attribute 'save'" in result
+        tools[0].func.__name__ == "generate_image"
+    ), "Tool should be generate_image"

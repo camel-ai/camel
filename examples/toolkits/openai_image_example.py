@@ -20,12 +20,14 @@ from camel.types import ModelPlatformType, ModelType
 sys_msg = "You are a helpful assistant that can generate images."
 
 # Create OpenAI Image Toolkit with DALL-E 3 model and base64 response format
-tools = [*OpenAIImageToolkit(
-    model="dall-e-3",
-    response_format="b64_json",
-    size="1024x1024",
-    quality="standard"
-).get_tools()]
+tools = [
+    *OpenAIImageToolkit(
+        model="dall-e-3",
+        response_format="b64_json",
+        size="1024x1024",
+        quality="standard",
+    ).get_tools()
+]
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
