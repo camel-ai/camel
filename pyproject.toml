@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.71a2"
+version = "0.2.71a3"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -265,6 +265,7 @@ owl = [
     "pytesseract>=0.3.13",
     "markitdown==0.1.1",
     "pymupdf>=1.26.1",
+    "exa-py>=1.10.0,<2",
 ]
 all = [
     "numpy>=1.2,<=2.2",
