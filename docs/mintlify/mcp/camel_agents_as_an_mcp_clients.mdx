@@ -1,0 +1,134 @@
+---
+title: "CAMEL Agents as an MCP Client"
+icon: plug
+---
+
+This guide walks you through turning your CAMEL AI agent into an MCP client—letting your agent easily use tools from multiple MCP servers.
+
+## Quick Setup Steps
+
+1. **Create a Config File**: Tell CAMEL which MCP servers you want to connect to.
+2. **Use MCPToolkit to Connect**: Load your config file to connect to the servers.
+3. **Enable Tools in CAMEL Agent**: Pass the server tools to your CAMEL agent to use.
+
+This guide walks you through turning your CAMEL AI agent into an MCP client—letting your agent easily use tools from multiple MCP servers.
+
+## Step-by-Step Setup
+
+<Steps>
+
+  <Step title="Step 1: Configure MCP Servers">
+    Start by creating a config file that tells your CAMEL agent what MCP servers to connect to. You can define local or remote servers, each with a transport method.
+
+    <Tabs>
+      <Tab title="Local Server (stdio)">
+      ```json
+      {
+        "mcpServers": {
+          "time_server": {
+            "command": "python",
+            "args": ["time_server.py"],
+            "transport": "stdio"
+          }
+        }
+      }
+      ```
+      </Tab>
+
+      <Tab title="Remote Server (streamable-http)">
+      ```json
+      {
+        "mcpServers": {
+          "composio-notion": {
+            "command": "npx",
+            "args": ["composio-core@rc", "mcp", "https://mcp.composio.dev/notion/your-server-id", "--client", "camel"],
+            "env": {
+              "COMPOSIO_API_KEY": "your-api-key-here"
+            },
+            "transport": "streamable-http"
+          }
+        }
+      }
+      ```
+      </Tab>
+
+      <Tab title="ACI.dev Server (sse)">
+      ```json
+      {
+        "mcpServers": {
+          "aci_apps": {
+            "command": "uvx",
+            "args": [
+              "aci-mcp",
+              "apps-server",
+              "--apps=BRAVE_SEARCH,GITHUB,ARXIV",
+              "--linked-account-owner-id",
+              "<your_linked_acc_owner_id>"
+            ],
+            "env": {
+              "ACI_API_KEY": "your_aci_api_key"
+            }
+          }
+        }
+      }
+      ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Step 2: Connect & Build the Agent">
+    Use `MCPToolkit` to connect to the servers and pass the tools to your CAMEL agent.
+
+    ```python
+    import asyncio
+    from camel.toolkits.mcp_toolkit import MCPToolkit
+    from camel.agents import ChatAgent
+
+    async def main():
+        toolkit = MCPToolkit(config_path="config/time.json")
+        await toolkit.connect()
+        agent = ChatAgent(model=model, tools=toolkit.get_tools())
+        response = await agent.astep("What time is it now?")
+        print(response.msgs[0].content)
+        await toolkit.disconnect()
+
+    asyncio.run(main())
+    ```
+  </Step>
+
+  <Step title="Step 3: Add More Tools & Debug">
+    Once connected, you can extend your setup with other servers from ACI.dev, Composio, or `npx`.  
+
+    <Note type="info">
+    - Use `stdio` for local testing, `sse` or `streamable-http` for cloud tools.
+    - Secure your API keys using the `env` field in the config.
+    - Use the MCP Inspector (`npx @modelcontextprotocol/inspector`) if you run into issues.
+
+    Try plugging in servers like GitHub, Notion, or ArXiv and see your CAMEL agent in action.
+    </Note>
+  </Step>
+
+</Steps>
+
+## How It Works – System Diagram
+
+<Card title="CAMEL Agent as an MCP Client" img="/images/camel_toolks_as_mcp_server.png">
+This diagram illustrates how CAMEL agents use MCPToolkit to seamlessly connect with MCP servers. Servers provide external tools from platforms like GitHub, Gmail, Notion, and more.
+</Card>
+
+
+## Using Transport Methods
+
+- **stdio**: Ideal for local servers. Fast and easy.
+- **sse**: Great for cloud-hosted servers like ACI.dev.
+- **streamable-http**: Recommended for modern cloud integrations.
+
+## Tips to Keep in Mind
+
+- Start local with `stdio` servers, then scale up.
+- Store your API keys securely in the config file, never in code.
+- Use the MCP Inspector tool (`npx @modelcontextprotocol/inspector`) for debugging.
+
+## Give It a Go
+
+Try setting up a config file for an MCP server (like GitHub or Notion) and see your CAMEL agent use the new tools right away!

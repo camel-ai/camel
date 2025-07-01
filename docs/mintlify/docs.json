@@ -73,6 +73,15 @@
             ]
           },
           {
+            "group": "MCP",
+            "pages": [
+              "mcp/overview",
+              "mcp/camel_agents_as_an_mcp_clients",
+              "mcp/export_camel_agent_as_mcp_server",
+              "mcp/camel_toolkits_as_an_mcp_server"
+            ]
+          }, 
+          {
             "group": "Cookbooks",
             "pages": [
               {
@@ -101,7 +110,7 @@
                   "cookbooks/advanced_features/critic_agents_and_tree_search",
                   "cookbooks/advanced_features/embodied_agents"
                 ]
-              },
+              },             
               {
                 "group": "Applications",
                 "pages": [
