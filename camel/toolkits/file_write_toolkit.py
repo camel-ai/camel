@@ -164,6 +164,9 @@ class FileWriteToolkit(BaseToolkit):
             use_latex (bool): Whether to use LaTeX for rendering. (requires
                 LaTeX toolchain). If False, uses WeasyPrint for simpler PDF
                 generation. (default: :obj:`False`)
+            css_style (str): The css style to apply to the PDF file.
+                Please use a high-end style as much as possible to set off the
+                pdf content. (default: :obj: `""`)
         """
         # TODO: table generation need to be improved
         if use_latex:
@@ -356,8 +359,9 @@ class FileWriteToolkit(BaseToolkit):
             use_latex (bool): For PDF files, whether to use LaTeX rendering
                 (True) or simple FPDF rendering (False). (default: :obj:
                 `False`)
-            css_style (str): The css style to apply to the PDF file. (default:
-                :obj: `""`)
+            css_style (str): The css style to apply to the PDF file.
+                Please use a high-end style as much as possible to set off the
+                pdf content. (default: :obj: `""`)
 
         Returns:
             str: A message indicating success or error details.
