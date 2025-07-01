@@ -409,7 +409,7 @@ We are actively involved in community events including:
 - 🤝 **Volunteer Activities** — Contributions, documentation drives, and mentorship
 - 🌍 **Ambassador Programs** — Represent CAMEL in your university or local tech groups 
 
-> Want to host or participate in a CAMEL event? Join the [Discussions](https://github.com/camel-ai/camel/discussions) or want to be part of [Ambassador Program](https://www.camel-ai.org/ambassador).
+> Want to host or participate in a CAMEL event? Join our [Discord](https://discord.com/invite/CNcNpquyDc) or want to be part of [Ambassador Program](https://www.camel-ai.org/ambassador).
 
 
 
