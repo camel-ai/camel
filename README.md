@@ -404,8 +404,8 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 
 We are actively involved in community events including:
 
-- 🎙️ **Community Meetings** — Regular updates and team syncs 
-- 🏆 **Competitions** — Hackathons, Bouty Tasks and coding challenges hosted by CAMEL
+- 🎙️ **Community Meetings** — Weekly virtual syncs with the CAMEL team
+- 🏆 **Competitions** — Hackathons, Bounty Tasks and coding challenges hosted by CAMEL
 - 🤝 **Volunteer Activities** — Contributions, documentation drives, and mentorship
 - 🌍 **Ambassador Programs** — Represent CAMEL in your university or local tech groups 
 
