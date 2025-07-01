@@ -19,7 +19,6 @@ auto-scaling based ondemand and intelligent reuse of existing agents.
 - **initial_size** (int): Initial number of agents in the pool. (default: :obj:`1`)
 - **max_size** (int): Maximum number of agents in the pool. (default: :obj:`10`)
 - **auto_scale** (bool): Whether to automatically scale the pool size. (default: :obj:`True`)
-- **scale_factor** (float): Factor by which to scale the pool when needed. (default: :obj:`1.5`)
 - **idle_timeout** (float): Time in seconds after which idle agents are removed. (default: :obj:`180.0`)
 
 <a id="camel.societies.workforce.single_agent_worker.AgentPool.__init__"></a>
@@ -33,7 +32,6 @@ def __init__(
     initial_size: int = 1,
     max_size: int = 10,
     auto_scale: bool = True,
-    scale_factor: float = 1.5,
     idle_timeout: float = 180.0
 ):
 ```

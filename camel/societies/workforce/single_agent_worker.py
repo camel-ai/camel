@@ -26,7 +26,7 @@ from camel.agents import ChatAgent
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
-from camel.tasks.task import Task, TaskState, validate_task_content
+from camel.tasks.task import Task, TaskState, is_task_result_insufficient
 
 
 class AgentPool:
@@ -43,8 +43,6 @@ class AgentPool:
             (default: :obj:`10`)
         auto_scale (bool): Whether to automatically scale the pool size.
             (default: :obj:`True`)
-        scale_factor (float): Factor by which to scale the pool when needed.
-            (default: :obj:`1.5`)
         idle_timeout (float): Time in seconds after which idle agents are
             removed. (default: :obj:`180.0`)
     """
@@ -55,13 +53,11 @@ class AgentPool:
         initial_size: int = 1,
         max_size: int = 10,
         auto_scale: bool = True,
-        scale_factor: float = 1.5,
         idle_timeout: float = 180.0,  # 3 minutes
     ):
         self.base_agent = base_agent
         self.max_size = max_size
         self.auto_scale = auto_scale
-        self.scale_factor = scale_factor
         self.idle_timeout = idle_timeout
 
         # Pool management
@@ -332,7 +328,7 @@ class SingleAgentWorker(Worker):
         # Store the actual token usage for this specific task
         task.additional_info["token_usage"] = {"total_tokens": total_tokens}
 
-        print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
+        print(f"======\n{Fore.GREEN}Response from {self}:{Fore.RESET}")
 
         try:
             result_dict = json.loads(response.msg.content)
@@ -352,14 +348,14 @@ class SingleAgentWorker(Worker):
         if task_result.failed:
             return TaskState.FAILED
 
-        if not validate_task_content(task_result.content, task.id):
+        task.result = task_result.content
+
+        if is_task_result_insufficient(task):
             print(
                 f"{Fore.RED}Task {task.id}: Content validation failed - "
                 f"task marked as failed{Fore.RESET}"
             )
             return TaskState.FAILED
-
-        task.result = task_result.content
         return TaskState.DONE
 
     async def _listen_to_channel(self):

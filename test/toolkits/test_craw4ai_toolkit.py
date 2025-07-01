@@ -11,8 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .browser_non_visual_toolkit import BrowserNonVisualToolkit
 
-__all__ = [
-    "BrowserNonVisualToolkit",
-]
+import pytest
+
+from camel.toolkits.craw4ai_toolkit import Crawl4AIToolkit
+
+
+@pytest.fixture(scope="function")
+def toolkit_fixture():
+    return Crawl4AIToolkit(timeout=600)
+
+
+@pytest.mark.asyncio
+async def test_scrape_success(toolkit_fixture):
+    url = "https://github.com/camel-ai/camel/blob/master/LICENSE"
+    result = await toolkit_fixture.scrape(url)
+    assert len(result) > 0

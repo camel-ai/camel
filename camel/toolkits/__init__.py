@@ -77,7 +77,7 @@ from .aci_toolkit import ACIToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
 from .task_planning_toolkit import TaskPlanningToolkit
-from .non_visual_browser_toolkit import BrowserNonVisualToolkit
+from .hybrid_browser_toolkit import HybridBrowserToolkit
 from .edgeone_pages_mcp_toolkit import EdgeOnePagesMCPToolkit
 from .google_drive_mcp_toolkit import GoogleDriveMCPToolkit
 from .craw4ai_toolkit import Crawl4AIToolkit
@@ -146,7 +146,7 @@ __all__ = [
     'WolframAlphaToolkit',
     'BohriumToolkit',
     'TaskPlanningToolkit',
-    'BrowserNonVisualToolkit',
+    'HybridBrowserToolkit',
     'EdgeOnePagesMCPToolkit',
     'GoogleDriveMCPToolkit',
     'Crawl4AIToolkit',

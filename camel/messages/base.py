@@ -437,12 +437,8 @@ class BaseMessage:
         if self.image_list and len(self.image_list) > 0:
             for image in self.image_list:
                 if image.format is None:
-                    raise ValueError(
-                        f"Image's `format` is `None`, please "
-                        f"transform the `PIL.Image.Image` to  one of "
-                        f"following supported formats, such as "
-                        f"{list(OpenAIImageType)}"
-                    )
+                    # Set default format to PNG as fallback
+                    image.format = 'PNG'
 
                 image_type: str = image.format.lower()
                 if image_type not in OpenAIImageType:
