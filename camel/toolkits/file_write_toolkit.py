@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 import re
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Union
@@ -146,6 +148,53 @@ class FileWriteToolkit(BaseToolkit):
         document.save(str(file_path))
         logger.debug(f"Wrote DOCX to {file_path} with default formatting")
 
+    def _ensure_weasyprint_dependencies(self) -> None:
+        r"""Ensure WeasyPrint and its dependencies are installed.
+
+        On macOS, this will install the necessary dependencies using Homebrew
+        if they are not already installed and add the required environment
+        variables.
+
+        This is a no-op on other platforms, as those are expected to have the
+        dependencies already installed.
+        """
+
+        # Check if Homebrew is installed
+        try:
+            subprocess.run(
+                ["brew", "--version"],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            raise RuntimeError(
+                "Homebrew is required to install WeasyPrint on macOS. "
+                "Please install Homebrew from https://brew.sh/"
+            )
+
+        # Install the required packages using Homebrew
+        try:
+            logger.info("Installing WeasyPrint dependencies with Homebrew...")
+            subprocess.run(
+                ["brew", "install", "weasyprint", "pango", "libffi", "cairo"],
+                check=True,
+                capture_output=True,
+            )
+            logger.info("WeasyPrint dependencies installed successfully")
+
+            # Set up environment variables
+            os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "/opt/homebrew/lib"
+            os.environ["PKG_CONFIG_PATH"] = (
+                "/opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/libffi/lib/pkgconfig"
+            )
+
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(
+                f"Failed to install WeasyPrint dependencies:"
+                f" {e.stderr.decode()}"
+            )
+
     @dependencies_required('pylatex', 'weasyprint')
     def _write_pdf_file(
         self,
@@ -219,6 +268,9 @@ class FileWriteToolkit(BaseToolkit):
 
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
         else:
+            # Ensure WeasyPrint dependencies are properly installed
+            self._ensure_weasyprint_dependencies()
+
             from weasyprint import CSS, HTML  # type: ignore[import-untyped]
 
             # Apply CSS to the HTML content
