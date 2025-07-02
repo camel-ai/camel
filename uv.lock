@@ -1158,7 +1158,7 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'document-tools'", specifier = ">=1.2,<=2.2" },
     { name = "numpy", marker = "extra == 'owl'", specifier = ">=1.2,<=2.2" },
     { name = "numpy", marker = "extra == 'rag'", specifier = ">=1.2,<=2.2" },
-    { name = "openai", specifier = ">=1.68.0,<2" },
+    { name = "openai", specifier = ">=1.86.0,<2" },
     { name = "openapi-spec-validator", marker = "extra == 'all'", specifier = ">=0.7.1,<0.8" },
     { name = "openapi-spec-validator", marker = "extra == 'document-tools'", specifier = ">=0.7.1,<0.8" },
     { name = "openapi-spec-validator", marker = "extra == 'owl'", specifier = ">=0.7.1,<0.8" },
