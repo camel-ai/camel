@@ -113,6 +113,10 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
     
   Using Google's Gemini models in CAMEL:
 
+ - **Google AI Studio** ([Quick Start](https://aistudio.google.com/)): Try models quickly in a no-code environment.
+ - **API Key Setup** ([Generate Key](https://aistudio.google.com/app/apikey)): Obtain your Gemini API key to start integration.
+ - **Gemini API Docs** ([Deep Dive](https://ai.google.dev/gemini-api/docs)): Explore detailed Gemini API capabilities.
+
   ```python
   from camel.models import ModelFactory
   from camel.types import ModelPlatformType, ModelType

@@ -12,13 +12,18 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.logger import disable_logging, enable_logging, set_log_level
+import pytest
 
-__version__ = '0.2.71a3'
+from camel.toolkits.craw4ai_toolkit import Crawl4AIToolkit
 
-__all__ = [
-    '__version__',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+
+@pytest.fixture(scope="function")
+def toolkit_fixture():
+    return Crawl4AIToolkit(timeout=600)
+
+
+@pytest.mark.asyncio
+async def test_scrape_success(toolkit_fixture):
+    url = "https://github.com/camel-ai/camel/blob/master/LICENSE"
+    result = await toolkit_fixture.scrape(url)
+    assert len(result) > 0
