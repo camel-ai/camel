@@ -153,7 +153,7 @@ class OpenAIImageToolkit(BaseToolkit):
 
         # basic parameters supported by all models
         if self.n is not None:
-            params["n"] = self.n
+            params["n"] = self.n  # type: ignore[assignment]
         if self.size is not None:
             params["size"] = self.size
 
@@ -201,29 +201,53 @@ class OpenAIImageToolkit(BaseToolkit):
             logger.error(error_msg)
             return error_msg
 
-        # check if response has URL or base64 data
-        if hasattr(response.data[0], 'url') and response.data[0].url:
-            image_url = response.data[0].url
-            return f"Image {operation} successfully. Image URL: {image_url}"
-        elif (
-            hasattr(response.data[0], 'b64_json') and response.data[0].b64_json
-        ):
-            image_b64 = response.data[0].b64_json
+        results = []
 
-            # Save the image from base64
-            image_bytes = base64.b64decode(image_b64)
-            os.makedirs(self.image_save_path, exist_ok=True)
-            image_path = os.path.join(
-                self.image_save_path,
-                f"{image_name}_{uuid.uuid4().hex}.png",
-            )
+        for i, image_data in enumerate(response.data):
+            # check if response has URL or base64 data
+            if hasattr(image_data, 'url') and image_data.url:
+                image_url = image_data.url
+                results.append(f"Image URL: {image_url}")
+            elif hasattr(image_data, 'b64_json') and image_data.b64_json:
+                image_b64 = image_data.b64_json
 
-            with open(image_path, "wb") as f:
-                f.write(image_bytes)
+                # Save the image from base64
+                image_bytes = base64.b64decode(image_b64)
+                os.makedirs(self.image_save_path, exist_ok=True)
 
-            return f"Image generated and saved to {image_path}"
+                # Add index to filename when multiple images
+                if len(response.data) > 1:
+                    filename = f"{image_name}_{i+1}_{uuid.uuid4().hex}.png"
+                else:
+                    filename = f"{image_name}_{uuid.uuid4().hex}.png"
+
+                image_path = os.path.join(self.image_save_path, filename)
+
+                with open(image_path, "wb") as f:
+                    f.write(image_bytes)
+
+                results.append(f"Image saved to {image_path}")
+            else:
+                error_msg = (
+                    f"No valid image data (URL or base64) found in image {i+1}"
+                )
+                logger.error(error_msg)
+                results.append(error_msg)
+
+        if results:
+            count = len(response.data)
+            if count == 1:
+                return f"Image {operation} successfully. {results[0]}"
+            else:
+                return (
+                    f"{count} images {operation} successfully:\n"
+                    + "\n".join(
+                        f"  {i+1}. {result}"
+                        for i, result in enumerate(results)
+                    )
+                )
         else:
-            error_msg = "No valid image data (URL or base64) found in response"
+            error_msg = "No valid image data found in any response"
             logger.error(error_msg)
             return error_msg
 
