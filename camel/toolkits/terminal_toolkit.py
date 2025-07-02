@@ -796,7 +796,9 @@ class TerminalToolkit(BaseToolkit):
                         break
 
                     # Use select to wait for I/O on stdin or master PTY
-                    r, _, _ = select.select([sys.stdin, master_fd], [], [], 0.1)
+                    r, _, _ = select.select(
+                        [sys.stdin, master_fd], [], [], 0.1
+                    )
 
                     if master_fd in r:
                         try:
