@@ -85,12 +85,10 @@ This guide walks you through turning your CAMEL AI agent into an MCP client—le
     from camel.agents import ChatAgent
 
     async def main():
-        toolkit = MCPToolkit(config_path="config/time.json")
-        await toolkit.connect()
-        agent = ChatAgent(model=model, tools=toolkit.get_tools())
-        response = await agent.astep("What time is it now?")
-        print(response.msgs[0].content)
-        await toolkit.disconnect()
+        async with MCPToolkit(config_path="config/time.json") as toolkit:
+          agent = ChatAgent(model=model, tools=toolkit.get_tools())
+          response = await agent.astep("What time is it now?")
+          print(response.msgs[0].content)
 
     asyncio.run(main())
     ```
