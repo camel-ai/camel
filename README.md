@@ -400,6 +400,19 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 <br>
 
 
+## 🗓️ Events
+
+We are actively involved in community events including:
+
+- 🎙️ **Community Meetings** — Weekly virtual syncs with the CAMEL team
+- 🏆 **Competitions** — Hackathons, Bounty Tasks and coding challenges hosted by CAMEL
+- 🤝 **Volunteer Activities** — Contributions, documentation drives, and mentorship
+- 🌍 **Ambassador Programs** — Represent CAMEL in your university or local tech groups 
+
+> Want to host or participate in a CAMEL event? Join our [Discord](https://discord.com/invite/CNcNpquyDc) or want to be part of [Ambassador Program](https://www.camel-ai.org/ambassador).
+
+
+
 ## Contributing to CAMEL
 
 > For those who'd like to contribute code, we appreciate your interest in contributing to our open-source initiative. Please take a moment to review our [contributing guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) to get started on a smooth collaboration journey.🚀
