@@ -15,8 +15,6 @@ from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
-import pandas as pd
-
 if TYPE_CHECKING:
     from pandas import DataFrame
     from pandasai import SmartDataframe
@@ -87,8 +85,7 @@ class PandasLoader(BaseLoader):
 
     def load(
         self,
-        data: Union["DataFrame", str],
-        *args: Any,
+        source: Union["DataFrame", str],
         **kwargs: Dict[str, Any],
     ) -> Union["DataFrame", "SmartDataframe"]:
         r"""Loads a file or DataFrame and returns a DataFrame or
@@ -99,8 +96,7 @@ class PandasLoader(BaseLoader):
         returned.
 
         args:
-            data (Union[DataFrame, str]): The data to load.
-            *args (Any): Additional positional arguments.
+            source (Union[DataFrame, str]): The source to load.
             **kwargs (Dict[str, Any]): Additional keyword arguments.
 
         Returns:
@@ -110,15 +106,15 @@ class PandasLoader(BaseLoader):
         from pandas import DataFrame
 
         # Load the data into a pandas DataFrame
-        if isinstance(data, DataFrame):
-            df = data
+        if isinstance(source, DataFrame):
+            df = source
         else:
-            file_path = str(data)
+            file_path = str(source)
             path = Path(file_path)
             if not file_path.startswith("http") and not path.exists():
                 raise FileNotFoundError(f"File {file_path} not found")
             if path.suffix in self.__LOADER:
-                df = self.__LOADER[path.suffix](file_path, *args, **kwargs)  # type: ignore[operator]
+                df = self.__LOADER[path.suffix](file_path, *kwargs)  # type: ignore[operator]
             else:
                 raise ValueError(f"Unsupported file format: {path.suffix}")
 
