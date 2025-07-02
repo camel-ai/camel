@@ -82,47 +82,13 @@ You can expose any number of custom tools, multi-agent workflows, or domain know
 
 ---
 
-## Advanced: Register with MCP Hubs & Registries
-
-<Card title="Connect your agent to an MCP registry" icon="link">
-Want your MCP agent discoverable by thousands of clients?  
-Register it with a hub like <a href="https://aci.dev/" target="_blank">ACI.dev</a> or similar.
-```python Register with ACI Registry lines icon="python"
-from camel.agents import MCPAgent
-from camel.types import ACIRegistryConfig, ModelFactory, ModelPlatformType, ModelType
-import os
-
-aci_config = ACIRegistryConfig(
-    api_key=os.getenv("ACI_API_KEY"),
-    linked_account_owner_id=os.getenv("ACI_LINKED_ACCOUNT_OWNER_ID"),
-)
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
-)
-
-agent = MCPAgent(
-    model=model,
-    registry_configs=[aci_config],
-)
-```
-Your agent is now connected to the <a href="https://aci.dev/" target="_blank">ACI.dev</a> registry and visible in the ecosystem.
-</Card>
-
-<Card title="Minimal agent without function-calling" icon="function">
-Don’t need advanced tool-calling?  
-See <a href="https://github.com/camel-ai/camel/blob/master/examples/agents/mcp_agent/mcp_agent_without_function_calling.py" target="_blank">this example</a> for a super-lightweight setup.
-</Card>
-
----
-
 ## Why make your ChatAgent an MCP server?
 
 <Card title="Benefits" icon="star">
 - **Universal Access:** Any client, any platform, anytime.
 - **Multi-Agent Workflows:** Power agent societies by letting agents call each other.
 - **Local Control:** Expose only the tools and data you want, with full security.
-- **No Glue Code:** MCP handles discovery and invocation—no custom REST or RPC needed.
+- **No Glue Code:** MCP handles discovery and invocation, no custom REST or RPC needed.
 </Card>
 
 ---

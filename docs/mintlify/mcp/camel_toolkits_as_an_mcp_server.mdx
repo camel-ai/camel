@@ -67,29 +67,3 @@ Once running, your MCP server will:
 
 This means you can build an LLM workflow where, for example, Claude running in your browser or another service in your company network can call your toolkit directly—without ever importing your Python code.
 </Card>
-
-
-<Card title = "Discover MCP Servers Easily with PulseMCP">
-
-Finding MCP servers is now a breeze with PulseMCP integration.  
-You don’t have to guess which MCP servers are available—just search, browse, and connect.
-
-<Card title="Discover MCP Servers Instantly" icon="wave-pulse">
-PulseMCP acts as a living directory of the entire MCP ecosystem.  
-CAMEL toolkits can plug directly into PulseMCP, letting you browse and connect to thousands of servers, all kept up to date in real time.
-
-You can visit [PulseMCP.com](https://pulsemcp.com) to browse all available MCP servers—everything from file systems and search to specialized APIs.
-
-If you prefer to search programmatically inside your CAMEL code, just use:
-
-<CodeBlock language="python" title="pulse_mcp_search.py">
-from camel.toolkits.mcp import PulseMCPSearchToolkit
-
-search_toolkit = PulseMCPSearchToolkit()
-results = search_toolkit.search_mcp_servers(query="Slack", top_k=1)
-print(results)
-</CodeBlock>
-
-PulseMCP does the heavy lifting of finding, categorizing, and keeping MCP servers fresh—your agents just connect and go.
-</Card>
-</Card>

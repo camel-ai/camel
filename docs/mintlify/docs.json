@@ -73,12 +73,13 @@
             ]
           },
           {
-            "group": "MCP",
+            "group": "CAMEL with MCP",
             "pages": [
               "mcp/overview",
               "mcp/camel_agents_as_an_mcp_clients",
               "mcp/export_camel_agent_as_mcp_server",
-              "mcp/camel_toolkits_as_an_mcp_server"
+              "mcp/camel_toolkits_as_an_mcp_server",
+              "mcp/mcp_hub"
             ]
           }, 
           {

@@ -6,7 +6,7 @@ icon: 'play'
 
 ## What is MCP all about?
 
-MCP (Model Context Protocol) originated from an [Anthropic article](https://www.anthropic.com/index/introducing-the-model-context-protocol) published on November 25, 2024: *Introducing the Model Context Protocol*.
+MCP (Model Context Protocol) originated from an [Anthropic article](https://www.anthropic.com/news/model-context-protocol) published on November 25, 2024: *Introducing the Model Context Protocol*.
 
 MCP defines **how applications and AI models exchange contextual information**.  
 It enables developers to connect data sources, tools, and functions to LLMs using a universal, standardized protocol—much like USB-C enables diverse devices to connect via a single interface.
@@ -26,32 +26,21 @@ It enables developers to connect data sources, tools, and functions to LLMs usin
   </Card>
 </CardGroup>
 
-<Info>
-  **MCP’s goal:**  
-  Create a universal standard that makes building, connecting, and maintaining AI applications simpler and more unified.
-</Info>
-
----
-
 ## Visualizing MCP
 
 Here’s how MCP acts as an **intermediate protocol layer** between LLMs and tools:
 
-![MCP Architecture](/images/mcp-architecture.jpeg)
+<Frame caption="Visualization of MCP as an intermediate layer between LLMs and tools">
+  <img src="/images/mcp-architecture.jpeg" />
+</Frame>
 
-A simpler illustration of MCP’s benefits:
+## What Changes with MCP?
 
-![MCP Protocol vs. Without MCP](/images/mcp-without-vs-with.jpg)
-
-**Key Takeaway:**  
-MCP reduces the integration mess—tools and models only need to support MCP, not each other!
+<Frame caption="With MCP, tools and models connect through a single protocol instead of point-to-point integrations">
+  <img src="/images/mcp-without-vs-with.jpg" />
+</Frame>
 
 ## Why introduce MCP?
-
-<Info>
-**Seamless Agent Integration:**  
-MCP was designed by Anthropic to solve the challenge of connecting context, data, and tools to LLMs in a clean, unified way.  
-</Info>
 
 - **Ecosystem**: Leverage a growing library of MCP plugins—just plug them in.
 - **Uniformity**: Not limited to any one model or vendor; if your agent supports MCP, you can swap models/tools anytime.
@@ -79,7 +68,7 @@ MCP follows a **client-server model** with three main roles:
 - **Remote Services**: Online APIs and cloud platforms accessible to MCP servers.
 
 ![MCP Server/Client diagram](/images/mcp-client-server-example.png)
-### How it works—step by step:
+### How it works, step by step:
 
 1. **User asks:**  
    “What documents do I have on my desktop?” via the Host (e.g., Claude Desktop).
@@ -88,21 +77,21 @@ MCP follows a **client-server model** with three main roles:
    Receives your question and forwards it to the Claude model.
 
 3. **Client (MCP Client):**  
-   Claude model decides it needs more data—Client is activated to connect to a file system MCP Server.
+   Claude model decides it needs more data, Client is activated to connect to a file system MCP Server.
 
 4. **Server (MCP Server):**  
    The server reads your desktop directory and returns a list of documents.
 
 5. **Results:**  
-   Claude uses this info to answer your question—displayed in your desktop app.
+   Claude uses this info to answer your question, displayed in your desktop app.
 
 This architecture **lets agents dynamically call tools and access data**—local or remote—while developers only focus on building the relevant MCPServer.  
 **You don’t have to handle the nitty-gritty of connecting Hosts and Clients.**
 
-<Info>
+<Note type="info">
 For deeper architecture details and diagrams, see the  
 <a href="https://modelcontextprotocol.io/docs/concepts/architecture" target="_blank">official MCP docs: Architecture Concepts</a>.
-</Info>
+</Note>
 
 ## At a Glance
 
