@@ -167,15 +167,17 @@ async function renderNode(slide, node, pres) {
 
 // Main function
 async function generatePptxFromRenderTree(tree) {
+  // Ensure input is always an array of slide root nodes
+  const slideNodes = Array.isArray(tree) ? tree : [tree];
   console.error('Generating PPTX from render tree...');
   const pres = new pptxgen();
   pres.defineLayout(PRESENTATION_CONFIG.layout);
   pres.layout = PRESENTATION_CONFIG.layout.name;
-  
-  const slide = pres.addSlide();
-  
-  await renderNode(slide, tree[0][0], pres);
-  
+  // Multi-slide support: loop over all root nodes
+  for (const slideNode of slideNodes) {
+    const slide = pres.addSlide();
+    await renderNode(slide, slideNode, pres);
+  }
   return await pres.write('nodebuffer');
 }
 

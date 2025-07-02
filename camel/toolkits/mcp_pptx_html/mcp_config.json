@@ -5,7 +5,8 @@
       "args": ["camel/toolkits/mcp_pptx_html/mcp_server.js"],
       "env": {
         "NODE_ENV": "production"
-      }
+      },
+      "timeout": 100000
     }
   }
 }

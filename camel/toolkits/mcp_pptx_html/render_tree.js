@@ -325,7 +325,7 @@ async function extractRenderTreeFromHtml(html) {
           rect: {
             x: rect.x,
             y: rect.y,
-            width: rect.width + 30,
+            width: rect.width ,
             height: rect.height + 0,
             top: rect.top,
             left: rect.left,
@@ -445,7 +445,12 @@ async function extractRenderTreeFromHtml(html) {
       };
     }
 
-    return { elements: [extract(document.body)], debug };
+    // Find all top-level .slide divs
+    const slideDivs = Array.from(document.querySelectorAll('body > div.slide'));
+    // If none found, fallback to body as a single slide
+    const roots = slideDivs.length > 0 ? slideDivs : [document.body];
+    const elements = roots.map(root => extract(root));
+    return { elements, debug };
   });
   await browser.close();
   // Save debug info to a file
@@ -457,4 +462,19 @@ async function extractRenderTreeFromHtml(html) {
   return elements;
 }
 
-module.exports = { extractRenderTreeFromHtml };
+// New: Extract render trees from a list of HTML strings
+async function extractRenderTreesFromHtmlList(htmlList) {
+  if (!Array.isArray(htmlList)) throw new Error('htmlList must be an array');
+  const allSlides = [];
+  for (const html of htmlList) {
+    const slides = await extractRenderTreeFromHtml(html);
+    if (Array.isArray(slides)) {
+      allSlides.push(...slides);
+    } else if (slides) {
+      allSlides.push(slides);
+    }
+  }
+  return allSlides;
+}
+
+module.exports = { extractRenderTreeFromHtml, extractRenderTreesFromHtmlList };

@@ -1,6 +1,6 @@
 const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
-const { extractRenderTreeFromHtml } = require('./render_tree.js');
+const { extractRenderTreeFromHtml, extractRenderTreesFromHtmlList } = require('./render_tree.js');
 const { generatePptxFromRenderTree } = require('./pptxgenjs.js');
 
 // Create a simple MCP server
@@ -20,13 +20,20 @@ const server = new Server(
 const tools = [
   {
     name: 'convert_html_to_pptx',
-    description: 'Convert HTML content to a PowerPoint presentation (PPTX)',
+    description: 'Convert HTML content(s) to a PowerPoint presentation (PPTX). Use "html" for a single slide, or "htmlList" for multiple slides (one per HTML).',
     inputSchema: {
       type: 'object',
       properties: {
         html: {
           type: 'string',
           description: 'The HTML content to convert to PPTX'
+        },
+        htmlList: {
+          type: 'array',
+          items: {
+            type: 'string'
+          },
+          description: 'An array of HTML contents to convert to PPTX, one slide per HTML'
         },
         outputPath: {
           type: 'string',
@@ -56,17 +63,23 @@ async function handleToolCall(request) {
 
 async function convertHtmlToPptx(args) {
   try {
-    const { html, outputPath } = args;
+    const { html, htmlList, outputPath } = args;
     
-    if (!html) {
-      throw new Error('HTML content is required');
+    if (!html && (!htmlList || !Array.isArray(htmlList))) {
+      throw new Error('Either "html" or "htmlList" is required');
     }
 
-    console.error('Extracting render tree from HTML...');
-    const renderTree = await extractRenderTreeFromHtml(html);
-    
-    console.error('Generating PPTX from render tree...');
-    const pptxBuffer = await generatePptxFromRenderTree(renderTree);
+    let renderTrees;
+    if (html) {
+      console.error('Extracting render tree from HTML...');
+      renderTrees = [await extractRenderTreeFromHtml(html)];
+    } else if (htmlList && Array.isArray(htmlList)) {
+      console.error('Extracting render trees from HTML list...');
+      renderTrees = await extractRenderTreesFromHtmlList(htmlList);
+    }
+
+    console.error('Generating PPTX from render trees...');
+    const pptxBuffer = await generatePptxFromRenderTree(renderTrees);
 
     if (outputPath) {
       // Save to file
