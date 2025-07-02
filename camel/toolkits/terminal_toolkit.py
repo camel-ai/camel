@@ -134,7 +134,14 @@ class TerminalToolkit(BaseToolkit):
         logger.info(f"Terminal output will be redirected to: {self.log_file}")
 
         def file_update(output: str):
+            import sys
+
             try:
+                # For macOS/Linux file-based mode, also write to stdout
+                # to provide real-time feedback in the user's terminal.
+                sys.stdout.write(output)
+                sys.stdout.flush()
+
                 # Initialize file on first write
                 if not self._file_initialized:
                     with open(self.log_file, "w") as f:
@@ -147,9 +154,6 @@ class TerminalToolkit(BaseToolkit):
                 # Directly append to the end of the file
                 with open(self.log_file, "a") as f:
                     f.write(output)
-                    # If the output does not end with a newline, add one
-                    if output and not output.endswith('\n'):
-                        f.write('\n')
                 # Ensure the agent also receives the output
                 self.agent_queue.put(output)
             except Exception as e:
@@ -649,18 +653,30 @@ class TerminalToolkit(BaseToolkit):
 
         return True, command
 
-    def shell_exec(self, id: str, command: str) -> str:
+    def shell_exec(
+        self, id: str, command: str, interactive: bool = False
+    ) -> str:
         r"""Execute commands. This can be used to execute various commands,
-        such as writing code, executing code, and running commands.
+        such as writing code, executing code, and running commands. When
+        `interactive` is True, the command will be run with direct access
+        to the user's terminal input, allowing for interactive prompts like
+        password entry or script inputs.
+
+        Note:
+            When `interactive` is set to `True`, the `shell_write_to_process`
+            function cannot be used for that session, as the process's input
+            is connected to the terminal, not a pipe.
 
         Args:
             id (str): Unique identifier of the target shell session.
             command (str): Shell command to execute.
+            interactive (bool, optional): Whether to run the command in
+                interactive mode, connecting it to the terminal's stdin.
+                Defaults to False.
 
         Returns:
             str: Output of the command execution or error message.
         """
-        # Command execution must be within the working directory
         error_msg = self._enforce_working_dir_for_execution(self.working_dir)
         if error_msg:
             return error_msg
@@ -673,7 +689,6 @@ class TerminalToolkit(BaseToolkit):
                 return f"Command rejected: {sanitized_command}"
             command = sanitized_command
 
-        # If the session does not exist, create a new session
         if id not in self.shell_sessions:
             self.shell_sessions[id] = {
                 "process": None,
@@ -682,7 +697,6 @@ class TerminalToolkit(BaseToolkit):
             }
 
         try:
-            # First, log the command to be executed
             self._update_terminal_output(f"\n$ {command}\n")
 
             if command.startswith('python') or command.startswith('pip'):
@@ -705,43 +719,123 @@ class TerminalToolkit(BaseToolkit):
                     command = command.replace('python', f'"{python_path}"', 1)
                 elif command.startswith('pip'):
                     command = command.replace('pip', pip_path, 1)
+            if not interactive:
+                proc = subprocess.Popen(
+                    command,
+                    shell=True,
+                    cwd=self.working_dir,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    stdin=subprocess.PIPE,
+                    text=True,
+                    bufsize=1,
+                    universal_newlines=True,
+                    env=os.environ.copy(),
+                )
 
-            proc = subprocess.Popen(
-                command,
-                shell=True,
-                cwd=self.working_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                stdin=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-                universal_newlines=True,
-                env=os.environ.copy(),
-            )
+                self.shell_sessions[id]["process"] = proc
+                self.shell_sessions[id]["running"] = True
+                stdout, stderr = proc.communicate()
+                output = stdout or ""
+                if stderr:
+                    output += f"\nStderr Output:\n{stderr}"
+                self.shell_sessions[id]["output"] = output
+                self._update_terminal_output(output + "\n")
+                return output
 
-            # Store the process and mark it as running
-            self.shell_sessions[id]["process"] = proc
+            # Interactive mode with real-time streaming via PTY
+            if self.os_type not in ['Darwin', 'Linux']:
+                return (
+                    "Interactive mode is not supported on "
+                    f"{self.os_type} due to PTY limitations."
+                )
+
+            import pty
+            import select
+            import sys
+            import termios
+            import tty
+
+            # Fork a new process with a PTY
+            pid, master_fd = pty.fork()
+
+            if pid == 0:  # Child process
+                # Execute the command in the child process
+                # We need to parse the command for execvp
+                import shlex
+
+                parts = shlex.split(command)
+                # Set the working directory for the child process
+                os.chdir(self.working_dir)
+                try:
+                    os.execvp(parts[0], parts)
+                except FileNotFoundError:
+                    # If command is not found, print error and exit
+                    print(f"Command not found: {parts[0]}")
+                    os._exit(127)
+
+            # Parent process
+            self.shell_sessions[id]["process_id"] = pid
             self.shell_sessions[id]["running"] = True
+            output_lines: List[str] = []
+            original_settings = termios.tcgetattr(sys.stdin)
 
-            # Get output
-            stdout, stderr = proc.communicate()
+            try:
+                tty.setraw(sys.stdin.fileno())
 
-            output = stdout or ""
-            if stderr:
-                output += f"\nStderr Output:\n{stderr}"
+                while True:
+                    # Check if the child process has exited
+                    try:
+                        wait_pid, status = os.waitpid(pid, os.WNOHANG)
+                        if wait_pid == pid:
+                            self.shell_sessions[id]["running"] = False
+                            break
+                    except OSError:
+                        # Process already reaped
+                        self.shell_sessions[id]["running"] = False
+                        break
 
-            # Update session information and terminal
-            self.shell_sessions[id]["output"] = output
-            self._update_terminal_output(output + "\n")
+                    # Use select to wait for I/O on stdin or master PTY
+                    r, _, _ = select.select([sys.stdin, master_fd], [], [], 0.1)
 
-            return output
+                    if master_fd in r:
+                        try:
+                            data = os.read(master_fd, 1024)
+                            if not data:
+                                break
+                            decoded_data = data.decode(
+                                'utf-8', errors='replace'
+                            )
+                            # Echo to user's terminal and log
+                            self._update_terminal_output(decoded_data)
+                            output_lines.append(decoded_data)
+                        except OSError:
+                            break  # PTY has been closed
+
+                    if sys.stdin in r:
+                        try:
+                            user_input = os.read(sys.stdin.fileno(), 1024)
+                            if not user_input:
+                                break
+                            os.write(master_fd, user_input)
+                        except OSError:
+                            break
+
+            finally:
+                termios.tcsetattr(
+                    sys.stdin, termios.TCSADRAIN, original_settings
+                )
+                if master_fd:
+                    os.close(master_fd)
+
+            final_output = "".join(output_lines)
+            self.shell_sessions[id]["output"] = final_output
+            return final_output
 
         except Exception as e:
             error_msg = f"Command execution error: {e!s}"
             logger.error(error_msg)
             self._update_terminal_output(f"\nError: {error_msg}\n")
-
-            # More detailed error information
             import traceback
 
             detailed_error = traceback.format_exc()
