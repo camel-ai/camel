@@ -17,9 +17,17 @@ from camel.toolkits import OpenAIImageToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
-sys_msg = "You are a helpful assistant"
+sys_msg = "You are a helpful assistant that can generate images."
 
-tools = [*OpenAIImageToolkit(response_format="url").get_tools()]
+# Create OpenAI Image Toolkit with DALL-E 3 model and base64 response format
+tools = [
+    *OpenAIImageToolkit(
+        model="dall-e-3",
+        response_format="b64_json",
+        size="1024x1024",
+        quality="standard",
+    ).get_tools()
+]
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
@@ -34,8 +42,10 @@ camel_agent = ChatAgent(
 )
 
 # Define a user message
-usr_msg = "Generate an image of a cat."
+usr_msg = "Generate an image of a camel working out in a gym."
 
 # Get response information
-response = camel_agent.step(usr_msg)  # TODO: test this, now no permission
-print(response.info['tool_calls'])
+response = camel_agent.step(usr_msg)
+
+print(f"Tool calls made: {len(response.info['tool_calls'])}")
+print(f"\nAgent response: {response.msg}")

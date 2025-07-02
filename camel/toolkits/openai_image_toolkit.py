@@ -12,19 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-# Enables postponed evaluation of annotations (for string-based type hints)
-from __future__ import annotations
-
 import base64
 import os
 import uuid
 from io import BytesIO
-from typing import IO, List, Literal, Optional, Union
+from typing import List, Literal, Optional
 
 from openai import OpenAI
-from openai._types import NOT_GIVEN, FileTypes
 from PIL import Image
-from typing_extensions import cast as typing_cast
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
@@ -36,7 +31,7 @@ logger = get_logger(__name__)
 
 @MCPServer()
 class OpenAIImageToolkit(BaseToolkit):
-    r"""A class representing a toolkit for image generation using OpenAI's
+    r"""A class toolkit for image generation using OpenAI's
     Image Generation API.
     """
 
@@ -66,8 +61,8 @@ class OpenAIImageToolkit(BaseToolkit):
             ]
         ] = "1024x1024",
         quality: Optional[
-            Literal["auto", "high", "medium", "low", "standard", "hd"]
-        ] = "auto",
+            Literal["auto", "low", "medium", "high", "standard", "hd"]
+        ] = "standard",
         response_format: Optional[Literal["url", "b64_json"]] = "b64_json",
         n: Optional[int] = 1,
         background: Optional[
@@ -84,7 +79,7 @@ class OpenAIImageToolkit(BaseToolkit):
             url (Optional[str]): The url to the OpenAI service.
                 (default: :obj:`None`)
             model (Optional[str]): The model to use.
-                (default: :obj:`"gpt-image-1"`)
+                (default: :obj:`"dall-e-3"`)
             timeout (Optional[float]): The timeout value for API requests
                 in seconds. If None, no timeout is applied.
                 (default: :obj:`None`)
@@ -93,9 +88,10 @@ class OpenAIImageToolkit(BaseToolkit):
                 "auto"]]):
                 The size of the image to generate.
                 (default: :obj:`"1024x1024"`)
-            quality (Optional[Literal["auto", "high", "medium", "low",
+            quality (Optional[Literal["auto", "low", "medium", "high",
                 "standard", "hd"]]):The quality of the image to
-                generate. (default: :obj:`"auto"`)
+                generate. Different models support different values.
+                (default: :obj:`"standard"`)
             response_format (Optional[Literal["url", "b64_json"]]):
                 The format of the response.(default: :obj:`"b64_json"`)
             n (Optional[int]): The number of images to generate.
@@ -131,141 +127,105 @@ class OpenAIImageToolkit(BaseToolkit):
                 fails.
         """
         try:
-            # Decode the base64 string to get the image data
+            # decode the base64 string to get the image data
             image_data = base64.b64decode(base64_string)
-            # Create a memory buffer for the image data
+            # create a memory buffer for the image data
             image_buffer = BytesIO(image_data)
-            # Open the image using the PIL library
+            # open the image with PIL
             image = Image.open(image_buffer)
             return image
         except Exception as e:
-            error_msg = (
+            logger.error(
                 f"An error occurred while converting base64 to image: {e}"
             )
-            logger.error(error_msg)
             return None
 
-    def _validate_params(self, operation: str = "generate") -> None:
-        r"""Validate parameters according to the selected model and the type of
-        operation (generate or edit).
+    def _build_base_params(self, prompt: str) -> dict:
+        r"""Build base parameters dict for OpenAI API calls.
 
         Args:
-            operation (str, optional): Either generate or edit.
-                (default: :obj:`"generate"`)
+            prompt (str): The text prompt for the image operation.
 
-        Raises:
-            ValueError: If a parameter is not compatible with the selected
-                model or the requested operation.
+        Returns:
+            dict: Parameters dictionary with non-None values.
         """
-        # Normalise strings to avoid case issues (all our literals are lower
-        # case, but callers might pass upper-case by accident if **kwargs are
-        # allowed in future revisions).
-        model = (self.model or "").lower()
-        size = (self.size or "").lower()
-        quality = (self.quality or "").lower()  # type: ignore[arg-type]
-        response_format = (self.response_format or "").lower()  # type: ignore[arg-type]
-        background = (self.background or "").lower()  # type: ignore[arg-type]
-        style = (self.style or "").lower() if self.style is not None else None
+        params = {"prompt": prompt, "model": self.model}
 
-        # Shared checks -----------------------------------------------------
-        if model not in {"gpt-image-1", "dall-e-3", "dall-e-2"}:
-            raise ValueError(
-                f"Unsupported model: {self.model}. "
-                f"Choose from 'gpt-image-1', 'dall-e-3', or 'dall-e-2'."
-            )
-
+        # basic parameters supported by all models
         if self.n is not None:
-            if not (1 <= self.n <= 10):
-                raise ValueError(
-                    "Parameter 'n' must be between 1 and 10 inclusive."
-                )
+            params["n"] = self.n
+        if self.size is not None:
+            params["size"] = self.size
 
-        # Model specific checks --------------------------------------------
-        if model == "gpt-image-1":
-            allowed_sizes = {"1024x1024", "1536x1024", "1024x1536", "auto"}
-            allowed_qualities = {"auto", "high", "medium", "low"}
-            if size not in allowed_sizes:
-                raise ValueError(
-                    f"Size '{self.size}' is not supported for gpt-image-1. "
-                    f"Allowed: {sorted(allowed_sizes)}."
-                )
-            if quality not in allowed_qualities:
-                raise ValueError(
-                    f"Quality '{self.quality}' is not supported for "
-                    f"gpt-image-1. "
-                    f"Allowed: {sorted(allowed_qualities)}."
-                )
-            if self.response_format != "b64_json":
-                raise ValueError(
-                    "gpt-image-1 always returns base64 images. "
-                    "'response_format' must be 'b64_json'."
-                )
-            if style is not None:
-                raise ValueError(
-                    "Parameter 'style' is not supported for gpt-image-1."
-                )
-            # background is supported, no further checks needed
-            # (already type-hinted).
+        # Model-specific parameter filtering based on model
+        if self.model == "dall-e-2":
+            # dall-e-2 supports: prompt, model, n, size, response_format
+            if self.response_format is not None:
+                params["response_format"] = self.response_format
 
-        elif model == "dall-e-3":
-            if operation == "edit":
-                raise ValueError(
-                    "dall-e-3 does not support the image edit endpoint."
-                )
+        elif self.model == "dall-e-3":
+            # dall-e-3 supports: prompt, model, n,
+            # size, quality, response_format, style
+            if self.quality is not None:
+                params["quality"] = self.quality
+            if self.response_format is not None:
+                params["response_format"] = self.response_format
+            if self.style is not None:
+                params["style"] = self.style
 
-            allowed_sizes = {"1024x1024", "1792x1024", "1024x1792"}
-            allowed_qualities = {"hd", "standard"}
-            allowed_styles = {"vivid", "natural"}
-            if size not in allowed_sizes:
-                raise ValueError(
-                    f"Size '{self.size}' is not supported for dall-e-3. "
-                    f"Allowed: {sorted(allowed_sizes)}."
-                )
-            if quality not in allowed_qualities:
-                raise ValueError(
-                    f"Quality '{self.quality}' is not supported for dall-e-3. "
-                    f"Allowed: {sorted(allowed_qualities)}."
-                )
-            if self.n != 1:
-                raise ValueError("dall-e-3 only supports n=1.")
-            if background != "auto":
-                raise ValueError(
-                    "Parameter 'background' is not supported for dall-e-3."
-                )
-            if style is not None and style not in allowed_styles:
-                raise ValueError(
-                    f"Style '{self.style}' is not supported for dall-e-3. "
-                    f"Allowed: {sorted(allowed_styles)}."
-                )
+        elif self.model == "gpt-image-1":
+            # gpt-image-1 supports: prompt, model, n, size, quality, background
+            # Note: gpt-image-1 seems to default to b64_json response format
+            if self.quality is not None:
+                params["quality"] = self.quality
+            if self.background is not None:
+                params["background"] = self.background
 
-        elif model == "dall-e-2":
-            allowed_sizes = {"256x256", "512x512", "1024x1024"}
-            if size not in allowed_sizes:
-                raise ValueError(
-                    f"Size '{self.size}' is not supported for dall-e-2. "
-                    f"Allowed: {sorted(allowed_sizes)}."
-                )
-            if quality != "standard":
-                raise ValueError(
-                    "Parameter 'quality' must be 'standard' for dall-e-2."
-                )
-            if background != "auto":
-                raise ValueError(
-                    "Parameter 'background' is not supported for dall-e-2."
-                )
-            if style is not None:
-                raise ValueError(
-                    "Parameter 'style' is not supported for dall-e-2."
-                )
+        return params
 
-        # Additional checks for response_format (for models that allow it).
-        if model in {"dall-e-2", "dall-e-3"} and response_format not in {
-            "url",
-            "b64_json",
-        }:
-            raise ValueError(
-                "'response_format' must be either 'url' or 'b64_json'."
+    def _handle_api_response(
+        self, response, image_name: str, operation: str
+    ) -> str:
+        r"""Handle API response from OpenAI image operations.
+
+        Args:
+            response: The response object from OpenAI API.
+            image_name (str): Name for the saved image file.
+            operation (str): Operation type for success message ("generated").
+
+        Returns:
+            str: Success message with image path/URL or error message.
+        """
+        if response.data is None or len(response.data) == 0:
+            error_msg = "No image data returned from OpenAI API."
+            logger.error(error_msg)
+            return error_msg
+
+        # check if response has URL or base64 data
+        if hasattr(response.data[0], 'url') and response.data[0].url:
+            image_url = response.data[0].url
+            return f"Image {operation} successfully. Image URL: {image_url}"
+        elif (
+            hasattr(response.data[0], 'b64_json') and response.data[0].b64_json
+        ):
+            image_b64 = response.data[0].b64_json
+
+            # Save the image from base64
+            image_bytes = base64.b64decode(image_b64)
+            os.makedirs(self.image_save_path, exist_ok=True)
+            image_path = os.path.join(
+                self.image_save_path,
+                f"{image_name}_{uuid.uuid4().hex}.png",
             )
+
+            with open(image_path, "wb") as f:
+                f.write(image_bytes)
+
+            return f"Image generated and saved to {image_path}"
+        else:
+            error_msg = "No valid image data (URL or base64) found in response"
+            logger.error(error_msg)
+            return error_msg
 
     def generate_image(
         self,
@@ -285,252 +245,12 @@ class OpenAIImageToolkit(BaseToolkit):
         Returns:
             str: the content of the model response or format of the response.
         """
-
-        # Validate parameters before making the request
-        self._validate_params(operation="generate")
         try:
-            # Call the OpenAI Images API with only the parameters supported
-            # by each model variant. This avoids the need for type ignores or
-            # casts while satisfying the static type checker.
-
-            if self.model == "gpt-image-1":
-                response = self.client.images.generate(
-                    prompt=prompt,
-                    model=self.model,
-                    n=self.n if self.n is not None else NOT_GIVEN,
-                    size=self.size if self.size is not None else NOT_GIVEN,
-                    quality=self.quality
-                    if self.quality is not None
-                    else NOT_GIVEN,
-                    background=self.background
-                    if self.background is not None
-                    else NOT_GIVEN,
-                )
-            elif self.model == "dall-e-3":
-                response = self.client.images.generate(
-                    prompt=prompt,
-                    model=self.model,
-                    n=self.n if self.n is not None else NOT_GIVEN,
-                    size=self.size if self.size is not None else NOT_GIVEN,
-                    quality=self.quality
-                    if self.quality is not None
-                    else NOT_GIVEN,
-                    response_format=self.response_format
-                    if self.response_format is not None
-                    else NOT_GIVEN,
-                    style=self.style if self.style is not None else NOT_GIVEN,
-                )
-            else:  # "dall-e-2"
-                response = self.client.images.generate(
-                    prompt=prompt,
-                    model=self.model,
-                    n=self.n if self.n is not None else NOT_GIVEN,
-                    size=self.size if self.size is not None else NOT_GIVEN,
-                    quality=self.quality
-                    if self.quality is not None
-                    else NOT_GIVEN,
-                    response_format=self.response_format
-                    if self.response_format is not None
-                    else NOT_GIVEN,
-                )
-
-            if response.data is None or len(response.data) == 0:
-                error_msg = "No image data returned from OPENAI API."
-                logger.error(error_msg)
-                return error_msg
-            if self.response_format == "url":
-                image_url = response.data[0].url
-                return f"Image generated successfully. Image URL: {image_url}"
-            else:
-                image_b64 = response.data[0].b64_json
-                image = self.base64_to_image(image_b64)  # type: ignore[arg-type]
-
-                if image is None:
-                    error_msg = "Failed to convert base64 string to image."
-                    logger.error(error_msg)
-                    return error_msg
-
-                os.makedirs(self.image_save_path, exist_ok=True)
-                image_path = os.path.join(
-                    self.image_save_path,
-                    f"{image_name}_{uuid.uuid4().hex}.png",
-                )
-                image.save(image_path)
-                return f"Image saved to {image_path}"
+            params = self._build_base_params(prompt)
+            response = self.client.images.generate(**params)
+            return self._handle_api_response(response, image_name, "generated")
         except Exception as e:
             error_msg = f"An error occurred while generating image: {e}"
-            logger.error(error_msg)
-            return error_msg
-
-    def edit_image(
-        self,
-        prompt: str,
-        image_paths: Union[str, List[str]],
-        image_name: str = "edited_image",
-    ) -> str:
-        r"""Edit an existing image (or images) using OpenAI's Image Edit API.
-
-        Args:
-            prompt (str): The text prompt describing the modifications to
-                the image.
-            image_paths (Union[str, List[str]]): List of file paths to the
-                input images to be edited. for example:
-                "['image1.png', 'image2.png']" or "image1.png,image2.png"
-            image_name (str): The name of the output image.
-                (default: :obj:`"edited_image"`)
-
-        Returns:
-            str: Path to the saved image (for ``b64_json`` responses) or a URL
-                string, or an error message when something went wrong.
-        """
-
-        # Validate parameters before making the request
-        self._validate_params(operation="edit")
-        try:
-            # Normalize incoming image paths into a list without changing the
-            # runtime type of the original ``image_paths`` variable (to keep
-            # mypy happy).
-            image_paths_list: List[str]
-
-            if isinstance(image_paths, str):
-                # Try to parse as JSON first
-                try:
-                    import json
-
-                    image_paths_list = json.loads(image_paths)
-                    if not isinstance(image_paths_list, list):
-                        raise ValueError()
-                except Exception:
-                    # If not JSON, try comma-separated values
-                    if ',' in image_paths:
-                        image_paths_list = [
-                            path.strip() for path in image_paths.split(',')
-                        ]
-                    else:
-                        # Single path
-                        image_paths_list = [image_paths]
-            elif isinstance(image_paths, list):
-                image_paths_list = image_paths
-            else:
-                raise ValueError(
-                    f"image_paths must be a list of strings or a string, "
-                    f"got {type(image_paths)}"
-                )
-
-            # Open multiple image files
-            images: List[IO[bytes]] = []
-            for path in image_paths_list:
-                images.append(open(path, "rb"))
-
-            # Call the OpenAI Images Edit API with model-specific arguments.
-            if self.model == "gpt-image-1":
-                # Cast to FileTypes to satisfy the OpenAI SDK type requirements
-                file_images: FileTypes = images  # type: ignore[assignment]
-
-                # Cast size and quality to match edit API expectations
-                edit_size = typing_cast(
-                    Optional[
-                        Literal[
-                            "256x256",
-                            "512x512",
-                            "1024x1024",
-                            "1536x1024",
-                            "1024x1536",
-                            "auto",
-                        ]
-                    ],
-                    self.size,
-                )
-                edit_quality = typing_cast(
-                    Optional[
-                        Literal["standard", "low", "medium", "high", "auto"]
-                    ],
-                    self.quality,
-                )
-
-                response = self.client.images.edit(
-                    image=file_images,
-                    prompt=prompt,
-                    model=self.model,
-                    n=self.n if self.n is not None else NOT_GIVEN,
-                    size=edit_size if edit_size is not None else NOT_GIVEN,
-                    quality=edit_quality
-                    if edit_quality is not None
-                    else NOT_GIVEN,
-                    background=self.background
-                    if self.background is not None
-                    else NOT_GIVEN,
-                )
-            else:  # "dall-e-2"
-                single_image = images[0]
-
-                # Cast size and quality to match edit API expectations
-                edit_size = typing_cast(
-                    Optional[
-                        Literal[
-                            "256x256",
-                            "512x512",
-                            "1024x1024",
-                            "1536x1024",
-                            "1024x1536",
-                            "auto",
-                        ]
-                    ],
-                    self.size,
-                )
-                edit_quality = typing_cast(
-                    Optional[
-                        Literal["standard", "low", "medium", "high", "auto"]
-                    ],
-                    self.quality,
-                )
-
-                response = self.client.images.edit(
-                    image=single_image,
-                    prompt=prompt,
-                    model=self.model,
-                    n=self.n if self.n is not None else NOT_GIVEN,
-                    size=edit_size if edit_size is not None else NOT_GIVEN,
-                    quality=edit_quality
-                    if edit_quality is not None
-                    else NOT_GIVEN,
-                    response_format=self.response_format
-                    if self.response_format is not None
-                    else NOT_GIVEN,
-                )
-
-            # Close all opened files
-            for img in images:
-                img.close()
-
-            if response.data is None or len(response.data) == 0:
-                error_msg = "No image data returned from OpenAI API."
-                logger.error(error_msg)
-                return error_msg
-            if self.response_format == "url":
-                image_url = response.data[0].url
-                return f"Image edited successfully. Image URL: {image_url}"
-            else:
-                image_b64 = response.data[0].b64_json
-                # Ensure image_b64 is not None before decoding
-                assert (
-                    image_b64 is not None
-                ), "Expected base64 image data but got None"
-
-            # Save the image directly from base64
-            image_bytes = base64.b64decode(image_b64)
-
-            os.makedirs(self.image_save_path, exist_ok=True)
-            image_path = os.path.join(
-                self.image_save_path, f"{image_name}_{uuid.uuid4().hex}.png"
-            )
-
-            with open(image_path, "wb") as f:
-                f.write(image_bytes)
-
-            return f"Edited image saved to {image_path}"
-        except Exception as e:
-            error_msg = f"An error occurred while editing image: {e}"
             logger.error(error_msg)
             return error_msg
 
@@ -544,5 +264,5 @@ class OpenAIImageToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.generate_image),
-            FunctionTool(self.edit_image),
+            # could add edit_image function later
         ]
