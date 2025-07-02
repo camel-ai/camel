@@ -24,7 +24,7 @@ from camel.utils import print_text_animated
 # Create ERNIE 4.5 model configuration
 model = ModelFactory.create(
     model_platform=ModelPlatformType.QIANFAN,
-    model_type=ModelType.QIANFAN_ERNIE_4_5_TURBO_128K,
+    model_type=ModelType.ERNIE_4_5_TURBO_128K,
     model_config_dict=QianfanConfig(temperature=0.2).as_dict(),
 )
 
@@ -34,8 +34,13 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
-    study of autonomous and communicative agents."""
+user_msg = """Say hi to CAMEL-AI, one open-source community believe that 
+scaling up multi-agent systems is a pathway toward AGI. It's mission is: 
+Finding the Scaling Laws of Agents. Intelligence emerges from diversity, not a 
+single perfect principle. Multi-agent systems naturally follow "divide and 
+conquer" approaches, breaking down complex problems across multiple 
+specialized agents. Since 2023, they have been building the first multi-agent 
+framework CAMEL"""
 
 # Get response information
 response = camel_agent.step(user_msg)
@@ -43,10 +48,17 @@ print(response.msgs[0].content)
 
 '''
 ===============================================================================
-Hi, CAMEL AI! It's great to connect with an open-source community focused on 
-the fascinating field of autonomous and communicative agents. Your work in 
-advancing this area is truly valuable, and I'm excited to see the innovative 
-solutions and insights you'll bring to the table. Keep up the amazing work!
+Hi, CAMEL-AI! It's fantastic to learn about your open - source community and 
+your ambitious mission of finding the scaling laws of agents. The idea that 
+intelligence emerges from diversity rather than a single perfect principle is 
+quite intriguing and aligns with the complex nature of real - world problems.
+
+The "divide and conquer" approach of multi - agent systems to tackle complex 
+problems by distributing tasks among specialized agents makes a lot of sense. 
+It's impressive that you've been working on the CAMEL framework since 2023. 
+I'm curious, what are some of the key challenges you've faced so far in 
+building this multi - agent framework, and how do you plan to overcome them as 
+you continue your journey toward understanding the scaling laws of agents?
 ===============================================================================
 '''
 
