@@ -10,18 +10,31 @@
     // === Complete snapshot.js logic preservation ===
 
     function isVisible(node) {
+        // Check if node is null or not a valid DOM node
+        if (!node || typeof node.nodeType === 'undefined') return false;
         if (node.nodeType !== Node.ELEMENT_NODE) return true;
-        const style = window.getComputedStyle(node);
-        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0')
+
+        try {
+            const style = window.getComputedStyle(node);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0')
+                return false;
+            // An element with `display: contents` is not rendered itself, but its children are.
+            if (style.display === 'contents')
+                return true;
+            const rect = node.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        } catch (e) {
+            // If there's an error getting computed style or bounding rect, assume element is not visible
             return false;
-        // An element with `display: contents` is not rendered itself, but its children are.
-        if (style.display === 'contents')
-            return true;
-        const rect = node.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0;
+        }
     }
 
     function getRole(node) {
+        // Check if node is null or doesn't have required properties
+        if (!node || !node.tagName || !node.getAttribute) {
+            return 'generic';
+        }
+
         const role = node.getAttribute('role');
         if (role) return role;
 
@@ -39,6 +52,9 @@
     }
 
     function getAccessibleName(node) {
+        // Check if node is null or doesn't have required methods
+        if (!node || !node.hasAttribute || !node.getAttribute) return '';
+
         if (node.hasAttribute('aria-label')) return node.getAttribute('aria-label') || '';
         if (node.hasAttribute('aria-labelledby')) {
             const id = node.getAttribute('aria-labelledby');
@@ -55,6 +71,9 @@
 
     const textCache = new Map();
     function getVisibleTextContent(_node) {
+        // Check if node is null or doesn't have nodeType
+        if (!_node || typeof _node.nodeType === 'undefined') return '';
+
         if (textCache.has(_node)) return textCache.get(_node);
 
         if (_node.nodeType === Node.TEXT_NODE) {
@@ -85,6 +104,9 @@
         const visited = new Set();
 
         function toAriaNode(element) {
+            // Check if element is null or not a valid DOM element
+            if (!element || !element.tagName) return null;
+
             // Only consider visible elements
             if (!isVisible(element)) return null;
 
@@ -115,7 +137,8 @@
         }
 
         function traverse(element, parentNode) {
-            if (visited.has(element)) return;
+            // Check if element is null or not a valid DOM element
+            if (!element || !element.tagName || visited.has(element)) return;
             visited.add(element);
 
             // FIX: Completely skip script and style tags and their children.

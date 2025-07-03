@@ -96,7 +96,7 @@ __all__ = [
     'SearchToolkit',
     'SlackToolkit',
     'WhatsAppToolkit',
-    'DalleToolkit',
+    'OpenAIImageToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
     'RetrievalToolkit',
