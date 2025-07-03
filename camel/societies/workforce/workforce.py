@@ -28,12 +28,11 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    Union,
 )
 
 from colorama import Fore
 
-from camel.agents import ChatAgent, MCPAgent
+from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
@@ -210,7 +209,7 @@ class Workforce(BaseNode):
         children: Optional[List[BaseNode]] = None,
         coordinator_agent: Optional[ChatAgent] = None,
         task_agent: Optional[ChatAgent] = None,
-        new_worker_agent: Optional[Union[ChatAgent, MCPAgent]] = None,
+        new_worker_agent: Optional[ChatAgent] = None,
         graceful_shutdown_timeout: float = 15.0,
         share_memory: bool = False,
     ) -> None:
