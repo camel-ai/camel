@@ -28,6 +28,8 @@ export TRACEROOT_ENABLED="true"
 python camel/examples/debug/traceroot_example.py
 ```
 
+Some of the configuration options specified in the `.traceroot-config.yaml` file.
+
 And then if you import `import traceroot` in your Python code, the traceroot functionality will be automatically enabled.
 
 ### 3. Self-Hosted Deployment
