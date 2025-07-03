@@ -25,10 +25,13 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel
+from PIL import Image
+from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
+import uuid
+
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -43,19 +46,35 @@ from .task_prompt import (
 logger = get_logger(__name__)
 
 
+class TaskValidationMode(Enum):
+    r"""Validation modes for different use cases."""
+
+    INPUT = "input"  # For validating task content before processing
+    OUTPUT = "output"  # For validating task results after completion
+
+
 def validate_task_content(
-    content: str, task_id: str = "unknown", min_length: int = 10
+    content: str,
+    task_id: str = "unknown",
+    min_length: int = 1,
+    mode: TaskValidationMode = TaskValidationMode.INPUT,
+    check_failure_patterns: bool = True,
 ) -> bool:
-    r"""Validates task result content to avoid silent failures.
-    It performs basic checks to ensure the content meets minimum
-    quality standards.
+    r"""Unified validation for task content and results to avoid silent
+    failures. Performs comprehensive checks to ensure content meets quality
+    standards.
 
     Args:
-        content (str): The task result content to validate.
+        content (str): The task content or result to validate.
         task_id (str): Task ID for logging purposes.
             (default: :obj:`"unknown"`)
         min_length (int): Minimum content length after stripping whitespace.
-            (default: :obj:`10`)
+            (default: :obj:`1`)
+        mode (TaskValidationMode): Validation mode - INPUT for task content,
+            OUTPUT for task results. (default: :obj:`TaskValidationMode.INPUT`)
+        check_failure_patterns (bool): Whether to check for failure indicators
+            in the content. Only effective in OUTPUT mode.
+            (default: :obj:`True`)
 
     Returns:
         bool: True if content passes validation, False otherwise.
@@ -82,12 +101,68 @@ def validate_task_content(
         )
         return False
 
+    # 4: For OUTPUT mode, check for failure patterns if enabled
+    if mode == TaskValidationMode.OUTPUT and check_failure_patterns:
+        content_lower = stripped_content.lower()
+
+        # Check for explicit failure indicators
+        failure_indicators = [
+            "i cannot complete",
+            "i cannot do",
+            "task failed",
+            "unable to complete",
+            "cannot be completed",
+            "failed to complete",
+            "i cannot",
+            "not possible",
+            "impossible to",
+            "cannot perform",
+        ]
+
+        if any(indicator in content_lower for indicator in failure_indicators):
+            logger.warning(
+                f"Task {task_id}: Failure indicator detected in result. "
+                f"Content preview: '{stripped_content[:100]}...'"
+            )
+            return False
+
+        # Check for responses that are just error messages or refusals
+        if content_lower.startswith(("error", "failed", "cannot", "unable")):
+            logger.warning(
+                f"Task {task_id}: Error/refusal pattern detected at start. "
+                f"Content preview: '{stripped_content[:100]}...'"
+            )
+            return False
+
     # All validation checks passed
     logger.debug(
-        f"Task {task_id}: Content validation passed "
+        f"Task {task_id}: {mode.value} validation passed "
         f"({len(stripped_content)} chars)"
     )
     return True
+
+
+def is_task_result_insufficient(task: "Task") -> bool:
+    r"""Check if a task result is insufficient and should be treated as failed.
+
+    This is a convenience wrapper around validate_task_content for backward
+    compatibility and semantic clarity when checking task results.
+
+    Args:
+        task (Task): The task to check.
+
+    Returns:
+        bool: True if the result is insufficient, False otherwise.
+    """
+    if not hasattr(task, 'result') or task.result is None:
+        return True
+
+    return not validate_task_content(
+        content=task.result,
+        task_id=task.id,
+        mode=TaskValidationMode.OUTPUT,
+        check_failure_patterns=True,
+    )
 
 
 def parse_response(
@@ -142,27 +217,39 @@ class Task(BaseModel):
         content (str): string content for task.
         id (str): An unique string identifier for the task. This should
             ideally be provided by the provider/model which created the task.
-            (default: :obj: `""`)
+            (default: :obj:`uuid.uuid4()`)
         state (TaskState): The state which should be OPEN, RUNNING, DONE or
-            DELETED. (default: :obj: `TaskState.OPEN`)
-        type (Optional[str]): task type. (default: :obj: `None`)
+            DELETED. (default: :obj:`TaskState.FAILED`)
+        type (Optional[str]): task type. (default: :obj:`None`)
         parent (Optional[Task]): The parent task, None for root task.
-            (default: :obj: `None`)
+            (default: :obj:`None`)
         subtasks (List[Task]): The childrent sub-tasks for the task.
-            (default: :obj: `[]`)
+            (default: :obj:`[]`)
         result (Optional[str]): The answer for the task.
-            (default: :obj: `""`)
+            (default: :obj:`""`)
         failure_count (int): The failure count for the task.
-            (default: :obj: `0`)
+            (default: :obj:`0`)
+        assigned_worker_id (Optional[str]): The ID of the worker assigned to
+            this task. (default: :obj:`None`)
         additional_info (Optional[Dict[str, Any]]): Additional information for
-            the task. (default: :obj: `None`)
+            the task. (default: :obj:`None`)
+        image_list (Optional[List[Image.Image]]): Optional list of PIL Image
+            objects associated with the task. (default: :obj:`None`)
+        image_detail (Literal["auto", "low", "high"]): Detail level of the
+            images associated with the task. (default: :obj:`auto`)
+        video_bytes (Optional[bytes]): Optional bytes of a video associated
+            with the task. (default: :obj:`None`)
+        video_detail (Literal["auto", "low", "high"]): Detail level of the
+            videos associated with the task. (default: :obj:`auto`)
     """
 
     content: str
 
-    id: str = ""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
 
-    state: TaskState = TaskState.OPEN
+    state: TaskState = (
+        TaskState.FAILED
+    )  # TODO: Add logic for OPEN in workforce.py
 
     type: Optional[str] = None
 
@@ -174,7 +261,19 @@ class Task(BaseModel):
 
     failure_count: int = 0
 
+    assigned_worker_id: Optional[str] = None
+
     additional_info: Optional[Dict[str, Any]] = None
+
+    image_list: Optional[List[Image.Image]] = None
+
+    image_detail: Literal["auto", "low", "high"] = "auto"
+
+    video_bytes: Optional[bytes] = None
+
+    video_detail: Literal["auto", "low", "high"] = "auto"
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __repr__(self) -> str:
         r"""Return a string representation of the task."""
@@ -204,7 +303,9 @@ class Task(BaseModel):
 
     def reset(self):
         r"""Reset Task to initial state."""
-        self.state = TaskState.OPEN
+        self.state = (
+            TaskState.FAILED
+        )  # TODO: Add logic for OPEN in workforce.py
         self.result = ""
 
     def update_result(self, result: str):
@@ -357,6 +458,10 @@ class Task(BaseModel):
             role_name=role_name,
             content=self.content,
             additional_info=self.additional_info,
+            image_list=self.image_list,
+            image_detail=self.image_detail,
+            video_bytes=self.video_bytes,
+            video_detail=self.video_detail,
             other_results=sub_tasks_result,
         )
         msg = BaseMessage.make_user_message(
@@ -507,7 +612,12 @@ class TaskManager:
         role_name = agent.role_name
         content = template.format(role_name=role_name, content=task.content)
         msg = BaseMessage.make_user_message(
-            role_name=role_name, content=content
+            role_name=role_name,
+            content=content,
+            image_list=task.image_list,
+            image_detail=task.image_detail,
+            video_bytes=task.video_bytes,
+            video_detail=task.video_detail,
         )
         response = agent.step(msg)
         if task_parser is None:

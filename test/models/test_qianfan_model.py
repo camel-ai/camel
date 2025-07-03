@@ -51,7 +51,7 @@ def test_qianfan_model(model_type: ModelType):
 
 @pytest.mark.model_backend
 def test_qianfan_model_unexpected_argument():
-    model_type = ModelType.QIANFAN_ERNIE_X1_TURBO_32K
+    model_type = ModelType.ERNIE_X1_TURBO_32K
 
     model_config_dict = {"model_path": "ernie-x1-turbo-32k"}
 
@@ -69,6 +69,6 @@ def test_qianfan_model_unexpected_argument():
 
 @pytest.mark.model_backend
 def test_qianfan_model_stream_property():
-    model = QianfanModel(ModelType.QIANFAN_ERNIE_X1_TURBO_32K)
+    model = QianfanModel(ModelType.ERNIE_X1_TURBO_32K)
 
     assert model.stream is False

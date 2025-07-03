@@ -81,9 +81,10 @@ class TerminalToolkit(BaseToolkit):
         self.terminal_ready = threading.Event()
         self.gui_thread = None
         self.safe_mode = safe_mode
-
+        self._file_initialized = False
         self.cloned_env_path = None
         self.use_shell_mode = use_shell_mode
+        self._human_takeover_active = False
 
         self.python_executable = sys.executable
         self.is_macos = platform.system() == 'Darwin'
@@ -129,31 +130,30 @@ class TerminalToolkit(BaseToolkit):
 
         self.log_file = os.path.join(os.getcwd(), "camel_terminal.txt")
 
-        if os.path.exists(self.log_file):
-            with open(self.log_file, "w") as f:
-                f.truncate(0)
-                f.write("CAMEL Terminal Session\n")
-                f.write("=" * 50 + "\n")
-                f.write(f"Working Directory: {os.getcwd()}\n")
-                f.write("=" * 50 + "\n\n")
-        else:
-            with open(self.log_file, "w") as f:
-                f.write("CAMEL Terminal Session\n")
-                f.write("=" * 50 + "\n")
-                f.write(f"Working Directory: {os.getcwd()}\n")
-                f.write("=" * 50 + "\n\n")
-
         # Inform the user
-        logger.info(f"Terminal output redirected to: {self.log_file}")
+        logger.info(f"Terminal output will be redirected to: {self.log_file}")
 
         def file_update(output: str):
+            import sys
+
             try:
+                # For macOS/Linux file-based mode, also write to stdout
+                # to provide real-time feedback in the user's terminal.
+                sys.stdout.write(output)
+                sys.stdout.flush()
+
+                # Initialize file on first write
+                if not self._file_initialized:
+                    with open(self.log_file, "w") as f:
+                        f.write("CAMEL Terminal Session\n")
+                        f.write("=" * 50 + "\n")
+                        f.write(f"Working Directory: {os.getcwd()}\n")
+                        f.write("=" * 50 + "\n\n")
+                    self._file_initialized = True
+
                 # Directly append to the end of the file
                 with open(self.log_file, "a") as f:
                     f.write(output)
-                    # If the output does not end with a newline, add one
-                    if output and not output.endswith('\n'):
-                        f.write('\n')
                 # Ensure the agent also receives the output
                 self.agent_queue.put(output)
             except Exception as e:
@@ -165,6 +165,12 @@ class TerminalToolkit(BaseToolkit):
     def _clone_current_environment(self):
         r"""Create a new Python virtual environment."""
         try:
+            if self.cloned_env_path is None:
+                self._update_terminal_output(
+                    "Error: No environment path specified\n"
+                )
+                return
+
             if os.path.exists(self.cloned_env_path):
                 self._update_terminal_output(
                     f"Using existing environment: {self.cloned_env_path}\n"
@@ -187,7 +193,8 @@ class TerminalToolkit(BaseToolkit):
             logger.error(f"Failed to create environment: {e}")
 
     def _create_terminal(self):
-        r"""Create a terminal GUI."""
+        r"""Create a terminal GUI. If GUI creation fails, fallback
+        to file output."""
 
         try:
             import tkinter as tk
@@ -239,7 +246,12 @@ class TerminalToolkit(BaseToolkit):
             self.root.mainloop()
 
         except Exception as e:
-            logger.error(f"Failed to create terminal: {e}")
+            logger.warning(
+                f"Failed to create GUI terminal: {e}, "
+                f"falling back to file output mode"
+            )
+            # Fallback to file output mode when GUI creation fails
+            self._setup_file_output()
             self.terminal_ready.set()
 
     def _update_terminal_output(self, output: str):
@@ -249,8 +261,9 @@ class TerminalToolkit(BaseToolkit):
             output (str): The output to be sent to the agent
         """
         try:
-            # If it is macOS , only write to file
-            if self.is_macos:
+            # If it is macOS or if we have a log_file (fallback mode),
+            # write to file
+            if self.is_macos or hasattr(self, 'log_file'):
                 if hasattr(self, 'log_file'):
                     with open(self.log_file, "a") as f:
                         f.write(output)
@@ -325,17 +338,24 @@ class TerminalToolkit(BaseToolkit):
     def file_find_in_content(
         self, file: str, regex: str, sudo: bool = False
     ) -> str:
-        r"""Search for matching text within file content.
+        r"""Search for text within a file's content using a regular expression.
+
+        This function is useful for finding specific patterns or lines of text
+        within a given file. It uses `grep` on Unix-like systems and `findstr`
+        on Windows.
 
         Args:
-            file (str): Absolute path of the file to search within.
-            regex (str): Regular expression pattern to match.
-            sudo (bool, optional): Whether to use sudo privileges. Defaults to
-                False. Note: Using sudo requires the process to have
-                appropriate permissions.
+            file (str): The absolute path of the file to search within.
+            regex (str): The regular expression pattern to match.
+            sudo (bool, optional): Whether to use sudo privileges for the
+                search. Defaults to False. Note: Using sudo requires the
+                process to have appropriate permissions.
+                (default: :obj:`False`)
 
         Returns:
-            str: Matching content found in the file.
+            str: The matching content found in the file. If no matches are
+                found, an empty string is returned. Returns an error message
+                if the file does not exist or another error occurs.
         """
 
         if not os.path.exists(file):
@@ -367,14 +387,21 @@ class TerminalToolkit(BaseToolkit):
             return f"Error: {e!s}"
 
     def file_find_by_name(self, path: str, glob: str) -> str:
-        r"""Find files by name pattern in specified directory.
+        r"""Find files by name in a specified directory using a glob pattern.
+
+        This function recursively searches for files matching a given name or
+        pattern within a directory. It uses `find` on Unix-like systems and
+        `dir` on Windows.
 
         Args:
-            path (str): Absolute path of directory to search.
-            glob (str): Filename pattern using glob syntax wildcards.
+            path (str): The absolute path of the directory to search in.
+            glob (str): The filename pattern to search for, using glob syntax
+                (e.g., "*.py", "data*").
 
         Returns:
-            str: List of files matching the pattern.
+            str: A newline-separated string containing the paths of the files
+                that match the pattern. Returns an error message if the
+                directory does not exist or another error occurs.
         """
         if not os.path.exists(path):
             return f"Directory not found: {path}"
@@ -640,18 +667,37 @@ class TerminalToolkit(BaseToolkit):
 
         return True, command
 
-    def shell_exec(self, id: str, command: str) -> str:
-        r"""Execute commands. This can be used to execute various commands,
-        such as writing code, executing code, and running commands.
+    def shell_exec(
+        self, id: str, command: str, interactive: bool = False
+    ) -> str:
+        r"""Executes a shell command in a specified session.
+
+        This function creates and manages shell sessions to execute commands,
+        simulating a real terminal. It can run commands in both non-interactive
+        (capturing output) and interactive modes. Each session is identified by
+        a unique ID. If a session with the given ID does not exist, it will be
+        created.
 
         Args:
-            id (str): Unique identifier of the target shell session.
-            command (str): Shell command to execute.
+            id (str): A unique identifier for the shell session. This is used
+                to manage multiple concurrent shell processes.
+            command (str): The shell command to be executed.
+            interactive (bool, optional): If `True`, the command runs in
+                interactive mode, connecting it to the terminal's standard
+                input. This is useful for commands that require user input,
+                like `ssh`. Defaults to `False`. Interactive mode is only
+                supported on macOS and Linux. (default: :obj:`False`)
 
         Returns:
-            str: Output of the command execution or error message.
+            str: The standard output and standard error from the command. If an
+                error occurs during execution, a descriptive error message is
+                returned.
+
+        Note:
+            When `interactive` is set to `True`, this function may block if the
+            command requires input. In safe mode, some commands that are
+            considered dangerous are restricted.
         """
-        # Command execution must be within the working directory
         error_msg = self._enforce_working_dir_for_execution(self.working_dir)
         if error_msg:
             return error_msg
@@ -664,7 +710,6 @@ class TerminalToolkit(BaseToolkit):
                 return f"Command rejected: {sanitized_command}"
             command = sanitized_command
 
-        # If the session does not exist, create a new session
         if id not in self.shell_sessions:
             self.shell_sessions[id] = {
                 "process": None,
@@ -673,7 +718,6 @@ class TerminalToolkit(BaseToolkit):
             }
 
         try:
-            # First, log the command to be executed
             self._update_terminal_output(f"\n$ {command}\n")
 
             if command.startswith('python') or command.startswith('pip'):
@@ -697,30 +741,7 @@ class TerminalToolkit(BaseToolkit):
                 elif command.startswith('pip'):
                     command = command.replace('pip', pip_path, 1)
 
-            if self.is_macos:
-                # Type safe version - macOS uses subprocess.run
-                process = subprocess.run(
-                    command,
-                    shell=True,
-                    cwd=self.working_dir,
-                    capture_output=True,
-                    text=True,
-                    env=os.environ.copy(),
-                )
-
-                # Process the output
-                output = process.stdout or ""
-                if process.stderr:
-                    output += f"\nStderr Output:\n{process.stderr}"
-
-                # Update session information and terminal
-                self.shell_sessions[id]["output"] = output
-                self._update_terminal_output(output + "\n")
-
-                return output
-
-            else:
-                # Non-macOS systems use the Popen method
+            if not interactive:
                 proc = subprocess.Popen(
                     command,
                     shell=True,
@@ -734,29 +755,116 @@ class TerminalToolkit(BaseToolkit):
                     env=os.environ.copy(),
                 )
 
-                # Store the process and mark it as running
                 self.shell_sessions[id]["process"] = proc
                 self.shell_sessions[id]["running"] = True
-
-                # Get output
                 stdout, stderr = proc.communicate()
-
                 output = stdout or ""
                 if stderr:
                     output += f"\nStderr Output:\n{stderr}"
-
-                # Update session information and terminal
                 self.shell_sessions[id]["output"] = output
                 self._update_terminal_output(output + "\n")
-
                 return output
+
+            # Interactive mode with real-time streaming via PTY
+            if self.os_type not in ['Darwin', 'Linux']:
+                return (
+                    "Interactive mode is not supported on "
+                    f"{self.os_type} due to PTY limitations."
+                )
+
+            import pty
+            import select
+            import sys
+            import termios
+            import tty
+
+            # Fork a new process with a PTY
+            pid, master_fd = pty.fork()
+
+            if pid == 0:  # Child process
+                # Execute the command in the child process
+                try:
+                    import shlex
+
+                    parts = shlex.split(command)
+                    if not parts:
+                        logger.error("Error: Empty command")
+                        os._exit(1)
+
+                    os.chdir(self.working_dir)
+                    os.execvp(parts[0], parts)
+                except (ValueError, IndexError, OSError) as e:
+                    logger.error(f"Command execution error: {e}")
+                    os._exit(127)
+                except Exception as e:
+                    logger.error(f"Unexpected error: {e}")
+                    os._exit(1)
+
+            # Parent process
+            self.shell_sessions[id]["process_id"] = pid
+            self.shell_sessions[id]["running"] = True
+            output_lines: List[str] = []
+            original_settings = termios.tcgetattr(sys.stdin)
+
+            try:
+                tty.setraw(sys.stdin.fileno())
+
+                while True:
+                    # Check if the child process has exited
+                    try:
+                        wait_pid, status = os.waitpid(pid, os.WNOHANG)
+                        if wait_pid == pid:
+                            self.shell_sessions[id]["running"] = False
+                            break
+                    except OSError:
+                        # Process already reaped
+                        self.shell_sessions[id]["running"] = False
+                        break
+
+                    # Use select to wait for I/O on stdin or master PTY
+                    r, _, _ = select.select(
+                        [sys.stdin, master_fd], [], [], 0.1
+                    )
+
+                    if master_fd in r:
+                        try:
+                            data = os.read(master_fd, 1024)
+                            if not data:
+                                break
+                            decoded_data = data.decode(
+                                'utf-8', errors='replace'
+                            )
+                            # Echo to user's terminal and log
+                            self._update_terminal_output(decoded_data)
+                            output_lines.append(decoded_data)
+                        except OSError:
+                            break  # PTY has been closed
+
+                    if sys.stdin in r:
+                        try:
+                            user_input = os.read(sys.stdin.fileno(), 1024)
+                            if not user_input:
+                                break
+                            os.write(master_fd, user_input)
+                        except OSError:
+                            break
+
+            finally:
+                if original_settings is not None:
+                    termios.tcsetattr(
+                        sys.stdin, termios.TCSADRAIN, original_settings
+                    )
+                if master_fd:
+                    os.close(master_fd)
+
+            final_output = "".join(output_lines)
+            self.shell_sessions[id]["output"] = final_output
+            return final_output
 
         except Exception as e:
             error_msg = f"Command execution error: {e!s}"
             logger.error(error_msg)
             self._update_terminal_output(f"\nError: {error_msg}\n")
-
-            # More detailed error information
             import traceback
 
             detailed_error = traceback.format_exc()
@@ -766,13 +874,19 @@ class TerminalToolkit(BaseToolkit):
             )
 
     def shell_view(self, id: str) -> str:
-        r"""View the content of a specified shell session.
+        r"""View the full output history of a specified shell session.
+
+        Retrieves the accumulated output (both stdout and stderr) generated by
+        commands in the specified session since its creation. This is useful
+        for checking the complete history of a session, especially after a
+        command has finished execution.
 
         Args:
-            id (str): Unique identifier of the target shell session.
+            id (str): The unique identifier of the shell session to view.
 
         Returns:
-            str: Current output content of the shell session.
+            str: The complete output history of the shell session. Returns an
+                error message if the session is not found.
         """
         if id not in self.shell_sessions:
             return f"Shell session not found: {id}"
@@ -803,16 +917,22 @@ class TerminalToolkit(BaseToolkit):
             return f"Error: {e!s}"
 
     def shell_wait(self, id: str, seconds: Optional[int] = None) -> str:
-        r"""Wait for the running process in a specified shell session to
-        return.
+        r"""Wait for a command to finish in a specified shell session.
+
+        Blocks execution and waits for the running process in a shell session
+        to complete. This is useful for ensuring a long-running command has
+        finished before proceeding.
 
         Args:
-            id (str): Unique identifier of the target shell session.
-            seconds (Optional[int], optional): Wait duration in seconds.
-                If None, wait indefinitely. Defaults to None.
+            id (str): The unique identifier of the target shell session.
+            seconds (Optional[int], optional): The maximum time to wait, in
+                seconds. If `None`, it waits indefinitely.
+                (default: :obj:`None`)
 
         Returns:
-            str: Final output content after waiting.
+            str: A message indicating that the process has completed, including
+                the final output. If the process times out, it returns a
+                timeout message.
         """
         if id not in self.shell_sessions:
             return f"Shell session not found: {id}"
@@ -872,13 +992,20 @@ class TerminalToolkit(BaseToolkit):
     ) -> str:
         r"""Write input to a running process in a specified shell session.
 
+        Sends a string of text to the standard input of a running process.
+        This is useful for interacting with commands that require input. This
+        function cannot be used with a command that was started in
+        interactive mode.
+
         Args:
-            id (str): Unique identifier of the target shell session.
-            input (str): Input content to write to the process.
-            press_enter (bool): Whether to press Enter key after input.
+            id (str): The unique identifier of the target shell session.
+            input (str): The text to write to the process's stdin.
+            press_enter (bool): If `True`, a newline character (`\n`) is
+                appended to the input, simulating pressing the Enter key.
 
         Returns:
-            str: Status message indicating whether the input was sent.
+            str: A status message indicating whether the input was sent, or an
+                error message if the operation fails.
         """
         if id not in self.shell_sessions:
             return f"Shell session not found: {id}"
@@ -914,11 +1041,17 @@ class TerminalToolkit(BaseToolkit):
     def shell_kill_process(self, id: str) -> str:
         r"""Terminate a running process in a specified shell session.
 
+        Forcibly stops a command that is currently running in a shell session.
+        This is useful for ending processes that are stuck, running too long,
+        or need to be cancelled.
+
         Args:
-            id (str): Unique identifier of the target shell session.
+            id (str): The unique identifier of the shell session containing the
+                process to be terminated.
 
         Returns:
-            str: Status message indicating whether the process was terminated.
+            str: A status message indicating that the process has been
+                terminated, or an error message if the operation fails.
         """
         if id not in self.shell_sessions:
             return f"Shell session not found: {id}"
@@ -952,6 +1085,171 @@ class TerminalToolkit(BaseToolkit):
         except Exception as e:
             logger.error(f"Error killing process: {e}")
             return f"Error killing process: {e!s}"
+
+    def ask_user_for_help(self, id: str) -> str:
+        r"""Pause the agent and ask a human for help with a command.
+
+        This function should be used when the agent is stuck and requires
+        manual intervention, such as solving a CAPTCHA or debugging a complex
+        issue. It pauses the agent's execution and allows a human to take
+        control of a specified shell session. The human can execute one
+        command to resolve the issue, and then control is returned to the
+        agent.
+
+        Args:
+            id (str): The identifier of the shell session for the human to
+                interact with. If the session does not exist, it will be
+                created.
+
+        Returns:
+            str: A status message indicating that the human has finished,
+                including the number of commands executed. If the takeover
+                times out or fails, an error message is returned.
+        """
+        # Input validation
+        if not id or not isinstance(id, str):
+            return "Error: Invalid session ID provided"
+
+        # Prevent concurrent human takeovers
+        if (
+            hasattr(self, '_human_takeover_active')
+            and self._human_takeover_active
+        ):
+            return "Error: Human takeover already in progress"
+
+        try:
+            self._human_takeover_active = True
+
+            # Ensure the session exists so that the human can reuse it
+            if id not in self.shell_sessions:
+                self.shell_sessions[id] = {
+                    "process": None,
+                    "output": "",
+                    "running": False,
+                }
+
+            command_count = 0
+            error_occurred = False
+
+            # Create clear banner message for user
+            takeover_banner = (
+                f"\n{'='*60}\n"
+                f"🤖 CAMEL Agent needs human help! Session: {id}\n"
+                f"📂 Working directory: {self.working_dir}\n"
+                f"{'='*60}\n"
+                f"💡 Type commands or '/exit' to return control to agent.\n"
+                f"{'='*60}\n"
+            )
+
+            # Print once to console for immediate visibility
+            print(takeover_banner, flush=True)
+            # Log for terminal output tracking
+            self._update_terminal_output(takeover_banner)
+
+            # Helper flag + event for coordination
+            done_event = threading.Event()
+
+            def _human_loop() -> None:
+                r"""Blocking loop that forwards human input to shell_exec."""
+                nonlocal command_count, error_occurred
+                try:
+                    while True:
+                        try:
+                            # Clear, descriptive prompt for user input
+                            user_cmd = input(f"🧑‍💻 [{id}]> ")
+                            if (
+                                user_cmd.strip()
+                            ):  # Only count non-empty commands
+                                command_count += 1
+                        except EOFError:
+                            # e.g. Ctrl_D / stdin closed, treat as exit.
+                            break
+                        except (KeyboardInterrupt, Exception) as e:
+                            logger.warning(
+                                f"Input error during human takeover: {e}"
+                            )
+                            error_occurred = True
+                            break
+
+                        if user_cmd.strip() in {"/exit", "exit", "quit"}:
+                            break
+
+                        try:
+                            exec_result = self.shell_exec(id, user_cmd)
+                            # Show the result immediately to the user
+                            if exec_result.strip():
+                                print(exec_result)
+                            logger.info(
+                                f"Human command executed: {user_cmd[:50]}..."
+                            )
+                            # Auto-exit after successful command
+                            break
+                        except Exception as e:
+                            error_msg = f"Error executing command: {e}"
+                            logger.error(f"Error executing human command: {e}")
+                            print(error_msg)  # Show error to user immediately
+                            self._update_terminal_output(f"{error_msg}\n")
+                            error_occurred = True
+
+                except Exception as e:
+                    logger.error(f"Unexpected error in human loop: {e}")
+                    error_occurred = True
+                finally:
+                    # Notify completion clearly
+                    finish_msg = (
+                        f"\n{'='*60}\n"
+                        f"✅ Human assistance completed! "
+                        f"Commands: {command_count}\n"
+                        f"🤖 Returning control to CAMEL agent...\n"
+                        f"{'='*60}\n"
+                    )
+                    print(finish_msg, flush=True)
+                    self._update_terminal_output(finish_msg)
+                    done_event.set()
+
+            # Start interactive thread (non-daemon for proper cleanup)
+            thread = threading.Thread(target=_human_loop, daemon=False)
+            thread.start()
+
+            # Block until human signals completion with timeout
+            if done_event.wait(timeout=600):  # 10 minutes timeout
+                thread.join(timeout=10)  # Give thread time to cleanup
+
+                # Generate detailed status message
+                status = "completed successfully"
+                if error_occurred:
+                    status = "completed with some errors"
+
+                result_msg = (
+                    f"Human assistance {status} for session '{id}'. "
+                    f"Total commands executed: {command_count}. "
+                    f"Working directory: {self.working_dir}"
+                )
+                logger.info(result_msg)
+                return result_msg
+            else:
+                timeout_msg = (
+                    f"Human takeover for session '{id}' timed out after 10 "
+                    "minutes"
+                )
+                logger.warning(timeout_msg)
+                return timeout_msg
+
+        except Exception as e:
+            error_msg = f"Error during human takeover for session '{id}': {e}"
+            logger.error(error_msg)
+            # Notify user of the error clearly
+            error_banner = (
+                f"\n{'='*60}\n"
+                f"❌ Error in human takeover! Session: {id}\n"
+                f"❗ {e}\n"
+                f"{'='*60}\n"
+            )
+            print(error_banner, flush=True)
+            return error_msg
+        finally:
+            # Always reset the flag
+            self._human_takeover_active = False
 
     def __del__(self):
         r"""Clean up resources when the object is being destroyed.
@@ -1034,4 +1332,5 @@ class TerminalToolkit(BaseToolkit):
             FunctionTool(self.shell_wait),
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
+            FunctionTool(self.ask_user_for_help),
         ]
