@@ -73,14 +73,24 @@
             ]
           },
           {
+            "group": "CAMEL with MCP",
+            "pages": [
+              "mcp/overview",
+              "mcp/camel_agents_as_an_mcp_clients",
+              "mcp/export_camel_agent_as_mcp_server",
+              "mcp/camel_toolkits_as_an_mcp_server",
+              "mcp/mcp_hub"
+            ]
+          }, 
+          {
             "group": "Cookbooks",
             "pages": [
               {
                 "group": "Basic Concepts",
                 "pages": [
+                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/agents_message",
                   "cookbooks/basic_concepts/agents_prompting",
-                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/create_your_first_agents_society",
                   "cookbooks/basic_concepts/model_speed_comparison"
                 ]
@@ -101,7 +111,7 @@
                   "cookbooks/advanced_features/critic_agents_and_tree_search",
                   "cookbooks/advanced_features/embodied_agents"
                 ]
-              },
+              },             
               {
                 "group": "Applications",
                 "pages": [
