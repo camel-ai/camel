@@ -185,9 +185,7 @@ class FileWriteToolkit(BaseToolkit):
 
             # Set up environment variables
             os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "/opt/homebrew/lib"
-            os.environ["PKG_CONFIG_PATH"] = (
-                "/opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/libffi/lib/pkgconfig"
-            )
+
 
         except subprocess.CalledProcessError as e:
             raise RuntimeError(

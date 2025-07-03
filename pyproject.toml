@@ -390,6 +390,7 @@ all = [
     "pgvector>=0.2.4,<0.3",
     "chromadb>=0.6.0,<1.0.0",
     "pymupdf>=1.26.1",
+    "weasyprint>=65.1",
 ]
 
 [project.urls]
