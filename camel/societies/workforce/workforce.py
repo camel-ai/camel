@@ -19,7 +19,16 @@ import time
 import uuid
 from collections import deque
 from enum import Enum
-from typing import Any, Coroutine, Deque, Dict, List, Optional, Set, Tuple
+from typing import (
+    Any,
+    Coroutine,
+    Deque,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+)
 
 from colorama import Fore
 
@@ -200,7 +209,7 @@ class Workforce(BaseNode):
         children: Optional[List[BaseNode]] = None,
         coordinator_agent: Optional[ChatAgent] = None,
         task_agent: Optional[ChatAgent] = None,
-        new_worker_agent: Optional[ChatAgent] = None,  # TODO: use MCP Agent
+        new_worker_agent: Optional[ChatAgent] = None,
         graceful_shutdown_timeout: float = 15.0,
         share_memory: bool = False,
     ) -> None:
@@ -325,9 +334,10 @@ class Workforce(BaseNode):
                 "settings (ModelPlatformType.DEFAULT, ModelType.DEFAULT) "
                 "with default system message and TaskPlanningToolkit."
             )
+            task_tools = TaskPlanningToolkit().get_tools()
             self.task_agent = ChatAgent(
                 task_sys_msg,
-                tools=TaskPlanningToolkit().get_tools(),  # type: ignore[arg-type]
+                tools=task_tools,  # type: ignore[arg-type]
             )
         else:
             logger.info(
@@ -1436,7 +1446,9 @@ class Workforce(BaseNode):
 
         return valid_assignments, invalid_assignments
 
-    def _handle_task_assignment_fallbacks(self, tasks: List[Task]) -> List:
+    async def _handle_task_assignment_fallbacks(
+        self, tasks: List[Task]
+    ) -> List:
         r"""Create new workers for unassigned tasks as fallback.
 
         Args:
@@ -1449,7 +1461,7 @@ class Workforce(BaseNode):
 
         for task in tasks:
             logger.info(f"Creating new worker for unassigned task {task.id}")
-            new_worker = self._create_worker_node_for_task(task)
+            new_worker = await self._create_worker_node_for_task(task)
 
             assignment = TaskAssignment(
                 task_id=task.id,
@@ -1460,7 +1472,7 @@ class Workforce(BaseNode):
 
         return fallback_assignments
 
-    def _handle_assignment_retry_and_fallback(
+    async def _handle_assignment_retry_and_fallback(
         self,
         invalid_assignments: List[TaskAssignment],
         tasks: List[Task],
@@ -1531,14 +1543,14 @@ class Workforce(BaseNode):
                 f"Creating fallback workers for {len(unassigned_tasks)} "
                 f"unassigned tasks"
             )
-            fallback_assignments = self._handle_task_assignment_fallbacks(
-                unassigned_tasks
+            fallback_assignments = (
+                await self._handle_task_assignment_fallbacks(unassigned_tasks)
             )
             final_assignments.extend(fallback_assignments)
 
         return final_assignments
 
-    def _find_assignee(
+    async def _find_assignee(
         self,
         tasks: List[Task],
     ) -> TaskAssignResult:
@@ -1580,7 +1592,7 @@ class Workforce(BaseNode):
         # invalid assignments and unassigned tasks
         all_problem_assignments = invalid_assignments
         retry_and_fallback_assignments = (
-            self._handle_assignment_retry_and_fallback(
+            await self._handle_assignment_retry_and_fallback(
                 all_problem_assignments, tasks, valid_worker_ids
             )
         )
@@ -1616,7 +1628,7 @@ class Workforce(BaseNode):
     async def _post_dependency(self, dependency: Task) -> None:
         await self._channel.post_dependency(dependency, self.node_id)
 
-    def _create_worker_node_for_task(self, task: Task) -> Worker:
+    async def _create_worker_node_for_task(self, task: Task) -> Worker:
         r"""Creates a new worker node for a given task and add it to the
         children list of this node. This is one of the actions that
         the coordinator can take when a task has failed.
@@ -1662,7 +1674,7 @@ class Workforce(BaseNode):
                     f"Coordinator agent returned malformed JSON response. "
                 )
 
-        new_agent = self._create_new_agent(
+        new_agent = await self._create_new_agent(
             new_node_conf.role,
             new_node_conf.sys_msg,
         )
@@ -1689,14 +1701,19 @@ class Workforce(BaseNode):
         )
         return new_node
 
-    def _create_new_agent(self, role: str, sys_msg: str) -> ChatAgent:
+    async def _create_new_agent(self, role: str, sys_msg: str) -> ChatAgent:
         worker_sys_msg = BaseMessage.make_assistant_message(
             role_name=role,
             content=sys_msg,
         )
 
         if self.new_worker_agent is not None:
-            return self.new_worker_agent
+            # Clone the template agent to create an independent instance
+            cloned_agent = self.new_worker_agent.clone(with_memory=False)
+            # Update the system message for the specific role
+            cloned_agent._system_message = worker_sys_msg
+            cloned_agent.init_messages()  # Initialize with new system message
+            return cloned_agent
         else:
             # Default tools for a new agent
             function_list = [
@@ -1712,7 +1729,7 @@ class Workforce(BaseNode):
             )
 
             return ChatAgent(
-                worker_sys_msg,
+                system_message=worker_sys_msg,
                 model=model,
                 tools=function_list,  # type: ignore[arg-type]
                 pause_event=self._pause_event,
@@ -1765,7 +1782,7 @@ class Workforce(BaseNode):
                 f"Found {len(tasks_to_assign)} new tasks. "
                 f"Requesting assignment..."
             )
-            batch_result = self._find_assignee(tasks_to_assign)
+            batch_result = await self._find_assignee(tasks_to_assign)
             logger.debug(
                 f"Coordinator returned assignments:\n"
                 f"{json.dumps(batch_result.dict(), indent=2)}"
@@ -1885,7 +1902,7 @@ class Workforce(BaseNode):
 
         if task.get_depth() > 3:
             # Create a new worker node and reassign
-            assignee = self._create_worker_node_for_task(task)
+            assignee = await self._create_worker_node_for_task(task)
 
             # Sync shared memory after creating new worker to provide context
             if self.share_memory:
