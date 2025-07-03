@@ -593,16 +593,16 @@ wheels = [
 
 [[package]]
 name = "botocore"
-version = "1.39.0"
+version = "1.37.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
     { name = "python-dateutil" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/56/97/c34be91a7cd625b913430199c2fe8b8718753b3c4a697ecfb587d89ec499/botocore-1.39.0.tar.gz", hash = "sha256:2b8701e529a80241b989d83262a629d0d91fbd7a06ded63ecc1c9d529a383d57", size = 14095797, upload-time = "2025-06-30T19:24:54.716Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/74/fb/b243ab806d2e1e6b8a475b731cc59a1f1e4709eded4884b988a27bbc996b/botocore-1.37.3.tar.gz", hash = "sha256:fe8403eb55a88faf9b0f9da6615e5bee7be056d75e17af66c3c8f0a3b0648da4", size = 13574648, upload-time = "2025-02-27T20:27:59.559Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/b6/dcd0fd188cc28d772e0df23a31ce50af4d358ef31bfee969dc5a033482a5/botocore-1.39.0-py3-none-any.whl", hash = "sha256:d8e72850d3450aeca355b654efb32c8370bf824c1945a61cad2395dc2688581e", size = 13753356, upload-time = "2025-06-30T19:24:49.416Z" },
+    { url = "https://files.pythonhosted.org/packages/88/54/772118f15b5990173aa5264946cc8c9ff70c8f02d72ee6d63167a985188c/botocore-1.37.3-py3-none-any.whl", hash = "sha256:d01bd3bf4c80e61fa88d636ad9f5c9f60a551d71549b481386c6b4efe0bb2b2e", size = 13342066, upload-time = "2025-02-27T20:27:53.137Z" },
 ]
 
 [[package]]
@@ -1046,8 +1046,8 @@ requires-dist = [
     { name = "datasets", marker = "extra == 'all'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'huggingface'", specifier = ">=3,<4" },
     { name = "datasets", marker = "extra == 'owl'", specifier = ">=3,<4" },
-    { name = "daytona-sdk", marker = "extra == 'all'", specifier = ">=0.20.0" },
-    { name = "daytona-sdk", marker = "extra == 'dev-tools'", specifier = ">=0.20.0" },
+    { name = "daytona-sdk", marker = "extra == 'all'", specifier = "==0.20.0" },
+    { name = "daytona-sdk", marker = "extra == 'dev-tools'", specifier = "==0.20.0" },
     { name = "diffusers", marker = "extra == 'all'", specifier = ">=0.25.0,<0.26" },
     { name = "diffusers", marker = "extra == 'huggingface'", specifier = ">=0.25.0,<0.26" },
     { name = "discord-py", marker = "extra == 'all'", specifier = ">=2.3.2,<3" },
