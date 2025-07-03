@@ -23,10 +23,12 @@ uv pip install ".[dev_tools]"
 Before using TraceRoot, set the following environment variables:
 
 ```bash
-# Enable TraceRoot debugging
+# Enable TraceRoot for debugging
 export TRACEROOT_ENABLED="true"
 python camel/examples/debug/traceroot_example.py
 ```
+
+And then if you import `import traceroot` in your Python code, the traceroot functionality will be automatically enabled.
 
 ### 3. Self-Hosted Deployment
 
