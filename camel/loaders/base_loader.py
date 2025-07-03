@@ -32,6 +32,11 @@ class LoaderResult(Generic[T]):
 
     @property
     def failed(self) -> bool:
+        r"""Check if the load operation failed.
+
+        Returns:
+            bool: True if the load operation failed, False otherwise.
+        """
         return not self.success
 
 
