@@ -946,17 +946,14 @@ class Workforce(BaseNode):
         await self.start()
 
         if subtasks:
-            # Collect results from all descendants (including decomposed
-            # subtasks)
-            all_results = self._collect_all_task_results_recursive(task)
             task.result = "\n\n".join(
-                f"--- Task {task_id} Result ---\n{result}"
-                for task_id, result in all_results
-                if result
+                f"--- Subtask {sub.id} Result ---\n{sub.result}"
+                for sub in task.subtasks
+                if sub.result
             )
-
-            # Check if all descendants are complete (including decomposed ones)
-            if task.subtasks and self._check_all_descendants_complete(task):
+            if task.subtasks and all(
+                sub.state == TaskState.DONE for sub in task.subtasks
+            ):
                 task.state = TaskState.DONE
             else:
                 task.state = TaskState.FAILED
@@ -1065,23 +1062,6 @@ class Workforce(BaseNode):
         finally:
             if self._state != WorkforceState.STOPPED:
                 self._state = WorkforceState.IDLE
-
-        # Apply the same result composition logic as process_task_async
-        if subtasks:
-            # Collect results from all descendants (including decomposed
-            # subtasks)
-            all_results = self._collect_all_task_results_recursive(task)
-            task.result = "\n\n".join(
-                f"--- Task {task_id} Result ---\n{result}"
-                for task_id, result in all_results
-                if result
-            )
-
-            # Check if all descendants are complete (including decomposed ones)
-            if task.subtasks and self._check_all_descendants_complete(task):
-                task.state = TaskState.DONE
-            else:
-                task.state = TaskState.FAILED
 
         return task
 
@@ -1966,57 +1946,6 @@ class Workforce(BaseNode):
         await self._post_ready_tasks()
         return False
 
-    def _collect_all_task_results_recursive(
-        self, task: Task
-    ) -> List[Tuple[str, str]]:
-        r"""Recursively collect results from a task and all its descendants.
-
-        Args:
-            task (Task): The task to collect results from
-
-        Returns:
-            List[Tuple[str, str]]: List of (task_id, result) pairs
-        """
-        results = []
-
-        # If this task has a result, include it
-        if task.result:
-            results.append((task.id, task.result))
-
-        # Recursively collect from subtasks
-        if hasattr(task, 'subtasks') and task.subtasks:
-            for subtask in task.subtasks:
-                results.extend(
-                    self._collect_all_task_results_recursive(subtask)
-                )
-
-        return results
-
-    def _check_all_descendants_complete(self, task: Task) -> bool:
-        r"""Check if all descendants of a task are complete (including
-        decomposed ones).
-
-        Args:
-            task (Task): The task to check
-
-        Returns:
-            bool: True if all descendants are complete
-        """
-        if not hasattr(task, 'subtasks') or not task.subtasks:
-            # Leaf task - check if it's done or if it's been completed for
-            # dependency tracking
-            return (
-                task.state == TaskState.DONE
-                or task in self._completed_tasks
-                or task.id in {t.id for t in self._completed_tasks}
-            )
-
-        # For parent tasks, check all subtasks recursively
-        for subtask in task.subtasks:
-            if not self._check_all_descendants_complete(subtask):
-                return False
-        return True
-
     async def _handle_completed_task(self, task: Task) -> None:
         if self.metrics_logger:
             worker_id = task.assigned_worker_id or "unknown"
@@ -2109,12 +2038,15 @@ class Workforce(BaseNode):
         # Handle parent task completion logic
         parent = task.parent
         if parent and parent.id not in {t.id for t in self._completed_tasks}:
-            # Use the new recursive completion check
-            if self._check_all_descendants_complete(parent):
+            all_subtasks_done = all(
+                sub.id in {t.id for t in self._completed_tasks}
+                for sub in parent.subtasks
+            )
+            if all_subtasks_done:
                 # Set the parent task state to done
                 parent.state = TaskState.DONE
                 logger.debug(
-                    f"All descendants of {parent.id} are done. "
+                    f"All subtasks of {parent.id} are done. "
                     f"Marking parent as complete."
                 )
                 # Treat the parent task as a completed task to unblock
@@ -2191,10 +2123,10 @@ class Workforce(BaseNode):
 
         await self._post_ready_tasks()
 
-        # Continue execution while there's work to be done
-        # (either pending tasks or in-flight tasks) and no stop is requested
         while (
-            self._pending_tasks or self._in_flight_tasks > 0
+            self._task is None
+            or self._pending_tasks
+            or self._in_flight_tasks > 0
         ) and not self._stop_requested:
             try:
                 # Check for pause request at the beginning of each loop
