@@ -180,6 +180,7 @@ dev_tools = [
     "daytona-sdk==0.20.0",
     "aci-sdk>=1.0.0b1",
     "langfuse>=2.60.5",
+    "traceroot==0.0.2",
 ]
 model_platforms = [
     "litellm>=1.38.1,<2",
