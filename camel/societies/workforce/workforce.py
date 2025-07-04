@@ -40,12 +40,16 @@ from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
+    FAILURE_ANALYSIS_PROMPT,
     WF_TASK_DECOMPOSE_PROMPT,
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
+    FailureContext,
+    RecoveryDecision,
+    RecoveryStrategy,
     TaskAssignment,
     TaskAssignResult,
     WorkerConf,
@@ -611,6 +615,31 @@ class Workforce(BaseNode):
             # Remove original task dependencies as it's now decomposed
             del self._task_dependencies[original_task_id]
 
+    def _increment_in_flight_tasks(self, task_id: str) -> None:
+        r"""Safely increment the in-flight tasks counter with logging."""
+        self._in_flight_tasks += 1
+        logger.debug(
+            f"Incremented in-flight tasks for {task_id}. "
+            f"Count: {self._in_flight_tasks}"
+        )
+
+    def _decrement_in_flight_tasks(
+        self, task_id: str, context: str = ""
+    ) -> None:
+        r"""Safely decrement the in-flight tasks counter with safety checks."""
+        if self._in_flight_tasks > 0:
+            self._in_flight_tasks -= 1
+            logger.debug(
+                f"Decremented in-flight tasks for {task_id} ({context}). "
+                f"Count: {self._in_flight_tasks}"
+            )
+        else:
+            logger.debug(
+                f"Attempted to decrement in-flight tasks for {task_id} "
+                f"({context}) but counter is already 0. "
+                f"Counter: {self._in_flight_tasks}"
+            )
+
     def _cleanup_task_tracking(self, task_id: str) -> None:
         r"""Clean up tracking data for a task to prevent memory leaks.
 
@@ -634,15 +663,85 @@ class Workforce(BaseNode):
         )
         self.task_agent.reset()
         subtasks = task.decompose(self.task_agent, decompose_prompt)
-        task.subtasks = subtasks
-        for subtask in subtasks:
-            subtask.parent = task
 
         # Update dependency tracking for decomposed task
         if subtasks:
             self._update_dependencies_for_decomposition(task, subtasks)
 
         return subtasks
+
+    def _analyze_failure(
+        self, task: Task, error_message: str
+    ) -> RecoveryDecision:
+        r"""Analyze a task failure and decide on the best recovery strategy.
+
+        Args:
+            task (Task): The failed task
+            error_message (str): The error message from the failure
+
+        Returns:
+            RecoveryDecision: The decided recovery strategy with reasoning
+        """
+        # First, do a quick smart analysis based on error patterns
+        error_msg_lower = error_message.lower()
+        if any(
+            keyword in error_msg_lower
+            for keyword in [
+                'connection',
+                'network',
+                'server disconnected',
+                'timeout',
+                'apiconnectionerror',
+            ]
+        ):
+            return RecoveryDecision(
+                strategy=RecoveryStrategy.RETRY,
+                reasoning="Network/connection error detected, retrying task",
+                modified_task_content=None,
+            )
+
+        # Create failure context
+        failure_context = FailureContext(
+            task_id=task.id,
+            task_content=task.content,
+            failure_count=task.failure_count,
+            error_message=error_message,
+            worker_id=task.assigned_worker_id,
+            task_depth=task.get_depth(),
+            additional_info=str(task.additional_info)
+            if task.additional_info
+            else None,
+        )
+
+        # Format the analysis prompt
+        analysis_prompt = FAILURE_ANALYSIS_PROMPT.format(
+            task_id=failure_context.task_id,
+            task_content=failure_context.task_content,
+            failure_count=failure_context.failure_count,
+            error_message=failure_context.error_message,
+            worker_id=failure_context.worker_id or "unknown",
+            task_depth=failure_context.task_depth,
+            additional_info=failure_context.additional_info or "None",
+        )
+
+        try:
+            # Get decision from task agent
+            self.task_agent.reset()
+            response = self.task_agent.step(
+                analysis_prompt, response_format=RecoveryDecision
+            )
+            return response.msg.parsed
+
+        except Exception as e:
+            logger.warning(
+                f"Error during failure analysis: {e}, defaulting to RETRY"
+            )
+            return RecoveryDecision(
+                strategy=RecoveryStrategy.RETRY,
+                reasoning=f"Analysis failed due to error: {e!s}, "
+                f"defaulting to retry",
+                modified_task_content=None,
+            )
 
     # Human intervention methods
     async def _async_pause(self) -> None:
@@ -1654,15 +1753,13 @@ class Workforce(BaseNode):
             )
 
         try:
-            self._in_flight_tasks += 1
             await self._channel.post_task(task, self.node_id, assignee_id)
+            self._increment_in_flight_tasks(task.id)
             logger.debug(
                 f"Posted task {task.id} to {assignee_id}. "
                 f"In-flight tasks: {self._in_flight_tasks}"
             )
         except Exception as e:
-            # Decrement counter if posting failed
-            self._in_flight_tasks -= 1
             logger.error(
                 f"Failed to post task {task.id} to {assignee_id}: {e}"
             )
@@ -1789,10 +1886,6 @@ class Workforce(BaseNode):
                 timeout=TASK_TIMEOUT_SECONDS,
             )
         except Exception as e:
-            # Decrement in-flight counter to prevent hanging
-            if self._in_flight_tasks > 0:
-                self._in_flight_tasks -= 1
-
             error_msg = (
                 f"Error getting returned task {e} in "
                 f"workforce {self.node_id}. "
@@ -1804,8 +1897,11 @@ class Workforce(BaseNode):
             if self._pending_tasks and self._assignees:
                 for task in self._pending_tasks:
                     if task.id in self._assignees:
-                        # Mark this real task as failed
+                        # Mark task as failed and decrement counter
                         task.set_state(TaskState.FAILED)
+                        self._decrement_in_flight_tasks(
+                            task.id, "timeout/error in _get_returned_task"
+                        )
                         return task
             return None
 
@@ -1905,7 +2001,6 @@ class Workforce(BaseNode):
                 task_id=task.id,
                 worker_id=worker_id,
                 error_message=detailed_error,
-                error_type="TaskFailure",
                 metadata={
                     'failure_count': task.failure_count,
                     'task_content': task.content,
@@ -1944,21 +2039,55 @@ class Workforce(BaseNode):
                 await self._channel.archive_task(task.id)
             return True
 
-        if task.get_depth() > 3:
-            # Create a new worker node and reassign
-            assignee = await self._create_worker_node_for_task(task)
+        # Use intelligent failure analysis to decide recovery strategy
+        recovery_decision = self._analyze_failure(task, detailed_error)
 
-            # Sync shared memory after creating new worker to provide context
-            if self.share_memory:
-                logger.info(
-                    f"Syncing shared memory after creating new worker "
-                    f"{assignee.node_id} for failed task {task.id}"
+        logger.info(
+            f"Task {task.id} failure "
+            f"analysis: {recovery_decision.strategy.value} - "
+            f"{recovery_decision.reasoning}"
+        )
+
+        if recovery_decision.strategy == RecoveryStrategy.RETRY:
+            # Simply retry the task by reposting it
+            if task.id in self._assignees:
+                assignee_id = self._assignees[task.id]
+                await self._post_task(task, assignee_id)
+                action_taken = f"retried with same worker {assignee_id}"
+            else:
+                # Find a new assignee and retry
+                batch_result = await self._find_assignee([task])
+                assignment = batch_result.assignments[0]
+                self._assignees[task.id] = assignment.assignee_id
+                await self._post_task(task, assignment.assignee_id)
+                action_taken = (
+                    f"retried with new worker {assignment.assignee_id}"
                 )
-                self._sync_shared_memory()
 
-            await self._post_task(task, assignee.node_id)
-            action_taken = f"reassigned to new worker {assignee.node_id}"
-        else:
+        elif recovery_decision.strategy == RecoveryStrategy.REPLAN:
+            # Modify the task content and retry
+            if recovery_decision.modified_task_content:
+                task.content = recovery_decision.modified_task_content
+                logger.info(f"Task {task.id} content modified for replan")
+
+            # Repost the modified task
+            if task.id in self._assignees:
+                assignee_id = self._assignees[task.id]
+                await self._post_task(task, assignee_id)
+                action_taken = (
+                    f"replanned and retried with worker {assignee_id}"
+                )
+            else:
+                # Find a new assignee for the replanned task
+                batch_result = await self._find_assignee([task])
+                assignment = batch_result.assignments[0]
+                self._assignees[task.id] = assignment.assignee_id
+                await self._post_task(task, assignment.assignee_id)
+                action_taken = "replanned and assigned to "
+                f"worker {assignment.assignee_id}"
+
+        elif recovery_decision.strategy == RecoveryStrategy.DECOMPOSE:
+            # Decompose the task into subtasks
             subtasks = self._decompose_task(task)
             if self.metrics_logger and subtasks:
                 self.metrics_logger.log_task_decomposed(
@@ -2000,7 +2129,14 @@ class Workforce(BaseNode):
             await self._post_ready_tasks()
             return False
 
-        # For reassigned tasks (depth > 3), handle normally
+        elif recovery_decision.strategy == RecoveryStrategy.CREATE_WORKER:
+            assignee = await self._create_worker_node_for_task(task)
+            await self._post_task(task, assignee.node_id)
+            action_taken = (
+                f"created new worker {assignee.node_id} and assigned "
+                f"task {task.id} to it"
+            )
+
         if task.id in self._assignees:
             await self._channel.archive_task(task.id)
 
@@ -2275,7 +2411,9 @@ class Workforce(BaseNode):
                     await self._post_ready_tasks()
                     continue
 
-                self._in_flight_tasks -= 1
+                self._decrement_in_flight_tasks(
+                    returned_task.id, "task returned successfully"
+                )
 
                 # Check for stop request after getting task
                 if self._stop_requested:
@@ -2360,8 +2498,9 @@ class Workforce(BaseNode):
 
             except Exception as e:
                 # Decrement in-flight counter to prevent hanging
-                if self._in_flight_tasks > 0:
-                    self._in_flight_tasks -= 1
+                self._decrement_in_flight_tasks(
+                    "unknown", "exception in task processing loop"
+                )
 
                 logger.error(
                     f"Error processing task in workforce {self.node_id}: {e}"
