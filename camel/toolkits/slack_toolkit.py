@@ -265,7 +265,10 @@ class SlackToolkit(BaseToolkit):
                 response = slack_client.chat_postMessage(
                     channel=channel_id, text=message
                 )
-            return f"Message: {message} sent successfully, got response: {response}"
+            return (
+                f"Message: {message} sent successfully, "
+                f"got response: {response}"
+            )
         except SlackApiError as e:
             return f"Error creating conversation: {e.response['error']}"
 
