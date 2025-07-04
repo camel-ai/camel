@@ -137,10 +137,12 @@ class DocumentToolkit(BaseToolkit):
         """
         super().__init__()
 
-        # Initialize paths and cache settings
-        self.cache_dir: Path = Path(cache_dir or "~/.cache/camel/documents").expanduser()
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.enable_cache = enable_cache
+        if self.enable_cache:
+            self.cache_dir: Path = Path(cache_dir or "~/.cache/camel/documents").expanduser()
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            self.cache_dir = None
 
         # Initialize specialized toolkits for specific file types
         self.image_tool = ImageAnalysisToolkit(model=model)
