@@ -12,8 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from unittest.mock import MagicMock, patch
-
 import pytest
+
 from surrealdb.data.types.record_id import RecordID
 
 from camel.storages.vectordb_storages.surreal import (
