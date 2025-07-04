@@ -37,7 +37,6 @@ from camel.loaders import MarkItDownLoader
 
 logger = get_logger(__name__)
 
-
 _TEXT_EXTS: Set[str] = {".txt", ".md", ".rtf"}
 _DOC_EXTS: Set[str] = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".odt"}
 _IMAGE_EXTS: Set[str] = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp"}
@@ -52,32 +51,33 @@ class _LoaderWrapper:
     r"""Uniform interface wrapper for different document loaders.
 
     Every loader exposes convert_file(path) -> str method for consistent usage.
+
+    Args:
+        loader (object): The underlying loader instance.
     """
 
     def __init__(self, loader: object):
-        r"""Initialize the loader wrapper.
-
-        Args:
-            loader (object): The underlying loader instance.
-        """
+        r"""Initialize the loader wrapper."""
         self._loader = loader
 
-    def convert_file(self, path: str) -> str:
+    def convert_file(self, path: str) -> Tuple[bool, str]:
         r"""Convert a file to plain text using the wrapped loader.
 
         Args:
             path (str): Path to the file to be converted.
 
         Returns:
-            str: The extracted plain text content.
-
-        Raises:
-            AttributeError: If the loader doesn't support required methods.
-            RuntimeError: If the loader fails to parse the file.
+            Tuple[bool, str]: A tuple containing success status and either
+                the extracted plain text content or an error message.
         """
         if hasattr(self._loader, "convert_file"):
-            return self._loader.convert_file(path)  # type: ignore[attr-defined]
-        raise AttributeError("Loader must expose convert_file method")
+            try:
+                content = self._loader.convert_file(path)  # type: ignore[attr-defined]
+                return True, content
+            except Exception as e:
+                return False, f"Loader failed to convert file {path}: {e}"
+
+        return False, "Loader does not support convert_file method"
 
 
 def _init_loader(loader_type: str, loader_kwargs: Optional[dict] | None) -> _LoaderWrapper:
@@ -139,7 +139,7 @@ class DocumentToolkit(BaseToolkit):
 
         self.enable_cache = enable_cache
         if self.enable_cache:
-            self.cache_dir: Path = Path(cache_dir or "~/.cache/camel/documents").expanduser()
+            self.cache_dir: Optional[Path] = Path(cache_dir or "~/.cache/camel/documents").expanduser()
             self.cache_dir.mkdir(parents=True, exist_ok=True)
         else:
             self.cache_dir = None
@@ -164,7 +164,6 @@ class DocumentToolkit(BaseToolkit):
         # Initialize in-memory cache (keyed by SHA-256 of path + mtime)
         self._cache: Dict[str, str] = {}
 
-
     # Public API methods
     @retry_on_error()
     def extract_document_content(self, document_path: str) -> Tuple[bool, str]:
@@ -182,7 +181,7 @@ class DocumentToolkit(BaseToolkit):
         """
         try:
             cache_key = self._hash_key(document_path)
-            if self.enable_cache and cache_key in self._cache and self.cache_dir: 
+            if self.enable_cache and cache_key in self._cache:
                 logger.debug("Cache hit: %s", document_path)
                 return True, self._cache[cache_key]
 
@@ -227,8 +226,12 @@ class DocumentToolkit(BaseToolkit):
             # Handle Office/PDF documents with preferred loader
             if suffix in _DOC_EXTS:
                 if getattr(self, "mid_loader", None) is not None:
-                    txt = self.mid_loader.convert_file(document_path)  # type: ignore[attr-defined]
-                    return self._cache_and_return(cache_key, True, txt)
+                    try:
+                        txt = self.mid_loader.convert_file(document_path)  # type: ignore[attr-defined]
+                        return self._cache_and_return(cache_key, True, txt)
+                    except Exception as e:
+                        logger.warning("MarkItDown loader failed: %s", e)
+                        # Fall through to generic loader
                 else:
                     logger.warning("No suitable loader for DOC/PDF – falling back to generic loader")
 
@@ -237,8 +240,8 @@ class DocumentToolkit(BaseToolkit):
                 return self._cache_and_return(cache_key, ok, txt)
 
             # Fallback to generic loader
-            txt = self._loader.convert_file(document_path)
-            return self._cache_and_return(cache_key, True, txt)
+            ok, txt = self._loader.convert_file(document_path)
+            return self._cache_and_return(cache_key, ok, txt)
 
         except Exception as exc:  # pragma: no cover
             logger.error("Failed to extract %s: %s", document_path, exc)
@@ -351,7 +354,6 @@ class DocumentToolkit(BaseToolkit):
             logger.error(f"Error scraping {url}: {str(e)}")
             return f"Error while crawling the webpage: {str(e)}"
 
-
     # Specialized file type handlers
     def _handle_image(self, path: str) -> Tuple[bool, str]:
         r"""Process image files using the image analysis toolkit.
@@ -372,7 +374,14 @@ class DocumentToolkit(BaseToolkit):
 
     @dependencies_required('tabulate')
     def _convert_to_markdown(self, df: 'pd.DataFrame') -> str:
-        r"""Convert DataFrame to Markdown format table."""
+        r"""Convert DataFrame to Markdown format table.
+
+        Args:
+            df (pd.DataFrame): The pandas DataFrame to convert to markdown format.
+
+        Returns:
+            str: The DataFrame content formatted as a markdown table with pipe separators.
+        """
         from tabulate import tabulate
 
         md_table = tabulate(df, headers='keys', tablefmt='pipe')
@@ -512,6 +521,7 @@ class DocumentToolkit(BaseToolkit):
             logger.error(f"Error processing Excel file {path}: {e}")
             return False, f"Error processing Excel file {path}: {e}"
 
+    @dependencies_required('xmltodict')
     def _handle_data_file(self, path: str) -> Tuple[bool, str]:
         r"""Process structured data files (JSON, XML).
 
@@ -595,18 +605,18 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             Tuple[bool, str]: Success status and processed content.
         """
-        try:
-            # Try using the generic loader first
-            txt = self._loader.convert_file(path)
+        # Try using the generic loader first
+        ok, txt = self._loader.convert_file(path)
+        if ok:
             return True, txt
-        except Exception as e:
-            # Fallback to raw text reading
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    content = f.read()
-                return True, content
-            except Exception as e2:
-                return False, f"Error processing HTML file {path}: {e2}"
+
+        # Fallback to raw text reading
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            return True, content
+        except Exception as e2:
+            return False, f"Error processing HTML file {path}: {e2}"
 
     # ZIP archive processing methods
     def _handle_zip(self, path_or_url: str) -> Tuple[bool, str]:
@@ -619,6 +629,9 @@ class DocumentToolkit(BaseToolkit):
             Tuple[bool, str]: Success status and combined content of all files.
         """
         try:
+            if not self.cache_dir:
+                return False, "Cache directory not available for ZIP processing"
+
             zip_path = self._ensure_local_zip(path_or_url)
             extract_dir = self.cache_dir / f"unzip_{self._short_hash(zip_path)}"
             extract_dir.mkdir(parents=True, exist_ok=True)
@@ -670,6 +683,9 @@ class DocumentToolkit(BaseToolkit):
     def _download_file(self, url: str) -> Path:
         r"""Download a file from URL to the local cache directory."""
         import re
+
+        if not self.cache_dir:
+            raise RuntimeError("Cache directory not available for downloading files")
 
         try:
             resp = requests.get(url, stream=True, timeout=60)
@@ -742,7 +758,7 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             Tuple[bool, str]: The input success status and value.
         """
-        if ok and self.enable_cache:
+        if ok and self.enable_cache and self.cache_dir:
             self._cache[key] = value
             try:
                 (self.cache_dir / f"{key}.txt").write_text(value, encoding="utf-8")
@@ -779,7 +795,6 @@ class DocumentToolkit(BaseToolkit):
         """
         return hashlib.sha256(str(path).encode()).hexdigest()[:8]
 
-
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
         in the toolkit.
@@ -790,7 +805,6 @@ class DocumentToolkit(BaseToolkit):
         """
         return [FunctionTool(self.extract_document_content)]
 
-
     async def _extract_async(self, document_path: str) -> str:
         r"""Asynchronous wrapper for document extraction (rarely used).
 
@@ -800,7 +814,11 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             str: Extracted document content.
         """
-        return self._loader.convert_file(document_path)
+        ok, content = self._loader.convert_file(document_path)
+        if ok:
+            return content
+        else:
+            raise RuntimeError(content)
 
     def extract_document_content_sync(self, document_path: str) -> Tuple[bool, str]:
         r"""Synchronous wrapper for environments without asyncio support.
