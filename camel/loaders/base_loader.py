@@ -13,16 +13,14 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, TypeVar, Union
-
-T = TypeVar('T')
+from typing import Any, Dict, List, Union
 
 
 class BaseLoader(ABC):
     r"""Abstract base class for all data loaders in CAMEL."""
 
     @abstractmethod
-    def _load_single(self, source: Union[str, Path], **kwargs) -> T:
+    def _load_single(self, source: Union[str, Path], **kwargs) -> Any:
         """Load data from a single source.
 
         Args:
@@ -37,47 +35,48 @@ class BaseLoader(ABC):
         """
         pass
 
+    def load(
+        self,
+        source: Union[
+            str, Path, List[Union[str, Path]], set[Union[str, Path]]
+        ],
+        **kwargs: Any,
+    ) -> Dict[str, List[Any]]:
+        """Load data from one or multiple sources.
 
-def load(
-    self,
-    source: Union[str, Path, List[Union[str, Path]], set[Union[str, Path]]],
-    **kwargs: Any,
-) -> Dict[str, List[Any]]:
-    """Load data from one or multiple sources.
+        Args:
+            source: The data source(s) to load from. Can be:
+                - A single path/URL (str or Path)
+                - A list/set of paths/URLs
+            **kwargs: Additional keyword arguments for loading data.
 
-    Args:
-        source: The data source(s) to load from. Can be:
-            - A single path/URL (str or Path)
-            - A list/set of paths/URLs
-        **kwargs: Additional keyword arguments for loading data.
+        Returns:
+            A dictionary with a single key "contents" containing a list of
+            loaded data. If a single source is provided, the list will
+            contain a single item.
 
-    Returns:
-        A dictionary with a single key "contents" containing a list of
-        loaded data. If a single source is provided, the list will
-        contain a single item.
+        Raises:
+            ValueError: If no sources are provided
+            Exception: If loading fails for any source
+        """
+        if not source:
+            raise ValueError("At least one source must be provided")
 
-    Raises:
-        ValueError: If no sources are provided
-        Exception: If loading fails for any source
-    """
-    if not source:
-        raise ValueError("At least one source must be provided")
+        # Convert single source to list for uniform processing
+        sources = [source] if isinstance(source, (str, Path)) else list(source)
 
-    # Convert single source to list for uniform processing
-    sources = [source] if isinstance(source, (str, Path)) else list(source)
+        # Process all sources
+        results = []
+        for i, src in enumerate(sources, 1):
+            try:
+                content = self._load_single(src, **kwargs)
+                results.append(content)
+            except Exception as e:
+                raise RuntimeError(
+                    f"Error loading source {i}/{len(sources)}: {src}"
+                ) from e
 
-    # Process all sources
-    results = []
-    for i, src in enumerate(sources, 1):
-        try:
-            content = self._load_single(src, **kwargs)
-            results.append(content)
-        except Exception as e:
-            raise RuntimeError(
-                f"Error loading source {i}/{len(sources)}: {src}"
-            ) from e
-
-    return {"contents": results}
+        return {"contents": results}
 
     @property
     @abstractmethod
