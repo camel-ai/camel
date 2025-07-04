@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import random
+from collections.abc import Sequence
 from pathlib import Path
 from typing import (
     Any,
@@ -287,6 +288,11 @@ class StaticDataset(Dataset):
                 f"{type(data).__name__} does not implement `__len__()`."
             )
         raw_data = []
+
+        if not isinstance(data, Sequence):
+            raise TypeError(
+                f"{type(data).__name__} does not support indexing."
+            )
 
         for i in range(len(data)):
             item = data[i]

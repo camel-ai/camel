@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import abc
+import os
 import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type, Union
@@ -71,6 +72,8 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
         timeout (Optional[float], optional): The timeout value in seconds for
             API calls. (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries
+            for API calls. (default: :obj:`3`)
     """
 
     def __init__(
@@ -81,6 +84,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
     ) -> None:
         self.model_type: UnifiedModelType = UnifiedModelType(model_type)
         if model_config_dict is None:
@@ -90,6 +94,13 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         self._url = url
         self._token_counter = token_counter
         self._timeout = timeout
+        self._max_retries = max_retries
+        # Initialize logging configuration
+        self._log_enabled = (
+            os.environ.get("CAMEL_MODEL_LOG_ENABLED", "False").lower()
+            == "true"
+        )
+        self._log_dir = os.environ.get("CAMEL_LOG_DIR", "camel_logs")
         self.check_model_config()
 
     @property
@@ -228,6 +239,68 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
         return formatted_messages
 
+    def _log_request(self, messages: List[OpenAIMessage]) -> Optional[str]:
+        r"""Log the request messages to a JSON file if logging is enabled.
+
+        Args:
+            messages (List[OpenAIMessage]): The messages to log.
+
+        Returns:
+            Optional[str]: The path to the log file if logging is enabled,
+                None otherwise.
+        """
+        if not self._log_enabled:
+            return None
+
+        import json
+        from datetime import datetime
+
+        os.makedirs(self._log_dir, exist_ok=True)
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        log_file_path = os.path.join(self._log_dir, f"conv_{timestamp}.json")
+
+        log_entry = {
+            "request_timestamp": datetime.now().isoformat(),
+            "model": str(self.model_type),
+            "request": {"messages": messages},
+        }
+
+        with open(log_file_path, "w") as f:
+            json.dump(log_entry, f, indent=4)
+
+        return log_file_path
+
+    def _log_response(self, log_path: str, response: Any) -> None:
+        r"""Log the response to the existing log file.
+
+        Args:
+            log_path (str): The path to the log file.
+            response (Any): The response to log.
+        """
+        if not self._log_enabled or not log_path:
+            return
+
+        import json
+        from datetime import datetime
+
+        with open(log_path, "r+") as f:
+            log_data = json.load(f)
+
+            log_data["response_timestamp"] = datetime.now().isoformat()
+            if isinstance(response, BaseModel):
+                log_data["response"] = response.model_dump()
+            else:
+                try:
+                    json.dumps(response)
+                    log_data["response"] = response
+                except TypeError:
+                    log_data["response"] = str(response)
+
+            f.seek(0)
+            json.dump(log_data, f, indent=4)
+            f.truncate()
+
     @abstractmethod
     def _run(
         self,
@@ -269,13 +342,23 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        # Log the request if logging is enabled
+        log_path = self._log_request(messages)
+
         # None -> use default tools
         if tools is None:
             tools = self.model_config_dict.get("tools", None)
         # Empty -> use no tools
         elif not tools:
             tools = None
-        return self._run(messages, response_format, tools)
+
+        result = self._run(messages, response_format, tools)
+
+        # Log the response if logging is enabled
+        if log_path:
+            self._log_response(log_path, result)
+
+        return result
 
     async def arun(
         self,
@@ -300,11 +383,21 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+        # Log the request if logging is enabled
+        log_path = self._log_request(messages)
+
         if tools is None:
             tools = self.model_config_dict.get("tools", None)
         elif not tools:
             tools = None
-        return await self._arun(messages, response_format, tools)
+
+        result = await self._arun(messages, response_format, tools)
+
+        # Log the response if logging is enabled
+        if log_path:
+            self._log_response(log_path, result)
+
+        return result
 
     @abstractmethod
     def check_model_config(self):

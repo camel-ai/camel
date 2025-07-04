@@ -24,7 +24,18 @@ from camel.utils import (
     BaseTokenCounter,
     LiteLLMTokenCounter,
     dependencies_required,
+    get_current_agent_session_id,
+    update_current_observation,
+    update_langfuse_trace,
 )
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 
 class LiteLLMModel(BaseModelBackend):
@@ -48,6 +59,8 @@ class LiteLLMModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     # NOTE: Currently stream mode is not supported.
@@ -61,6 +74,7 @@ class LiteLLMModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        **kwargs: Any,
     ) -> None:
         from litellm import completion
 
@@ -71,6 +85,7 @@ class LiteLLMModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
         self.client = completion
+        self.kwargs = kwargs
 
     def _convert_response_from_litellm_to_openai(
         self, response
@@ -117,6 +132,7 @@ class LiteLLMModel(BaseModelBackend):
     async def _arun(self) -> None:  # type: ignore[override]
         raise NotImplementedError
 
+    @observe(as_type='generation')
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -132,6 +148,28 @@ class LiteLLMModel(BaseModelBackend):
         Returns:
             ChatCompletion
         """
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "source": "camel",
+                    "agent_id": agent_session_id,
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         response = self.client(
             timeout=self._timeout,
             api_key=self._api_key,
@@ -139,8 +177,13 @@ class LiteLLMModel(BaseModelBackend):
             model=self.model_type,
             messages=messages,
             **self.model_config_dict,
+            **self.kwargs,
         )
         response = self._convert_response_from_litellm_to_openai(response)
+
+        update_current_observation(
+            usage=response.usage,
+        )
         return response
 
     def check_model_config(self):

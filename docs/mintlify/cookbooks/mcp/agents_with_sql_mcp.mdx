@@ -2,7 +2,7 @@
 title: "CAMEL Cookbook: SQL MCP Server"
 ---
 
-You can also check this cookbook in [Google Colab](https://colab.research.google.com/drive/1ssaxacH4ahbFcv0fz6azy7hX9yjEXYro?usp=sharing).
+You can also check this cookbook in [Google Colab](https://drive.google.com/file/d/14Eznv3TZaT0Qnt6PvnMylk4i3yG6JCfz/view?usp=sharing).
 
 <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
   <a href="https://www.camel-ai.org/">
@@ -35,7 +35,7 @@ First, install the CAMEL package with all its dependencies:
 
 
 ```python
-%pip install "camel-ai[all]==0.2.57"
+%pip install "camel-ai[all]==0.2.62"
 ```
 
 ## 🔑 Setting Up API Keys
@@ -56,15 +56,15 @@ Create a file named `mcp_config.json` with the following content:
 
 ```json
 {
-    "servers": [
-        {
+    "mcpServers": {
+        "sql_server": {
             "type": "script",
             "command": "python",
             "args": ["sql_server_mcp.py"],
             "transport": "stdio"
         }
-    ]
-}
+    }
+} 
 ```
 
 This configuration tells CAMEL how to start and communicate with your SQL MCP server.
@@ -225,9 +225,8 @@ async def main():
         
     mcp_toolkit = MCPToolkit(config_path=str(config_file_path))
     
-    tools = None
-    async with mcp_toolkit.connection() as toolkit_connection:
-        tools = toolkit_connection.get_tools()
+    await mcp_toolkit.connect()
+    tools = mcp_toolkit.get_tools()
     
     # Get API key securely from user input
     openrouter_api_key = getpass('Enter your OpenRouter API key: ')
@@ -238,7 +237,7 @@ async def main():
     try:
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENROUTER,
-            model_type="anthropic/claude-3.7-sonnet",
+            model_type="google/gemini-2.5-pro-preview",
             api_key=openrouter_api_key,
             model_config_dict={
                 "temperature": 0.2,
@@ -297,6 +296,8 @@ async def main():
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")
         print(f"\nError: {str(e)}")
+    finally:
+        await mcp_toolkit.disconnect() # final cleanup
 
 
 if __name__ == "__main__":

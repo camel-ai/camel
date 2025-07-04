@@ -27,8 +27,7 @@ from camel.societies.workforce.prompts import (
 )
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
-from camel.tasks.task import Task, TaskState
-from camel.utils import print_text_animated
+from camel.tasks.task import Task, TaskState, is_task_result_insufficient
 
 
 class RolePlayingWorker(Worker):
@@ -48,7 +47,7 @@ class RolePlayingWorker(Worker):
             initialize the summarize agent, like the model name, etc.
             (default: :obj:`None`)
         chat_turn_limit (int): The maximum number of chat turns in the role
-            playing. (default: :obj:`3`)
+            playing. (default: :obj:`20`)
     """
 
     def __init__(
@@ -59,7 +58,7 @@ class RolePlayingWorker(Worker):
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
         summarize_agent_kwargs: Optional[Dict] = None,
-        chat_turn_limit: int = 3,
+        chat_turn_limit: int = 20,
     ) -> None:
         super().__init__(description)
         self.summarize_agent_kwargs = summarize_agent_kwargs
@@ -141,24 +140,20 @@ class RolePlayingWorker(Worker):
                 )
                 break
 
-            print_text_animated(
+            print(
                 f"{Fore.BLUE}AI User:\n\n{user_response.msg.content}"
                 f"{Fore.RESET}\n",
-                delay=0.005,
             )
             chat_history.append(f"AI User: {user_response.msg.content}")
 
-            print_text_animated(
-                f"{Fore.GREEN}AI Assistant:{Fore.RESET}", delay=0.005
-            )
+            print(f"{Fore.GREEN}AI Assistant:{Fore.RESET}")
 
             for func_record in assistant_response.info['tool_calls']:
                 print(func_record)
 
-            print_text_animated(
+            print(
                 f"\n{Fore.GREEN}{assistant_response.msg.content}"
                 f"{Fore.RESET}\n",
-                delay=0.005,
             )
             chat_history.append(
                 f"AI Assistant: {assistant_response.msg.content}"
@@ -182,7 +177,15 @@ class RolePlayingWorker(Worker):
         )
         result_dict = json.loads(response.msg.content)
         task_result = TaskResult(**result_dict)
+
         task.result = task_result.content
+
+        if is_task_result_insufficient(task):
+            print(
+                f"{Fore.RED}Task {task.id}: Content validation failed - "
+                f"task marked as failed{Fore.RESET}"
+            )
+            return TaskState.FAILED
 
         print(f"Task result: {task.result}\n")
         return TaskState.DONE
