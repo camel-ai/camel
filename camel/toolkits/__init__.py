@@ -82,6 +82,7 @@ from .edgeone_pages_mcp_toolkit import EdgeOnePagesMCPToolkit
 from .google_drive_mcp_toolkit import GoogleDriveMCPToolkit
 from .craw4ai_toolkit import Crawl4AIToolkit
 from .markitdown_toolkit import MarkItDownToolkit
+from .note_taking_toolkit import NoteTakingToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -96,7 +97,7 @@ __all__ = [
     'SearchToolkit',
     'SlackToolkit',
     'WhatsAppToolkit',
-    'DalleToolkit',
+    'OpenAIImageToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
     'RetrievalToolkit',
@@ -152,4 +153,5 @@ __all__ = [
     'GoogleDriveMCPToolkit',
     'Crawl4AIToolkit',
     'MarkItDownToolkit',
+    'NoteTakingToolkit',
 ]

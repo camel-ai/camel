@@ -160,9 +160,9 @@ class FileWriteToolkit(BaseToolkit):
             file_path (Path): The target file path.
             title (str): The title of the document.
             content (str): The text content to write.
-            use_latex (bool): Whether to use LaTeX for rendering. (requires
-                LaTeX toolchain). If False, uses PyMuPDF for simpler PDF
-                generation. (default: :obj:`False`)
+            use_latex (bool): Whether to use LaTeX for rendering. Only
+                Recommended for documents with mathematical formulas or
+                complex typesetting needs. (default: :obj:`False`)
         """
         # TODO: table generation need to be improved
         if use_latex:
@@ -439,9 +439,9 @@ class FileWriteToolkit(BaseToolkit):
                 supplied, it is resolved to self.output_dir.
             encoding (Optional[str]): The character encoding to use. (default:
                 :obj: `None`)
-            use_latex (bool): For PDF files, whether to use LaTeX rendering
-                (True) or simple FPDF rendering (False). (default: :obj:
-                `False`)
+            use_latex (bool): For PDF files, whether to use LaTeX rendering.
+                Only recommended for documents with mathematical formulas or
+                complex typesetting needs. (default: :obj:`False`)
 
         Returns:
             str: A message indicating success or error details.

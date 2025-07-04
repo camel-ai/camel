@@ -73,14 +73,24 @@
             ]
           },
           {
+            "group": "CAMEL with MCP",
+            "pages": [
+              "mcp/overview",
+              "mcp/camel_agents_as_an_mcp_clients",
+              "mcp/export_camel_agent_as_mcp_server",
+              "mcp/camel_toolkits_as_an_mcp_server",
+              "mcp/mcp_hub"
+            ]
+          },
+          {
             "group": "Cookbooks",
             "pages": [
               {
                 "group": "Basic Concepts",
                 "pages": [
+                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/agents_message",
                   "cookbooks/basic_concepts/agents_prompting",
-                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/create_your_first_agents_society",
                   "cookbooks/basic_concepts/model_speed_comparison"
                 ]
@@ -488,6 +498,7 @@
               "reference/camel.toolkits.meshy_toolkit",
               "reference/camel.toolkits.mineru_toolkit",
               "reference/camel.toolkits.networkx_toolkit",
+              "reference/camel.toolkits.note_taking_toolkit",
               "reference/camel.toolkits.notion_toolkit",
               "reference/camel.toolkits.open_api_toolkit",
               "reference/camel.toolkits.openai_agent_toolkit",

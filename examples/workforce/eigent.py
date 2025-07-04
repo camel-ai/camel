@@ -24,18 +24,18 @@ from camel.toolkits import (
     AudioAnalysisToolkit,
     CodeExecutionToolkit,
     Crawl4AIToolkit,
-    DalleToolkit,
     EdgeOnePagesMCPToolkit,
     ExcelToolkit,
     FileWriteToolkit,
-    FunctionTool,
     # GoogleDriveMCPToolkit,
     HumanToolkit,
     HybridBrowserToolkit,
     ImageAnalysisToolkit,
     LinkedInToolkit,
     MarkItDownToolkit,
+    NoteTakingToolkit,
     NotionToolkit,
+    OpenAIImageToolkit,
     PPTXToolkit,
     RedditToolkit,
     SearchToolkit,
@@ -137,13 +137,14 @@ def search_agent_factory(
     """
     tools = [
         # FunctionTool(SearchToolkit().search_wiki),
-        FunctionTool(SearchToolkit().search_exa),
+        SearchToolkit().search_exa,
         # FunctionTool(SearchToolkit().search_bing),
         # FunctionTool(SearchToolkit().search_baidu),
         *HybridBrowserToolkit(headless=False).get_tools(),
         *TerminalToolkit().get_tools(),
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
+        NoteTakingToolkit().take_note,
         *Crawl4AIToolkit().get_tools(),
     ]
 
@@ -156,53 +157,56 @@ def search_agent_factory(
     and a one-sentence description. This is a mandatory part of your 
     workflow.
 
-    Keep in mind that:
+    ### Core Principles
     - For each decision you make and action you take, you must send a message 
     to the user to keep them informed.
     - Do not be overly confident in your own knowledge. Searching can provide 
-    a broader perspective and help validate existing knowledge.  
+    a broader perspective and help validate existing knowledge.
     - If one way fails to provide an answer, try other ways or methods. The 
     answer does exist.
-    - When encountering verification challenges (like login, CAPTCHAs or robot 
-    checks), you MUST request help using the human toolkit.
-    - If the search snippet is unhelpful but the URL comes from an 
-    authoritative source, try visit the website for more details.  
-    - For the page you have visited, you should check the subpages of the page 
-    to see if it can provide more information to solve the task. 
-    - When looking for specific numerical values (e.g., dollar amounts), 
-    prioritize reliable sources and avoid relying only on search snippets.  
+
+    ### Note Taking
+    - As you find information, you MUST use the `take_note` tool to record 
+    your findings in a structured way.
+    - Append new information to the notes. Do not overwrite the note file 
+    unless you are summarizing or restructuring the content.
+    - Your notes will be used by the Document Agent to create the final 
+    report, so make them clear, concise, and well-organized. Include 
+    headings, details, and any relevant URLs or sources.
+
+    ### Web Search Strategy
     - When solving tasks that require web searches, check Wikipedia first 
-    before exploring other websites.  
-    - You can also simulate browser actions to get more information or verify 
-    the information you have found.
-    - Browser simulation is also helpful for finding target URLs. Browser 
-    simulation operations do not necessarily need to find specific answers, 
-    but can also help find web page URLs that contain answers (usually 
-    difficult to find through simple web searches). You can find the answer to 
-    the question by performing subsequent operations on the URL, such as 
-    extracting the content of the webpage.
-    - Do not solely rely on browser simulation to find the 
-    answer, you should combine search tools, scraper tools and browser 
-    simulation to comprehensively process web page information. Some content 
-    may need to do browser simulation to get.
-    - In your response, you should mention the urls you have visited and 
+    before exploring other websites.
+    - If a question is complex, your search query should be concise and focus 
+    on finding official sources. For example, to answer "What is the maximum 
+    length in meters of #9 in the first National Geographic short on YouTube 
+    that was ever released according to the Monterey Bay Aquarium website?", 
+    your first search term should be coarse-grained like "National 
+    Geographic YouTube" to find the official channel first, then narrow down 
+    your search.
+    - If the search snippet is unhelpful but the URL comes from an 
+    authoritative source, try visiting the website for more details.
+    - When looking for specific numerical values (e.g., dollar amounts), 
+    prioritize reliable sources and avoid relying only on search snippets.
+
+    ### Browser Interaction
+    - When using `open_browser` or `visit_page` without a specific URL in 
+    mind, start from a search engine like Brave Search 
+    (https://search.brave.com) instead of trying to guess the URL.
+    - You can simulate browser actions to get more information or verify what 
+    you have found. This is also helpful for finding target URLs that are 
+    hard to find with simple web searches.
+    - After visiting a page, check its subpages for more relevant 
+    information.
+    - Do not rely solely on browser simulation. Combine search, scraper, and 
+    browser tools to process web page information comprehensively. Some 
+    content may require browser simulation to access.
+    - In your response, you should mention the URLs you have visited and 
     processed.
 
-Here are some tips that help you perform web search:
-- Never add too many keywords in your search query! Some detailed results need 
-    to perform browser interaction to get, not using search toolkit.
-- If the question is complex, search results typically do not provide precise 
-    answers. It is not likely to find the answer directly using search toolkit 
-    only, the search query should be concise and focuses on finding official 
-    sources rather than direct answers.
-    For example, as for the question "What is the maximum length in meters of 
-    #9 in the first National Geographic short on YouTube that was ever 
-    released according to the Monterey Bay Aquarium website?", your first 
-    search term must be coarse-grained like "National Geographic YouTube" to 
-    find the youtube website first, and then try other fine-grained search 
-    terms step-by-step to find more urls.
-- The results you return do not have to directly answer the original question, 
-    you only need to collect relevant information.
+    ### Handling Obstacles
+    - When encountering verification challenges (like login, CAPTCHAs or 
+    robot checks), you MUST request help using the human toolkit.
 """
 
     return ChatAgent(
@@ -231,6 +235,7 @@ def document_agent_factory(
         HumanToolkit().ask_human_via_console,
         *MarkItDownToolkit().get_tools(),
         *ExcelToolkit().get_tools(),
+        NoteTakingToolkit().read_note,
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
@@ -241,7 +246,13 @@ def document_agent_factory(
     
     Your capabilities include:
 
-    1. Document Creation & Editing:
+    1. Information Gathering:
+       - Before creating any document, you MUST use the `read_note` tool to 
+       get all the information gathered by the Search Agent.
+       - The notes contain all the raw data, findings, and sources you need 
+       to complete your work.
+
+    2. Document Creation & Editing:
        - Create and write to various file formats including Markdown (.md), 
        Word documents (.docx), PDFs, CSV files, JSON, YAML, and HTML
        - Apply formatting options including custom encoding, font styles, and 
@@ -250,7 +261,7 @@ def document_agent_factory(
        - Support for mathematical expressions in PDF documents through LaTeX 
        rendering
 
-    2. PowerPoint Presentation Creation:
+    3. PowerPoint Presentation Creation:
        - Create professional PowerPoint presentations with title slides and 
        content slides
        - Format text with bold and italic styling
@@ -259,7 +270,7 @@ def document_agent_factory(
        - Create tables with headers and rows of data
        - Support for custom templates and slide layouts
 
-    3. Excel Spreadsheet Management:
+    4. Excel Spreadsheet Management:
        - Extract and analyze content from Excel files (.xlsx, .xls, .csv) 
        with detailed cell information and markdown formatting
        - Create new Excel workbooks from scratch with multiple sheets
@@ -272,7 +283,7 @@ def document_agent_factory(
        - Handle complex data structures with proper formatting and validation
        - Support for both programmatic data entry and manual cell updates
 
-    4. Human Interaction:
+    5. Human Interaction:
        - Ask questions to users and receive their responses
        - Send informative messages to users without requiring responses
 
@@ -307,7 +318,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *VideoDownloaderToolkit().get_tools(),
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
-        *DalleToolkit().get_tools(),
+        *OpenAIImageToolkit().get_tools(),
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
     ]
@@ -542,11 +553,13 @@ async def main():
         human_task = Task(
             content=(
                 """
-I want to read papers about GUI Agent. Please help me find 
-ten papers, check the detailed content of the papers and help 
-me write a comparison report, then create a nice slides(pptx) 
-to introduce the latest research progress of GUI Agent. The 
-slides should be very comprehensive and professional.
+Analyze the UK healthcare industry to support the planning of my next company. 
+Provide a comprehensive market overview, including current trends, growth 
+projections, and relevant regulations. Identify the top 5-10 major competitors 
+in the space, including their names, website URLs, estimated market size or 
+share, core services or products, key strengths, and notable weaknesses. Also 
+highlight any significant opportunities, gaps, or underserved segments within 
+the market. Present all findings in a well-structured, professional PDF report.
                 """
             ),
             id='0',
