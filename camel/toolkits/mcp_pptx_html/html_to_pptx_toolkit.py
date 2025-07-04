@@ -11,31 +11,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from camel.toolkits.base import BaseToolkit
-from camel.toolkits import MCPToolkit
 import os
 import subprocess
-from camel.toolkits.base import FunctionTool
+
+from camel.toolkits import MCPToolkit
+from camel.toolkits.base import BaseToolkit, FunctionTool
 from camel.utils import MCPServer
+from camel.toolkits import TerminalToolkit
+
 
 @MCPServer()
 class HTMLToPPTXToolkit(BaseToolkit):
     def __init__(self):
         super().__init__()
-        self.config_path = "camel/toolkits/mcp_pptx_html/mcp_config.json"
-        self.node_project_path = "camel/toolkits/mcp_pptx_html/"
+        # Get the directory where this script is located
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.config_path = os.path.join(current_dir, "mcp_config.json")
+        self.node_project_path = current_dir
+        # Initialize terminal toolkit with the correct working directory
+        self.terminal_toolkit = TerminalToolkit(working_dir=current_dir)
         self._init_node_modules()
 
     def _init_node_modules(self):
-        if not os.path.exists(os.path.join(self.node_project_path, 'node_modules')):
+        if not os.path.exists(
+            os.path.join(self.node_project_path, 'node_modules')
+        ):
             print("Installing Node modules...")
-            subprocess.run(['npm', 'install'], cwd=self.node_project_path, check=True)
+            print(f"Working directory: {self.node_project_path}")
+            result = self.terminal_toolkit.shell_exec(id="install_node_modules", command="npm install")
+            print("Installation result:", result)
         else:
             print("Node modules already installed.")
 
-    
-
-    async def convert_htmls_to_pptx(self, html_list: list[str], output_path: str):
+    async def convert_htmls_to_pptx(
+        self, html_list: list[str], output_path: str
+    ):
         r"""
         Convert a list of HTML strings to a multi-slide PPTX using the MCPToolkit.
         Args:
@@ -44,7 +54,9 @@ class HTMLToPPTXToolkit(BaseToolkit):
         Returns:
             The result from the MCP tool call.
         """
-        async with MCPToolkit(config_path=self.config_path, timeout=120) as mcp_toolkit:
+        async with MCPToolkit(
+            config_path=self.config_path, timeout=120
+        ) as mcp_toolkit:
             await mcp_toolkit.connect()
             result = await mcp_toolkit.call_tool(
                 "convert_html_to_pptx",
@@ -55,6 +67,3 @@ class HTMLToPPTXToolkit(BaseToolkit):
 
     def get_tools(self):
         return [FunctionTool(self.convert_htmls_to_pptx)]
-
-    
-
