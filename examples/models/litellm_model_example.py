@@ -15,6 +15,7 @@ from camel.agents import ChatAgent
 from camel.configs import LiteLLMConfig
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
+from camel.toolkits import MathToolkit
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.LITELLM,
@@ -26,13 +27,13 @@ model = ModelFactory.create(
 sys_msg = "You are a helpful assistant."
 
 # Set agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model, token_limit=500)
+camel_agent = ChatAgent(system_message=sys_msg, model=model, token_limit=500, tools=[*MathToolkit().get_tools()])
 
-user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
-    study of autonomous and communicative agents."""
+user_msg = """我要测试我的工具是不是正常，使用工具计算1+1等于多少"""
 
 # Get response information
 response = camel_agent.step(user_msg)
+print(response.info['tool_calls'])
 print(response.msgs[0].content)
 '''
 ===============================================================================
