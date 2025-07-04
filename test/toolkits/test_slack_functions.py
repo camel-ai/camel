@@ -118,7 +118,10 @@ def test_send_slack_message(slack_toolkit):
         mock_login.return_value = mock_client
         mock_client.chat_postMessage.return_value = {}
         response = slack_toolkit.send_slack_message("test_message", "123")
-        assert response == "{}"
+        assert (
+            response
+            == "Message: test_message sent successfully, got response: {}"
+        )
 
 
 def test_delete_slack_message(slack_toolkit):
