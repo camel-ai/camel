@@ -59,7 +59,7 @@ class TaskAssignment(BaseModel):
     # downstream logic does not break with validation errors.
     @staticmethod
     def _split_and_strip(dep_str: str) -> List[str]:
-        """Utility to split a comma separated string and strip whitespace."""
+        r"""Utility to split a comma separated string and strip whitespace."""
         return [d.strip() for d in dep_str.split(',') if d.strip()]
 
     @field_validator("dependencies", mode="before")
