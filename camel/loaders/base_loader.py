@@ -20,34 +20,33 @@ class BaseLoader(ABC):
     r"""Abstract base class for all data loaders in CAMEL."""
 
     @abstractmethod
-    def _load_single(self, source: Union[str, Path], **kwargs) -> Any:
-        """Load data from a single source.
+    def _load_single(
+        self, source: Union[str, Path], **kwargs
+    ) -> Dict[str, Any]:
+        r"""Load data from a single source.
 
         Args:
-            source: The data source to load from
+            source: The data source to load from.
             **kwargs: Additional keyword arguments for loading data.
 
         Returns:
-            The loaded data of type T.
-
-        Raises:
-            Exception: If loading fails for any reason.
+            A dictionary containing the loaded data. It is recommended that
+            the dictionary includes a "content" key with the primary data
+            and optional metadata keys.
         """
         pass
 
     def load(
         self,
-        source: Union[
-            str, Path, List[Union[str, Path]], set[Union[str, Path]]
-        ],
+        source: Union[str, Path, List[Union[str, Path]]],
         **kwargs: Any,
-    ) -> Dict[str, List[Any]]:
-        """Load data from one or multiple sources.
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        r"""Load data from one or multiple sources.
 
         Args:
             source: The data source(s) to load from. Can be:
                 - A single path/URL (str or Path)
-                - A list/set of paths/URLs
+                - A list of paths/URLs
             **kwargs: Additional keyword arguments for loading data.
 
         Returns:
@@ -81,7 +80,7 @@ class BaseLoader(ABC):
     @property
     @abstractmethod
     def supported_formats(self) -> set[str]:
-        """Get the set of supported file formats or data sources.
+        r"""Get the set of supported file formats or data sources.
 
         Returns:
             A set of strings representing the supported formats/sources.
