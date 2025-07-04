@@ -1125,6 +1125,7 @@ class TestHybridBrowserToolkit:
         tools = toolkit.get_tools()
 
         # Default tools should be 6 tools (updated default configuration)
+
         assert len(tools) == 6
         tool_names = [tool.func.__name__ for tool in tools]
 
