@@ -1976,14 +1976,6 @@ class Workforce(BaseNode):
             # Insert packets at the head of the queue
             self._pending_tasks.extendleft(reversed(subtasks))
 
-            # Sync shared memory after task decomposition
-            if self.share_memory:
-                logger.info(
-                    f"Syncing shared memory after decomposing failed "
-                    f"task {task.id}"
-                )
-                self._sync_shared_memory()
-
             await self._post_ready_tasks()
             action_taken = f"decomposed into {len(subtasks)} subtasks"
 
