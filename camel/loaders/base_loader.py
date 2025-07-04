@@ -12,45 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TypeVar, Union
-
-from typing_extensions import Generic
-
-from camel.logger import get_logger
-
-logger = get_logger(__name__)
+from typing import Any, Dict, List, TypeVar, Union
 
 T = TypeVar('T')
 
 
-@dataclass
-class LoaderResult(Generic[T]):
-    r"""Container for load operation results."""
-
-    content: Optional[T] = None
-    success: bool = True
-    error: Optional[Exception] = None
-    source: Optional[Union[str, Path]] = None
-
-    @property
-    def failed(self) -> bool:
-        r"""Check if the load operation failed.
-
-        Returns:
-            bool: True if the load operation failed, False otherwise.
-        """
-        return not self.success
-
-
-class BaseLoader(ABC, Generic[T]):
-    r"""Abstract base class for all data loaders in CAMEL.
-
-    This class defines the common interface for loading data from various
-    sources. Subclasses should implement the `_load_single` method to handle
-    individual source loading.
-    """
+class BaseLoader(ABC):
+    r"""Abstract base class for all data loaders in CAMEL."""
 
     @abstractmethod
     def _load_single(self, source: Union[str, Path], **kwargs) -> T:
@@ -68,67 +37,52 @@ class BaseLoader(ABC, Generic[T]):
         """
         pass
 
-    def load(
-        self,
-        source: Optional[
-            Union[str, Path, List[Union[str, Path]], set[Union[str, Path]]]
-        ] = None,
-        **kwargs: Any,
-    ) -> Dict[str, List[LoaderResult[T]]]:
-        r"""Load data from one or multiple sources.
 
-        Args:
-            source: The data source(s) to load from. Can be:
-                - A single path/URL (str or Path)
-                - A list/set of paths/URLs
-                (default: :obj:`None`)
-            **kwargs: Additional keyword arguments for loading data.
-                - raise_on_error: If True (default), raises an exception
-                on first error. If False, returns failed results with error
-                information.
-                (default: :obj:`True`)
+def load(
+    self,
+    source: Union[str, Path, List[Union[str, Path]], set[Union[str, Path]]],
+    **kwargs: Any,
+) -> Dict[str, List[Any]]:
+    """Load data from one or multiple sources.
 
-        Returns:
-            A dictionary with a single key 'results' containing a list of
-            LoaderResult objects. Each LoaderResult contains the loaded
-            content (if successful) or error information.
+    Args:
+        source: The data source(s) to load from. Can be:
+            - A single path/URL (str or Path)
+            - A list/set of paths/URLs
+        **kwargs: Additional keyword arguments for loading data.
 
-        Raises:
-            ValueError: If no sources are provided
-            Exception: If loading fails for any source and raise_on_error
-                is True
-        """
-        if not source:
-            raise ValueError("At least one source must be provided")
+    Returns:
+        A dictionary with a single key "contents" containing a list of
+        loaded data. If a single source is provided, the list will
+        contain a single item.
 
-        # Convert single source to list for uniform processing
-        sources = [source] if isinstance(source, (str, Path)) else list(source)
+    Raises:
+        ValueError: If no sources are provided
+        Exception: If loading fails for any source
+    """
+    if not source:
+        raise ValueError("At least one source must be provided")
 
-        # Process all sources
-        results: List[LoaderResult[T]] = []
-        for src in sources:
-            try:
-                content = self._load_single(src, **kwargs)
-                logger.debug(f"Successfully loaded source {src}")
-                results.append(
-                    LoaderResult(content=content, success=True, source=src)
-                )
-            except Exception as e:
-                logger.error(f"Failed to load source {src}: {e}")
-                if kwargs.get('raise_on_error', True):
-                    raise ValueError(
-                        f"Failed to load source {src}: {e}"
-                    ) from e
-                results.append(
-                    LoaderResult(success=False, error=e, source=src)
-                )
+    # Convert single source to list for uniform processing
+    sources = [source] if isinstance(source, (str, Path)) else list(source)
 
-        return {'results': results}
+    # Process all sources
+    results = []
+    for i, src in enumerate(sources, 1):
+        try:
+            content = self._load_single(src, **kwargs)
+            results.append(content)
+        except Exception as e:
+            raise RuntimeError(
+                f"Error loading source {i}/{len(sources)}: {src}"
+            ) from e
+
+    return {"contents": results}
 
     @property
     @abstractmethod
     def supported_formats(self) -> set[str]:
-        r"""Get the set of supported file formats or data sources.
+        """Get the set of supported file formats or data sources.
 
         Returns:
             A set of strings representing the supported formats/sources.
