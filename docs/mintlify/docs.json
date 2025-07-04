@@ -646,6 +646,7 @@
             "pages": [
               "reference/camel.loaders.apify_reader",
               "reference/camel.loaders.base_io",
+              "reference/camel.loaders.base_loader",
               "reference/camel.loaders.chunkr_reader",
               "reference/camel.loaders.crawl4ai_reader",
               "reference/camel.loaders.firecrawl_reader",

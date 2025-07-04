@@ -646,7 +646,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.71a3"
+version = "0.2.71a4"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
