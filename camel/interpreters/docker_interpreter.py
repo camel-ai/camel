@@ -146,8 +146,9 @@ class DockerInterpreter(BaseInterpreter):
         tar_stream = io.BytesIO()
         with tarfile.open(fileobj=tar_stream, mode='w') as tar:
             tarinfo = tarfile.TarInfo(name=filename)
-            tarinfo.size = len(content)
-            tar.addfile(tarinfo, io.BytesIO(content.encode('utf-8')))
+            encoded_content = content.encode('utf-8')
+            tarinfo.size = len(encoded_content)
+            tar.addfile(tarinfo, io.BytesIO(encoded_content))
         tar_stream.seek(0)
 
         # copy the tar into the container

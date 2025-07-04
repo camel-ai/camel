@@ -498,6 +498,7 @@
               "reference/camel.toolkits.meshy_toolkit",
               "reference/camel.toolkits.mineru_toolkit",
               "reference/camel.toolkits.networkx_toolkit",
+              "reference/camel.toolkits.note_taking_toolkit",
               "reference/camel.toolkits.notion_toolkit",
               "reference/camel.toolkits.open_api_toolkit",
               "reference/camel.toolkits.openai_agent_toolkit",
@@ -645,6 +646,7 @@
             "pages": [
               "reference/camel.loaders.apify_reader",
               "reference/camel.loaders.base_io",
+              "reference/camel.loaders.base_loader",
               "reference/camel.loaders.chunkr_reader",
               "reference/camel.loaders.crawl4ai_reader",
               "reference/camel.loaders.firecrawl_reader",

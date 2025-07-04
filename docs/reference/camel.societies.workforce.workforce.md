@@ -163,6 +163,18 @@ def _sync_shared_memory(self):
 
 Synchronize memory across all agents by collecting and sharing.
 
+<a id="camel.societies.workforce.workforce.Workforce._update_dependencies_for_decomposition"></a>
+
+### _update_dependencies_for_decomposition
+
+```python
+def _update_dependencies_for_decomposition(self, original_task: Task, subtasks: List[Task]):
+```
+
+Update dependency tracking when a task is decomposed into subtasks.
+Tasks that depended on the original task should now depend on all
+subtasks. The last subtask inherits the original task's dependencies.
+
 <a id="camel.societies.workforce.workforce.Workforce._cleanup_task_tracking"></a>
 
 ### _cleanup_task_tracking
