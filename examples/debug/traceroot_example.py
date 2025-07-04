@@ -19,7 +19,7 @@ Preparation before running:
    - TRACEROOT_ENABLED="true"           # Enable debugging
 
 Note:
-- Debugging and tracing will only be enabled if TRACEROOT_ENABLED=true is set
+- Debugging and tracing will only be enabled if TRACEROOT_ENABLED=true
 """
 
 import traceroot
