@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 import re
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from surrealdb import Surreal
 from surrealdb.data.types.record_id import RecordID
@@ -182,8 +182,12 @@ class SurrealStorage(BaseVectorStorage):
             validate_data.append(record_dict)
 
         return validate_data
-
-    def query(self, q: VectorDBQuery, **kwargs) -> List[VectorDBQueryResult]:
+    
+    def query(
+    self,
+    query: VectorDBQuery,
+    **kwargs: Any,
+    ) -> List[VectorDBQueryResult]:
         r"""
         Perform a top-k similarity search using the configured distance metric.
 
@@ -216,9 +220,9 @@ class SurrealStorage(BaseVectorStorage):
 
             query = f"""
                 SELECT payload,
-                    {metric_func}(embedding, {q.query_vector}) AS score
+                    {metric_func}(embedding, {query.query_vector}) AS score
                 FROM {self.table}
-                WHERE embedding <|{q.top_k},{metric}|> {q.query_vector}
+                WHERE embedding <|{query.top_k},{metric}|> {query.query_vector}
                 ORDER BY score;
             """
 
