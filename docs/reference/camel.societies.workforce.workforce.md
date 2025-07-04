@@ -60,11 +60,20 @@ capabilities
 
 - **description** (str): Description of the workforce.
 - **children** (Optional[List[BaseNode]], optional): List of child nodes under this node. Each child node can be a worker node or another workforce node. (default: :obj:`None`)
-- **coordinator_agent_kwargs** (Optional[Dict], optional): Keyword arguments passed directly to the coordinator :obj:`ChatAgent` constructor. The coordinator manages task assignment and failure handling strategies. See :obj:`ChatAgent` documentation for all available parameters. (default: :obj:`None` - uses ModelPlatformType.DEFAULT, ModelType.DEFAULT)
-- **task_agent_kwargs** (Optional[Dict], optional): Keyword arguments passed directly to the task planning :obj:`ChatAgent` constructor. The task agent handles task decomposition into subtasks and result composition. See :obj:`ChatAgent` documentation for all available parameters. (default: :obj:`None` - uses ModelPlatformType.DEFAULT, ModelType.DEFAULT)
-- **new_worker_agent_kwargs** (Optional[Dict], optional): Default keyword arguments passed to :obj:`ChatAgent` constructor for workers created dynamically at runtime when existing workers cannot handle failed tasks. See :obj:`ChatAgent` documentation for all available parameters. (default: :obj:`None` - creates workers with SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit)
+- **coordinator_agent** (Optional[ChatAgent], optional): A custom coordinator agent instance for task assignment and worker creation. If provided, the workforce will create a new agent using this agent's model configuration but with the required system message and functionality. If None, a default agent will be created using DEFAULT model settings. (default: :obj:`None`)
+- **task_agent** (Optional[ChatAgent], optional): A custom task planning agent instance for task decomposition and composition. If provided, the workforce will create a new agent using this agent's model configuration but with the required system message and tools (TaskPlanningToolkit). If None, a default agent will be created using DEFAULT model settings. (default: :obj:`None`)
+- **new_worker_agent** (Optional[ChatAgent], optional): A template agent for workers created dynamically at runtime when existing workers cannot handle failed tasks. If None, workers will be created with default settings including SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. (default: :obj:`None`)
 - **graceful_shutdown_timeout** (float, optional): The timeout in seconds for graceful shutdown when a task fails 3 times. During this period, the workforce remains active for debugging. Set to 0 for immediate shutdown. (default: :obj:`15.0`)
 - **share_memory** (bool, optional): Whether to enable shared memory across SingleAgentWorker instances in the workforce. When enabled, all SingleAgentWorker instances, coordinator agent, and task planning agent will share their complete conversation history and function-calling trajectory, providing better context for task handoffs and continuity. Note: Currently only supports SingleAgentWorker instances; RolePlayingWorker and nested Workforce instances do not participate in memory sharing. (default: :obj:`False`)
+
+**Note:**
+
+When custom coordinator_agent or task_agent are provided, the workforce
+will preserve the user's system message and append the required
+workforce coordination or task planning instructions to it. This
+ensures both the user's intent is preserved and proper workforce
+functionality is maintained. All other agent configurations (model,
+memory, tools, etc.) will also be preserved.
 
 <a id="camel.societies.workforce.workforce.Workforce.__init__"></a>
 
@@ -75,13 +84,37 @@ def __init__(
     self,
     description: str,
     children: Optional[List[BaseNode]] = None,
-    coordinator_agent_kwargs: Optional[Dict] = None,
-    task_agent_kwargs: Optional[Dict] = None,
-    new_worker_agent_kwargs: Optional[Dict] = None,
+    coordinator_agent: Optional[ChatAgent] = None,
+    task_agent: Optional[ChatAgent] = None,
+    new_worker_agent: Optional[ChatAgent] = None,
     graceful_shutdown_timeout: float = 15.0,
     share_memory: bool = False
 ):
 ```
+
+<a id="camel.societies.workforce.workforce.Workforce._attach_pause_event_to_agent"></a>
+
+### _attach_pause_event_to_agent
+
+```python
+def _attach_pause_event_to_agent(self, agent: ChatAgent):
+```
+
+Ensure the given ChatAgent shares this workforce's pause_event.
+
+If the agent already has a different pause_event we overwrite it and
+emit a debug log (it is unlikely an agent needs multiple independent
+pause controls once managed by this workforce).
+
+<a id="camel.societies.workforce.workforce.Workforce._ensure_pause_event_in_kwargs"></a>
+
+### _ensure_pause_event_in_kwargs
+
+```python
+def _ensure_pause_event_in_kwargs(self, kwargs: Optional[Dict]):
+```
+
+Insert pause_event into kwargs dict for ChatAgent construction.
 
 <a id="camel.societies.workforce.workforce.Workforce.__repr__"></a>
 
@@ -129,6 +162,20 @@ def _sync_shared_memory(self):
 ```
 
 Synchronize memory across all agents by collecting and sharing.
+
+<a id="camel.societies.workforce.workforce.Workforce._cleanup_task_tracking"></a>
+
+### _cleanup_task_tracking
+
+```python
+def _cleanup_task_tracking(self, task_id: str):
+```
+
+Clean up tracking data for a task to prevent memory leaks.
+
+**Parameters:**
+
+- **task_id** (str): The ID of the task to clean up.
 
 <a id="camel.societies.workforce.workforce.Workforce._decompose_task"></a>
 
@@ -358,7 +405,7 @@ def add_single_agent_worker(
     self,
     description: str,
     worker: ChatAgent,
-    pool_max_size: int = 10
+    pool_max_size: int = DEFAULT_WORKER_POOL_SIZE
 ):
 ```
 
@@ -456,52 +503,57 @@ def _get_child_nodes_info(self):
 
 Get the information of all the child nodes under this node.
 
-<a id="camel.societies.workforce.workforce.Workforce._find_assignee"></a>
+<a id="camel.societies.workforce.workforce.Workforce._get_valid_worker_ids"></a>
 
-### _find_assignee
+### _get_valid_worker_ids
 
 ```python
-def _find_assignee(self, tasks: List[Task]):
+def _get_valid_worker_ids(self):
 ```
-
-Assigns multiple tasks to worker nodes with the best capabilities.
-
-**Parameters:**
-
-- **tasks** (List[Task]): The tasks to be assigned.
 
 **Returns:**
 
-  TaskAssignResult: Assignment result containing task assignments
-with their dependencies.
+  set: Set of valid worker IDs that can be assigned tasks.
 
-<a id="camel.societies.workforce.workforce.Workforce._create_worker_node_for_task"></a>
+<a id="camel.societies.workforce.workforce.Workforce._call_coordinator_for_assignment"></a>
 
-### _create_worker_node_for_task
+### _call_coordinator_for_assignment
 
 ```python
-def _create_worker_node_for_task(self, task: Task):
+def _call_coordinator_for_assignment(self, tasks: List[Task], invalid_ids: Optional[List[str]] = None):
 ```
 
-Creates a new worker node for a given task and add it to the
-children list of this node. This is one of the actions that
-the coordinator can take when a task has failed.
+Call coordinator agent to assign tasks with optional validation
+feedback in the case of invalid worker IDs.
 
 **Parameters:**
 
-- **task** (Task): The task for which the worker node is created.
+- **tasks** (List[Task]): Tasks to assign.
+- **invalid_ids** (List[str], optional): Invalid worker IDs from previous attempt (if any).
 
 **Returns:**
 
-  Worker: The created worker node.
+  TaskAssignResult: Assignment result from coordinator.
 
-<a id="camel.societies.workforce.workforce.Workforce._create_new_agent"></a>
+<a id="camel.societies.workforce.workforce.Workforce._validate_assignments"></a>
 
-### _create_new_agent
+### _validate_assignments
 
 ```python
-def _create_new_agent(self, role: str, sys_msg: str):
+def _validate_assignments(self, assignments: List[TaskAssignment], valid_ids: Set[str]):
 ```
+
+Validate task assignments against valid worker IDs.
+
+**Parameters:**
+
+- **assignments** (List[TaskAssignment]): Assignments to validate.
+- **valid_ids** (Set[str]): Set of valid worker IDs.
+
+**Returns:**
+
+  Tuple[List[TaskAssignment], List[TaskAssignment]]:
+(valid_assignments, invalid_assignments)
 
 <a id="camel.societies.workforce.workforce.Workforce.get_workforce_log_tree"></a>
 
