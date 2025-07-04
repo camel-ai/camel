@@ -1,7 +1,22 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 import re
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
+
+from surrealdb import Surreal
+from surrealdb.data.types.record_id import RecordID
 
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
@@ -10,13 +25,11 @@ from camel.storages.vectordb_storages import (
     VectorDBStatus,
     VectorRecord,
 )
-from camel.utils import dependencies_required
 from camel.types import VectorDistance
-
-from surrealdb import Surreal
-from surrealdb.data.types.record_id import RecordID
+from camel.utils import dependencies_required
 
 logger = logging.getLogger(__name__)
+
 
 class SurrealStorage(BaseVectorStorage):
     @dependencies_required('surrealdb')
@@ -33,7 +46,8 @@ class SurrealStorage(BaseVectorStorage):
         password: str = "root",
     ) -> None:
         r"""
-        Initialize SurrealStorage with connection settings and ensure the target table exists.
+        Initialize SurrealStorage with connection settings and ensure
+        the target table exists.
 
         Args:
             url (str): WebSocket URL for connecting to SurrealDB.
@@ -85,8 +99,8 @@ class SurrealStorage(BaseVectorStorage):
             res = db.query_raw(f"INFO FOR TABLE {self.table};")
 
             indexes = res['result'][0]['result'].get("indexes", {})
-            
-            dim = self.vector_dim  
+
+            dim = self.vector_dim
             idx_def = indexes.get("hnsw_idx")
             if idx_def and isinstance(idx_def, str):
                 m = re.search(r"DIMENSION\s+(\d+)", idx_def)
@@ -95,12 +109,13 @@ class SurrealStorage(BaseVectorStorage):
             cnt = db.query_raw(f"SELECT COUNT() FROM {self.table};")
             try:
                 count = len(cnt['result'][0]['result'])
-            except (KeyError, IndexError, TypeError) as e:
-                logger.warning("Unexpected result format when counting records: %s", cnt)
+            except (KeyError, IndexError, TypeError):
+                logger.warning(
+                    "Unexpected result format when counting records: %s", cnt
+                )
                 count = 0
 
             return {"dim": dim, "count": count}
-
 
     def _create_table(self):
         r"""
@@ -119,7 +134,7 @@ class SurrealStorage(BaseVectorStorage):
                 """
             )
         logger.info(f"Table '{self.table}' created successfully.")
-    
+
     def _drop_table(self):
         r"""
         Drop the vector storage table if it exists.
@@ -139,14 +154,18 @@ class SurrealStorage(BaseVectorStorage):
             in_dim = self._get_table_info()["dim"]
             if in_dim != self.vector_dim:
                 raise ValueError(
-                    f"Table {self.table} exists with dimension {in_dim}, expected {self.vector_dim}"
+                    f"Table {self.table} exists with dimension {in_dim}, "
+                    f"expected {self.vector_dim}"
                 )
         else:
             self._create_table()
-    
-    def _validate_and_convert_records(self, records: List[VectorRecord]) -> List[Dict]:
+
+    def _validate_and_convert_records(
+        self, records: List[VectorRecord]
+    ) -> List[Dict]:
         r"""
-        Validate and convert VectorRecord instances into SurrealDB-compatible dictionaries.
+        Validate and convert VectorRecord instances into
+        SurrealDB-compatible dictionaries.
 
         Args:
             records (List[VectorRecord]): List of vector records to insert.
@@ -158,21 +177,23 @@ class SurrealStorage(BaseVectorStorage):
         for record in records:
             record_dict = {
                 "payload": record.payload if record.payload else "",
-                "embedding": record.vector
+                "embedding": record.vector,
             }
             validate_data.append(record_dict)
 
         return validate_data
 
-    def query(self, q: VectorDBQuery) -> List[VectorDBQueryResult]:
+    def query(self, q: VectorDBQuery, **kwargs) -> List[VectorDBQueryResult]:
         r"""
         Perform a top-k similarity search using the configured distance metric.
 
         Args:
-            q (VectorDBQuery): Query containing the query vector and top_k value.
+            q (VectorDBQuery): Query containing the query vector
+                and top_k value.
 
         Returns:
-            List[VectorDBQueryResult]: Ranked list of matching records with similarity scores.
+            List[VectorDBQueryResult]: Ranked list of matching records
+                with similarity scores.
         """
         metric = {
             VectorDistance.COSINE: "cosine",
@@ -207,7 +228,9 @@ class SurrealStorage(BaseVectorStorage):
             return [
                 VectorDBQueryResult(
                     record=VectorRecord(vector=[], payload=row["payload"]),
-                    similarity=1.0 - row["score"] if self.distance == VectorDistance.COSINE else -row["score"],
+                    similarity=1.0 - row["score"]
+                    if self.distance == VectorDistance.COSINE
+                    else -row["score"],
                 )
                 for row in results["result"]
             ]
@@ -219,7 +242,9 @@ class SurrealStorage(BaseVectorStorage):
         Args:
             records (List[VectorRecord]): List of vector records to add.
         """
-        logger.info("Adding %d records to table '%s'.", len(records), self.table)
+        logger.info(
+            "Adding %d records to table '%s'.", len(records), self.table
+        )
         try:
             with Surreal(self.url) as db:
                 db.signin({"username": self.user, "password": self.password})
@@ -229,12 +254,23 @@ class SurrealStorage(BaseVectorStorage):
                 for record in validated_records:
                     db.create(self.table, record)
 
-            logger.info("Successfully added %d records to table '%s'.", len(records), self.table)
+            logger.info(
+                "Successfully added %d records to table '%s'.",
+                len(records),
+                self.table,
+            )
         except Exception as e:
-            logger.error("Failed to add records to table '%s': %s", self.table, str(e), exc_info=True)
+            logger.error(
+                "Failed to add records to table '%s': %s",
+                self.table,
+                str(e),
+                exc_info=True,
+            )
             raise
 
-    def delete(self, ids: Optional[List[str]] = None, if_all: bool = False, **kwargs) -> None:
+    def delete(
+        self, ids: Optional[List[str]] = None, if_all: bool = False, **kwargs
+    ) -> None:
         r"""
         Delete specific records by ID or clear the entire table.
 
@@ -249,11 +285,15 @@ class SurrealStorage(BaseVectorStorage):
 
                 if if_all:
                     db.delete(self.table, **kwargs)
-                    logger.info(f"Deleted all records from table '{self.table}'")
+                    logger.info(
+                        f"Deleted all records from table '{self.table}'"
+                    )
                     return
 
                 if not ids:
-                    raise ValueError("Either `ids` must be provided or `if_all=True`")
+                    raise ValueError(
+                        "Either `ids` must be provided or `if_all=True`"
+                    )
 
                 for id_str in ids:
                     rec = RecordID(self.table, id_str)
@@ -288,9 +328,8 @@ class SurrealStorage(BaseVectorStorage):
         r"""Load the collection hosted on cloud service."""
         # SurrealDB doesn't require explicit loading
         pass
-    
+
     @property
     def client(self) -> "Surreal":
         r"""Provides access to the underlying SurrealDB client."""
-        return self._surreal_client  
-
+        return self._surreal_client
