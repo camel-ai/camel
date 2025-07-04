@@ -19,7 +19,16 @@ import time
 import uuid
 from collections import deque
 from enum import Enum
-from typing import Any, Coroutine, Deque, Dict, List, Optional, Set, Tuple
+from typing import (
+    Any,
+    Coroutine,
+    Deque,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+)
 
 from colorama import Fore
 
@@ -200,7 +209,7 @@ class Workforce(BaseNode):
         children: Optional[List[BaseNode]] = None,
         coordinator_agent: Optional[ChatAgent] = None,
         task_agent: Optional[ChatAgent] = None,
-        new_worker_agent: Optional[ChatAgent] = None,  # TODO: use MCP Agent
+        new_worker_agent: Optional[ChatAgent] = None,
         graceful_shutdown_timeout: float = 15.0,
         share_memory: bool = False,
     ) -> None:
@@ -325,9 +334,10 @@ class Workforce(BaseNode):
                 "settings (ModelPlatformType.DEFAULT, ModelType.DEFAULT) "
                 "with default system message and TaskPlanningToolkit."
             )
+            task_tools = TaskPlanningToolkit().get_tools()
             self.task_agent = ChatAgent(
                 task_sys_msg,
-                tools=TaskPlanningToolkit().get_tools(),  # type: ignore[arg-type]
+                tools=task_tools,  # type: ignore[arg-type]
             )
         else:
             logger.info(
@@ -563,6 +573,44 @@ class Workforce(BaseNode):
         except Exception as e:
             logger.warning(f"Error synchronizing shared memory: {e}")
 
+    def _update_dependencies_for_decomposition(
+        self, original_task: Task, subtasks: List[Task]
+    ) -> None:
+        r"""Update dependency tracking when a task is decomposed into subtasks.
+        Tasks that depended on the original task should now depend on all
+        subtasks. The last subtask inherits the original task's dependencies.
+        """
+        if not subtasks:
+            return
+
+        original_task_id = original_task.id
+        subtask_ids = [subtask.id for subtask in subtasks]
+
+        # Find tasks that depend on the original task
+        dependent_task_ids = [
+            task_id
+            for task_id, deps in self._task_dependencies.items()
+            if original_task_id in deps
+        ]
+
+        # Update dependent tasks to depend on all subtasks
+        for task_id in dependent_task_ids:
+            dependencies = self._task_dependencies[task_id]
+            dependencies.remove(original_task_id)
+            dependencies.extend(subtask_ids)
+
+        # The last subtask inherits original task's dependencies (if any)
+        if original_task_id in self._task_dependencies:
+            original_dependencies = self._task_dependencies[original_task_id]
+            if original_dependencies:
+                # Set dependencies for the last subtask to maintain execution
+                # order
+                self._task_dependencies[subtask_ids[-1]] = (
+                    original_dependencies.copy()
+                )
+            # Remove original task dependencies as it's now decomposed
+            del self._task_dependencies[original_task_id]
+
     def _cleanup_task_tracking(self, task_id: str) -> None:
         r"""Clean up tracking data for a task to prevent memory leaks.
 
@@ -589,6 +637,10 @@ class Workforce(BaseNode):
         task.subtasks = subtasks
         for subtask in subtasks:
             subtask.parent = task
+
+        # Update dependency tracking for decomposed task
+        if subtasks:
+            self._update_dependencies_for_decomposition(task, subtasks)
 
         return subtasks
 
@@ -1436,7 +1488,9 @@ class Workforce(BaseNode):
 
         return valid_assignments, invalid_assignments
 
-    def _handle_task_assignment_fallbacks(self, tasks: List[Task]) -> List:
+    async def _handle_task_assignment_fallbacks(
+        self, tasks: List[Task]
+    ) -> List:
         r"""Create new workers for unassigned tasks as fallback.
 
         Args:
@@ -1449,7 +1503,7 @@ class Workforce(BaseNode):
 
         for task in tasks:
             logger.info(f"Creating new worker for unassigned task {task.id}")
-            new_worker = self._create_worker_node_for_task(task)
+            new_worker = await self._create_worker_node_for_task(task)
 
             assignment = TaskAssignment(
                 task_id=task.id,
@@ -1460,7 +1514,7 @@ class Workforce(BaseNode):
 
         return fallback_assignments
 
-    def _handle_assignment_retry_and_fallback(
+    async def _handle_assignment_retry_and_fallback(
         self,
         invalid_assignments: List[TaskAssignment],
         tasks: List[Task],
@@ -1531,14 +1585,14 @@ class Workforce(BaseNode):
                 f"Creating fallback workers for {len(unassigned_tasks)} "
                 f"unassigned tasks"
             )
-            fallback_assignments = self._handle_task_assignment_fallbacks(
-                unassigned_tasks
+            fallback_assignments = (
+                await self._handle_task_assignment_fallbacks(unassigned_tasks)
             )
             final_assignments.extend(fallback_assignments)
 
         return final_assignments
 
-    def _find_assignee(
+    async def _find_assignee(
         self,
         tasks: List[Task],
     ) -> TaskAssignResult:
@@ -1580,7 +1634,7 @@ class Workforce(BaseNode):
         # invalid assignments and unassigned tasks
         all_problem_assignments = invalid_assignments
         retry_and_fallback_assignments = (
-            self._handle_assignment_retry_and_fallback(
+            await self._handle_assignment_retry_and_fallback(
                 all_problem_assignments, tasks, valid_worker_ids
             )
         )
@@ -1616,7 +1670,7 @@ class Workforce(BaseNode):
     async def _post_dependency(self, dependency: Task) -> None:
         await self._channel.post_dependency(dependency, self.node_id)
 
-    def _create_worker_node_for_task(self, task: Task) -> Worker:
+    async def _create_worker_node_for_task(self, task: Task) -> Worker:
         r"""Creates a new worker node for a given task and add it to the
         children list of this node. This is one of the actions that
         the coordinator can take when a task has failed.
@@ -1662,7 +1716,7 @@ class Workforce(BaseNode):
                     f"Coordinator agent returned malformed JSON response. "
                 )
 
-        new_agent = self._create_new_agent(
+        new_agent = await self._create_new_agent(
             new_node_conf.role,
             new_node_conf.sys_msg,
         )
@@ -1689,14 +1743,19 @@ class Workforce(BaseNode):
         )
         return new_node
 
-    def _create_new_agent(self, role: str, sys_msg: str) -> ChatAgent:
+    async def _create_new_agent(self, role: str, sys_msg: str) -> ChatAgent:
         worker_sys_msg = BaseMessage.make_assistant_message(
             role_name=role,
             content=sys_msg,
         )
 
         if self.new_worker_agent is not None:
-            return self.new_worker_agent
+            # Clone the template agent to create an independent instance
+            cloned_agent = self.new_worker_agent.clone(with_memory=False)
+            # Update the system message for the specific role
+            cloned_agent._system_message = worker_sys_msg
+            cloned_agent.init_messages()  # Initialize with new system message
+            return cloned_agent
         else:
             # Default tools for a new agent
             function_list = [
@@ -1712,7 +1771,7 @@ class Workforce(BaseNode):
             )
 
             return ChatAgent(
-                worker_sys_msg,
+                system_message=worker_sys_msg,
                 model=model,
                 tools=function_list,  # type: ignore[arg-type]
                 pause_event=self._pause_event,
@@ -1765,7 +1824,7 @@ class Workforce(BaseNode):
                 f"Found {len(tasks_to_assign)} new tasks. "
                 f"Requesting assignment..."
             )
-            batch_result = self._find_assignee(tasks_to_assign)
+            batch_result = await self._find_assignee(tasks_to_assign)
             logger.debug(
                 f"Coordinator returned assignments:\n"
                 f"{json.dumps(batch_result.dict(), indent=2)}"
@@ -1788,17 +1847,19 @@ class Workforce(BaseNode):
         # Step 2: Iterate through all pending tasks and post those that are
         # ready
         posted_tasks = []
-        # Pre-compute completed task IDs set for O(1) lookups
-        completed_task_ids = {t.id for t in self._completed_tasks}
+        # Pre-compute completed task IDs and their states for O(1) lookups
+        completed_tasks_info = {t.id: t.state for t in self._completed_tasks}
 
         for task in self._pending_tasks:
             # A task must be assigned to be considered for posting
             if task.id in self._task_dependencies:
                 dependencies = self._task_dependencies[task.id]
                 # Check if all dependencies for this task are in the completed
-                # set
+                # set and their state is DONE
                 if all(
-                    dep_id in completed_task_ids for dep_id in dependencies
+                    dep_id in completed_tasks_info
+                    and completed_tasks_info[dep_id] == TaskState.DONE
+                    for dep_id in dependencies
                 ):
                     assignee_id = self._assignees[task.id]
                     logger.debug(
@@ -1885,7 +1946,7 @@ class Workforce(BaseNode):
 
         if task.get_depth() > 3:
             # Create a new worker node and reassign
-            assignee = self._create_worker_node_for_task(task)
+            assignee = await self._create_worker_node_for_task(task)
 
             # Sync shared memory after creating new worker to provide context
             if self.share_memory:
@@ -1915,19 +1976,35 @@ class Workforce(BaseNode):
             # Insert packets at the head of the queue
             self._pending_tasks.extendleft(reversed(subtasks))
 
+            await self._post_ready_tasks()
+            action_taken = f"decomposed into {len(subtasks)} subtasks"
+
+            # Handle task completion differently for decomposed tasks
+            if task.id in self._assignees:
+                await self._channel.archive_task(task.id)
+
+            self._cleanup_task_tracking(task.id)
+            logger.debug(
+                f"Task {task.id} failed and was {action_taken}. "
+                f"Dependencies updated for subtasks."
+            )
+
             # Sync shared memory after task decomposition
             if self.share_memory:
                 logger.info(
-                    f"Syncing shared memory after decomposing failed "
-                    f"task {task.id}"
+                    f"Syncing shared memory after task {task.id} decomposition"
                 )
                 self._sync_shared_memory()
 
+            # Check if any pending tasks are now ready to execute
             await self._post_ready_tasks()
-            action_taken = f"decomposed into {len(subtasks)} subtasks"
+            return False
+
+        # For reassigned tasks (depth > 3), handle normally
         if task.id in self._assignees:
             await self._channel.archive_task(task.id)
 
+        self._cleanup_task_tracking(task.id)
         logger.debug(
             f"Task {task.id} failed and was {action_taken}. "
             f"Updating dependency state."
@@ -2020,31 +2097,65 @@ class Workforce(BaseNode):
                 break
 
         if not found_and_removed:
-            # Task was already removed from pending queue (expected case when
-            # it had been popped immediately after posting).  No need to
-            # draw user attention with a warning; record at debug level.
+            # Task was already removed from pending queue (common case when
+            # it was posted and removed immediately).
             logger.debug(
                 f"Completed task {task.id} was already removed from pending "
-                "queue."
+                "queue (normal for posted tasks)."
             )
 
         # Archive the task and update dependency tracking
         if task.id in self._assignees:
             await self._channel.archive_task(task.id)
 
-        # Ensure it's in completed tasks set
-        self._completed_tasks.append(task)
+        # Ensure it's in completed tasks set by updating if it exists or
+        # appending if it's new.
+        task_found_in_completed = False
+        for i, t in enumerate(self._completed_tasks):
+            if t.id == task.id:
+                self._completed_tasks[i] = task
+                task_found_in_completed = True
+                break
+        if not task_found_in_completed:
+            self._completed_tasks.append(task)
 
         # Handle parent task completion logic
         parent = task.parent
-        if parent and parent.id not in {t.id for t in self._completed_tasks}:
+        if parent:
+            # Check if all subtasks are completed and successful
             all_subtasks_done = all(
-                sub.id in {t.id for t in self._completed_tasks}
+                any(
+                    t.id == sub.id and t.state == TaskState.DONE
+                    for t in self._completed_tasks
+                )
                 for sub in parent.subtasks
             )
             if all_subtasks_done:
-                # Set the parent task state to done
+                # Collect results from successful subtasks only
+                successful_results = []
+                for sub in parent.subtasks:
+                    completed_subtask = next(
+                        (
+                            t
+                            for t in self._completed_tasks
+                            if t.id == sub.id and t.state == TaskState.DONE
+                        ),
+                        None,
+                    )
+                    if completed_subtask and completed_subtask.result:
+                        successful_results.append(
+                            f"--- Subtask {sub.id} Result ---\n"
+                            f"{completed_subtask.result}"
+                        )
+
+                # Set parent task state and result
                 parent.state = TaskState.DONE
+                parent.result = (
+                    "\n\n".join(successful_results)
+                    if successful_results
+                    else "All subtasks completed"
+                )
+
                 logger.debug(
                     f"All subtasks of {parent.id} are done. "
                     f"Marking parent as complete."
