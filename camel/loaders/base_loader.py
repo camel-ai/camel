@@ -21,38 +21,36 @@ class BaseLoader(ABC):
 
     @abstractmethod
     def _load_single(
-        self, source: Union[str, Path], **kwargs
+        self, source: Union[str, Path]
     ) -> Dict[str, Any]:
         r"""Load data from a single source.
 
         Args:
-            source: The data source to load from.
-            **kwargs: Additional keyword arguments for loading data.
+            source (Union[str, Path]): The data source to load from.
 
         Returns:
-            A dictionary containing the loaded data. It is recommended that
-            the dictionary includes a "content" key with the primary data
-            and optional metadata keys.
+            Dict[str, Any]: A dictionary containing the loaded data. It is
+                recommended that the dictionary includes a "content" key with 
+                the primary data and optional metadata keys.
         """
         pass
 
     def load(
         self,
         source: Union[str, Path, List[Union[str, Path]]],
-        **kwargs: Any,
     ) -> Dict[str, List[Dict[str, Any]]]:
         r"""Load data from one or multiple sources.
 
         Args:
-            source: The data source(s) to load from. Can be:
+            source (Union[str, Path, List[Union[str, Path]]]): The data source
+                (s) to load from. Can be:
                 - A single path/URL (str or Path)
                 - A list of paths/URLs
-            **kwargs: Additional keyword arguments for loading data.
 
         Returns:
-            A dictionary with a single key "contents" containing a list of
-            loaded data. If a single source is provided, the list will
-            contain a single item.
+            Dict[str, List[Dict[str, Any]]]: A dictionary with a single key
+                "contents" containing a list of loaded data. If a single source
+                is provided, the list will contain a single item.
 
         Raises:
             ValueError: If no sources are provided
@@ -68,7 +66,7 @@ class BaseLoader(ABC):
         results = []
         for i, src in enumerate(sources, 1):
             try:
-                content = self._load_single(src, **kwargs)
+                content = self._load_single(src)
                 results.append(content)
             except Exception as e:
                 raise RuntimeError(
@@ -83,6 +81,7 @@ class BaseLoader(ABC):
         r"""Get the set of supported file formats or data sources.
 
         Returns:
-            A set of strings representing the supported formats/sources.
+            set[str]: A set of strings representing the supported formats/
+            sources.
         """
         pass
