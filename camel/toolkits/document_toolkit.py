@@ -180,7 +180,7 @@ class DocumentToolkit(BaseToolkit):
         """
         try:
             cache_key = self._hash_key(document_path)
-            if self.enable_cache and cache_key in self._cache:
+            if self.enable_cache and cache_key in self._cache and self.cache_dir: 
                 logger.debug("Cache hit: %s", document_path)
                 return True, self._cache[cache_key]
 
