@@ -22,16 +22,29 @@ logger = logging.getLogger(__name__)
 
 
 class HumanToolkit(BaseToolkit):
-    r"""A class representing a toolkit for human interaction."""
+    r"""A class representing a toolkit for human interaction.
+
+    Note:
+        This toolkit should be called to send a tidy message to the user to
+        keep them informed.
+    """
 
     def ask_human_via_console(self, question: str) -> str:
-        r"""Ask a question to the human via the console.
+        r"""Use this tool to ask a question to the user when you are stuck,
+        need clarification, or require a decision to be made. This is a
+        two-way communication channel that will wait for the user's response.
+        You should use it to:
+        - Clarify ambiguous instructions or requirements.
+        - Request missing information that you cannot find (e.g., login
+        credentials, file paths).
+        - Ask for a decision when there are multiple viable options.
+        - Seek help when you encounter an error you cannot resolve on your own.
 
         Args:
-            question (str): The question to ask the human.
+            question (str): The question to ask the user.
 
         Returns:
-            str: The answer from the human.
+            str: The user's response to the question.
         """
         print(f"Question: {question}")
         logger.info(f"Question: {question}")
@@ -40,14 +53,21 @@ class HumanToolkit(BaseToolkit):
         return reply
 
     def send_message_to_user(self, message: str) -> None:
-        r"""Send a message to the user, without waiting for
-        a response. This will send to stdout in a noticeable way.
+        r"""Use this tool to send a tidy message to the user in one short
+        sentence.
 
-        This is guaranteed to reach the user regardless of
-        actual user interface.
+        This one-way tool keeps the user informed about your progress,
+        decisions, or actions. It does not require a response.
+        You should use it to:
+        - Announce what you are about to do (e.g., "I will now search for
+          papers on GUI Agents.").
+        - Report the result of an action (e.g., "I have found 15 relevant
+          papers.").
+        - State a decision (e.g., "I will now analyze the top 10 papers.").
+        - Give a status update during a long-running task.
 
         Args:
-            message (str): The message to send to the user.
+            message (str): The tidy and informative message for the user.
         """
         print(f"\nAgent Message:\n{message}")
         logger.info(f"\nAgent Message:\n{message}")

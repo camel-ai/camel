@@ -26,7 +26,7 @@ from PIL import Image
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import MCPServer, dependencies_required
+from camel.utils import dependencies_required
 
 logger = get_logger(__name__)
 
@@ -57,7 +57,6 @@ def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
     return Image.open(io.BytesIO(out))
 
 
-@MCPServer()
 class VideoDownloaderToolkit(BaseToolkit):
     r"""A class for downloading videos and optionally splitting them into
     chunks.
@@ -123,6 +122,9 @@ class VideoDownloaderToolkit(BaseToolkit):
         yt-dlp will detect if the video is downloaded automatically so there
         is no need to check if the video exists.
 
+        Args:
+            url (str): The URL of the video to download.
+
         Returns:
             str: The path to the downloaded video file.
         """
@@ -175,7 +177,8 @@ class VideoDownloaderToolkit(BaseToolkit):
         dividing the video into equal parts if an integer is provided.
 
         Args:
-            video_url (str): The URL of the video to take screenshots.
+            video_path (str): The local path or URL of the video to take
+              screenshots.
             amount (int): the amount of evenly split screenshots to capture.
 
         Returns:

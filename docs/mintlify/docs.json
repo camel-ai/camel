@@ -73,14 +73,24 @@
             ]
           },
           {
+            "group": "CAMEL with MCP",
+            "pages": [
+              "mcp/overview",
+              "mcp/camel_agents_as_an_mcp_clients",
+              "mcp/export_camel_agent_as_mcp_server",
+              "mcp/camel_toolkits_as_an_mcp_server",
+              "mcp/mcp_hub"
+            ]
+          },
+          {
             "group": "Cookbooks",
             "pages": [
               {
                 "group": "Basic Concepts",
                 "pages": [
+                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/agents_message",
                   "cookbooks/basic_concepts/agents_prompting",
-                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/create_your_first_agents_society",
                   "cookbooks/basic_concepts/model_speed_comparison"
                 ]
@@ -426,9 +436,11 @@
               "reference/camel.storages.object_storages.base",
               "reference/camel.storages.object_storages.google_cloud",
               "reference/camel.storages.vectordb_storages.base",
+              "reference/camel.storages.vectordb_storages.chroma",
               "reference/camel.storages.vectordb_storages.faiss",
               "reference/camel.storages.vectordb_storages.milvus",
               "reference/camel.storages.vectordb_storages.oceanbase",
+              "reference/camel.storages.vectordb_storages.pgvector",
               "reference/camel.storages.vectordb_storages.qdrant",
               "reference/camel.storages.vectordb_storages.tidb",
               "reference/camel.storages.vectordb_storages.weaviate"
@@ -486,9 +498,11 @@
               "reference/camel.toolkits.meshy_toolkit",
               "reference/camel.toolkits.mineru_toolkit",
               "reference/camel.toolkits.networkx_toolkit",
+              "reference/camel.toolkits.note_taking_toolkit",
               "reference/camel.toolkits.notion_toolkit",
               "reference/camel.toolkits.open_api_toolkit",
               "reference/camel.toolkits.openai_agent_toolkit",
+              "reference/camel.toolkits.openai_image_toolkit",
               "reference/camel.toolkits.openbb_toolkit",
               "reference/camel.toolkits.playwright_mcp_toolkit",
               "reference/camel.toolkits.pptx_toolkit",
@@ -513,6 +527,11 @@
               "reference/camel.toolkits.whatsapp_toolkit",
               "reference/camel.toolkits.wolfram_alpha_toolkit",
               "reference/camel.toolkits.zapier_toolkit",
+              "reference/camel.toolkits.hybrid_browser_toolkit.actions",
+              "reference/camel.toolkits.hybrid_browser_toolkit.agent",
+              "reference/camel.toolkits.hybrid_browser_toolkit.browser_session",
+              "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit",
+              "reference/camel.toolkits.hybrid_browser_toolkit.snapshot",
               "reference/camel.toolkits.non_visual_browser_toolkit.actions",
               "reference/camel.toolkits.non_visual_browser_toolkit.agent",
               "reference/camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit",
@@ -560,8 +579,10 @@
               "reference/camel.utils.langfuse",
               "reference/camel.utils.mcp",
               "reference/camel.utils.mcp_client",
+              "reference/camel.utils.message_summarizer",
               "reference/camel.utils.response_format",
               "reference/camel.utils.token_counting",
+              "reference/camel.utils.tool_result",
               "reference/camel.utils.chunker.base",
               "reference/camel.utils.chunker.code_chunker",
               "reference/camel.utils.chunker.uio_chunker"

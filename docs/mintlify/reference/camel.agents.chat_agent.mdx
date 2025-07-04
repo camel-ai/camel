@@ -23,6 +23,8 @@ Class for managing conversations of CAMEL Chat Agents.
 - **max_iteration** (Optional[int], optional): Maximum number of model calling iterations allowed per step. If `None` (default), there's no explicit limit. If `1`, it performs a single model call. If `N > 1`, it allows up to N model calls. (default: :obj:`None`)
 - **agent_id** (str, optional): The ID of the agent. If not provided, a random UUID will be generated. (default: :obj:`None`)
 - **stop_event** (Optional[threading.Event], optional): Event to signal termination of the agent's operation. When set, the agent will terminate its execution. (default: :obj:`None`)
+- **mask_tool_output** (Optional[bool]): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
+- **pause_event** (Optional[asyncio.Event]): Event to signal pause of the agent's operation. When clear, the agent will pause its execution. (default: :obj:`None`)
 
 <a id="camel.agents.chat_agent.ChatAgent.__init__"></a>
 
@@ -43,7 +45,9 @@ def __init__(
     scheduling_strategy: str = 'round_robin',
     max_iteration: Optional[int] = None,
     agent_id: Optional[str] = None,
-    stop_event: Optional[threading.Event] = None
+    stop_event: Optional[threading.Event] = None,
+    mask_tool_output: bool = False,
+    pause_event: Optional[asyncio.Event] = None
 ):
 ```
 
@@ -381,6 +385,80 @@ def _try_format_message(self, message: BaseMessage, response_format: Type[BaseMo
   bool: Whether the message is formatted successfully (or no format
 is needed).
 
+<a id="camel.agents.chat_agent.ChatAgent._check_tools_strict_compatibility"></a>
+
+### _check_tools_strict_compatibility
+
+```python
+def _check_tools_strict_compatibility(self):
+```
+
+**Returns:**
+
+  bool: True if all tools are strict mode compatible,
+False otherwise.
+
+<a id="camel.agents.chat_agent.ChatAgent._convert_response_format_to_prompt"></a>
+
+### _convert_response_format_to_prompt
+
+```python
+def _convert_response_format_to_prompt(self, response_format: Type[BaseModel]):
+```
+
+Convert a Pydantic response format to a prompt instruction.
+
+**Parameters:**
+
+- **response_format** (Type[BaseModel]): The Pydantic model class.
+
+**Returns:**
+
+  str: A prompt instruction requesting the specific format.
+
+<a id="camel.agents.chat_agent.ChatAgent._handle_response_format_with_non_strict_tools"></a>
+
+### _handle_response_format_with_non_strict_tools
+
+```python
+def _handle_response_format_with_non_strict_tools(
+    self,
+    input_message: Union[BaseMessage, str],
+    response_format: Optional[Type[BaseModel]] = None
+):
+```
+
+Handle response format when tools are not strict mode compatible.
+
+**Parameters:**
+
+- **input_message**: The original input message.
+- **response_format**: The requested response format.
+
+**Returns:**
+
+  Tuple: (modified_message, modified_response_format,
+used_prompt_formatting)
+
+<a id="camel.agents.chat_agent.ChatAgent._apply_prompt_based_parsing"></a>
+
+### _apply_prompt_based_parsing
+
+```python
+def _apply_prompt_based_parsing(
+    self,
+    response: ModelResponse,
+    original_response_format: Type[BaseModel]
+):
+```
+
+Apply manual parsing when using prompt-based formatting.
+
+**Parameters:**
+
+- **response**: The model response to parse.
+- **original_response_format**: The original response format class.
+
 <a id="camel.agents.chat_agent.ChatAgent._format_response_if_needed"></a>
 
 ### _format_response_if_needed
@@ -478,6 +556,18 @@ def _convert_to_chatagent_response(
 
 Parse the final model response into the chat agent response.
 
+<a id="camel.agents.chat_agent.ChatAgent._process_pending_images"></a>
+
+### _process_pending_images
+
+```python
+def _process_pending_images(self):
+```
+
+**Returns:**
+
+  List: List of successfully converted PIL Images.
+
 <a id="camel.agents.chat_agent.ChatAgent._record_final_output"></a>
 
 ### _record_final_output
@@ -487,6 +577,37 @@ def _record_final_output(self, output_messages: List[BaseMessage]):
 ```
 
 Log final messages or warnings about multiple responses.
+
+<a id="camel.agents.chat_agent.ChatAgent._is_vision_error"></a>
+
+### _is_vision_error
+
+```python
+def _is_vision_error(self, exc: Exception):
+```
+
+Check if the exception is likely related to vision/image is not
+supported by the model.
+
+<a id="camel.agents.chat_agent.ChatAgent._has_images"></a>
+
+### _has_images
+
+```python
+def _has_images(self, messages: List[OpenAIMessage]):
+```
+
+Check if any message contains images.
+
+<a id="camel.agents.chat_agent.ChatAgent._strip_images_from_messages"></a>
+
+### _strip_images_from_messages
+
+```python
+def _strip_images_from_messages(self, messages: List[OpenAIMessage]):
+```
+
+Remove images from messages, keeping only text content.
 
 <a id="camel.agents.chat_agent.ChatAgent._get_model_response"></a>
 
@@ -686,12 +807,26 @@ def _record_tool_calling(
     func_name: str,
     args: Dict[str, Any],
     result: Any,
-    tool_call_id: str
+    tool_call_id: str,
+    mask_output: bool = False
 ):
 ```
 
 Record the tool calling information in the memory, and return the
 tool calling record.
+
+**Parameters:**
+
+- **func_name** (str): The name of the tool function called.
+- **args** (Dict[str, Any]): The arguments passed to the tool.
+- **result** (Any): The result returned by the tool execution.
+- **tool_call_id** (str): A unique identifier for the tool call.
+- **mask_output** (bool, optional): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
+
+**Returns:**
+
+  ToolCallingRecord: A struct containing information about
+this tool call.
 
 <a id="camel.agents.chat_agent.ChatAgent.get_usage_dict"></a>
 

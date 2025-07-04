@@ -15,25 +15,27 @@
 import asyncio
 
 from camel.agents.chat_agent import ChatAgent
+from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import (
     AudioAnalysisToolkit,
-    BrowserNonVisualToolkit,
     CodeExecutionToolkit,
     Crawl4AIToolkit,
-    DalleToolkit,
     EdgeOnePagesMCPToolkit,
+    ExcelToolkit,
     FileWriteToolkit,
-    FunctionTool,
-    GoogleDriveMCPToolkit,
+    # GoogleDriveMCPToolkit,
     HumanToolkit,
+    HybridBrowserToolkit,
     ImageAnalysisToolkit,
     LinkedInToolkit,
     MarkItDownToolkit,
+    NoteTakingToolkit,
     NotionToolkit,
+    OpenAIImageToolkit,
     PPTXToolkit,
     RedditToolkit,
     SearchToolkit,
@@ -46,6 +48,34 @@ from camel.toolkits import (
 from camel.types import ModelPlatformType, ModelType
 from camel.utils.commons import api_keys_required
 
+logger = get_logger(__name__)
+
+
+def send_message_to_user(message: str) -> None:
+    r"""Use this tool to send a tidy message to the user, including a
+    short title and a one-sentence description.
+
+    This one-way tool keeps the user informed about your progress,
+    decisions, or actions. It does not require a response.
+    You should use it to:
+    - Announce what you are about to do (e.g.,
+        'Starting Task\nSearching for papers on
+        GUI Agents.').
+    - Report the result of an action (e.g.,
+        'Search Complete\nFound 15 relevant
+        papers.').
+    - State a decision (e.g.,
+        'Next Step\nAnalyzing the top 10
+        papers.').
+    - Give a status update during a long-running task.
+
+    Args:
+        message (str): The tidy and informative message for the user,
+            which should contain a title and a description.
+    """
+    print(f"\nAgent Message:\n{message}")
+    logger.info(f"\nAgent Message:\n{message}")
+
 
 def developer_agent_factory(
     model: BaseModelBackend,
@@ -54,6 +84,7 @@ def developer_agent_factory(
 ):
     r"""Factory for creating a developer agent."""
     tools = [
+        send_message_to_user,
         HumanToolkit().ask_human_via_console,
         *TerminalToolkit(clone_current_env=True).get_tools(),
         *CodeExecutionToolkit().get_tools(),
@@ -61,7 +92,12 @@ def developer_agent_factory(
     ]
 
     system_message = """You are a skilled coding assistant with DIRECT CODE 
-    EXECUTION CAPABILITIES. You can:
+    EXECUTION CAPABILITIES. You MUST use the `send_message_to_user` tool to 
+    inform the user of every decision and action you take. Your message must 
+    include a short title and a one-sentence description. This is a 
+    mandatory part of your workflow.
+
+    Your capabilities include:
     - WRITE AND EXECUTE code in real-time to solve tasks
     - RUN terminal commands to install packages, process files, or test 
     functionality
@@ -78,7 +114,8 @@ def developer_agent_factory(
     - If there's dependency issues when you try to execute code, you should 
     use the terminal toolkit to install the dependencies.
     - ASK for human input via the console if you are stuck or need 
-    clarification."""
+    clarification.
+    """
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -96,68 +133,81 @@ def search_agent_factory(
     task_id: str,
 ):
     r"""Factory for creating a search agent, based on user-provided code
-    structure."""
+    structure.
+    """
     tools = [
         # FunctionTool(SearchToolkit().search_wiki),
-        FunctionTool(SearchToolkit().search_exa),
+        SearchToolkit().search_exa,
         # FunctionTool(SearchToolkit().search_bing),
         # FunctionTool(SearchToolkit().search_baidu),
-        *BrowserNonVisualToolkit(headless=False).get_tools(),
+        *HybridBrowserToolkit(headless=False).get_tools(),
         *TerminalToolkit().get_tools(),
+        send_message_to_user,
         HumanToolkit().ask_human_via_console,
+        NoteTakingToolkit().take_note,
         *Crawl4AIToolkit().get_tools(),
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
     extract webpage content, simulate browser actions, and provide relevant 
     information to solve the given task.
-    Keep in mind that:
+    
+    You MUST use the `send_message_to_user` tool to inform the user of every 
+    decision and action you take. Your message must include a short title 
+    and a one-sentence description. This is a mandatory part of your 
+    workflow.
+
+    ### Core Principles
+    - For each decision you make and action you take, you must send a message 
+    to the user to keep them informed.
     - Do not be overly confident in your own knowledge. Searching can provide 
-    a broader perspective and help validate existing knowledge.  
+    a broader perspective and help validate existing knowledge.
     - If one way fails to provide an answer, try other ways or methods. The 
     answer does exist.
-    - When encountering verification challenges (like login, CAPTCHAs or robot 
-    checks), you MUST request help using the human toolkit.
-    - If the search snippet is unhelpful but the URL comes from an 
-    authoritative source, try visit the website for more details.  
-    - For the page you have visited, you should check the subpages of the page 
-    to see if it can provide more information to solve the task. 
-    - When looking for specific numerical values (e.g., dollar amounts), 
-    prioritize reliable sources and avoid relying only on search snippets.  
+
+    ### Note Taking
+    - As you find information, you MUST use the `take_note` tool to record 
+    your findings in a structured way.
+    - Append new information to the notes. Do not overwrite the note file 
+    unless you are summarizing or restructuring the content.
+    - Your notes will be used by the Document Agent to create the final 
+    report, so make them clear, concise, and well-organized. Include 
+    headings, details, and any relevant URLs or sources.
+
+    ### Web Search Strategy
     - When solving tasks that require web searches, check Wikipedia first 
-    before exploring other websites.  
-    - You can also simulate browser actions to get more information or verify 
-    the information you have found.
-    - Browser simulation is also helpful for finding target URLs. Browser 
-    simulation operations do not necessarily need to find specific answers, 
-    but can also help find web page URLs that contain answers (usually 
-    difficult to find through simple web searches). You can find the answer to 
-    the question by performing subsequent operations on the URL, such as 
-    extracting the content of the webpage.
-    - Do not solely rely on browser simulation to find the 
-    answer, you should combine search tools, scraper tools and browser 
-    simulation to comprehensively process web page information. Some content 
-    may need to do browser simulation to get.
-    - In your response, you should mention the urls you have visited and 
+    before exploring other websites.
+    - If a question is complex, your search query should be concise and focus 
+    on finding official sources. For example, to answer "What is the maximum 
+    length in meters of #9 in the first National Geographic short on YouTube 
+    that was ever released according to the Monterey Bay Aquarium website?", 
+    your first search term should be coarse-grained like "National 
+    Geographic YouTube" to find the official channel first, then narrow down 
+    your search.
+    - If the search snippet is unhelpful but the URL comes from an 
+    authoritative source, try visiting the website for more details.
+    - When looking for specific numerical values (e.g., dollar amounts), 
+    prioritize reliable sources and avoid relying only on search snippets.
+
+    ### Browser Interaction
+    - When using `open_browser` or `visit_page` without a specific URL in 
+    mind, start from a search engine like Brave Search 
+    (https://search.brave.com) instead of trying to guess the URL.
+    - You can simulate browser actions to get more information or verify what 
+    you have found. This is also helpful for finding target URLs that are 
+    hard to find with simple web searches.
+    - After visiting a page, check its subpages for more relevant 
+    information.
+    - Do not rely solely on browser simulation. Combine search, scraper, and 
+    browser tools to process web page information comprehensively. Some 
+    content may require browser simulation to access.
+    - In your response, you should mention the URLs you have visited and 
     processed.
 
-Here are some tips that help you perform web search:
-- Never add too many keywords in your search query! Some detailed results need 
-    to perform browser interaction to get, not using search toolkit.
-- If the question is complex, search results typically do not provide precise 
-    answers. It is not likely to find the answer directly using search toolkit 
-    only, the search query should be concise and focuses on finding official 
-    sources rather than direct answers.
-    For example, as for the question "What is the maximum length in meters of 
-    #9 in the first National Geographic short on YouTube that was ever 
-    released according to the Monterey Bay Aquarium website?", your first 
-    search term must be coarse-grained like "National Geographic YouTube" to 
-    find the youtube website first, and then try other fine-grained search 
-    terms step-by-step to find more urls.
-- The results you return do not have to directly answer the original question, 
-    you only need to collect relevant information.
-    
-    """
+    ### Handling Obstacles
+    - When encountering verification challenges (like login, CAPTCHAs or 
+    robot checks), you MUST request help using the human toolkit.
+"""
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -172,24 +222,37 @@ Here are some tips that help you perform web search:
 def document_agent_factory(
     model: BaseModelBackend,
     task_id: str,
-    google_drive_mcp_toolkit: GoogleDriveMCPToolkit,
+    # google_drive_mcp_toolkit: GoogleDriveMCPToolkit,
 ):
     r"""Factory for creating a document agent, based on user-provided code
     structure."""
     tools = [
         *FileWriteToolkit().get_tools(),
         *PPTXToolkit().get_tools(),
-        *google_drive_mcp_toolkit.get_tools(),
+        # *google_drive_mcp_toolkit.get_tools(),
         # *RetrievalToolkit().get_tools(),
+        send_message_to_user,
         HumanToolkit().ask_human_via_console,
         *MarkItDownToolkit().get_tools(),
+        *ExcelToolkit().get_tools(),
+        NoteTakingToolkit().read_note,
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
-    creating, modifying, and managing various document formats. Your 
-    capabilities include:
+    creating, modifying, and managing various document formats. You MUST use 
+    the `send_message_to_user` tool to inform the user of every decision and 
+    action you take. Your message must include a short title and a 
+    one-sentence description. This is a mandatory part of your workflow.
+    
+    Your capabilities include:
 
-    1. Document Creation & Editing:
+    1. Information Gathering:
+       - Before creating any document, you MUST use the `read_note` tool to 
+       get all the information gathered by the Search Agent.
+       - The notes contain all the raw data, findings, and sources you need 
+       to complete your work.
+
+    2. Document Creation & Editing:
        - Create and write to various file formats including Markdown (.md), 
        Word documents (.docx), PDFs, CSV files, JSON, YAML, and HTML
        - Apply formatting options including custom encoding, font styles, and 
@@ -198,7 +261,7 @@ def document_agent_factory(
        - Support for mathematical expressions in PDF documents through LaTeX 
        rendering
 
-    2. PowerPoint Presentation Creation:
+    3. PowerPoint Presentation Creation:
        - Create professional PowerPoint presentations with title slides and 
        content slides
        - Format text with bold and italic styling
@@ -207,7 +270,20 @@ def document_agent_factory(
        - Create tables with headers and rows of data
        - Support for custom templates and slide layouts
 
-    3. Human Interaction:
+    4. Excel Spreadsheet Management:
+       - Extract and analyze content from Excel files (.xlsx, .xls, .csv) 
+       with detailed cell information and markdown formatting
+       - Create new Excel workbooks from scratch with multiple sheets
+       - Perform comprehensive spreadsheet operations including:
+         * Sheet creation, deletion, and data clearing
+         * Cell-level operations (read, write, find specific values)
+         * Row and column manipulation (add, update, delete)
+         * Range operations for bulk data processing
+         * Data export to CSV format for compatibility
+       - Handle complex data structures with proper formatting and validation
+       - Support for both programmatic data entry and manual cell updates
+
+    5. Human Interaction:
        - Ask questions to users and receive their responses
        - Send informative messages to users without requiring responses
 
@@ -217,9 +293,13 @@ def document_agent_factory(
     - Provide clear feedback about document creation and modification processes
     - Ask clarifying questions when user requirements are ambiguous
     - Recommend best practices for document organization and presentation
+    - For Excel files, always provide clear data structure and organization
+    - When creating spreadsheets, consider data relationships and use 
+    appropriate sheet naming conventions
 
     Your goal is to help users efficiently create, modify, and manage their 
-    documents with professional quality and appropriate formatting."""
+    documents with professional quality and appropriate formatting across all 
+    supported formats including advanced spreadsheet functionality."""
 
     return ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -238,13 +318,18 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *VideoDownloaderToolkit().get_tools(),
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
-        *DalleToolkit().get_tools(),
+        *OpenAIImageToolkit().get_tools(),
+        send_message_to_user,
         HumanToolkit().ask_human_via_console,
     ]
 
     system_message = """You are a Multi-Modal Processing Assistant specialized 
-    in analyzing and generating various types of media content. Your 
-    capabilities include:
+    in analyzing and generating various types of media content. You MUST use 
+    the `send_message_to_user` tool to inform the user of every decision and 
+    action you take. Your message must include a short title and a 
+    one-sentence description. This is a mandatory part of your workflow.
+    
+    Your capabilities include:
 
     1. Video & Audio Analysis:
        - Download videos from URLs for analysis.
@@ -293,9 +378,14 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
     return ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Social Medium Agent",
-            content="""You are a Social Media Management Assistant with 
-            comprehensive capabilities across multiple platforms. Your 
-            integrated toolkits enable you to:
+            content="""
+You are a Social Media Management Assistant with comprehensive capabilities 
+across multiple platforms. You MUST use the `send_message_to_user` tool to 
+inform the user of every decision and action you take. Your message must 
+include a short title and a one-sentence description. This is a mandatory 
+part of your workflow.
+
+Your integrated toolkits enable you to:
 
 1. WhatsApp Business Management (WhatsAppToolkit):
    - Send text and template messages to customers via the WhatsApp Business 
@@ -346,6 +436,7 @@ operations.
             *RedditToolkit().get_tools(),
             *NotionToolkit().get_tools(),
             *SlackToolkit().get_tools(),
+            send_message_to_user,
             HumanToolkit().ask_human_via_console,
         ],
     )
@@ -353,12 +444,12 @@ operations.
 
 async def main():
     edgeone_pages_mcp_toolkit = EdgeOnePagesMCPToolkit()
-    google_drive_mcp_toolkit = GoogleDriveMCPToolkit(
-        credentials_path="path/to/credentials.json"
-    )
+    # google_drive_mcp_toolkit = GoogleDriveMCPToolkit(
+    #     credentials_path="path/to/credentials.json"
+    # )
     try:
         await edgeone_pages_mcp_toolkit.connect()
-        await google_drive_mcp_toolkit.connect()
+        # await google_drive_mcp_toolkit.connect()
 
         # Create a single model backend for all agents
         model_backend = ModelFactory.create(
@@ -379,10 +470,41 @@ async def main():
 
         task_id = 'workforce_task'
 
-        # Configure kwargs for all agents to use the same model_backend
-        coordinator_agent_kwargs = {"model": model_backend_reason}
-        task_agent_kwargs = {"model": model_backend_reason}
-        new_worker_agent_kwargs = {"model": model_backend}
+        # Create custom agents for the workforce
+        coordinator_agent = ChatAgent(
+            "You are a helpful coordinator. You MUST use the "
+            "`send_message_to_user` tool to inform the user of every "
+            "decision and action you take. Your message must include a short "
+            "title and a one-sentence description. This is a mandatory part "
+            "of your workflow.",
+            model=model_backend_reason,
+            tools=[
+                send_message_to_user,
+            ],
+        )
+        task_agent = ChatAgent(
+            "You are a helpful task planner. You MUST use the "
+            "`send_message_to_user` tool to inform the user of every decision "
+            "and action you take. Your message must include a short title and "
+            "a one-sentence description. This is a mandatory part of your "
+            "workflow.",
+            model=model_backend_reason,
+            tools=[
+                send_message_to_user,
+            ],
+        )
+        new_worker_agent = ChatAgent(
+            "You are a helpful worker. You MUST use the "
+            "`send_message_to_user` tool to inform the user of every "
+            "decision and action you take. Your message must include a short "
+            "title and a one-sentence description. This is a mandatory part "
+            "of your workflow.",
+            model=model_backend,
+            tools=[
+                send_message_to_user,
+                HumanToolkit().ask_human_via_console,
+            ],
+        )
 
         # Create agents using factory functions
         search_agent = search_agent_factory(model_backend, task_id)
@@ -390,23 +512,20 @@ async def main():
             model_backend, task_id, edgeone_pages_mcp_toolkit
         )
         document_agent = document_agent_factory(
-            model_backend, task_id, google_drive_mcp_toolkit
+            model_backend,
+            task_id,
+            # google_drive_mcp_toolkit
         )
         multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
-
-        # Configure kwargs for all agents to use the same model_backend
-        coordinator_agent_kwargs = {"model": model_backend_reason}
-        task_agent_kwargs = {"model": model_backend_reason}
-        new_worker_agent_kwargs = {"model": model_backend}
 
         # Create workforce instance before adding workers
         workforce = Workforce(
             'A workforce',
             graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
             share_memory=False,
-            coordinator_agent_kwargs=coordinator_agent_kwargs,
-            task_agent_kwargs=task_agent_kwargs,
-            new_worker_agent_kwargs=new_worker_agent_kwargs,
+            coordinator_agent=coordinator_agent,
+            task_agent=task_agent,
+            new_worker_agent=new_worker_agent,
         )
 
         workforce.add_single_agent_worker(
@@ -434,11 +553,13 @@ async def main():
         human_task = Task(
             content=(
                 """
-I want to read papers about GUI Agent. Please help me find 
-ten papers, check the detailed content of the papers and help 
-me write a comparison report, then create a nice slides(pptx) 
-to introduce the latest research progress of GUI Agent. The 
-slides should be very comprehensive and professional.
+Analyze the UK healthcare industry to support the planning of my next company. 
+Provide a comprehensive market overview, including current trends, growth 
+projections, and relevant regulations. Identify the top 5-10 major competitors 
+in the space, including their names, website URLs, estimated market size or 
+share, core services or products, key strengths, and notable weaknesses. Also 
+highlight any significant opportunities, gaps, or underserved segments within 
+the market. Present all findings in a well-structured, professional PDF report.
                 """
             ),
             id='0',
@@ -463,7 +584,7 @@ slides should be very comprehensive and professional.
 
     finally:
         await edgeone_pages_mcp_toolkit.disconnect()
-        await google_drive_mcp_toolkit.disconnect()
+        # await google_drive_mcp_toolkit.disconnect()
 
 
 if __name__ == "__main__":

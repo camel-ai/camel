@@ -69,7 +69,9 @@ def test_write_to_file_text(file_write_toolkit):
     content = "Hello, world!"
     filename = "test.txt"
 
-    result = file_write_toolkit.write_to_file(content, filename)
+    result = file_write_toolkit.write_to_file(
+        "Test Document", content, filename
+    )
 
     # Check the result message
     assert "successfully written" in result
@@ -89,7 +91,9 @@ def test_write_to_file_markdown(file_write_toolkit):
     content = "# Heading\n\nThis is a paragraph with **bold** text."
     filename = "test.md"
 
-    result = file_write_toolkit.write_to_file(content, filename)
+    result = file_write_toolkit.write_to_file(
+        "Markdown Document", content, filename
+    )
 
     # Check the result message
     assert "successfully written" in result
@@ -109,7 +113,7 @@ def test_write_to_file_json(file_write_toolkit):
     data = {"name": "John", "age": 30, "city": "New York"}
     filename = "test.json"
 
-    result = file_write_toolkit.write_to_file(data, filename)
+    result = file_write_toolkit.write_to_file("JSON Document", data, filename)
 
     # Check the result message
     assert "successfully written" in result
@@ -129,7 +133,7 @@ def test_write_to_file_yaml(file_write_toolkit):
     data = {"name": "John", "age": 30, "city": "New York"}
     filename = "test.yaml"
 
-    result = file_write_toolkit.write_to_file(data, filename)
+    result = file_write_toolkit.write_to_file("YAML Document", data, filename)
 
     # Check the result message
     assert "successfully written" in result
@@ -149,7 +153,9 @@ def test_write_to_file_csv_string(file_write_toolkit):
     content = "name,age,city\nJohn,30,New York\nJane,25,San Francisco"
     filename = "test.csv"
 
-    result = file_write_toolkit.write_to_file(content, filename)
+    result = file_write_toolkit.write_to_file(
+        "CSV Document", content, filename
+    )
 
     # Check the result message
     assert "successfully written" in result
@@ -173,7 +179,9 @@ def test_write_to_file_csv_list(file_write_toolkit):
     ]
     filename = "test_list.csv"
 
-    result = file_write_toolkit.write_to_file(content, filename)
+    result = file_write_toolkit.write_to_file(
+        "CSV List Document", content, filename
+    )
 
     # Check the result message
     assert "successfully written" in result
@@ -196,7 +204,9 @@ def test_write_to_file_html(file_write_toolkit):
     content = "<html><body><h1>Hello, world!</h1></body></html>"
     filename = "test.html"
 
-    result = file_write_toolkit.write_to_file(content, filename)
+    result = file_write_toolkit.write_to_file(
+        "HTML Document", content, filename
+    )
 
     # Check the result message
     assert "successfully written" in result
@@ -218,7 +228,9 @@ def test_write_to_file_no_extension(file_write_toolkit):
     content = "# Default format test"
     filename = "test_no_extension"
 
-    result = file_write_toolkit.write_to_file(content, filename)
+    result = file_write_toolkit.write_to_file(
+        "Default Format Document", content, filename
+    )
 
     # Check the result message
     assert "successfully written" in result
@@ -241,7 +253,7 @@ def test_write_to_file_custom_encoding(file_write_toolkit):
     encoding = "latin-1"
 
     result = file_write_toolkit.write_to_file(
-        content, filename, encoding=encoding
+        "Custom Encoding Document", content, filename, encoding=encoding
     )
 
     # Check the result message
@@ -263,7 +275,9 @@ def test_write_to_file_nested_directory(file_write_toolkit):
     content = "Content in nested directory"
     filename = "nested/dir/test.txt"
 
-    result = file_write_toolkit.write_to_file(content, filename)
+    result = file_write_toolkit.write_to_file(
+        "Nested Directory Document", content, filename
+    )
 
     # Check the result message
     assert "successfully written" in result
@@ -284,7 +298,7 @@ def test_write_to_file_absolute_path(temp_dir):
     content = "Content with absolute path"
     filename = os.path.join(temp_dir, "absolute_path.txt")
 
-    result = toolkit.write_to_file(content, filename)
+    result = toolkit.write_to_file("Absolute Path Document", content, filename)
 
     # Check the result message
     assert "successfully written" in result
