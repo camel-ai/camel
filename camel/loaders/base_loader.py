@@ -20,9 +20,7 @@ class BaseLoader(ABC):
     r"""Abstract base class for all data loaders in CAMEL."""
 
     @abstractmethod
-    def _load_single(
-        self, source: Union[str, Path]
-    ) -> Dict[str, Any]:
+    def _load_single(self, source: Union[str, Path]) -> Dict[str, Any]:
         r"""Load data from a single source.
 
         Args:
@@ -30,7 +28,7 @@ class BaseLoader(ABC):
 
         Returns:
             Dict[str, Any]: A dictionary containing the loaded data. It is
-                recommended that the dictionary includes a "content" key with 
+                recommended that the dictionary includes a "content" key with
                 the primary data and optional metadata keys.
         """
         pass
