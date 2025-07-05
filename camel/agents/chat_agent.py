@@ -2426,7 +2426,7 @@ class ChatAgent(BaseAgent):
         except Exception as e:
             # Capture the error message to prevent framework crash
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
-            result = {"error": error_msg}
+            result = f"Tool execution failed: {error_msg}"
             logging.warning(error_msg)
 
         # Check if result is a ToolResult with images
@@ -2562,6 +2562,13 @@ class ChatAgent(BaseAgent):
         yield from self._stream_response(
             openai_messages, num_tokens, response_format
         )
+
+    def _get_token_count(self, content: str) -> int:
+        r"""Get token count for content with fallback."""
+        if hasattr(self.model_backend, 'token_counter'):
+            return len(self.model_backend.token_counter.encode(content))
+        else:
+            return len(content.split())
 
     def _stream_response(
         self,
@@ -2714,7 +2721,9 @@ class ChatAgent(BaseAgent):
                                     choice.finish_reason or "stop"
                                     for choice in final_completion.choices
                                 ],
-                                "num_tokens": len(final_content.split()),
+                                "num_tokens": self._get_token_count(
+                                    final_content
+                                ),
                                 "tool_calls": tool_call_records,
                                 "external_tool_requests": None,
                                 "streaming": False,
@@ -2891,9 +2900,9 @@ class ChatAgent(BaseAgent):
                 and delta_tool_call.function
             ):
                 if delta_tool_call.function.name:
-                    tool_call_entry['function']['name'] = (
+                    tool_call_entry['function']['name'] += (
                         delta_tool_call.function.name
-                    )  # Set full name
+                    )  # Append incremental name
                 if delta_tool_call.function.arguments:
                     tool_call_entry['function']['arguments'] += (
                         delta_tool_call.function.arguments
@@ -2906,6 +2915,7 @@ class ChatAgent(BaseAgent):
                 tool_call_entry['id']
                 and tool_call_entry['function']['name']
                 and tool_call_entry['function']['arguments']
+                and tool_call_entry['function']['name'] in self._internal_tools
             ):
                 try:
                     # Try to parse arguments to check completeness
@@ -3382,7 +3392,9 @@ class ChatAgent(BaseAgent):
                                     choice.finish_reason or "stop"
                                     for choice in final_completion.choices
                                 ],
-                                "num_tokens": len(final_content.split()),
+                                "num_tokens": self._get_token_count(
+                                    final_content
+                                ),
                                 "tool_calls": tool_call_records,
                                 "external_tool_requests": None,
                                 "streaming": False,
@@ -3690,7 +3702,7 @@ class ChatAgent(BaseAgent):
                 "id": "",
                 "usage": step_token_usage.copy(),
                 "finish_reasons": [status_type],
-                "num_tokens": len(full_content.split()),
+                "num_tokens": self._get_token_count(full_content),
                 "tool_calls": tool_calls or [],
                 "external_tool_requests": None,
                 "streaming": True,
@@ -3727,7 +3739,7 @@ class ChatAgent(BaseAgent):
                 "id": response_id,
                 "usage": step_token_usage.copy(),
                 "finish_reasons": ["streaming"],
-                "num_tokens": len(full_content.split()),
+                "num_tokens": self._get_token_count(full_content),
                 "tool_calls": tool_call_records or [],
                 "external_tool_requests": None,
                 "streaming": True,
