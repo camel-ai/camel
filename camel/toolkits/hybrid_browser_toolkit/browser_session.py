@@ -130,7 +130,7 @@ class NVBrowserSession:
             raise FileNotFoundError(f"Stealth script not found: {script_path}")
         except Exception as e:
             logger.error(f"Error loading stealth script: {e}")
-            raise
+            raise RuntimeError(f"Failed to load stealth script: {e}") from e
 
     # ------------------------------------------------------------------
     # Multi-tab management methods

@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from camel.logger import get_logger
 from camel.models import BaseModelBackend, ModelFactory
@@ -79,10 +79,11 @@ what was accomplished
         *,
         user_data_dir: Optional[str] = None,
         headless: bool = False,
+        stealth: bool = False,
         model_backend: Optional[BaseModelBackend] = None,
     ):
         self._session = NVBrowserSession(
-            headless=headless, user_data_dir=user_data_dir
+            headless=headless, user_data_dir=user_data_dir, stealth=stealth
         )
         from camel.agents import ChatAgent
 
@@ -240,11 +241,25 @@ what was accomplished
             result = await self._run_action(action)
             logger.debug("Executed action: %s | Result: %s", action, result)
 
+            success = False
+            result_for_history = ""
+
+            if isinstance(result, str):
+                success = "Error" not in result
+                result_for_history = result
+            elif isinstance(result, dict):
+                success = result.get('success', False)
+                result_for_history = result.get('message', str(result))
+            else:
+                # Fallback case
+                success = False
+                result_for_history = str(result)
+
             self.action_history.append(
                 {
                     "action": action,
-                    "result": result,
-                    "success": "Error" not in result,
+                    "result": result_for_history,
+                    "success": success,
                 }
             )
 
@@ -277,7 +292,9 @@ what was accomplished
 
         logger.info("Process completed with %d steps", steps)
 
-    async def _run_action(self, action: Dict[str, Any]) -> str:
+    async def _run_action(
+        self, action: Dict[str, Any]
+    ) -> Union[str, Dict[str, Any]]:
         r"""Execute a single action and return the result."""
         if action.get("type") == "navigate":
             return await self.navigate(action.get("url", ""))
