@@ -104,6 +104,7 @@ class RolePlayingWorker(Worker):
         dependency_tasks_info = self._get_dep_tasks_info(dependencies)
         prompt = ROLEPLAY_PROCESS_TASK_PROMPT.format(
             content=task.content,
+            parent_task_content=task.parent.content if task.parent else "",
             dependency_task_info=dependency_tasks_info,
             additional_info=task.additional_info,
         )
