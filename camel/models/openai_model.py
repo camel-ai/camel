@@ -16,6 +16,10 @@ import warnings
 from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
+from openai.lib.streaming.chat import (
+    AsyncChatCompletionStreamManager,
+    ChatCompletionStreamManager,
+)
 from pydantic import BaseModel
 
 from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
@@ -243,7 +247,11 @@ class OpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        Stream[ChatCompletionChunk],
+        ChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs inference of OpenAI chat completion.
 
         Args:
@@ -255,9 +263,12 @@ class OpenAIModel(BaseModelBackend):
                 use for the request.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+            Union[ChatCompletion, Stream[ChatCompletionChunk],
+                ChatCompletionStreamManager[BaseModel]]:
+                `ChatCompletion` in the non-stream mode,
+                `Stream[ChatCompletionChunk]`in the stream mode,
+                or `ChatCompletionStreamManager[BaseModel]` for
+                structured output streaming.
         """
 
         # Update Langfuse trace with current agent session and metadata
@@ -278,10 +289,22 @@ class OpenAIModel(BaseModelBackend):
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
+
+        # Check if streaming is enabled
+        is_streaming = self.model_config_dict.get("stream", False)
+
         if response_format:
             result: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
                 self._request_parse(messages, response_format, tools)
             )
+            if is_streaming:
+                # Use streaming parse for structured output
+                return self._request_stream_parse(
+                    messages, response_format, tools
+                )
+            else:
+                # Use non-streaming parse for structured output
+                return self._request_parse(messages, response_format, tools)
         else:
             result = self._request_chat_completion(messages, tools)
 
@@ -293,7 +316,11 @@ class OpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+    ) -> Union[
+        ChatCompletion,
+        AsyncStream[ChatCompletionChunk],
+        AsyncChatCompletionStreamManager[BaseModel],
+    ]:
         r"""Runs inference of OpenAI chat completion in async mode.
 
         Args:
@@ -305,9 +332,12 @@ class OpenAIModel(BaseModelBackend):
                 use for the request.
 
         Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk],
+                  AsyncChatCompletionStreamManager[BaseModel]]:
+                `ChatCompletion` in the non-stream mode,
+                `AsyncStream[ChatCompletionChunk]` in the stream mode, or
+                `AsyncChatCompletionStreamManager[BaseModel]` for
+                structured output streaming.
         """
 
         # Update Langfuse trace with current agent session and metadata
@@ -328,10 +358,24 @@ class OpenAIModel(BaseModelBackend):
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
+
+        # Check if streaming is enabled
+        is_streaming = self.model_config_dict.get("stream", False)
+
         if response_format:
             result: Union[
                 ChatCompletion, AsyncStream[ChatCompletionChunk]
             ] = await self._arequest_parse(messages, response_format, tools)
+            if is_streaming:
+                # Use streaming parse for structured output
+                return await self._arequest_stream_parse(
+                    messages, response_format, tools
+                )
+            else:
+                # Use non-streaming parse for structured output
+                return await self._arequest_parse(
+                    messages, response_format, tools
+                )
         else:
             result = await self._arequest_chat_completion(messages, tools)
 
@@ -424,6 +468,66 @@ class OpenAIModel(BaseModelBackend):
         return await self._async_client.beta.chat.completions.parse(
             messages=messages,
             model=self.model_type,
+            **request_config,
+        )
+
+    def _request_stream_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletionStreamManager[BaseModel]:
+        r"""Request streaming structured output parsing.
+
+        Note: This uses OpenAI's beta streaming API for structured outputs.
+        """
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        # Remove stream from config as it's handled by the stream method
+        request_config.pop("stream", None)
+
+        if tools is not None:
+            request_config["tools"] = tools
+
+        request_config = self._sanitize_config(request_config)
+
+        # Use the beta streaming API for structured outputs
+        return self._client.beta.chat.completions.stream(
+            messages=messages,
+            model=self.model_type,
+            response_format=response_format,
+            **request_config,
+        )
+
+    async def _arequest_stream_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> AsyncChatCompletionStreamManager[BaseModel]:
+        r"""Request async streaming structured output parsing.
+
+        Note: This uses OpenAI's beta streaming API for structured outputs.
+        """
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        # Remove stream from config as it's handled by the stream method
+        request_config.pop("stream", None)
+
+        if tools is not None:
+            request_config["tools"] = tools
+
+        request_config = self._sanitize_config(request_config)
+
+        # Use the beta streaming API for structured outputs
+        return self._async_client.beta.chat.completions.stream(
+            messages=messages,
+            model=self.model_type,
+            response_format=response_format,
             **request_config,
         )
 

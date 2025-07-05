@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
+from camel.agents.chat_agent import StreamingChatAgentResponse
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
@@ -442,7 +443,7 @@ class RepoAgent(ChatAgent):
 
     def step(
         self, input_message: Union[BaseMessage, str], *args, **kwargs
-    ) -> ChatAgentResponse:
+    ) -> Union[ChatAgentResponse, StreamingChatAgentResponse]:
         r"""Overrides `ChatAgent.step()` to first retrieve relevant context
         from the vector store before passing the input to the language model.
         """
