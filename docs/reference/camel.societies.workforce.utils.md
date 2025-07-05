@@ -58,6 +58,52 @@ class TaskAssignResult(BaseModel):
 
 The result of task assignment for both single and batch assignments.
 
+<a id="camel.societies.workforce.utils.RecoveryStrategy"></a>
+
+## RecoveryStrategy
+
+```python
+class RecoveryStrategy(str, Enum):
+```
+
+Strategies for handling failed tasks.
+
+<a id="camel.societies.workforce.utils.RecoveryStrategy.__str__"></a>
+
+### __str__
+
+```python
+def __str__(self):
+```
+
+<a id="camel.societies.workforce.utils.RecoveryStrategy.__repr__"></a>
+
+### __repr__
+
+```python
+def __repr__(self):
+```
+
+<a id="camel.societies.workforce.utils.FailureContext"></a>
+
+## FailureContext
+
+```python
+class FailureContext(BaseModel):
+```
+
+Context information about a task failure.
+
+<a id="camel.societies.workforce.utils.RecoveryDecision"></a>
+
+## RecoveryDecision
+
+```python
+class RecoveryDecision(BaseModel):
+```
+
+Decision on how to recover from a task failure.
+
 <a id="camel.societies.workforce.utils.check_if_running"></a>
 
 ## check_if_running
