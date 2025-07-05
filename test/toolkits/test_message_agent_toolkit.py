@@ -12,234 +12,196 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from unittest.mock import Mock
+import json
+import time
+import uuid
+from unittest.mock import MagicMock
 
-from camel.toolkits.message_agent_toolkit import MessageAgentTool
+import pytest
+
+from camel.agents import ChatAgent
+from camel.messages import BaseMessage
+from camel.toolkits.message_agent_toolkit import (
+    AgentCommunicationToolkit,
+    AgentMessage,
+)
 
 
-class TestMessageAgentTool:
-    """Test cases for MessageAgentTool."""
+class TestAgentMessage:
+    r"""Test suite for the AgentMessage class."""
 
-    def test_initialization_empty(self):
-        """Test MessageAgentTool initialization with no agents."""
-        toolkit = MessageAgentTool()
-        assert toolkit.agents == {}
-        assert len(toolkit.agents) == 0
+    def test_agent_message_initialization(self):
+        r"""Test AgentMessage initialization with core parameters."""
+        message_id = str(uuid.uuid4())
+        sender_id = "agent1"
+        receiver_id = "agent2"
+        content = "Hello, this is a test message"
+        timestamp = time.time()
 
-    def test_initialization_with_agents(self):
-        """Test MessageAgentTool initialization with predefined agents."""
-        mock_agent1 = Mock()
-        mock_agent2 = Mock()
-        agents = {"agent1": mock_agent1, "agent2": mock_agent2}
+        message = AgentMessage(
+            message_id=message_id,
+            sender_id=sender_id,
+            receiver_id=receiver_id,
+            content=content,
+            timestamp=timestamp,
+        )
 
-        toolkit = MessageAgentTool(agents=agents)
-        assert toolkit.agents == agents
-        assert len(toolkit.agents) == 2
+        assert message.id == message_id
+        assert message.sender_id == sender_id
+        assert message.receiver_id == receiver_id
+        assert message.content == content
+        assert message.timestamp == timestamp
+        assert isinstance(message, BaseMessage)
 
-    def test_register_agent_new(self):
-        """Test registering a new agent."""
-        toolkit = MessageAgentTool()
-        mock_agent = Mock()
 
+class TestAgentCommunicationToolkit:
+    r"""Test suite for the AgentCommunicationToolkit class."""
+
+    @pytest.fixture
+    def mock_agent(self):
+        r"""Create a mock ChatAgent for testing."""
+        agent = MagicMock(spec=ChatAgent)
+        agent.step.return_value = MagicMock(
+            msgs=[MagicMock(content="Mock response")]
+        )
+        return agent
+
+    @pytest.fixture
+    def toolkit(self):
+        r"""Create a AgentCommunicationToolkit instance for testing."""
+        return AgentCommunicationToolkit()
+
+    @pytest.fixture
+    def toolkit_with_agents(self):
+        r"""Create a AgentCommunicationToolkit with pre-registered agents."""
+        agent1 = MagicMock(spec=ChatAgent)
+        agent1.step.return_value = MagicMock(
+            msgs=[MagicMock(content="Agent1 response")]
+        )
+
+        agent2 = MagicMock(spec=ChatAgent)
+        agent2.step.return_value = MagicMock(
+            msgs=[MagicMock(content="Agent2 response")]
+        )
+
+        toolkit = AgentCommunicationToolkit(
+            agents={"agent1": agent1, "agent2": agent2}
+        )
+        return toolkit
+
+    def test_register_agent(self, toolkit, mock_agent):
+        r"""Test agent registration."""
         result = toolkit.register_agent("test_agent", mock_agent)
 
         assert "test_agent" in toolkit.agents
         assert toolkit.agents["test_agent"] == mock_agent
         assert "registered successfully" in result.lower()
 
-    def test_register_agent_overwrite(self):
-        """Test overwriting an existing agent."""
-        mock_agent1 = Mock()
-        mock_agent2 = Mock()
-        toolkit = MessageAgentTool({"existing_agent": mock_agent1})
+    def test_send_message_success(self, toolkit_with_agents):
+        r"""Test successful message sending."""
+        result = toolkit_with_agents.send_message(
+            message="Hello, agent2!",
+            receiver_id="agent2",
+            sender_id="agent1",
+        )
 
-        result = toolkit.register_agent("existing_agent", mock_agent2)
+        assert "delivered" in result.lower()
+        assert "agent2" in result
+        assert len(toolkit_with_agents._message_history["agent1"]) == 1
+        assert len(toolkit_with_agents._message_history["agent2"]) == 1
 
-        assert toolkit.agents["existing_agent"] == mock_agent2
-        assert "registered successfully" in result.lower()
+    def test_send_message_with_metadata(self, toolkit_with_agents):
+        r"""Test message sending with metadata."""
+        metadata = {"priority": "high"}
+        result = toolkit_with_agents.send_message(
+            message="Urgent message",
+            receiver_id="agent2",
+            sender_id="agent1",
+            metadata_json=json.dumps(metadata),
+        )
 
-    def test_message_agent_success(self):
-        """Test successful message sending to an agent."""
-        mock_agent = Mock()
-        mock_response = Mock()
-        mock_response.msgs = [Mock(content="Hello back!")]
-        mock_agent.step.return_value = mock_response
+        assert "delivered" in result.lower()
+        history = toolkit_with_agents._message_history["agent1"]
+        assert history[0].metadata == metadata
 
-        toolkit = MessageAgentTool({"target_agent": mock_agent})
+    def test_send_message_agent_not_found(self, toolkit_with_agents):
+        r"""Test sending message to non-existent agent."""
+        result = toolkit_with_agents.send_message(
+            message="Hello",
+            receiver_id="nonexistent",
+            sender_id="agent1",
+        )
 
-        result = toolkit.message_agent("Hello", "target_agent")
+        assert "error" in result.lower()
+        assert "not found" in result.lower()
 
-        mock_agent.step.assert_called_once_with("Hello")
-        assert result == "Hello back!"
+    def test_send_message_empty_content(self, toolkit_with_agents):
+        r"""Test sending message with empty content."""
+        with pytest.raises(
+            ValueError, match="Message content cannot be empty"
+        ):
+            toolkit_with_agents.send_message(
+                message="",
+                receiver_id="agent2",
+                sender_id="agent1",
+            )
 
-    def test_message_agent_success_string_response(self):
-        """Test successful message sending with string response."""
-        mock_agent = Mock()
-        mock_agent.step.return_value = "Simple string response"
+    def test_broadcast_message(self, toolkit_with_agents):
+        r"""Test broadcast message functionality."""
+        result = toolkit_with_agents.broadcast_message(
+            message="Broadcast to all",
+            sender_id="system",
+        )
 
-        toolkit = MessageAgentTool({"target_agent": mock_agent})
+        assert "broadcast completed" in result.lower()
+        assert "agent1:" in result
+        assert "agent2:" in result
 
-        result = toolkit.message_agent("Hello", "target_agent")
+    def test_get_message_history(self, toolkit_with_agents):
+        r"""Test retrieving message history."""
+        toolkit_with_agents.send_message("Hello", "agent2", "agent1")
 
-        mock_agent.step.assert_called_once_with("Hello")
-        assert result == "Simple string response"
+        result = toolkit_with_agents.get_message_history("agent1")
 
-    def test_message_agent_not_found(self):
-        """Test messaging a non-existent agent."""
-        toolkit = MessageAgentTool()
+        assert "message history" in result.lower()
+        assert "agent1" in result
+        assert "hello" in result.lower()
 
-        result = toolkit.message_agent("Hello", "nonexistent_agent")
+    def test_list_available_agents(self, toolkit_with_agents):
+        r"""Test listing available agents."""
+        result = toolkit_with_agents.list_available_agents()
 
-        assert "Error" in result
-        assert "not found" in result
-
-    def test_message_agent_communication_error(self):
-        """Test handling communication errors."""
-        mock_agent = Mock()
-        mock_agent.step.side_effect = Exception("Communication failed")
-
-        toolkit = MessageAgentTool({"error_agent": mock_agent})
-
-        result = toolkit.message_agent("Hello", "error_agent")
-
-        assert "Error" in result
-        assert "Failed to communicate" in result
-        assert "Communication failed" in result
-
-    def test_list_available_agents_empty(self):
-        """Test listing agents when none are registered."""
-        toolkit = MessageAgentTool()
-
-        result = toolkit.list_available_agents()
-
-        assert "No agents registered" in result
-
-    def test_list_available_agents_with_agents(self):
-        """Test listing agents when multiple agents are registered."""
-        mock_agent1 = Mock()
-        mock_agent2 = Mock()
-        agents = {"agent1": mock_agent1, "agent2": mock_agent2}
-        toolkit = MessageAgentTool(agents)
-
-        result = toolkit.list_available_agents()
-
-        assert "Available agents:" in result
+        assert "available agents" in result.lower()
         assert "agent1" in result
         assert "agent2" in result
 
-    def test_remove_agent_success(self):
-        """Test successfully removing an agent."""
-        mock_agent = Mock()
-        toolkit = MessageAgentTool({"test_agent": mock_agent})
-
-        result = toolkit.remove_agent("test_agent")
-
-        assert "test_agent" not in toolkit.agents
-        assert "removed successfully" in result.lower()
-
-    def test_remove_agent_not_found(self):
-        """Test removing a non-existent agent."""
-        toolkit = MessageAgentTool()
-
-        result = toolkit.remove_agent("nonexistent_agent")
-
-        assert "Error" in result
-        assert "not found" in result
-
-    def test_get_agent_count_empty(self):
-        """Test getting agent count when no agents are registered."""
-        toolkit = MessageAgentTool()
-
-        result = toolkit.get_agent_count()
-
-        assert "Total registered agents: 0" in result
-
-    def test_get_agent_count_with_agents(self):
-        """Test getting agent count with multiple agents."""
-        mock_agent1 = Mock()
-        mock_agent2 = Mock()
-        mock_agent3 = Mock()
-        agents = {
-            "agent1": mock_agent1,
-            "agent2": mock_agent2,
-            "agent3": mock_agent3,
-        }
-        toolkit = MessageAgentTool(agents)
-
-        result = toolkit.get_agent_count()
-
-        assert "Total registered agents: 3" in result
-
-    def test_get_tools_returns_correct_functions(self):
-        """Test that get_tools returns all expected function tools."""
-        toolkit = MessageAgentTool()
-
+    def test_get_tools_returns_function_tools(self, toolkit):
+        r"""Test that get_tools returns proper FunctionTool objects."""
         tools = toolkit.get_tools()
 
         assert len(tools) == 5
-        tool_names = [tool.get_function_name() for tool in tools]
+        tool_names = [tool.func.__name__ for tool in tools]
 
-        expected_functions = [
-            "message_agent",
-            "register_agent",
+        expected_tools = [
+            "send_message",
+            "broadcast_message",
             "list_available_agents",
-            "remove_agent",
-            "get_agent_count",
+            "get_message_history",
+            "get_conversation_thread",
         ]
 
-        for expected_func in expected_functions:
-            assert expected_func in tool_names
+        for expected_tool in expected_tools:
+            assert expected_tool in tool_names
 
-    def test_timeout_parameter(self):
-        """Test initialization with timeout parameter."""
-        toolkit = MessageAgentTool(timeout=30.0)
+    def test_message_history_size_management(self, toolkit_with_agents):
+        r"""Test message history size management."""
+        toolkit_with_agents.max_message_history = 3
 
-        assert toolkit.timeout == 30.0
+        # Send more messages than the limit
+        for i in range(5):
+            toolkit_with_agents.send_message(
+                f"Message {i}", "agent2", "agent1"
+            )
 
-    def test_agent_registration_flow(self):
-        """Test complete agent registration and communication flow."""
-        # Create toolkit
-        toolkit = MessageAgentTool()
-
-        # Register multiple agents
-        mock_agent1 = Mock()
-        mock_agent2 = Mock()
-
-        # Set up mock responses
-        mock_response1 = Mock()
-        mock_response1.msgs = [Mock(content="Response from agent 1")]
-        mock_agent1.step.return_value = mock_response1
-
-        mock_response2 = Mock()
-        mock_response2.msgs = [Mock(content="Response from agent 2")]
-        mock_agent2.step.return_value = mock_response2
-
-        # Register agents
-        toolkit.register_agent("agent1", mock_agent1)
-        toolkit.register_agent("agent2", mock_agent2)
-
-        # Test agent count
-        count_result = toolkit.get_agent_count()
-        assert "2" in count_result
-
-        # Test listing agents
-        list_result = toolkit.list_available_agents()
-        assert "agent1" in list_result
-        assert "agent2" in list_result
-
-        # Test messaging agents
-        response1 = toolkit.message_agent("Hello agent 1", "agent1")
-        assert response1 == "Response from agent 1"
-
-        response2 = toolkit.message_agent("Hello agent 2", "agent2")
-        assert response2 == "Response from agent 2"
-
-        # Test removing agent
-        remove_result = toolkit.remove_agent("agent1")
-        assert "removed successfully" in remove_result.lower()
-        assert "agent1" not in toolkit.agents
-        assert "agent2" in toolkit.agents
-
-        # Test final count
-        final_count = toolkit.get_agent_count()
-        assert "1" in final_count
+        history = toolkit_with_agents._message_history["agent1"]
+        assert len(history) == 3
