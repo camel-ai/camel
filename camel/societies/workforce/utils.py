@@ -14,7 +14,7 @@
 from functools import wraps
 from typing import Callable, List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class WorkerConf(BaseModel):
@@ -53,6 +53,23 @@ class TaskAssignment(BaseModel):
         description="List of task IDs that must complete before this task. "
         "This is critical for the task decomposition and execution.",
     )
+
+    # Allow LLMs to output dependencies as a comma-separated string or empty
+    # string. This validator converts such cases into a list[str] so that
+    # downstream logic does not break with validation errors.
+    @staticmethod
+    def _split_and_strip(dep_str: str) -> List[str]:
+        r"""Utility to split a comma separated string and strip whitespace."""
+        return [d.strip() for d in dep_str.split(',') if d.strip()]
+
+    @field_validator("dependencies", mode="before")
+    def validate_dependencies(cls, v) -> List[str]:
+        if v is None:
+            return []
+        # Handle empty string or comma-separated string from LLM
+        if isinstance(v, str):
+            return TaskAssignment._split_and_strip(v)
+        return v
 
 
 class TaskAssignResult(BaseModel):
