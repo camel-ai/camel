@@ -65,7 +65,8 @@ Example valid response:
   "assignments": [
     {{"task_id": "task_1", "assignee_id": "node_12345", "dependencies": []}},
     {{"task_id": "task_2", "assignee_id": "node_67890", "dependencies": ["task_1"]}},
-    {{"task_id": "task_3", "assignee_id": "node_12345", "dependencies": []}}
+    {{"task_id": "task_3", "assignee_id": "node_12345", "dependencies": []}},
+    {{"task_id": "task_4", "assignee_id": "node_67890", "dependencies": ["task_1", "task_2"]}}
   ]
 }}
 

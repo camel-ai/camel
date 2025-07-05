@@ -50,6 +50,7 @@ from camel.agents._utils import (
     safe_model_dump,
 )
 from camel.agents.base import BaseAgent
+from camel.logger import get_logger
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -90,7 +91,7 @@ from camel.utils.tool_result import ToolResult
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # AgentOps decorator setting
 try:
@@ -107,6 +108,11 @@ except (ImportError, AttributeError):
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
         from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+    try:
+        from traceroot import trace as observe  # type: ignore[import]
     except ImportError:
         from camel.utils import observe
 else:
@@ -1222,9 +1228,8 @@ class ChatAgent(BaseAgent):
                         ):
                             while not self.pause_event.is_set():
                                 time.sleep(0.001)
-                        tool_call_records.append(
-                            self._execute_tool(tool_call_request)
-                        )
+                        result = self._execute_tool(tool_call_request)
+                        tool_call_records.append(result)
 
                 # If we found external tool calls, break the loop
                 if external_tool_call_requests:
