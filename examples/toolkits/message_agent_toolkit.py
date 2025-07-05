@@ -11,223 +11,148 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-"""
-Example demonstrating the usage of MessageAgentTool for agent communication.
-
-This example shows how to:
-1. Create multiple specialized agents
-2. Set up communication between them using MessageAgentTool
-3. Coordinate agents through a manager agent
-4. Handle multi-step collaborative tasks
-"""
-
-import os
+import asyncio
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from camel.models import ModelFactory
-from camel.toolkits.message_agent_toolkit import MessageAgentTool
-from camel.types import ModelPlatformType, ModelType
+from camel.societies.workforce import Workforce
+from camel.tasks import Task
+from camel.toolkits import AgentCommunicationToolkit
 
 
-def main():
-    """Demonstrate MessageAgentTool usage with multiple specialized agents."""
+def create_messaging_workforce():
+    r"""Create a workforce where agents can communicate with each other."""
 
-    # Ensure you have your OpenAI API key set up
-    if not os.getenv("OPENAI_API_KEY"):
-        print("Please set your OPENAI_API_KEY environment variable.")
-        return
+    # 1. Initialize the message toolkit
+    msg_toolkit = AgentCommunicationToolkit(max_message_history=100)
 
-    print("🤖 Setting up Multi-Agent Communication Example")
-    print("=" * 50)
-
-    # Create model backend
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
-        model_config_dict={"temperature": 0.1},
+    # 2. Create agents with specific roles
+    researcher = ChatAgent(
+        BaseMessage.make_assistant_message(
+            role_name="Researcher",
+            content=(
+                "You are a Research Specialist. ALWAYS use send_message to "
+                "share your findings with the writer. First use "
+                "list_available_agents to see who you can message, then "
+                "send your research findings to the writer."
+            ),
+        )
     )
 
-    # Create specialized agents
-    print("📝 Creating specialized agents...")
-
-    # Data Analyst Agent
-    analyst_system_message = BaseMessage.make_assistant_message(
-        role_name="Data Analyst",
-        content="""You are a data analyst agent. Your role is to:
-        - Analyze data and identify patterns
-        - Provide insights and recommendations
-        - Create summaries of analytical findings
-        - Respond concisely and focus on key insights.""",
-    )
-    analyst_agent = ChatAgent(
-        system_message=analyst_system_message, model=model
+    writer = ChatAgent(
+        BaseMessage.make_assistant_message(
+            role_name="Writer",
+            content=(
+                "You are a Content Writer. ALWAYS use send_message to "
+                "coordinate. After creating content, send it to the "
+                "reviewer for feedback. Use messaging tools to communicate "
+                "with team members."
+            ),
+        )
     )
 
-    # Technical Writer Agent
-    writer_system_message = BaseMessage.make_assistant_message(
-        role_name="Technical Writer",
-        content="""You are a technical writer agent. Your role is to:
-        - Transform technical analysis into clear, readable reports
-        - Create well-structured documentation
-        - Make complex information accessible
-        - Write in a professional but engaging tone.""",
-    )
-    writer_agent = ChatAgent(system_message=writer_system_message, model=model)
-
-    # Research Agent
-    researcher_system_message = BaseMessage.make_assistant_message(
-        role_name="Research Agent",
-        content="""You are a research agent. Your role is to:
-        - Gather information on specific topics
-        - Provide comprehensive background research
-        - Identify relevant trends and context
-        - Support analysis with additional data points.""",
-    )
-    researcher_agent = ChatAgent(
-        system_message=researcher_system_message, model=model
+    reviewer = ChatAgent(
+        BaseMessage.make_assistant_message(
+            role_name="Reviewer",
+            content=(
+                "You are a Content Reviewer. ALWAYS use send_message to "
+                "provide feedback to the writer. Use messaging tools to "
+                "coordinate and ensure quality. Send detailed feedback via "
+                "messages."
+            ),
+        )
     )
 
-    # Create MessageAgentTool and register agents
-    print("🔗 Setting up agent communication...")
-    communication_tool = MessageAgentTool(
-        {
-            "analyst": analyst_agent,
-            "writer": writer_agent,
-            "researcher": researcher_agent,
-        }
-    )
+    # 3. Register agents with the message toolkit using role names that match
+    msg_toolkit.register_agent("Researcher", researcher)
+    msg_toolkit.register_agent("Writer", writer)
+    msg_toolkit.register_agent("Reviewer", reviewer)
 
-    # Create Manager Agent with communication capabilities
-    manager_system_message = BaseMessage.make_assistant_message(
-        role_name="Project Manager",
-        content="""You are a project manager that coordinates other agents.
-        You have access to message_agent() function to communicate with:
-        - "analyst": For data analysis tasks
-        - "writer": For creating reports and documentation  
-        - "researcher": For gathering additional information
-        
-        Break down complex tasks and delegate appropriately to other agents.
-        Coordinate their work to produce comprehensive results.""",
-    )
+    # 4. Add messaging tools to each agent
+    message_tools = msg_toolkit.get_tools()
+    for agent in [researcher, writer, reviewer]:
+        for tool in message_tools:
+            agent.add_tool(tool)
 
-    manager_agent = ChatAgent(
-        system_message=manager_system_message,
-        model=model,
-        tools=communication_tool.get_tools(),
-    )
+    # 5. Create workforce and add workers with matching names
+    workforce = Workforce("Content Creation Team")
+    workforce.add_single_agent_worker("Researcher", researcher)
+    workforce.add_single_agent_worker("Writer", writer)
+    workforce.add_single_agent_worker("Reviewer", reviewer)
 
-    print("✅ All agents set up successfully!")
-    print(f"📊 Agent registry: {communication_tool.list_available_agents()}")
-    print()
+    return workforce, msg_toolkit
 
-    # Example 1: Simple agent-to-agent communication
-    print("🔄 Example 1: Direct Agent Communication")
-    print("-" * 40)
 
-    # Direct message to analyst
-    message = (
-        "Analyze the trend: Sales increased 25% in Q1, 15% in Q2, "
-        "and 10% in Q3. What insights can you provide?"
-    )
-    analyst_response = communication_tool.message_agent(message, "analyst")
-    print(f"💼 Analyst Response: {analyst_response}")
-    print()
+async def demonstrate_coordination():
+    r"""Show how agents coordinate using messaging during task execution."""
 
-    # Pass analyst result to writer
-    writer_message = (
-        f"Please create a professional summary report based on this "
-        f"analysis: {analyst_response}"
-    )
-    writer_response = communication_tool.message_agent(
-        writer_message, "writer"
-    )
-    print(f"📝 Writer Response: {writer_response}")
-    print()
+    print("🏗️  Setting up messaging-enabled workforce...")
+    workforce, msg_toolkit = create_messaging_workforce()
 
-    # Example 2: Manager coordinating multiple agents
-    print("🔄 Example 2: Manager-Coordinated Multi-Agent Task")
-    print("-" * 40)
+    print("📋 Available agents:")
+    print(msg_toolkit.list_available_agents())
 
-    complex_task = """
-    We need a comprehensive report on the impact of remote work.
-    Please coordinate with the team to:
-    1. Research current trends and studies on remote work productivity
-    2. Analyze the key factors affecting productivity
-    3. Create a professional report summarizing the findings
-    """
-
-    print(f"📋 Task: {complex_task}")
-    print()
-
-    # Manager coordinates the task
-    manager_response = manager_agent.step(complex_task)
-    print(f"👨‍💼 Manager Coordination: {manager_response.msgs[0].content}")
-    print()
-
-    # Example 3: Agent management operations
-    print("🔄 Example 3: Agent Management Operations")
-    print("-" * 40)
-
-    # Add a new agent dynamically
-    qa_system_message = BaseMessage.make_assistant_message(
-        role_name="QA Specialist",
+    # Create a task that requires coordination
+    task = Task(
         content=(
-            "You are a quality assurance specialist. "
-            "Review work for accuracy and completeness."
+            "IMPORTANT: You MUST use the messaging tools for coordination! "
+            "\n\nTask: Research and write a brief article about the "
+            "benefits of AI collaboration."
+            "\n\nRequired workflow:"
+            "\n1. Researcher: First use list_available_agents(), then "
+            "send_message() to share findings with writer"
+            "\n2. Writer: Use send_message() to send draft to reviewer for "
+            "feedback"
+            "\n3. Reviewer: Use send_message() to provide feedback to writer"
+            "\n\nYou MUST demonstrate inter-agent messaging capabilities!"
         ),
-    )
-    qa_agent = ChatAgent(system_message=qa_system_message, model=model)
-
-    # Register the new agent
-    registration_result = communication_tool.register_agent(
-        "qa_specialist", qa_agent
-    )
-    print(f"+ Registration: {registration_result}")
-
-    # List all agents
-    print(
-        f"📋 Updated agent list: {communication_tool.list_available_agents()}"
+        id="collaborative_article_task",
     )
 
-    # Get agent count
-    print(f"🔢 Agent count: {communication_tool.get_agent_count()}")
+    print(f"\n🎯 Processing coordinated task: {task.id}")
 
-    # Use the new agent
-    qa_message = (
-        "Please review this for quality: "
-        "'The report shows good trends in productivity metrics.'"
+    # Process the task
+    result = await workforce.process_task_async(task)
+
+    print(f"\n✅ Task Status: {result.state}")
+    result_preview = result.result[:200] if result.result else "No result"
+    print(f"📄 Result Preview: {result_preview}...")
+
+    # Show message exchange that occurred
+    print("\n💬 Message Activity Summary:")
+    for agent_id in ["researcher", "writer", "reviewer"]:
+        history = msg_toolkit.get_message_history(agent_id, limit=5)
+        print(f"\n{agent_id.upper()}:")
+        print(history)
+
+    print("\n📊 Final Toolkit Status:")
+    print(msg_toolkit.get_toolkit_status())
+
+    # Add a demonstration of manual messaging
+    print("\n🔧 Manual messaging demonstration:")
+    print("Sending a coordination message...")
+    manual_result = msg_toolkit.send_message(
+        message=(
+            "Great job everyone! The collaboration workflow is working "
+            "perfectly."
+        ),
+        receiver_id="researcher",
+        sender_id="system",
     )
-    qa_response = communication_tool.message_agent(qa_message, "qa_specialist")
-    print(f"🔍 QA Response: {qa_response}")
+    print(f"Manual message result: {manual_result}")
 
-    # Remove an agent
-    removal_result = communication_tool.remove_agent("qa_specialist")
-    print(f"- Removal: {removal_result}")
-    print(f"📋 Final agent list: {communication_tool.list_available_agents()}")
-    print()
-
-    # Example 4: Error handling
-    print("🔄 Example 4: Error Handling")
-    print("-" * 40)
-
-    # Try to message non-existent agent
-    error_response = communication_tool.message_agent(
-        "Hello", "nonexistent_agent"
-    )
-    print(f"❌ Error handling: {error_response}")
-    print()
-
-    print("🎉 MessageAgentTool demonstration completed!")
-    print("This example showed:")
-    print("  ✓ Creating specialized agents")
-    print("  ✓ Setting up agent communication")
-    print("  ✓ Direct agent-to-agent messaging")
-    print("  ✓ Manager-coordinated multi-agent tasks")
-    print("  ✓ Dynamic agent registration and removal")
-    print("  ✓ Error handling for robust operation")
+    # Show updated history
+    print("\n📝 Updated message history:")
+    updated_history = msg_toolkit.get_message_history("researcher", limit=3)
+    print(updated_history)
 
 
 if __name__ == "__main__":
-    main()
+    print("🚀 AgentCommunicationToolkit + Workforce Quick Start")
+    print("=" * 60)
+
+    # Try workforce demo first
+    try:
+        asyncio.run(demonstrate_coordination())
+    except Exception as e:
+        print(f"⚠️  Workforce demo failed: {e}")
