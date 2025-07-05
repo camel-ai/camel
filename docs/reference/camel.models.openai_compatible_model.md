@@ -107,8 +107,6 @@ def _request_stream_parse(
 
 Request streaming structured output parsing.
 
-Note: This uses OpenAI's beta streaming API for structured outputs.
-
 <a id="camel.models.openai_compatible_model.OpenAICompatibleModel.token_counter"></a>
 
 ### token_counter
