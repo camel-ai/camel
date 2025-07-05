@@ -24,11 +24,11 @@ from typing import Any, Dict, List
 
 class StealthConfig:
     """Configuration class for stealth browser settings."""
-    
+
     @staticmethod
     def get_launch_args() -> List[str]:
         """Get Chrome launch arguments for stealth mode.
-        
+
         Returns:
             List[str]: Chrome command line arguments to avoid detection.
         """
@@ -52,11 +52,11 @@ class StealthConfig:
             '--disable-features=BlinkGenPropertyTrees',
             '--disable-component-extensions-with-background-pages',
         ]
-    
+
     @staticmethod
     def get_context_options() -> Dict[str, Any]:
         """Get browser context options for stealth mode.
-        
+
         Returns:
             Dict[str, Any]: Browser context configuration options.
         """
@@ -72,11 +72,11 @@ class StealthConfig:
             'geolocation': {'latitude': 40.7128, 'longitude': -74.0060},
             'permissions': ['geolocation'],
         }
-    
+
     @staticmethod
     def get_http_headers() -> Dict[str, str]:
         """Get HTTP headers for stealth mode.
-        
+
         Returns:
             Dict[str, str]: HTTP headers to appear more like a real browser.
         """
@@ -99,13 +99,13 @@ class StealthConfig:
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'none',
             'Sec-Fetch-User': '?1',
-            'Upgrade-Insecure-Requests': '1'
+            'Upgrade-Insecure-Requests': '1',
         }
 
     @staticmethod
     def get_all_config() -> Dict[str, Any]:
         """Get all stealth configuration in one dict.
-        
+
         Returns:
             Dict[str, Any]: Complete stealth configuration.
         """
@@ -113,4 +113,4 @@ class StealthConfig:
             'launch_args': StealthConfig.get_launch_args(),
             'context_options': StealthConfig.get_context_options(),
             'http_headers': StealthConfig.get_http_headers(),
-        } 
+        }
