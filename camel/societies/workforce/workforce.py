@@ -2164,8 +2164,10 @@ class Workforce(BaseNode):
                 assignment = batch_result.assignments[0]
                 self._assignees[task.id] = assignment.assignee_id
                 await self._post_task(task, assignment.assignee_id)
-                action_taken = "replanned and assigned to "
-                f"worker {assignment.assignee_id}"
+                action_taken = (
+                    f"replanned and assigned to "
+                    f"worker {assignment.assignee_id}"
+                )
 
         elif recovery_decision.strategy == RecoveryStrategy.DECOMPOSE:
             # Decompose the task into subtasks
