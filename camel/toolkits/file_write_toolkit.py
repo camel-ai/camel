@@ -14,7 +14,7 @@
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     from reportlab.platypus import Table
@@ -36,8 +36,9 @@ class FileWriteToolkit(BaseToolkit):
 
     This class provides cross-platform (macOS, Linux, Windows) support for
     writing to various file formats (Markdown, DOCX, PDF, and plaintext),
-    replacing text in existing files, automatic backups, custom encoding,
-    and enhanced formatting options for specialized formats.
+    replacing text in existing files, automatic filename uniquification to
+    prevent overwrites, custom encoding and enhanced formatting options for
+    specialized formats.
     """
 
     def __init__(
@@ -204,8 +205,22 @@ class FileWriteToolkit(BaseToolkit):
                 if isinstance(content, str):
                     content_lines = content.split('\n')
                 else:
-                    # Convert table data to string representation
-                    content_lines = [str(row) for row in content]
+                    # Convert table data to LaTeX table format
+                    content_lines = []
+                    if content:
+                        # Add table header
+                        table_header = (
+                            r'\begin{tabular}{' + 'l' * len(content[0]) + '}'
+                        )
+                        content_lines.append(table_header)
+                        content_lines.append(r'\hline')
+                        for row in content:
+                            row_content = (
+                                ' & '.join(str(cell) for cell in row) + r' \\'
+                            )
+                            content_lines.append(row_content)
+                            content_lines.append(r'\hline')
+                        content_lines.append(r'\end{tabular}')
 
                 for line in content_lines:
                     stripped_line = line.strip()
@@ -345,99 +360,74 @@ class FileWriteToolkit(BaseToolkit):
             heading_style: Style for headings
             body_style: Style for body text
         """
-        import re
-
         from reportlab.platypus import Paragraph, Spacer
 
         # Process content
         lines = content.split('\n')
-        current_table_data: List[List[str]] = []
-        in_table = False
-
         logger.debug(f"Processing {len(lines)} lines of content")
 
-        for line in lines:
-            line = line.strip()
+        # Parse all tables from the content first
+        tables = self._parse_markdown_table(lines)
+        table_line_ranges = []
 
-            # Skip empty lines
-            if not line:
-                if in_table:
-                    # End of table
-                    if current_table_data:
-                        logger.debug(
-                            f"End of table (empty line), adding table with "
-                            f"{len(current_table_data)} rows"
-                        )
-                        try:
-                            table = self._create_pdf_table(current_table_data)
-                            story.append(table)
-                            story.append(Spacer(1, 12))
-                        except Exception as e:
-                            logger.error(
-                                f"Failed to create table at empty line: {e}"
-                            )
-                            # Fallback: render as text
-                            story.append(
-                                Paragraph(
-                                    f"Table data (empty line error)"
-                                    f": {current_table_data}",
-                                    body_style,
-                                )
-                            )
-                    current_table_data = []
-                    in_table = False
-                else:
-                    story.append(Spacer(1, 6))
-                continue
+        # Find line ranges that contain tables
+        if tables:
+            table_line_ranges = self._find_table_line_ranges(lines)
 
-            # Check for table (Markdown-style)
-            if '|' in line and line.count('|') >= 2:
-                logger.debug(f"Found table line: {line}")
-                # This looks like a table row
-                if not in_table:
-                    in_table = True
-                    current_table_data = []
-                    logger.debug("Starting new table")
+        # Process lines, skipping table lines and adding tables at
+        # appropriate positions
+        i = 0
+        current_table_idx = 0
 
-                # Skip separator lines (e.g., |---|---|)
-                if re.match(r'^[\s\|\-\:]+$', line):
-                    logger.debug("Skipping separator line")
-                    continue
+        while i < len(lines):
+            line = lines[i].strip()
 
-                # Parse table row
-                cells = [cell.strip() for cell in line.split('|')]
-                # Remove empty cells at start/end
-                if cells and not cells[0]:
-                    cells = cells[1:]
-                if cells and not cells[-1]:
-                    cells = cells[:-1]
+            # Check if this line is part of a table
+            is_table_line = any(
+                start <= i <= end for start, end in table_line_ranges
+            )
 
-                if cells:
-                    current_table_data.append(cells)
-                    logger.debug(f"Added table row: {cells}")
-                continue
+            if is_table_line:
+                # Skip all lines in this table and add the table to story
+                table_start, table_end = next(
+                    (start, end)
+                    for start, end in table_line_ranges
+                    if start <= i <= end
+                )
 
-            # If we were in a table and now we're not, add the table
-            if in_table:
-                if current_table_data:
-                    logger.debug(
-                        f"Adding table with {len(current_table_data)} rows"
-                    )
+                if current_table_idx < len(tables):
+                    table_row_count = len(tables[current_table_idx])
+                    logger.debug(f"Adding table with {table_row_count} rows")
                     try:
-                        table = self._create_pdf_table(current_table_data)
+                        table = self._create_pdf_table(
+                            tables[current_table_idx]
+                        )
                         story.append(table)
                         story.append(Spacer(1, 12))
                     except Exception as e:
                         logger.error(f"Failed to create table: {e}")
                         # Fallback: render as text
+                        table_error_msg = (
+                            f"Table data (error): "
+                            f"{tables[current_table_idx]}"
+                        )
                         story.append(
                             Paragraph(
-                                f"Table data (error): {current_table_data}",
+                                table_error_msg,
                                 body_style,
                             )
                         )
-                current_table_data = []
-                in_table = False
+                    current_table_idx += 1
+
+                # Skip to end of table
+                i = table_end + 1
+                continue
+
+            # Skip empty lines
+            if not line:
+                story.append(Spacer(1, 6))
+                i += 1
+                continue
 
             # Handle headings
             if line.startswith('# '):
@@ -452,23 +442,42 @@ class FileWriteToolkit(BaseToolkit):
                 line = self._convert_markdown_to_html(line)
                 story.append(Paragraph(line, body_style))
 
-        # Add any remaining table
-        if in_table and current_table_data:
-            logger.debug(
-                f"Adding final table with {len(current_table_data)} rows"
-            )
-            try:
-                table = self._create_pdf_table(current_table_data)
-                story.append(table)
-            except Exception as e:
-                logger.error(f"Failed to create final table: {e}")
-                # Fallback: render as text
-                story.append(
-                    Paragraph(
-                        f"Table data (final error): {current_table_data}",
-                        body_style,
-                    )
-                )
+            i += 1
+
+    def _find_table_line_ranges(
+        self, lines: List[str]
+    ) -> List[Tuple[int, int]]:
+        r"""Find line ranges that contain markdown tables.
+
+        Args:
+            lines (List[str]): List of lines to analyze.
+
+        Returns:
+            List[Tuple[int, int]]: List of (start_line, end_line) tuples
+                for table ranges.
+        """
+        ranges = []
+        in_table = False
+        table_start = 0
+
+        for i, line in enumerate(lines):
+            line = line.strip()
+
+            if self._is_table_row(line):
+                if not in_table:
+                    in_table = True
+                    table_start = i
+            else:
+                if in_table:
+                    # End of table
+                    ranges.append((table_start, i - 1))
+                    in_table = False
+
+        # Handle table at end of content
+        if in_table:
+            ranges.append((table_start, len(lines) - 1))
+
+        return ranges
 
     def _register_chinese_font(self) -> str:
         r"""Register Chinese font for PDF generation.
@@ -531,6 +540,112 @@ class FileWriteToolkit(BaseToolkit):
         logger.warning("No Chinese font found, falling back to Helvetica")
         return "Helvetica"
 
+    def _parse_markdown_table(self, lines: List[str]) -> List[List[List[str]]]:
+        r"""Parse markdown-style tables from a list of lines.
+
+        Args:
+            lines (List[str]): List of text lines that may contain tables.
+
+        Returns:
+            List[List[List[str]]]: List of tables, where each table is a list
+                of rows, and each row is a list of cells.
+        """
+        tables = []
+        current_table_data: List[List[str]] = []
+        in_table = False
+
+        for line in lines:
+            line = line.strip()
+
+            # Check for table (Markdown-style)
+            if self._is_table_row(line):
+                logger.debug(f"Found table line: {line}")
+
+                if not in_table:
+                    in_table = True
+                    current_table_data = []
+                    logger.debug("Starting new table")
+
+                # Skip separator lines (e.g., |---|---|)
+                if self._is_table_separator(line):
+                    logger.debug("Skipping separator line")
+                    continue
+
+                # Parse table row
+                cells = self._parse_table_row(line)
+                if cells:
+                    current_table_data.append(cells)
+                    logger.debug(f"Added table row: {cells}")
+                continue
+
+            # If we were in a table and now we're not, finalize the table
+            if in_table:
+                if current_table_data:
+                    row_count = len(current_table_data)
+                    logger.debug(f"Finalizing table with {row_count} rows")
+                    tables.append(current_table_data)
+                current_table_data = []
+                in_table = False
+
+        # Add any remaining table
+        if in_table and current_table_data:
+            row_count = len(current_table_data)
+            logger.debug(f"Adding final table with {row_count} rows")
+            tables.append(current_table_data)
+
+        return tables
+
+    def _is_table_row(self, line: str) -> bool:
+        r"""Check if a line appears to be a table row.
+
+        Args:
+            line (str): The line to check.
+
+        Returns:
+            bool: True if the line looks like a table row.
+        """
+        return '|' in line and line.count('|') >= 2
+
+    def _is_table_separator(self, line: str) -> bool:
+        r"""Check if a line is a table separator (e.g., |---|---|).
+
+        Args:
+            line (str): The line to check.
+
+        Returns:
+            bool: True if the line is a table separator.
+        """
+        import re
+
+        # More precise check for separator lines
+        # Must contain only spaces, pipes, dashes, and colons
+        # and have at least one dash to be a separator
+        if not re.match(r'^[\s\|\-\:]+$', line):
+            return False
+
+        # Must contain at least one dash to be a valid separator
+        return '-' in line
+
+    def _parse_table_row(self, line: str) -> List[str]:
+        r"""Parse a single table row into cells.
+
+        Args:
+            line (str): The table row line.
+
+        Returns:
+            List[str]: List of cell contents.
+        """
+        # Parse table row
+        cells = [cell.strip() for cell in line.split('|')]
+
+        # Remove empty cells at start/end (common in markdown tables)
+        if cells and not cells[0]:
+            cells = cells[1:]
+        if cells and not cells[-1]:
+            cells = cells[:-1]
+
+        return cells
+
     def _create_pdf_table(self, table_data: List[List[str]]) -> "Table":
         r"""Create a formatted table for PDF.
 
@@ -579,6 +694,10 @@ class FileWriteToolkit(BaseToolkit):
 
         except Exception as e:
             logger.error(f"Error creating table: {e}")
+            # Return simple unstyled table as fallback
+            from reportlab.platypus import Table
+
+            return Table(table_data)
 
     def _convert_markdown_to_html(self, text: str) -> str:
         r"""Convert basic markdown formatting to HTML for PDF rendering.
@@ -589,13 +708,15 @@ class FileWriteToolkit(BaseToolkit):
         Returns:
             str: Text with HTML formatting.
         """
-        # Bold text
+        # Bold text (check double markers first)
         text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
         text = re.sub(r'__(.*?)__', r'<b>\1</b>', text)
 
-        # Italic text
-        text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', text)
-        text = re.sub(r'_(.*?)_', r'<i>\1</i>', text)
+        # Italic text (single markers after double markers)
+        text = re.sub(
+            r'(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)', r'<i>\1</i>', text
+        )
+        text = re.sub(r'(?<!_)_(?!_)(.*?)(?<!_)_(?!_)', r'<i>\1</i>', text)
 
         # Code (inline)
         text = re.sub(r'`(.*?)`', r'<font name="Courier">\1</font>', text)
