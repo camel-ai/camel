@@ -177,6 +177,8 @@ class LiteLLMModel(BaseModelBackend):
         request_config = self.model_config_dict.copy()
         if tools:
             request_config['tools'] = tools
+        if response_format:
+            request_config['response_format'] = response_format
 
         update_current_observation(
             input={
@@ -206,7 +208,7 @@ class LiteLLMModel(BaseModelBackend):
             base_url=self._url,
             model=self.model_type,
             messages=messages,
-            **self.model_config_dict,
+            **request_config,
             **self.kwargs,
         )
         response = self._convert_response_from_litellm_to_openai(response)
