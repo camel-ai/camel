@@ -26,7 +26,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
-    Awaitable,
     Callable,
     Dict,
     Generator,
@@ -1473,11 +1472,11 @@ class ChatAgent(BaseAgent):
         return openai_messages
 
     @observe()
-    def astep(
+    async def astep(
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-    ) -> Union[Awaitable[ChatAgentResponse], AsyncStreamingChatAgentResponse]:
+    ) -> Union[ChatAgentResponse, AsyncStreamingChatAgentResponse]:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
 
@@ -1494,12 +1493,11 @@ class ChatAgent(BaseAgent):
                 helps in defining the expected output format. (default:
                 :obj:`None`)
         Returns:
-            Union[Awaitable[ChatAgentResponse],
-                AsyncStreamingChatAgentResponse]:If stream is False,
-                returns an awaitable ChatAgentResponse.If stream is True,
-                returns an AsyncStreamingChatAgentResponse that can be
-                awaited for the final result or async iterated for
-                streaming updates.
+            Union[ChatAgentResponse, AsyncStreamingChatAgentResponse]:
+                If stream is False, returns a ChatAgentResponse. If stream is
+                True, returns an AsyncStreamingChatAgentResponse that can be
+                awaited for the final result or async iterated for streaming
+                updates.
         """
 
         try:
@@ -1515,7 +1513,7 @@ class ChatAgent(BaseAgent):
             async_generator = self._astream(input_message, response_format)
             return AsyncStreamingChatAgentResponse(async_generator)
         else:
-            return self._astep_non_streaming_task(
+            return await self._astep_non_streaming_task(
                 input_message, response_format
             )
 
@@ -1964,7 +1962,11 @@ class ChatAgent(BaseAgent):
             f"index {self.model_backend.current_model_index}, "
             f"processed these messages: {sanitized_messages}"
         )
-        assert isinstance(response, ChatCompletion)
+        if not isinstance(response, ChatCompletion):
+            raise TypeError(
+                f"Expected response to be a `ChatCompletion` object, but "
+                f"got {type(response).__name__} instead."
+            )
         return self._handle_batch_response(response)
 
     async def _aget_model_response(
@@ -2029,7 +2031,11 @@ class ChatAgent(BaseAgent):
             f"index {self.model_backend.current_model_index}, "
             f"processed these messages: {sanitized_messages}"
         )
-        assert isinstance(response, ChatCompletion)
+        if not isinstance(response, ChatCompletion):
+            raise TypeError(
+                f"Expected response to be a `ChatCompletion` object, but "
+                f"got {type(response).__name__} instead."
+            )
         return self._handle_batch_response(response)
 
     def _sanitize_messages_for_logging(self, messages):
@@ -2426,7 +2432,7 @@ class ChatAgent(BaseAgent):
         except Exception as e:
             # Capture the error message to prevent framework crash
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
-            result = {"error": error_msg}
+            result = f"Tool execution failed: {error_msg}"
             logging.warning(error_msg)
 
         # Check if result is a ToolResult with images
@@ -2562,6 +2568,13 @@ class ChatAgent(BaseAgent):
         yield from self._stream_response(
             openai_messages, num_tokens, response_format
         )
+
+    def _get_token_count(self, content: str) -> int:
+        r"""Get token count for content with fallback."""
+        if hasattr(self.model_backend, 'token_counter'):
+            return len(self.model_backend.token_counter.encode(content))
+        else:
+            return len(content.split())
 
     def _stream_response(
         self,
@@ -2714,7 +2727,9 @@ class ChatAgent(BaseAgent):
                                     choice.finish_reason or "stop"
                                     for choice in final_completion.choices
                                 ],
-                                "num_tokens": len(final_content.split()),
+                                "num_tokens": self._get_token_count(
+                                    final_content
+                                ),
                                 "tool_calls": tool_call_records,
                                 "external_tool_requests": None,
                                 "streaming": False,
@@ -2891,9 +2906,9 @@ class ChatAgent(BaseAgent):
                 and delta_tool_call.function
             ):
                 if delta_tool_call.function.name:
-                    tool_call_entry['function']['name'] = (
+                    tool_call_entry['function']['name'] += (
                         delta_tool_call.function.name
-                    )  # Set full name
+                    )  # Append incremental name
                 if delta_tool_call.function.arguments:
                     tool_call_entry['function']['arguments'] += (
                         delta_tool_call.function.arguments
@@ -2906,6 +2921,7 @@ class ChatAgent(BaseAgent):
                 tool_call_entry['id']
                 and tool_call_entry['function']['name']
                 and tool_call_entry['function']['arguments']
+                and tool_call_entry['function']['name'] in self._internal_tools
             ):
                 try:
                     # Try to parse arguments to check completeness
@@ -3382,7 +3398,9 @@ class ChatAgent(BaseAgent):
                                     choice.finish_reason or "stop"
                                     for choice in final_completion.choices
                                 ],
-                                "num_tokens": len(final_content.split()),
+                                "num_tokens": self._get_token_count(
+                                    final_content
+                                ),
                                 "tool_calls": tool_call_records,
                                 "external_tool_requests": None,
                                 "streaming": False,
@@ -3690,7 +3708,7 @@ class ChatAgent(BaseAgent):
                 "id": "",
                 "usage": step_token_usage.copy(),
                 "finish_reasons": [status_type],
-                "num_tokens": len(full_content.split()),
+                "num_tokens": self._get_token_count(full_content),
                 "tool_calls": tool_calls or [],
                 "external_tool_requests": None,
                 "streaming": True,
@@ -3727,7 +3745,7 @@ class ChatAgent(BaseAgent):
                 "id": response_id,
                 "usage": step_token_usage.copy(),
                 "finish_reasons": ["streaming"],
-                "num_tokens": len(full_content.split()),
+                "num_tokens": self._get_token_count(full_content),
                 "tool_calls": tool_call_records or [],
                 "external_tool_requests": None,
                 "streaming": True,
