@@ -23,7 +23,7 @@ from .open_api_specs.security_config import openapi_security_config
 from .math_toolkit import MathToolkit
 from .search_toolkit import SearchToolkit
 from .weather_toolkit import WeatherToolkit
-from .dalle_toolkit import DalleToolkit
+from .openai_image_toolkit import OpenAIImageToolkit
 from .ask_news_toolkit import AskNewsToolkit, AsyncAskNewsToolkit
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
@@ -76,7 +76,13 @@ from .klavis_toolkit import KlavisToolkit
 from .aci_toolkit import ACIToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
-
+from .task_planning_toolkit import TaskPlanningToolkit
+from .hybrid_browser_toolkit import HybridBrowserToolkit
+from .edgeone_pages_mcp_toolkit import EdgeOnePagesMCPToolkit
+from .google_drive_mcp_toolkit import GoogleDriveMCPToolkit
+from .craw4ai_toolkit import Crawl4AIToolkit
+from .markitdown_toolkit import MarkItDownToolkit
+from .note_taking_toolkit import NoteTakingToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -91,7 +97,7 @@ __all__ = [
     'SearchToolkit',
     'SlackToolkit',
     'WhatsAppToolkit',
-    'DalleToolkit',
+    'OpenAIImageToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
     'RetrievalToolkit',
@@ -140,4 +146,12 @@ __all__ = [
     'PlaywrightMCPToolkit',
     'WolframAlphaToolkit',
     'BohriumToolkit',
+    'OpenAIImageToolkit',
+    'TaskPlanningToolkit',
+    'HybridBrowserToolkit',
+    'EdgeOnePagesMCPToolkit',
+    'GoogleDriveMCPToolkit',
+    'Crawl4AIToolkit',
+    'MarkItDownToolkit',
+    'NoteTakingToolkit',
 ]
