@@ -26,7 +26,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
-    Awaitable,
     Callable,
     Dict,
     Generator,
@@ -1473,11 +1472,11 @@ class ChatAgent(BaseAgent):
         return openai_messages
 
     @observe()
-    def astep(
+    async def astep(
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-    ) -> Union[Awaitable[ChatAgentResponse], AsyncStreamingChatAgentResponse]:
+    ) -> Union[ChatAgentResponse, AsyncStreamingChatAgentResponse]:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
 
@@ -1494,12 +1493,11 @@ class ChatAgent(BaseAgent):
                 helps in defining the expected output format. (default:
                 :obj:`None`)
         Returns:
-            Union[Awaitable[ChatAgentResponse],
-                AsyncStreamingChatAgentResponse]:If stream is False,
-                returns an awaitable ChatAgentResponse.If stream is True,
-                returns an AsyncStreamingChatAgentResponse that can be
-                awaited for the final result or async iterated for
-                streaming updates.
+            Union[ChatAgentResponse, AsyncStreamingChatAgentResponse]:
+                If stream is False, returns a ChatAgentResponse. If stream is
+                True, returns an AsyncStreamingChatAgentResponse that can be
+                awaited for the final result or async iterated for streaming
+                updates.
         """
 
         try:
@@ -1515,7 +1513,7 @@ class ChatAgent(BaseAgent):
             async_generator = self._astream(input_message, response_format)
             return AsyncStreamingChatAgentResponse(async_generator)
         else:
-            return self._astep_non_streaming_task(
+            return await self._astep_non_streaming_task(
                 input_message, response_format
             )
 
@@ -1964,7 +1962,11 @@ class ChatAgent(BaseAgent):
             f"index {self.model_backend.current_model_index}, "
             f"processed these messages: {sanitized_messages}"
         )
-        assert isinstance(response, ChatCompletion)
+        if not isinstance(response, ChatCompletion):
+            raise TypeError(
+                f"Expected response to be a `ChatCompletion` object, but "
+                f"got {type(response).__name__} instead."
+            )
         return self._handle_batch_response(response)
 
     async def _aget_model_response(
@@ -2029,7 +2031,11 @@ class ChatAgent(BaseAgent):
             f"index {self.model_backend.current_model_index}, "
             f"processed these messages: {sanitized_messages}"
         )
-        assert isinstance(response, ChatCompletion)
+        if not isinstance(response, ChatCompletion):
+            raise TypeError(
+                f"Expected response to be a `ChatCompletion` object, but "
+                f"got {type(response).__name__} instead."
+            )
         return self._handle_batch_response(response)
 
     def _sanitize_messages_for_logging(self, messages):
