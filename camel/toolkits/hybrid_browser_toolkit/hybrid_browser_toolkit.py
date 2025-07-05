@@ -825,17 +825,19 @@ class HybridBrowserToolkit(BaseToolkit):
     # Public API Methods
 
     async def open_browser(
-        self, start_url: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, start_url: Optional[str] = "https://search.brave.com/"
+    ) -> Dict[str, str]:
         r"""Launches a new browser session, making it ready for web automation.
 
         This method initializes the underlying browser instance. If a
-        `start_url` is provided, it will also navigate to that URL.
+        `start_url` is provided, it will also navigate to that URL. If you
+        don't have a specific URL to start with, you can use a search engine
+        like 'https://search.brave.com/'.
 
         Args:
             start_url (Optional[str]): The initial URL to navigate to after the
                 browser is launched. If not provided, the browser will start
-                with a blank page.
+                with a blank page. (default: :obj:`https://search.brave.com/`)
 
         Returns:
             Dict[str, Any]: A dictionary containing:
@@ -955,6 +957,9 @@ class HybridBrowserToolkit(BaseToolkit):
                 "current_tab": 0,
                 "total_tabs": 1,
             }
+
+        if '://' not in url:
+            url = f'https://{url}'
 
         logger.info(f"Navigating to URL: {url}")
 

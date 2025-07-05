@@ -25,6 +25,7 @@ from camel.agents.repo_agent import (
 )
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
+from camel.responses import ChatAgentResponse
 from camel.types import ModelType
 
 # Create mock Github module
@@ -286,13 +287,16 @@ def test_step_in_rag_mode(mock_vector_retriever):
 
     # Mock the super().step() method
     with patch('camel.agents.repo_agent.ChatAgent.step') as mock_step:
-        mock_step.return_value = "mocked response"
+        # Create a proper ChatAgentResponse mock
+        mock_response = MagicMock(spec=ChatAgentResponse)
+        mock_step.return_value = mock_response
 
         # Act - Call the step method with a test message
-        agent.step("Test query")
+        result = agent.step("Test query")
 
         # Assert
         assert mock_step.called
+        assert result == mock_response
         # Check that the input was augmented with retrieved content
         call_args = mock_step.call_args[0][0]
         assert isinstance(call_args, BaseMessage)

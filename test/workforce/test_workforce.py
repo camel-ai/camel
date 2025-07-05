@@ -415,3 +415,76 @@ def test_cross_agent_memory_access(mock_model, sample_shared_memory):
     # Both should know both pieces of information
     for content in [alice_content, bob_content]:
         assert "blue42" in content and "314" in content
+
+
+def test_dynamic_worker_addition():
+    r"""Test adding workers dynamically during different workforce states"""
+    workforce = Workforce(description="Dynamic Test Workforce")
+    from camel.societies.workforce.workforce import WorkforceState
+
+    # Test 1: Add worker in IDLE state (should work)
+    agent1 = ChatAgent("You are a test agent.")
+    workforce.add_single_agent_worker("Test Worker 1", agent1)
+    assert len(workforce._children) == 1
+
+    # Test 2: Add worker in PAUSED state (should work)
+    workforce._state = WorkforceState.PAUSED
+    agent2 = ChatAgent("You are another test agent.")
+    workforce.add_single_agent_worker("Test Worker 2", agent2)
+    assert len(workforce._children) == 2
+
+    # Test 3: Try to add worker in RUNNING state (should fail)
+    workforce._state = WorkforceState.RUNNING
+    agent3 = ChatAgent("You should not be added.")
+
+    with pytest.raises(
+        RuntimeError, match="Cannot add workers while workforce is running"
+    ):
+        workforce.add_single_agent_worker("Should Fail", agent3)
+
+    assert len(workforce._children) == 2  # No new worker added
+
+
+@pytest.mark.asyncio
+async def test_dynamic_worker_types():
+    r"""Test adding different types of workers during pause"""
+    workforce = Workforce(description="Worker Types Test")
+    from camel.societies.workforce.workforce import WorkforceState
+
+    workforce._state = WorkforceState.PAUSED
+
+    # Add SingleAgentWorker
+    agent = ChatAgent("You are a specialist.")
+    workforce.add_single_agent_worker("Specialist", agent)
+    assert len(workforce._children) == 1
+
+    # Add RolePlayingWorker
+    workforce.add_role_playing_worker(
+        description="Analysis Team",
+        assistant_role_name="Analyst",
+        user_role_name="Expert",
+    )
+    assert len(workforce._children) == 2
+
+    # Add nested Workforce
+    nested = Workforce(description="Sub-team")
+    workforce.add_workforce(nested)
+    assert len(workforce._children) == 3
+
+
+def test_start_child_node_helper():
+    r"""Test the _start_child_node_when_paused helper function"""
+    workforce = Workforce(description="Helper Test")
+    from camel.societies.workforce.workforce import WorkforceState
+
+    async def mock_coroutine():
+        return "test"
+
+    # Should do nothing when not paused
+    workforce._state = WorkforceState.IDLE
+    workforce._start_child_node_when_paused(mock_coroutine())
+
+    # Should do nothing when no loop
+    workforce._state = WorkforceState.PAUSED
+    workforce._loop = None
+    workforce._start_child_node_when_paused(mock_coroutine())

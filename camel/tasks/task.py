@@ -430,6 +430,8 @@ class Task(BaseModel):
         tasks = task_parser(response.msg.content, self.id)
         for task in tasks:
             task.additional_info = self.additional_info
+            task.parent = self
+        self.subtasks = tasks
         return tasks
 
     def compose(
