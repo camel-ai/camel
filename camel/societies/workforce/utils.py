@@ -63,12 +63,12 @@ class TaskAssignment(BaseModel):
         return [d.strip() for d in dep_str.split(',') if d.strip()]
 
     @field_validator("dependencies", mode="before")
-    def validate_dependencies(cls, v):  # noqa: N805
+    def validate_dependencies(cls, v) -> List[str]:
         if v is None:
             return []
         # Handle empty string or comma-separated string from LLM
         if isinstance(v, str):
-            return cls._split_and_strip(v)
+            return TaskAssignment._split_and_strip(v)
         return v
 
 
