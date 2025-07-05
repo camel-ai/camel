@@ -203,6 +203,9 @@ and returns a single response.
 
 **Returns:**
 
-  Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+  Union[ChatCompletion, Stream[ChatCompletionChunk],
+ChatCompletionStreamManager[BaseModel]]:
 `ChatCompletion` in the non-stream mode, or
-`Stream[ChatCompletionChunk]` in the stream mode.
+`Stream[ChatCompletionChunk]` in the stream mode, or
+`ChatCompletionStreamManager[BaseModel]` for
+structured-output stream.

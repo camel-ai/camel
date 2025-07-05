@@ -161,7 +161,8 @@ Runs the query to the backend model in a non-stream mode.
   Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
 `ChatCompletion` in the non-stream mode, or
 `Stream[ChatCompletionChunk]` in the stream mode,
-or other stream managers for structured output.
+or `ChatCompletionStreamManager[BaseModel]` in the structured
+stream mode.
 
 <a id="camel.models.base_model.BaseModelBackend.run"></a>
 
@@ -189,7 +190,8 @@ Runs the query to the backend model.
   Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
 `ChatCompletion` in the non-stream mode,
 `Stream[ChatCompletionChunk]` in the stream mode, or
-other stream managers for structured output.
+`ChatCompletionStreamManager[BaseModel]` in the structured
+stream mode.
 
 <a id="camel.models.base_model.BaseModelBackend.check_model_config"></a>
 

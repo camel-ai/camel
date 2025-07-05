@@ -151,6 +151,8 @@ def _request_stream_parse(
 
 Request streaming structured output parsing.
 
+Note: This uses OpenAI's beta streaming API for structured outputs.
+
 <a id="camel.models.openai_model.OpenAIModel.check_model_config"></a>
 
 ### check_model_config

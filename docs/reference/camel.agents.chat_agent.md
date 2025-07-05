@@ -922,3 +922,297 @@ Expose this ChatAgent as an MCP server.
 **Returns:**
 
   FastMCP: An MCP server instance that can be run.
+
+<a id="camel.agents.chat_agent.ChatAgent.stream"></a>
+
+### stream
+
+```python
+def stream(
+    self,
+    input_message: Union[BaseMessage, str],
+    response_format: Optional[Type[BaseModel]] = None
+):
+```
+
+Executes a streaming step in the chat session, yielding
+intermediate responses as they are generated.
+
+**Parameters:**
+
+- **input_message** (Union[BaseMessage, str]): The input message for the agent.
+- **response_format** (Optional[Type[BaseModel]], optional): A Pydantic model defining the expected structure of the response.
+- **Yields**: 
+- **ChatAgentResponse**: Intermediate responses containing partial content, tool calls, and other information as they become available.
+
+<a id="camel.agents.chat_agent.ChatAgent._stream_response"></a>
+
+### _stream_response
+
+```python
+def _stream_response(
+    self,
+    openai_messages: List[OpenAIMessage],
+    num_tokens: int,
+    response_format: Optional[Type[BaseModel]] = None
+):
+```
+
+Internal method to handle streaming responses with tool calls.
+
+<a id="camel.agents.chat_agent.ChatAgent._process_stream_chunks_with_accumulator"></a>
+
+### _process_stream_chunks_with_accumulator
+
+```python
+def _process_stream_chunks_with_accumulator(
+    self,
+    stream: Stream[ChatCompletionChunk],
+    content_accumulator: '_StreamContentAccumulator',
+    accumulated_tool_calls: Dict[str, Any],
+    tool_call_records: List[ToolCallingRecord],
+    step_token_usage: Dict[str, int],
+    response_format: Optional[Type[BaseModel]] = None
+):
+```
+
+Process streaming chunks with content accumulator.
+
+<a id="camel.agents.chat_agent.ChatAgent._accumulate_tool_calls"></a>
+
+### _accumulate_tool_calls
+
+```python
+def _accumulate_tool_calls(
+    self,
+    tool_call_deltas: List[Any],
+    accumulated_tool_calls: Dict[str, Any]
+):
+```
+
+Accumulate tool call chunks and return True when
+any tool call is complete.
+
+**Parameters:**
+
+- **tool_call_deltas** (List[Any]): List of tool call deltas.
+- **accumulated_tool_calls** (Dict[str, Any]): Dictionary of accumulated tool calls.
+
+**Returns:**
+
+  bool: True if any tool call is complete, False otherwise.
+
+<a id="camel.agents.chat_agent.ChatAgent._execute_tools_sync_with_status_accumulator"></a>
+
+### _execute_tools_sync_with_status_accumulator
+
+```python
+def _execute_tools_sync_with_status_accumulator(
+    self,
+    accumulated_tool_calls: Dict[str, Any],
+    content_accumulator: '_StreamContentAccumulator',
+    step_token_usage: Dict[str, int],
+    tool_call_records: List[ToolCallingRecord]
+):
+```
+
+Execute multiple tools synchronously with
+proper content accumulation.
+
+<a id="camel.agents.chat_agent.ChatAgent._execute_tool_from_stream_data"></a>
+
+### _execute_tool_from_stream_data
+
+```python
+def _execute_tool_from_stream_data(self, tool_call_data: Dict[str, Any]):
+```
+
+Execute a tool from accumulated stream data.
+
+<a id="camel.agents.chat_agent.ChatAgent._create_error_response"></a>
+
+### _create_error_response
+
+```python
+def _create_error_response(
+    self,
+    error_message: str,
+    tool_call_records: List[ToolCallingRecord]
+):
+```
+
+Create an error response for streaming.
+
+<a id="camel.agents.chat_agent.ChatAgent._record_assistant_tool_calls_message"></a>
+
+### _record_assistant_tool_calls_message
+
+```python
+def _record_assistant_tool_calls_message(self, accumulated_tool_calls: Dict[str, Any], content: str = ''):
+```
+
+Record the assistant message that contains tool calls.
+
+This method creates and records an assistant message that includes
+the tool calls information, which is required by OpenAI's API format.
+
+<a id="camel.agents.chat_agent.ChatAgent._create_tool_status_response"></a>
+
+### _create_tool_status_response
+
+```python
+def _create_tool_status_response(
+    self,
+    content: str,
+    status_message: str,
+    status_type: str,
+    step_token_usage: Dict[str, int],
+    tool_calls: Optional[List[ToolCallingRecord]] = None
+):
+```
+
+Create a generic tool status response to
+reduce code duplication.
+
+<a id="camel.agents.chat_agent.ChatAgent._create_simple_tool_calling_status"></a>
+
+### _create_simple_tool_calling_status
+
+```python
+def _create_simple_tool_calling_status(
+    self,
+    tool_call_data: Dict[str, Any],
+    content: str,
+    step_token_usage: Dict[str, int]
+):
+```
+
+Create a simple tool calling status response.
+
+<a id="camel.agents.chat_agent.ChatAgent._create_simple_tool_output_status"></a>
+
+### _create_simple_tool_output_status
+
+```python
+def _create_simple_tool_output_status(
+    self,
+    tool_call_record: ToolCallingRecord,
+    content: str,
+    step_token_usage: Dict[str, int]
+):
+```
+
+Create a simple tool output status response.
+
+<a id="camel.agents.chat_agent.ChatAgent._create_tool_status_response_with_accumulator"></a>
+
+### _create_tool_status_response_with_accumulator
+
+```python
+def _create_tool_status_response_with_accumulator(
+    self,
+    accumulator: '_StreamContentAccumulator',
+    status_message: str,
+    status_type: str,
+    step_token_usage: Dict[str, int],
+    tool_calls: Optional[List[ToolCallingRecord]] = None
+):
+```
+
+Create a tool status response using content accumulator.
+
+<a id="camel.agents.chat_agent.ChatAgent._create_streaming_response_with_accumulator"></a>
+
+### _create_streaming_response_with_accumulator
+
+```python
+def _create_streaming_response_with_accumulator(
+    self,
+    accumulator: '_StreamContentAccumulator',
+    new_content: str,
+    step_token_usage: Dict[str, int],
+    response_id: str = '',
+    tool_call_records: Optional[List[ToolCallingRecord]] = None
+):
+```
+
+Create a streaming response using content accumulator.
+
+<a id="camel.agents.chat_agent._StreamContentAccumulator"></a>
+
+## _StreamContentAccumulator
+
+```python
+class _StreamContentAccumulator:
+```
+
+Manages content accumulation across streaming responses to ensure
+all responses contain complete cumulative content.
+
+<a id="camel.agents.chat_agent._StreamContentAccumulator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self):
+```
+
+<a id="camel.agents.chat_agent._StreamContentAccumulator.set_base_content"></a>
+
+### set_base_content
+
+```python
+def set_base_content(self, content: str):
+```
+
+Set the base content (usually empty or pre-tool content).
+
+<a id="camel.agents.chat_agent._StreamContentAccumulator.add_streaming_content"></a>
+
+### add_streaming_content
+
+```python
+def add_streaming_content(self, new_content: str):
+```
+
+Add new streaming content.
+
+<a id="camel.agents.chat_agent._StreamContentAccumulator.add_tool_status"></a>
+
+### add_tool_status
+
+```python
+def add_tool_status(self, status_message: str):
+```
+
+Add a tool status message.
+
+<a id="camel.agents.chat_agent._StreamContentAccumulator.get_full_content"></a>
+
+### get_full_content
+
+```python
+def get_full_content(self):
+```
+
+Get the complete accumulated content.
+
+<a id="camel.agents.chat_agent._StreamContentAccumulator.get_content_with_new_status"></a>
+
+### get_content_with_new_status
+
+```python
+def get_content_with_new_status(self, status_message: str):
+```
+
+Get content with a new status message appended.
+
+<a id="camel.agents.chat_agent._StreamContentAccumulator.reset_streaming_content"></a>
+
+### reset_streaming_content
+
+```python
+def reset_streaming_content(self):
+```
+
+Reset only the streaming content, keep base and tool status.
