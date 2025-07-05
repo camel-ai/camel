@@ -1125,15 +1125,18 @@ class TestHybridBrowserToolkit:
         tools = toolkit.get_tools()
 
         # Default tools should be 5 tools (updated default configuration)
-        assert len(tools) == 5
+        assert len(tools) == 8
         tool_names = [tool.func.__name__ for tool in tools]
 
         expected_default_tools = [
-            'open_browser',
-            'close_browser',
-            'visit_page',
-            'click',
-            'type',
+            "open_browser",
+            "close_browser",
+            "visit_page",
+            "back",
+            "forward",
+            "click",
+            "type",
+            "switch_tab",
         ]
 
         for expected_tool in expected_default_tools:
@@ -1151,7 +1154,7 @@ class TestHybridBrowserToolkit:
 
         # Default tools should be 5, even with web_agent_model set
         # unless solve_task is explicitly enabled
-        assert len(tools) == 5
+        assert len(tools) == 8
         tool_names = [tool.func.__name__ for tool in tools]
 
         # Should not automatically include solve_task unless explicitly enabled
@@ -1192,11 +1195,14 @@ class TestHybridBrowserToolkit:
     def test_get_tools_custom_selection(self):
         """Test getting tools with custom tool selection."""
         custom_tools = [
-            'open_browser',
-            'visit_page',
-            'get_som_screenshot',
-            'click',
-            'scroll',
+            "open_browser",
+            "close_browser",
+            "visit_page",
+            "back",
+            "forward",
+            "click",
+            "type",
+            "switch_tab",
         ]
 
         with (
@@ -1220,7 +1226,7 @@ class TestHybridBrowserToolkit:
             tools = toolkit.get_tools()
             tool_names = [tool.func.__name__ for tool in tools]
 
-            assert len(tools) == 5
+            assert len(tools) == 8
             for expected_tool in custom_tools:
                 assert expected_tool in tool_names
 
