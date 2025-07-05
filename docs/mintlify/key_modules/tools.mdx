@@ -100,7 +100,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | AudioAnalysisToolkit | A toolkit for audio processing and analysis, including transcription and question answering about audio content. |
 | BrowserToolkit | A toolkit for browsing the web and interacting with web pages, including browser simulation and content extraction. |
 | CodeExecutionToolkit | A toolkit for code execution which can run code in various sandboxes including internal Python, Jupyter, Docker, subprocess, or e2b. |
-| DalleToolkit | A toolkit for image generation using OpenAI's DALL-E model. |
+| OpenAIImageToolkit | A toolkit for image generation using OpenAI's DALL-E model. |
 | DappierToolkit | A toolkit for searching real-time data and fetching AI recommendations across key verticals like News, Finance, Stock Market, Sports, Weather and more using the Dappier API. |
 | DataCommonsToolkit | A toolkit for querying and retrieving data from the Data Commons knowledge graph, including SPARQL queries, statistical time series data, and property analysis. |
 | ExcelToolkit | A toolkit for extracting and processing content from Excel files, including conversion to markdown tables. |

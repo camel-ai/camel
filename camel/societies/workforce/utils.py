@@ -11,10 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from enum import Enum
 from functools import wraps
-from typing import Callable, List
+from typing import Callable, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class WorkerConf(BaseModel):
@@ -54,12 +55,76 @@ class TaskAssignment(BaseModel):
         "This is critical for the task decomposition and execution.",
     )
 
+    # Allow LLMs to output dependencies as a comma-separated string or empty
+    # string. This validator converts such cases into a list[str] so that
+    # downstream logic does not break with validation errors.
+    @staticmethod
+    def _split_and_strip(dep_str: str) -> List[str]:
+        r"""Utility to split a comma separated string and strip whitespace."""
+        return [d.strip() for d in dep_str.split(',') if d.strip()]
+
+    @field_validator("dependencies", mode="before")
+    def validate_dependencies(cls, v) -> List[str]:
+        if v is None:
+            return []
+        # Handle empty string or comma-separated string from LLM
+        if isinstance(v, str):
+            return TaskAssignment._split_and_strip(v)
+        return v
+
 
 class TaskAssignResult(BaseModel):
     r"""The result of task assignment for both single and batch assignments."""
 
     assignments: List[TaskAssignment] = Field(
         description="List of task assignments."
+    )
+
+
+class RecoveryStrategy(str, Enum):
+    r"""Strategies for handling failed tasks."""
+
+    RETRY = "retry"
+    REPLAN = "replan"
+    DECOMPOSE = "decompose"
+    CREATE_WORKER = "create_worker"
+
+    def __str__(self):
+        return self.value
+
+    def __repr__(self):
+        return f"RecoveryStrategy.{self.name}"
+
+
+class FailureContext(BaseModel):
+    r"""Context information about a task failure."""
+
+    task_id: str = Field(description="ID of the failed task")
+    task_content: str = Field(description="Content of the failed task")
+    failure_count: int = Field(
+        description="Number of times this task has failed"
+    )
+    error_message: str = Field(description="Detailed error message")
+    worker_id: Optional[str] = Field(
+        default=None, description="ID of the worker that failed"
+    )
+    task_depth: int = Field(
+        description="Depth of the task in the decomposition hierarchy"
+    )
+    additional_info: Optional[str] = Field(
+        default=None, description="Additional context about the task"
+    )
+
+
+class RecoveryDecision(BaseModel):
+    r"""Decision on how to recover from a task failure."""
+
+    strategy: RecoveryStrategy = Field(
+        description="The chosen recovery strategy"
+    )
+    reasoning: str = Field(description="Explanation for the chosen strategy")
+    modified_task_content: Optional[str] = Field(
+        default=None, description="Modified task content if strategy is REPLAN"
     )
 
 
