@@ -1,0 +1,5 @@
+name: "camel-example"
+service_name: "camel-example"
+github_owner: "camel-ai"
+github_repo_name: "camel"
+github_commit_hash: "master"

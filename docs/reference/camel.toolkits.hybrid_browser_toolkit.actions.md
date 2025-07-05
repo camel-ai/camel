@@ -25,3 +25,5 @@ def __init__(self, page: 'Page'):
 ```python
 def should_update_snapshot(action: Dict[str, Any]):
 ```
+
+Determine if an action requires a snapshot update.

@@ -132,7 +132,7 @@ Write text content to a PDF file with default formatting.
 - **file_path** (Path): The target file path.
 - **title** (str): The title of the document.
 - **content** (str): The text content to write.
-- **use_latex** (bool): Whether to use LaTeX for rendering. (requires LaTeX toolchain). If False, uses PyMuPDF for simpler PDF generation. (default: :obj:`False`)
+- **use_latex** (bool): Whether to use LaTeX for rendering. Only Recommended for documents with mathematical formulas or complex typesetting needs. (default: :obj:`False`)
 
 <a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_csv_file"></a>
 
@@ -267,7 +267,7 @@ and HTML (.html, .htm).
 - **content** (Union[str, List[List[str]]]): The content to write to the file. Content format varies by file type: - Text formats (txt, md, html, yaml): string - CSV: string or list of lists - JSON: string or serializable object
 - **filename** (str): The name or path of the file. If a relative path is supplied, it is resolved to self.output_dir.
 - **encoding** (Optional[str]): The character encoding to use. (default: :obj: `None`)
-- **use_latex** (bool): For PDF files, whether to use LaTeX rendering (True) or simple FPDF rendering (False). (default: :obj: `False`)
+- **use_latex** (bool): For PDF files, whether to use LaTeX rendering. Only recommended for documents with mathematical formulas or complex typesetting needs. (default: :obj:`False`)
 
 **Returns:**
 

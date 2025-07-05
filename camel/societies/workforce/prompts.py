@@ -65,7 +65,8 @@ Example valid response:
   "assignments": [
     {{"task_id": "task_1", "assignee_id": "node_12345", "dependencies": []}},
     {{"task_id": "task_2", "assignee_id": "node_67890", "dependencies": ["task_1"]}},
-    {{"task_id": "task_3", "assignee_id": "node_12345", "dependencies": []}}
+    {{"task_id": "task_3", "assignee_id": "node_12345", "dependencies": []}},
+    {{"task_id": "task_4", "assignee_id": "node_67890", "dependencies": ["task_1", "task_2"]}}
   ]
 }}
 
@@ -94,6 +95,11 @@ Please keep in mind the task you are going to process, the content of the task t
 
 ==============================
 {content}
+==============================
+
+Here is the content of the parent task for you to refer to:
+==============================
+{parent_task_content}
 ==============================
 
 Here are results of some prerequisite tasks that you can refer to:
@@ -126,16 +132,22 @@ concluding remarks, explanations, or any other text outside the JSON structure i
 
 ROLEPLAY_PROCESS_TASK_PROMPT = TextPrompt(
     """You need to process the task. It is recommended that tools be actively called when needed.
-Here are results of some prerequisite tasks that you can refer to:
-
-==============================
-{dependency_task_info}
-==============================
 
 The content of the task that you need to do is:
 
 ==============================
 {content}
+==============================
+
+Here is the content of the parent task for you to refer to:
+==============================
+{parent_task_content}
+==============================
+
+Here are results of some prerequisite tasks that you can refer to:
+
+==============================
+{dependency_task_info}
 ==============================
 
 Here are some additional information about the task:
@@ -254,3 +266,54 @@ Each subtask should be:
 - Contain all sequential steps that should be performed by the same worker type
 - Only separated from other subtasks when parallel execution by different worker types is beneficial
 """
+
+FAILURE_ANALYSIS_PROMPT = TextPrompt(
+    """You need to analyze a task failure and decide on the best recovery strategy.
+
+**TASK FAILURE DETAILS:**
+Task ID: {task_id}
+Task Content: {task_content}
+Failure Count: {failure_count}/3
+Error Message: {error_message}
+Worker ID: {worker_id}
+Task Depth: {task_depth}
+Additional Info: {additional_info}
+
+**AVAILABLE RECOVERY STRATEGIES:**
+
+1. **RETRY**: Attempt the same task again without changes
+   - Use for: Network errors, temporary API issues, random failures
+   - Avoid for: Fundamental task misunderstanding, capability gaps
+
+2. **REPLAN**: Modify the task content to address the underlying issue
+   - Use for: Unclear requirements, insufficient context, correctable errors
+   - Provide: Modified task content that addresses the failure cause
+
+3. **DECOMPOSE**: Break the task into smaller, more manageable subtasks
+   - Use for: Complex tasks, capability mismatches, persistent failures
+   - Consider: Whether the task is too complex for a single worker
+
+4. **CREATE_WORKER**: Create a new worker node to handle the task
+   - Use for: Fundamental task misunderstanding, capability gaps
+
+**ANALYSIS GUIDELINES:**
+
+- **Connection/Network Errors**: Almost always choose RETRY
+- **Model Processing Errors**: Consider REPLAN if the task can be clarified, otherwise DECOMPOSE
+- **Capability Gaps**: Choose DECOMPOSE to break into simpler parts
+- **Ambiguous Requirements**: Choose REPLAN with clearer instructions
+- **High Failure Count**: Lean towards DECOMPOSE rather than repeated retries
+- **Deep Tasks (depth > 2)**: Prefer RETRY or REPLAN over further decomposition
+
+**RESPONSE FORMAT:**
+You must return a valid JSON object with these fields:
+- "strategy": one of "retry", "replan", or "decompose" 
+- "reasoning": explanation for your choice (1-2 sentences)
+- "modified_task_content": new task content if strategy is "replan", null otherwise
+
+**Example Response:**
+{{"strategy": "retry", "reasoning": "The connection error appears to be temporary and network-related, a simple retry should resolve this.", "modified_task_content": null}}
+
+**CRITICAL**: Return ONLY the JSON object. No explanations or text outside the JSON structure.
+"""
+)
