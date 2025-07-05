@@ -22,7 +22,6 @@ from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import (
     AudioAnalysisToolkit,
-    CodeExecutionToolkit,
     Crawl4AIToolkit,
     EdgeOnePagesMCPToolkit,
     ExcelToolkit,
@@ -87,34 +86,39 @@ def developer_agent_factory(
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
         *TerminalToolkit(clone_current_env=True).get_tools(),
-        *CodeExecutionToolkit().get_tools(),
         *edgeone_pages_mcp_toolkit.get_tools(),
     ]
 
-    system_message = """You are a skilled coding assistant with DIRECT CODE 
-    EXECUTION CAPABILITIES. You MUST use the `send_message_to_user` tool to 
-    inform the user of every decision and action you take. Your message must 
-    include a short title and a one-sentence description. This is a 
-    mandatory part of your workflow.
+    system_message = """You are a skilled coding assistant. You can write and 
+    execute code by using the available terminal tools. You MUST use the 
+    `send_message_to_user` tool to inform the user of every decision and 
+    action you take. Your message must include a short title and a 
+    one-sentence description. This is a mandatory part of your workflow.
 
     Your capabilities include:
-    - WRITE AND EXECUTE code in real-time to solve tasks
-    - RUN terminal commands to install packages, process files, or test 
-    functionality
-    - VERIFY your solutions through immediate execution and testing
-    - UTILIZE any Python libraries (requests, BeautifulSoup, pandas, etc.) 
-    needed for efficient solutions
-    - IMPLEMENT complete, production-ready code rather than theoretical 
-    examples
-    - USE edgeone pages mcp toolkit to create and edit web pages. After you 
-    create a web page, you can ask the search agent to visit it for 
+    - Writing code to solve tasks. To execute the code, you MUST first save 
+    it to a file in the workspace (e.g., `script.py`), and then run it using 
+    the terminal tool (e.g., `python script.py`).
+    - Running terminal commands to install packages (e.g., with `pip`), 
+    process files, or test functionality. All files you create should be in 
+    the designated workspace.
+    - Verifying your solutions through immediate execution and testing in the 
+    terminal.
+    - Utilizing any Python libraries (e.g., requests, BeautifulSoup, pandas, 
+    etc.) needed for efficient solutions. You can install missing packages 
+    using `pip` in the terminal.
+    - Implementing complete, production-ready code rather than theoretical 
+    examples.
+    - Using the `edgeone_pages_mcp_toolkit` to create and edit web pages. 
+    After you create a web page, you can ask the search agent to visit it for 
     verification.
-    - DEMONSTRATE results with proper error handling and practical 
-    implementation
-    - If there's dependency issues when you try to execute code, you should 
-    use the terminal toolkit to install the dependencies.
-    - ASK for human input via the console if you are stuck or need 
+    - Demonstrating results with proper error handling and practical 
+    implementation.
+    - Asking for human input via the console if you are stuck or need 
     clarification.
+    
+    Remember to manage your terminal sessions. You can create new sessions 
+    and run commands in them.
     """
 
     return ChatAgent(
@@ -127,7 +131,7 @@ def developer_agent_factory(
     )
 
 
-@api_keys_required([(None, 'EXA_API_KEY')])
+@api_keys_required([(None, 'EXA_API_KEY'), (None, 'GOOGLE_API_KEY')])
 def search_agent_factory(
     model: BaseModelBackend,
     task_id: str,
@@ -137,8 +141,8 @@ def search_agent_factory(
     """
     tools = [
         # FunctionTool(SearchToolkit().search_wiki),
-        SearchToolkit().search_exa,
-        # FunctionTool(SearchToolkit().search_bing),
+        SearchToolkit().search_google,
+        SearchToolkit().search_bing,
         # FunctionTool(SearchToolkit().search_baidu),
         *HybridBrowserToolkit(headless=False).get_tools(),
         *TerminalToolkit().get_tools(),
@@ -157,6 +161,17 @@ def search_agent_factory(
     and a one-sentence description. This is a mandatory part of your 
     workflow.
 
+    ### Web Search Workflow
+    1.  **Search First**: You MUST start by using a search engine to get 
+        initial URLs. Use `search_google` for English queries and 
+        `search_bing` for Chinese queries. Do not use browser tools before 
+        this step.
+    2.  **Browse URLs**: After getting search results, use the `visit_page` 
+        tool from the browser toolkit to open promising URLs.
+    3.  **Explore and Scrape**: Once on a page, use browser tools to read 
+        content, scrape information, and navigate to other linked pages to 
+        gather all necessary data.
+
     ### Core Principles
     - For each decision you make and action you take, you must send a message 
     to the user to keep them informed.
@@ -174,35 +189,18 @@ def search_agent_factory(
     report, so make them clear, concise, and well-organized. Include 
     headings, details, and any relevant URLs or sources.
 
-    ### Web Search Strategy
-    - When solving tasks that require web searches, check Wikipedia first 
-    before exploring other websites.
-    - If a question is complex, your search query should be concise and focus 
-    on finding official sources. For example, to answer "What is the maximum 
-    length in meters of #9 in the first National Geographic short on YouTube 
-    that was ever released according to the Monterey Bay Aquarium website?", 
-    your first search term should be coarse-grained like "National 
-    Geographic YouTube" to find the official channel first, then narrow down 
-    your search.
-    - If the search snippet is unhelpful but the URL comes from an 
-    authoritative source, try visiting the website for more details.
-    - When looking for specific numerical values (e.g., dollar amounts), 
-    prioritize reliable sources and avoid relying only on search snippets.
-
-    ### Browser Interaction
-    - When using `open_browser` or `visit_page` without a specific URL in 
-    mind, start from a search engine like Brave Search 
-    (https://search.brave.com) instead of trying to guess the URL.
-    - You can simulate browser actions to get more information or verify what 
-    you have found. This is also helpful for finding target URLs that are 
-    hard to find with simple web searches.
-    - After visiting a page, check its subpages for more relevant 
-    information.
-    - Do not rely solely on browser simulation. Combine search, scraper, and 
-    browser tools to process web page information comprehensively. Some 
-    content may require browser simulation to access.
+    ### Guidelines
+    - If a search query is complex, break it down. Start with broad terms to 
+      find authoritative sources, then narrow your search.
+    - If a search snippet is unhelpful but the URL seems authoritative, visit 
+      the page to investigate further.
+    - IMPORTANT: You MUST only use URLs from search results or scraped from 
+      pages you have visited. NEVER invent or guess URLs.
+    - After visiting a page, check its subpages for more relevant information.
+    - Combine search, scraper, and browser tools for comprehensive information 
+      gathering.
     - In your response, you should mention the URLs you have visited and 
-    processed.
+      processed.
 
     ### Handling Obstacles
     - When encountering verification challenges (like login, CAPTCHAs or 
@@ -236,6 +234,7 @@ def document_agent_factory(
         *MarkItDownToolkit().get_tools(),
         *ExcelToolkit().get_tools(),
         NoteTakingToolkit().read_note,
+        SearchToolkit().search_exa,
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
@@ -321,6 +320,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *OpenAIImageToolkit().get_tools(),
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
+        SearchToolkit().search_exa,
     ]
 
     system_message = """You are a Multi-Modal Processing Assistant specialized 
@@ -438,6 +438,7 @@ operations.
             *SlackToolkit().get_tools(),
             send_message_to_user,
             HumanToolkit().ask_human_via_console,
+            SearchToolkit().search_exa,
         ],
     )
 
