@@ -182,11 +182,11 @@ class SurrealStorage(BaseVectorStorage):
             validate_data.append(record_dict)
 
         return validate_data
-    
+
     def query(
-    self,
-    query: VectorDBQuery,
-    **kwargs: Any,
+        self,
+        query: VectorDBQuery,
+        **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
         r"""
         Perform a top-k similarity search using the configured distance metric.
@@ -218,7 +218,7 @@ class SurrealStorage(BaseVectorStorage):
             db.signin({"username": self.user, "password": self.password})
             db.use(self.ns, self.db)
 
-            query = f"""
+            sql_query = f"""
                 SELECT payload,
                     {metric_func}(embedding, {query.query_vector}) AS score
                 FROM {self.table}
@@ -226,7 +226,7 @@ class SurrealStorage(BaseVectorStorage):
                 ORDER BY score;
             """
 
-            response = db.query_raw(query)
+            response = db.query_raw(sql_query)
             results = response["result"][0]
 
             return [
@@ -316,9 +316,16 @@ class SurrealStorage(BaseVectorStorage):
             VectorDBStatus: Object containing vector table metadata.
         """
         status = self._get_table_info()
+
+        dim = status.get("dim")
+        count = status.get("count")
+
+        if dim is None or count is None:
+            raise ValueError("Vector dimension and count cannot be None")
+
         return VectorDBStatus(
-            vector_dim=status["dim"],
-            vector_count=status["count"],
+            vector_dim=dim,
+            vector_count=count,
         )
 
     def clear(self) -> None:
