@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import json
 import time
 import uuid
@@ -28,6 +29,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Union,
 )
 
 from colorama import Fore
@@ -218,7 +220,9 @@ class Workforce(BaseNode):
         share_memory: bool = False,
     ) -> None:
         super().__init__(description)
-        self._child_listening_tasks: Deque[asyncio.Task] = deque()
+        self._child_listening_tasks: Deque[
+            Union[asyncio.Task, concurrent.futures.Future]
+        ] = deque()
         self._children = children or []
         self.new_worker_agent = new_worker_agent
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
@@ -1128,9 +1132,6 @@ class Workforce(BaseNode):
             needed
             >>> print(result.result)
         """
-        import asyncio
-        import concurrent.futures
-
         # Check if we're already in an event loop
         try:
             current_loop = asyncio.get_running_loop()
@@ -1305,7 +1306,39 @@ class Workforce(BaseNode):
 
         return self._task
 
-    @check_if_running(False)
+    def _start_child_node_when_paused(
+        self, start_coroutine: Coroutine
+    ) -> None:
+        r"""Helper to start a child node when workforce is paused.
+
+        Args:
+            start_coroutine: The coroutine to start (e.g., worker_node.start())
+        """
+        if self._state == WorkforceState.PAUSED and hasattr(
+            self, '_child_listening_tasks'
+        ):
+            if self._loop and not self._loop.is_closed():
+                # Use thread-safe coroutine execution for dynamic addition
+                child_task: Union[asyncio.Task, concurrent.futures.Future]
+                try:
+                    # Check if we're in the same thread as the loop
+                    current_loop = asyncio.get_running_loop()
+                    if current_loop is self._loop:
+                        # Same loop context - use create_task
+                        child_task = self._loop.create_task(start_coroutine)
+                    else:
+                        # Different loop context - use thread-safe approach
+                        child_task = asyncio.run_coroutine_threadsafe(
+                            start_coroutine, self._loop
+                        )
+                except RuntimeError:
+                    # No running loop in current thread - use thread-safe
+                    # approach
+                    child_task = asyncio.run_coroutine_threadsafe(
+                        start_coroutine, self._loop
+                    )
+                self._child_listening_tasks.append(child_task)
+
     def add_single_agent_worker(
         self,
         description: str,
@@ -1313,6 +1346,7 @@ class Workforce(BaseNode):
         pool_max_size: int = DEFAULT_WORKER_POOL_SIZE,
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses a single agent.
+        Can be called when workforce is paused to dynamically add workers.
 
         Args:
             description (str): Description of the worker node.
@@ -1322,7 +1356,15 @@ class Workforce(BaseNode):
 
         Returns:
             Workforce: The workforce node itself.
+
+        Raises:
+            RuntimeError: If called while workforce is running (not paused).
         """
+        if self._state == WorkforceState.RUNNING:
+            raise RuntimeError(
+                "Cannot add workers while workforce is running. "
+                "Pause the workforce first."
+            )
         # Ensure the worker agent shares this workforce's pause control
         self._attach_pause_event_to_agent(worker)
 
@@ -1332,6 +1374,14 @@ class Workforce(BaseNode):
             pool_max_size=pool_max_size,
         )
         self._children.append(worker_node)
+
+        # If we have a channel set up, set it for the new worker
+        if hasattr(self, '_channel') and self._channel is not None:
+            worker_node.set_channel(self._channel)
+
+        # If workforce is paused, start the worker's listening task
+        self._start_child_node_when_paused(worker_node.start())
+
         if self.metrics_logger:
             self.metrics_logger.log_worker_created(
                 worker_id=worker_node.node_id,
@@ -1340,7 +1390,6 @@ class Workforce(BaseNode):
             )
         return self
 
-    @check_if_running(False)
     def add_role_playing_worker(
         self,
         description: str,
@@ -1352,6 +1401,7 @@ class Workforce(BaseNode):
         chat_turn_limit: int = 3,
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses `RolePlaying` system.
+        Can be called when workforce is paused to dynamically add workers.
 
         Args:
             description (str): Description of the node.
@@ -1371,7 +1421,15 @@ class Workforce(BaseNode):
 
         Returns:
             Workforce: The workforce node itself.
+
+        Raises:
+            RuntimeError: If called while workforce is running (not paused).
         """
+        if self._state == WorkforceState.RUNNING:
+            raise RuntimeError(
+                "Cannot add workers while workforce is running. "
+                "Pause the workforce first."
+            )
         # Ensure provided kwargs carry pause_event so that internally created
         # ChatAgents (assistant/user/summarizer) inherit it.
         assistant_agent_kwargs = self._ensure_pause_event_in_kwargs(
@@ -1394,6 +1452,14 @@ class Workforce(BaseNode):
             chat_turn_limit=chat_turn_limit,
         )
         self._children.append(worker_node)
+
+        # If we have a channel set up, set it for the new worker
+        if hasattr(self, '_channel') and self._channel is not None:
+            worker_node.set_channel(self._channel)
+
+        # If workforce is paused, start the worker's listening task
+        self._start_child_node_when_paused(worker_node.start())
+
         if self.metrics_logger:
             self.metrics_logger.log_worker_created(
                 worker_id=worker_node.node_id,
@@ -1402,20 +1468,35 @@ class Workforce(BaseNode):
             )
         return self
 
-    @check_if_running(False)
     def add_workforce(self, workforce: Workforce) -> Workforce:
         r"""Add a workforce node to the workforce.
+        Can be called when workforce is paused to dynamically add workers.
 
         Args:
             workforce (Workforce): The workforce node to be added.
 
         Returns:
             Workforce: The workforce node itself.
+
+        Raises:
+            RuntimeError: If called while workforce is running (not paused).
         """
+        if self._state == WorkforceState.RUNNING:
+            raise RuntimeError(
+                "Cannot add workers while workforce is running. "
+                "Pause the workforce first."
+            )
         # Align child workforce's pause_event with this one for unified
         # control of worker agents only.
         workforce._pause_event = self._pause_event
         self._children.append(workforce)
+
+        # If we have a channel set up, set it for the new workforce
+        if hasattr(self, '_channel') and self._channel is not None:
+            workforce.set_channel(self._channel)
+
+        # If workforce is paused, start the child workforce's listening task
+        self._start_child_node_when_paused(workforce.start())
         return self
 
     async def _async_reset(self) -> None:
@@ -2579,8 +2660,20 @@ class Workforce(BaseNode):
                         for task in self._child_listening_tasks:
                             if not task.done():
                                 task.cancel()
+
+                        # Handle both asyncio.Task and concurrent.futures.
+                        # Future
+                        awaitables = []
+                        for task in self._child_listening_tasks:
+                            if isinstance(task, concurrent.futures.Future):
+                                # Convert Future to awaitable
+                                awaitables.append(asyncio.wrap_future(task))
+                            else:
+                                # Already an asyncio.Task
+                                awaitables.append(task)
+
                         await asyncio.gather(
-                            *self._child_listening_tasks,
+                            *awaitables,
                             return_exceptions=True,
                         )
 
