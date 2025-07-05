@@ -77,6 +77,8 @@ from .aci_toolkit import ACIToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
 from .task_planning_toolkit import TaskPlanningToolkit
+from .document_toolkit import DocumentToolkit
+from .non_visual_browser_toolkit import BrowserNonVisualToolkit
 from .hybrid_browser_toolkit import HybridBrowserToolkit
 from .edgeone_pages_mcp_toolkit import EdgeOnePagesMCPToolkit
 from .google_drive_mcp_toolkit import GoogleDriveMCPToolkit
@@ -148,6 +150,8 @@ __all__ = [
     'BohriumToolkit',
     'OpenAIImageToolkit',
     'TaskPlanningToolkit',
+    'DocumentToolkit',
+    'BrowserNonVisualToolkit',
     'HybridBrowserToolkit',
     'EdgeOnePagesMCPToolkit',
     'GoogleDriveMCPToolkit',
