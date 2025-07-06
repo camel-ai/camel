@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+import uuid
 
 from camel.agents.chat_agent import ChatAgent
 from camel.logger import get_logger
@@ -116,7 +117,7 @@ def developer_agent_factory(
     implementation.
     - Asking for human input via the console if you are stuck or need 
     clarification.
-    
+
     Remember to manage your terminal sessions. You can create new sessions 
     and run commands in them.
     """
@@ -131,7 +132,7 @@ def developer_agent_factory(
     )
 
 
-@api_keys_required([(None, 'EXA_API_KEY'), (None, 'GOOGLE_API_KEY')])
+@api_keys_required([(None, 'EXA_API_KEY')])
 def search_agent_factory(
     model: BaseModelBackend,
     task_id: str,
@@ -139,12 +140,35 @@ def search_agent_factory(
     r"""Factory for creating a search agent, based on user-provided code
     structure.
     """
+    # Generate a unique identifier for this agent instance
+    agent_id = str(uuid.uuid4())[:8]
+
+    custom_tools = [
+        "open_browser",
+        "close_browser",
+        "click",
+        "type",
+        "back",
+        "forward",
+        "switch_tab",
+        "enter",
+        "get_som_screenshot",
+    ]
+    web_toolkit_custom = HybridBrowserToolkit(
+        headless=False,
+        enabled_tools=custom_tools,
+        browser_log_to_file=True,
+        stealth=True,
+        session_id=agent_id,  # unique session ID
+        default_start_url="https://bing.com/",
+    )
+
     tools = [
         # FunctionTool(SearchToolkit().search_wiki),
-        SearchToolkit().search_google,
-        SearchToolkit().search_bing,
+        # SearchToolkit().search_google,
+        # SearchToolkit().search_bing,
         # FunctionTool(SearchToolkit().search_baidu),
-        *HybridBrowserToolkit(headless=False).get_tools(),
+        *web_toolkit_custom.get_tools(),
         *TerminalToolkit().get_tools(),
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
@@ -155,21 +179,12 @@ def search_agent_factory(
     system_message = """You are a helpful assistant that can search the web, 
     extract webpage content, simulate browser actions, and provide relevant 
     information to solve the given task.
-    
-    You MUST use the `send_message_to_user` tool to inform the user of every 
-    decision and action you take. Your message must include a short title 
-    and a one-sentence description. This is a mandatory part of your 
-    workflow.
 
     ### Web Search Workflow
-    1.  **Search First**: You MUST start by using a search engine to get 
-        initial URLs. Use `search_google` for English queries and 
-        `search_bing` for Chinese queries. Do not use browser tools before 
-        this step.
-    2.  **Browse URLs**: After getting search results, use the `visit_page` 
-        tool from the browser toolkit to open promising URLs.
-    3.  **Explore and Scrape**: Once on a page, use browser tools to read 
-        content, scrape information, and navigate to other linked pages to 
+    1.  **Search First**: You should open browser with bing.com and 
+    search information from it. Please use enter to confirm the search.
+    2.  **Explore and Scrape**: Once on a page, use browser tools to read 
+        content, scrape information, and click to other linked pages to 
         gather all necessary data.
 
     ### Core Principles
@@ -242,7 +257,7 @@ def document_agent_factory(
     the `send_message_to_user` tool to inform the user of every decision and 
     action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
-    
+
     Your capabilities include:
 
     1. Information Gathering:
@@ -328,7 +343,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     the `send_message_to_user` tool to inform the user of every decision and 
     action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
-    
+
     Your capabilities include:
 
     1. Video & Audio Analysis:

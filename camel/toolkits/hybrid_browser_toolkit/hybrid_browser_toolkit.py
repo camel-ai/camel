@@ -95,6 +95,8 @@ class HybridBrowserToolkit(BaseToolkit):
         cache_dir: str = "tmp/",
         enabled_tools: Optional[List[str]] = None,
         browser_log_to_file: bool = False,
+        session_id: Optional[str] = None,
+        default_start_url: str = "https://google.com/",
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -129,12 +131,21 @@ class HybridBrowserToolkit(BaseToolkit):
                 and page loading times.
                 Logs are saved to an auto-generated timestamped file.
                 Defaults to `False`.
+            session_id (Optional[str]): A unique identifier for this browser
+                session. When multiple HybridBrowserToolkit instances are used
+                concurrently, different session IDs prevent them from sharing
+                the same browser session and causing conflicts. If None, a
+                default session will be used. Defaults to `None`.
+            default_start_url (str): The default URL to navigate to when
+                open_browser() is called without a start_url parameter or with
+                None. Defaults to `"https://google.com/"`.
         """
         super().__init__()
         self._headless = headless
         self._user_data_dir = user_data_dir
         self.web_agent_model = web_agent_model
         self.cache_dir = cache_dir
+        self.default_start_url = default_start_url
         os.makedirs(self.cache_dir, exist_ok=True)
 
         # Logging configuration - fixed values for simplicity
@@ -153,7 +164,7 @@ class HybridBrowserToolkit(BaseToolkit):
 
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             self.log_file_path: Optional[str] = os.path.join(
-                log_dir, f"hybrid_browser_toolkit_{timestamp}.log"
+                log_dir, f"hybrid_browser_toolkit_{timestamp}_{session_id}.log"
             )
         else:
             self.log_file_path = None
@@ -186,9 +197,15 @@ class HybridBrowserToolkit(BaseToolkit):
             logger.info(f"Log file path: {self.log_file_path}")
 
         # Core components
-        self._session = NVBrowserSession(
-            headless=headless, user_data_dir=user_data_dir, stealth=stealth
+        temp_session = NVBrowserSession(
+            headless=headless,
+            user_data_dir=user_data_dir,
+            stealth=stealth,
+            session_id=session_id,
         )
+        # Use the session directly - singleton logic is handled in
+        # ensure_browser
+        self._session = temp_session
         self._agent: Optional[PlaywrightLLMAgent] = None
         self._unified_script = self._load_unified_analyzer()
 
@@ -391,12 +408,26 @@ class HybridBrowserToolkit(BaseToolkit):
 
         return wrapper
 
+    async def _get_session(self) -> "NVBrowserSession":
+        """Get the correct singleton session instance."""
+        singleton = await NVBrowserSession._get_or_create_instance(
+            self._session
+        )
+        if singleton is not self._session:
+            logger.debug("Updating to singleton session instance")
+            self._session = singleton
+        return self._session
+
     async def _ensure_browser(self):
-        await self._session.ensure_browser()
+        # Get singleton instance and update self._session if needed
+        session = await self._get_session()
+        await session.ensure_browser()
 
     async def _require_page(self):
-        await self._session.ensure_browser()
-        return await self._session.get_page()
+        # Get singleton instance and update self._session if needed
+        session = await self._get_session()
+        await session.ensure_browser()
+        return await session.get_page()
 
     async def _wait_for_page_stability(self):
         r"""Wait for page to become stable after actions that might trigger
@@ -578,16 +609,100 @@ class HybridBrowserToolkit(BaseToolkit):
     async def _get_tab_info_for_output(self) -> Dict[str, Any]:
         r"""Get tab information to include in action outputs."""
         try:
-            tab_info = await self._session.get_tab_info()
-            current_tab_index = await self._session.get_current_tab_index()
+            # Ensure we have the correct singleton session instance first
+            session = await self._get_session()
+
+            # Add debug info for tab info retrieval
+            logger.debug("Attempting to get tab info from session...")
+            tab_info = await session.get_tab_info()
+            current_tab_index = await session.get_current_tab_index()
+
+            # Debug log the successful retrieval
+            logger.debug(
+                f"Successfully retrieved {len(tab_info)} tabs, current: "
+                f"{current_tab_index}"
+            )
+
             return {
                 "tabs": tab_info,
                 "current_tab": current_tab_index,
                 "total_tabs": len(tab_info),
             }
         except Exception as e:
-            logger.warning(f"Failed to get tab info: {e}")
-            return {"tabs": [], "current_tab": 0, "total_tabs": 1}
+            logger.warning(
+                f"Failed to get tab info from session: {type(e).__name__}: {e}"
+            )
+
+            # Try to get actual tab count from session pages directly
+            try:
+                # Get the correct session instance for fallback
+                fallback_session = await self._get_session()
+
+                # Check browser session state
+                session_state = {
+                    "has_session": fallback_session is not None,
+                    "has_pages_attr": hasattr(fallback_session, '_pages'),
+                    "pages_count": len(fallback_session._pages)
+                    if hasattr(fallback_session, '_pages')
+                    else "unknown",
+                    "has_page": hasattr(fallback_session, '_page')
+                    and fallback_session._page is not None,
+                    "session_id": getattr(
+                        fallback_session, '_session_id', 'unknown'
+                    ),
+                }
+                logger.debug(f"Browser session state: {session_state}")
+
+                actual_tab_count = 0
+                if (
+                    hasattr(fallback_session, '_pages')
+                    and fallback_session._pages
+                ):
+                    actual_tab_count = len(fallback_session._pages)
+                    # Also try to filter out closed pages
+                    try:
+                        open_pages = [
+                            p
+                            for p in fallback_session._pages
+                            if not p.is_closed()
+                        ]
+                        actual_tab_count = len(open_pages)
+                        logger.debug(
+                            f"Found {actual_tab_count} open tabs out of "
+                            f"{len(fallback_session._pages)} total"
+                        )
+                    except Exception:
+                        # Keep the original count if we can't check page status
+                        pass
+
+                if actual_tab_count == 0:
+                    # If no pages, check if browser is even initialized
+                    if (
+                        hasattr(fallback_session, '_page')
+                        and fallback_session._page is not None
+                    ):
+                        actual_tab_count = 1
+                        logger.debug(
+                            "No pages in list but main page exists, assuming "
+                            "1 tab"
+                        )
+                    else:
+                        actual_tab_count = 1
+                        logger.debug("No pages found, defaulting to 1 tab")
+
+                logger.debug(f"Using fallback tab count: {actual_tab_count}")
+                return {
+                    "tabs": [],
+                    "current_tab": 0,
+                    "total_tabs": actual_tab_count,
+                }
+
+            except Exception as fallback_error:
+                logger.warning(
+                    f"Fallback tab count also failed: "
+                    f"{type(fallback_error).__name__}: {fallback_error}"
+                )
+                return {"tabs": [], "current_tab": 0, "total_tabs": 1}
 
     async def _exec_with_snapshot(
         self,
@@ -601,7 +716,7 @@ class HybridBrowserToolkit(BaseToolkit):
         logger.info(f"Executing action: {action_type}")
 
         action_start_time = time.time()
-        inputs = {"action": action}
+        inputs: Dict[str, Any] = {"action": action}
         page_load_time = None
 
         try:
@@ -824,25 +939,20 @@ class HybridBrowserToolkit(BaseToolkit):
 
     # Public API Methods
 
-    async def open_browser(
-        self, start_url: Optional[str] = "https://search.brave.com/"
-    ) -> Dict[str, str]:
-        r"""Launches a new browser session, making it ready for web automation.
+    async def open_browser(self) -> Dict[str, Any]:
+        r"""Launches a new browser session and navigates to the configured
+        default page.
 
-        This method initializes the underlying browser instance. If a
-        `start_url` is provided, it will also navigate to that URL. If you
-        don't have a specific URL to start with, you can use a search engine
-        like 'https://search.brave.com/'.
-
-        Args:
-            start_url (Optional[str]): The initial URL to navigate to after the
-                browser is launched. If not provided, the browser will start
-                with a blank page. (default: :obj:`https://search.brave.com/`)
+        This method initializes the underlying browser instance and
+        automatically
+        navigates to the default start URL that was configured during toolkit
+        initialization. Agents cannot specify a custom URL - they must use the
+        visit_page tool for navigation to other URLs.
 
         Returns:
             Dict[str, Any]: A dictionary containing:
                 - "result": A string confirming that the browser session has
-                  started.
+                  started and the default page has been loaded.
                 - "snapshot": A textual representation of the current page's
                   interactive elements. This snapshot is crucial for
                   identifying elements for subsequent actions.
@@ -852,7 +962,7 @@ class HybridBrowserToolkit(BaseToolkit):
         """
         # Add logging if enabled
         action_start = time.time()
-        inputs = {"start_url": start_url}
+        inputs: Dict[str, Any] = {}  # No input parameters for agents
 
         logger.info("Starting browser session...")
 
@@ -862,28 +972,11 @@ class HybridBrowserToolkit(BaseToolkit):
         logger.info(f"Browser session started in {browser_time:.2f}s")
 
         try:
-            if start_url:
-                logger.info(f"Auto-navigating to start URL: {start_url}")
-                result = await self.visit_page(start_url)
-            else:
-                logger.info("Capturing initial browser snapshot...")
-                snapshot_start = time.time()
-                snapshot = await self._session.get_snapshot(
-                    force_refresh=True, diff_only=False
-                )
-                snapshot_time = time.time() - snapshot_start
-                logger.info(
-                    f"Initial snapshot captured in {snapshot_time:.2f}s"
-                )
+            # Always use the configured default start URL
+            start_url = self.default_start_url
+            logger.info(f"Navigating to configured default page: {start_url}")
 
-                # Get tab information
-                tab_info = await self._get_tab_info_for_output()
-
-                result = {
-                    "result": "Browser session started.",
-                    "snapshot": snapshot,
-                    **tab_info,
-                }
+            result = await self.visit_page(start_url)
 
             # Log success
             if self.enable_action_logging or self.enable_timing_logging:
@@ -891,7 +984,10 @@ class HybridBrowserToolkit(BaseToolkit):
                 await self._log_action(
                     action_name="open_browser",
                     inputs=inputs,
-                    outputs=result,
+                    outputs={
+                        "result": "Browser opened and navigated to default "
+                        "page."
+                    },
                     execution_time=execution_time,
                 )
 
@@ -1371,25 +1467,32 @@ class HybridBrowserToolkit(BaseToolkit):
 
         return result
 
-    async def enter(self, *, ref: str) -> Dict[str, Any]:
-        r"""Simulates pressing the Enter key on a specific element.
+    async def enter(self) -> Dict[str, Any]:
+        r"""Simulates pressing the Enter key on the currently focused element.
 
-        This is often used to submit forms after filling them out.
+        This tool is used to execute or confirm an action after interacting
+        with
+        an element, such as:
+        - Submitting a search query after typing in a search box.
+        - Confirming a form submission.
+        - Executing a command in a text input field.
 
-        Args:
-            ref (str): The reference ID of the element to press Enter on.
+        The common usage pattern is to first use the 'type' tool to input
+        text, which sets the focus, and then call 'enter' without any
+        parameters to trigger the action.
 
         Returns:
             Dict[str, Any]: A dictionary containing:
-                - "result": A confirmation of the action.
+                - "result": A confirmation of the Enter key action.
                 - "snapshot": A new page snapshot, as this action often
                   triggers navigation or page updates.
                 - "tabs": List of all open tabs with their information.
                 - "current_tab": Index of the currently active tab.
                 - "total_tabs": Total number of open tabs.
         """
-        self._validate_ref(ref, "enter")
-        action = {"type": "enter", "ref": ref}
+        # Always press Enter on the currently focused element
+        action = {"type": "enter"}
+
         result = await self._exec_with_snapshot(action)
 
         # Add tab information to the result
@@ -1564,33 +1667,6 @@ class HybridBrowserToolkit(BaseToolkit):
             else 0,
         }
 
-    def dump_logs_to_file(self, file_path: Optional[str] = None) -> str:
-        r"""Dump all logs to a JSON file."""
-        if file_path is None:
-            # Create log directory if it doesn't exist
-            log_dir = "log"
-            os.makedirs(log_dir, exist_ok=True)
-
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            file_path = os.path.join(
-                log_dir, f"hybrid_browser_toolkit_full_logs_{timestamp}.json"
-            )
-
-        log_data = {
-            "summary": self.get_log_summary(),
-            "detailed_logs": self.log_buffer,
-        }
-
-        try:
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(log_data, f, ensure_ascii=False, indent=2)
-
-            logger.info(f"Logs dumped to: {file_path}")
-            return file_path
-        except Exception as e:
-            logger.error(f"Failed to dump logs to file: {e}")
-            raise
-
     def clear_logs(self) -> None:
         r"""Clear the log buffer."""
         self.log_buffer.clear()
@@ -1632,14 +1708,46 @@ class HybridBrowserToolkit(BaseToolkit):
                 continue
 
             if tool_name in tool_map:
-                enabled_tools.append(
-                    FunctionTool(cast(Callable[..., Any], tool_map[tool_name]))
+                tool = FunctionTool(
+                    cast(Callable[..., Any], tool_map[tool_name])
                 )
+                enabled_tools.append(tool)
             else:
                 logger.warning(f"Unknown tool name: {tool_name}")
 
         logger.info(f"Returning {len(enabled_tools)} enabled tools")
         return enabled_tools
+
+    def clone_for_new_session(
+        self, new_session_id: Optional[str] = None
+    ) -> "HybridBrowserToolkit":
+        r"""Create a new instance of HybridBrowserToolkit with a unique
+        session.
+
+        Args:
+            new_session_id: Optional new session ID. If None, a UUID will be
+            generated.
+
+        Returns:
+            A new HybridBrowserToolkit instance with the same configuration
+            but a different session.
+        """
+        import uuid
+
+        if new_session_id is None:
+            new_session_id = str(uuid.uuid4())[:8]
+
+        return HybridBrowserToolkit(
+            headless=self._headless,
+            user_data_dir=self._user_data_dir,
+            stealth=self._session._stealth if self._session else False,
+            web_agent_model=self.web_agent_model,
+            cache_dir=f"{self.cache_dir.rstrip('/')}_clone_{new_session_id}/",
+            enabled_tools=self.enabled_tools.copy(),
+            browser_log_to_file=self.log_to_file,
+            session_id=new_session_id,
+            default_start_url=self.default_start_url,
+        )
 
     @action_logger
     async def switch_tab(self, *, tab_index: int) -> Dict[str, Any]:
@@ -1664,11 +1772,12 @@ class HybridBrowserToolkit(BaseToolkit):
                 - "total_tabs": Total number of open tabs.
         """
         await self._ensure_browser()
+        session = await self._get_session()
 
-        success = await self._session.switch_to_tab(tab_index)
+        success = await session.switch_to_tab(tab_index)
 
         if success:
-            snapshot = await self._session.get_snapshot(
+            snapshot = await session.get_snapshot(
                 force_refresh=True, diff_only=False
             )
             tab_info = await self._get_tab_info_for_output()
@@ -1711,13 +1820,14 @@ class HybridBrowserToolkit(BaseToolkit):
                 - "total_tabs": Total number of remaining open tabs.
         """
         await self._ensure_browser()
+        session = await self._get_session()
 
-        success = await self._session.close_tab(tab_index)
+        success = await session.close_tab(tab_index)
 
         if success:
             # Get current state after closing the tab
             try:
-                snapshot = await self._session.get_snapshot(
+                snapshot = await session.get_snapshot(
                     force_refresh=True, diff_only=False
                 )
             except Exception:

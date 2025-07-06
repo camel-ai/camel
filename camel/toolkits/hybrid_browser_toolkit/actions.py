@@ -141,7 +141,7 @@ class ActionExecutor:
                 async with self.page.context.expect_page(
                     timeout=self.SHORT_TIMEOUT
                 ) as new_page_info:
-                    await element.click(modifiers=["Control"])
+                    await element.click(modifiers=["ControlOrMeta"])
                 new_page = await new_page_info.value
                 await new_page.wait_for_load_state('domcontentloaded')
                 new_tab_index = await self.session.register_page(new_page)
@@ -161,7 +161,7 @@ class ActionExecutor:
                     "details": details,
                 }
             else:
-                await element.click(modifiers=["Control"])
+                await element.click(modifiers=["ControlOrMeta"])
                 details["click_method"] = "ctrl_click_no_session"
                 return {
                     "message": f"Clicked element (ctrl click, no"
@@ -361,23 +361,16 @@ class ActionExecutor:
         }
 
     async def _enter(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Handle Enter key press actions."""
-        ref = action.get("ref")
-        selector = action.get("selector")
+        r"""Handle Enter key press on the currently focused element."""
+        details = {"action_type": "enter", "target": "focused_element"}
 
-        details = {"ref": ref, "selector": selector, "target": None}
-
-        if ref:
-            target = f"[aria-ref='{ref}']"
-            details["target"] = target
-            await self.page.focus(target)
-        elif selector:
-            details["target"] = selector
-            await self.page.focus(selector)
-
+        # Press Enter on whatever element currently has focus
         await self.page.keyboard.press("Enter")
         await asyncio.sleep(0.3)
-        return {"message": "Pressed Enter", "details": details}
+        return {
+            "message": "Pressed Enter on focused element",
+            "details": details,
+        }
 
     # utilities
     async def _wait_dom_stable(self) -> None:
