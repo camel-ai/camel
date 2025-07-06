@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class NVBrowserSession:
+class HybridBrowserSession:
     """Lightweight wrapper around Playwright for
     browsing with multi-tab support.
 
@@ -49,8 +49,8 @@ class NVBrowserSession:
     NETWORK_IDLE_TIMEOUT = 5000  # 5 seconds
 
     # Class-level registry for singleton instances
-    # Format: {(loop_id, session_id): NVBrowserSession}
-    _instances: ClassVar[Dict[Tuple[Any, str], "NVBrowserSession"]] = {}
+    # Format: {(loop_id, session_id): HybridBrowserSession}
+    _instances: ClassVar[Dict[Tuple[Any, str], "HybridBrowserSession"]] = {}
     _instances_lock: ClassVar[asyncio.Lock] = asyncio.Lock()
 
     _initialized: bool
@@ -63,7 +63,7 @@ class NVBrowserSession:
         user_data_dir: Optional[str] = None,
         stealth: bool = False,
         session_id: Optional[str] = None,
-    ) -> "NVBrowserSession":
+    ) -> "HybridBrowserSession":
         # Create a unique key for this event loop and session combination
         # We defer the event loop lookup to avoid issues with creation
         # outside async context
@@ -81,8 +81,8 @@ class NVBrowserSession:
     @classmethod
     async def _get_or_create_instance(
         cls,
-        instance: "NVBrowserSession",
-    ) -> "NVBrowserSession":
+        instance: "HybridBrowserSession",
+    ) -> "HybridBrowserSession":
         """Get or create singleton instance for the current event loop and
         session."""
         try:
@@ -450,7 +450,7 @@ class NVBrowserSession:
 
         # Serialise initialisation to avoid race conditions where multiple
         # concurrent coroutine calls create multiple browser instances for
-        # the same NVBrowserSession.
+        # the same HybridBrowserSession.
         async with self._ensure_lock:
             await self._ensure_browser_inner()
 

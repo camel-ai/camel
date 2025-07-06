@@ -143,7 +143,7 @@ async def browser_toolkit_fixture():
 
     with (
         patch(
-            'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+            'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
             return_value=mock_session,
         ),
         patch(
@@ -219,7 +219,7 @@ def sync_browser_toolkit():
 
     with (
         patch(
-            'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+            'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
             return_value=mock_session,
         ),
         patch(
@@ -244,7 +244,7 @@ class TestHybridBrowserToolkit:
         with (
             patch(
                 'camel.toolkits.hybrid_browser_toolkit.browser_session'
-                '.NVBrowserSession',
+                '.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -272,7 +272,7 @@ class TestHybridBrowserToolkit:
         with (
             patch(
                 'camel.toolkits.hybrid_browser_toolkit.browser_session'
-                '.NVBrowserSession',
+                '.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -300,7 +300,7 @@ class TestHybridBrowserToolkit:
         mock_session = AsyncMock()
         with patch(
             'camel.toolkits.hybrid_browser_toolkit.browser_session'
-            '.NVBrowserSession',
+            '.HybridBrowserSession',
             return_value=mock_session,
         ):
             with patch('builtins.open', create=True) as mock_file:
@@ -319,7 +319,7 @@ class TestHybridBrowserToolkit:
         mock_session = AsyncMock()
         with patch(
             'camel.toolkits.hybrid_browser_toolkit.browser_session'
-            '.NVBrowserSession',
+            '.HybridBrowserSession',
             return_value=mock_session,
         ):
             with (
@@ -336,7 +336,7 @@ class TestHybridBrowserToolkit:
         with (
             patch(
                 'camel.toolkits.hybrid_browser_toolkit.browser_session'
-                '.NVBrowserSession',
+                '.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -356,7 +356,7 @@ class TestHybridBrowserToolkit:
         with (
             patch(
                 'camel.toolkits.hybrid_browser_toolkit.browser_session'
-                '.NVBrowserSession',
+                '.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -389,7 +389,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -426,7 +426,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -475,7 +475,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -511,7 +511,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -548,7 +548,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -586,7 +586,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -631,7 +631,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -694,7 +694,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -746,7 +746,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -789,7 +789,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -824,7 +824,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -863,7 +863,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -902,7 +902,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -939,7 +939,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -978,7 +978,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -1022,7 +1022,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -1057,7 +1057,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -1096,7 +1096,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(
@@ -1171,7 +1171,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=AsyncMock(),
             ),
             patch(
@@ -1212,7 +1212,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=AsyncMock(),
             ),
             patch(
@@ -1337,7 +1337,7 @@ class TestHybridBrowserToolkit:
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
+                'camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession',
                 return_value=mock_session,
             ),
             patch(

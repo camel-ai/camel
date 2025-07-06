@@ -125,10 +125,10 @@ async def main() -> None:
         await web_toolkit_custom.close_browser()
         # Close all browser sessions to ensure complete cleanup
         from camel.toolkits.hybrid_browser_toolkit.browser_session import (
-            NVBrowserSession,
+            HybridBrowserSession,
         )
 
-        await NVBrowserSession.close_all_sessions()
+        await HybridBrowserSession.close_all_sessions()
         # Give Playwright time to fully shut down subprocesses
         await asyncio.sleep(0.5)
     except Exception as err:
