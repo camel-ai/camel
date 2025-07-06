@@ -165,7 +165,7 @@ def search_agent_factory(
         *TerminalToolkit().get_tools(),
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
-        NoteTakingToolkit().take_note,
+        NoteTakingToolkit().append_note,
         *Crawl4AIToolkit().get_tools(),
     ]
 
@@ -206,7 +206,7 @@ def search_agent_factory(
     or document processing capabilities.
 
     ### Note Taking
-    - As you find information, you MUST use the `take_note` tool to record 
+    - As you find information, you MUST use the `append_note` tool to record 
     your findings in a structured way.
     - Append new information to the notes. Do not overwrite the note file 
     unless you are summarizing or restructuring the content.
@@ -498,7 +498,7 @@ async def main():
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1_MINI,
+        model_type=ModelType.GPT_4_1,
         # model_config_dict={
         #     "max_tokens": 32768,
         # },
@@ -506,7 +506,7 @@ async def main():
 
     model_backend_reason = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1_MINI,
+        model_type=ModelType.GPT_4_1,
         # model_config_dict={
         #     "max_tokens": 32768,
         # },

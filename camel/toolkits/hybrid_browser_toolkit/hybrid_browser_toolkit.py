@@ -28,6 +28,7 @@ from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import sanitize_filename
 from camel.utils.commons import dependencies_required
+from camel.utils.tool_result import ToolResult
 
 from .agent import PlaywrightLLMAgent
 from .browser_session import NVBrowserSession
@@ -313,6 +314,11 @@ class HybridBrowserToolkit(BaseToolkit):
             elif isinstance(outputs, dict):
                 # Unpack dictionary items into the log entry
                 log_entry.update(outputs)
+            elif isinstance(outputs, ToolResult):
+                log_entry["outputs"] = {
+                    "text": outputs.text,
+                    "images": outputs.images,
+                }
             else:
                 # For non-dict outputs, assign to 'outputs' key
                 log_entry["outputs"] = outputs
