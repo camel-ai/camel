@@ -44,7 +44,7 @@ _EXCEL_EXTS: Set[str] = {".xls", ".xlsx", ".csv"}
 _ARCHIVE_EXTS: Set[str] = {".zip"}
 _WEB_EXTS: Set[str] = {".html", ".htm", ".xml"}
 _CODE_EXTS: Set[str] = {".py", ".js", ".java", ".cpp", ".c", ".go", ".rs"}
-_DATA_EXTS: Set[str] = {".json", ".jsonl", ".jsonld", ".xml"}
+_DATA_EXTS: Set[str] = {".json", ".jsonl", ".jsonld", ".xml", ".yaml", ".yml"}
 
 
 class _LoaderWrapper:
@@ -521,9 +521,9 @@ class DocumentToolkit(BaseToolkit):
             logger.error(f"Error processing Excel file {path}: {e}")
             return False, f"Error processing Excel file {path}: {e}"
 
-    @dependencies_required('xmltodict')
+    @dependencies_required('xmltodict', 'pyyaml')
     def _handle_data_file(self, path: str) -> Tuple[bool, str]:
-        r"""Process structured data files (JSON, XML).
+        r"""Process structured data files (JSON, XML, YAML).
 
         Args:
             path (str): Path to the data file.
@@ -534,6 +534,7 @@ class DocumentToolkit(BaseToolkit):
         try:
             import json
             import xmltodict
+            import yaml
 
             suffix = Path(path).suffix.lower()
 
@@ -548,6 +549,19 @@ class DocumentToolkit(BaseToolkit):
                     else:
                         content = json.load(f)
                 return True, str(content)
+
+            elif suffix in [".yaml", ".yml"]:
+                with open(path, "r", encoding="utf-8") as f:
+                    try:
+                        # Handle multiple YAML documents in one file
+                        documents = list(yaml.safe_load_all(f))
+                        if len(documents) == 1:
+                            content = documents[0]
+                        else:
+                            content = documents
+                        return True, str(content)
+                    except yaml.YAMLError as e:
+                        return False, f"Error parsing YAML file {path}: {e}"
 
             elif suffix == ".xml":
                 with open(path, "r", encoding="utf-8") as f:
@@ -681,7 +695,19 @@ class DocumentToolkit(BaseToolkit):
         return Path(path_or_url).expanduser().resolve()
 
     def _download_file(self, url: str) -> Path:
-        r"""Download a file from URL to the local cache directory."""
+        r"""Download a file from URL to the local cache directory.
+
+        Args:
+            url (str): The URL of the file to download.
+
+        Returns:
+            Path: Local path to the downloaded file.
+
+        Raises:
+            RuntimeError: If cache directory is not available.
+            requests.RequestException: If download fails.
+            IOError: If file cannot be saved to disk.
+        """
         import re
 
         if not self.cache_dir:
@@ -724,7 +750,10 @@ class DocumentToolkit(BaseToolkit):
                     "image/gif": ".gif",
                     "image/webp": ".webp",
                     "text/plain": ".txt",
-                    "text/csv": ".csv"
+                    "text/csv": ".csv",
+                    "application/x-yaml": ".yaml",
+                    "text/yaml": ".yaml",
+                    "text/x-yaml": ".yaml"
                 }
                 ext = ext_map.get(content_type, "")
                 filename += ext
