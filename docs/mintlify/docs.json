@@ -412,6 +412,7 @@
               "reference/camel.societies.workforce.base",
               "reference/camel.societies.workforce.role_playing_worker",
               "reference/camel.societies.workforce.single_agent_worker",
+              "reference/camel.societies.workforce.structured_output_handler",
               "reference/camel.societies.workforce.task_channel",
               "reference/camel.societies.workforce.utils",
               "reference/camel.societies.workforce.worker",
