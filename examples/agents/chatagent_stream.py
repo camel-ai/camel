@@ -115,7 +115,8 @@ async def test_async_tool_execution():
 
     previous_content = ""
 
-    async for response in agent.astep(query):
+    streaming_response = await agent.astep(query)
+    async for response in streaming_response:
         if response.msgs:
             current_content = response.msgs[0].content
 
@@ -229,7 +230,8 @@ async def test_async_structured_output():
 
     previous_content = ""
 
-    async for response in agent.astep(query, response_format=Thinking):
+    streaming_response = await agent.astep(query, response_format=Thinking)
+    async for response in streaming_response:
         if response.msgs:
             current_content = response.msgs[0].content
 
