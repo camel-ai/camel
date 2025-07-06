@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import json
 import time
 import uuid
@@ -28,6 +29,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Union,
 )
 
 from colorama import Fore
@@ -40,12 +42,16 @@ from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
+    FAILURE_ANALYSIS_PROMPT,
     WF_TASK_DECOMPOSE_PROMPT,
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
+    FailureContext,
+    RecoveryDecision,
+    RecoveryStrategy,
     TaskAssignment,
     TaskAssignResult,
     WorkerConf,
@@ -214,7 +220,9 @@ class Workforce(BaseNode):
         share_memory: bool = False,
     ) -> None:
         super().__init__(description)
-        self._child_listening_tasks: Deque[asyncio.Task] = deque()
+        self._child_listening_tasks: Deque[
+            Union[asyncio.Task, concurrent.futures.Future]
+        ] = deque()
         self._children = children or []
         self.new_worker_agent = new_worker_agent
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
@@ -573,6 +581,69 @@ class Workforce(BaseNode):
         except Exception as e:
             logger.warning(f"Error synchronizing shared memory: {e}")
 
+    def _update_dependencies_for_decomposition(
+        self, original_task: Task, subtasks: List[Task]
+    ) -> None:
+        r"""Update dependency tracking when a task is decomposed into subtasks.
+        Tasks that depended on the original task should now depend on all
+        subtasks. The last subtask inherits the original task's dependencies.
+        """
+        if not subtasks:
+            return
+
+        original_task_id = original_task.id
+        subtask_ids = [subtask.id for subtask in subtasks]
+
+        # Find tasks that depend on the original task
+        dependent_task_ids = [
+            task_id
+            for task_id, deps in self._task_dependencies.items()
+            if original_task_id in deps
+        ]
+
+        # Update dependent tasks to depend on all subtasks
+        for task_id in dependent_task_ids:
+            dependencies = self._task_dependencies[task_id]
+            dependencies.remove(original_task_id)
+            dependencies.extend(subtask_ids)
+
+        # The last subtask inherits original task's dependencies (if any)
+        if original_task_id in self._task_dependencies:
+            original_dependencies = self._task_dependencies[original_task_id]
+            if original_dependencies:
+                # Set dependencies for the last subtask to maintain execution
+                # order
+                self._task_dependencies[subtask_ids[-1]] = (
+                    original_dependencies.copy()
+                )
+            # Remove original task dependencies as it's now decomposed
+            del self._task_dependencies[original_task_id]
+
+    def _increment_in_flight_tasks(self, task_id: str) -> None:
+        r"""Safely increment the in-flight tasks counter with logging."""
+        self._in_flight_tasks += 1
+        logger.debug(
+            f"Incremented in-flight tasks for {task_id}. "
+            f"Count: {self._in_flight_tasks}"
+        )
+
+    def _decrement_in_flight_tasks(
+        self, task_id: str, context: str = ""
+    ) -> None:
+        r"""Safely decrement the in-flight tasks counter with safety checks."""
+        if self._in_flight_tasks > 0:
+            self._in_flight_tasks -= 1
+            logger.debug(
+                f"Decremented in-flight tasks for {task_id} ({context}). "
+                f"Count: {self._in_flight_tasks}"
+            )
+        else:
+            logger.debug(
+                f"Attempted to decrement in-flight tasks for {task_id} "
+                f"({context}) but counter is already 0. "
+                f"Counter: {self._in_flight_tasks}"
+            )
+
     def _cleanup_task_tracking(self, task_id: str) -> None:
         r"""Clean up tracking data for a task to prevent memory leaks.
 
@@ -596,11 +667,85 @@ class Workforce(BaseNode):
         )
         self.task_agent.reset()
         subtasks = task.decompose(self.task_agent, decompose_prompt)
-        task.subtasks = subtasks
-        for subtask in subtasks:
-            subtask.parent = task
+
+        # Update dependency tracking for decomposed task
+        if subtasks:
+            self._update_dependencies_for_decomposition(task, subtasks)
 
         return subtasks
+
+    def _analyze_failure(
+        self, task: Task, error_message: str
+    ) -> RecoveryDecision:
+        r"""Analyze a task failure and decide on the best recovery strategy.
+
+        Args:
+            task (Task): The failed task
+            error_message (str): The error message from the failure
+
+        Returns:
+            RecoveryDecision: The decided recovery strategy with reasoning
+        """
+        # First, do a quick smart analysis based on error patterns
+        error_msg_lower = error_message.lower()
+        if any(
+            keyword in error_msg_lower
+            for keyword in [
+                'connection',
+                'network',
+                'server disconnected',
+                'timeout',
+                'apiconnectionerror',
+            ]
+        ):
+            return RecoveryDecision(
+                strategy=RecoveryStrategy.RETRY,
+                reasoning="Network/connection error detected, retrying task",
+                modified_task_content=None,
+            )
+
+        # Create failure context
+        failure_context = FailureContext(
+            task_id=task.id,
+            task_content=task.content,
+            failure_count=task.failure_count,
+            error_message=error_message,
+            worker_id=task.assigned_worker_id,
+            task_depth=task.get_depth(),
+            additional_info=str(task.additional_info)
+            if task.additional_info
+            else None,
+        )
+
+        # Format the analysis prompt
+        analysis_prompt = FAILURE_ANALYSIS_PROMPT.format(
+            task_id=failure_context.task_id,
+            task_content=failure_context.task_content,
+            failure_count=failure_context.failure_count,
+            error_message=failure_context.error_message,
+            worker_id=failure_context.worker_id or "unknown",
+            task_depth=failure_context.task_depth,
+            additional_info=failure_context.additional_info or "None",
+        )
+
+        try:
+            # Get decision from task agent
+            self.task_agent.reset()
+            response = self.task_agent.step(
+                analysis_prompt, response_format=RecoveryDecision
+            )
+            return response.msg.parsed
+
+        except Exception as e:
+            logger.warning(
+                f"Error during failure analysis: {e}, defaulting to RETRY"
+            )
+            return RecoveryDecision(
+                strategy=RecoveryStrategy.RETRY,
+                reasoning=f"Analysis failed due to error: {e!s}, "
+                f"defaulting to retry",
+                modified_task_content=None,
+            )
 
     # Human intervention methods
     async def _async_pause(self) -> None:
@@ -987,9 +1132,6 @@ class Workforce(BaseNode):
             needed
             >>> print(result.result)
         """
-        import asyncio
-        import concurrent.futures
-
         # Check if we're already in an event loop
         try:
             current_loop = asyncio.get_running_loop()
@@ -1164,7 +1306,39 @@ class Workforce(BaseNode):
 
         return self._task
 
-    @check_if_running(False)
+    def _start_child_node_when_paused(
+        self, start_coroutine: Coroutine
+    ) -> None:
+        r"""Helper to start a child node when workforce is paused.
+
+        Args:
+            start_coroutine: The coroutine to start (e.g., worker_node.start())
+        """
+        if self._state == WorkforceState.PAUSED and hasattr(
+            self, '_child_listening_tasks'
+        ):
+            if self._loop and not self._loop.is_closed():
+                # Use thread-safe coroutine execution for dynamic addition
+                child_task: Union[asyncio.Task, concurrent.futures.Future]
+                try:
+                    # Check if we're in the same thread as the loop
+                    current_loop = asyncio.get_running_loop()
+                    if current_loop is self._loop:
+                        # Same loop context - use create_task
+                        child_task = self._loop.create_task(start_coroutine)
+                    else:
+                        # Different loop context - use thread-safe approach
+                        child_task = asyncio.run_coroutine_threadsafe(
+                            start_coroutine, self._loop
+                        )
+                except RuntimeError:
+                    # No running loop in current thread - use thread-safe
+                    # approach
+                    child_task = asyncio.run_coroutine_threadsafe(
+                        start_coroutine, self._loop
+                    )
+                self._child_listening_tasks.append(child_task)
+
     def add_single_agent_worker(
         self,
         description: str,
@@ -1172,6 +1346,7 @@ class Workforce(BaseNode):
         pool_max_size: int = DEFAULT_WORKER_POOL_SIZE,
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses a single agent.
+        Can be called when workforce is paused to dynamically add workers.
 
         Args:
             description (str): Description of the worker node.
@@ -1181,7 +1356,15 @@ class Workforce(BaseNode):
 
         Returns:
             Workforce: The workforce node itself.
+
+        Raises:
+            RuntimeError: If called while workforce is running (not paused).
         """
+        if self._state == WorkforceState.RUNNING:
+            raise RuntimeError(
+                "Cannot add workers while workforce is running. "
+                "Pause the workforce first."
+            )
         # Ensure the worker agent shares this workforce's pause control
         self._attach_pause_event_to_agent(worker)
 
@@ -1191,6 +1374,14 @@ class Workforce(BaseNode):
             pool_max_size=pool_max_size,
         )
         self._children.append(worker_node)
+
+        # If we have a channel set up, set it for the new worker
+        if hasattr(self, '_channel') and self._channel is not None:
+            worker_node.set_channel(self._channel)
+
+        # If workforce is paused, start the worker's listening task
+        self._start_child_node_when_paused(worker_node.start())
+
         if self.metrics_logger:
             self.metrics_logger.log_worker_created(
                 worker_id=worker_node.node_id,
@@ -1199,7 +1390,6 @@ class Workforce(BaseNode):
             )
         return self
 
-    @check_if_running(False)
     def add_role_playing_worker(
         self,
         description: str,
@@ -1211,6 +1401,7 @@ class Workforce(BaseNode):
         chat_turn_limit: int = 3,
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses `RolePlaying` system.
+        Can be called when workforce is paused to dynamically add workers.
 
         Args:
             description (str): Description of the node.
@@ -1230,7 +1421,15 @@ class Workforce(BaseNode):
 
         Returns:
             Workforce: The workforce node itself.
+
+        Raises:
+            RuntimeError: If called while workforce is running (not paused).
         """
+        if self._state == WorkforceState.RUNNING:
+            raise RuntimeError(
+                "Cannot add workers while workforce is running. "
+                "Pause the workforce first."
+            )
         # Ensure provided kwargs carry pause_event so that internally created
         # ChatAgents (assistant/user/summarizer) inherit it.
         assistant_agent_kwargs = self._ensure_pause_event_in_kwargs(
@@ -1253,6 +1452,14 @@ class Workforce(BaseNode):
             chat_turn_limit=chat_turn_limit,
         )
         self._children.append(worker_node)
+
+        # If we have a channel set up, set it for the new worker
+        if hasattr(self, '_channel') and self._channel is not None:
+            worker_node.set_channel(self._channel)
+
+        # If workforce is paused, start the worker's listening task
+        self._start_child_node_when_paused(worker_node.start())
+
         if self.metrics_logger:
             self.metrics_logger.log_worker_created(
                 worker_id=worker_node.node_id,
@@ -1261,20 +1468,35 @@ class Workforce(BaseNode):
             )
         return self
 
-    @check_if_running(False)
     def add_workforce(self, workforce: Workforce) -> Workforce:
         r"""Add a workforce node to the workforce.
+        Can be called when workforce is paused to dynamically add workers.
 
         Args:
             workforce (Workforce): The workforce node to be added.
 
         Returns:
             Workforce: The workforce node itself.
+
+        Raises:
+            RuntimeError: If called while workforce is running (not paused).
         """
+        if self._state == WorkforceState.RUNNING:
+            raise RuntimeError(
+                "Cannot add workers while workforce is running. "
+                "Pause the workforce first."
+            )
         # Align child workforce's pause_event with this one for unified
         # control of worker agents only.
         workforce._pause_event = self._pause_event
         self._children.append(workforce)
+
+        # If we have a channel set up, set it for the new workforce
+        if hasattr(self, '_channel') and self._channel is not None:
+            workforce.set_channel(self._channel)
+
+        # If workforce is paused, start the child workforce's listening task
+        self._start_child_node_when_paused(workforce.start())
         return self
 
     async def _async_reset(self) -> None:
@@ -1612,15 +1834,13 @@ class Workforce(BaseNode):
             )
 
         try:
-            self._in_flight_tasks += 1
             await self._channel.post_task(task, self.node_id, assignee_id)
+            self._increment_in_flight_tasks(task.id)
             logger.debug(
                 f"Posted task {task.id} to {assignee_id}. "
                 f"In-flight tasks: {self._in_flight_tasks}"
             )
         except Exception as e:
-            # Decrement counter if posting failed
-            self._in_flight_tasks -= 1
             logger.error(
                 f"Failed to post task {task.id} to {assignee_id}: {e}"
             )
@@ -1747,10 +1967,6 @@ class Workforce(BaseNode):
                 timeout=TASK_TIMEOUT_SECONDS,
             )
         except Exception as e:
-            # Decrement in-flight counter to prevent hanging
-            if self._in_flight_tasks > 0:
-                self._in_flight_tasks -= 1
-
             error_msg = (
                 f"Error getting returned task {e} in "
                 f"workforce {self.node_id}. "
@@ -1762,8 +1978,11 @@ class Workforce(BaseNode):
             if self._pending_tasks and self._assignees:
                 for task in self._pending_tasks:
                     if task.id in self._assignees:
-                        # Mark this real task as failed
+                        # Mark task as failed and decrement counter
                         task.set_state(TaskState.FAILED)
+                        self._decrement_in_flight_tasks(
+                            task.id, "timeout/error in _get_returned_task"
+                        )
                         return task
             return None
 
@@ -1805,17 +2024,19 @@ class Workforce(BaseNode):
         # Step 2: Iterate through all pending tasks and post those that are
         # ready
         posted_tasks = []
-        # Pre-compute completed task IDs set for O(1) lookups
-        completed_task_ids = {t.id for t in self._completed_tasks}
+        # Pre-compute completed task IDs and their states for O(1) lookups
+        completed_tasks_info = {t.id: t.state for t in self._completed_tasks}
 
         for task in self._pending_tasks:
             # A task must be assigned to be considered for posting
             if task.id in self._task_dependencies:
                 dependencies = self._task_dependencies[task.id]
                 # Check if all dependencies for this task are in the completed
-                # set
+                # set and their state is DONE
                 if all(
-                    dep_id in completed_task_ids for dep_id in dependencies
+                    dep_id in completed_tasks_info
+                    and completed_tasks_info[dep_id] == TaskState.DONE
+                    for dep_id in dependencies
                 ):
                     assignee_id = self._assignees[task.id]
                     logger.debug(
@@ -1861,7 +2082,6 @@ class Workforce(BaseNode):
                 task_id=task.id,
                 worker_id=worker_id,
                 error_message=detailed_error,
-                error_type="TaskFailure",
                 metadata={
                     'failure_count': task.failure_count,
                     'task_content': task.content,
@@ -1900,21 +2120,57 @@ class Workforce(BaseNode):
                 await self._channel.archive_task(task.id)
             return True
 
-        if task.get_depth() > 3:
-            # Create a new worker node and reassign
-            assignee = await self._create_worker_node_for_task(task)
+        # Use intelligent failure analysis to decide recovery strategy
+        recovery_decision = self._analyze_failure(task, detailed_error)
 
-            # Sync shared memory after creating new worker to provide context
-            if self.share_memory:
-                logger.info(
-                    f"Syncing shared memory after creating new worker "
-                    f"{assignee.node_id} for failed task {task.id}"
+        logger.info(
+            f"Task {task.id} failure "
+            f"analysis: {recovery_decision.strategy.value} - "
+            f"{recovery_decision.reasoning}"
+        )
+
+        if recovery_decision.strategy == RecoveryStrategy.RETRY:
+            # Simply retry the task by reposting it
+            if task.id in self._assignees:
+                assignee_id = self._assignees[task.id]
+                await self._post_task(task, assignee_id)
+                action_taken = f"retried with same worker {assignee_id}"
+            else:
+                # Find a new assignee and retry
+                batch_result = await self._find_assignee([task])
+                assignment = batch_result.assignments[0]
+                self._assignees[task.id] = assignment.assignee_id
+                await self._post_task(task, assignment.assignee_id)
+                action_taken = (
+                    f"retried with new worker {assignment.assignee_id}"
                 )
-                self._sync_shared_memory()
 
-            await self._post_task(task, assignee.node_id)
-            action_taken = f"reassigned to new worker {assignee.node_id}"
-        else:
+        elif recovery_decision.strategy == RecoveryStrategy.REPLAN:
+            # Modify the task content and retry
+            if recovery_decision.modified_task_content:
+                task.content = recovery_decision.modified_task_content
+                logger.info(f"Task {task.id} content modified for replan")
+
+            # Repost the modified task
+            if task.id in self._assignees:
+                assignee_id = self._assignees[task.id]
+                await self._post_task(task, assignee_id)
+                action_taken = (
+                    f"replanned and retried with worker {assignee_id}"
+                )
+            else:
+                # Find a new assignee for the replanned task
+                batch_result = await self._find_assignee([task])
+                assignment = batch_result.assignments[0]
+                self._assignees[task.id] = assignment.assignee_id
+                await self._post_task(task, assignment.assignee_id)
+                action_taken = (
+                    f"replanned and assigned to "
+                    f"worker {assignment.assignee_id}"
+                )
+
+        elif recovery_decision.strategy == RecoveryStrategy.DECOMPOSE:
+            # Decompose the task into subtasks
             subtasks = self._decompose_task(task)
             if self.metrics_logger and subtasks:
                 self.metrics_logger.log_task_decomposed(
@@ -1932,19 +2188,42 @@ class Workforce(BaseNode):
             # Insert packets at the head of the queue
             self._pending_tasks.extendleft(reversed(subtasks))
 
+            await self._post_ready_tasks()
+            action_taken = f"decomposed into {len(subtasks)} subtasks"
+
+            # Handle task completion differently for decomposed tasks
+            if task.id in self._assignees:
+                await self._channel.archive_task(task.id)
+
+            self._cleanup_task_tracking(task.id)
+            logger.debug(
+                f"Task {task.id} failed and was {action_taken}. "
+                f"Dependencies updated for subtasks."
+            )
+
             # Sync shared memory after task decomposition
             if self.share_memory:
                 logger.info(
-                    f"Syncing shared memory after decomposing failed "
-                    f"task {task.id}"
+                    f"Syncing shared memory after task {task.id} decomposition"
                 )
                 self._sync_shared_memory()
 
+            # Check if any pending tasks are now ready to execute
             await self._post_ready_tasks()
-            action_taken = f"decomposed into {len(subtasks)} subtasks"
+            return False
+
+        elif recovery_decision.strategy == RecoveryStrategy.CREATE_WORKER:
+            assignee = await self._create_worker_node_for_task(task)
+            await self._post_task(task, assignee.node_id)
+            action_taken = (
+                f"created new worker {assignee.node_id} and assigned "
+                f"task {task.id} to it"
+            )
+
         if task.id in self._assignees:
             await self._channel.archive_task(task.id)
 
+        self._cleanup_task_tracking(task.id)
         logger.debug(
             f"Task {task.id} failed and was {action_taken}. "
             f"Updating dependency state."
@@ -2037,31 +2316,65 @@ class Workforce(BaseNode):
                 break
 
         if not found_and_removed:
-            # Task was already removed from pending queue (expected case when
-            # it had been popped immediately after posting).  No need to
-            # draw user attention with a warning; record at debug level.
+            # Task was already removed from pending queue (common case when
+            # it was posted and removed immediately).
             logger.debug(
                 f"Completed task {task.id} was already removed from pending "
-                "queue."
+                "queue (normal for posted tasks)."
             )
 
         # Archive the task and update dependency tracking
         if task.id in self._assignees:
             await self._channel.archive_task(task.id)
 
-        # Ensure it's in completed tasks set
-        self._completed_tasks.append(task)
+        # Ensure it's in completed tasks set by updating if it exists or
+        # appending if it's new.
+        task_found_in_completed = False
+        for i, t in enumerate(self._completed_tasks):
+            if t.id == task.id:
+                self._completed_tasks[i] = task
+                task_found_in_completed = True
+                break
+        if not task_found_in_completed:
+            self._completed_tasks.append(task)
 
         # Handle parent task completion logic
         parent = task.parent
-        if parent and parent.id not in {t.id for t in self._completed_tasks}:
+        if parent:
+            # Check if all subtasks are completed and successful
             all_subtasks_done = all(
-                sub.id in {t.id for t in self._completed_tasks}
+                any(
+                    t.id == sub.id and t.state == TaskState.DONE
+                    for t in self._completed_tasks
+                )
                 for sub in parent.subtasks
             )
             if all_subtasks_done:
-                # Set the parent task state to done
+                # Collect results from successful subtasks only
+                successful_results = []
+                for sub in parent.subtasks:
+                    completed_subtask = next(
+                        (
+                            t
+                            for t in self._completed_tasks
+                            if t.id == sub.id and t.state == TaskState.DONE
+                        ),
+                        None,
+                    )
+                    if completed_subtask and completed_subtask.result:
+                        successful_results.append(
+                            f"--- Subtask {sub.id} Result ---\n"
+                            f"{completed_subtask.result}"
+                        )
+
+                # Set parent task state and result
                 parent.state = TaskState.DONE
+                parent.result = (
+                    "\n\n".join(successful_results)
+                    if successful_results
+                    else "All subtasks completed"
+                )
+
                 logger.debug(
                     f"All subtasks of {parent.id} are done. "
                     f"Marking parent as complete."
@@ -2181,7 +2494,9 @@ class Workforce(BaseNode):
                     await self._post_ready_tasks()
                     continue
 
-                self._in_flight_tasks -= 1
+                self._decrement_in_flight_tasks(
+                    returned_task.id, "task returned successfully"
+                )
 
                 # Check for stop request after getting task
                 if self._stop_requested:
@@ -2266,8 +2581,9 @@ class Workforce(BaseNode):
 
             except Exception as e:
                 # Decrement in-flight counter to prevent hanging
-                if self._in_flight_tasks > 0:
-                    self._in_flight_tasks -= 1
+                self._decrement_in_flight_tasks(
+                    "unknown", "exception in task processing loop"
+                )
 
                 logger.error(
                     f"Error processing task in workforce {self.node_id}: {e}"
@@ -2346,8 +2662,20 @@ class Workforce(BaseNode):
                         for task in self._child_listening_tasks:
                             if not task.done():
                                 task.cancel()
+
+                        # Handle both asyncio.Task and concurrent.futures.
+                        # Future
+                        awaitables = []
+                        for task in self._child_listening_tasks:
+                            if isinstance(task, concurrent.futures.Future):
+                                # Convert Future to awaitable
+                                awaitables.append(asyncio.wrap_future(task))
+                            else:
+                                # Already an asyncio.Task
+                                awaitables.append(task)
+
                         await asyncio.gather(
-                            *self._child_listening_tasks,
+                            *awaitables,
                             return_exceptions=True,
                         )
 

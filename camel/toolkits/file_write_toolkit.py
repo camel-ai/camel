@@ -14,7 +14,10 @@
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+
+if TYPE_CHECKING:
+    from reportlab.platypus import Table
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -33,8 +36,9 @@ class FileWriteToolkit(BaseToolkit):
 
     This class provides cross-platform (macOS, Linux, Windows) support for
     writing to various file formats (Markdown, DOCX, PDF, and plaintext),
-    replacing text in existing files, automatic backups, custom encoding,
-    and enhanced formatting options for specialized formats.
+    replacing text in existing files, automatic filename uniquification to
+    prevent overwrites, custom encoding and enhanced formatting options for
+    specialized formats.
     """
 
     def __init__(
@@ -102,21 +106,36 @@ class FileWriteToolkit(BaseToolkit):
             f.write(content)
         logger.debug(f"Wrote text to {file_path} with {encoding} encoding")
 
-    def _create_backup(self, file_path: Path) -> None:
-        r"""Create a backup of the file if it exists and backup is enabled.
+    def _generate_unique_filename(self, file_path: Path) -> Path:
+        r"""Generate a unique filename if the target file already exists.
 
         Args:
-            file_path (Path): Path to the file to backup.
+            file_path (Path): The original file path.
+
+        Returns:
+            Path: A unique file path that doesn't exist yet.
         """
-        import shutil
+        if not file_path.exists():
+            return file_path
 
-        if not self.backup_enabled or not file_path.exists():
-            return
-
+        # Generate unique filename with timestamp and counter
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = file_path.parent / f"{file_path.name}.{timestamp}.bak"
-        shutil.copy2(file_path, backup_path)
-        logger.info(f"Created backup at {backup_path}")
+        stem = file_path.stem
+        suffix = file_path.suffix
+        parent = file_path.parent
+
+        # First try with timestamp
+        new_path = parent / f"{stem}_{timestamp}{suffix}"
+        if not new_path.exists():
+            return new_path
+
+        # If timestamp version exists, add counter
+        counter = 1
+        while True:
+            new_path = parent / f"{stem}_{timestamp}_{counter}{suffix}"
+            if not new_path.exists():
+                return new_path
+            counter += 1
 
     def _write_docx_file(self, file_path: Path, content: str) -> None:
         r"""Write text content to a DOCX file with default formatting.
@@ -146,25 +165,28 @@ class FileWriteToolkit(BaseToolkit):
         document.save(str(file_path))
         logger.debug(f"Wrote DOCX to {file_path} with default formatting")
 
-    @dependencies_required('pylatex', 'pymupdf')
+    @dependencies_required('reportlab')
     def _write_pdf_file(
         self,
         file_path: Path,
         title: str,
-        content: str,
+        content: Union[str, List[List[str]]],
         use_latex: bool = False,
     ) -> None:
-        r"""Write text content to a PDF file with default formatting.
+        r"""Write text content to a PDF file with LaTeX and table support.
 
         Args:
             file_path (Path): The target file path.
-            title (str): The title of the document.
-            content (str): The text content to write.
-            use_latex (bool): Whether to use LaTeX for rendering. Only
-                Recommended for documents with mathematical formulas or
-                complex typesetting needs. (default: :obj:`False`)
+            title (str): The document title.
+            content (Union[str, List[List[str]]]): The content to write. Can
+                be:
+                - String: Supports Markdown-style tables and LaTeX math
+                expressions
+                - List[List[str]]: Table data as list of rows for direct table
+                rendering
+            use_latex (bool): Whether to use LaTeX for math rendering.
+                (default: :obj:`False`)
         """
-        # TODO: table generation need to be improved
         if use_latex:
             from pylatex import (
                 Command,
@@ -179,7 +201,28 @@ class FileWriteToolkit(BaseToolkit):
             doc = Document(documentclass="article")
             doc.packages.append(Command('usepackage', 'amsmath'))
             with doc.create(Section('Generated Content')):
-                for line in content.split('\n'):
+                # Handle different content types
+                if isinstance(content, str):
+                    content_lines = content.split('\n')
+                else:
+                    # Convert table data to LaTeX table format
+                    content_lines = []
+                    if content:
+                        # Add table header
+                        table_header = (
+                            r'\begin{tabular}{' + 'l' * len(content[0]) + '}'
+                        )
+                        content_lines.append(table_header)
+                        content_lines.append(r'\hline')
+                        for row in content:
+                            row_content = (
+                                ' & '.join(str(cell) for cell in row) + r' \\'
+                            )
+                            content_lines.append(row_content)
+                            content_lines.append(r'\hline')
+                        content_lines.append(r'\end{tabular}')
+
+                for line in content_lines:
                     stripped_line = line.strip()
 
                     # Skip empty lines
@@ -214,106 +257,471 @@ class FileWriteToolkit(BaseToolkit):
                 doc.generate_pdf(str(file_path), clean_tex=True)
 
             logger.info(f"Wrote PDF (with LaTeX) to {file_path}")
+
         else:
-            import pymupdf
+            try:
+                from reportlab.lib import colors
+                from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+                from reportlab.lib.pagesizes import A4
+                from reportlab.lib.styles import (
+                    ParagraphStyle,
+                    getSampleStyleSheet,
+                )
+                from reportlab.platypus import (
+                    Paragraph,
+                    SimpleDocTemplate,
+                    Spacer,
+                )
 
-            # Create a new PDF document
-            doc = pymupdf.open()
+                # Register Chinese fonts
+                chinese_font = self._register_chinese_font()
 
-            # Add a page
-            page = doc.new_page()
+                # Create PDF document
+                doc = SimpleDocTemplate(
+                    str(file_path),
+                    pagesize=A4,
+                    rightMargin=72,
+                    leftMargin=72,
+                    topMargin=72,
+                    bottomMargin=18,
+                )
 
-            # Process the content
-            lines = content.strip().split('\n')
-            document_title = title
+                # Get styles with Chinese font support
+                styles = getSampleStyleSheet()
+                title_style = ParagraphStyle(
+                    'CustomTitle',
+                    parent=styles['Heading1'],
+                    fontSize=18,
+                    spaceAfter=30,
+                    alignment=TA_CENTER,
+                    textColor=colors.black,
+                    fontName=chinese_font,
+                )
 
-            # Create a TextWriter for writing text to the page
-            text_writer = pymupdf.TextWriter(page.rect)
+                heading_style = ParagraphStyle(
+                    'CustomHeading',
+                    parent=styles['Heading2'],
+                    fontSize=14,
+                    spaceAfter=12,
+                    spaceBefore=20,
+                    textColor=colors.black,
+                    fontName=chinese_font,
+                )
 
-            # Define fonts
-            normal_font = pymupdf.Font(
-                "helv"
-            )  # Standard font with multilingual support
-            bold_font = pymupdf.Font("helv")
+                body_style = ParagraphStyle(
+                    'CustomBody',
+                    parent=styles['Normal'],
+                    fontSize=11,
+                    spaceAfter=12,
+                    alignment=TA_JUSTIFY,
+                    textColor=colors.black,
+                    fontName=chinese_font,
+                )
 
-            # Start position for text
-            y_pos = 50
-            x_pos = 50
+                # Build story (content elements)
+                story = []
 
-            # Add title
-            text_writer.fill_textbox(
-                pymupdf.Rect(
-                    x_pos, y_pos, page.rect.width - x_pos, y_pos + 30
-                ),
-                document_title,
-                fontsize=16,
+                # Add title
+                if title:
+                    story.append(Paragraph(title, title_style))
+                    story.append(Spacer(1, 12))
+
+                # Handle different content types
+                if isinstance(content, list) and all(
+                    isinstance(row, list) for row in content
+                ):
+                    # Content is a table (List[List[str]])
+                    logger.debug(
+                        f"Processing content as table with {len(content)} rows"
+                    )
+                    if content:
+                        table = self._create_pdf_table(content)
+                        story.append(table)
+                else:
+                    # Content is a string, process normally
+                    content_str = str(content)
+                    self._process_text_content(
+                        story, content_str, heading_style, body_style
+                    )
+
+                # Build PDF
+                doc.build(story)
+            except Exception as e:
+                logger.error(f"Error creating PDF: {e}")
+
+    def _process_text_content(
+        self, story, content: str, heading_style, body_style
+    ):
+        r"""Process text content and add to story.
+
+        Args:
+            story: The reportlab story list to append to
+            content (str): The text content to process
+            heading_style: Style for headings
+            body_style: Style for body text
+        """
+        from reportlab.platypus import Paragraph, Spacer
+
+        # Process content
+        lines = content.split('\n')
+        logger.debug(f"Processing {len(lines)} lines of content")
+
+        # Parse all tables from the content first
+        tables = self._parse_markdown_table(lines)
+        table_line_ranges = []
+
+        # Find line ranges that contain tables
+        if tables:
+            table_line_ranges = self._find_table_line_ranges(lines)
+
+        # Process lines, skipping table lines and adding tables at
+        # appropriate positions
+        i = 0
+        current_table_idx = 0
+
+        while i < len(lines):
+            line = lines[i].strip()
+
+            # Check if this line is part of a table
+            is_table_line = any(
+                start <= i <= end for start, end in table_line_ranges
             )
-            y_pos += 40
 
-            # Process content
-            for line in lines:
-                stripped_line = line.strip()
+            if is_table_line:
+                # Skip all lines in this table and add the table to story
+                table_start, table_end = next(
+                    (start, end)
+                    for start, end in table_line_ranges
+                    if start <= i <= end
+                )
 
-                # Skip empty lines but add some space
-                if not stripped_line:
-                    y_pos += 10
+                if current_table_idx < len(tables):
+                    table_row_count = len(tables[current_table_idx])
+                    logger.debug(f"Adding table with {table_row_count} rows")
+                    try:
+                        table = self._create_pdf_table(
+                            tables[current_table_idx]
+                        )
+                        story.append(table)
+                        story.append(Spacer(1, 12))
+                    except Exception as e:
+                        logger.error(f"Failed to create table: {e}")
+                        # Fallback: render as text
+                        table_error_msg = (
+                            f"Table data (error): "
+                            f"{tables[current_table_idx]}"
+                        )
+                        story.append(
+                            Paragraph(
+                                table_error_msg,
+                                body_style,
+                            )
+                        )
+                    current_table_idx += 1
+
+                # Skip to end of table
+                i = table_end + 1
+                continue
+
+            # Skip empty lines
+            if not line:
+                story.append(Spacer(1, 6))
+                i += 1
+                continue
+
+            # Handle headings
+            if line.startswith('# '):
+                story.append(Paragraph(line[2:], heading_style))
+            elif line.startswith('## '):
+                story.append(Paragraph(line[3:], heading_style))
+            elif line.startswith('### '):
+                story.append(Paragraph(line[4:], heading_style))
+            else:
+                # Regular paragraph
+                # Convert basic markdown formatting
+                line = self._convert_markdown_to_html(line)
+                story.append(Paragraph(line, body_style))
+
+            i += 1
+
+    def _find_table_line_ranges(
+        self, lines: List[str]
+    ) -> List[Tuple[int, int]]:
+        r"""Find line ranges that contain markdown tables.
+
+        Args:
+            lines (List[str]): List of lines to analyze.
+
+        Returns:
+            List[Tuple[int, int]]: List of (start_line, end_line) tuples
+                for table ranges.
+        """
+        ranges = []
+        in_table = False
+        table_start = 0
+
+        for i, line in enumerate(lines):
+            line = line.strip()
+
+            if self._is_table_row(line):
+                if not in_table:
+                    in_table = True
+                    table_start = i
+            else:
+                if in_table:
+                    # End of table
+                    ranges.append((table_start, i - 1))
+                    in_table = False
+
+        # Handle table at end of content
+        if in_table:
+            ranges.append((table_start, len(lines) - 1))
+
+        return ranges
+
+    def _register_chinese_font(self) -> str:
+        r"""Register Chinese font for PDF generation.
+
+        Returns:
+            str: The font name to use for Chinese text.
+        """
+        import os
+        import platform
+
+        from reportlab.lib.fonts import addMapping
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+
+        # Try to find and register Chinese fonts on the system
+        font_paths = []
+        system = platform.system()
+
+        if system == "Darwin":  # macOS
+            font_paths = [
+                "/System/Library/Fonts/PingFang.ttc",
+                "/System/Library/Fonts/Hiragino Sans GB.ttc",
+                "/System/Library/Fonts/STHeiti Light.ttc",
+                "/System/Library/Fonts/STHeiti Medium.ttc",
+                "/Library/Fonts/Arial Unicode MS.ttf",
+            ]
+        elif system == "Windows":
+            font_paths = [
+                r"C:\Windows\Fonts\msyh.ttc",  # Microsoft YaHei
+                r"C:\Windows\Fonts\simsun.ttc",  # SimSun
+                r"C:\Windows\Fonts\arial.ttf",  # Arial (fallback)
+            ]
+        elif system == "Linux":
+            font_paths = [
+                "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+                "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            ]
+
+        # Try to register the first available font
+        for font_path in font_paths:
+            if os.path.exists(font_path):
+                try:
+                    font_name = "ChineseFont"
+                    # Only register if not already registered
+                    if font_name not in pdfmetrics.getRegisteredFontNames():
+                        pdfmetrics.registerFont(TTFont(font_name, font_path))
+                        # Add font mapping for bold/italic variants
+                        addMapping(font_name, 0, 0, font_name)  # normal
+                        addMapping(font_name, 0, 1, font_name)  # italic
+                        addMapping(font_name, 1, 0, font_name)  # bold
+                        addMapping(font_name, 1, 1, font_name)  # bold italic
+                        logger.debug(f"Registered Chinese font: {font_path}")
+                    return font_name
+                except Exception as e:
+                    logger.debug(f"Failed to register font {font_path}: {e}")
                     continue
 
-                # Handle headers
-                if stripped_line.startswith('## '):
-                    text_writer.fill_textbox(
-                        pymupdf.Rect(
-                            x_pos, y_pos, page.rect.width - x_pos, y_pos + 20
-                        ),
-                        stripped_line[3:].strip(),
-                        font=bold_font,
-                        fontsize=14,
-                    )
-                    y_pos += 25
-                elif stripped_line.startswith('# '):
-                    text_writer.fill_textbox(
-                        pymupdf.Rect(
-                            x_pos, y_pos, page.rect.width - x_pos, y_pos + 25
-                        ),
-                        stripped_line[2:].strip(),
-                        font=bold_font,
-                        fontsize=16,
-                    )
-                    y_pos += 30
-                # Handle horizontal rule
-                elif stripped_line == '---':
-                    page.draw_line(
-                        pymupdf.Point(x_pos, y_pos + 5),
-                        pymupdf.Point(page.rect.width - x_pos, y_pos + 5),
-                    )
-                    y_pos += 15
-                # Regular text
-                else:
-                    # Check if we need a new page
-                    if y_pos > page.rect.height - 50:
-                        text_writer.write_text(page)
-                        page = doc.new_page()
-                        text_writer = pymupdf.TextWriter(page.rect)
-                        y_pos = 50
+        # Fallback to Helvetica if no Chinese font found
+        logger.warning("No Chinese font found, falling back to Helvetica")
+        return "Helvetica"
 
-                    # Add text to the current page
-                    text_writer.fill_textbox(
-                        pymupdf.Rect(
-                            x_pos, y_pos, page.rect.width - x_pos, y_pos + 15
-                        ),
-                        stripped_line,
-                        font=normal_font,
-                    )
-                    y_pos += 15
+    def _parse_markdown_table(self, lines: List[str]) -> List[List[List[str]]]:
+        r"""Parse markdown-style tables from a list of lines.
 
-            # Write the accumulated text to the last page
-            text_writer.write_text(page)
+        Args:
+            lines (List[str]): List of text lines that may contain tables.
 
-            # Save the PDF
-            doc.save(str(file_path))
-            doc.close()
+        Returns:
+            List[List[List[str]]]: List of tables, where each table is a list
+                of rows, and each row is a list of cells.
+        """
+        tables = []
+        current_table_data: List[List[str]] = []
+        in_table = False
 
-            logger.debug(f"Wrote PDF to {file_path} with PyMuPDF formatting")
+        for line in lines:
+            line = line.strip()
+
+            # Check for table (Markdown-style)
+            if self._is_table_row(line):
+                logger.debug(f"Found table line: {line}")
+
+                if not in_table:
+                    in_table = True
+                    current_table_data = []
+                    logger.debug("Starting new table")
+
+                # Skip separator lines (e.g., |---|---|)
+                if self._is_table_separator(line):
+                    logger.debug("Skipping separator line")
+                    continue
+
+                # Parse table row
+                cells = self._parse_table_row(line)
+                if cells:
+                    current_table_data.append(cells)
+                    logger.debug(f"Added table row: {cells}")
+                continue
+
+            # If we were in a table and now we're not, finalize the table
+            if in_table:
+                if current_table_data:
+                    row_count = len(current_table_data)
+                    logger.debug(f"Finalizing table with {row_count} rows")
+                    tables.append(current_table_data)
+                current_table_data = []
+                in_table = False
+
+        # Add any remaining table
+        if in_table and current_table_data:
+            row_count = len(current_table_data)
+            logger.debug(f"Adding final table with {row_count} rows")
+            tables.append(current_table_data)
+
+        return tables
+
+    def _is_table_row(self, line: str) -> bool:
+        r"""Check if a line appears to be a table row.
+
+        Args:
+            line (str): The line to check.
+
+        Returns:
+            bool: True if the line looks like a table row.
+        """
+        return '|' in line and line.count('|') >= 2
+
+    def _is_table_separator(self, line: str) -> bool:
+        r"""Check if a line is a table separator (e.g., |---|---|).
+
+        Args:
+            line (str): The line to check.
+
+        Returns:
+            bool: True if the line is a table separator.
+        """
+        import re
+
+        # More precise check for separator lines
+        # Must contain only spaces, pipes, dashes, and colons
+        # and have at least one dash to be a separator
+        if not re.match(r'^[\s\|\-\:]+$', line):
+            return False
+
+        # Must contain at least one dash to be a valid separator
+        return '-' in line
+
+    def _parse_table_row(self, line: str) -> List[str]:
+        r"""Parse a single table row into cells.
+
+        Args:
+            line (str): The table row line.
+
+        Returns:
+            List[str]: List of cell contents.
+        """
+        # Parse table row
+        cells = [cell.strip() for cell in line.split('|')]
+
+        # Remove empty cells at start/end (common in markdown tables)
+        if cells and not cells[0]:
+            cells = cells[1:]
+        if cells and not cells[-1]:
+            cells = cells[:-1]
+
+        return cells
+
+    def _create_pdf_table(self, table_data: List[List[str]]) -> "Table":
+        r"""Create a formatted table for PDF.
+
+        Args:
+            table_data (List[List[str]]): Table data as list of rows.
+
+        Returns:
+            Table: A formatted reportlab Table object.
+        """
+        from reportlab.lib import colors
+        from reportlab.platypus import Table, TableStyle
+
+        try:
+            # Get Chinese font for table
+            chinese_font = self._register_chinese_font()
+
+            # Debug: Log table data
+            logger.debug(f"Creating table with {len(table_data)} rows")
+            for i, row in enumerate(table_data):
+                logger.debug(f"Row {i}: {row}")
+
+            # Create table
+            table = Table(table_data)
+
+            # Style the table with Chinese font support
+            table.setStyle(
+                TableStyle(
+                    [
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, 0), chinese_font),
+                        ('FONTSIZE', (0, 0), (-1, 0), 10),
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                        ('FONTNAME', (0, 1), (-1, -1), chinese_font),
+                        ('FONTSIZE', (0, 1), (-1, -1), 9),
+                        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ]
+                )
+            )
+
+            logger.debug("Table created successfully")
+            return table
+
+        except Exception as e:
+            logger.error(f"Error creating table: {e}")
+            # Return simple unstyled table as fallback
+            from reportlab.platypus import Table
+
+            return Table(table_data)
+
+    def _convert_markdown_to_html(self, text: str) -> str:
+        r"""Convert basic markdown formatting to HTML for PDF rendering.
+
+        Args:
+            text (str): Text with markdown formatting.
+
+        Returns:
+            str: Text with HTML formatting.
+        """
+        # Bold text (check double markers first)
+        text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
+        text = re.sub(r'__(.*?)__', r'<b>\1</b>', text)
+
+        # Italic text (single markers after double markers)
+        text = re.sub(
+            r'(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)', r'<i>\1</i>', text
+        )
+        text = re.sub(r'(?<!_)_(?!_)(.*?)(?<!_)_(?!_)', r'<i>\1</i>', text)
+
+        # Code (inline)
+        text = re.sub(r'`(.*?)`', r'<font name="Courier">\1</font>', text)
+
+        return text
 
     def _write_csv_file(
         self,
@@ -439,9 +847,8 @@ class FileWriteToolkit(BaseToolkit):
                 supplied, it is resolved to self.output_dir.
             encoding (Optional[str]): The character encoding to use. (default:
                 :obj: `None`)
-            use_latex (bool): For PDF files, whether to use LaTeX rendering.
-                Only recommended for documents with mathematical formulas or
-                complex typesetting needs. (default: :obj:`False`)
+            use_latex (bool): Whether to use LaTeX for math rendering.
+                (default: :obj:`False`)
 
         Returns:
             str: A message indicating success or error details.
@@ -449,8 +856,8 @@ class FileWriteToolkit(BaseToolkit):
         file_path = self._resolve_filepath(filename)
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Create backup if file exists
-        self._create_backup(file_path)
+        # Generate unique filename if file exists
+        file_path = self._generate_unique_filename(file_path)
 
         extension = file_path.suffix.lower()
 
@@ -466,9 +873,7 @@ class FileWriteToolkit(BaseToolkit):
             if extension in [".doc", ".docx"]:
                 self._write_docx_file(file_path, str(content))
             elif extension == ".pdf":
-                self._write_pdf_file(
-                    file_path, title, str(content), use_latex=use_latex
-                )
+                self._write_pdf_file(file_path, title, content, use_latex)
             elif extension == ".csv":
                 self._write_csv_file(
                     file_path, content, encoding=file_encoding

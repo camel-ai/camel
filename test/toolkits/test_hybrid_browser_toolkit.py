@@ -406,7 +406,7 @@ class TestHybridBrowserToolkit:
 
             result = await toolkit.open_browser()
 
-            assert result["result"] == "Browser session started."
+            assert result["result"] == "Visited test URL"
             assert "snapshot" in result
 
     @pytest.mark.asyncio
@@ -1124,8 +1124,9 @@ class TestHybridBrowserToolkit:
 
         tools = toolkit.get_tools()
 
-        # Default tools should be 5 tools (updated default configuration)
-        assert len(tools) == 5
+        # Default tools should be 6 tools (updated default configuration)
+
+        assert len(tools) == 6
         tool_names = [tool.func.__name__ for tool in tools]
 
         expected_default_tools = [
@@ -1149,9 +1150,9 @@ class TestHybridBrowserToolkit:
 
         tools = toolkit.get_tools()
 
-        # Default tools should be 5, even with web_agent_model set
+        # Default tools should be 6, even with web_agent_model set
         # unless solve_task is explicitly enabled
-        assert len(tools) == 5
+        assert len(tools) == 6
         tool_names = [tool.func.__name__ for tool in tools]
 
         # Should not automatically include solve_task unless explicitly enabled
@@ -1344,5 +1345,5 @@ class TestHybridBrowserToolkit:
             # Test a simple async operation
             result = await toolkit.open_browser()
 
-            assert result["result"] == "Browser session started."
+            assert result["result"] == "Visited test URL"
             assert "snapshot" in result
