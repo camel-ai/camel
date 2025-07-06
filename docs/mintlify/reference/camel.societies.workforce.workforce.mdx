@@ -175,6 +175,26 @@ Update dependency tracking when a task is decomposed into subtasks.
 Tasks that depended on the original task should now depend on all
 subtasks. The last subtask inherits the original task's dependencies.
 
+<a id="camel.societies.workforce.workforce.Workforce._increment_in_flight_tasks"></a>
+
+### _increment_in_flight_tasks
+
+```python
+def _increment_in_flight_tasks(self, task_id: str):
+```
+
+Safely increment the in-flight tasks counter with logging.
+
+<a id="camel.societies.workforce.workforce.Workforce._decrement_in_flight_tasks"></a>
+
+### _decrement_in_flight_tasks
+
+```python
+def _decrement_in_flight_tasks(self, task_id: str, context: str = ''):
+```
+
+Safely decrement the in-flight tasks counter with safety checks.
+
 <a id="camel.societies.workforce.workforce.Workforce._cleanup_task_tracking"></a>
 
 ### _cleanup_task_tracking
@@ -200,6 +220,25 @@ def _decompose_task(self, task: Task):
 **Returns:**
 
   List[Task]: The subtasks.
+
+<a id="camel.societies.workforce.workforce.Workforce._analyze_failure"></a>
+
+### _analyze_failure
+
+```python
+def _analyze_failure(self, task: Task, error_message: str):
+```
+
+Analyze a task failure and decide on the best recovery strategy.
+
+**Parameters:**
+
+- **task** (Task): The failed task
+- **error_message** (str): The error message from the failure
+
+**Returns:**
+
+  RecoveryDecision: The decided recovery strategy with reasoning
 
 <a id="camel.societies.workforce.workforce.Workforce.pause"></a>
 
@@ -408,6 +447,20 @@ def continue_from_pause(self):
   Optional[Task]: The completed task if execution finishes, None if
 still running/paused.
 
+<a id="camel.societies.workforce.workforce.Workforce._start_child_node_when_paused"></a>
+
+### _start_child_node_when_paused
+
+```python
+def _start_child_node_when_paused(self, start_coroutine: Coroutine):
+```
+
+Helper to start a child node when workforce is paused.
+
+**Parameters:**
+
+- **start_coroutine**: The coroutine to start (e.g., worker_node.start())
+
 <a id="camel.societies.workforce.workforce.Workforce.add_single_agent_worker"></a>
 
 ### add_single_agent_worker
@@ -422,6 +475,7 @@ def add_single_agent_worker(
 ```
 
 Add a worker node to the workforce that uses a single agent.
+Can be called when workforce is paused to dynamically add workers.
 
 **Parameters:**
 
@@ -451,6 +505,7 @@ def add_role_playing_worker(
 ```
 
 Add a worker node to the workforce that uses `RolePlaying` system.
+Can be called when workforce is paused to dynamically add workers.
 
 **Parameters:**
 
@@ -475,6 +530,7 @@ def add_workforce(self, workforce: Workforce):
 ```
 
 Add a workforce node to the workforce.
+Can be called when workforce is paused to dynamically add workers.
 
 **Parameters:**
 
