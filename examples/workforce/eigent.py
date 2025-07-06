@@ -180,6 +180,11 @@ def search_agent_factory(
     extract webpage content, simulate browser actions, and provide relevant 
     information to solve the given task.
 
+    You MUST use the `send_message_to_user` tool to inform the user of every 
+    decision and action you take. Your message must include a short title 
+    and a one-sentence description. This is a mandatory part of your 
+    workflow.
+    
     ### Web Search Workflow
     1.  **Search First**: You should open browser with bing.com and 
     search information from it. Please use enter to confirm the search.

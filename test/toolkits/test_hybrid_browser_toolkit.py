@@ -374,7 +374,7 @@ class TestHybridBrowserToolkit:
 
     @pytest.mark.asyncio
     async def test_open_browser_no_start_url(self):
-        """Test opening browser without start URL."""
+        """Test opening browser using the default start URL configured during initialization."""
         mock_session = AsyncMock()
         mock_session.ensure_browser = AsyncMock()
         mock_session.get_page = AsyncMock(return_value=mock_page)
@@ -410,8 +410,8 @@ class TestHybridBrowserToolkit:
             assert "snapshot" in result
 
     @pytest.mark.asyncio
-    async def test_open_browser_with_start_url(self):
-        """Test opening browser with start URL."""
+    async def test_open_browser_with_custom_default_url(self):
+        """Test opening browser with a custom default start URL."""
         mock_session = AsyncMock()
         mock_session.ensure_browser = AsyncMock()
         mock_session.get_page = AsyncMock(return_value=mock_page)
@@ -438,7 +438,11 @@ class TestHybridBrowserToolkit:
                 mock_open(read_data="console.log('mock script');"),
             ),
         ):
-            toolkit = HybridBrowserToolkit(headless=True)
+            # Create toolkit with custom default URL
+            toolkit = HybridBrowserToolkit(
+                headless=True, 
+                default_start_url=TEST_URL
+            )
             toolkit._session = mock_session
 
             # Mock visit_page method
@@ -450,8 +454,9 @@ class TestHybridBrowserToolkit:
                     "snapshot": "test",
                 }
 
-                await toolkit.open_browser(start_url=TEST_URL)
+                await toolkit.open_browser()
 
+                # Should call visit_page with the configured default URL
                 mock_visit.assert_called_once_with(TEST_URL)
 
     @pytest.mark.asyncio
