@@ -494,7 +494,7 @@ Ensure the JSON is valid and properly formatted.
             # Generic fallback
             try:
                 return schema()
-            except Exception:
+            except Exception as e:
                 raise ValueError(
                     f"Cannot create fallback for unknown schema: {schema_name}"
-                )
+                ) from e

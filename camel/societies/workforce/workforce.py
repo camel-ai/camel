@@ -2063,7 +2063,7 @@ class Workforce(BaseNode):
                     raise RuntimeError(
                         f"Failed to create worker for task {task.id}: "
                         f"Coordinator agent returned malformed JSON response. "
-                    )
+                    ) from e
 
         new_agent = await self._create_new_agent(
             new_node_conf.role,
