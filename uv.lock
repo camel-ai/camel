@@ -21,7 +21,7 @@ wheels = [
 
 [[package]]
 name = "aci-sdk"
-version = "1.0.0b2"
+version = "1.0.0b3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "griffe" },
@@ -30,9 +30,9 @@ dependencies = [
     { name = "tenacity" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/68/57/bd2b54e6ee84db1606e9959cabdde5fc6dace3e34dd360a62663d353e868/aci_sdk-1.0.0b2.tar.gz", hash = "sha256:b5f6b97c65adbacdf835bbba9d691dd55ad4aeae941eae68d5fb05ea01da802a", size = 63622, upload-time = "2025-05-06T14:33:12.312Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c1/d4/7b7e723e935f6bc0e6c9c6c274536a8aefdbce1c5ff88f0a7123715cf2d5/aci_sdk-1.0.0b3.tar.gz", hash = "sha256:f4ff452419c9baac3c86787f3ae85123712706668397fe1b7780ffb85b1b06b1", size = 64225, upload-time = "2025-07-05T22:53:32.213Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5e/57/943ce077b823bce9a9d8f223cde70c12d9fbe923392f62d89cabea7cd7e1/aci_sdk-1.0.0b2-py3-none-any.whl", hash = "sha256:5ff09d074e1e146b536fe19334ea7ab03e62c75657ba0628bfb8778d376a7140", size = 31876, upload-time = "2025-05-06T14:33:10.871Z" },
+    { url = "https://files.pythonhosted.org/packages/4f/95/231ce4f25f78bf8f3e35d2d9e3603895e162104c33450a08b5912303f512/aci_sdk-1.0.0b3-py3-none-any.whl", hash = "sha256:828bd478a633dea0aa7ffe8857e5bc2339e1eb06b47155ed74372d7dbd46f24f", size = 32225, upload-time = "2025-07-05T22:53:30.895Z" },
 ]
 
 [[package]]
@@ -647,7 +647,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.71a5"
+version = "0.2.71a6"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -7493,14 +7493,14 @@ wheels = [
 
 [[package]]
 name = "sse-starlette"
-version = "2.3.6"
+version = "2.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/f4/989bc70cb8091eda43a9034ef969b25145291f3601703b82766e5172dfed/sse_starlette-2.3.6.tar.gz", hash = "sha256:0382336f7d4ec30160cf9ca0518962905e1b69b72d6c1c995131e0a703b436e3", size = 18284, upload-time = "2025-05-30T13:34:12.914Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/3e/eae74d8d33e3262bae0a7e023bb43d8bdd27980aa3557333f4632611151f/sse_starlette-2.4.1.tar.gz", hash = "sha256:7c8a800a1ca343e9165fc06bbda45c78e4c6166320707ae30b416c42da070926", size = 18635, upload-time = "2025-07-06T09:41:33.631Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/81/05/78850ac6e79af5b9508f8841b0f26aa9fd329a1ba00bf65453c2d312bcc8/sse_starlette-2.3.6-py3-none-any.whl", hash = "sha256:d49a8285b182f6e2228e2609c350398b2ca2c36216c2675d875f81e93548f760", size = 10606, upload-time = "2025-05-30T13:34:11.703Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/f1/6c7eaa8187ba789a6dd6d74430307478d2a91c23a5452ab339b6fbe15a08/sse_starlette-2.4.1-py3-none-any.whl", hash = "sha256:08b77ea898ab1a13a428b2b6f73cfe6d0e607a7b4e15b9bb23e4a37b087fd39a", size = 10824, upload-time = "2025-07-06T09:41:32.321Z" },
 ]
 
 [[package]]

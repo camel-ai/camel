@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+import uuid
 
 from camel.agents.chat_agent import ChatAgent
 from camel.logger import get_logger
@@ -114,7 +115,6 @@ def developer_agent_factory(
     - Communicating with other agents using messaging tools. You can use 
     `list_available_agents` to see available team members and `send_message` 
     to coordinate with them for complex tasks requiring collaboration.
-    
     Remember to manage your terminal sessions. You can create new sessions 
     and run commands in them.
     """
@@ -137,24 +137,47 @@ def search_agent_factory(
     r"""Factory for creating a search agent, based on user-provided code
     structure.
     """
+    # Generate a unique identifier for this agent instance
+    agent_id = str(uuid.uuid4())[:8]
+
+    custom_tools = [
+        "open_browser",
+        "close_browser",
+        "click",
+        "type",
+        "back",
+        "forward",
+        "switch_tab",
+        "enter",
+        "get_som_screenshot",
+    ]
+    web_toolkit_custom = HybridBrowserToolkit(
+        headless=False,
+        enabled_tools=custom_tools,
+        browser_log_to_file=True,
+        stealth=True,
+        session_id=agent_id,  # unique session ID
+        default_start_url="https://bing.com/",
+    )
+
     tools = [
-        *HybridBrowserToolkit(headless=False).get_tools(),
+        *web_toolkit_custom.get_tools(),
         *TerminalToolkit().get_tools(),
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
-        NoteTakingToolkit().take_note,
+        NoteTakingToolkit().append_note,
         *Crawl4AIToolkit().get_tools(),
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
     extract webpage content, simulate browser actions, and provide relevant 
     information to solve the given task.
-    
+
     You MUST use the `send_message_to_user` tool to inform the user of every 
     decision and action you take. Your message must include a short title 
     and a one-sentence description. This is a mandatory part of your 
     workflow.
-
+    
     ### Web Search Workflow
     1.  **Open Browser**: You MUST start by using the `open_browser` tool to 
         launch a browser. This will automatically open a search engine page.
@@ -183,7 +206,7 @@ def search_agent_factory(
     or document processing capabilities.
 
     ### Note Taking
-    - As you find information, you MUST use the `take_note` tool to record 
+    - As you find information, you MUST use the `append_note` tool to record 
     your findings in a structured way.
     - Append new information to the notes. Do not overwrite the note file 
     unless you are summarizing or restructuring the content.
@@ -244,7 +267,7 @@ def document_agent_factory(
     the `send_message_to_user` tool to inform the user of every decision and 
     action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
-    
+
     Your capabilities include:
 
     1. Information Gathering:
@@ -334,7 +357,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     the `send_message_to_user` tool to inform the user of every decision and 
     action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
-    
+
     Your capabilities include:
 
     1. Video & Audio Analysis:
@@ -475,7 +498,7 @@ async def main():
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1_MINI,
+        model_type=ModelType.GPT_4_1,
         # model_config_dict={
         #     "max_tokens": 32768,
         # },
@@ -483,7 +506,7 @@ async def main():
 
     model_backend_reason = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1_MINI,
+        model_type=ModelType.GPT_4_1,
         # model_config_dict={
         #     "max_tokens": 32768,
         # },
