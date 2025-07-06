@@ -28,7 +28,7 @@ class ActionExecutor:
 
     def __init__(self, page: "Page", session: Optional[Any] = None):
         self.page = page
-        self.session = session  # NVBrowserSession instance
+        self.session = session  # HybridBrowserSession instance
 
     # ------------------------------------------------------------------
     # Public helpers

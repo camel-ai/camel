@@ -1,11 +1,11 @@
 <a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session"></a>
 
-<a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession"></a>
+<a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session.HybridBrowserSession"></a>
 
-## NVBrowserSession
+## HybridBrowserSession
 
 ```python
-class NVBrowserSession:
+class HybridBrowserSession:
 ```
 
 Lightweight wrapper around Playwright for non-visual (headless)
@@ -17,7 +17,7 @@ duplicating Playwright setup code.
 
 This class is a singleton per event-loop.
 
-<a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession.__new__"></a>
+<a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session.HybridBrowserSession.__new__"></a>
 
 ### __new__
 
@@ -25,7 +25,7 @@ This class is a singleton per event-loop.
 def __new__(cls):
 ```
 
-<a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session.NVBrowserSession.__init__"></a>
+<a id="camel.toolkits.non_visual_browser_toolkit.nv_browser_session.HybridBrowserSession.__init__"></a>
 
 ### __init__
 

@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class NVBrowserSession:
+class HybridBrowserSession:
     """Lightweight wrapper around Playwright for
     browsing with multi-tab support.
 
@@ -49,8 +49,8 @@ class NVBrowserSession:
     NETWORK_IDLE_TIMEOUT = 5000  # 5 seconds
 
     # Class-level registry for singleton instances
-    # Format: {(loop_id, session_id): NVBrowserSession}
-    _instances: ClassVar[Dict[Tuple[Any, str], "NVBrowserSession"]] = {}
+    # Format: {(loop_id, session_id): HybridBrowserSession}
+    _instances: ClassVar[Dict[Tuple[Any, str], "HybridBrowserSession"]] = {}
     _instances_lock: ClassVar[asyncio.Lock] = asyncio.Lock()
 
     _initialized: bool
@@ -63,7 +63,7 @@ class NVBrowserSession:
         user_data_dir: Optional[str] = None,
         stealth: bool = False,
         session_id: Optional[str] = None,
-    ) -> "NVBrowserSession":
+    ) -> "HybridBrowserSession":
         # Create a unique key for this event loop and session combination
         # We defer the event loop lookup to avoid issues with creation
         # outside async context
@@ -81,16 +81,18 @@ class NVBrowserSession:
     @classmethod
     async def _get_or_create_instance(
         cls,
-        instance: "NVBrowserSession",
-    ) -> "NVBrowserSession":
+        instance: "HybridBrowserSession",
+    ) -> "HybridBrowserSession":
         """Get or create singleton instance for the current event loop and
         session."""
         try:
             loop = asyncio.get_running_loop()
-            loop_id = id(loop)
+            loop_id = str(id(loop))
         except RuntimeError:
-            # No event loop running, use a default key
-            loop_id = 0
+            # No event loop running, use a unique identifier for sync context
+            import threading
+
+            loop_id = f"sync_{threading.current_thread().ident}"
 
         # Ensure session_id is never None for the key
         session_id = (
@@ -276,41 +278,56 @@ class NVBrowserSession:
         Returns:
             bool: True if successful, False if tab index is invalid
         """
-        if not self._pages or tab_index < 0 or tab_index >= len(self._pages):
-            logger.warning(
-                f"Invalid tab index {tab_index}, available tabs: "
-                f"{len(self._pages)}"
-            )
-            return False
-
-        # Check if the page is still valid
+        # Use a more robust bounds check to prevent race conditions
         try:
-            page = self._pages[tab_index]
+            if not self._pages:
+                logger.warning("No tabs available")
+                return False
+
+            # Capture current state to avoid race conditions
+            current_pages = self._pages.copy()
+            pages_count = len(current_pages)
+
+            if tab_index < 0 or tab_index >= pages_count:
+                logger.warning(
+                    f"Invalid tab index {tab_index}, available "
+                    f"tabs: {pages_count}"
+                )
+                return False
+
+            # Check if the page is still valid
+            page = current_pages[tab_index]
             if page.is_closed():
                 logger.warning(
                     f"Tab {tab_index} is closed, removing from list"
                 )
-                self._pages.pop(tab_index)
-                # Adjust current tab index if necessary
-                if self._current_tab_index >= len(self._pages):
-                    self._current_tab_index = max(0, len(self._pages) - 1)
+                # Remove closed page from original list
+                if (
+                    tab_index < len(self._pages)
+                    and self._pages[tab_index] is page
+                ):
+                    self._pages.pop(tab_index)
+                    # Adjust current tab index if necessary
+                    if self._current_tab_index >= len(self._pages):
+                        self._current_tab_index = max(0, len(self._pages) - 1)
                 return False
+
+            self._current_tab_index = tab_index
+            self._page = page
+
+            # Bring the tab to the front in the browser window
+            await self._page.bring_to_front()
+
+            # Update executor and snapshot for new tab
+            self.executor = ActionExecutor(self._page, self)
+            self.snapshot = PageSnapshot(self._page)
+
+            logger.info(f"Switched to tab {tab_index}")
+            return True
+
         except Exception as e:
-            logger.warning(f"Error checking tab {tab_index}: {e}")
+            logger.warning(f"Error switching to tab {tab_index}: {e}")
             return False
-
-        self._current_tab_index = tab_index
-        self._page = self._pages[tab_index]
-
-        # Bring the tab to the front in the browser window
-        await self._page.bring_to_front()
-
-        # Update executor and snapshot for new tab
-        self.executor = ActionExecutor(self._page, self)
-        self.snapshot = PageSnapshot(self._page)
-
-        logger.info(f"Switched to tab {tab_index}")
-        return True
 
     async def close_tab(self, tab_index: int) -> bool:
         r"""Close a specific tab.
@@ -433,7 +450,7 @@ class NVBrowserSession:
 
         # Serialise initialisation to avoid race conditions where multiple
         # concurrent coroutine calls create multiple browser instances for
-        # the same NVBrowserSession.
+        # the same HybridBrowserSession.
         async with self._ensure_lock:
             await self._ensure_browser_inner()
 
@@ -512,23 +529,34 @@ class NVBrowserSession:
 
             # Remove from singleton registry
             try:
-                loop = asyncio.get_running_loop()
-                loop_id = id(loop)
-            except RuntimeError:
-                loop_id = 0
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop_id = str(id(loop))
+                except RuntimeError:
+                    # Use same logic as _get_or_create_instance
+                    import threading
 
-            session_id = (
-                self._session_id if self._session_id is not None else "default"
-            )
-            session_key = (loop_id, session_id)
+                    loop_id = f"sync_{threading.current_thread().ident}"
 
-            async with self._instances_lock:
-                if (
-                    session_key in self._instances
-                    and self._instances[session_key] is self
-                ):
-                    del self._instances[session_key]
-                    logger.debug(f"Removed session {session_id} from registry")
+                session_id = (
+                    self._session_id
+                    if self._session_id is not None
+                    else "default"
+                )
+                session_key = (loop_id, session_id)
+
+                async with self._instances_lock:
+                    if (
+                        session_key in self._instances
+                        and self._instances[session_key] is self
+                    ):
+                        del self._instances[session_key]
+                        logger.debug(
+                            f"Removed session {session_id} from registry"
+                        )
+
+            except Exception as registry_error:
+                logger.warning(f"Error cleaning up registry: {registry_error}")
 
             logger.debug("Browser session closed successfully")
         except Exception as e:

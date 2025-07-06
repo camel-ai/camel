@@ -28,9 +28,10 @@ from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import sanitize_filename
 from camel.utils.commons import dependencies_required
+from camel.utils.tool_result import ToolResult
 
 from .agent import PlaywrightLLMAgent
-from .browser_session import NVBrowserSession
+from .browser_session import HybridBrowserSession
 
 logger = get_logger(__name__)
 
@@ -197,7 +198,7 @@ class HybridBrowserToolkit(BaseToolkit):
             logger.info(f"Log file path: {self.log_file_path}")
 
         # Core components
-        temp_session = NVBrowserSession(
+        temp_session = HybridBrowserSession(
             headless=headless,
             user_data_dir=user_data_dir,
             stealth=stealth,
@@ -313,6 +314,11 @@ class HybridBrowserToolkit(BaseToolkit):
             elif isinstance(outputs, dict):
                 # Unpack dictionary items into the log entry
                 log_entry.update(outputs)
+            elif isinstance(outputs, ToolResult):
+                log_entry["outputs"] = {
+                    "text": outputs.text,
+                    "images": outputs.images,
+                }
             else:
                 # For non-dict outputs, assign to 'outputs' key
                 log_entry["outputs"] = outputs
@@ -408,9 +414,9 @@ class HybridBrowserToolkit(BaseToolkit):
 
         return wrapper
 
-    async def _get_session(self) -> "NVBrowserSession":
+    async def _get_session(self) -> "HybridBrowserSession":
         """Get the correct singleton session instance."""
-        singleton = await NVBrowserSession._get_or_create_instance(
+        singleton = await HybridBrowserSession._get_or_create_instance(
             self._session
         )
         if singleton is not self._session:

@@ -20,7 +20,7 @@ from camel.models import BaseModelBackend, ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 from .actions import ActionExecutor
-from .browser_session import NVBrowserSession
+from .browser_session import HybridBrowserSession
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
@@ -82,7 +82,7 @@ what was accomplished
         stealth: bool = False,
         model_backend: Optional[BaseModelBackend] = None,
     ):
-        self._session = NVBrowserSession(
+        self._session = HybridBrowserSession(
             headless=headless, user_data_dir=user_data_dir, stealth=stealth
         )
         from camel.agents import ChatAgent
@@ -102,7 +102,7 @@ what was accomplished
     async def navigate(self, url: str) -> str:
         r"""Navigate to a URL and return the snapshot."""
         try:
-            # NVBrowserSession handles waits internally
+            # HybridBrowserSession handles waits internally
             logger.debug("Navigated to URL: %s", url)
             await self._session.visit(url)
             return await self._session.get_snapshot(force_refresh=True)
