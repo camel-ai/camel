@@ -8,14 +8,14 @@
 class HybridBrowserSession:
 ```
 
-Lightweight wrapper around Playwright for non-visual (headless)
-browsing.
+Lightweight wrapper around Playwright for
+browsing with multi-tab support.
 
-It provides a single *Page* instance plus helper utilities (snapshot &
+It provides multiple *Page* instances plus helper utilities (snapshot &
 executor).  Multiple toolkits or agents can reuse this class without
 duplicating Playwright setup code.
 
-This class is a singleton per event-loop.
+This class is a singleton per event-loop and session-id combination.
 
 <a id="camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession.__new__"></a>
 
@@ -32,3 +32,13 @@ def __new__(cls):
 ```python
 def __init__(self):
 ```
+
+<a id="camel.toolkits.hybrid_browser_toolkit.browser_session.HybridBrowserSession._load_stealth_script"></a>
+
+### _load_stealth_script
+
+```python
+def _load_stealth_script(self):
+```
+
+Load the stealth JavaScript script from file.
