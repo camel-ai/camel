@@ -440,8 +440,7 @@ class TestHybridBrowserToolkit:
         ):
             # Create toolkit with custom default URL
             toolkit = HybridBrowserToolkit(
-                headless=True, 
-                default_start_url=TEST_URL
+                headless=True, default_start_url=TEST_URL
             )
             toolkit._session = mock_session
 
