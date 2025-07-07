@@ -150,6 +150,7 @@ def search_agent_factory(
         "switch_tab",
         "enter",
         "get_som_screenshot",
+        "visit_page",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
@@ -267,6 +268,7 @@ def document_agent_factory(
         *ExcelToolkit().get_tools(),
         NoteTakingToolkit().read_note,
         SearchToolkit().search_exa,
+        *TerminalToolkit().get_tools(),
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
@@ -362,6 +364,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
         SearchToolkit().search_exa,
+        *TerminalToolkit().get_tools(),
     ]
 
     system_message = """You are a Multi-Modal Processing Assistant specialized 
@@ -493,6 +496,7 @@ operations.
             send_message_to_user,
             HumanToolkit().ask_human_via_console,
             SearchToolkit().search_exa,
+            *TerminalToolkit().get_tools(),
         ],
     )
 
@@ -510,7 +514,7 @@ async def main():
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1,
+        model_type=ModelType.GPT_4_1_MINI,
         # model_config_dict={
         #     "max_tokens": 32768,
         # },
@@ -518,7 +522,7 @@ async def main():
 
     model_backend_reason = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1,
+        model_type=ModelType.GPT_4_1_MINI,
         # model_config_dict={
         #     "max_tokens": 32768,
         # },
