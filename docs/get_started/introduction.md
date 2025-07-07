@@ -43,7 +43,7 @@ description: |
     Verifier‑driven synthetic data generation for domain‑specific QA at scale
   </Card>
 
-  <Card title="Agentic RAG Bots" icon="comments" href="/cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG">
+  <Card title="OWL 🦉" icon="brain-circuit" href="https://github.com/camel-ai/owl">
     Real‑world retrieval agents for Discord, support, and knowledge applications
   </Card>
 </CardGroup>
