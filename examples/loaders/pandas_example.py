@@ -18,7 +18,7 @@ import os
 import pandas as pd
 from pandasai.llm import OpenAI  # type: ignore[import-untyped]
 
-from camel.loaders import PandasReader
+from camel.loaders import PandasLoader
 
 # Create sample data
 sales_by_country = pd.DataFrame(
@@ -52,7 +52,7 @@ sales_by_country = pd.DataFrame(
 
 # Example 1: Using PandasReader without an LLM (default behavior)
 print("Example 1: PandasReader without LLM")
-reader_no_llm = PandasReader()
+reader_no_llm = PandasLoader()
 # Without an LLM, load() returns a regular pandas DataFrame
 df_no_llm = reader_no_llm.load(sales_by_country)
 print(f"Loaded DataFrame shape: {df_no_llm.shape}")
@@ -69,7 +69,7 @@ if os.getenv("OPENAI_API_KEY"):
             api_token=os.getenv("OPENAI_API_KEY"),
         )
     }
-    reader_with_llm = PandasReader(config=llm_config)
+    reader_with_llm = PandasLoader(config=llm_config)
     # With an LLM, load() returns a SmartDataframe
     df_with_llm = reader_with_llm.load(sales_by_country)
     print("Querying data with LLM:")
