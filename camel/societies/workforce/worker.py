@@ -103,6 +103,8 @@ class Worker(BaseNode, ABC):
             await self._channel.return_task(task.id)
         except Exception as e:
             logger.error(f"Error processing task {task.id}: {e}")
+            # Store error information in task result
+            task.result = f"{type(e).__name__}: {e!s}"
             task.set_state(TaskState.FAILED)
             await self._channel.return_task(task.id)
         finally:

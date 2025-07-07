@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-import json
 from typing import Dict, List, Optional
 
 from colorama import Fore
@@ -24,6 +23,9 @@ from camel.societies import RolePlaying
 from camel.societies.workforce.prompts import (
     ROLEPLAY_PROCESS_TASK_PROMPT,
     ROLEPLAY_SUMMARIZE_PROMPT,
+)
+from camel.societies.workforce.structured_output_handler import (
+    StructuredOutputHandler,
 )
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
@@ -48,6 +50,14 @@ class RolePlayingWorker(Worker):
             (default: :obj:`None`)
         chat_turn_limit (int): The maximum number of chat turns in the role
             playing. (default: :obj:`20`)
+        use_structured_output_handler (bool, optional): Whether to use the
+            structured output handler instead of native structured output.
+            When enabled, the workforce will use prompts with structured
+            output instructions and regex extraction to parse responses.
+            This ensures compatibility with agents that don't reliably
+            support native structured output. When disabled, the workforce
+            uses the native response_format parameter.
+            (default: :obj:`True`)
     """
 
     def __init__(
@@ -59,8 +69,15 @@ class RolePlayingWorker(Worker):
         user_agent_kwargs: Optional[Dict] = None,
         summarize_agent_kwargs: Optional[Dict] = None,
         chat_turn_limit: int = 20,
+        use_structured_output_handler: bool = True,
     ) -> None:
         super().__init__(description)
+        self.use_structured_output_handler = use_structured_output_handler
+        self.structured_handler = (
+            StructuredOutputHandler()
+            if use_structured_output_handler
+            else None
+        )
         self.summarize_agent_kwargs = summarize_agent_kwargs
         summ_sys_msg = BaseMessage.make_assistant_message(
             role_name="Summarizer",
@@ -173,13 +190,53 @@ class RolePlayingWorker(Worker):
             chat_history=chat_history_str,
             additional_info=task.additional_info,
         )
-        response = self.summarize_agent.step(
-            prompt, response_format=TaskResult
-        )
-        result_dict = json.loads(response.msg.content)
-        task_result = TaskResult(**result_dict)
+        if self.use_structured_output_handler and self.structured_handler:
+            # Use structured output handler for prompt-based extraction
+            enhanced_prompt = (
+                self.structured_handler.generate_structured_prompt(
+                    base_prompt=prompt,
+                    schema=TaskResult,
+                    examples=[
+                        {
+                            "content": "The assistant successfully completed "
+                            "the task by...",
+                            "failed": False,
+                        }
+                    ],
+                    additional_instructions=(
+                        "Summarize the task execution based "
+                        "on the chat history, clearly indicating whether "
+                        "the task succeeded or failed."
+                    ),
+                )
+            )
+            response = self.summarize_agent.step(enhanced_prompt)
+            task_result = self.structured_handler.parse_structured_response(
+                response_text=response.msg.content if response.msg else "",
+                schema=TaskResult,
+                fallback_values={
+                    "content": "Task summarization failed",
+                    "failed": True,
+                },
+            )
+        else:
+            # Use native structured output if supported
+            response = self.summarize_agent.step(
+                prompt, response_format=TaskResult
+            )
+            if response.msg.parsed is None:
+                print(
+                    f"{Fore.RED}Error in summarization: Invalid "
+                    f"task result{Fore.RESET}"
+                )
+                task_result = TaskResult(
+                    content="Failed to generate valid task summary.",
+                    failed=True,
+                )
+            else:
+                task_result = response.msg.parsed
 
-        task.result = task_result.content
+        task.result = task_result.content  # type: ignore[union-attr]
 
         if is_task_result_insufficient(task):
             print(

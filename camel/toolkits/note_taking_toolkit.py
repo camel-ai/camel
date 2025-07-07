@@ -41,27 +41,21 @@ class NoteTakingToolkit(BaseToolkit):
         self.note_file_path = Path(note_file_path)
         self.note_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def take_note(self, content: str, update: bool = False) -> str:
-        r"""Takes a note and saves it to the note file.
+    def append_note(self, content: str) -> str:
+        r"""Appends a note to the note file.
 
         Args:
-            content (str): The content of the note to be saved.
-            update (bool): If True, the existing note file will be
-                overwritten with the new content. If False, the new content
-                will be appended to the end of the file.
-                (default: :obj:`False`)
+            content (str): The content of the note to be appended.
 
         Returns:
             str: A message indicating the result of the operation.
         """
-        mode = "w" if update else "a"
         try:
-            with self.note_file_path.open(mode, encoding="utf-8") as f:
+            with self.note_file_path.open("a", encoding="utf-8") as f:
                 f.write(content + "\n")
-            action = "updated" if update else "appended to"
-            return f"Note successfully {action} in {self.note_file_path}."
+            return f"Note successfully appended to in {self.note_file_path}."
         except Exception as e:
-            return f"Error taking note: {e}"
+            return f"Error appending note: {e}"
 
     def read_note(self) -> str:
         r"""Reads the content of the note file.
@@ -85,6 +79,6 @@ class NoteTakingToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects.
         """
         return [
-            FunctionTool(self.take_note),
+            FunctionTool(self.append_note),
             FunctionTool(self.read_note),
         ]
