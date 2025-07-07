@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -26,24 +26,33 @@ class ActionExecutor:
     SHORT_TIMEOUT = 2000  # 2 seconds
     MAX_SCROLL_AMOUNT = 5000  # Maximum scroll distance in pixels
 
-    def __init__(self, page: "Page"):
+    def __init__(self, page: "Page", session: Optional[Any] = None):
         self.page = page
+        self.session = session  # HybridBrowserSession instance
 
     # ------------------------------------------------------------------
     # Public helpers
     # ------------------------------------------------------------------
-    async def execute(self, action: Dict[str, Any]) -> str:
-        r"""Execute an action and return the result description."""
+    async def execute(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        r"""Execute an action and return detailed result information."""
         if not action:
-            return "No action to execute"
+            return {
+                "success": False,
+                "message": "No action to execute",
+                "details": {},
+            }
 
         action_type = action.get("type")
         if not action_type:
-            return "Error: action has no type"
+            return {
+                "success": False,
+                "message": "Error: action has no type",
+                "details": {},
+            }
 
         try:
             # small helper to ensure basic stability
-            await self._wait_dom_stable()
+            # await self._wait_dom_stable()
 
             handler = {
                 "click": self._click,
@@ -56,24 +65,41 @@ class ActionExecutor:
             }.get(action_type)
 
             if handler is None:
-                return f"Error: Unknown action type '{action_type}'"
+                return {
+                    "success": False,
+                    "message": f"Error: Unknown action type '{action_type}'",
+                    "details": {"action_type": action_type},
+                }
 
-            return await handler(action)
+            result = await handler(action)
+            return {
+                "success": True,
+                "message": result["message"],
+                "details": result.get("details", {}),
+            }
         except Exception as exc:
-            return f"Error executing {action_type}: {exc}"
+            return {
+                "success": False,
+                "message": f"Error executing {action_type}: {exc}",
+                "details": {"action_type": action_type, "error": str(exc)},
+            }
 
     # ------------------------------------------------------------------
     # Internal handlers
     # ------------------------------------------------------------------
-    async def _click(self, action: Dict[str, Any]) -> str:
-        r"""Handle click actions with multiple fallback strategies."""
+    async def _click(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        r"""Handle click actions with new tab support for any clickable
+        element."""
         ref = action.get("ref")
         text = action.get("text")
         selector = action.get("selector")
         if not (ref or text or selector):
-            return "Error: click requires ref/text/selector"
+            return {
+                "message": "Error: click requires ref/text/selector",
+                "details": {"error": "missing_selector"},
+            }
 
-        # Build strategies in priority order: ref > selector > text
+        # Build strategies in priority order
         strategies = []
         if ref:
             strategies.append(f"[aria-ref='{ref}']")
@@ -82,90 +108,230 @@ class ActionExecutor:
         if text:
             strategies.append(f'text="{text}"')
 
-        # Strategy 1: Try Playwright force click for each selector
+        details: Dict[str, Any] = {
+            "ref": ref,
+            "selector": selector,
+            "text": text,
+            "strategies_tried": [],
+            "successful_strategy": None,
+            "click_method": None,
+            "new_tab_created": False,
+        }
+
+        # Find the first valid selector
+        found_selector = None
         for sel in strategies:
-            try:
-                if await self.page.locator(sel).count() > 0:
-                    await self.page.click(
-                        sel, timeout=self.DEFAULT_TIMEOUT, force=True
-                    )
-                    return f"Clicked element via force: {sel}"
-            except Exception:
-                continue
+            if await self.page.locator(sel).count() > 0:
+                found_selector = sel
+                break
 
-        # Strategy 2: Try JavaScript click as fallback
-        for sel in strategies:
-            try:
-                await self.page.locator(sel).first.evaluate("el => el.click()")
-                await asyncio.sleep(0.1)  # Brief wait for effects
-                return f"Clicked element via JS: {sel}"
-            except Exception:
-                continue
+        if not found_selector:
+            details['error'] = "Element not found with any strategy"
+            return {
+                "message": "Error: Click failed, element not found",
+                "details": details,
+            }
 
-        return "Error: All click strategies failed"
+        element = self.page.locator(found_selector).first
+        details['successful_strategy'] = found_selector
 
-    async def _type(self, action: Dict[str, Any]) -> str:
+        # Attempt ctrl+click first (always)
+        try:
+            if self.session:
+                async with self.page.context.expect_page(
+                    timeout=self.SHORT_TIMEOUT
+                ) as new_page_info:
+                    await element.click(modifiers=["ControlOrMeta"])
+                new_page = await new_page_info.value
+                await new_page.wait_for_load_state('domcontentloaded')
+                new_tab_index = await self.session.register_page(new_page)
+                if new_tab_index is not None:
+                    await self.session.switch_to_tab(new_tab_index)
+                    self.page = new_page
+                details.update(
+                    {
+                        "click_method": "ctrl_click_new_tab",
+                        "new_tab_created": True,
+                        "new_tab_index": new_tab_index,
+                    }
+                )
+                return {
+                    "message": f"Clicked element (ctrl click), opened in new "
+                    f"tab {new_tab_index}",
+                    "details": details,
+                }
+            else:
+                await element.click(modifiers=["ControlOrMeta"])
+                details["click_method"] = "ctrl_click_no_session"
+                return {
+                    "message": f"Clicked element (ctrl click, no"
+                    f" session): {found_selector}",
+                    "details": details,
+                }
+        except asyncio.TimeoutError:
+            # No new tab was opened, click may have still worked
+            details["click_method"] = "ctrl_click_same_tab"
+            return {
+                "message": f"Clicked element (ctrl click, "
+                f"same tab): {found_selector}",
+                "details": details,
+            }
+        except Exception as e:
+            details['strategies_tried'].append(
+                {
+                    'selector': found_selector,
+                    'method': 'ctrl_click',
+                    'error': str(e),
+                }
+            )
+            # Fall through to fallback
+
+        # Fallback to normal force click if ctrl+click fails
+        try:
+            await element.click(force=True, timeout=self.DEFAULT_TIMEOUT)
+            details["click_method"] = "playwright_force_click"
+            return {
+                "message": f"Fallback clicked element: {found_selector}",
+                "details": details,
+            }
+        except Exception as e:
+            details["click_method"] = "playwright_force_click_failed"
+            details["error"] = str(e)
+            return {
+                "message": f"Error: All click strategies "
+                f"failed for {found_selector}",
+                "details": details,
+            }
+
+    async def _type(self, action: Dict[str, Any]) -> Dict[str, Any]:
         r"""Handle typing text into input fields."""
         ref = action.get("ref")
         selector = action.get("selector")
         text = action.get("text", "")
         if not (ref or selector):
-            return "Error: type requires ref/selector"
+            return {
+                "message": "Error: type requires ref/selector",
+                "details": {"error": "missing_selector"},
+            }
+
         target = selector or f"[aria-ref='{ref}']"
+        details = {
+            "ref": ref,
+            "selector": selector,
+            "target": target,
+            "text": text,
+            "text_length": len(text),
+        }
+
         try:
             await self.page.fill(target, text, timeout=self.SHORT_TIMEOUT)
-            return f"Typed '{text}' into {target}"
+            return {
+                "message": f"Typed '{text}' into {target}",
+                "details": details,
+            }
         except Exception as exc:
-            return f"Type failed: {exc}"
+            details["error"] = str(exc)
+            return {"message": f"Type failed: {exc}", "details": details}
 
-    async def _select(self, action: Dict[str, Any]) -> str:
+    async def _select(self, action: Dict[str, Any]) -> Dict[str, Any]:
         r"""Handle selecting options from dropdowns."""
         ref = action.get("ref")
         selector = action.get("selector")
         value = action.get("value", "")
         if not (ref or selector):
-            return "Error: select requires ref/selector"
+            return {
+                "message": "Error: select requires ref/selector",
+                "details": {"error": "missing_selector"},
+            }
+
         target = selector or f"[aria-ref='{ref}']"
+        details = {
+            "ref": ref,
+            "selector": selector,
+            "target": target,
+            "value": value,
+        }
+
         try:
             await self.page.select_option(
                 target, value, timeout=self.DEFAULT_TIMEOUT
             )
-            return f"Selected '{value}' in {target}"
+            return {
+                "message": f"Selected '{value}' in {target}",
+                "details": details,
+            }
         except Exception as exc:
-            return f"Select failed: {exc}"
+            details["error"] = str(exc)
+            return {"message": f"Select failed: {exc}", "details": details}
 
-    async def _wait(self, action: Dict[str, Any]) -> str:
+    async def _wait(self, action: Dict[str, Any]) -> Dict[str, Any]:
         r"""Handle wait actions."""
+        details: Dict[str, Any] = {
+            "wait_type": None,
+            "timeout": None,
+            "selector": None,
+        }
+
         if "timeout" in action:
             ms = int(action["timeout"])
+            details["wait_type"] = "timeout"
+            details["timeout"] = ms
             await asyncio.sleep(ms / 1000)
-            return f"Waited {ms}ms"
+            return {"message": f"Waited {ms}ms", "details": details}
         if "selector" in action:
             sel = action["selector"]
+            details["wait_type"] = "selector"
+            details["selector"] = sel
             await self.page.wait_for_selector(
                 sel, timeout=self.DEFAULT_TIMEOUT
             )
-            return f"Waited for {sel}"
-        return "Error: wait requires timeout/selector"
+            return {"message": f"Waited for {sel}", "details": details}
+        return {
+            "message": "Error: wait requires timeout/selector",
+            "details": details,
+        }
 
-    async def _extract(self, action: Dict[str, Any]) -> str:
+    async def _extract(self, action: Dict[str, Any]) -> Dict[str, Any]:
         r"""Handle text extraction from elements."""
         ref = action.get("ref")
         if not ref:
-            return "Error: extract requires ref"
+            return {
+                "message": "Error: extract requires ref",
+                "details": {"error": "missing_ref"},
+            }
+
         target = f"[aria-ref='{ref}']"
+        details = {"ref": ref, "target": target}
+
         await self.page.wait_for_selector(target, timeout=self.DEFAULT_TIMEOUT)
         txt = await self.page.text_content(target)
-        return f"Extracted: {txt[:100] if txt else 'None'}"
 
-    async def _scroll(self, action: Dict[str, Any]) -> str:
+        details["extracted_text"] = txt
+        details["text_length"] = len(txt) if txt else 0
+
+        return {
+            "message": f"Extracted: {txt[:100] if txt else 'None'}",
+            "details": details,
+        }
+
+    async def _scroll(self, action: Dict[str, Any]) -> Dict[str, Any]:
         r"""Handle page scrolling with safe parameter validation."""
         direction = action.get("direction", "down")
         amount = action.get("amount", 300)
 
+        details = {
+            "direction": direction,
+            "requested_amount": amount,
+            "actual_amount": None,
+            "scroll_offset": None,
+        }
+
         # Validate inputs to prevent injection
         if direction not in ("up", "down"):
-            return "Error: direction must be 'up' or 'down'"
+            return {
+                "message": "Error: direction must be 'up' or 'down'",
+                "details": details,
+            }
 
         try:
             # Safely convert amount to integer and clamp to reasonable range
@@ -174,28 +340,37 @@ class ActionExecutor:
                 -self.MAX_SCROLL_AMOUNT,
                 min(self.MAX_SCROLL_AMOUNT, amount_int),
             )  # Clamp to MAX_SCROLL_AMOUNT range
+            details["actual_amount"] = amount_int
         except (ValueError, TypeError):
-            return "Error: amount must be a valid number"
+            return {
+                "message": "Error: amount must be a valid number",
+                "details": details,
+            }
 
         # Use safe evaluation with bound parameters
         scroll_offset = amount_int if direction == "down" else -amount_int
+        details["scroll_offset"] = scroll_offset
+
         await self.page.evaluate(
             "offset => window.scrollBy(0, offset)", scroll_offset
         )
         await asyncio.sleep(0.5)
-        return f"Scrolled {direction} by {abs(amount_int)}px"
+        return {
+            "message": f"Scrolled {direction} by {abs(amount_int)}px",
+            "details": details,
+        }
 
-    async def _enter(self, action: Dict[str, Any]) -> str:
-        r"""Handle Enter key press actions."""
-        ref = action.get("ref")
-        selector = action.get("selector")
-        if ref:
-            await self.page.focus(f"[aria-ref='{ref}']")
-        elif selector:
-            await self.page.focus(selector)
+    async def _enter(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        r"""Handle Enter key press on the currently focused element."""
+        details = {"action_type": "enter", "target": "focused_element"}
+
+        # Press Enter on whatever element currently has focus
         await self.page.keyboard.press("Enter")
         await asyncio.sleep(0.3)
-        return "Pressed Enter"
+        return {
+            "message": "Pressed Enter on focused element",
+            "details": details,
+        }
 
     # utilities
     async def _wait_dom_stable(self) -> None:

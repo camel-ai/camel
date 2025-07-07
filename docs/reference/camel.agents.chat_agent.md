@@ -1243,6 +1243,17 @@ configuration as the current instance.
   ChatAgent: A new instance of :obj:`ChatAgent` with the same
 configuration.
 
+<a id="camel.agents.chat_agent.ChatAgent._clone_tools"></a>
+
+### _clone_tools
+
+```python
+def _clone_tools(self):
+```
+
+Clone tools for new agent instance,
+handling stateful toolkits properly.
+
 <a id="camel.agents.chat_agent.ChatAgent.__repr__"></a>
 
 ### __repr__

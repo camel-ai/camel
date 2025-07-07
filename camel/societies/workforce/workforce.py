@@ -47,6 +47,9 @@ from camel.societies.workforce.prompts import (
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
+from camel.societies.workforce.structured_output_handler import (
+    StructuredOutputHandler,
+)
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
     FailureContext,
@@ -168,6 +171,14 @@ class Workforce(BaseNode):
             SingleAgentWorker instances; RolePlayingWorker and nested
             Workforce instances do not participate in memory sharing.
             (default: :obj:`False`)
+        use_structured_output_handler (bool, optional): Whether to use the
+            structured output handler instead of native structured output.
+            When enabled, the workforce will use prompts with structured
+            output instructions and regex extraction to parse responses.
+            This ensures compatibility with agents that don't reliably
+            support native structured output. When disabled, the workforce
+            uses the native response_format parameter.
+            (default: :obj:`True`)
 
     Example:
         >>> import asyncio
@@ -218,6 +229,7 @@ class Workforce(BaseNode):
         new_worker_agent: Optional[ChatAgent] = None,
         graceful_shutdown_timeout: float = 15.0,
         share_memory: bool = False,
+        use_structured_output_handler: bool = True,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[
@@ -227,6 +239,9 @@ class Workforce(BaseNode):
         self.new_worker_agent = new_worker_agent
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
         self.share_memory = share_memory
+        self.use_structured_output_handler = use_structured_output_handler
+        if self.use_structured_output_handler:
+            self.structured_handler = StructuredOutputHandler()
         self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
         self._task: Optional[Task] = None
         self._pending_tasks: Deque[Task] = deque()
@@ -729,12 +744,55 @@ class Workforce(BaseNode):
         )
 
         try:
-            # Get decision from task agent
-            self.task_agent.reset()
-            response = self.task_agent.step(
-                analysis_prompt, response_format=RecoveryDecision
-            )
-            return response.msg.parsed
+            # Check if we should use structured handler
+            if self.use_structured_output_handler:
+                # Use structured handler
+                enhanced_prompt = (
+                    self.structured_handler.generate_structured_prompt(
+                        base_prompt=analysis_prompt,
+                        schema=RecoveryDecision,
+                        examples=[
+                            {
+                                "strategy": "RETRY",
+                                "reasoning": "Temporary network error, "
+                                "worth retrying",
+                                "modified_task_content": None,
+                            }
+                        ],
+                    )
+                )
+
+                self.task_agent.reset()
+                response = self.task_agent.step(enhanced_prompt)
+
+                result = self.structured_handler.parse_structured_response(
+                    response.msg.content if response.msg else "",
+                    schema=RecoveryDecision,
+                    fallback_values={
+                        "strategy": RecoveryStrategy.RETRY,
+                        "reasoning": "Defaulting to retry due to parsing "
+                        "issues",
+                        "modified_task_content": None,
+                    },
+                )
+                # Ensure we return a RecoveryDecision instance
+                if isinstance(result, RecoveryDecision):
+                    return result
+                elif isinstance(result, dict):
+                    return RecoveryDecision(**result)
+                else:
+                    return RecoveryDecision(
+                        strategy=RecoveryStrategy.RETRY,
+                        reasoning="Failed to parse recovery decision",
+                        modified_task_content=None,
+                    )
+            else:
+                # Use existing native structured output code
+                self.task_agent.reset()
+                response = self.task_agent.step(
+                    analysis_prompt, response_format=RecoveryDecision
+                )
+                return response.msg.parsed
 
         except Exception as e:
             logger.warning(
@@ -1338,6 +1396,9 @@ class Workforce(BaseNode):
                         start_coroutine, self._loop
                     )
                 self._child_listening_tasks.append(child_task)
+        else:
+            # Close the coroutine to prevent RuntimeWarning
+            start_coroutine.close()
 
     def add_single_agent_worker(
         self,
@@ -1372,6 +1433,7 @@ class Workforce(BaseNode):
             description=description,
             worker=worker,
             pool_max_size=pool_max_size,
+            use_structured_output_handler=self.use_structured_output_handler,
         )
         self._children.append(worker_node)
 
@@ -1450,6 +1512,7 @@ class Workforce(BaseNode):
             user_agent_kwargs=user_agent_kwargs,
             summarize_agent_kwargs=summarize_agent_kwargs,
             chat_turn_limit=chat_turn_limit,
+            use_structured_output_handler=self.use_structured_output_handler,
         )
         self._children.append(worker_node)
 
@@ -1623,26 +1686,73 @@ class Workforce(BaseNode):
             )
             prompt = prompt + f"\n\n{feedback}"
 
-        response = self.coordinator_agent.step(
-            prompt, response_format=TaskAssignResult
-        )
-
-        if response.msg is None or response.msg.content is None:
-            logger.error(
-                "Coordinator agent returned empty response for task assignment"
+        # Check if we should use structured handler
+        if self.use_structured_output_handler:
+            # Use structured handler for prompt-based extraction
+            enhanced_prompt = (
+                self.structured_handler.generate_structured_prompt(
+                    base_prompt=prompt,
+                    schema=TaskAssignResult,
+                    examples=[
+                        {
+                            "assignments": [
+                                {
+                                    "task_id": "task_1",
+                                    "assignee_id": "worker_123",
+                                    "dependencies": [],
+                                }
+                            ]
+                        }
+                    ],
+                )
             )
-            return TaskAssignResult(assignments=[])
 
-        try:
-            result_dict = json.loads(response.msg.content, parse_int=str)
-            return TaskAssignResult(**result_dict)
-        except json.JSONDecodeError as e:
-            logger.error(
-                f"JSON parsing error in task assignment: Invalid response "
-                f"format - {e}. Response content: "
-                f"{response.msg.content[:50]}..."
+            # Get response without structured format
+            response = self.coordinator_agent.step(enhanced_prompt)
+
+            if response.msg is None or response.msg.content is None:
+                logger.error(
+                    "Coordinator agent returned empty response for "
+                    "task assignment"
+                )
+                return TaskAssignResult(assignments=[])
+
+            # Parse with structured handler
+            result = self.structured_handler.parse_structured_response(
+                response.msg.content,
+                schema=TaskAssignResult,
+                fallback_values={"assignments": []},
             )
-            return TaskAssignResult(assignments=[])
+            # Ensure we return a TaskAssignResult instance
+            if isinstance(result, TaskAssignResult):
+                return result
+            elif isinstance(result, dict):
+                return TaskAssignResult(**result)
+            else:
+                return TaskAssignResult(assignments=[])
+        else:
+            # Use existing native structured output code
+            response = self.coordinator_agent.step(
+                prompt, response_format=TaskAssignResult
+            )
+
+            if response.msg is None or response.msg.content is None:
+                logger.error(
+                    "Coordinator agent returned empty response for "
+                    "task assignment"
+                )
+                return TaskAssignResult(assignments=[])
+
+            try:
+                result_dict = json.loads(response.msg.content, parse_int=str)
+                return TaskAssignResult(**result_dict)
+            except json.JSONDecodeError as e:
+                logger.error(
+                    f"JSON parsing error in task assignment: Invalid response "
+                    f"format - {e}. Response content: "
+                    f"{response.msg.content[:50]}..."
+                )
+                return TaskAssignResult(assignments=[])
 
     def _validate_assignments(
         self, assignments: List[TaskAssignment], valid_ids: Set[str]
@@ -1844,6 +1954,10 @@ class Workforce(BaseNode):
             logger.error(
                 f"Failed to post task {task.id} to {assignee_id}: {e}"
             )
+            print(
+                f"{Fore.RED}Failed to post task {task.id} to {assignee_id}: "
+                f"{e}{Fore.RESET}"
+            )
 
     async def _post_dependency(self, dependency: Task) -> None:
         await self._channel.post_dependency(dependency, self.node_id)
@@ -1864,35 +1978,92 @@ class Workforce(BaseNode):
             child_nodes_info=self._get_child_nodes_info(),
             additional_info=task.additional_info,
         )
-        response = self.coordinator_agent.step(
-            prompt, response_format=WorkerConf
-        )
-        if response.msg is None or response.msg.content is None:
-            logger.error(
-                "Coordinator agent returned empty response for worker creation"
+        # Check if we should use structured handler
+        if self.use_structured_output_handler:
+            # Use structured handler
+            enhanced_prompt = (
+                self.structured_handler.generate_structured_prompt(
+                    base_prompt=prompt,
+                    schema=WorkerConf,
+                    examples=[
+                        {
+                            "description": "Data analysis specialist",
+                            "role": "Data Analyst",
+                            "sys_msg": "You are an expert data analyst.",
+                        }
+                    ],
+                )
             )
-            # Create a fallback worker configuration
-            new_node_conf = WorkerConf(
-                description=f"Fallback worker for "
-                f"task: {task.content[:50]}...",
-                role="General Assistant",
-                sys_msg="You are a general assistant that can help "
-                "with various tasks.",
-            )
-        else:
-            try:
-                result_dict = json.loads(response.msg.content)
-                new_node_conf = WorkerConf(**result_dict)
-            except json.JSONDecodeError as e:
+
+            response = self.coordinator_agent.step(enhanced_prompt)
+
+            if response.msg is None or response.msg.content is None:
                 logger.error(
-                    f"JSON parsing error in worker creation: Invalid response "
-                    f"format - {e}. Response content: "
-                    f"{response.msg.content[:100]}..."
+                    "Coordinator agent returned empty response for "
+                    "worker creation"
                 )
-                raise RuntimeError(
-                    f"Failed to create worker for task {task.id}: "
-                    f"Coordinator agent returned malformed JSON response. "
+                new_node_conf = WorkerConf(
+                    description=f"Fallback worker for task: "
+                    f"{task.content[:50]}...",
+                    role="General Assistant",
+                    sys_msg="You are a general assistant that can help "
+                    "with various tasks.",
                 )
+            else:
+                result = self.structured_handler.parse_structured_response(
+                    response.msg.content,
+                    schema=WorkerConf,
+                    fallback_values={
+                        "description": f"Worker for task: "
+                        f"{task.content[:50]}...",
+                        "role": "Task Specialist",
+                        "sys_msg": f"You are a specialist for: {task.content}",
+                    },
+                )
+                # Ensure we have a WorkerConf instance
+                if isinstance(result, WorkerConf):
+                    new_node_conf = result
+                elif isinstance(result, dict):
+                    new_node_conf = WorkerConf(**result)
+                else:
+                    new_node_conf = WorkerConf(
+                        description=f"Worker for task: {task.content[:50]}...",
+                        role="Task Specialist",
+                        sys_msg=f"You are a specialist for: {task.content}",
+                    )
+        else:
+            # Use existing native structured output code
+            response = self.coordinator_agent.step(
+                prompt, response_format=WorkerConf
+            )
+            if response.msg is None or response.msg.content is None:
+                logger.error(
+                    "Coordinator agent returned empty response for "
+                    "worker creation"
+                )
+                # Create a fallback worker configuration
+                new_node_conf = WorkerConf(
+                    description=f"Fallback worker for "
+                    f"task: {task.content[:50]}...",
+                    role="General Assistant",
+                    sys_msg="You are a general assistant that can help "
+                    "with various tasks.",
+                )
+            else:
+                try:
+                    result_dict = json.loads(response.msg.content)
+                    new_node_conf = WorkerConf(**result_dict)
+                except json.JSONDecodeError as e:
+                    logger.error(
+                        f"JSON parsing error in worker creation: Invalid "
+                        f"response format - {e}. Response content: "
+                        f"format - {e}. Response content: "
+                        f"{response.msg.content[:100]}..."
+                    )
+                    raise RuntimeError(
+                        f"Failed to create worker for task {task.id}: "
+                        f"Coordinator agent returned malformed JSON response. "
+                    ) from e
 
         new_agent = await self._create_new_agent(
             new_node_conf.role,
@@ -1903,6 +2074,7 @@ class Workforce(BaseNode):
             description=new_node_conf.description,
             worker=new_agent,
             pool_max_size=DEFAULT_WORKER_POOL_SIZE,
+            use_structured_output_handler=self.use_structured_output_handler,
         )
         new_node.set_channel(self._channel)
 
@@ -2129,101 +2301,107 @@ class Workforce(BaseNode):
             f"{recovery_decision.reasoning}"
         )
 
-        if recovery_decision.strategy == RecoveryStrategy.RETRY:
-            # Simply retry the task by reposting it
-            if task.id in self._assignees:
-                assignee_id = self._assignees[task.id]
-                await self._post_task(task, assignee_id)
-                action_taken = f"retried with same worker {assignee_id}"
-            else:
-                # Find a new assignee and retry
-                batch_result = await self._find_assignee([task])
-                assignment = batch_result.assignments[0]
-                self._assignees[task.id] = assignment.assignee_id
-                await self._post_task(task, assignment.assignee_id)
-                action_taken = (
-                    f"retried with new worker {assignment.assignee_id}"
-                )
-
-        elif recovery_decision.strategy == RecoveryStrategy.REPLAN:
-            # Modify the task content and retry
-            if recovery_decision.modified_task_content:
-                task.content = recovery_decision.modified_task_content
-                logger.info(f"Task {task.id} content modified for replan")
-
-            # Repost the modified task
-            if task.id in self._assignees:
-                assignee_id = self._assignees[task.id]
-                await self._post_task(task, assignee_id)
-                action_taken = (
-                    f"replanned and retried with worker {assignee_id}"
-                )
-            else:
-                # Find a new assignee for the replanned task
-                batch_result = await self._find_assignee([task])
-                assignment = batch_result.assignments[0]
-                self._assignees[task.id] = assignment.assignee_id
-                await self._post_task(task, assignment.assignee_id)
-                action_taken = (
-                    f"replanned and assigned to "
-                    f"worker {assignment.assignee_id}"
-                )
-
-        elif recovery_decision.strategy == RecoveryStrategy.DECOMPOSE:
-            # Decompose the task into subtasks
-            subtasks = self._decompose_task(task)
-            if self.metrics_logger and subtasks:
-                self.metrics_logger.log_task_decomposed(
-                    parent_task_id=task.id,
-                    subtask_ids=[st.id for st in subtasks],
-                )
-                for subtask in subtasks:
-                    self.metrics_logger.log_task_created(
-                        task_id=subtask.id,
-                        description=subtask.content,
-                        parent_task_id=task.id,
-                        task_type=subtask.type,
-                        metadata=subtask.additional_info,
-                    )
-            # Insert packets at the head of the queue
-            self._pending_tasks.extendleft(reversed(subtasks))
-
-            await self._post_ready_tasks()
-            action_taken = f"decomposed into {len(subtasks)} subtasks"
-
-            # Handle task completion differently for decomposed tasks
-            if task.id in self._assignees:
-                await self._channel.archive_task(task.id)
-
-            self._cleanup_task_tracking(task.id)
-            logger.debug(
-                f"Task {task.id} failed and was {action_taken}. "
-                f"Dependencies updated for subtasks."
-            )
-
-            # Sync shared memory after task decomposition
-            if self.share_memory:
-                logger.info(
-                    f"Syncing shared memory after task {task.id} decomposition"
-                )
-                self._sync_shared_memory()
-
-            # Check if any pending tasks are now ready to execute
-            await self._post_ready_tasks()
-            return False
-
-        elif recovery_decision.strategy == RecoveryStrategy.CREATE_WORKER:
-            assignee = await self._create_worker_node_for_task(task)
-            await self._post_task(task, assignee.node_id)
-            action_taken = (
-                f"created new worker {assignee.node_id} and assigned "
-                f"task {task.id} to it"
-            )
-
+        # Clean up tracking before attempting recovery
         if task.id in self._assignees:
             await self._channel.archive_task(task.id)
-
         self._cleanup_task_tracking(task.id)
+
+        try:
+            if recovery_decision.strategy == RecoveryStrategy.RETRY:
+                # Simply retry the task by reposting it
+                if task.id in self._assignees:
+                    assignee_id = self._assignees[task.id]
+                    await self._post_task(task, assignee_id)
+                    action_taken = f"retried with same worker {assignee_id}"
+                else:
+                    # Find a new assignee and retry
+                    batch_result = await self._find_assignee([task])
+                    assignment = batch_result.assignments[0]
+                    self._assignees[task.id] = assignment.assignee_id
+                    await self._post_task(task, assignment.assignee_id)
+                    action_taken = (
+                        f"retried with new worker {assignment.assignee_id}"
+                    )
+
+            elif recovery_decision.strategy == RecoveryStrategy.REPLAN:
+                # Modify the task content and retry
+                if recovery_decision.modified_task_content:
+                    task.content = recovery_decision.modified_task_content
+                    logger.info(f"Task {task.id} content modified for replan")
+
+                # Repost the modified task
+                if task.id in self._assignees:
+                    assignee_id = self._assignees[task.id]
+                    await self._post_task(task, assignee_id)
+                    action_taken = (
+                        f"replanned and retried with worker {assignee_id}"
+                    )
+                else:
+                    # Find a new assignee for the replanned task
+                    batch_result = await self._find_assignee([task])
+                    assignment = batch_result.assignments[0]
+                    self._assignees[task.id] = assignment.assignee_id
+                    await self._post_task(task, assignment.assignee_id)
+                    action_taken = (
+                        f"replanned and assigned to "
+                        f"worker {assignment.assignee_id}"
+                    )
+
+            elif recovery_decision.strategy == RecoveryStrategy.DECOMPOSE:
+                # Decompose the task into subtasks
+                subtasks = self._decompose_task(task)
+                if self.metrics_logger and subtasks:
+                    self.metrics_logger.log_task_decomposed(
+                        parent_task_id=task.id,
+                        subtask_ids=[st.id for st in subtasks],
+                    )
+                    for subtask in subtasks:
+                        self.metrics_logger.log_task_created(
+                            task_id=subtask.id,
+                            description=subtask.content,
+                            parent_task_id=task.id,
+                            task_type=subtask.type,
+                            metadata=subtask.additional_info,
+                        )
+                # Insert packets at the head of the queue
+                self._pending_tasks.extendleft(reversed(subtasks))
+
+                await self._post_ready_tasks()
+                action_taken = f"decomposed into {len(subtasks)} subtasks"
+
+                logger.debug(
+                    f"Task {task.id} failed and was {action_taken}. "
+                    f"Dependencies updated for subtasks."
+                )
+
+                # Sync shared memory after task decomposition
+                if self.share_memory:
+                    logger.info(
+                        f"Syncing shared memory after "
+                        f"task {task.id} decomposition"
+                    )
+                    self._sync_shared_memory()
+
+                # Check if any pending tasks are now ready to execute
+                await self._post_ready_tasks()
+                return False
+
+            elif recovery_decision.strategy == RecoveryStrategy.CREATE_WORKER:
+                assignee = await self._create_worker_node_for_task(task)
+                await self._post_task(task, assignee.node_id)
+                action_taken = (
+                    f"created new worker {assignee.node_id} and assigned "
+                    f"task {task.id} to it"
+                )
+        except Exception as e:
+            logger.error(f"Recovery strategy failed for task {task.id}: {e}")
+            # If max retries reached, halt the workforce
+            if task.failure_count >= MAX_TASK_RETRIES:
+                self._completed_tasks.append(task)
+                return True
+            self._completed_tasks.append(task)
+            return False
+
         logger.debug(
             f"Task {task.id} failed and was {action_taken}. "
             f"Updating dependency state."
@@ -2716,6 +2894,7 @@ class Workforce(BaseNode):
             else None,
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
+            use_structured_output_handler=self.use_structured_output_handler,
         )
 
         for child in self._children:

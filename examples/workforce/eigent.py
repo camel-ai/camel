@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+import uuid
 
 from camel.agents.chat_agent import ChatAgent
 from camel.logger import get_logger
@@ -21,9 +22,9 @@ from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import (
+    AgentCommunicationToolkit,
     AudioAnalysisToolkit,
     Crawl4AIToolkit,
-    EdgeOnePagesMCPToolkit,
     ExcelToolkit,
     FileWriteToolkit,
     # GoogleDriveMCPToolkit,
@@ -79,14 +80,12 @@ def send_message_to_user(message: str) -> None:
 def developer_agent_factory(
     model: BaseModelBackend,
     task_id: str,
-    edgeone_pages_mcp_toolkit: EdgeOnePagesMCPToolkit,
 ):
     r"""Factory for creating a developer agent."""
     tools = [
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
         *TerminalToolkit(clone_current_env=True).get_tools(),
-        *edgeone_pages_mcp_toolkit.get_tools(),
     ]
 
     system_message = """You are a skilled coding assistant. You can write and 
@@ -109,14 +108,13 @@ def developer_agent_factory(
     using `pip` in the terminal.
     - Implementing complete, production-ready code rather than theoretical 
     examples.
-    - Using the `edgeone_pages_mcp_toolkit` to create and edit web pages. 
-    After you create a web page, you can ask the search agent to visit it for 
-    verification.
     - Demonstrating results with proper error handling and practical 
     implementation.
     - Asking for human input via the console if you are stuck or need 
     clarification.
-    
+    - Communicating with other agents using messaging tools. You can use 
+    `list_available_agents` to see available team members and `send_message` 
+    to coordinate with them for complex tasks requiring collaboration.
     Remember to manage your terminal sessions. You can create new sessions 
     and run commands in them.
     """
@@ -131,7 +129,7 @@ def developer_agent_factory(
     )
 
 
-@api_keys_required([(None, 'EXA_API_KEY'), (None, 'GOOGLE_API_KEY')])
+@api_keys_required([(None, 'EXA_API_KEY')])
 def search_agent_factory(
     model: BaseModelBackend,
     task_id: str,
@@ -139,38 +137,60 @@ def search_agent_factory(
     r"""Factory for creating a search agent, based on user-provided code
     structure.
     """
+    # Generate a unique identifier for this agent instance
+    agent_id = str(uuid.uuid4())[:8]
+
+    custom_tools = [
+        "open_browser",
+        "close_browser",
+        "click",
+        "type",
+        "back",
+        "forward",
+        "switch_tab",
+        "enter",
+        "get_som_screenshot",
+    ]
+    web_toolkit_custom = HybridBrowserToolkit(
+        headless=False,
+        enabled_tools=custom_tools,
+        browser_log_to_file=True,
+        stealth=True,
+        session_id=agent_id,  # unique session ID
+        default_start_url="https://bing.com/",
+    )
+
     tools = [
-        # FunctionTool(SearchToolkit().search_wiki),
-        SearchToolkit().search_google,
-        SearchToolkit().search_bing,
-        # FunctionTool(SearchToolkit().search_baidu),
-        *HybridBrowserToolkit(headless=False).get_tools(),
+        *web_toolkit_custom.get_tools(),
         *TerminalToolkit().get_tools(),
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
-        NoteTakingToolkit().take_note,
+        NoteTakingToolkit().append_note,
         *Crawl4AIToolkit().get_tools(),
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
     extract webpage content, simulate browser actions, and provide relevant 
     information to solve the given task.
-    
+
     You MUST use the `send_message_to_user` tool to inform the user of every 
     decision and action you take. Your message must include a short title 
     and a one-sentence description. This is a mandatory part of your 
     workflow.
-
+    
     ### Web Search Workflow
-    1.  **Search First**: You MUST start by using a search engine to get 
-        initial URLs. Use `search_google` for English queries and 
-        `search_bing` for Chinese queries. Do not use browser tools before 
-        this step.
-    2.  **Browse URLs**: After getting search results, use the `visit_page` 
-        tool from the browser toolkit to open promising URLs.
-    3.  **Explore and Scrape**: Once on a page, use browser tools to read 
-        content, scrape information, and navigate to other linked pages to 
-        gather all necessary data.
+    1.  **Open Browser**: You MUST start by using the `open_browser` tool to 
+        launch a browser. This will automatically open a search engine page.
+    2.  **Perform Search**: Use the `type` tool to enter your search query 
+        into the search bar on the page. Then, use the `click` tool to 
+        press the search button.
+    3.  **Analyze Search Results**: After the search results load, use 
+        `get_page_snapshot` to see the available links.
+    4.  **Navigate and Explore**: Instead of using `visit_page` with a URL 
+        you guess, you MUST `click` on a link from the snapshot to navigate 
+        to a page. Once on a page, use browser tools to read content, scrape 
+        information, and navigate to other linked pages to gather all 
+        necessary data. This avoids errors from using incorrect URLs.
 
     ### Core Principles
     - For each decision you make and action you take, you must send a message 
@@ -179,9 +199,14 @@ def search_agent_factory(
     a broader perspective and help validate existing knowledge.
     - If one way fails to provide an answer, try other ways or methods. The 
     answer does exist.
+    - Communicate with other agents using messaging tools when needed. You can 
+    use `list_available_agents` to see available team members and 
+    `send_message` to coordinate with them, especially when you need 
+    assistance from developers 
+    or document processing capabilities.
 
     ### Note Taking
-    - As you find information, you MUST use the `take_note` tool to record 
+    - As you find information, you MUST use the `append_note` tool to record 
     your findings in a structured way.
     - Append new information to the notes. Do not overwrite the note file 
     unless you are summarizing or restructuring the content.
@@ -242,7 +267,7 @@ def document_agent_factory(
     the `send_message_to_user` tool to inform the user of every decision and 
     action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
-    
+
     Your capabilities include:
 
     1. Information Gathering:
@@ -250,6 +275,10 @@ def document_agent_factory(
        get all the information gathered by the Search Agent.
        - The notes contain all the raw data, findings, and sources you need 
        to complete your work.
+       - You can communicate with other agents using messaging tools when you 
+       need additional information. Use `list_available_agents` to see 
+       available team members and `send_message` to request specific data or 
+       clarifications.
 
     2. Document Creation & Editing:
        - Create and write to various file formats including Markdown (.md), 
@@ -328,7 +357,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     the `send_message_to_user` tool to inform the user of every decision and 
     action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
-    
+
     Your capabilities include:
 
     1. Video & Audio Analysis:
@@ -352,6 +381,13 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     4. Human Interaction:
        - Ask questions to users and receive their responses
        - Send informative messages to users without requiring responses
+
+    5. Agent Communication:
+       - Communicate with other agents using messaging tools when 
+       collaboration is needed. Use `list_available_agents` to see available 
+       team members and `send_message` to coordinate with them, especially 
+       when you need to share analysis results or request additional 
+       processing capabilities.
 
     When working with multi-modal content, you should:
     - Provide detailed and accurate descriptions of media content
@@ -420,6 +456,12 @@ Your integrated toolkits enable you to:
 7. Human Interaction (HumanToolkit):
    - Ask questions to users and send messages via console.
 
+8. Agent Communication:
+   - Communicate with other agents using messaging tools when collaboration 
+   is needed. Use `list_available_agents` to see available team members and 
+   `send_message` to coordinate with them, especially when you need content 
+   from document agents or research from search agents.
+
 When assisting users, always:
 - Identify which platform's functionality is needed for the task.
 - Check if required API credentials are available before attempting 
@@ -444,116 +486,151 @@ operations.
 
 
 async def main():
-    edgeone_pages_mcp_toolkit = EdgeOnePagesMCPToolkit()
     # google_drive_mcp_toolkit = GoogleDriveMCPToolkit(
     #     credentials_path="path/to/credentials.json"
     # )
-    try:
-        await edgeone_pages_mcp_toolkit.connect()
-        # await google_drive_mcp_toolkit.connect()
 
-        # Create a single model backend for all agents
-        model_backend = ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4_1_MINI,
-            # model_config_dict={
-            #     "max_tokens": 32768,
-            # },
-        )
+    # Initialize the AgentCommunicationToolkit
+    msg_toolkit = AgentCommunicationToolkit(max_message_history=100)
 
-        model_backend_reason = ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4_1_MINI,
-            # model_config_dict={
-            #     "max_tokens": 32768,
-            # },
-        )
+    # await google_drive_mcp_toolkit.connect()
 
-        task_id = 'workforce_task'
+    # Create a single model backend for all agents
+    model_backend = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4_1,
+        # model_config_dict={
+        #     "max_tokens": 32768,
+        # },
+    )
 
-        # Create custom agents for the workforce
-        coordinator_agent = ChatAgent(
-            "You are a helpful coordinator. You MUST use the "
-            "`send_message_to_user` tool to inform the user of every "
-            "decision and action you take. Your message must include a short "
-            "title and a one-sentence description. This is a mandatory part "
-            "of your workflow.",
-            model=model_backend_reason,
-            tools=[
-                send_message_to_user,
-            ],
-        )
-        task_agent = ChatAgent(
-            "You are a helpful task planner. You MUST use the "
-            "`send_message_to_user` tool to inform the user of every decision "
-            "and action you take. Your message must include a short title and "
-            "a one-sentence description. This is a mandatory part of your "
-            "workflow.",
-            model=model_backend_reason,
-            tools=[
-                send_message_to_user,
-            ],
-        )
-        new_worker_agent = ChatAgent(
-            "You are a helpful worker. You MUST use the "
-            "`send_message_to_user` tool to inform the user of every "
-            "decision and action you take. Your message must include a short "
-            "title and a one-sentence description. This is a mandatory part "
-            "of your workflow.",
-            model=model_backend,
-            tools=[
-                send_message_to_user,
-                HumanToolkit().ask_human_via_console,
-            ],
-        )
+    model_backend_reason = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4_1,
+        # model_config_dict={
+        #     "max_tokens": 32768,
+        # },
+    )
 
-        # Create agents using factory functions
-        search_agent = search_agent_factory(model_backend, task_id)
-        developer_agent = developer_agent_factory(
-            model_backend, task_id, edgeone_pages_mcp_toolkit
-        )
-        document_agent = document_agent_factory(
-            model_backend,
-            task_id,
-            # google_drive_mcp_toolkit
-        )
-        multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
+    task_id = 'workforce_task'
 
-        # Create workforce instance before adding workers
-        workforce = Workforce(
-            'A workforce',
-            graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
-            share_memory=False,
-            coordinator_agent=coordinator_agent,
-            task_agent=task_agent,
-            new_worker_agent=new_worker_agent,
-        )
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator. You MUST use the "
+        "`send_message_to_user` tool to inform the user of every "
+        "decision and action you take. Your message must include a short "
+        "title and a one-sentence description. This is a mandatory part "
+        "of your workflow.",
+        model=model_backend_reason,
+        tools=[
+            send_message_to_user,
+        ],
+    )
+    task_agent = ChatAgent(
+        "You are a helpful task planner. You MUST use the "
+        "`send_message_to_user` tool to inform the user of every decision "
+        "and action you take. Your message must include a short title and "
+        "a one-sentence description. This is a mandatory part of your "
+        "workflow.",
+        model=model_backend_reason,
+        tools=[
+            send_message_to_user,
+        ],
+    )
+    new_worker_agent = ChatAgent(
+        "You are a helpful worker. You MUST use the "
+        "`send_message_to_user` tool to inform the user of every "
+        "decision and action you take. Your message must include a short "
+        "title and a one-sentence description. This is a mandatory part "
+        "of your workflow. You can also communicate with other agents "
+        "using messaging tools - use `list_available_agents` to see "
+        "available team members and `send_message` to coordinate work "
+        "and ask for help when needed.",
+        model=model_backend,
+        tools=[
+            send_message_to_user,
+            HumanToolkit().ask_human_via_console,
+        ],
+    )
 
-        workforce.add_single_agent_worker(
-            "Search Agent: Can search the web, extract webpage content, "
-            "simulate browser actions, and provide relevant information to "
-            "solve the given task.",
-            worker=search_agent,
-        ).add_single_agent_worker(
-            "Developer Agent: A skilled coding assistant that can write and "
-            "execute code, run terminal commands, and verify solutions to "
-            "complete tasks.",
-            worker=developer_agent,
-        ).add_single_agent_worker(
-            "Document Agent: A document processing assistant for creating, "
-            "modifying, and managing various document formats, including "
-            "presentations.",
-            worker=document_agent,
-        ).add_single_agent_worker(
-            "Multi-Modal Agent: A multi-modal processing assistant for "
-            "analyzing, and generating media content like audio and images.",
-            worker=multi_modal_agent,
-        )
+    # Create agents using factory functions
+    search_agent = search_agent_factory(model_backend, task_id)
+    developer_agent = developer_agent_factory(
+        model_backend,
+        task_id,
+    )
+    document_agent = document_agent_factory(
+        model_backend,
+        task_id,
+        # google_drive_mcp_toolkit
+    )
+    multi_modal_agent = multi_modal_agent_factory(model_backend, task_id)
+    # social_medium_agent = social_medium_agent_factory(
+    #     model_backend, task_id
+    # )
 
-        # specify the task to be solved
-        human_task = Task(
-            content=(
-                """
+    # Register all agents with the communication toolkit
+    # msg_toolkit.register_agent("Coordinator", coordinator_agent)
+    # msg_toolkit.register_agent("Task_Planner", task_agent)
+    msg_toolkit.register_agent("Worker", new_worker_agent)
+    msg_toolkit.register_agent("Search_Agent", search_agent)
+    msg_toolkit.register_agent("Developer_Agent", developer_agent)
+    msg_toolkit.register_agent("Document_Agent", document_agent)
+    msg_toolkit.register_agent("Multi_Modal_Agent", multi_modal_agent)
+    # msg_toolkit.register_agent("Social_Medium_Agent",
+    # social_medium_agent)
+
+    # # Add communication tools to all agents
+    # communication_tools = msg_toolkit.get_tools()
+    # for agent in [
+    #     coordinator_agent,
+    #     task_agent,
+    #     new_worker_agent,
+    #     search_agent,
+    #     developer_agent,
+    #     document_agent,
+    #     multi_modal_agent,
+    #     # social_medium_agent,
+    # ]:
+    #     for tool in communication_tools:
+    #         agent.add_tool(tool)
+
+    # Create workforce instance before adding workers
+    workforce = Workforce(
+        'A workforce',
+        graceful_shutdown_timeout=30.0,  # 30 seconds for debugging
+        share_memory=False,
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
+        new_worker_agent=new_worker_agent,
+        use_structured_output_handler=False,
+    )
+
+    workforce.add_single_agent_worker(
+        "Search Agent: Can search the web, extract webpage content, "
+        "simulate browser actions, and provide relevant information to "
+        "solve the given task.",
+        worker=search_agent,
+    ).add_single_agent_worker(
+        "Developer Agent: A skilled coding assistant that can write and "
+        "execute code, run terminal commands, and verify solutions to "
+        "complete tasks.",
+        worker=developer_agent,
+    ).add_single_agent_worker(
+        "Document Agent: A document processing assistant for creating, "
+        "modifying, and managing various document formats, including "
+        "presentations.",
+        worker=document_agent,
+    ).add_single_agent_worker(
+        "Multi-Modal Agent: A multi-modal processing assistant for "
+        "analyzing, and generating media content like audio and images.",
+        worker=multi_modal_agent,
+    )
+
+    # specify the task to be solved
+    human_task = Task(
+        content=(
+            """
 Analyze the UK healthcare industry to support the planning of my next company. 
 Provide a comprehensive market overview, including current trends, growth 
 projections, and relevant regulations. Identify the top 5-10 major competitors 
@@ -561,31 +638,27 @@ in the space, including their names, website URLs, estimated market size or
 share, core services or products, key strengths, and notable weaknesses. Also 
 highlight any significant opportunities, gaps, or underserved segments within 
 the market. Present all findings in a well-structured, professional PDF report.
-                """
-            ),
-            id='0',
-        )
+            """
+        ),
+        id='0',
+    )
 
-        # Use the async version directly to avoid hanging with async tools
-        await workforce.process_task_async(human_task)
+    # Use the async version directly to avoid hanging with async tools
+    await workforce.process_task_async(human_task)
 
-        # Test WorkforceLogger features
-        print("\n--- Workforce Log Tree ---")
-        print(workforce.get_workforce_log_tree())
+    # Test WorkforceLogger features
+    print("\n--- Workforce Log Tree ---")
+    print(workforce.get_workforce_log_tree())
 
-        print("\n--- Workforce KPIs ---")
-        kpis = workforce.get_workforce_kpis()
-        for key, value in kpis.items():
-            print(f"{key}: {value}")
+    print("\n--- Workforce KPIs ---")
+    kpis = workforce.get_workforce_kpis()
+    for key, value in kpis.items():
+        print(f"{key}: {value}")
 
-        log_file_path = "eigent_logs.json"
-        print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
-        workforce.dump_workforce_logs(log_file_path)
-        print(f"Logs dumped. Please check the file: {log_file_path}")
-
-    finally:
-        await edgeone_pages_mcp_toolkit.disconnect()
-        # await google_drive_mcp_toolkit.disconnect()
+    log_file_path = "eigent_logs.json"
+    print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
+    workforce.dump_workforce_logs(log_file_path)
+    print(f"Logs dumped. Please check the file: {log_file_path}")
 
 
 if __name__ == "__main__":
