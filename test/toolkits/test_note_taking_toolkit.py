@@ -24,35 +24,19 @@ def note_taking_toolkit():
     return NoteTakingToolkit(note_file_path="test_notes.md")
 
 
-def test_take_note_append(note_taking_toolkit):
+def test_append_note(note_taking_toolkit):
     # Test appending a note
     note_file = Path("test_notes.md")
     if note_file.exists():
         note_file.unlink()
 
-    result = note_taking_toolkit.take_note("First note.")
+    result = note_taking_toolkit.append_note("First note.")
     assert "appended" in result
     assert note_file.read_text() == "First note.\n"
 
-    result = note_taking_toolkit.take_note("Second note.")
+    result = note_taking_toolkit.append_note("Second note.")
     assert "appended" in result
     assert note_file.read_text() == "First note.\nSecond note.\n"
-
-    # Clean up the test file
-    if note_file.exists():
-        note_file.unlink()
-
-
-def test_take_note_update(note_taking_toolkit):
-    # Test updating a note
-    note_file = Path("test_notes.md")
-    if note_file.exists():
-        note_file.unlink()
-
-    note_taking_toolkit.take_note("Initial content.")
-    result = note_taking_toolkit.take_note("Updated content.", update=True)
-    assert "updated" in result
-    assert note_file.read_text() == "Updated content.\n"
 
     # Clean up the test file
     if note_file.exists():
@@ -68,7 +52,7 @@ def test_read_note(note_taking_toolkit):
     # Test reading non-existent file
     assert "does not exist" in note_taking_toolkit.read_note()
 
-    note_taking_toolkit.take_note("Hello, world!")
+    note_taking_toolkit.append_note("Hello, world!")
     assert note_taking_toolkit.read_note() == "Hello, world!\n"
 
     # Clean up the test file
