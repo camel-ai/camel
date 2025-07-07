@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, ClassVar, Dict, List, Optional, Union, override
+from typing import Any, ClassVar, Dict, List, Optional, Union
 
 from camel.loaders.base_loader import BaseLoader
 from camel.logger import get_logger
@@ -204,7 +204,6 @@ class MarkItDownLoader(BaseLoader):
 
         return converted_files
 
-    @override
     def _load_single(  # type: ignore[override]
         self,
         source: str,
@@ -221,7 +220,6 @@ class MarkItDownLoader(BaseLoader):
         """
         return {source: self.convert_file(source, **kwargs)}
 
-    @override
     def load(  # type: ignore[override]
         self,
         source: Union[str, List[str]],

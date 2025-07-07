@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional, Union, override
+from typing import Any, Dict, List, Optional, Union
 from warnings import warn
 
 from camel.types.enums import JinaReturnFormat
@@ -81,7 +81,6 @@ class JinaURLLoader(BaseLoader):
         self._headers = {k: v for k, v in raw_headers.items() if v}
         self.timeout = timeout
 
-    @override
     def _load_single(  # type: ignore[override]
         self,
         source: str,
@@ -121,7 +120,6 @@ class JinaURLLoader(BaseLoader):
                 f"Failed to read content from {source}: {e}"
             ) from e
 
-    @override
     def load(  # type: ignore[override]
         self,
         source: Union[str, List[str]],

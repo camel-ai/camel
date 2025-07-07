@@ -21,7 +21,6 @@ from typing import (
     List,
     Optional,
     Union,
-    override,
 )
 
 from .base_loader import BaseLoader
@@ -125,11 +124,9 @@ class PandasLoader(BaseLoader):
 
         return loader_method(file_path, **kwargs)
 
-    @override
-    def load(  # type: ignore[override]
+    def load(
         self,
         source: Union["DataFrame", str, List[Union[str, "DataFrame"]]],
-        *args: Any,
         **kwargs: Dict[str, Any],
     ) -> Dict[str, List[Dict[str, Any]]]:
         r"""Load data from one or multiple sources.
@@ -139,6 +136,7 @@ class PandasLoader(BaseLoader):
                 - A pandas DataFrame
                 - A single path/URL (str or Path)
                 - A list of paths/DataFrames
+                (de)
             *args: Additional positional arguments.
             **kwargs: Additional keyword arguments.
 
