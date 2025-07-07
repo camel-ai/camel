@@ -344,6 +344,8 @@ class SingleAgentWorker(Worker):
                 f"{Fore.RED}Error processing task {task.id}: "
                 f"{type(e).__name__}: {e}{Fore.RESET}"
             )
+            # Store error information in task result
+            task.result = f"{type(e).__name__}: {e!s}"
             return TaskState.FAILED
         finally:
             # Return agent to pool or let it be garbage collected

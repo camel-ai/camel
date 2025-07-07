@@ -150,6 +150,7 @@ def search_agent_factory(
         "switch_tab",
         "enter",
         "get_som_screenshot",
+        "visit_page",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
@@ -177,6 +178,10 @@ def search_agent_factory(
     decision and action you take. Your message must include a short title 
     and a one-sentence description. This is a mandatory part of your 
     workflow.
+
+    You MUST use the `append_note` tool to record your 
+            findings, make sure the note is very detailed and include all the 
+            information you have gathered.
     
     ### Web Search Workflow
     1.  **Open Browser**: You MUST start by using the `open_browser` tool to 
@@ -191,6 +196,9 @@ def search_agent_factory(
         to a page. Once on a page, use browser tools to read content, scrape 
         information, and navigate to other linked pages to gather all 
         necessary data. This avoids errors from using incorrect URLs.
+    5. **Note Taking**: You MUST use the `append_note` tool to record your 
+        findings, make sure the note is very detailed and include all the 
+        information you have gathered.
 
     ### Core Principles
     - For each decision you make and action you take, you must send a message 
@@ -260,6 +268,7 @@ def document_agent_factory(
         *ExcelToolkit().get_tools(),
         NoteTakingToolkit().read_note,
         SearchToolkit().search_exa,
+        *TerminalToolkit().get_tools(),
     ]
 
     system_message = """You are a Document Processing Assistant specialized in 
@@ -346,10 +355,16 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *VideoDownloaderToolkit().get_tools(),
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
-        *OpenAIImageToolkit().get_tools(),
+        *OpenAIImageToolkit(
+            model="dall-e-3",
+            response_format="b64_json",
+            size="1024x1024",
+            quality="standard",
+        ).get_tools(),
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
         SearchToolkit().search_exa,
+        *TerminalToolkit().get_tools(),
     ]
 
     system_message = """You are a Multi-Modal Processing Assistant specialized 
@@ -481,6 +496,7 @@ operations.
             send_message_to_user,
             HumanToolkit().ask_human_via_console,
             SearchToolkit().search_exa,
+            *TerminalToolkit().get_tools(),
         ],
     )
 
@@ -498,7 +514,7 @@ async def main():
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1,
+        model_type=ModelType.GPT_4_1_MINI,
         # model_config_dict={
         #     "max_tokens": 32768,
         # },
@@ -506,7 +522,7 @@ async def main():
 
     model_backend_reason = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1,
+        model_type=ModelType.GPT_4_1_MINI,
         # model_config_dict={
         #     "max_tokens": 32768,
         # },
