@@ -65,6 +65,7 @@ capabilities
 - **new_worker_agent** (Optional[ChatAgent], optional): A template agent for workers created dynamically at runtime when existing workers cannot handle failed tasks. If None, workers will be created with default settings including SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. (default: :obj:`None`)
 - **graceful_shutdown_timeout** (float, optional): The timeout in seconds for graceful shutdown when a task fails 3 times. During this period, the workforce remains active for debugging. Set to 0 for immediate shutdown. (default: :obj:`15.0`)
 - **share_memory** (bool, optional): Whether to enable shared memory across SingleAgentWorker instances in the workforce. When enabled, all SingleAgentWorker instances, coordinator agent, and task planning agent will share their complete conversation history and function-calling trajectory, providing better context for task handoffs and continuity. Note: Currently only supports SingleAgentWorker instances; RolePlayingWorker and nested Workforce instances do not participate in memory sharing. (default: :obj:`False`)
+- **use_structured_output_handler** (bool, optional): Whether to use the structured output handler instead of native structured output. When enabled, the workforce will use prompts with structured output instructions and regex extraction to parse responses. This ensures compatibility with agents that don't reliably support native structured output. When disabled, the workforce uses the native response_format parameter. (default: :obj:`True`)
 
 **Note:**
 
@@ -88,9 +89,34 @@ def __init__(
     task_agent: Optional[ChatAgent] = None,
     new_worker_agent: Optional[ChatAgent] = None,
     graceful_shutdown_timeout: float = 15.0,
-    share_memory: bool = False
+    share_memory: bool = False,
+    use_structured_output_handler: bool = True
 ):
 ```
+
+<a id="camel.societies.workforce.workforce.Workforce._attach_pause_event_to_agent"></a>
+
+### _attach_pause_event_to_agent
+
+```python
+def _attach_pause_event_to_agent(self, agent: ChatAgent):
+```
+
+Ensure the given ChatAgent shares this workforce's pause_event.
+
+If the agent already has a different pause_event we overwrite it and
+emit a debug log (it is unlikely an agent needs multiple independent
+pause controls once managed by this workforce).
+
+<a id="camel.societies.workforce.workforce.Workforce._ensure_pause_event_in_kwargs"></a>
+
+### _ensure_pause_event_in_kwargs
+
+```python
+def _ensure_pause_event_in_kwargs(self, kwargs: Optional[Dict]):
+```
+
+Insert pause_event into kwargs dict for ChatAgent construction.
 
 <a id="camel.societies.workforce.workforce.Workforce.__repr__"></a>
 
@@ -139,6 +165,38 @@ def _sync_shared_memory(self):
 
 Synchronize memory across all agents by collecting and sharing.
 
+<a id="camel.societies.workforce.workforce.Workforce._update_dependencies_for_decomposition"></a>
+
+### _update_dependencies_for_decomposition
+
+```python
+def _update_dependencies_for_decomposition(self, original_task: Task, subtasks: List[Task]):
+```
+
+Update dependency tracking when a task is decomposed into subtasks.
+Tasks that depended on the original task should now depend on all
+subtasks. The last subtask inherits the original task's dependencies.
+
+<a id="camel.societies.workforce.workforce.Workforce._increment_in_flight_tasks"></a>
+
+### _increment_in_flight_tasks
+
+```python
+def _increment_in_flight_tasks(self, task_id: str):
+```
+
+Safely increment the in-flight tasks counter with logging.
+
+<a id="camel.societies.workforce.workforce.Workforce._decrement_in_flight_tasks"></a>
+
+### _decrement_in_flight_tasks
+
+```python
+def _decrement_in_flight_tasks(self, task_id: str, context: str = ''):
+```
+
+Safely decrement the in-flight tasks counter with safety checks.
+
 <a id="camel.societies.workforce.workforce.Workforce._cleanup_task_tracking"></a>
 
 ### _cleanup_task_tracking
@@ -164,6 +222,25 @@ def _decompose_task(self, task: Task):
 **Returns:**
 
   List[Task]: The subtasks.
+
+<a id="camel.societies.workforce.workforce.Workforce._analyze_failure"></a>
+
+### _analyze_failure
+
+```python
+def _analyze_failure(self, task: Task, error_message: str):
+```
+
+Analyze a task failure and decide on the best recovery strategy.
+
+**Parameters:**
+
+- **task** (Task): The failed task
+- **error_message** (str): The error message from the failure
+
+**Returns:**
+
+  RecoveryDecision: The decided recovery strategy with reasoning
 
 <a id="camel.societies.workforce.workforce.Workforce.pause"></a>
 
@@ -372,6 +449,20 @@ def continue_from_pause(self):
   Optional[Task]: The completed task if execution finishes, None if
 still running/paused.
 
+<a id="camel.societies.workforce.workforce.Workforce._start_child_node_when_paused"></a>
+
+### _start_child_node_when_paused
+
+```python
+def _start_child_node_when_paused(self, start_coroutine: Coroutine):
+```
+
+Helper to start a child node when workforce is paused.
+
+**Parameters:**
+
+- **start_coroutine**: The coroutine to start (e.g., worker_node.start())
+
 <a id="camel.societies.workforce.workforce.Workforce.add_single_agent_worker"></a>
 
 ### add_single_agent_worker
@@ -386,6 +477,7 @@ def add_single_agent_worker(
 ```
 
 Add a worker node to the workforce that uses a single agent.
+Can be called when workforce is paused to dynamically add workers.
 
 **Parameters:**
 
@@ -415,6 +507,7 @@ def add_role_playing_worker(
 ```
 
 Add a worker node to the workforce that uses `RolePlaying` system.
+Can be called when workforce is paused to dynamically add workers.
 
 **Parameters:**
 
@@ -439,6 +532,7 @@ def add_workforce(self, workforce: Workforce):
 ```
 
 Add a workforce node to the workforce.
+Can be called when workforce is paused to dynamically add workers.
 
 **Parameters:**
 
@@ -530,98 +624,6 @@ Validate task assignments against valid worker IDs.
 
   Tuple[List[TaskAssignment], List[TaskAssignment]]:
 (valid_assignments, invalid_assignments)
-
-<a id="camel.societies.workforce.workforce.Workforce._handle_task_assignment_fallbacks"></a>
-
-### _handle_task_assignment_fallbacks
-
-```python
-def _handle_task_assignment_fallbacks(self, tasks: List[Task]):
-```
-
-Create new workers for unassigned tasks as fallback.
-
-**Parameters:**
-
-- **tasks** (List[Task]): Tasks that need new workers.
-
-**Returns:**
-
-  List[TaskAssignment]: Assignments for newly created workers.
-
-<a id="camel.societies.workforce.workforce.Workforce._handle_assignment_retry_and_fallback"></a>
-
-### _handle_assignment_retry_and_fallback
-
-```python
-def _handle_assignment_retry_and_fallback(
-    self,
-    invalid_assignments: List[TaskAssignment],
-    tasks: List[Task],
-    valid_worker_ids: Set[str]
-):
-```
-
-Called if Coordinator agent fails to assign tasks to valid worker
-IDs. Handles retry assignment and fallback worker creation for invalid
-assignments.
-
-**Parameters:**
-
-- **invalid_assignments** (List[TaskAssignment]): Invalid assignments to retry.
-- **tasks** (List[Task]): Original tasks list for task lookup.
-- **valid_worker_ids** (set): Set of valid worker IDs.
-
-**Returns:**
-
-  List[TaskAssignment]: Final assignments for the invalid tasks.
-
-<a id="camel.societies.workforce.workforce.Workforce._find_assignee"></a>
-
-### _find_assignee
-
-```python
-def _find_assignee(self, tasks: List[Task]):
-```
-
-Assigns multiple tasks to worker nodes with the best capabilities.
-
-**Parameters:**
-
-- **tasks** (List[Task]): The tasks to be assigned.
-
-**Returns:**
-
-  TaskAssignResult: Assignment result containing task assignments
-with their dependencies.
-
-<a id="camel.societies.workforce.workforce.Workforce._create_worker_node_for_task"></a>
-
-### _create_worker_node_for_task
-
-```python
-def _create_worker_node_for_task(self, task: Task):
-```
-
-Creates a new worker node for a given task and add it to the
-children list of this node. This is one of the actions that
-the coordinator can take when a task has failed.
-
-**Parameters:**
-
-- **task** (Task): The task for which the worker node is created.
-
-**Returns:**
-
-  Worker: The created worker node.
-
-<a id="camel.societies.workforce.workforce.Workforce._create_new_agent"></a>
-
-### _create_new_agent
-
-```python
-def _create_new_agent(self, role: str, sys_msg: str):
-```
 
 <a id="camel.societies.workforce.workforce.Workforce.get_workforce_log_tree"></a>
 
