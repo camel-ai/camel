@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.71a4"
+version = "0.2.71a5"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -130,7 +130,7 @@ document_tools = [
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50",
     "python-pptx>=1.0.2",
-    "pymupdf>=1.26.1",
+    "reportlab>=4.4.2",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -180,6 +180,7 @@ dev_tools = [
     "daytona-sdk==0.20.0",
     "aci-sdk>=1.0.0b1",
     "langfuse>=2.60.5",
+    "traceroot==0.0.3a2",
 ]
 model_platforms = [
     "litellm>=1.38.1,<2",
@@ -264,8 +265,8 @@ owl = [
     "python-pptx>=1.0.2",
     "pytesseract>=0.3.13",
     "markitdown==0.1.1",
-    "pymupdf>=1.26.1",
     "exa-py>=1.10.0,<2",
+    "reportlab>=4.4.2",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -389,7 +390,8 @@ all = [
     "psycopg[binary]>=3.1.18,<4",
     "pgvector>=0.2.4,<0.3",
     "chromadb>=0.6.0,<1.0.0",
-    "pymupdf>=1.26.1",
+    "traceroot==0.0.3a2",
+    "reportlab>=4.4.2",
 ]
 
 [project.urls]
@@ -590,7 +592,7 @@ module = [
     "psycopg.*",
     "pgvecto.*",
     "pgvector.*",
-    "pymupdf",
+    "reportlab.*"
 ]
 ignore_missing_imports = true
 

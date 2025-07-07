@@ -180,7 +180,6 @@ class WorkforceLogger:
         self,
         task_id: str,
         error_message: str,
-        error_type: str,
         worker_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -190,7 +189,6 @@ class WorkforceLogger:
             task_id=task_id,
             worker_id=worker_id,
             error_message=error_message,
-            error_type=error_type,
             metadata=metadata or {},
         )
         if task_id in self._task_hierarchy:
@@ -484,7 +482,6 @@ class WorkforceLogger:
             'total_tasks_created': 0,
             'total_tasks_completed': 0,
             'total_tasks_failed': 0,
-            'error_types_count': {},
             'worker_utilization': {},
             'current_pending_tasks': 0,
             'total_workforce_running_time_seconds': 0.0,
@@ -560,11 +557,6 @@ class WorkforceLogger:
                         tasks_handled_by_worker[worker_id] = (
                             tasks_handled_by_worker.get(worker_id, 0) + 1
                         )
-                error_type = entry['error_type']
-                kpis['error_types_count'][error_type] = (
-                    kpis['error_types_count'].get(error_type, 0) + 1
-                )
-
             elif event_type == 'queue_status':
                 pass  # Placeholder for now
 
