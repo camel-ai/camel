@@ -17,7 +17,7 @@ from .base_io import File, create_file, create_file_from_raw_bytes
 from .chunkr_reader import ChunkrReader, ChunkrReaderConfig
 from .crawl4ai_reader import Crawl4AI
 from .firecrawl_reader import Firecrawl
-from .jina_url_reader import JinaURLReader
+from .jina_url_reader import JinaURLLoader
 from .markitdown import MarkItDownLoader
 from .mineru_extractor import MinerU
 from .mistral_reader import MistralReader
@@ -30,7 +30,7 @@ __all__ = [
     'create_file',
     'create_file_from_raw_bytes',
     'UnstructuredIO',
-    'JinaURLReader',
+    'JinaURLLoader',
     'Firecrawl',
     'Apify',
     'PandasLoader',

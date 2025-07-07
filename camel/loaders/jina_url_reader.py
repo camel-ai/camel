@@ -13,34 +13,36 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Optional
+from typing import Any, List, Optional, Union
 from warnings import warn
 
 from camel.types.enums import JinaReturnFormat
 
+from .base_loader import BaseLoader
+
 JINA_ENDPOINT = "https://r.jina.ai/"
 
 
-class JinaURLReader:
-    r"""URL Reader provided by Jina AI. The output is cleaner and more
+class JinaURLLoader(BaseLoader):
+    r"""URL Loader provided by Jina AI. The output is cleaner and more
     LLM-friendly than the URL Reader of UnstructuredIO. Can be configured to
     replace the UnstructuredIO URL Reader in the pipeline.
 
     Args:
         api_key (Optional[str], optional): The API key for Jina AI. If not
             provided, the reader will have a lower rate limit. Defaults to
-            None.
+            None. (default: :obj:`None`)
         return_format (ReturnFormat, optional): The level of detail
             of the returned content, which is optimized for LLMs. For
             now screenshots are not supported. Defaults to
-            ReturnFormat.DEFAULT.
+            ReturnFormat.DEFAULT. (default: :obj:`ReturnFormat.DEFAULT`)
         json_response (bool, optional): Whether to return the response
-            in JSON format. Defaults to False.
+            in JSON format. Defaults to False. (default: :obj:`False`)
         timeout (int, optional): The maximum time in seconds to wait for
-            the page to be rendered. Defaults to 30.
+            the page to be rendered. Defaults to 30. (default: :obj:`30`)
         **kwargs (Any): Additional keyword arguments, including proxies,
             cookies, etc. It should align with the HTTP Header field and
-            value pairs listed in the reference.
+            value pairs listed in the reference. (default: :obj:`None`)
 
     References:
         https://jina.ai/reader
@@ -54,6 +56,8 @@ class JinaURLReader:
         timeout: int = 30,
         **kwargs: Any,
     ) -> None:
+        super().__init__()
+
         api_key = api_key or os.getenv('JINA_API_KEY')
         if not api_key:
             warn(
@@ -75,25 +79,72 @@ class JinaURLReader:
 
         # eliminate None values
         self._headers = {k: v for k, v in raw_headers.items() if v}
+        self.timeout = timeout
 
-    def read_content(self, url: str) -> str:
-        r"""Reads the content of a URL and returns it as a string with
-        given form.
+    def _load_single(self, source: str, **kwargs: Any) -> str:
+        r"""Load content from a single URL.
 
         Args:
-            url (str): The URL to read.
+            source: The URL to load content from.
+            (default: :obj:`None`)
+            **kwargs: Additional arguments to pass to the request.
+            (default: :obj:`None`)
 
         Returns:
-            str: The content of the URL.
-        """
+            The content of the URL as a string.
 
+        Raises:
+            ValueError: If the URL is invalid or the request fails.
+        """
         import requests
 
-        full_url = f"{JINA_ENDPOINT}{url}"
-        try:
-            resp = requests.get(full_url, headers=self._headers)
-            resp.raise_for_status()
-        except Exception as e:
-            raise ValueError(f"Failed to read content from {url}: {e}") from e
+        if not source.startswith(('http://', 'https://')):
+            raise ValueError(f"Invalid URL: {source}")
 
-        return resp.text
+        try:
+            response = requests.get(
+                JINA_ENDPOINT,
+                params={"url": source},
+                headers=self._headers,
+                timeout=self.timeout,
+                **kwargs,
+            )
+            response.raise_for_status()
+            return response.text
+        except Exception as e:
+            raise ValueError(
+                f"Failed to read content from {source}: {e}"
+            ) from e
+
+    def load(
+        self,
+        source: Union[str, List[str]],
+        **kwargs: Any,
+    ) -> Union[str, List[str]]:
+        r"""Load content from one or more URLs.
+
+        Args:
+            source: A single URL or a list of URLs to load.
+            (default: :obj:`None`)
+            **kwargs: Additional arguments to pass to the request.
+            (default: :obj:`None`)
+
+        Returns:
+            If a single URL is provided, returns its content as a string.
+            If a list of URLs is provided, returns a list of contents.
+
+        Raises:
+            ValueError: If any URL is invalid or the request fails.
+        """
+        if isinstance(source, str):
+            return self._load_single(source, **kwargs)
+        return [self._load_single(url, **kwargs) for url in source]
+
+    @property
+    def supported_formats(self) -> List[str]:
+        r"""Get the list of supported URL schemes.
+
+        Returns:
+            List[str]: The list of supported URL schemes.
+        """
+        return ["http", "https"]
