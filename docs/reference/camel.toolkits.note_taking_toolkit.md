@@ -32,20 +32,19 @@ Initialize the NoteTakingToolkit.
 - **note_file_path** (str): The path to the note file. (default: :obj:`notes/notes.md`)
 - **timeout** (Optional[float]): The timeout for the toolkit.
 
-<a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit.take_note"></a>
+<a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit.append_note"></a>
 
-### take_note
+### append_note
 
 ```python
-def take_note(self, content: str, update: bool = False):
+def append_note(self, content: str):
 ```
 
-Takes a note and saves it to the note file.
+Appends a note to the note file.
 
 **Parameters:**
 
-- **content** (str): The content of the note to be saved.
-- **update** (bool): If True, the existing note file will be overwritten with the new content. If False, the new content will be appended to the end of the file. (default: :obj:`False`)
+- **content** (str): The content of the note to be appended.
 
 **Returns:**
 

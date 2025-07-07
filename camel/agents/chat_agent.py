@@ -3815,7 +3815,7 @@ class ChatAgent(BaseAgent):
                 self.memory.get_context_creator(), "token_limit", None
             ),
             output_language=self._output_language,
-            tools=[tool.func for tool in self._internal_tools.values()],
+            tools=self._clone_tools(),
             external_tools=[
                 schema for schema in self._external_tool_schemas.values()
             ],
@@ -3838,6 +3838,56 @@ class ChatAgent(BaseAgent):
                 new_agent.memory.write_record(context_record.memory_record)
 
         return new_agent
+
+    def _clone_tools(self) -> List[Union[FunctionTool, Callable]]:
+        r"""Clone tools for new agent instance,
+        handling stateful toolkits properly."""
+        cloned_tools = []
+        hybrid_browser_toolkits = {}  # Cache for created toolkits
+
+        for tool in self._internal_tools.values():
+            # Check if this is a HybridBrowserToolkit method
+            if (
+                hasattr(tool.func, '__self__')
+                and tool.func.__self__.__class__.__name__
+                == 'HybridBrowserToolkit'
+            ):
+                toolkit_instance = tool.func.__self__
+                toolkit_id = id(toolkit_instance)
+
+                # Check if we already created a clone for this toolkit
+                if toolkit_id not in hybrid_browser_toolkits:
+                    try:
+                        import uuid
+
+                        new_session_id = str(uuid.uuid4())[:8]
+                        new_toolkit = toolkit_instance.clone_for_new_session(
+                            new_session_id
+                        )
+                        hybrid_browser_toolkits[toolkit_id] = new_toolkit
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to clone HybridBrowserToolkit: {e}"
+                        )
+                        # Fallback to original function
+                        cloned_tools.append(tool.func)
+                        continue
+
+                # Get the corresponding method from the cloned toolkit
+                new_toolkit = hybrid_browser_toolkits[toolkit_id]
+                method_name = tool.func.__name__
+                if hasattr(new_toolkit, method_name):
+                    new_method = getattr(new_toolkit, method_name)
+                    cloned_tools.append(new_method)
+                else:
+                    # Fallback to original function
+                    cloned_tools.append(tool.func)
+            else:
+                # Regular tool or other stateless toolkit
+                # just use the original function
+                cloned_tools.append(tool.func)
+
+        return cloned_tools
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.
