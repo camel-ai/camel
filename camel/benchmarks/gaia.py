@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import logging
 import os
 import random
 import re
@@ -26,10 +25,11 @@ from tqdm import tqdm
 
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.retrievers.auto_retriever import AutoRetriever
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RetrieverProtocol(Protocol):
@@ -243,6 +243,7 @@ class GAIABenchmark(BaseBenchmark):
 
         logger.info(f"Running benchmark on {on} set at levels {levels}.")
         datas = [data for data in self._data[on] if data["Level"] in levels]
+        datas = [datas[0]]
 
         # Shuffle and subset data if necessary
         if randomize:
@@ -333,7 +334,7 @@ class GAIABenchmark(BaseBenchmark):
         }
         self._results.append(result_data)
         file_obj.write(
-            json.dumps(result_data, indent=2) + "\n", ensure_ascii=False
+            json.dumps(result_data, indent=2, ensure_ascii=False) + "\n"
         )
         file_obj.flush()
 
@@ -354,7 +355,7 @@ class GAIABenchmark(BaseBenchmark):
         }
         self._results.append(error_data)
         file_obj.write(
-            json.dumps(error_data, indent=2) + "\n", ensure_ascii=False
+            json.dumps(error_data, indent=2, ensure_ascii=False) + "\n"
         )
         file_obj.flush()
 

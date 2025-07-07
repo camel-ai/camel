@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import traceroot
 
 from camel.agents import ChatAgent
 from camel.benchmarks import DefaultGAIARetriever, GAIABenchmark
@@ -20,8 +21,10 @@ from camel.runtimes import RemoteHttpRuntime
 from camel.toolkits import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType, StorageType
 
+logger = traceroot.get_logger('camel')
+
 retriever = DefaultGAIARetriever(
-    vector_storage_local_path="local_data2/", storage_type=StorageType.QDRANT
+    vector_storage_local_path="local_data/", storage_type=StorageType.QDRANT
 )
 
 benchmark = GAIABenchmark(
@@ -36,26 +39,26 @@ print(f"Number of test examples: {len(benchmark.test)}")
 
 
 toolkit = CodeExecutionToolkit(verbose=True)
-runtime = RemoteHttpRuntime("localhost").add(
+runtime = RemoteHttpRuntime("localhost", port=8001).add(
     toolkit.get_tools(),
     "camel.toolkits.CodeExecutionToolkit",
 )
 
-task_prompt = """
-        You are a general AI assistant. I will ask you a question. Report your
-        thoughts, and finish your answer with the following template:
-        FINAL ANSWER: [YOUR FINAL ANSWER].
-        YOUR FINAL ANSWER should be a number OR as few words as possible OR a
-        comma separated list of numbers and/or strings.
-        If you are asked for a number, don't use comma to write your number
-        neither use units such as $ or percent sign unless specified otherwise.
-        If you are asked for a string, don't use articles, neither
-        abbreviations (e.g. for cities), and write the digits in plain text
-        unless specified otherwise.
-        If you are asked for a comma separated list, apply the above rules
-        depending of whether the element to be put in the list is a number or
-        a string.
-        """.strip()
+task_prompt = (
+    "You are a general AI assistant. I will ask you a question.\n"
+    "Report your thoughts, and finish your answer with the following "
+    "template:\n FINAL ANSWER: [YOUR FINAL ANSWER].\n"
+    "YOUR FINAL ANSWER should be a number OR as few words as possible OR a "
+    "comma separated list of numbers and/or strings.\n"
+    "If you are asked for a number, don't use comma to write your number"
+    "neither use units such as $ or percent sign unless specified otherwise.\n"
+    "If you are asked for a string, don't use articles, neither"
+    "abbreviations (e.g. for cities), and write the digits in plain text"
+    "unless specified otherwise.\n"
+    "If you are asked for a comma separated list, apply the above rules"
+    "depending of whether the element to be put in the list is a number or"
+    "a string.\n"
+)
 
 tools = runtime.get_tools()
 
@@ -71,9 +74,17 @@ agent = ChatAgent(
     tools=tools,
 )
 
-result = benchmark.run(agent, "valid", level="all", subset=3)
-print("correct:", result["correct"])
-print("total:", result["total"])
+
+@traceroot.trace()
+def main():
+    result = benchmark.run(agent, "valid", level="all", subset=3)
+    logger.info(f"benchmark results: {benchmark._results}")
+    print(f"correct: {result['correct']}")
+    print(f"total: {result['total']}")
+
+
+if __name__ == "__main__":
+    main()
 
 # ruff: noqa: E501
 """
