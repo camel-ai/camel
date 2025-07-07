@@ -534,6 +534,10 @@ class HtmlGenToolkit(BaseToolkit):
             f"Content successfully written to file: {filename}"
             f"The content is: {response.msgs[0].content}"
         )
+        # don't use reset here, when agent generate next html, it can
+        # reference the previous html file,the implementation here can
+        # be further discussed
+        # self.viewer_html_agent.reset()
         return result
 
     def get_tools(self) -> List[FunctionTool]:
