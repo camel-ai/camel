@@ -17,21 +17,19 @@ import asyncio
 from camel.agents import ChatAgent
 from camel.toolkits import OrigeneToolkit
 
-origene_toolkit = OrigeneToolkit()
-
 
 async def main():
-    await origene_toolkit.connect()
-
-    user_msg = "what is the chemical structure of 1,2-dimethylbenzene?"
-    agent = ChatAgent(
-        "You are named origene assistant.",
-        model="gpt-4o",
-        tools=[*origene_toolkit.get_tools()],
-    )
-    response = agent.step(user_msg)
-    print(response.msgs[0].content)
-    await origene_toolkit.disconnect()
+    # Use async context manager for automatic connection management
+    async with OrigeneToolkit() as origene_toolkit:
+        user_msg = "what is the chemical structure of 1,2-dimethylbenzene?"
+        agent = ChatAgent(
+            "You are named origene assistant.",
+            model="gpt-4o",
+            tools=[*origene_toolkit.get_tools()],
+        )
+        response = agent.step(user_msg)
+        print(response.msgs[0].content)
+    # Toolkit is automatically disconnected when exiting the context
 
 
 if __name__ == "__main__":

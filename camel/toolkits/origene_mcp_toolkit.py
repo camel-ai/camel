@@ -23,6 +23,13 @@ class OrigeneToolkit(BaseToolkit):
     r"""OrigeneToolkit provides an interface for interacting with
     Origene MCP server.
 
+    This toolkit can be used as an async context manager for automatic
+    connection management:
+
+        async with OrigeneToolkit() as toolkit:
+            tools = toolkit.get_tools()
+            # Toolkit is automatically disconnected when exiting
+
     Attributes:
         timeout (Optional[float]): Connection timeout in seconds.
             (default: :obj:`None`)
@@ -32,7 +39,7 @@ class OrigeneToolkit(BaseToolkit):
         self,
         timeout: Optional[float] = None,
     ) -> None:
-        r"""Initializes the EdgeOnePagesMCPToolkit.
+        r"""Initializes the OrigeneToolkit.
 
         Args:
             timeout (Optional[float]): Connection timeout in seconds.
@@ -59,6 +66,27 @@ class OrigeneToolkit(BaseToolkit):
     async def disconnect(self):
         r"""Explicitly disconnect from the Origene MCP server."""
         await self._mcp_toolkit.disconnect()
+
+    async def __aenter__(self) -> "OrigeneToolkit":
+        r"""Async context manager entry point.
+
+        Returns:
+            OrigeneToolkit: The connected toolkit instance.
+
+        Example:
+            async with OrigeneToolkit() as toolkit:
+                tools = toolkit.get_tools()
+        """
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        r"""Async context manager exit point.
+
+        Automatically disconnects from the Origene MCP server.
+        """
+        await self.disconnect()
+        return None
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of tools provided by the Origene MCP server.
