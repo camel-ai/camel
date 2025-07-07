@@ -31,7 +31,6 @@ dependencies = [
     "psutil>=5.9.8,<6",
     "pillow>=10.1.0,<11.0.0",
     "openai>=1.86.0,<2",
-    "surrealdb>=0.4.1",
 ]
 
 
@@ -393,6 +392,7 @@ all = [
     "chromadb>=0.6.0,<1.0.0",
     "traceroot==0.0.3a2",
     "reportlab>=4.4.2",
+    "surrealdb>=0.4.1",
 ]
 
 [project.urls]

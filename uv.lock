@@ -659,7 +659,6 @@ dependencies = [
     { name = "pillow" },
     { name = "psutil" },
     { name = "pydantic" },
-    { name = "surrealdb" },
     { name = "tiktoken" },
 ]
 
@@ -768,6 +767,7 @@ all = [
     { name = "slack-sdk" },
     { name = "soundfile" },
     { name = "stripe" },
+    { name = "surrealdb" },
     { name = "sympy" },
     { name = "tabulate" },
     { name = "tavily-python" },
@@ -1292,7 +1292,7 @@ requires-dist = [
     { name = "sphinxext-rediraffe", marker = "extra == 'docs'", specifier = ">=0.2.7,<0.3" },
     { name = "stripe", marker = "extra == 'all'", specifier = ">=11.3.0,<12" },
     { name = "stripe", marker = "extra == 'data-tools'", specifier = ">=11.3.0,<12" },
-    { name = "surrealdb", specifier = ">=0.4.1" },
+    { name = "surrealdb", marker = "extra == 'all'", specifier = ">=0.4.1" },
     { name = "sympy", marker = "extra == 'all'", specifier = ">=1.13.3,<2" },
     { name = "sympy", marker = "extra == 'web-tools'", specifier = ">=1.13.3,<2" },
     { name = "tabulate", marker = "extra == 'all'", specifier = ">=0.9.0" },
