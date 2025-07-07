@@ -62,6 +62,27 @@ in downstream processing.
 
   Path: A fully resolved (absolute) and sanitized Path object.
 
+<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._sanitize_filename"></a>
+
+### _sanitize_filename
+
+```python
+def _sanitize_filename(self, filename: str):
+```
+
+Sanitize a filename by replacing any character that is not
+alphanumeric, a dot (.), hyphen (-), or underscore (_) with an
+underscore (_).
+
+**Parameters:**
+
+- **filename** (str): The original filename which may contain spaces or special characters.
+
+**Returns:**
+
+  str: The sanitized filename with disallowed characters replaced by
+underscores.
+
 <a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_text_file"></a>
 
 ### _write_text_file
@@ -345,12 +366,12 @@ Write JSON content to a file.
 - **content** (str): The JSON content as a string.
 - **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_yaml_file"></a>
+<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_simple_text_file"></a>
 
-### _write_yaml_file
+### _write_simple_text_file
 
 ```python
-def _write_yaml_file(
+def _write_simple_text_file(
     self,
     file_path: Path,
     content: str,
@@ -358,54 +379,12 @@ def _write_yaml_file(
 ):
 ```
 
-Write YAML content to a file.
+Write text content to a file (used for HTML, Markdown, YAML, etc.).
 
 **Parameters:**
 
 - **file_path** (Path): The target file path.
-- **content** (str): The YAML content as a string.
-- **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
-
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_html_file"></a>
-
-### _write_html_file
-
-```python
-def _write_html_file(
-    self,
-    file_path: Path,
-    content: str,
-    encoding: str = 'utf-8'
-):
-```
-
-Write text content to an HTML file.
-
-**Parameters:**
-
-- **file_path** (Path): The target file path.
-- **content** (str): The HTML content to write.
-- **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
-
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._write_markdown_file"></a>
-
-### _write_markdown_file
-
-```python
-def _write_markdown_file(
-    self,
-    file_path: Path,
-    content: str,
-    encoding: str = 'utf-8'
-):
-```
-
-Write text content to a Markdown file.
-
-**Parameters:**
-
-- **file_path** (Path): The target file path.
-- **content** (str): The Markdown content to write.
+- **content** (str): The content to write.
 - **encoding** (str): Character encoding to use. (default: :obj:`utf-8`) (default: utf-8)
 
 <a id="camel.toolkits.file_write_toolkit.FileWriteToolkit.write_to_file"></a>
@@ -454,24 +433,3 @@ def get_tools(self):
 
   List[FunctionTool]: A list of FunctionTool objects representing
 the available functions in this toolkit.
-
-<a id="camel.toolkits.file_write_toolkit.FileWriteToolkit._sanitize_filename"></a>
-
-### _sanitize_filename
-
-```python
-def _sanitize_filename(self, filename: str):
-```
-
-Sanitize a filename by replacing any character that is not
-alphanumeric, a dot (.), hyphen (-), or underscore (_) with an
-underscore (_).
-
-**Parameters:**
-
-- **filename** (str): The original filename which may contain spaces or special characters.
-
-**Returns:**
-
-  str: The sanitized filename with disallowed characters replaced by
-underscores.
