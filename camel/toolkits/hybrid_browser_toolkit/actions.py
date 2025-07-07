@@ -22,13 +22,13 @@ class ActionExecutor:
     r"""Executes high-level actions (click, type …) on a Playwright Page."""
 
     # Configuration constants
-    DEFAULT_TIMEOUT = 5000  # 5 seconds
-    SHORT_TIMEOUT = 2000  # 2 seconds
+    DEFAULT_TIMEOUT = 3000  # 3 seconds
+    SHORT_TIMEOUT = 1000  # 1 seconds
     MAX_SCROLL_AMOUNT = 5000  # Maximum scroll distance in pixels
 
     def __init__(self, page: "Page", session: Optional[Any] = None):
         self.page = page
-        self.session = session  # NVBrowserSession instance
+        self.session = session  # HybridBrowserSession instance
 
     # ------------------------------------------------------------------
     # Public helpers
