@@ -2145,17 +2145,7 @@ class Workforce(BaseNode):
                 f"Current pending tasks: {len(self._pending_tasks)}, "
                 f"In-flight tasks: {self._in_flight_tasks}"
             )
-            logger.warning(error_msg)
-
-            if self._pending_tasks and self._assignees:
-                for task in self._pending_tasks:
-                    if task.id in self._assignees:
-                        # Mark task as failed and decrement counter
-                        task.set_state(TaskState.FAILED)
-                        self._decrement_in_flight_tasks(
-                            task.id, "timeout/error in _get_returned_task"
-                        )
-                        return task
+            logger.error(error_msg, exc_info=True)
             return None
 
     async def _post_ready_tasks(self) -> None:
@@ -2231,12 +2221,8 @@ class Workforce(BaseNode):
         task.failure_count += 1
 
         # Determine detailed failure information
-        if is_task_result_insufficient(task):
-            failure_reason = "Worker returned unhelpful "
-            f"response: {task.result[:100] if task.result else ''}..."
-        else:
-            failure_reason = "Task marked as failed despite "
-            f"having result: {(task.result or '')[:100]}..."
+        # Use the actual error/result stored in task.result
+        failure_reason = task.result or "Unknown error"
 
         # Add context about the worker and task
         worker_id = task.assigned_worker_id or "unknown"
