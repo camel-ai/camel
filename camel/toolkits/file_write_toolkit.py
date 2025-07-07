@@ -656,6 +656,7 @@ class FileWriteToolkit(BaseToolkit):
             Table: A formatted reportlab Table object.
         """
         from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
         from reportlab.platypus import Table, TableStyle
 
         try:
@@ -667,24 +668,58 @@ class FileWriteToolkit(BaseToolkit):
             for i, row in enumerate(table_data):
                 logger.debug(f"Row {i}: {row}")
 
-            # Create table
-            table = Table(table_data)
+            # Calculate available width (A4 width minus margins)
+            page_width = A4[0]  # A4 width in points
+            margins = 144  # left + right margins (72 each)
+            available_width = page_width - margins
 
-            # Style the table with Chinese font support
+            # Calculate column widths based on content length
+            if table_data:
+                num_columns = len(table_data[0])
+                # Calculate max content length for each column
+                max_lengths = [0] * num_columns
+                for row in table_data:
+                    for i, cell in enumerate(row):
+                        if i < len(max_lengths):
+                            max_lengths[i] = max(
+                                max_lengths[i], len(str(cell))
+                            )
+
+                # Distribute width proportionally with minimum width
+                total_length = sum(max_lengths)
+                if total_length > 0:
+                    col_widths = [
+                        max(60, (length / total_length) * available_width)
+                        for length in max_lengths
+                    ]
+                else:
+                    col_widths = [available_width / num_columns] * num_columns
+            else:
+                col_widths = None
+
+            # Create table with dynamic column widths
+            table = Table(table_data, colWidths=col_widths, repeatRows=1)
+
+            # Style the table with better formatting
             table.setStyle(
                 TableStyle(
                     [
                         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                         ('FONTNAME', (0, 0), (-1, 0), chinese_font),
-                        ('FONTSIZE', (0, 0), (-1, 0), 10),
-                        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                        ('FONTSIZE', (0, 0), (-1, 0), 9),
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                        ('TOPPADDING', (0, 0), (-1, 0), 8),
+                        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                         ('FONTNAME', (0, 1), (-1, -1), chinese_font),
-                        ('FONTSIZE', (0, 1), (-1, -1), 9),
-                        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                        ('FONTSIZE', (0, 1), (-1, -1), 8),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                        ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                        ('TOPPADDING', (0, 1), (-1, -1), 4),
+                        ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
                     ]
                 )
             )

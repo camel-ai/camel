@@ -177,6 +177,10 @@ def search_agent_factory(
     decision and action you take. Your message must include a short title 
     and a one-sentence description. This is a mandatory part of your 
     workflow.
+
+    You MUST use the `append_note` tool to record your 
+            findings, make sure the note is very detailed and include all the 
+            information you have gathered.
     
     ### Web Search Workflow
     1.  **Open Browser**: You MUST start by using the `open_browser` tool to 
@@ -191,6 +195,9 @@ def search_agent_factory(
         to a page. Once on a page, use browser tools to read content, scrape 
         information, and navigate to other linked pages to gather all 
         necessary data. This avoids errors from using incorrect URLs.
+    5. **Note Taking**: You MUST use the `append_note` tool to record your 
+        findings, make sure the note is very detailed and include all the 
+        information you have gathered.
 
     ### Core Principles
     - For each decision you make and action you take, you must send a message 
@@ -346,7 +353,12 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *VideoDownloaderToolkit().get_tools(),
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
-        *OpenAIImageToolkit().get_tools(),
+        *OpenAIImageToolkit(
+            model="dall-e-3",
+            response_format="b64_json",
+            size="1024x1024",
+            quality="standard",
+        ).get_tools(),
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
         SearchToolkit().search_exa,
