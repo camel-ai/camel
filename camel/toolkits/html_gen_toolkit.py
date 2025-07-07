@@ -15,16 +15,10 @@
 # Enables postponed evaluation of annotations (for string-based type hints)
 from __future__ import annotations
 
-from io import BytesIO
-from typing import List, Optional
-from urllib.parse import urlparse
 import os
-
-import requests
-from PIL import Image
+from typing import List, Optional
 
 from camel.logger import get_logger
-from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
@@ -264,7 +258,7 @@ Use the following templates as a basis for generating slides.
 
 ## Final Instructions for the LLM
 When you receive a request to create a presentation slide, first identify the type of slide (e.g., title, content, chart, image). Then, select the most appropriate template and populate it with the provided content. Pay close attention to the color scheme and styling rules to ensure consistency. Always output the full, final HTML code. 
-"""
+"""  # noqa: E501
 
 VIEWER_HTML_PROMPT = """
 # Prompt for Generating an HTML Presentation Viewer
@@ -433,7 +427,8 @@ This is a key part of the styling for the grid view previews.
 }
 ```
 You will need JavaScript to dynamically calculate the scale factor for a responsive grid. `const scale = previewContainer.clientWidth / 1280;` is a good starting point. 
-"""
+"""  # noqa: E501
+
 
 @MCPServer()
 class HtmlGenToolkit(BaseToolkit):
@@ -461,6 +456,7 @@ class HtmlGenToolkit(BaseToolkit):
                 (default: :obj:`.`)
         """
         from camel.agents.chat_agent import ChatAgent
+
         super().__init__(timeout=timeout)
         self.model = model
         if self.model is None:
@@ -472,23 +468,21 @@ class HtmlGenToolkit(BaseToolkit):
         self.onepage_html_agent = ChatAgent(
             model=self.model,
             system_message=ONE_PAGE_HTML_PROMPT,
-            max_iteration=1
+            max_iteration=1,
         )
         self.viewer_html_agent = ChatAgent(
             model=self.model,
             system_message=VIEWER_HTML_PROMPT,
-            max_iteration=1
+            max_iteration=1,
         )
 
-    def generate_one_page_html4ppt(
-        self, prompt: str, filename: str
-    ) -> str:
+    def generate_one_page_html4ppt(self, prompt: str, filename: str) -> str:
         r"""Generates HTML content for one page ppt slide.
 
         Args:
             prompt (str): The prompt of the html generation,
                 the prompt should be the requirement of
-                slide, this prompt will be used by anther agent 
+                slide, this prompt will be used by anther agent
                 to generate the html content.
             filename (str): The filename of the html file.
 
@@ -499,11 +493,10 @@ class HtmlGenToolkit(BaseToolkit):
             response = self.onepage_html_agent.step(
                 input_message=prompt,
             )
-            print('success')
         except Exception as e:
             logger.error(f"Error generating one page html: {e}")
             return f"Error generating one page html: {e!s}"
-        
+
         # save to file
         with open(os.path.join(self.workspace, filename), "w") as f:
             f.write(response.msgs[0].content)
@@ -513,15 +506,13 @@ class HtmlGenToolkit(BaseToolkit):
         )
         return result
 
-    def generate_viewer_html4ppt(
-        self, prompt: str, filename: str
-    ) -> str:
+    def generate_viewer_html4ppt(self, prompt: str, filename: str) -> str:
         r"""Generates HTML content for a viewer for a ppt.
 
         Args:
             prompt (str): The prompt of the html generation
                 the prompt should include the requirement
-                of the viewer, this prompt will be used by 
+                of the viewer, this prompt will be used by
                 anther agent to generate the html content.
             filename (str): The filename of the viewer html file.
 
@@ -535,7 +526,7 @@ class HtmlGenToolkit(BaseToolkit):
         except Exception as e:
             logger.error(f"Error generating viewer html: {e}")
             return f"Error generating viewer html: {e!s}"
-        
+
         # save to file
         with open(os.path.join(self.workspace, filename), "w") as f:
             f.write(response.msgs[0].content)

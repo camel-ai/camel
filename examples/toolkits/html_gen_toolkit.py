@@ -41,10 +41,7 @@ tools_list = html_toolkit.get_tools()
 
 # Initialize a ChatAgent with the tools
 camel_agent = ChatAgent(
-    system_message=sys_msg,
-    model=model,
-    tools=tools_list,
-    max_iteration=1
+    system_message=sys_msg, model=model, tools=tools_list, max_iteration=1
 )
 
 query = """Please generate a for a ppt slide. the style can be purple 
