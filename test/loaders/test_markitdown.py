@@ -51,7 +51,7 @@ def mock_files():
 
 def test_convert_file_success(mock_files):
     converter = MarkItDownLoader()
-    markdown_text = converter.convert_file(mock_files["demo_html"])
+    markdown_text = converter.load(mock_files["demo_html"])
     assert markdown_text is not None
     assert isinstance(markdown_text, str)
 
@@ -61,13 +61,13 @@ def test_convert_file_not_found():
     with pytest.raises(
         FileNotFoundError, match="File not found: nonexistent.txt"
     ):
-        converter.convert_file("nonexistent.txt")
+        converter.load("nonexistent.txt")
 
 
 def test_convert_file_unsupported_format(mock_files):
     converter = MarkItDownLoader()
     with pytest.raises(ValueError, match="Unsupported file format"):
-        converter.convert_file(mock_files["unsupported_xxx"])
+        converter.load(mock_files["unsupported_xxx"])
 
 
 def test_convert_file_conversion_error(mock_files):

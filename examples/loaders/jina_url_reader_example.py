@@ -22,7 +22,7 @@ def read_with_different_format(return_format, json_response):
     jina_url_loader = JinaURLLoader(
         return_format=return_format, json_response=json_response
     )
-    content = jina_url_loader.read_content(URL)
+    content = jina_url_loader.load(URL)
     print(content)
 
 

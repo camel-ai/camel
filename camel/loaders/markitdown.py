@@ -13,14 +13,15 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import ClassVar, Dict, List, Optional
+from typing import ClassVar, Dict, List, Optional, Any, Union
 
 from camel.logger import get_logger
+from camel.loaders.base_loader import BaseLoader
 
 logger = get_logger(__name__)
 
 
-class MarkItDownLoader:
+class MarkItDownLoader(BaseLoader):
     r"""MarkitDown convert various file types into Markdown format.
 
     Supported Input Formats:
@@ -202,3 +203,48 @@ class MarkItDownLoader:
                         converted_files[path] = f"Error: {e}"
 
         return converted_files
+
+    def _load_single(self, source: str, **kwargs: Any) -> str:
+        """Load and convert a single file to Markdown.
+
+        This is a wrapper around convert_file to maintain consistent interface.
+
+        Args:
+            source: Path to the input file.
+            **kwargs: Additional arguments to pass to the converter.
+
+        Returns:
+            str: Converted Markdown content.
+        """
+        return self.convert_file(source, **kwargs)
+
+    def load(
+        self,
+        source: Union[str, List[str]],
+        **kwargs: Any,
+    ) -> Union[str, List[str]]:
+        """Load and convert one or more files to Markdown.
+
+        This is a wrapper around convert_files to maintain consistent interface.
+
+        Args:
+            source: A single file path or a list of file paths.
+        **kwargs: Additional arguments to pass to the converter.
+
+    Returns:
+        If a single file is provided, returns its Markdown content as a string.
+        If a list of files is provided, returns a list of Markdown contents.
+    """
+        if isinstance(source, str):
+            return self._load_single(source, **kwargs)
+        return self.convert_files(source, **kwargs)
+    
+    @property
+    def supported_formats(self) -> List[str]:
+        r"""Supported file formats.
+
+        Returns:
+            List[str]: List of supported file formats.
+        """
+        return self.SUPPORTED_FORMATS
+    
