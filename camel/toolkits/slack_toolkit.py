@@ -252,9 +252,6 @@ class SlackToolkit(BaseToolkit):
         Returns:
             str: A confirmation message indicating whether the message was sent
                 successfully or an error message.
-
-        Raises:
-            SlackApiError: If an error occurs while sending the message.
         """
         from slack_sdk.errors import SlackApiError
 
@@ -268,7 +265,10 @@ class SlackToolkit(BaseToolkit):
                 response = slack_client.chat_postMessage(
                     channel=channel_id, text=message
                 )
-            return str(response)
+            return (
+                f"Message: {message} sent successfully, "
+                f"got response: {response}"
+            )
         except SlackApiError as e:
             return f"Error creating conversation: {e.response['error']}"
 

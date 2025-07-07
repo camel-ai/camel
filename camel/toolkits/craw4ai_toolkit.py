@@ -71,11 +71,11 @@ class Crawl4AIToolkit(BaseToolkit):
             return f"Error scraping {url}: {e}"
 
     async def __aenter__(self):
-        """Async context manager entry."""
+        r"""Async context manager entry."""
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit - cleanup the client."""
+        r"""Async context manager exit - cleanup the client."""
         if self._client is not None:
             await self._client.__aexit__(exc_type, exc_val, exc_tb)
             self._client = None

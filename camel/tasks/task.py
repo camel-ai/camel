@@ -184,7 +184,7 @@ def parse_response(
     tasks = []
     if task_id is None:
         task_id = "0"
-    for i, content in enumerate(tasks_content):
+    for i, content in enumerate(tasks_content, 1):
         stripped_content = content.strip()
         # validate subtask content before creating the task
         if validate_task_content(stripped_content, f"{task_id}.{i}"):
@@ -430,6 +430,8 @@ class Task(BaseModel):
         tasks = task_parser(response.msg.content, self.id)
         for task in tasks:
             task.additional_info = self.additional_info
+            task.parent = self
+        self.subtasks = tasks
         return tasks
 
     def compose(

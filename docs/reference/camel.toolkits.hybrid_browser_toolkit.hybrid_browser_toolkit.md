@@ -31,9 +31,13 @@ Initialize the HybridBrowserToolkit.
 
 - **headless** (bool): Whether to run the browser in headless mode. Defaults to `True`.
 - **user_data_dir** (Optional[str]): Path to a directory for storing browser data like cookies and local storage. Useful for maintaining sessions across runs. Defaults to `None` (a temporary directory is used).
+- **stealth** (bool): Whether to run the browser in stealth mode to avoid bot detection. When enabled, hides WebDriver characteristics, spoofs navigator properties, and implements various anti-detection measures. Highly recommended for production use and when accessing sites with bot detection. Defaults to `False`.
 - **web_agent_model** (Optional[BaseModelBackend]): The language model backend to use for the high-level `solve_task` agent. This is required only if you plan to use `solve_task`. Defaults to `None`.
 - **cache_dir** (str): The directory to store cached files, such as screenshots. Defaults to `"tmp/"`.
-- **enabled_tools** (Optional[List[str]]): List of tool names to enable. If None, uses DEFAULT_TOOLS. Available tools: open_browser, close_browser, visit_page, get_page_snapshot, get_som_screenshot, get_page_links, click, type, select, scroll, enter, wait_user, solve_task. Defaults to `None`.
+- **enabled_tools** (Optional[List[str]]): List of tool names to enable. If None, uses DEFAULT_TOOLS. Available tools: open_browser, close_browser, visit_page, back, forward, get_page_snapshot, get_som_screenshot, get_page_links, click, type, select, scroll, enter, wait_user, solve_task. Defaults to `None`.
+- **browser_log_to_file** (bool): Whether to save detailed browser action logs to file. When enabled, logs action inputs/outputs, execution times, and page loading times. Logs are saved to an auto-generated timestamped file. Defaults to `False`.
+- **session_id** (Optional[str]): A unique identifier for this browser session. When multiple HybridBrowserToolkit instances are used concurrently, different session IDs prevent them from sharing the same browser session and causing conflicts. If None, a default session will be used. Defaults to `None`.
+- **default_start_url** (str): The default URL to navigate to when open_browser() is called without a start_url parameter or with None. Defaults to `"https://google.com/"`.
 
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.__del__"></a>
 
@@ -64,6 +68,26 @@ def _validate_ref(self, ref: str, method_name: str):
 ```
 
 Validate ref parameter.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit._truncate_if_needed"></a>
+
+### _truncate_if_needed
+
+```python
+def _truncate_if_needed(self, content: Any):
+```
+
+Truncate content if max_log_length is set.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.action_logger"></a>
+
+### action_logger
+
+```python
+def action_logger(func: Callable[..., Any]):
+```
+
+Decorator to add logging to action methods.
 
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit._convert_analysis_to_rects"></a>
 
@@ -105,6 +129,26 @@ def _ensure_agent(self):
 
 Create PlaywrightLLMAgent on first use.
 
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.get_log_summary"></a>
+
+### get_log_summary
+
+```python
+def get_log_summary(self):
+```
+
+Get a summary of logged actions.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.clear_logs"></a>
+
+### clear_logs
+
+```python
+def clear_logs(self):
+```
+
+Clear the log buffer.
+
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.get_tools"></a>
 
 ### get_tools
@@ -115,3 +159,23 @@ def get_tools(self):
 
 Get available function tools
 based on enabled_tools configuration.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.clone_for_new_session"></a>
+
+### clone_for_new_session
+
+```python
+def clone_for_new_session(self, new_session_id: Optional[str] = None):
+```
+
+Create a new instance of HybridBrowserToolkit with a unique
+session.
+
+**Parameters:**
+
+- **new_session_id**: Optional new session ID. If None, a UUID will be generated.
+
+**Returns:**
+
+  A new HybridBrowserToolkit instance with the same configuration
+but a different session.
