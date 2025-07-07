@@ -50,7 +50,7 @@ def test_load_dataframe():
             7000,
         ],
     }
-    df = reader.load(pd.DataFrame(sales_by_country))
+    df = reader.load(pd.DataFrame(sales_by_country))["contents"][0]
     # Test that the dataframe was loaded correctly
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (10, 2)
@@ -99,7 +99,7 @@ def test_multi_column_dataframe():
             1200,
         ],
     }
-    df = reader.load(pd.DataFrame(sales_by_country))
+    df = reader.load(pd.DataFrame(sales_by_country))["contents"][0]
     # Test that the dataframe was loaded correctly with multiple columns
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (10, 3)
@@ -123,7 +123,7 @@ def test_load_from_url():
 
     try:
         # Test loading from the file
-        df = reader.load(tmp_path)
+        df = reader.load(tmp_path)["contents"][0]
         assert isinstance(df, pd.DataFrame)
         assert "Country" in df.columns
         assert df.shape == (3, 3)
@@ -149,7 +149,7 @@ def test_with_llm():
         "country": ["United States", "United Kingdom", "China"],
         "sales": [5000, 3200, 7000],
     }
-    df = reader.load(pd.DataFrame(sales_by_country))
+    df = reader.load(pd.DataFrame(sales_by_country))["contents"][0]
     # With LLM config, should return a SmartDataframe
     from pandasai import SmartDataframe
 

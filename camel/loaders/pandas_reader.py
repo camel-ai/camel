@@ -13,13 +13,21 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from functools import wraps
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
+    override,
+)
 
 from .base_loader import BaseLoader
 
 if TYPE_CHECKING:
     from pandas import DataFrame
-    from pandasai import SmartDataframe
 
 
 def check_suffix(valid_suffixs: List[str]) -> Callable:
@@ -117,12 +125,13 @@ class PandasLoader(BaseLoader):
 
         return loader_method(file_path, **kwargs)
 
-    def load(
+    @override
+    def load(  # type: ignore[override]
         self,
-        data: Union["DataFrame", str, List[Union[str, "DataFrame"]]],
+        source: Union["DataFrame", str, List[Union[str, "DataFrame"]]],
         *args: Any,
         **kwargs: Dict[str, Any],
-    ) -> Union["DataFrame", "SmartDataframe", Dict[str, List[Any]]]:
+    ) -> Dict[str, List[Dict[str, Any]]]:
         r"""Load data from one or multiple sources.
 
         Args:
@@ -141,17 +150,17 @@ class PandasLoader(BaseLoader):
         """
 
         # Handle single source
-        if not isinstance(data, (list, set, tuple)):
-            df = self._load_single(data, **kwargs)
+        if not isinstance(source, (list, set, tuple)):
+            df = self._load_single(source, **kwargs)
             if hasattr(self, 'config') and 'llm' in self.config:
                 from pandasai import SmartDataframe
 
-                return SmartDataframe(df, config=self.config)
-            return df
+                return {"contents": [SmartDataframe(df, config=self.config)]}
+            return {"contents": [df]}
 
         # Handle multiple sources
         results = []
-        for item in data:
+        for item in source:
             df = self._load_single(item, **kwargs)
             results.append(df)
 

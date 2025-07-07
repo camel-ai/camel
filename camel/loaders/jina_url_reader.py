@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, override
 from warnings import warn
 
 from camel.types.enums import JinaReturnFormat
@@ -81,7 +81,12 @@ class JinaURLLoader(BaseLoader):
         self._headers = {k: v for k, v in raw_headers.items() if v}
         self.timeout = timeout
 
-    def _load_single(self, source: str, **kwargs: Any) -> str:
+    @override
+    def _load_single(  # type: ignore[override]
+        self,
+        source: str,
+        **kwargs: Any,
+    ) -> Dict[str, str]:
         r"""Load content from a single URL.
 
         Args:
@@ -110,17 +115,18 @@ class JinaURLLoader(BaseLoader):
                 **kwargs,
             )
             response.raise_for_status()
-            return response.text
+            return {source: response.text}
         except Exception as e:
             raise ValueError(
                 f"Failed to read content from {source}: {e}"
             ) from e
 
-    def load(
+    @override
+    def load(  # type: ignore[override]
         self,
         source: Union[str, List[str]],
         **kwargs: Any,
-    ) -> Union[str, List[str]]:
+    ) -> Dict[str, List[Dict[str, Any]]]:
         r"""Load content from one or more URLs.
 
         Args:
@@ -130,21 +136,24 @@ class JinaURLLoader(BaseLoader):
             (default: :obj:`None`)
 
         Returns:
-            If a single URL is provided, returns its content as a string.
-            If a list of URLs is provided, returns a list of contents.
+            Dict[str, List[Dict[str, Any]]]: A dictionary with a single key
+                "contents" containing a list of loaded data. If a single source
+                is provided, the list will contain a single item.
 
         Raises:
             ValueError: If any URL is invalid or the request fails.
         """
         if isinstance(source, str):
-            return self._load_single(source, **kwargs)
-        return [self._load_single(url, **kwargs) for url in source]
+            return {"contents": [self._load_single(source, **kwargs)]}
+        return {
+            "contents": [self._load_single(url, **kwargs) for url in source]
+        }
 
     @property
-    def supported_formats(self) -> List[str]:
-        r"""Get the list of supported URL schemes.
+    def supported_formats(self) -> set[str]:
+        r"""Get the set of supported URL schemes.
 
         Returns:
-            List[str]: The list of supported URL schemes.
+            set[str]: The set of supported URL schemes.
         """
-        return ["http", "https"]
+        return {"http", "https"}

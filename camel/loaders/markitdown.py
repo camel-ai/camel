@@ -13,10 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import ClassVar, Dict, List, Optional, Any, Union
+from typing import Any, ClassVar, Dict, List, Optional, Union, override
 
-from camel.logger import get_logger
 from camel.loaders.base_loader import BaseLoader
+from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -204,47 +204,57 @@ class MarkItDownLoader(BaseLoader):
 
         return converted_files
 
-    def _load_single(self, source: str, **kwargs: Any) -> str:
+    @override
+    def _load_single(  # type: ignore[override]
+        self,
+        source: str,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
         """Load and convert a single file to Markdown.
-
-        This is a wrapper around convert_file to maintain consistent interface.
 
         Args:
             source: Path to the input file.
             **kwargs: Additional arguments to pass to the converter.
 
         Returns:
-            str: Converted Markdown content.
+            Dict[str, Any]: Converted Markdown content.
         """
-        return self.convert_file(source, **kwargs)
+        return {source: self.convert_file(source, **kwargs)}
 
-    def load(
+    @override
+    def load(  # type: ignore[override]
         self,
         source: Union[str, List[str]],
         **kwargs: Any,
-    ) -> Union[str, List[str]]:
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """Load and convert one or more files to Markdown.
 
-        This is a wrapper around convert_files to maintain consistent interface.
+        This is a wrapper around convert_files to maintain consistent
+            interface.
 
         Args:
             source: A single file path or a list of file paths.
-        **kwargs: Additional arguments to pass to the converter.
+            **kwargs: Additional arguments to pass to the converter.
 
-    Returns:
-        If a single file is provided, returns its Markdown content as a string.
-        If a list of files is provided, returns a list of Markdown contents.
-    """
+        Returns:
+            If a single file is provided, returns its Markdown content as
+                a string.
+            If a list of files is provided, returns a list of Markdown
+                contents.
+        """
+
+        result = []
         if isinstance(source, str):
-            return self._load_single(source, **kwargs)
-        return self.convert_files(source, **kwargs)
-    
+            result.append(self._load_single(source, **kwargs))
+        else:
+            result.append(self.convert_files(source, **kwargs))
+        return {"contents": result}
+
     @property
-    def supported_formats(self) -> List[str]:
+    def supported_formats(self) -> set[str]:
         r"""Supported file formats.
 
         Returns:
-            List[str]: List of supported file formats.
+            set[str]: Set of supported file formats.
         """
-        return self.SUPPORTED_FORMATS
-    
+        return set(self.SUPPORTED_FORMATS)
