@@ -1,6 +1,9 @@
 const axios = require('axios');
 
-function pxToIn(px) { return px / 96; }
+function pxToIn(px) { return px ? parseFloat(px) / 96 : 0; }
+
+
+function pxToPt(px) { return (px && typeof px === 'string' && px.endsWith('px')) ? parseFloat(px) / 1.333 : 0; }
 
 function rgbaToPptxFill(rgbaStr) {
   const match = rgbaStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
@@ -13,14 +16,16 @@ function rgbaToPptxFill(rgbaStr) {
   return { color: `${r}${g}${b}`, transparency };
 }
 function rgbToHex(rgb) {
-  if (!rgb) return '000000';
-  const result = rgb.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
-  if (!result) return '000000';
-  
-  const [r, g, b] = result.slice(1).map(val => 
-    parseInt(val).toString(16).padStart(2, '0')
+  if (!rgb || rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return 'transparent';
+  const result = rgb.match(/rgba?\((\d+), (\d+), (\d+)(, [\d.]+)?\)/);
+  if (!result) return rgb;
+  return (
+    '#' +
+    ((1 << 24) + (parseInt(result[1]) << 16) + (parseInt(result[2]) << 8) + parseInt(result[3]))
+      .toString(16)
+      .slice(1)
+      .toUpperCase()
   );
-  return r + g + b;
 }
 async function toBase64(url) {
   try {
@@ -114,4 +119,4 @@ function determineBoldness(node) {
   return false;
 }
 
-module.exports = { pxToIn, rgbaToPptxFill, toBase64 ,rgbToHex, processFill, safeHexColor, processShadow, determineBoldness };
+module.exports = {pxToPt, pxToIn, rgbaToPptxFill, toBase64 ,rgbToHex, processFill, safeHexColor, processShadow, determineBoldness };
