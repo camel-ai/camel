@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional
 
 
 class BrowserConfig:
-    """Configuration class for browser settings including stealth mode and
+    r"""Configuration class for browser settings including stealth mode and
     timeouts."""
 
     # Default timeout values (in milliseconds)
@@ -42,7 +42,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_timeout_config() -> Dict[str, int]:
-        """Get timeout configuration with environment variable support.
+        r"""Get timeout configuration with environment variable support.
 
         Returns:
             Dict[str, int]: Timeout configuration in milliseconds.
@@ -94,7 +94,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_action_limits() -> Dict[str, int]:
-        """Get action limits configuration with environment variable support.
+        r"""Get action limits configuration with environment variable support.
 
         Returns:
             Dict[str, int]: Action limits configuration.
@@ -110,7 +110,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_action_timeout(override: Optional[int] = None) -> int:
-        """Get action timeout with optional override.
+        r"""Get action timeout with optional override.
 
         Args:
             override: Optional timeout override value in milliseconds.
@@ -124,7 +124,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_short_timeout(override: Optional[int] = None) -> int:
-        """Get short timeout with optional override.
+        r"""Get short timeout with optional override.
 
         Args:
             override: Optional timeout override value in milliseconds.
@@ -138,7 +138,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_navigation_timeout(override: Optional[int] = None) -> int:
-        """Get navigation timeout with optional override.
+        r"""Get navigation timeout with optional override.
 
         Args:
             override: Optional timeout override value in milliseconds.
@@ -152,7 +152,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_network_idle_timeout(override: Optional[int] = None) -> int:
-        """Get network idle timeout with optional override.
+        r"""Get network idle timeout with optional override.
 
         Args:
             override: Optional timeout override value in milliseconds.
@@ -166,7 +166,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_max_scroll_amount(override: Optional[int] = None) -> int:
-        """Get maximum scroll amount with optional override.
+        r"""Get maximum scroll amount with optional override.
 
         Args:
             override: Optional scroll amount override value in pixels.
@@ -180,7 +180,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_screenshot_timeout(override: Optional[int] = None) -> int:
-        """Get screenshot timeout with optional override.
+        r"""Get screenshot timeout with optional override.
 
         Args:
             override: Optional timeout override value in milliseconds.
@@ -194,7 +194,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_page_stability_timeout(override: Optional[int] = None) -> int:
-        """Get page stability timeout with optional override.
+        r"""Get page stability timeout with optional override.
 
         Args:
             override: Optional timeout override value in milliseconds.
@@ -208,7 +208,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_dom_content_loaded_timeout(override: Optional[int] = None) -> int:
-        """Get DOM content loaded timeout with optional override.
+        r"""Get DOM content loaded timeout with optional override.
 
         Args:
             override: Optional timeout override value in milliseconds.
@@ -222,7 +222,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_launch_args() -> List[str]:
-        """Get Chrome launch arguments for stealth mode.
+        r"""Get Chrome launch arguments for stealth mode.
 
         Returns:
             List[str]: Chrome command line arguments to avoid detection.
@@ -250,7 +250,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_context_options() -> Dict[str, Any]:
-        """Get browser context options for stealth mode.
+        r"""Get browser context options for stealth mode.
 
         Returns:
             Dict[str, Any]: Browser context configuration options.
@@ -270,7 +270,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_http_headers() -> Dict[str, str]:
-        """Get HTTP headers for stealth mode.
+        r"""Get HTTP headers for stealth mode.
 
         Returns:
             Dict[str, str]: HTTP headers to appear more like a real browser.
@@ -299,7 +299,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_stealth_config() -> Dict[str, Any]:
-        """Get stealth configuration.
+        r"""Get stealth configuration.
 
         Returns:
             Dict[str, Any]: Complete stealth configuration.
@@ -312,7 +312,7 @@ class BrowserConfig:
 
     @staticmethod
     def get_all_config() -> Dict[str, Any]:
-        """Get all browser configuration including stealth, timeouts,
+        r"""Get all browser configuration including stealth, timeouts,
         and action limits.
 
         Returns:
@@ -327,64 +327,64 @@ class BrowserConfig:
 
 # Legacy ConfigLoader class for compatibility (now just wraps BrowserConfig)
 class ConfigLoader:
-    """Legacy wrapper for BrowserConfig - maintained for backward
+    r"""Legacy wrapper for BrowserConfig - maintained for backward
     compatibility."""
 
     @classmethod
     def get_browser_config(cls):
-        """Get the BrowserConfig class."""
+        r"""Get the BrowserConfig class."""
         return BrowserConfig
 
     @classmethod
     def get_stealth_config(cls):
-        """Get the StealthConfig class (alias)."""
+        r"""Get the StealthConfig class (alias)."""
         return BrowserConfig  # StealthConfig is an alias for BrowserConfig
 
     @classmethod
     def get_timeout_config(cls) -> Dict[str, int]:
-        """Get timeout configuration."""
+        r"""Get timeout configuration."""
         return BrowserConfig.get_timeout_config()
 
     @classmethod
     def get_action_timeout(cls, override: Optional[int] = None) -> int:
-        """Get action timeout with optional override."""
+        r"""Get action timeout with optional override."""
         return BrowserConfig.get_action_timeout(override)
 
     @classmethod
     def get_short_timeout(cls, override: Optional[int] = None) -> int:
-        """Get short timeout with optional override."""
+        r"""Get short timeout with optional override."""
         return BrowserConfig.get_short_timeout(override)
 
     @classmethod
     def get_navigation_timeout(cls, override: Optional[int] = None) -> int:
-        """Get navigation timeout with optional override."""
+        r"""Get navigation timeout with optional override."""
         return BrowserConfig.get_navigation_timeout(override)
 
     @classmethod
     def get_network_idle_timeout(cls, override: Optional[int] = None) -> int:
-        """Get network idle timeout with optional override."""
+        r"""Get network idle timeout with optional override."""
         return BrowserConfig.get_network_idle_timeout(override)
 
     @classmethod
     def get_max_scroll_amount(cls, override: Optional[int] = None) -> int:
-        """Get maximum scroll amount with optional override."""
+        r"""Get maximum scroll amount with optional override."""
         return BrowserConfig.get_max_scroll_amount(override)
 
     @classmethod
     def get_screenshot_timeout(cls, override: Optional[int] = None) -> int:
-        """Get screenshot timeout with optional override."""
+        r"""Get screenshot timeout with optional override."""
         return BrowserConfig.get_screenshot_timeout(override)
 
     @classmethod
     def get_page_stability_timeout(cls, override: Optional[int] = None) -> int:
-        """Get page stability timeout with optional override."""
+        r"""Get page stability timeout with optional override."""
         return BrowserConfig.get_page_stability_timeout(override)
 
     @classmethod
     def get_dom_content_loaded_timeout(
         cls, override: Optional[int] = None
     ) -> int:
-        """Get DOM content loaded timeout with optional override."""
+        r"""Get DOM content loaded timeout with optional override."""
         return BrowserConfig.get_dom_content_loaded_timeout(override)
 
 
@@ -393,55 +393,55 @@ StealthConfig = BrowserConfig
 
 
 def get_browser_config():
-    """Get BrowserConfig class."""
+    r"""Get BrowserConfig class."""
     return BrowserConfig
 
 
 def get_stealth_config():
-    """Get StealthConfig class."""
+    r"""Get StealthConfig class."""
     return BrowserConfig
 
 
 def get_timeout_config() -> Dict[str, int]:
-    """Get timeout configuration."""
+    r"""Get timeout configuration."""
     return BrowserConfig.get_timeout_config()
 
 
 def get_action_timeout(override: Optional[int] = None) -> int:
-    """Get action timeout with optional override."""
+    r"""Get action timeout with optional override."""
     return BrowserConfig.get_action_timeout(override)
 
 
 def get_short_timeout(override: Optional[int] = None) -> int:
-    """Get short timeout with optional override."""
+    r"""Get short timeout with optional override."""
     return BrowserConfig.get_short_timeout(override)
 
 
 def get_navigation_timeout(override: Optional[int] = None) -> int:
-    """Get navigation timeout with optional override."""
+    r"""Get navigation timeout with optional override."""
     return BrowserConfig.get_navigation_timeout(override)
 
 
 def get_network_idle_timeout(override: Optional[int] = None) -> int:
-    """Get network idle timeout with optional override."""
+    r"""Get network idle timeout with optional override."""
     return BrowserConfig.get_network_idle_timeout(override)
 
 
 def get_max_scroll_amount(override: Optional[int] = None) -> int:
-    """Get maximum scroll amount with optional override."""
+    r"""Get maximum scroll amount with optional override."""
     return BrowserConfig.get_max_scroll_amount(override)
 
 
 def get_screenshot_timeout(override: Optional[int] = None) -> int:
-    """Get screenshot timeout with optional override."""
+    r"""Get screenshot timeout with optional override."""
     return BrowserConfig.get_screenshot_timeout(override)
 
 
 def get_page_stability_timeout(override: Optional[int] = None) -> int:
-    """Get page stability timeout with optional override."""
+    r"""Get page stability timeout with optional override."""
     return BrowserConfig.get_page_stability_timeout(override)
 
 
 def get_dom_content_loaded_timeout(override: Optional[int] = None) -> int:
-    """Get DOM content loaded timeout with optional override."""
+    r"""Get DOM content loaded timeout with optional override."""
     return BrowserConfig.get_dom_content_loaded_timeout(override)

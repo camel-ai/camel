@@ -377,7 +377,6 @@ class ActionExecutor:
 
         # Press Enter on whatever element currently has focus
         await self.page.keyboard.press("Enter")
-        # await asyncio.sleep(0.3)
         return {
             "message": "Pressed Enter on focused element",
             "details": details,
