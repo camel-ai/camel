@@ -16,9 +16,12 @@ from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
 
 import requests
 
+from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer, api_keys_required, dependencies_required
+
+logger = get_logger(__name__)
 
 
 @MCPServer()
@@ -480,12 +483,19 @@ class SearchToolkit(BaseToolkit):
                     }
                     responses.append(response)
             else:
-                responses.append({"error": "google search failed."})
+                error_info = data.get("error", {})
+                logger.error(
+                    f"Google search failed - API response: {error_info}"
+                )
+                responses.append(
+                    {
+                        "error": f"Google search failed - "
+                        f"API response: {error_info}"
+                    }
+                )
 
-        except requests.RequestException:
-            # Handle specific exceptions or general request exceptions
-            responses.append({"error": "google search failed."})
-        # If no answer found, return an empty list
+        except Exception as e:
+            responses.append({"error": f"google search failed: {e!s}"})
         return responses
 
     def tavily_search(
