@@ -158,7 +158,7 @@ def search_agent_factory(
         browser_log_to_file=True,
         stealth=True,
         session_id=agent_id,  # unique session ID
-        default_start_url="https://bing.com/",
+        default_start_url="https://search.brave.com/",
     )
 
     tools = [
@@ -168,6 +168,7 @@ def search_agent_factory(
         HumanToolkit().ask_human_via_console,
         NoteTakingToolkit().append_note,
         *Crawl4AIToolkit().get_tools(),
+        SearchToolkit().search_exa,
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
