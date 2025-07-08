@@ -691,7 +691,17 @@ class Workforce(BaseNode):
             additional_info=task.additional_info,
         )
         self.task_agent.reset()
-        subtasks = task.decompose(self.task_agent, decompose_prompt)
+        result = task.decompose(self.task_agent, decompose_prompt)
+
+        # Handle both streaming and non-streaming results
+        if hasattr(result, '__iter__') and not isinstance(result, list):
+            # This is a generator (streaming mode)
+            subtasks = []
+            for new_tasks in result:
+                subtasks.extend(new_tasks)
+        else:
+            # This is a regular list (non-streaming mode)
+            subtasks = result
 
         # Update dependency tracking for decomposed task
         if subtasks:
