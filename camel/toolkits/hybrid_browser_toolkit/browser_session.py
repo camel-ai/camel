@@ -19,8 +19,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple
 from camel.logger import get_logger
 
 from .actions import ActionExecutor
+from .config_loader import ConfigLoader
 from .snapshot import PageSnapshot
-from .stealth_config import StealthConfig
 
 if TYPE_CHECKING:
     from playwright.async_api import (
@@ -44,10 +44,6 @@ class HybridBrowserSession:
     This class is a singleton per event-loop and session-id combination.
     """
 
-    # Configuration constants
-    DEFAULT_NAVIGATION_TIMEOUT = 10000  # 10 seconds
-    NETWORK_IDLE_TIMEOUT = 5000  # 5 seconds
-
     # Class-level registry for singleton instances
     # Format: {(loop_id, session_id): HybridBrowserSession}
     _instances: ClassVar[Dict[Tuple[Any, str], "HybridBrowserSession"]] = {}
@@ -63,6 +59,10 @@ class HybridBrowserSession:
         user_data_dir: Optional[str] = None,
         stealth: bool = False,
         session_id: Optional[str] = None,
+        default_timeout: Optional[int] = None,
+        short_timeout: Optional[int] = None,
+        navigation_timeout: Optional[int] = None,
+        network_idle_timeout: Optional[int] = None,
     ) -> "HybridBrowserSession":
         # Create a unique key for this event loop and session combination
         # We defer the event loop lookup to avoid issues with creation
@@ -75,6 +75,10 @@ class HybridBrowserSession:
             "user_data_dir": user_data_dir,
             "stealth": stealth,
             "session_id": session_id,
+            "default_timeout": default_timeout,
+            "short_timeout": short_timeout,
+            "navigation_timeout": navigation_timeout,
+            "network_idle_timeout": network_idle_timeout,
         }
         return instance
 
@@ -126,6 +130,10 @@ class HybridBrowserSession:
         user_data_dir: Optional[str] = None,
         stealth: bool = False,
         session_id: Optional[str] = None,
+        default_timeout: Optional[int] = None,
+        short_timeout: Optional[int] = None,
+        navigation_timeout: Optional[int] = None,
+        network_idle_timeout: Optional[int] = None,
     ):
         if self._initialized:
             return
@@ -136,12 +144,27 @@ class HybridBrowserSession:
         self._stealth = stealth
         self._session_id = session_id or "default"
 
+        # Store timeout configuration for ActionExecutor instances and
+        # browser operations
+        self._default_timeout = default_timeout
+        self._short_timeout = short_timeout
+        self._navigation_timeout = ConfigLoader.get_navigation_timeout(
+            navigation_timeout
+        )
+        self._network_idle_timeout = ConfigLoader.get_network_idle_timeout(
+            network_idle_timeout
+        )
+
         # Initialize _creation_params to fix linter error
         self._creation_params = {
             "headless": headless,
             "user_data_dir": user_data_dir,
             "stealth": stealth,
             "session_id": session_id,
+            "default_timeout": default_timeout,
+            "short_timeout": short_timeout,
+            "navigation_timeout": navigation_timeout,
+            "network_idle_timeout": network_idle_timeout,
         }
 
         self._playwright: Optional[Playwright] = None
@@ -164,7 +187,8 @@ class HybridBrowserSession:
         self._stealth_config: Optional[Dict[str, Any]] = None
         if self._stealth:
             self._stealth_script = self._load_stealth_script()
-            self._stealth_config = StealthConfig.get_all_config()
+            stealth_config_class = ConfigLoader.get_stealth_config()
+            self._stealth_config = stealth_config_class.get_stealth_config()
 
     def _load_stealth_script(self) -> str:
         r"""Load the stealth JavaScript script from file."""
@@ -231,9 +255,7 @@ class HybridBrowserSession:
         # Navigate if URL provided
         if url:
             try:
-                await new_page.goto(
-                    url, timeout=self.DEFAULT_NAVIGATION_TIMEOUT
-                )
+                await new_page.goto(url, timeout=self._navigation_timeout)
                 await new_page.wait_for_load_state('domcontentloaded')
             except Exception as e:
                 logger.warning(f"Failed to navigate new tab to {url}: {e}")
@@ -319,7 +341,12 @@ class HybridBrowserSession:
             await self._page.bring_to_front()
 
             # Update executor and snapshot for new tab
-            self.executor = ActionExecutor(self._page, self)
+            self.executor = ActionExecutor(
+                self._page,
+                self,
+                default_timeout=self._default_timeout,
+                short_timeout=self._short_timeout,
+            )
             self.snapshot = PageSnapshot(self._page)
 
             logger.info(f"Switched to tab {tab_index}")
@@ -506,14 +533,17 @@ class HybridBrowserSession:
                 logger.warning(f"Failed to apply stealth script: {e}")
 
         # Set up timeout for navigation
-        self._page.set_default_navigation_timeout(
-            self.DEFAULT_NAVIGATION_TIMEOUT
-        )
-        self._page.set_default_timeout(self.DEFAULT_NAVIGATION_TIMEOUT)
+        self._page.set_default_navigation_timeout(self._navigation_timeout)
+        self._page.set_default_timeout(self._navigation_timeout)
 
         # Initialize utilities
         self.snapshot = PageSnapshot(self._page)
-        self.executor = ActionExecutor(self._page, self)
+        self.executor = ActionExecutor(
+            self._page,
+            self,
+            default_timeout=self._default_timeout,
+            short_timeout=self._short_timeout,
+        )
         self._current_tab_index = 0
 
         logger.info("Browser session initialized successfully")
@@ -579,7 +609,7 @@ class HybridBrowserSession:
                         await page.close()
                         logger.debug(
                             f"Closed page: "
-                            f"{page.url if hasattr(page, 'url') else 'unknown'}"  # noqa: E501
+                            f"{page.url if hasattr(page, 'url') else 'unknown'}"  # noqa:E501
                         )
                 except Exception as e:
                     logger.warning(f"Error closing page: {e}")
@@ -668,13 +698,13 @@ class HybridBrowserSession:
         await self.ensure_browser()
         page = await self.get_page()
 
-        await page.goto(url, timeout=self.DEFAULT_NAVIGATION_TIMEOUT)
+        await page.goto(url, timeout=self._navigation_timeout)
         await page.wait_for_load_state('domcontentloaded')
 
         # Try to wait for network idle
         try:
             await page.wait_for_load_state(
-                'networkidle', timeout=self.NETWORK_IDLE_TIMEOUT
+                'networkidle', timeout=self._network_idle_timeout
             )
         except Exception:
             logger.debug("Network idle timeout - continuing anyway")

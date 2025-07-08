@@ -14,6 +14,8 @@
 import asyncio
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
+from .config_loader import ConfigLoader
+
 if TYPE_CHECKING:
     from playwright.async_api import Page
 
@@ -21,14 +23,23 @@ if TYPE_CHECKING:
 class ActionExecutor:
     r"""Executes high-level actions (click, type …) on a Playwright Page."""
 
-    # Configuration constants
-    DEFAULT_TIMEOUT = 5000  # 5 seconds
-    SHORT_TIMEOUT = 2000  # 2 seconds
-    MAX_SCROLL_AMOUNT = 5000  # Maximum scroll distance in pixels
-
-    def __init__(self, page: "Page", session: Optional[Any] = None):
+    def __init__(
+        self,
+        page: "Page",
+        session: Optional[Any] = None,
+        default_timeout: Optional[int] = None,
+        short_timeout: Optional[int] = None,
+        max_scroll_amount: Optional[int] = None,
+    ):
         self.page = page
         self.session = session  # HybridBrowserSession instance
+
+        # Configure timeouts using the config file with optional overrides
+        self.default_timeout = ConfigLoader.get_action_timeout(default_timeout)
+        self.short_timeout = ConfigLoader.get_short_timeout(short_timeout)
+        self.max_scroll_amount = ConfigLoader.get_max_scroll_amount(
+            max_scroll_amount
+        )
 
     # ------------------------------------------------------------------
     # Public helpers
@@ -139,7 +150,7 @@ class ActionExecutor:
         try:
             if self.session:
                 async with self.page.context.expect_page(
-                    timeout=self.SHORT_TIMEOUT
+                    timeout=self.short_timeout
                 ) as new_page_info:
                     await element.click(modifiers=["ControlOrMeta"])
                 new_page = await new_page_info.value
@@ -188,7 +199,7 @@ class ActionExecutor:
 
         # Fallback to normal force click if ctrl+click fails
         try:
-            await element.click(force=True, timeout=self.DEFAULT_TIMEOUT)
+            await element.click(force=True, timeout=self.default_timeout)
             details["click_method"] = "playwright_force_click"
             return {
                 "message": f"Fallback clicked element: {found_selector}",
@@ -224,7 +235,7 @@ class ActionExecutor:
         }
 
         try:
-            await self.page.fill(target, text, timeout=self.SHORT_TIMEOUT)
+            await self.page.fill(target, text, timeout=self.short_timeout)
             return {
                 "message": f"Typed '{text}' into {target}",
                 "details": details,
@@ -254,7 +265,7 @@ class ActionExecutor:
 
         try:
             await self.page.select_option(
-                target, value, timeout=self.DEFAULT_TIMEOUT
+                target, value, timeout=self.default_timeout
             )
             return {
                 "message": f"Selected '{value}' in {target}",
@@ -283,7 +294,7 @@ class ActionExecutor:
             details["wait_type"] = "selector"
             details["selector"] = sel
             await self.page.wait_for_selector(
-                sel, timeout=self.DEFAULT_TIMEOUT
+                sel, timeout=self.default_timeout
             )
             return {"message": f"Waited for {sel}", "details": details}
         return {
@@ -303,7 +314,7 @@ class ActionExecutor:
         target = f"[aria-ref='{ref}']"
         details = {"ref": ref, "target": target}
 
-        await self.page.wait_for_selector(target, timeout=self.DEFAULT_TIMEOUT)
+        await self.page.wait_for_selector(target, timeout=self.default_timeout)
         txt = await self.page.text_content(target)
 
         details["extracted_text"] = txt
@@ -337,9 +348,9 @@ class ActionExecutor:
             # Safely convert amount to integer and clamp to reasonable range
             amount_int = int(amount)
             amount_int = max(
-                -self.MAX_SCROLL_AMOUNT,
-                min(self.MAX_SCROLL_AMOUNT, amount_int),
-            )  # Clamp to MAX_SCROLL_AMOUNT range
+                -self.max_scroll_amount,
+                min(self.max_scroll_amount, amount_int),
+            )  # Clamp to max_scroll_amount range
             details["actual_amount"] = amount_int
         except (ValueError, TypeError):
             return {
@@ -366,7 +377,6 @@ class ActionExecutor:
 
         # Press Enter on whatever element currently has focus
         await self.page.keyboard.press("Enter")
-        await asyncio.sleep(0.3)
         return {
             "message": "Pressed Enter on focused element",
             "details": details,
@@ -378,13 +388,13 @@ class ActionExecutor:
         try:
             # Wait for basic DOM content loading
             await self.page.wait_for_load_state(
-                'domcontentloaded', timeout=self.SHORT_TIMEOUT
+                'domcontentloaded', timeout=self.short_timeout
             )
 
             # Try to wait for network idle briefly
             try:
                 await self.page.wait_for_load_state(
-                    'networkidle', timeout=self.SHORT_TIMEOUT
+                    'networkidle', timeout=self.short_timeout
                 )
             except Exception:
                 pass  # Network idle is optional
