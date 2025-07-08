@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
@@ -27,9 +27,8 @@ from camel.logger import get_logger
 
 if TYPE_CHECKING:
     from surrealdb import Surreal
-    
-logger = get_logger(__name__)
 
+logger = get_logger(__name__)
 
 class SurrealStorage(BaseVectorStorage):
     r"""An implementation of the `BaseVectorStorage` using SurrealDB,
@@ -162,6 +161,7 @@ class SurrealStorage(BaseVectorStorage):
         Define and create the vector storage table with HNSW index.
         """
         from surrealdb import Surreal
+
         with Surreal(self.url) as db:
             db.signin({"username": self.user, "password": self.password})
             db.use(self.ns, self.db)
@@ -181,6 +181,7 @@ class SurrealStorage(BaseVectorStorage):
         Drop the vector storage table if it exists.
         """
         from surrealdb import Surreal
+
         with Surreal(self.url) as db:
             db.signin({"username": self.user, "password": self.password})
             db.use(self.ns, self.db)
@@ -242,6 +243,7 @@ class SurrealStorage(BaseVectorStorage):
                 with similarity scores.
         """
         from surrealdb import Surreal
+
         metric = {
             VectorDistance.COSINE: "cosine",
             VectorDistance.EUCLIDEAN: "euclidean",
@@ -293,6 +295,7 @@ class SurrealStorage(BaseVectorStorage):
             "Adding %d records to table '%s'.", len(records), self.table
         )
         from surrealdb import Surreal
+
         try:
             with Surreal(self.url) as db:
                 db.signin({"username": self.user, "password": self.password})
@@ -328,6 +331,7 @@ class SurrealStorage(BaseVectorStorage):
         """
         from surrealdb import Surreal
         from surrealdb.data.types.record_id import RecordID
+        
         try:
             with Surreal(self.url) as db:
                 db.signin({"username": self.user, "password": self.password})
