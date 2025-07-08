@@ -42,7 +42,7 @@ def test_initialization():
     r"""Test the initialization of FileWriteToolkit with default parameters."""
     toolkit = FileWriteToolkit()
 
-    assert toolkit.working_directory == Path("./").resolve()
+    assert toolkit.working_directory == Path("./camel_working_dir").resolve()
     assert toolkit.default_encoding == "utf-8"
     assert toolkit.backup_enabled is True
 
