@@ -551,6 +551,10 @@ class Workforce(BaseNode):
                     continue
 
             if not memory_records:
+                logger.warning(
+                    "No valid memory records could be reconstructed "
+                    "for sharing"
+                )
                 return
 
             # Share with coordinator agent
@@ -667,6 +671,12 @@ class Workforce(BaseNode):
         """
         if task_id in self._task_start_times:
             del self._task_start_times[task_id]
+
+        if task_id in self._task_dependencies:
+            del self._task_dependencies[task_id]
+
+        if task_id in self._assignees:
+            del self._assignees[task_id]
 
     def _decompose_task(self, task: Task) -> List[Task]:
         r"""Decompose the task into subtasks. This method will also set the
@@ -991,8 +1001,13 @@ class Workforce(BaseNode):
         tasks_dict = {task.id: task for task in self._pending_tasks}
 
         # Check if all provided IDs exist
-        if not all(task_id in tasks_dict for task_id in task_ids):
-            logger.warning("Some task IDs not found in pending tasks.")
+        invalid_ids = [
+            task_id for task_id in task_ids if task_id not in tasks_dict
+        ]
+        if invalid_ids:
+            logger.warning(
+                f"Task IDs not found in pending tasks: {invalid_ids}"
+            )
             return False
 
         # Check if we have the same number of tasks
@@ -2057,7 +2072,6 @@ class Workforce(BaseNode):
                     logger.error(
                         f"JSON parsing error in worker creation: Invalid "
                         f"response format - {e}. Response content: "
-                        f"format - {e}. Response content: "
                         f"{response.msg.content[:100]}..."
                     )
                     raise RuntimeError(
