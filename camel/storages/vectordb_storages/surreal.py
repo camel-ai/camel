@@ -39,10 +39,13 @@ class SurrealStorage(BaseVectorStorage):
     `SurrealDB <https://surrealdb.com>`_
 
     Args:
-        url (str): WebSocket URL for connecting to SurrealDB (default: "ws://localhost:8000/rpc").
-        table (str): Name of the table used for storing vectors (default: "vector_store").
+        url (str): WebSocket URL for connecting to SurrealDB
+            (default: "ws://localhost:8000/rpc").
+        table (str): Name of the table used for storing vectors
+            (default: "vector_store").
         vector_dim (int): Dimensionality of the stored vectors.
-        distance (VectorDistance): Distance metric used for similarity comparisons (default: VectorDistance.COSINE).
+        distance (VectorDistance): Distance metric used for similarity
+            comparisons (default: VectorDistance.COSINE).
         namespace (str): SurrealDB namespace to use (default: "default").
         database (str): SurrealDB database name (default: "demo").
         user (str): Username for authentication (default: "root").
@@ -331,7 +334,7 @@ class SurrealStorage(BaseVectorStorage):
         """
         from surrealdb import Surreal
         from surrealdb.data.types.record_id import RecordID
-        
+
         try:
             with Surreal(self.url) as db:
                 db.signin({"username": self.user, "password": self.password})
