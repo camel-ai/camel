@@ -31,10 +31,10 @@ model = ModelFactory.create(
 sys_msg = "You are a helpful assistant that can create and modify files."
 
 # Set up output directory
-output_dir = "./file_write_outputs"
+output_dir = "./html_gen_outputs"
 os.makedirs(output_dir, exist_ok=True)
 
-# Initialize the FileWriteToolkit with the output directory
+# Initialize the HtmlGenToolkit with the output directory
 html_toolkit = HtmlGenToolkit(workspace=output_dir)
 # Get the tools from the toolkit
 tools_list = html_toolkit.get_tools()

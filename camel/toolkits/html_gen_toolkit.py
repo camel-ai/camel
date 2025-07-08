@@ -440,7 +440,7 @@ class HtmlGenToolkit(BaseToolkit):
         self,
         model: Optional[BaseModelBackend] = None,
         timeout: Optional[float] = None,
-        workspace: Optional[str] = "./",
+        workspace: str = "./",
     ):
         r"""Initialize the HtmlGenToolkit.
 
