@@ -25,6 +25,7 @@ from typing import (
     Coroutine,
     Deque,
     Dict,
+    Generator,
     List,
     Optional,
     Set,
@@ -678,12 +679,15 @@ class Workforce(BaseNode):
         if task_id in self._assignees:
             del self._assignees[task_id]
 
-    def _decompose_task(self, task: Task) -> List[Task]:
+    def _decompose_task(
+        self, task: Task
+    ) -> Union[List[Task], Generator[List[Task], None, None]]:
         r"""Decompose the task into subtasks. This method will also set the
         relationship between the task and its subtasks.
 
         Returns:
-            List[Task]: The subtasks.
+            Union[List[Task], Generator[List[Task], None, None]]:
+            The subtasks or generator of subtasks.
         """
         decompose_prompt = WF_TASK_DECOMPOSE_PROMPT.format(
             content=task.content,
@@ -696,18 +700,25 @@ class Workforce(BaseNode):
         # Handle both streaming and non-streaming results
         if hasattr(result, '__iter__') and not isinstance(result, list):
             # This is a generator (streaming mode)
-            subtasks = []
-            for new_tasks in result:
-                subtasks.extend(new_tasks)
+            def streaming_with_dependencies():
+                all_subtasks = []
+                for new_tasks in result:
+                    all_subtasks.extend(new_tasks)
+                    # Update dependency tracking for each batch of new tasks
+                    if new_tasks:
+                        self._update_dependencies_for_decomposition(
+                            task, all_subtasks
+                        )
+                    yield new_tasks
+
+            return streaming_with_dependencies()
         else:
             # This is a regular list (non-streaming mode)
             subtasks = result
-
-        # Update dependency tracking for decomposed task
-        if subtasks:
-            self._update_dependencies_for_decomposition(task, subtasks)
-
-        return subtasks
+            # Update dependency tracking for decomposed task
+            if subtasks:
+                self._update_dependencies_for_decomposition(task, subtasks)
+            return subtasks
 
     def _analyze_failure(
         self, task: Task, error_message: str
@@ -1158,7 +1169,19 @@ class Workforce(BaseNode):
         task.state = TaskState.FAILED
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
-        subtasks = self._decompose_task(task)
+        subtasks_result = self._decompose_task(task)
+
+        # Handle both streaming and non-streaming results
+        if hasattr(subtasks_result, '__iter__') and not isinstance(
+            subtasks_result, list
+        ):
+            # This is a generator (streaming mode)
+            subtasks = []
+            for new_tasks in subtasks_result:
+                subtasks.extend(new_tasks)
+        else:
+            # This is a regular list (non-streaming mode)
+            subtasks = subtasks_result
         if self.metrics_logger and subtasks:
             self.metrics_logger.log_task_decomposed(
                 parent_task_id=task.id, subtask_ids=[st.id for st in subtasks]
@@ -1275,7 +1298,19 @@ class Workforce(BaseNode):
         task.state = TaskState.FAILED  # TODO: Add logic for OPEN
 
         # Decompose the task into subtasks first
-        subtasks = self._decompose_task(task)
+        subtasks_result = self._decompose_task(task)
+
+        # Handle both streaming and non-streaming results
+        if hasattr(subtasks_result, '__iter__') and not isinstance(
+            subtasks_result, list
+        ):
+            # This is a generator (streaming mode)
+            subtasks = []
+            for new_tasks in subtasks_result:
+                subtasks.extend(new_tasks)
+        else:
+            # This is a regular list (non-streaming mode)
+            subtasks = subtasks_result
         if subtasks:
             # If decomposition happened, the original task becomes a container.
             # We only execute its subtasks.
@@ -2359,7 +2394,19 @@ class Workforce(BaseNode):
 
             elif recovery_decision.strategy == RecoveryStrategy.DECOMPOSE:
                 # Decompose the task into subtasks
-                subtasks = self._decompose_task(task)
+                subtasks_result = self._decompose_task(task)
+
+                # Handle both streaming and non-streaming results
+                if hasattr(subtasks_result, '__iter__') and not isinstance(
+                    subtasks_result, list
+                ):
+                    # This is a generator (streaming mode)
+                    subtasks = []
+                    for new_tasks in subtasks_result:
+                        subtasks.extend(new_tasks)
+                else:
+                    # This is a regular list (non-streaming mode)
+                    subtasks = subtasks_result
                 if self.metrics_logger and subtasks:
                     self.metrics_logger.log_task_decomposed(
                         parent_task_id=task.id,
