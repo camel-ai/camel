@@ -32,6 +32,7 @@ from camel.utils.tool_result import ToolResult
 
 from .agent import PlaywrightLLMAgent
 from .browser_session import HybridBrowserSession
+from .config_loader import ConfigLoader
 
 logger = get_logger(__name__)
 
@@ -46,12 +47,6 @@ class HybridBrowserToolkit(BaseToolkit):
     and visual analysis of the page layout through screenshots with marked
     interactive elements.
     """
-
-    # Configuration constants - optimized for better performance
-    DEFAULT_SCREENSHOT_TIMEOUT = 15000  # 15 seconds
-    PAGE_STABILITY_TIMEOUT = 1500  # 1.5 seconds
-    NETWORK_IDLE_TIMEOUT = 1000  # 1 second
-    FAST_ACTION_TIMEOUT = 5000  # 5 seconds for quick actions
 
     # Default tool list - core browser functionality
     DEFAULT_TOOLS: ClassVar[List[str]] = [
@@ -99,6 +94,13 @@ class HybridBrowserToolkit(BaseToolkit):
         browser_log_to_file: bool = False,
         session_id: Optional[str] = None,
         default_start_url: str = "https://google.com/",
+        default_timeout: Optional[int] = None,
+        short_timeout: Optional[int] = None,
+        navigation_timeout: Optional[int] = None,
+        network_idle_timeout: Optional[int] = None,
+        screenshot_timeout: Optional[int] = None,
+        page_stability_timeout: Optional[int] = None,
+        dom_content_loaded_timeout: Optional[int] = None,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -141,14 +143,71 @@ class HybridBrowserToolkit(BaseToolkit):
             default_start_url (str): The default URL to navigate to when
                 open_browser() is called without a start_url parameter or with
                 None. Defaults to `"https://google.com/"`.
+            default_timeout (Optional[int]): Default timeout in milliseconds
+                for browser actions. If None, uses environment variable
+                HYBRID_BROWSER_DEFAULT_TIMEOUT or defaults to 3000ms.
+                Defaults to `None`.
+            short_timeout (Optional[int]): Short timeout in milliseconds
+                for quick browser actions. If None, uses environment variable
+                HYBRID_BROWSER_SHORT_TIMEOUT or defaults to 1000ms.
+                Defaults to `None`.
+            navigation_timeout (Optional[int]): Custom navigation timeout in
+            milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_NAVIGATION_TIMEOUT or defaults to 10000ms.
+                Defaults to `None`.
+            network_idle_timeout (Optional[int]): Custom network idle
+            timeout in milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_NETWORK_IDLE_TIMEOUT or defaults to 5000ms.
+                Defaults to `None`.
+            screenshot_timeout (Optional[int]): Custom screenshot timeout in
+            milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_SCREENSHOT_TIMEOUT or defaults to 15000ms.
+                Defaults to `None`.
+            page_stability_timeout (Optional[int]): Custom page stability
+            timeout in milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_PAGE_STABILITY_TIMEOUT or defaults to 1500ms.
+                Defaults to `None`.
+            dom_content_loaded_timeout (Optional[int]): Custom DOM content
+            loaded timeout in milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_DOM_CONTENT_LOADED_TIMEOUT or defaults to
+                5000ms.
+                Defaults to `None`.
         """
         super().__init__()
         self._headless = headless
         self._user_data_dir = user_data_dir
-        self.web_agent_model = web_agent_model
-        self.cache_dir = cache_dir
-        self.default_start_url = default_start_url
-        os.makedirs(self.cache_dir, exist_ok=True)
+        self._stealth = stealth
+        self._web_agent_model = web_agent_model
+        self._cache_dir = cache_dir
+        self._browser_log_to_file = browser_log_to_file
+        self._default_start_url = default_start_url
+        self._session_id = session_id or "default"
+
+        # Store timeout configuration
+        self._default_timeout = default_timeout
+        self._short_timeout = short_timeout
+        self._navigation_timeout = ConfigLoader.get_navigation_timeout(
+            navigation_timeout
+        )
+        self._network_idle_timeout = ConfigLoader.get_network_idle_timeout(
+            network_idle_timeout
+        )
+        self._screenshot_timeout = ConfigLoader.get_screenshot_timeout(
+            screenshot_timeout
+        )
+        self._page_stability_timeout = ConfigLoader.get_page_stability_timeout(
+            page_stability_timeout
+        )
+        self._dom_content_loaded_timeout = (
+            ConfigLoader.get_dom_content_loaded_timeout(
+                dom_content_loaded_timeout
+            )
+        )
 
         # Logging configuration - fixed values for simplicity
         self.enable_action_logging = True
@@ -204,12 +263,29 @@ class HybridBrowserToolkit(BaseToolkit):
             user_data_dir=user_data_dir,
             stealth=stealth,
             session_id=session_id,
+            default_timeout=default_timeout,
+            short_timeout=short_timeout,
         )
         # Use the session directly - singleton logic is handled in
         # ensure_browser
         self._session = temp_session
         self._agent: Optional[PlaywrightLLMAgent] = None
         self._unified_script = self._load_unified_analyzer()
+
+    @property
+    def web_agent_model(self) -> Optional[BaseModelBackend]:
+        """Get the web agent model."""
+        return self._web_agent_model
+
+    @web_agent_model.setter
+    def web_agent_model(self, value: Optional[BaseModelBackend]) -> None:
+        """Set the web agent model."""
+        self._web_agent_model = value
+
+    @property
+    def cache_dir(self) -> str:
+        """Get the cache directory."""
+        return self._cache_dir
 
     def __del__(self):
         r"""Cleanup browser resources on garbage collection."""
@@ -446,14 +522,14 @@ class HybridBrowserToolkit(BaseToolkit):
         try:
             # Wait for DOM content to be loaded (reduced timeout)
             await page.wait_for_load_state(
-                'domcontentloaded', timeout=self.PAGE_STABILITY_TIMEOUT
+                'domcontentloaded', timeout=self._page_stability_timeout
             )
             logger.debug("DOM content loaded")
 
             # Try to wait for network idle with shorter timeout
             try:
                 await page.wait_for_load_state(
-                    'networkidle', timeout=self.NETWORK_IDLE_TIMEOUT
+                    'networkidle', timeout=self._network_idle_timeout
                 )
                 logger.debug("Network idle achieved")
             except Exception:
@@ -485,7 +561,8 @@ class HybridBrowserToolkit(BaseToolkit):
                 # timeout)
                 try:
                     await page.wait_for_load_state(
-                        'domcontentloaded', timeout=self.FAST_ACTION_TIMEOUT
+                        'domcontentloaded',
+                        timeout=self._dom_content_loaded_timeout,
                     )
                 except Exception:
                     # Don't fail if DOM wait times out
@@ -525,7 +602,7 @@ class HybridBrowserToolkit(BaseToolkit):
                     try:
                         await page.wait_for_load_state(
                             'domcontentloaded',
-                            timeout=self.PAGE_STABILITY_TIMEOUT,
+                            timeout=self._page_stability_timeout,
                         )
                         # Reduced delay for JS context to stabilize
                         import asyncio
@@ -1001,7 +1078,7 @@ class HybridBrowserToolkit(BaseToolkit):
 
     def _ensure_agent(self) -> PlaywrightLLMAgent:
         r"""Create PlaywrightLLMAgent on first use."""
-        if self.web_agent_model is None:
+        if self._web_agent_model is None:
             raise RuntimeError(
                 "web_agent_model required for high-level task planning"
             )
@@ -1010,7 +1087,7 @@ class HybridBrowserToolkit(BaseToolkit):
             self._agent = PlaywrightLLMAgent(
                 headless=self._headless,
                 user_data_dir=self._user_data_dir,
-                model_backend=self.web_agent_model,
+                model_backend=self._web_agent_model,
             )
         return self._agent
 
@@ -1050,7 +1127,7 @@ class HybridBrowserToolkit(BaseToolkit):
 
         try:
             # Always use the configured default start URL
-            start_url = self.default_start_url
+            start_url = self._default_start_url
             logger.info(f"Navigating to configured default page: {start_url}")
 
             # Use visit_page without creating a new tab
@@ -1207,8 +1284,8 @@ class HybridBrowserToolkit(BaseToolkit):
             logger.info("Navigating back in browser history...")
             nav_start = time.time()
             await page.go_back(
-                wait_until="domcontentloaded", timeout=10000
-            )  # Reduced timeout
+                wait_until="domcontentloaded", timeout=self._navigation_timeout
+            )
             nav_time = time.time() - nav_start
             logger.info(f"Back navigation completed in {nav_time:.2f}s")
 
@@ -1276,8 +1353,8 @@ class HybridBrowserToolkit(BaseToolkit):
             logger.info("Navigating forward in browser history...")
             nav_start = time.time()
             await page.go_forward(
-                wait_until="domcontentloaded", timeout=10000
-            )  # Reduced timeout
+                wait_until="domcontentloaded", timeout=self._navigation_timeout
+            )
             nav_time = time.time() - nav_start
             logger.info(f"Forward navigation completed in {nav_time:.2f}s")
 
@@ -1390,13 +1467,11 @@ class HybridBrowserToolkit(BaseToolkit):
         # Log screenshot timeout start
         logger.info(
             f"Starting screenshot capture"
-            f"with timeout: {self.DEFAULT_SCREENSHOT_TIMEOUT}ms"
+            f"with timeout: {self._screenshot_timeout}ms"
         )
 
         start_time = time.time()
-        image_data = await page.screenshot(
-            timeout=self.DEFAULT_SCREENSHOT_TIMEOUT
-        )
+        image_data = await page.screenshot(timeout=self._screenshot_timeout)
         screenshot_time = time.time() - start_time
 
         logger.info(f"Screenshot capture completed in {screenshot_time:.2f}s")
@@ -1422,7 +1497,7 @@ class HybridBrowserToolkit(BaseToolkit):
         url_name = sanitize_filename(str(parsed_url.path), max_length=241)
         timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
         file_path = os.path.join(
-            self.cache_dir, f"{url_name}_{timestamp}_som.png"
+            self._cache_dir, f"{url_name}_{timestamp}_som.png"
         )
         marked_image.save(file_path, "PNG")
 
@@ -1811,7 +1886,7 @@ class HybridBrowserToolkit(BaseToolkit):
         enabled_tools = []
 
         for tool_name in self.enabled_tools:
-            if tool_name == "solve_task" and self.web_agent_model is None:
+            if tool_name == "solve_task" and self._web_agent_model is None:
                 logger.warning(
                     f"Tool '{tool_name}' is enabled but web_agent_model "
                     f"is not provided. Skipping this tool."
@@ -1851,13 +1926,20 @@ class HybridBrowserToolkit(BaseToolkit):
         return HybridBrowserToolkit(
             headless=self._headless,
             user_data_dir=self._user_data_dir,
-            stealth=self._session._stealth if self._session else False,
-            web_agent_model=self.web_agent_model,
-            cache_dir=f"{self.cache_dir.rstrip('/')}_clone_{new_session_id}/",
+            stealth=self._stealth,
+            web_agent_model=self._web_agent_model,
+            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_{new_session_id}/",
             enabled_tools=self.enabled_tools.copy(),
-            browser_log_to_file=self.log_to_file,
+            browser_log_to_file=self._browser_log_to_file,
             session_id=new_session_id,
-            default_start_url=self.default_start_url,
+            default_start_url=self._default_start_url,
+            default_timeout=self._default_timeout,
+            short_timeout=self._short_timeout,
+            navigation_timeout=self._navigation_timeout,
+            network_idle_timeout=self._network_idle_timeout,
+            screenshot_timeout=self._screenshot_timeout,
+            page_stability_timeout=self._page_stability_timeout,
+            dom_content_loaded_timeout=self._dom_content_loaded_timeout,
         )
 
     @action_logger

@@ -1088,3 +1088,164 @@ class TestHybridBrowserToolkit:
         result = await toolkit.open_browser()
         assert "Visited" in result["result"]
         assert "snapshot" in result
+
+
+class TestActionExecutorTimeouts:
+    """Test ActionExecutor timeout configuration functionality."""
+
+    @pytest.fixture
+    def mock_page(self):
+        """Create a mock page for ActionExecutor tests."""
+        page = AsyncMock()
+        page.locator = MagicMock(return_value=AsyncMock())
+        page.locator.return_value.count = AsyncMock(return_value=1)
+        page.locator.return_value.first = AsyncMock()
+        page.locator.return_value.first.click = AsyncMock()
+        page.fill = AsyncMock()
+        page.select_option = AsyncMock()
+        page.wait_for_selector = AsyncMock()
+        page.text_content = AsyncMock(return_value="test text")
+        page.wait_for_load_state = AsyncMock()
+        return page
+
+    def test_action_executor_default_timeouts(self, mock_page):
+        """Test that ActionExecutor uses default timeouts when none provided."""
+        from camel.toolkits.hybrid_browser_toolkit.actions import (
+            ActionExecutor,
+        )
+
+        executor = ActionExecutor(mock_page)
+
+        assert executor.default_timeout == 3000
+        assert executor.short_timeout == 1000
+
+    def test_action_executor_constructor_timeouts(self, mock_page):
+        """Test that ActionExecutor respects constructor timeout parameters."""
+        from camel.toolkits.hybrid_browser_toolkit.actions import (
+            ActionExecutor,
+        )
+
+        executor = ActionExecutor(
+            mock_page, default_timeout=5000, short_timeout=2000
+        )
+
+        assert executor.default_timeout == 5000
+        assert executor.short_timeout == 2000
+
+    @patch.dict(
+        'os.environ',
+        {
+            'HYBRID_BROWSER_DEFAULT_TIMEOUT': '7000',
+            'HYBRID_BROWSER_SHORT_TIMEOUT': '3500',
+        },
+    )
+    def test_action_executor_environment_timeouts(self, mock_page):
+        """Test that ActionExecutor respects environment variable timeouts."""
+        from camel.toolkits.hybrid_browser_toolkit.actions import (
+            ActionExecutor,
+        )
+
+        executor = ActionExecutor(mock_page)
+
+        assert executor.default_timeout == 7000
+        assert executor.short_timeout == 3500
+
+    @patch.dict(
+        'os.environ',
+        {
+            'HYBRID_BROWSER_DEFAULT_TIMEOUT': '7000',
+            'HYBRID_BROWSER_SHORT_TIMEOUT': '3500',
+        },
+    )
+    def test_action_executor_constructor_precedence_over_env(self, mock_page):
+        """Test that constructor parameters take precedence over environment variables."""
+        from camel.toolkits.hybrid_browser_toolkit.actions import (
+            ActionExecutor,
+        )
+
+        executor = ActionExecutor(
+            mock_page, default_timeout=9000, short_timeout=4500
+        )
+
+        # Constructor params should override environment variables
+        assert executor.default_timeout == 9000
+        assert executor.short_timeout == 4500
+
+    @patch.dict('os.environ', {'HYBRID_BROWSER_DEFAULT_TIMEOUT': '7000'})
+    def test_action_executor_partial_env_override(self, mock_page):
+        """Test partial environment variable override with constructor params."""
+        from camel.toolkits.hybrid_browser_toolkit.actions import (
+            ActionExecutor,
+        )
+
+        executor = ActionExecutor(
+            mock_page,
+            short_timeout=2500,  # Only override short_timeout
+        )
+
+        # Should use env var for default_timeout, constructor for short_timeout
+        assert executor.default_timeout == 7000
+        assert executor.short_timeout == 2500
+
+    @pytest.mark.asyncio
+    async def test_action_executor_uses_configured_timeouts_in_fill(
+        self, mock_page
+    ):
+        """Test that ActionExecutor uses configured timeouts in operations."""
+        from camel.toolkits.hybrid_browser_toolkit.actions import (
+            ActionExecutor,
+        )
+
+        executor = ActionExecutor(
+            mock_page, default_timeout=6000, short_timeout=2500
+        )
+
+        # Test that fill operation uses the configured short_timeout
+        action = {"type": "type", "ref": "test", "text": "hello"}
+        await executor._type(action)
+
+        mock_page.fill.assert_called_once()
+        call_args = mock_page.fill.call_args
+        assert call_args[1]["timeout"] == 2500  # Should use short_timeout
+
+    @pytest.mark.asyncio
+    async def test_action_executor_uses_configured_timeouts_in_select(
+        self, mock_page
+    ):
+        """Test that ActionExecutor uses configured timeouts in select operations."""
+        from camel.toolkits.hybrid_browser_toolkit.actions import (
+            ActionExecutor,
+        )
+
+        executor = ActionExecutor(
+            mock_page, default_timeout=8000, short_timeout=3000
+        )
+
+        # Test that select operation uses the configured default_timeout
+        action = {"type": "select", "ref": "test", "value": "option1"}
+        await executor._select(action)
+
+        mock_page.select_option.assert_called_once()
+        call_args = mock_page.select_option.call_args
+        assert call_args[1]["timeout"] == 8000  # Should use default_timeout
+
+    @pytest.mark.asyncio
+    async def test_action_executor_uses_configured_timeouts_in_wait(
+        self, mock_page
+    ):
+        """Test that ActionExecutor uses configured timeouts in wait operations."""
+        from camel.toolkits.hybrid_browser_toolkit.actions import (
+            ActionExecutor,
+        )
+
+        executor = ActionExecutor(
+            mock_page, default_timeout=7500, short_timeout=2750
+        )
+
+        # Test that wait operation uses the configured default_timeout
+        action = {"type": "wait", "selector": "test"}
+        await executor._wait(action)
+
+        mock_page.wait_for_selector.assert_called_once()
+        call_args = mock_page.wait_for_selector.call_args
+        assert call_args[1]["timeout"] == 7500  # Should use default_timeout

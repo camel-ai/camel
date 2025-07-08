@@ -2,17 +2,140 @@
     // Unified analyzer that combines visual and structural analysis
     // Preserves complete snapshot.js logic while adding visual coordinate information
 
-    // Persistent ref management across page analysis calls
+    // Memory management constants and configuration
+    const MAX_REFS = 2000; // Maximum number of refs to keep in memory
+    const MAX_UNUSED_AGE_MS = 90000; // Remove refs unused for more than xx seconds
+    const CLEANUP_THRESHOLD = 0.8; // Start aggressive cleanup when 80% of max refs reached
+
+    // Persistent ref management across page analysis calls with memory leak prevention
     let refCounter = window.__camelRefCounter || 1;
     let elementRefMap = window.__camelElementRefMap || new WeakMap();
     let refElementMap = window.__camelRefElementMap || new Map();
     let elementSignatureMap = window.__camelElementSignatureMap || new Map();
+    
+    // LRU tracking for ref access times
+    let refAccessTimes = window.__camelRefAccessTimes || new Map();
+    let lastNavigationUrl = window.__camelLastNavigationUrl || window.location.href;
+
+    // Initialize navigation event listeners for automatic cleanup
+    if (!window.__camelNavigationListenersInitialized) {
+        window.__camelNavigationListenersInitialized = true;
+        
+        // Listen for page navigation events
+        window.addEventListener('beforeunload', clearAllRefs);
+        window.addEventListener('pagehide', clearAllRefs);
+        
+        // Listen for pushState/replaceState navigation (SPA navigation)
+        const originalPushState = history.pushState;
+        const originalReplaceState = history.replaceState;
+        
+        history.pushState = function(...args) {
+            clearAllRefs();
+            return originalPushState.apply(this, args);
+        };
+        
+        history.replaceState = function(...args) {
+            clearAllRefs();
+            return originalReplaceState.apply(this, args);
+        };
+        
+        // Listen for popstate (back/forward navigation)
+        window.addEventListener('popstate', clearAllRefs);
+        
+        // Check for URL changes periodically (fallback for other navigation types)
+        setInterval(() => {
+            if (window.location.href !== lastNavigationUrl) {
+                clearAllRefs();
+                lastNavigationUrl = window.location.href;
+                window.__camelLastNavigationUrl = lastNavigationUrl;
+            }
+        }, 1000);
+    }
 
     function generateRef() {
         const ref = `e${refCounter++}`;
         // Persist counter globally
         window.__camelRefCounter = refCounter;
         return ref;
+    }
+
+    // Clear all refs and reset memory state
+    function clearAllRefs() {
+        try {
+            // Clear all DOM aria-ref attributes
+            document.querySelectorAll('[aria-ref]').forEach(element => {
+                element.removeAttribute('aria-ref');
+            });
+            
+            // Clear all maps and reset counters
+            elementRefMap.clear();
+            refElementMap.clear();
+            elementSignatureMap.clear();
+            refAccessTimes.clear();
+            
+            // Reset global state
+            window.__camelElementRefMap = elementRefMap;
+            window.__camelRefElementMap = refElementMap;
+            window.__camelElementSignatureMap = elementSignatureMap;
+            window.__camelRefAccessTimes = refAccessTimes;
+            
+            // Clear cached analysis results
+            delete window.__camelLastAnalysisResult;
+            delete window.__camelLastAnalysisTime;
+            
+            console.log('CAMEL: Cleared all refs due to navigation');
+        } catch (error) {
+            console.warn('CAMEL: Error clearing refs:', error);
+        }
+    }
+
+    // LRU eviction: Remove least recently used refs when limit exceeded
+    function evictLRURefs() {
+        const refsToEvict = refAccessTimes.size - MAX_REFS + Math.floor(MAX_REFS * 0.1); // Remove 10% extra for breathing room
+        if (refsToEvict <= 0) return 0;
+
+        // Sort refs by access time (oldest first)
+        const sortedRefs = Array.from(refAccessTimes.entries())
+            .sort((a, b) => a[1] - b[1])
+            .slice(0, refsToEvict);
+
+        let evictedCount = 0;
+        for (const [ref, _] of sortedRefs) {
+            const element = refElementMap.get(ref);
+            if (element) {
+                // Remove aria-ref attribute from DOM
+                try {
+                    element.removeAttribute('aria-ref');
+                } catch (e) {
+                    // Element might be detached from DOM
+                }
+                elementRefMap.delete(element);
+                
+                // Remove from signature map
+                const signature = generateElementSignature(element);
+                if (signature && elementSignatureMap.get(signature) === ref) {
+                    elementSignatureMap.delete(signature);
+                }
+            }
+            
+            refElementMap.delete(ref);
+            refAccessTimes.delete(ref);
+            evictedCount++;
+        }
+
+        // Persist updated maps
+        window.__camelElementRefMap = elementRefMap;
+        window.__camelRefElementMap = refElementMap;
+        window.__camelElementSignatureMap = elementSignatureMap;
+        window.__camelRefAccessTimes = refAccessTimes;
+
+        return evictedCount;
+    }
+
+    // Update ref access time for LRU tracking
+    function updateRefAccessTime(ref) {
+        refAccessTimes.set(ref, Date.now());
+        window.__camelRefAccessTimes = refAccessTimes;
     }
 
     // Generate a unique signature for an element based on its characteristics
@@ -52,6 +175,7 @@
             const existingRef = elementRefMap.get(element);
             // Verify the ref is still valid
             if (refElementMap.get(existingRef) === element) {
+                updateRefAccessTime(existingRef);
                 return existingRef;
             }
         }
@@ -61,6 +185,7 @@
         if (existingAriaRef && refElementMap.get(existingAriaRef) === element) {
             // Re-establish mappings
             elementRefMap.set(element, existingAriaRef);
+            updateRefAccessTime(existingAriaRef);
             return existingAriaRef;
         }
 
@@ -76,8 +201,14 @@
                 refElementMap.set(existingRef, element);
                 elementSignatureMap.set(signature, existingRef);
                 element.setAttribute('aria-ref', existingRef);
+                updateRefAccessTime(existingRef);
                 return existingRef;
             }
+        }
+
+        // Check if we need to evict refs before creating new ones
+        if (refElementMap.size >= MAX_REFS) {
+            evictLRURefs();
         }
 
         // Generate new ref for new element
@@ -88,16 +219,52 @@
             elementSignatureMap.set(signature, newRef);
         }
         element.setAttribute('aria-ref', newRef);
+        updateRefAccessTime(newRef);
         return newRef;
     }
 
-    // Clean up stale refs and mappings
+    // Enhanced cleanup function with aggressive stale ref removal
     function cleanupStaleRefs() {
         const staleRefs = [];
+        const currentTime = Date.now();
+        const isAggressiveCleanup = refElementMap.size > (MAX_REFS * CLEANUP_THRESHOLD);
 
-        // Check all mapped elements to see if they're still in DOM
+        // Check all mapped elements to see if they're still in DOM or too old
         for (const [ref, element] of refElementMap.entries()) {
+            let shouldRemove = false;
+
+            // Standard checks: element not in DOM
             if (!element || !document.contains(element)) {
+                shouldRemove = true;
+            }
+            // Aggressive cleanup: remove refs unused for too long
+            else if (isAggressiveCleanup) {
+                const lastAccess = refAccessTimes.get(ref) || 0;
+                const age = currentTime - lastAccess;
+                if (age > MAX_UNUSED_AGE_MS) {
+                    shouldRemove = true;
+                }
+            }
+            // Additional checks for aggressive cleanup
+            else if (isAggressiveCleanup) {
+                // Remove refs for elements that are hidden or have no meaningful content
+                try {
+                    const style = window.getComputedStyle(element);
+                    const hasNoVisibleContent = !element.textContent?.trim() && 
+                                               !element.value?.trim() && 
+                                               !element.src && 
+                                               !element.href;
+                    
+                    if ((style.display === 'none' || style.visibility === 'hidden') && hasNoVisibleContent) {
+                        shouldRemove = true;
+                    }
+                } catch (e) {
+                    // If we can't get computed style, element might be detached
+                    shouldRemove = true;
+                }
+            }
+
+            if (shouldRemove) {
                 staleRefs.push(ref);
             }
         }
@@ -106,19 +273,29 @@
         for (const ref of staleRefs) {
             const element = refElementMap.get(ref);
             if (element) {
+                // Remove aria-ref attribute from DOM
+                try {
+                    element.removeAttribute('aria-ref');
+                } catch (e) {
+                    // Element might be detached from DOM
+                }
                 elementRefMap.delete(element);
+                
+                // Remove from signature map
                 const signature = generateElementSignature(element);
                 if (signature && elementSignatureMap.get(signature) === ref) {
                     elementSignatureMap.delete(signature);
                 }
             }
             refElementMap.delete(ref);
+            refAccessTimes.delete(ref);
         }
 
         // Persist maps globally
         window.__camelElementRefMap = elementRefMap;
         window.__camelRefElementMap = refElementMap;
         window.__camelElementSignatureMap = elementSignatureMap;
+        window.__camelRefAccessTimes = refAccessTimes;
 
         return staleRefs.length;
     }
@@ -731,8 +908,15 @@
         // If less than 1 second since last analysis and page hasn't changed significantly
         if (timeSinceLastAnalysis < 1000 && window.__camelLastAnalysisResult && cleanedRefCount === 0) {
             const cachedResult = window.__camelLastAnalysisResult;
-            // Update timestamp in cached result
+            // Update timestamp and memory info in cached result
             cachedResult.metadata.timestamp = new Date().toISOString();
+            cachedResult.metadata.memoryInfo = {
+                currentRefCount: refElementMap.size,
+                maxRefs: MAX_REFS,
+                memoryUtilization: (refElementMap.size / MAX_REFS * 100).toFixed(1) + '%',
+                lruAccessTimesCount: refAccessTimes.size
+            };
+            cachedResult.metadata.cacheHit = true;
             return cachedResult;
         }
 
@@ -790,6 +974,16 @@
                 refValidationErrors: refValidationErrors,
                 totalMappedRefs: refElementMap.size,
                 refCounterValue: refCounter,
+                // Memory management information
+                memoryInfo: {
+                    currentRefCount: refElementMap.size,
+                    maxRefs: MAX_REFS,
+                    memoryUtilization: (refElementMap.size / MAX_REFS * 100).toFixed(1) + '%',
+                    lruAccessTimesCount: refAccessTimes.size,
+                    unusedAgeThreshold: MAX_UNUSED_AGE_MS + 'ms',
+                    cleanupThreshold: (CLEANUP_THRESHOLD * 100).toFixed(0) + '%',
+                    isAggressiveCleanup: refElementMap.size > (MAX_REFS * CLEANUP_THRESHOLD)
+                },
                 // Performance information
                 cacheHit: false,
                 analysisTime: Date.now() - currentTime
