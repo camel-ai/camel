@@ -169,6 +169,7 @@ def search_agent_factory(
         NoteTakingToolkit().append_note,
         *Crawl4AIToolkit().get_tools(),
         SearchToolkit().search_exa,
+        SearchToolkit().search_google,
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
@@ -185,21 +186,17 @@ def search_agent_factory(
             information you have gathered.
     
     ### Web Search Workflow
-    1.  **Open Browser**: You MUST start by using the `open_browser` tool to 
-        launch a browser. This will automatically open a search engine page.
-    2.  **Perform Search**: Use the `type` tool to enter your search query 
-        into the search bar on the page. Then, use the `click` tool to 
-        press the search button.
-    3.  **Analyze Search Results**: After the search results load, use 
-        `get_page_snapshot` to see the available links.
-    4.  **Navigate and Explore**: Instead of using `visit_page` with a URL 
-        you guess, you MUST `click` on a link from the snapshot to navigate 
-        to a page. Once on a page, use browser tools to read content, scrape 
-        information, and navigate to other linked pages to gather all 
-        necessary data. This avoids errors from using incorrect URLs.
-    5. **Note Taking**: You MUST use the `append_note` tool to record your 
-        findings, make sure the note is very detailed and include all the 
-        information you have gathered.
+    1.  **Initial Search**: Start by using `search_google` to get a list of
+        initial URLs for your research.
+    2.  **Browser Exploration**: Use the URLs from `search_google` with the
+        browser tools to investigate pages. You can `visit_page` to open a
+        webpage, `get_som_screenshot` to analyze its content, and `click` to
+        navigate.
+    3.  **Quick Information Gathering**: For quick questions or summaries,
+        use `search_exa` for fast and direct information retrieval.
+    4.  **Note Taking**: You MUST use `append_note` to record your findings,
+        ensuring your notes are detailed and include all gathered
+        information and sources.
 
     ### Core Principles
     - For each decision you make and action you take, you must send a message 
@@ -516,6 +513,8 @@ async def main():
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1_MINI,
+        # api_key="sk-nmwYgOtNYuhcJl3X0eE49e4b987547F1B9De351c9076Ec2e",
+        # url="https://api.pumpkinaigc.online/v1",
         # model_config_dict={
         #     "max_tokens": 32768,
         # },
@@ -524,6 +523,8 @@ async def main():
     model_backend_reason = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1_MINI,
+        # api_key="sk-nmwYgOtNYuhcJl3X0eE49e4b987547F1B9De351c9076Ec2e",
+        # url="https://api.pumpkinaigc.online/v1",
         # model_config_dict={
         #     "max_tokens": 32768,
         # },
