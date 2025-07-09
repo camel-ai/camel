@@ -94,6 +94,22 @@ def __init__(
 ):
 ```
 
+<a id="camel.societies.workforce.workforce.Workforce._validate_agent_compatibility"></a>
+
+### _validate_agent_compatibility
+
+```python
+def _validate_agent_compatibility(self, agent: ChatAgent, agent_context: str = 'agent'):
+```
+
+Validate that agent configuration is compatible with workforce
+settings.
+
+**Parameters:**
+
+- **agent** (ChatAgent): The agent to validate.
+- **agent_context** (str): Context description for error messages.
+
 <a id="camel.societies.workforce.workforce.Workforce._attach_pause_event_to_agent"></a>
 
 ### _attach_pause_event_to_agent
@@ -221,7 +237,8 @@ def _decompose_task(self, task: Task):
 
 **Returns:**
 
-  List[Task]: The subtasks.
+  Union[List[Task], Generator[List[Task], None, None]]:
+The subtasks or generator of subtasks.
 
 <a id="camel.societies.workforce.workforce.Workforce._analyze_failure"></a>
 

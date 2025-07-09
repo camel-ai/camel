@@ -20,7 +20,7 @@ Markdown file for note-taking purposes.
 ```python
 def __init__(
     self,
-    note_file_path: str = 'notes/notes.md',
+    working_directory: Optional[str] = None,
     timeout: Optional[float] = None
 ):
 ```
@@ -29,7 +29,7 @@ Initialize the NoteTakingToolkit.
 
 **Parameters:**
 
-- **note_file_path** (str): The path to the note file. (default: :obj:`notes/notes.md`)
+- **working_directory** (str, optional): The path to the note file. If not provided, it will be determined by the `CAMEL_WORKDIR` environment variable (if set), saving the note as `notes.md` in that directory. If the environment variable is not set, it defaults to `camel_working_dir/notes.md`.
 - **timeout** (Optional[float]): The timeout for the toolkit.
 
 <a id="camel.toolkits.note_taking_toolkit.NoteTakingToolkit.append_note"></a>
