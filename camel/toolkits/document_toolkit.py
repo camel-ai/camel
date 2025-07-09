@@ -12,28 +12,32 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from __future__ import annotations
+# from __future__ import annotations
 
 import asyncio
 import hashlib
+import mimetypes
 import traceback
 import zipfile
-import mimetypes
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Set
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 from urllib.parse import urlparse
 
 import requests
 
+from camel.loaders import MarkItDownLoader
 from camel.logger import get_logger
 from camel.models import BaseModelBackend
+from camel.toolkits import ImageAnalysisToolkit
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.toolkits import ImageAnalysisToolkit
+from camel.utils import MCPServer, retry_on_error
 from camel.utils.commons import dependencies_required
-from camel.utils import retry_on_error, MCPServer
-from camel.loaders import MarkItDownLoader
 
+if TYPE_CHECKING:
+    import pandas as pd
+    from tabulate import tabulate
 
 logger = get_logger(__name__)
 
@@ -45,6 +49,21 @@ _ARCHIVE_EXTS: Set[str] = {".zip"}
 _WEB_EXTS: Set[str] = {".html", ".htm", ".xml"}
 _CODE_EXTS: Set[str] = {".py", ".js", ".java", ".cpp", ".c", ".go", ".rs"}
 _DATA_EXTS: Set[str] = {".json", ".jsonl", ".jsonld", ".xml", ".yaml", ".yml"}
+
+
+class FileEditResult:
+    def __init__(
+        self,
+        success: bool,
+        message: str,
+        old_content: str = "",
+        new_content: str = "",
+    ):
+        self.success = success
+        self.message = message
+        self.old_content = old_content
+        self.new_content = new_content
+        self.changes_lines = self.new_content.count('\n')
 
 
 class _LoaderWrapper:
@@ -80,12 +99,15 @@ class _LoaderWrapper:
         return False, "Loader does not support convert_file method"
 
 
-def _init_loader(loader_type: str, loader_kwargs: Optional[dict] | None) -> _LoaderWrapper:
+def _init_loader(
+    loader_type: str, loader_kwargs: Optional[dict] | None
+) -> _LoaderWrapper:
     r"""Initialize a document loader based on the specified type.
 
     Args:
         loader_type (str): Type of loader to initialize ('markitdown').
-        loader_kwargs (Optional[dict]): Additional keyword arguments for the loader.
+        loader_kwargs (Optional[dict]): Additional keyword arguments for the
+            loader.
 
     Returns:
         _LoaderWrapper: Wrapped loader instance.
@@ -100,11 +122,14 @@ def _init_loader(loader_type: str, loader_kwargs: Optional[dict] | None) -> _Loa
     if loader_type == "markitdown":
         if MarkItDownLoader is None:
             raise ImportError(
-                "MarkItDownLoader unavailable – install `camel-ai[docs]` or `markitdown`."
+                "MarkItDownLoader unavailable - install `camel-ai[docs]` or "
+                "`markitdown`."
             )
         return _LoaderWrapper(MarkItDownLoader(**loader_kwargs))
 
-    raise ValueError("Unsupported loader_type. Only 'markitdown' is supported.")
+    raise ValueError(
+        "Unsupported loader_type. Only 'markitdown' is supported."
+    )
 
 
 @MCPServer()
@@ -117,29 +142,33 @@ class DocumentToolkit(BaseToolkit):
     """
 
     def __init__(
-            self,
-            *,
-            cache_dir: str | Path | None = None,
-            model: Optional[BaseModelBackend] = None,
-            loader_type: str = "markitdown",
-            loader_kwargs: Optional[dict] = None,
-            enable_cache: bool = True,
+        self,
+        *,
+        cache_dir: str | Path | None = None,
+        model: Optional[BaseModelBackend] = None,
+        loader_type: str = "markitdown",
+        loader_kwargs: Optional[dict] = None,
+        enable_cache: bool = True,
     ) -> None:
         r"""Initialize the DocumentToolkit.
 
         Args:
-            cache_dir (str | Path | None): Directory for caching processed documents.
-                Defaults to ~/.cache/camel/documents.
+            cache_dir (str | Path | None): Directory for caching processed
+                documents. Defaults to ~/.cache/camel/documents.
             model (Optional[object]): Model backend for image analysis.
             loader_type (str): Primary document loader type ('markitdown').
-            loader_kwargs (Optional[dict]): Additional arguments for the primary loader.
+            loader_kwargs (Optional[dict]): Additional arguments for the
+                primary loader.
             enable_cache (bool): Whether to enable disk and memory caching.
         """
         super().__init__()
+        self._file_history: Dict[str, List[FileEditResult]] = defaultdict(list)
 
         self.enable_cache = enable_cache
         if self.enable_cache:
-            self.cache_dir: Optional[Path] = Path(cache_dir or "~/.cache/camel/documents").expanduser()
+            self.cache_dir: Optional[Path] = Path(
+                cache_dir or "~/.cache/camel/documents"
+            ).expanduser()
             self.cache_dir.mkdir(parents=True, exist_ok=True)
         else:
             self.cache_dir = None
@@ -149,14 +178,19 @@ class DocumentToolkit(BaseToolkit):
 
         # Initialize primary document loader
         self._loader = _init_loader(loader_type, loader_kwargs)
-        logger.info("DocumentProcessingToolkit initialised with %s loader", loader_type)
+        logger.info(
+            "DocumentProcessingToolkit initialised with %s loader", loader_type
+        )
 
         # Initialize optional MarkItDown loader for improved Office/PDF support
+        self.mid_loader: Optional[MarkItDownLoader]
         if MarkItDownLoader is not None:
             try:
                 self.mid_loader = MarkItDownLoader()
             except Exception as e:  # pragma: no cover
-                logger.debug("Falling back – MarkItDown initialisation failed: %s", e)
+                logger.debug(
+                    "Falling back - MarkItDown initialisation failed: %s", e
+                )
                 self.mid_loader = None
         else:
             self.mid_loader = None
@@ -164,20 +198,296 @@ class DocumentToolkit(BaseToolkit):
         # Initialize in-memory cache (keyed by SHA-256 of path + mtime)
         self._cache: Dict[str, str] = {}
 
+    def insert(self, path: str, insert_line: int, new_str: str):
+        r"""Insert a new string at a specific line in the file.
+        Args:
+            path (str): The path of the file to be inserted.
+            insert_line (int): The line number to insert the new string.
+            new_str (str): The new string to be inserted.
+        Returns:
+            str: A message indicating the result of the operation.
+        """
+
+        # Get file extension first
+        suffix = f".{path.lower().rsplit('.', 1)[-1]}" if "." in path else ""
+        allowed_exts = _TEXT_EXTS | _CODE_EXTS | _DATA_EXTS
+        if suffix not in allowed_exts:
+            return (
+                f"Unsupported file type: {suffix} supported file types "
+                f"are {_TEXT_EXTS} {_CODE_EXTS} {_DATA_EXTS}"
+            )
+
+        file_text = self.read_file_content(path).expandtabs()
+        new_str = new_str.expandtabs()
+        file_text_lines = file_text.split('\n')
+        n_lines_file = len(file_text_lines)
+        if insert_line < 0 or insert_line > n_lines_file:
+            return (
+                f"Invalid line number: {insert_line}. "
+                f"The file has {n_lines_file} lines."
+            )
+
+        new_str_lines = new_str.split('\n')
+        new_file_text_lines = (
+            file_text_lines[:insert_line]
+            + new_str_lines
+            + file_text_lines[insert_line:]
+        )
+        new_file_text = '\n'.join(new_file_text_lines)
+        self.write_file(path, new_file_text)
+        self._file_history[path].append(
+            FileEditResult(
+                success=True,
+                message=(
+                    f"Successfully inserted {new_str} at line "
+                    f"{insert_line} in {path}."
+                ),
+                old_content=file_text,
+                new_content=new_file_text,
+            )
+        )
+        return (
+            f"Successfully inserted {new_str} at line {insert_line} in {path}."
+        )
+
+    def undo_edit(self, path: str):
+        r"""Undo the last edit operation on the file.
+        Args:
+            path (str): The path of the file to be undone.
+        Returns:
+            str: A message indicating the result of the operation.
+        """
+        if path not in self._file_history:
+            return f"No edit history found for {path}."
+        last_edit = self._file_history[path][-1]
+        self.write_file(path, last_edit.old_content)
+        self._file_history[path].pop()
+        return f"Successfully undone the last edit in {path}."
+
+    def read_file_content(
+        self, path: str, start_line: int = 0, end_line: Optional[int] = None
+    ) -> str:
+        r"""Read the content of a file.
+
+        Args:
+            path (str): The path of the file to be read.
+            start_line (int): Start line number.
+            end_line (Optional[int]): End line number.
+
+        Returns:
+            str: The content of the file.
+        """
+        try:
+            cache_key = self._hash_key(path)
+            if self.enable_cache and cache_key in self._cache:
+                logger.debug("Cache hit: %s", path)
+                return self._cache[cache_key]
+
+            # Get file extension first
+            suffix = (
+                f".{path.lower().rsplit('.', 1)[-1]}" if "." in path else ""
+            )
+            allowed_exts = _TEXT_EXTS | _CODE_EXTS | _DATA_EXTS
+            if suffix not in allowed_exts:
+                return (
+                    f"Unsupported file type: {suffix} supported file types "
+                    f"are {_TEXT_EXTS} {_CODE_EXTS} {_DATA_EXTS}"
+                )
+            if suffix in _TEXT_EXTS:
+                ok, content = self._handle_text_file(
+                    path, start_line, end_line
+                )
+            elif suffix in _CODE_EXTS:
+                ok, content = self._handle_code_file(
+                    path, start_line, end_line
+                )
+            elif suffix in _DATA_EXTS:
+                ok, content = self._handle_data_file(
+                    path, start_line, end_line
+                )
+            else:
+                return (
+                    f"Unsupported file type: {suffix} supported file types "
+                    f"are {_TEXT_EXTS} {_CODE_EXTS} {_DATA_EXTS}"
+                )
+            if ok:
+                return content
+            else:
+                return f"Error reading file {path}: {content}"
+        except Exception as e:
+            return f"Error reading file {path}: {e}"
+
+    def replace_file_content(
+        self,
+        path: str,
+        old_content: str,
+        new_content: str,
+    ) -> str:
+        r"""Replace specified string in the file.
+        Use for updating specific content in the file.
+
+        Args:
+            path (str): The path of the file to be replaced.
+            old_content (str): The old content to be replaced.
+            new_content (str): The new content to be replaced.
+
+        Returns:
+            str: A message indicating the result of the operation.
+        """
+        try:
+            file_path = Path(path).expanduser()
+            file_text = file_path.read_text(encoding="utf-8")
+            old_content = old_content.expandtabs()
+            new_content = new_content.expandtabs()
+
+            occurrences = file_text.count(old_content)
+            if occurrences == 0:
+                return (
+                    f"No replacement performed: '{old_content}' not found in "
+                    f"{path}."
+                )
+            elif occurrences > 1:
+                file_text_line = file_text.split('\n')
+                lines = [
+                    idx + 1
+                    for idx, line in enumerate(file_text_line)
+                    if old_content in line
+                ]
+                return (
+                    f"Multiple occurrences of '{old_content}' found in {path} "
+                    f"at lines {lines}. Please specify the line number to "
+                    f"replace."
+                )
+
+            new_file_content = file_text.replace(old_content, new_content)
+
+            file_path.write_text(new_file_content, encoding="utf-8")
+            self._file_history[path].append(
+                FileEditResult(
+                    success=True,
+                    message=f"Successfully replaced content in {path}.",
+                    old_content=file_text,
+                    new_content=new_file_content,
+                )
+            )
+            return (
+                f"Successfully replaced content in {path}. Review the changes "
+                f"and make sure they are as expected. Edit the file again if "
+                f"necessary."
+            )
+        except Exception as e:
+            return f"Error replacing content in {path}: {e}"
+
+    def write_file(self, path: str, file: str) -> str:
+        r"""
+        Create or overwrite a file at the given path with the provided content.
+
+        Args:
+            path (str): The path of the file to write.
+            file (str): The content to write to the file.
+
+        Returns:
+            str: A message indicating the result of the operation.
+        """
+        try:
+            file_path = Path(path).expanduser()
+            file_path.write_text(file, encoding="utf-8")
+            return f"File written at {path}."
+        except Exception as e:
+            return f"Error writing file {path}: {e}"
+
+    def find_file(
+        self,
+        pattern: str,
+        directory: Optional[str] = None,  # <-- change from Optional[Path]
+        recursive: bool = False,
+        include_hidden: bool = False,
+    ) -> list:
+        """
+        Find files in the specified directory that match the given pattern.
+
+        Args:
+            pattern (str): The pattern to match.
+            directory (Optional[str]): The directory to search.
+            recursive (bool): Whether to search recursively.
+            include_hidden (bool): Whether to include hidden files.
+
+        Returns:
+            List[str]: A list of file paths that match the pattern.
+        """
+        import glob
+
+        if directory is None:
+            search_dir = self.output_dir
+        else:
+            search_dir = Path(directory).resolve()
+
+        if not search_dir.exists():
+            raise FileNotFoundError(f"Directory not found: {search_dir}")
+
+        if not search_dir.is_dir():
+            raise ValueError(f"Path is not a directory: {search_dir}")
+
+        try:
+            matches = []
+
+            if recursive:
+                # Use ** for recursive search
+                if '/' in pattern or '\\' in pattern:
+                    # Pattern includes path separators
+                    glob_pattern = str(search_dir / pattern)
+                else:
+                    # Simple filename pattern
+                    glob_pattern = str(search_dir / "**" / pattern)
+
+                file_paths = glob.glob(glob_pattern, recursive=True)
+            else:
+                # Search only in the specified directory
+                glob_pattern = str(search_dir / pattern)
+                file_paths = glob.glob(glob_pattern, recursive=False)
+
+            # Filter results
+            for file_path in file_paths:
+                path_obj = Path(file_path)
+
+                # Skip directories (only return files)
+                if not path_obj.is_file():
+                    continue
+
+                # Handle hidden files
+                if not include_hidden and path_obj.name.startswith('.'):
+                    continue
+
+                matches.append(str(path_obj))
+
+            # Sort results for consistent output
+            matches.sort()
+
+            logger.debug(
+                f"Found {len(matches)} files matching pattern '{pattern}' in "
+                f"{search_dir}"
+            )
+            return matches
+        except Exception as e:
+            return f"Error finding files: {e}"
+
     # Public API methods
     @retry_on_error()
     def extract_document_content(self, document_path: str) -> Tuple[bool, str]:
-        r"""Extract the content of a given document (or URL) and return the processed text.
+        r"""Extract the content of a given document (or URL) and return the
+        processed text.
 
         It may filter out some information, resulting in inaccurate content.
 
         Args:
-            document_path (str): The path of the document to be processed, either a local path
-                or a URL. It can process image, audio files, zip files and webpages, etc.
+            document_path (str): The path of the document to be processed,
+                either a local path or a URL. It can process image, audio
+                files, zip files and webpages, etc.
 
         Returns:
-            Tuple[bool, str]: A tuple containing a boolean indicating whether the document
-                was processed successfully, and the content of the document (if success).
+            Tuple[bool, str]: A tuple containing a boolean indicating whether
+                the document was processed successfully, and the content of the
+                document (if success).
         """
         try:
             cache_key = self._hash_key(document_path)
@@ -186,8 +496,14 @@ class DocumentToolkit(BaseToolkit):
                 return True, self._cache[cache_key]
 
             # Get file extension first
-            suffix = f".{document_path.lower().rsplit('.', 1)[-1]}" if "." in document_path else ""
-            is_url = self._is_url(document_path)  # Helper to check if it's a URL
+            suffix = (
+                f".{document_path.lower().rsplit('.', 1)[-1]}"
+                if "." in document_path
+                else ""
+            )
+            is_url = self._is_url(
+                document_path
+            )  # Helper to check if it's a URL
 
             # For URLs with file extensions, download first then process
             if is_url and suffix and suffix not in _WEB_EXTS:
@@ -225,15 +541,18 @@ class DocumentToolkit(BaseToolkit):
 
             # Handle Office/PDF documents with preferred loader
             if suffix in _DOC_EXTS:
-                if getattr(self, "mid_loader", None) is not None:
+                if self.mid_loader is not None:
                     try:
-                        txt = self.mid_loader.convert_file(document_path)  # type: ignore[attr-defined]
+                        txt = self.mid_loader.convert_file(document_path)
                         return self._cache_and_return(cache_key, True, txt)
                     except Exception as e:
                         logger.warning("MarkItDown loader failed: %s", e)
                         # Fall through to generic loader
                 else:
-                    logger.warning("No suitable loader for DOC/PDF – falling back to generic loader")
+                    logger.warning(
+                        "No suitable loader for DOC/PDF - falling back to "
+                        "generic loader"
+                    )
 
             if self._is_webpage(document_path):
                 ok, txt = self._handle_webpage(document_path)
@@ -301,7 +620,9 @@ class DocumentToolkit(BaseToolkit):
             extracted_text = self._extract_webpage_content(url)
             return True, extracted_text
         except Exception as e:
-            logger.warning(f"FireCrawl failed for {url}: {e}, falling back to MarkItDown")
+            logger.warning(
+                f"FireCrawl failed for {url}: {e}, falling back to MarkItDown"
+            )
             try:
                 # Try using MarkItDown as fallback
                 if self.mid_loader is not None:
@@ -310,8 +631,13 @@ class DocumentToolkit(BaseToolkit):
                 else:
                     return False, "No suitable loader for webpage processing."
             except Exception as e2:
-                logger.error(f"All webpage processing methods failed for {url}: {e2}")
-                return False, f"Failed to extract content from the webpage: {e2}"
+                logger.error(
+                    f"All webpage processing methods failed for {url}: {e2}"
+                )
+                return (
+                    False,
+                    f"Failed to extract content from the webpage: {e2}",
+                )
 
     @retry_on_error()
     @dependencies_required('crawl4ai')
@@ -336,6 +662,7 @@ class DocumentToolkit(BaseToolkit):
         try:
             # Use asyncio to run the async scrape method
             import asyncio
+
             scrape_result = asyncio.run(crawler.scrape(url))
 
             logger.debug(f"Extracted data from {url}: {scrape_result}")
@@ -351,8 +678,8 @@ class DocumentToolkit(BaseToolkit):
                 return "Error while crawling the webpage."
 
         except Exception as e:
-            logger.error(f"Error scraping {url}: {str(e)}")
-            return f"Error while crawling the webpage: {str(e)}"
+            logger.error(f"Error scraping {url}: {e!s}")
+            return f"Error while crawling the webpage: {e!s}"
 
     # Specialized file type handlers
     def _handle_image(self, path: str) -> Tuple[bool, str]:
@@ -377,13 +704,13 @@ class DocumentToolkit(BaseToolkit):
         r"""Convert DataFrame to Markdown format table.
 
         Args:
-            df (pd.DataFrame): The pandas DataFrame to convert to markdown format.
+            df (pd.DataFrame): The pandas DataFrame to convert to markdown
+                format.
 
         Returns:
-            str: The DataFrame content formatted as a markdown table with pipe separators.
+            str: The DataFrame content formatted as a markdown table with pipe
+                separators.
         """
-        from tabulate import tabulate
-
         md_table = tabulate(df, headers='keys', tablefmt='pipe')
         return str(md_table)
 
@@ -403,13 +730,14 @@ class DocumentToolkit(BaseToolkit):
         from xls2xlsx import XLS2XLSX
 
         logger.debug(
-            f"Calling extract_excel_content with document_path: {document_path}"
+            f"Calling extract_excel_content with document_path: "
+            f"{document_path}"
         )
 
         if not (
-                document_path.endswith("xls")
-                or document_path.endswith("xlsx")
-                or document_path.endswith("csv")
+            document_path.endswith("xls")
+            or document_path.endswith("xlsx")
+            or document_path.endswith("csv")
         ):
             logger.error("Only xls, xlsx, csv files are supported.")
             return (
@@ -450,17 +778,17 @@ class DocumentToolkit(BaseToolkit):
 
                     font_color = None
                     if (
-                            cell.font
-                            and cell.font.color
-                            and "rgb=None" not in str(cell.font.color)
+                        cell.font
+                        and cell.font.color
+                        and "rgb=None" not in str(cell.font.color)
                     ):  # Handle font color
                         font_color = cell.font.color.rgb
 
                     fill_color = None
                     if (
-                            cell.fill
-                            and cell.fill.fgColor
-                            and "rgb=None" not in str(cell.fill.fgColor)
+                        cell.fill
+                        and cell.fill.fgColor
+                        and "rgb=None" not in str(cell.fill.fgColor)
                     ):  # Handle fill color
                         fill_color = cell.fill.fgColor.rgb
 
@@ -522,7 +850,9 @@ class DocumentToolkit(BaseToolkit):
             return False, f"Error processing Excel file {path}: {e}"
 
     @dependencies_required('xmltodict', 'pyyaml')
-    def _handle_data_file(self, path: str) -> Tuple[bool, str]:
+    def _handle_data_file(
+        self, path: str, start_line: int = 0, end_line: Optional[int] = None
+    ) -> Tuple[bool, str]:
         r"""Process structured data files (JSON, XML, YAML).
 
         Args:
@@ -533,53 +863,118 @@ class DocumentToolkit(BaseToolkit):
         """
         try:
             import json
+
             import xmltodict
             import yaml
 
             suffix = Path(path).suffix.lower()
 
-            if suffix in [".json", ".jsonl", ".jsonld"]:
+            # First, read the file with line-based filtering if needed
+            if start_line > 0 or end_line is not None:
                 with open(path, "r", encoding="utf-8") as f:
-                    if suffix == ".jsonl":
-                        # Handle JSON Lines format
-                        lines = []
-                        for line in f:
-                            lines.append(json.loads(line.strip()))
-                        content = lines
-                    else:
-                        content = json.load(f)
-                return True, str(content)
+                    lines = f.readlines()
+
+                total_lines = len(lines)
+
+                # Validate line numbers
+                if start_line >= total_lines:
+                    return (
+                        False,
+                        f"Start line {start_line} exceeds file length "
+                        f"({total_lines} lines)",
+                    )
+
+                # Determine end line
+                if end_line is None:
+                    end_line = total_lines - 1
+                elif end_line >= total_lines:
+                    end_line = total_lines - 1
+
+                # Extract the specified lines
+                selected_lines = lines[start_line : end_line + 1]
+                content_to_process = ''.join(selected_lines)
+            else:
+                # Read entire file
+                with open(path, "r", encoding="utf-8") as f:
+                    content_to_process = f.read()
+
+            # Process based on file type
+            if suffix in [".json", ".jsonl", ".jsonld"]:
+                if suffix == ".jsonl":
+                    # Handle JSON Lines format
+                    json_objects = []
+                    for line in content_to_process.strip().split('\n'):
+                        if line.strip():  # Skip empty lines
+                            try:
+                                json_objects.append(json.loads(line.strip()))
+                            except json.JSONDecodeError as e:
+                                return False, f"Error parsing JSON line: {e}"
+                    content = json_objects
+                else:
+                    # Handle regular JSON
+                    try:
+                        content = json.loads(content_to_process)
+                    except json.JSONDecodeError as e:
+                        return False, f"Error parsing JSON: {e}"
+
+                # Format output nicely
+                if isinstance(content, (list, dict)):
+                    formatted_content = json.dumps(
+                        content, indent=2, ensure_ascii=False
+                    )
+                else:
+                    formatted_content = str(content)
+
+                return True, formatted_content
 
             elif suffix in [".yaml", ".yml"]:
-                with open(path, "r", encoding="utf-8") as f:
-                    try:
-                        # Handle multiple YAML documents in one file
-                        documents = list(yaml.safe_load_all(f))
-                        if len(documents) == 1:
-                            content = documents[0]
-                        else:
-                            content = documents
-                        return True, str(content)
-                    except yaml.YAMLError as e:
-                        return False, f"Error parsing YAML file {path}: {e}"
+                try:
+                    # Handle multiple YAML documents in one file
+                    documents = list(yaml.safe_load_all(content_to_process))
+                    if len(documents) == 1:
+                        content = documents[0]
+                    else:
+                        content = documents
+
+                    # Format output nicely
+                    if isinstance(content, (list, dict)):
+                        formatted_content = yaml.dump(
+                            content,
+                            default_flow_style=False,
+                            allow_unicode=True,
+                        )
+                    else:
+                        formatted_content = str(content)
+
+                    return True, formatted_content
+                except yaml.YAMLError as e:
+                    return False, f"Error parsing YAML file {path}: {e}"
 
             elif suffix == ".xml":
-                with open(path, "r", encoding="utf-8") as f:
-                    content = f.read()
-
                 try:
-                    data = xmltodict.parse(content)
+                    # Try to parse as structured XML first
+                    data = xmltodict.parse(content_to_process)
                     logger.debug(f"The extracted xml data is: {data}")
-                    return True, str(data)
-                except Exception:
-                    logger.debug(f"The raw xml data is: {content}")
-                    return True, content
+
+                    # Format output nicely
+                    formatted_content = json.dumps(
+                        data, indent=2, ensure_ascii=False
+                    )
+                    return True, formatted_content
+                except Exception as e:
+                    # If parsing fails, return raw content
+                    logger.debug(
+                        f"XML parsing failed, returning raw content: {e}"
+                    )
+                    return True, content_to_process
 
             return False, f"Unsupported data file format: {suffix}"
         except Exception as e:
             return False, f"Error processing data file {path}: {e}"
 
-    def _handle_code_file(self, path: str) -> Tuple[bool, str]:
+    def _handle_code_file(
+        self, path: str, start_line: int = 0, end_line: Optional[int] = None
+    ) -> Tuple[bool, str]:
         r"""Process source code files by reading them as plain text.
 
         Args:
@@ -589,28 +984,66 @@ class DocumentToolkit(BaseToolkit):
             Tuple[bool, str]: Success status and code content.
         """
         try:
-            with open(path, "r", encoding="utf-8") as f:
-                content = f.read()
-            return True, content
+            return self._handle_text_file(path, start_line, end_line)
         except Exception as e:
             return False, f"Error processing code file {path}: {e}"
 
-    def _handle_text_file(self, path: str) -> Tuple[bool, str]:
+    def _handle_text_file(
+        self, path: str, start_line: int = 0, end_line: Optional[int] = None
+    ) -> Tuple[bool, str]:
         r"""Process plain text files by reading them directly.
 
         Args:
             path (str): Path to the text file.
+            start_line (int): Start line number.
+            end_line (Optional[int]): End line number.
 
         Returns:
             Tuple[bool, str]: Success status and text content.
         """
         try:
-            text = Path(path).expanduser().read_text(encoding="utf-8")
+            file_path = Path(path).expanduser()
+
+            # Read all lines from file
+            with open(file_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+
+            total_lines = len(lines)
+
+            if start_line == 0 and end_line is None:
+                selected_lines = lines
+            elif end_line is None:
+                if start_line >= total_lines:
+                    return (
+                        False,
+                        f"Start line {start_line} exceeds file length "
+                        f"({total_lines} lines)",
+                    )
+                selected_lines = lines[start_line:]
+            elif start_line == 0:
+                if end_line >= total_lines:
+                    end_line = total_lines - 1
+                selected_lines = lines[: end_line + 1]
+            else:
+                if start_line >= total_lines:
+                    return (
+                        False,
+                        f"Start line {start_line} exceeds file length "
+                        f"({total_lines} lines)",
+                    )
+                if end_line >= total_lines:
+                    end_line = total_lines - 1
+                selected_lines = lines[start_line : end_line + 1]
+
+            # Join lines and return
+            text = ''.join(selected_lines)
             return True, text
         except Exception as e:
             return False, f"Error reading text file {path}: {e}"
 
-    def _handle_html_file(self, path: str) -> Tuple[bool, str]:
+    def _handle_html_file(
+        self, path: str, start_line: int = 0, end_line: Optional[int] = None
+    ) -> Tuple[bool, str]:
         r"""Process local HTML/XML files.
 
         Args:
@@ -626,15 +1059,14 @@ class DocumentToolkit(BaseToolkit):
 
         # Fallback to raw text reading
         try:
-            with open(path, "r", encoding="utf-8") as f:
-                content = f.read()
-            return True, content
+            return self._handle_text_file(path, start_line, end_line)
         except Exception as e2:
             return False, f"Error processing HTML file {path}: {e2}"
 
     # ZIP archive processing methods
     def _handle_zip(self, path_or_url: str) -> Tuple[bool, str]:
-        r"""Process ZIP archive files by extracting and processing all contained files.
+        r"""Process ZIP archive files by extracting and processing all
+        contained files.
 
         Args:
             path_or_url (str): Path or URL to the ZIP file.
@@ -644,10 +1076,15 @@ class DocumentToolkit(BaseToolkit):
         """
         try:
             if not self.cache_dir:
-                return False, "Cache directory not available for ZIP processing"
+                return (
+                    False,
+                    "Cache directory not available for ZIP processing",
+                )
 
             zip_path = self._ensure_local_zip(path_or_url)
-            extract_dir = self.cache_dir / f"unzip_{self._short_hash(zip_path)}"
+            extract_dir = (
+                self.cache_dir / f"unzip_{self._short_hash(zip_path)}"
+            )
             extract_dir.mkdir(parents=True, exist_ok=True)
 
             with zipfile.ZipFile(zip_path, "r") as zf:
@@ -667,12 +1104,9 @@ class DocumentToolkit(BaseToolkit):
                     else:
                         failed_files.append(f"{file.name}: {text}")
 
-            if failed_files:
-                logger.warning(f"Failed to process files: {failed_files}")
-
             result = "\n\n".join(parts) if parts else ""
             if failed_files:
-                result += f"\n\nFailed to process:\n" + "\n".join(failed_files)
+                result += "\n\nFailed to process:\n" + "\n".join(failed_files)
 
             return True, result
         except Exception as exc:
@@ -711,7 +1145,9 @@ class DocumentToolkit(BaseToolkit):
         import re
 
         if not self.cache_dir:
-            raise RuntimeError("Cache directory not available for downloading files")
+            raise RuntimeError(
+                "Cache directory not available for downloading files"
+            )
 
         try:
             resp = requests.get(url, stream=True, timeout=60)
@@ -735,16 +1171,20 @@ class DocumentToolkit(BaseToolkit):
 
             # If no extension, guess from content type
             if not Path(filename).suffix:
-                content_type = resp.headers.get("Content-Type", "").split(';')[0].strip()
+                content_type = (
+                    resp.headers.get("Content-Type", "").split(';')[0].strip()
+                )
                 ext_map = {
                     "application/pdf": ".pdf",
                     "application/zip": ".zip",
                     "application/json": ".json",
                     "text/html": ".html",
                     "application/msword": ".doc",
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+                    "application/vnd.openxmlformats-"
+                    "officedocument.wordprocessingml.document": ".docx",
                     "application/vnd.ms-excel": ".xls",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+                    "application/vnd.openxmlformats-"
+                    "officedocument.spreadsheetml.sheet": ".xlsx",
                     "image/jpeg": ".jpg",
                     "image/png": ".png",
                     "image/gif": ".gif",
@@ -753,7 +1193,7 @@ class DocumentToolkit(BaseToolkit):
                     "text/csv": ".csv",
                     "application/x-yaml": ".yaml",
                     "text/yaml": ".yaml",
-                    "text/x-yaml": ".yaml"
+                    "text/x-yaml": ".yaml",
                 }
                 ext = ext_map.get(content_type, "")
                 filename += ext
@@ -776,7 +1216,9 @@ class DocumentToolkit(BaseToolkit):
         return local_path
 
     # Cache management methods
-    def _cache_and_return(self, key: str, ok: bool, value: str) -> Tuple[bool, str]:
+    def _cache_and_return(
+        self, key: str, ok: bool, value: str
+    ) -> Tuple[bool, str]:
         r"""Store successful results in cache and return the result tuple.
 
         Args:
@@ -790,14 +1232,17 @@ class DocumentToolkit(BaseToolkit):
         if ok and self.enable_cache and self.cache_dir:
             self._cache[key] = value
             try:
-                (self.cache_dir / f"{key}.txt").write_text(value, encoding="utf-8")
+                (self.cache_dir / f"{key}.txt").write_text(
+                    value, encoding="utf-8"
+                )
             except Exception as e:  # pragma: no cover
                 logger.debug("Cache write failed: %s", e)
         return ok, value
 
     # Hash generation utilities
     def _hash_key(self, path: str) -> str:
-        r"""Generate a stable cache key using SHA-256 hash of path and modification time.
+        r"""Generate a stable cache key using SHA-256 hash of path and
+        modification time.
 
         Args:
             path (str): File path or URL to generate key for.
@@ -832,7 +1277,15 @@ class DocumentToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects representing
                 the functions in the toolkit.
         """
-        return [FunctionTool(self.extract_document_content)]
+        return [
+            FunctionTool(self.extract_document_content),
+            FunctionTool(self.insert),
+            FunctionTool(self.write_file),
+            FunctionTool(self.replace_file_content),
+            FunctionTool(self.undo_edit),
+            FunctionTool(self.find_file),
+            FunctionTool(self.read_file_content),
+        ]
 
     async def _extract_async(self, document_path: str) -> str:
         r"""Asynchronous wrapper for document extraction (rarely used).
@@ -849,7 +1302,9 @@ class DocumentToolkit(BaseToolkit):
         else:
             raise RuntimeError(content)
 
-    def extract_document_content_sync(self, document_path: str) -> Tuple[bool, str]:
+    def extract_document_content_sync(
+        self, document_path: str
+    ) -> Tuple[bool, str]:
         r"""Synchronous wrapper for environments without asyncio support.
 
         Args:
@@ -863,4 +1318,6 @@ class DocumentToolkit(BaseToolkit):
             if asyncio.get_event_loop().is_running()
             else asyncio.new_event_loop()
         )
-        return loop.run_until_complete(self.extract_document_content(document_path))
+        return loop.run_until_complete(
+            self.extract_document_content(document_path)
+        )
