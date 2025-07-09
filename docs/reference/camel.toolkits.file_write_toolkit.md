@@ -23,7 +23,7 @@ specialized formats.
 ```python
 def __init__(
     self,
-    output_dir: str = './',
+    working_directory: Optional[str] = None,
     timeout: Optional[float] = None,
     default_encoding: str = 'utf-8',
     backup_enabled: bool = True
@@ -34,7 +34,7 @@ Initialize the FileWriteToolkit.
 
 **Parameters:**
 
-- **output_dir** (str): The default directory for output files. Defaults to the current working directory.
+- **working_directory** (str, optional): The default directory for output files. If not provided, it will be determined by the `CAMEL_WORKDIR` environment variable (if set). If the environment variable is not set, it defaults to `camel_working_dir`.
 - **timeout** (Optional[float]): The timeout for the toolkit. (default: :obj:`None`)
 - **default_encoding** (str): Default character encoding for text operations. (default: :obj:`utf-8`)
 - **backup_enabled** (bool): Whether to create backups of existing files before overwriting. (default: :obj:`True`)
@@ -413,7 +413,7 @@ and HTML (.html, .htm).
 
 - **title** (str): The title of the document.
 - **content** (Union[str, List[List[str]]]): The content to write to the file. Content format varies by file type: - Text formats (txt, md, html, yaml): string - CSV: string or list of lists - JSON: string or serializable object
-- **filename** (str): The name or path of the file. If a relative path is supplied, it is resolved to self.output_dir.
+- **filename** (str): The name or path of the file. If a relative path is supplied, it is resolved to self.working_directory.
 - **encoding** (Optional[str]): The character encoding to use. (default: :obj: `None`)
 - **use_latex** (bool): Whether to use LaTeX for math rendering. (default: :obj:`False`)
 

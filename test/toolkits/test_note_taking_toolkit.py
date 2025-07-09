@@ -21,7 +21,7 @@ from camel.toolkits import NoteTakingToolkit
 @pytest.fixture
 def note_taking_toolkit():
     # Create a toolkit with a temporary note file
-    return NoteTakingToolkit(note_file_path="test_notes.md")
+    return NoteTakingToolkit(working_directory="test_notes.md")
 
 
 def test_append_note(note_taking_toolkit):

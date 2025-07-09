@@ -35,7 +35,7 @@ def run_pptx_agent():
 
     # Initialize the toolkit with an output directory
     pptx_toolkit = PPTXToolkit(
-        output_dir="./pptx_outputs",
+        working_directory="./pptx_outputs",
     )
 
     # Initialize the agent with the toolkit

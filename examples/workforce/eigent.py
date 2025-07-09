@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+import os
 import uuid
 
 from camel.agents.chat_agent import ChatAgent
@@ -49,6 +50,8 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils.commons import api_keys_required
 
 logger = get_logger(__name__)
+
+WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or "eigent/working_dir/"
 
 
 def send_message_to_user(message: str) -> None:
@@ -94,6 +97,9 @@ def developer_agent_factory(
     action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
 
+    You are now working in `{WORKING_DIRECTORY}`. All your work
+    related to local operations should be done in that directory.
+
     Your capabilities include:
     - Writing code to solve tasks. To execute the code, you MUST first save 
     it to a file in the workspace (e.g., `script.py`), and then run it using 
@@ -129,7 +135,13 @@ def developer_agent_factory(
     )
 
 
-@api_keys_required([(None, 'EXA_API_KEY')])
+@api_keys_required(
+    [
+        (None, 'GOOGLE_API_KEY'),
+        (None, 'SEARCH_ENGINE_ID'),
+        (None, 'EXA_API_KEY'),
+    ]
+)
 def search_agent_factory(
     model: BaseModelBackend,
     task_id: str,
@@ -157,7 +169,7 @@ def search_agent_factory(
         enabled_tools=custom_tools,
         browser_log_to_file=True,
         stealth=True,
-        session_id=agent_id,  # unique session ID
+        session_id=agent_id,
         default_start_url="https://search.brave.com/",
     )
 
@@ -169,6 +181,7 @@ def search_agent_factory(
         NoteTakingToolkit().append_note,
         *Crawl4AIToolkit().get_tools(),
         SearchToolkit().search_exa,
+        SearchToolkit().search_google,
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
@@ -180,26 +193,25 @@ def search_agent_factory(
     and a one-sentence description. This is a mandatory part of your 
     workflow.
 
+    You are now working in `{WORKING_DIRECTORY}`. All your work
+    related to local operations should be done in that directory.
+
     You MUST use the `append_note` tool to record your 
             findings, make sure the note is very detailed and include all the 
             information you have gathered.
     
     ### Web Search Workflow
-    1.  **Open Browser**: You MUST start by using the `open_browser` tool to 
-        launch a browser. This will automatically open a search engine page.
-    2.  **Perform Search**: Use the `type` tool to enter your search query 
-        into the search bar on the page. Then, use the `click` tool to 
-        press the search button.
-    3.  **Analyze Search Results**: After the search results load, use 
-        `get_page_snapshot` to see the available links.
-    4.  **Navigate and Explore**: Instead of using `visit_page` with a URL 
-        you guess, you MUST `click` on a link from the snapshot to navigate 
-        to a page. Once on a page, use browser tools to read content, scrape 
-        information, and navigate to other linked pages to gather all 
-        necessary data. This avoids errors from using incorrect URLs.
-    5. **Note Taking**: You MUST use the `append_note` tool to record your 
-        findings, make sure the note is very detailed and include all the 
-        information you have gathered.
+    1.  **Initial Search**: Start by using `search_google` to get a list of
+        initial URLs for your research.
+    2.  **Browser Exploration**: Use the URLs from `search_google` with the
+        browser tools to investigate pages. You can `visit_page` to open a
+        webpage, `get_som_screenshot` to analyze its content, and `click` to
+        navigate.
+    3.  **Quick Information Gathering**: For quick questions or summaries,
+        use `search_exa` for fast and direct information retrieval.
+    4.  **Note Taking**: You MUST use `append_note` to record your findings,
+        ensuring your notes are detailed and include all gathered
+        information and sources.
 
     ### Core Principles
     - For each decision you make and action you take, you must send a message 
@@ -277,6 +289,9 @@ def document_agent_factory(
     the `send_message_to_user` tool to inform the user of every decision and 
     action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
+
+    You are now working in `{WORKING_DIRECTORY}`. All your work
+    related to local operations should be done in that directory.
 
     Your capabilities include:
 
@@ -374,6 +389,9 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
 
+    You are now working in `{WORKING_DIRECTORY}`. All your work
+    related to local operations should be done in that directory.
+
     Your capabilities include:
 
     1. Video & Audio Analysis:
@@ -436,6 +454,10 @@ across multiple platforms. You MUST use the `send_message_to_user` tool to
 inform the user of every decision and action you take. Your message must 
 include a short title and a one-sentence description. This is a mandatory 
 part of your workflow.
+
+
+You are now working in `{WORKING_DIRECTORY}`. All your work
+related to local operations should be done in that directory.
 
 Your integrated toolkits enable you to:
 
@@ -533,33 +555,41 @@ async def main():
 
     # Create custom agents for the workforce
     coordinator_agent = ChatAgent(
-        "You are a helpful coordinator. You MUST use the "
-        "`send_message_to_user` tool to inform the user of every "
-        "decision and action you take. Your message must include a short "
-        "title and a one-sentence description. This is a mandatory part "
-        "of your workflow.",
+        f"You are a helpful coordinator. You MUST use the "
+        f"`send_message_to_user` tool to inform the user of every "
+        f"decision and action you take. Your message must include a short "
+        f"title and a one-sentence description. This is a mandatory part "
+        f"of your workflow. You are now working in "
+        f"`{WORKING_DIRECTORY}`. "
+        "All your work related to local operations should be done in that "
+        "directory.",
         model=model_backend_reason,
         tools=[
             send_message_to_user,
         ],
     )
     task_agent = ChatAgent(
-        "You are a helpful task planner. You MUST use the "
-        "`send_message_to_user` tool to inform the user of every decision "
-        "and action you take. Your message must include a short title and "
-        "a one-sentence description. This is a mandatory part of your "
-        "workflow.",
+        f"You are a helpful task planner. You MUST use the "
+        f"`send_message_to_user` tool to inform the user of every decision "
+        f"and action you take. Your message must include a short title and "
+        f"a one-sentence description. This is a mandatory part of your "
+        f"workflow. You are now working in `{WORKING_DIRECTORY}`. "
+        "All your work related to local operations should be done in that "
+        "directory.",
         model=model_backend_reason,
         tools=[
             send_message_to_user,
         ],
     )
     new_worker_agent = ChatAgent(
-        "You are a helpful worker. You MUST use the "
-        "`send_message_to_user` tool to inform the user of every "
-        "decision and action you take. Your message must include a short "
-        "title and a one-sentence description. This is a mandatory part "
-        "of your workflow. You can also communicate with other agents "
+        f"You are a helpful worker. You MUST use the "
+        f"`send_message_to_user` tool to inform the user of every "
+        f"decision and action you take. Your message must include a short "
+        f"title and a one-sentence description. This is a mandatory part "
+        f"of your workflow. You are now working in "
+        f"`{WORKING_DIRECTORY}` All your work related to local "
+        "operations should be done in that "
+        "directory. You can also communicate with other agents "
         "using messaging tools - use `list_available_agents` to see "
         "available team members and `send_message` to coordinate work "
         "and ask for help when needed.",
