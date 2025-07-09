@@ -256,11 +256,24 @@ def sanitize_and_enforce_required(parameters_dict):
                 # This field is optional - add null to its type
                 current_type = field_schema.get('type')
                 has_ref = '$ref' in field_schema
+                has_any_of = 'anyOf' in field_schema
 
                 if has_ref:
                     # Fields with $ref shouldn't have additional type field
                     # The $ref itself defines the type structure
                     pass
+                elif has_any_of:
+                    # Field already has anyOf
+                    any_of_types = field_schema['anyOf']
+                    has_null_type = any(
+                        item.get('type') == 'null' for item in any_of_types
+                    )
+                    if not has_null_type:
+                        # Add null type to anyOf
+                        field_schema['anyOf'].append({'type': 'null'})
+                    # Remove conflicting type field if it exists
+                    if 'type' in field_schema:
+                        del field_schema['type']
                 elif current_type:
                     if isinstance(current_type, str):
                         # Single type - convert to array with null
