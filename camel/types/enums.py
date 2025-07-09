@@ -388,14 +388,14 @@ class ModelType(UnifiedModelType, Enum):
     WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
     # Qianfan models
-    QIANFAN_ERNIE_X1_TURBO_32K = "ernie-x1-turbo-32k"
-    QIANFAN_ERNIE_X1_32K = "ernie-x1-32k"
-    QIANFAN_ERNIE_X1_32K_PREVIEW = "ernie-x1-32k-preview"
-    QIANFAN_ERNIE_4_5_TURBO_128K = "ernie-4.5-turbo-128k"
-    QIANFAN_ERNIE_4_5_TURBO_32K = "ernie-4.5-turbo-32k"
-    QIANFAN_DEEPSEEK_V3 = "deepseek-v3"
-    QIANFAN_DEEPSEEK_R1 = "deepseek-r1"
-    QIANFAN_QWEN3_235B_A22B = "qwen3-235b-a22b"
+    ERNIE_X1_TURBO_32K = "ernie-x1-turbo-32k"
+    ERNIE_X1_32K = "ernie-x1-32k"
+    ERNIE_X1_32K_PREVIEW = "ernie-x1-32k-preview"
+    ERNIE_4_5_TURBO_128K = "ernie-4.5-turbo-128k"
+    ERNIE_4_5_TURBO_32K = "ernie-4.5-turbo-32k"
+    DEEPSEEK_V3 = "deepseek-v3"
+    DEEPSEEK_R1 = "deepseek-r1"
+    QWEN3_235B_A22B = "qwen3-235b-a22b"
 
     # Crynux models
     CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
@@ -882,14 +882,14 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def is_qianfan(self) -> bool:
         return self in {
-            ModelType.QIANFAN_ERNIE_X1_TURBO_32K,
-            ModelType.QIANFAN_ERNIE_X1_32K,
-            ModelType.QIANFAN_ERNIE_X1_32K_PREVIEW,
-            ModelType.QIANFAN_ERNIE_4_5_TURBO_128K,
-            ModelType.QIANFAN_ERNIE_4_5_TURBO_32K,
-            ModelType.QIANFAN_DEEPSEEK_V3,
-            ModelType.QIANFAN_DEEPSEEK_R1,
-            ModelType.QIANFAN_QWEN3_235B_A22B,
+            ModelType.ERNIE_X1_TURBO_32K,
+            ModelType.ERNIE_X1_32K,
+            ModelType.ERNIE_X1_32K_PREVIEW,
+            ModelType.ERNIE_4_5_TURBO_128K,
+            ModelType.ERNIE_4_5_TURBO_32K,
+            ModelType.DEEPSEEK_V3,
+            ModelType.DEEPSEEK_R1,
+            ModelType.QWEN3_235B_A22B,
         }
 
     @property
@@ -1063,11 +1063,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
             ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B,
             ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B,
-            ModelType.QIANFAN_ERNIE_X1_TURBO_32K,
-            ModelType.QIANFAN_ERNIE_X1_32K,
-            ModelType.QIANFAN_ERNIE_X1_32K_PREVIEW,
-            ModelType.QIANFAN_ERNIE_4_5_TURBO_32K,
-            ModelType.QIANFAN_QWEN3_235B_A22B,
+            ModelType.ERNIE_X1_TURBO_32K,
+            ModelType.ERNIE_X1_32K,
+            ModelType.ERNIE_X1_32K_PREVIEW,
+            ModelType.ERNIE_4_5_TURBO_32K,
+            ModelType.QWEN3_235B_A22B,
         }:
             return 32_000
         elif self in {
@@ -1148,7 +1148,7 @@ class ModelType(UnifiedModelType, Enum):
             return 65_535
         elif self in {
             ModelType.NOVITA_QWEN_2_5_V1_72B,
-            ModelType.QIANFAN_DEEPSEEK_R1,
+            ModelType.DEEPSEEK_R1,
         }:
             return 96_000
         elif self in {
@@ -1203,8 +1203,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
             ModelType.MISTRAL_MEDIUM_3,
-            ModelType.QIANFAN_ERNIE_4_5_TURBO_128K,
-            ModelType.QIANFAN_DEEPSEEK_V3,
+            ModelType.ERNIE_4_5_TURBO_128K,
+            ModelType.DEEPSEEK_V3,
         }:
             return 128_000
         elif self in {

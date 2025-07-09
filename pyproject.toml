@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.71a2"
+version = "0.2.71a10"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -21,7 +21,6 @@ keywords = [
     "large-language-models",
 ]
 dependencies = [
-    "openai>=1.68.0,<2",
     "mcp>=1.3.0",
     "tiktoken>=0.7.0,<0.8",
     "colorama>=0.4.6,<0.5",
@@ -31,6 +30,7 @@ dependencies = [
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
     "pillow>=10.1.0,<11.0.0",
+    "openai>=1.86.0,<2",
 ]
 
 
@@ -130,7 +130,7 @@ document_tools = [
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50",
     "python-pptx>=1.0.2",
-    "pymupdf>=1.26.1",
+    "reportlab>=4.4.2",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -177,9 +177,10 @@ dev_tools = [
     "tree-sitter>=0.23.2,<0.24",
     "typer>=0.15.2",
     "mcp>=1.3.0",
-    "daytona-sdk>=0.20.0",
+    "daytona-sdk==0.20.0",
     "aci-sdk>=1.0.0b1",
     "langfuse>=2.60.5",
+    "traceroot==0.0.3a2",
 ]
 model_platforms = [
     "litellm>=1.38.1,<2",
@@ -264,7 +265,8 @@ owl = [
     "python-pptx>=1.0.2",
     "pytesseract>=0.3.13",
     "markitdown==0.1.1",
-    "pymupdf>=1.26.1",
+    "exa-py>=1.10.0,<2",
+    "reportlab>=4.4.2",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -369,11 +371,11 @@ all = [
     "mem0ai>=0.1.67",
     "math-verify>=0.7.0,<0.8",
     "exa-py>=1.10.0,<2",
-    "crawl4ai>=0.3.745",
+    "crawl4ai>=0.4.0",
     "pyautogui>=0.9.54,<0.10",
     "pyobvector>=0.1.18",
     "scrapegraph-py>=1.12.0,<2",
-    "daytona-sdk>=0.20.0",
+    "daytona-sdk==0.20.0",
     "ibm-watsonx-ai>=1.3.11",
     "google-genai>=1.13.0",
     "aci-sdk>=1.0.0b1",
@@ -388,7 +390,8 @@ all = [
     "psycopg[binary]>=3.1.18,<4",
     "pgvector>=0.2.4,<0.3",
     "chromadb>=0.6.0,<1.0.0",
-    "pymupdf>=1.26.1",
+    "traceroot==0.0.3a2",
+    "reportlab>=4.4.2",
 ]
 
 [project.urls]
@@ -523,7 +526,7 @@ module = [
     "google_generativeai",
     "google_auth_oauthlib.flow",
     "googleapiclient.discovery",
-    "mistralai",
+    "mistralai.*",
     "cohere",
     "fish-audio-sdk",
     "reka-api",
@@ -589,7 +592,7 @@ module = [
     "psycopg.*",
     "pgvecto.*",
     "pgvector.*",
-    "pymupdf",
+    "reportlab.*"
 ]
 ignore_missing_imports = true
 

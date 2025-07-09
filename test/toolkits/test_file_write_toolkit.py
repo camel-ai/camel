@@ -27,7 +27,7 @@ from camel.toolkits import FileWriteToolkit
 def file_write_toolkit():
     r"""Create a FileWriteToolkit instance for testing."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        toolkit = FileWriteToolkit(output_dir=temp_dir)
+        toolkit = FileWriteToolkit(working_directory=temp_dir)
         yield toolkit
 
 
@@ -42,24 +42,24 @@ def test_initialization():
     r"""Test the initialization of FileWriteToolkit with default parameters."""
     toolkit = FileWriteToolkit()
 
-    assert toolkit.output_dir == Path("./").resolve()
+    assert toolkit.working_directory == Path("./camel_working_dir").resolve()
     assert toolkit.default_encoding == "utf-8"
     assert toolkit.backup_enabled is True
 
 
 def test_initialization_with_custom_parameters():
     r"""Test the initialization of FileWriteToolkit with custom parameters."""
-    output_dir = "./custom_dir"
+    working_directory = "./custom_dir"
     default_encoding = "latin-1"
     backup_enabled = False
 
     toolkit = FileWriteToolkit(
-        output_dir=output_dir,
+        working_directory=working_directory,
         default_encoding=default_encoding,
         backup_enabled=backup_enabled,
     )
 
-    assert toolkit.output_dir == Path(output_dir).resolve()
+    assert toolkit.working_directory == Path(working_directory).resolve()
     assert toolkit.default_encoding == default_encoding
     assert toolkit.backup_enabled is backup_enabled
 
@@ -294,7 +294,7 @@ def test_write_to_file_nested_directory(file_write_toolkit):
 
 def test_write_to_file_absolute_path(temp_dir):
     r"""Test writing to a file using an absolute path."""
-    toolkit = FileWriteToolkit(output_dir="./default")
+    toolkit = FileWriteToolkit(working_directory="./default")
     content = "Content with absolute path"
     filename = os.path.join(temp_dir, "absolute_path.txt")
 
@@ -335,8 +335,9 @@ def test_sanitize_and_resolve_filepath(file_write_toolkit):
 
     # Resolve the filepath using the toolkit
     resolved_path = file_write_toolkit._resolve_filepath(unsafe_filename)
-    # Expected path is in the toolkit's output_dir with the sanitized filename
-    expected_path = file_write_toolkit.output_dir / expected_sanitized
+    # Expected path is in the toolkit's working_directory with the sanitized
+    # filename
+    expected_path = file_write_toolkit.working_directory / expected_sanitized
 
     # Check that the resolved path matches the expected path
     assert (

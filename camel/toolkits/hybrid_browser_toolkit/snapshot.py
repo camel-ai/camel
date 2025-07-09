@@ -20,14 +20,14 @@ if TYPE_CHECKING:
 # Logging support
 from camel.logger import get_logger
 
+from .config_loader import ConfigLoader
+
 logger = get_logger(__name__)
 
 
 class PageSnapshot:
     """Utility for capturing YAML-like page snapshots and diff-only
     variants."""
-
-    MAX_TIMEOUT_MS = 5000  # wait_for_load_state timeout
 
     def __init__(self, page: "Page"):
         self.page = page
@@ -37,6 +37,7 @@ class PageSnapshot:
             "is_diff": False,
             "priorities": [1, 2, 3],
         }
+        self.dom_timeout = ConfigLoader.get_dom_content_loaded_timeout()
 
     # ---------------------------------------------------------------------
     # Public API
@@ -60,7 +61,7 @@ class PageSnapshot:
 
             # ensure DOM stability
             await self.page.wait_for_load_state(
-                'domcontentloaded', timeout=self.MAX_TIMEOUT_MS
+                'domcontentloaded', timeout=self.dom_timeout
             )
 
             logger.debug("Capturing page snapshot …")
@@ -153,7 +154,7 @@ class PageSnapshot:
                     # Wait for next DOM stability before retrying
                     try:
                         await self.page.wait_for_load_state(
-                            "domcontentloaded", timeout=self.MAX_TIMEOUT_MS
+                            "domcontentloaded", timeout=self.dom_timeout
                         )
                     except Exception:
                         # Even if waiting fails, attempt retry to give it

@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-import json
 import time
 from collections import deque
 from typing import Any, List, Optional
@@ -23,7 +22,11 @@ from typing import Any, List, Optional
 from colorama import Fore
 
 from camel.agents import ChatAgent
+from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
+from camel.societies.workforce.structured_output_handler import (
+    StructuredOutputHandler,
+)
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, is_task_result_insufficient
@@ -186,6 +189,14 @@ class SingleAgentWorker(Worker):
             (default: :obj:`10`)
         auto_scale_pool (bool): Whether to auto-scale the agent pool.
             (default: :obj:`True`)
+        use_structured_output_handler (bool, optional): Whether to use the
+            structured output handler instead of native structured output.
+            When enabled, the workforce will use prompts with structured
+            output instructions and regex extraction to parse responses.
+            This ensures compatibility with agents that don't reliably
+            support native structured output. When disabled, the workforce
+            uses the native response_format parameter.
+            (default: :obj:`True`)
     """
 
     def __init__(
@@ -196,11 +207,18 @@ class SingleAgentWorker(Worker):
         pool_initial_size: int = 1,
         pool_max_size: int = 10,
         auto_scale_pool: bool = True,
+        use_structured_output_handler: bool = True,
     ) -> None:
         node_id = worker.agent_id
         super().__init__(
             description,
             node_id=node_id,
+        )
+        self.use_structured_output_handler = use_structured_output_handler
+        self.structured_handler = (
+            StructuredOutputHandler()
+            if use_structured_output_handler
+            else None
         )
         self.worker = worker
         self.use_agent_pool = use_agent_pool
@@ -268,30 +286,108 @@ class SingleAgentWorker(Worker):
         """
         # Get agent efficiently (from pool or by cloning)
         worker_agent = await self._get_worker_agent()
+        response_content = ""
 
         try:
             dependency_tasks_info = self._get_dep_tasks_info(dependencies)
             prompt = PROCESS_TASK_PROMPT.format(
                 content=task.content,
+                parent_task_content=task.parent.content if task.parent else "",
                 dependency_tasks_info=dependency_tasks_info,
                 additional_info=task.additional_info,
             )
 
-            response = await worker_agent.astep(
-                prompt, response_format=TaskResult
-            )
+            if self.use_structured_output_handler and self.structured_handler:
+                # Use structured output handler for prompt-based extraction
+                enhanced_prompt = (
+                    self.structured_handler.generate_structured_prompt(
+                        base_prompt=prompt,
+                        schema=TaskResult,
+                        examples=[
+                            {
+                                "content": "I have successfully completed the "
+                                "task...",
+                                "failed": False,
+                            }
+                        ],
+                        additional_instructions="Ensure you provide a clear "
+                        "description of what was done and whether the task "
+                        "succeeded or failed.",
+                    )
+                )
+                response = await worker_agent.astep(enhanced_prompt)
+
+                # Handle streaming response
+                if isinstance(response, AsyncStreamingChatAgentResponse):
+                    content = ""
+                    async for chunk in response:
+                        if chunk.msg:
+                            content = chunk.msg.content
+                    response_content = content
+                else:
+                    # Regular ChatAgentResponse
+                    response_content = (
+                        response.msg.content if response.msg else ""
+                    )
+
+                task_result = (
+                    self.structured_handler.parse_structured_response(
+                        response_text=response_content,
+                        schema=TaskResult,
+                        fallback_values={
+                            "content": "Task processing failed",
+                            "failed": True,
+                        },
+                    )
+                )
+            else:
+                # Use native structured output if supported
+                response = await worker_agent.astep(
+                    prompt, response_format=TaskResult
+                )
+
+                # Handle streaming response for native output
+                if isinstance(response, AsyncStreamingChatAgentResponse):
+                    task_result = None
+                    async for chunk in response:
+                        if chunk.msg and chunk.msg.parsed:
+                            task_result = chunk.msg.parsed
+                            response_content = chunk.msg.content
+                    # If no parsed result found in streaming, create fallback
+                    if task_result is None:
+                        task_result = TaskResult(
+                            content="Failed to parse streaming response",
+                            failed=True,
+                        )
+                else:
+                    # Regular ChatAgentResponse
+                    task_result = response.msg.parsed
+                    response_content = (
+                        response.msg.content if response.msg else ""
+                    )
 
             # Get token usage from the response
-            usage_info = response.info.get("usage") or response.info.get(
-                "token_usage"
+            if isinstance(response, AsyncStreamingChatAgentResponse):
+                # For streaming responses, get the final response info
+                final_response = await response
+                usage_info = final_response.info.get(
+                    "usage"
+                ) or final_response.info.get("token_usage")
+            else:
+                usage_info = response.info.get("usage") or response.info.get(
+                    "token_usage"
+                )
+            total_tokens = (
+                usage_info.get("total_tokens", 0) if usage_info else 0
             )
-            total_tokens = usage_info.get("total_tokens", 0)
 
         except Exception as e:
             print(
                 f"{Fore.RED}Error processing task {task.id}: "
                 f"{type(e).__name__}: {e}{Fore.RESET}"
             )
+            # Store error information in task result
+            task.result = f"{type(e).__name__}: {e!s}"
             return TaskState.FAILED
         finally:
             # Return agent to pool or let it be garbage collected
@@ -315,8 +411,10 @@ class SingleAgentWorker(Worker):
             f"(from pool/clone of "
             f"{getattr(self.worker, 'agent_id', self.worker.role_name)}) "
             f"to process task {task.content}",
-            "response_content": response.msg.content,
-            "tool_calls": response.info.get("tool_calls"),
+            "response_content": response_content,
+            "tool_calls": final_response.info.get("tool_calls")
+            if isinstance(response, AsyncStreamingChatAgentResponse)
+            else response.info.get("tool_calls"),
             "total_tokens": total_tokens,
         }
 
@@ -330,25 +428,27 @@ class SingleAgentWorker(Worker):
 
         print(f"======\n{Fore.GREEN}Response from {self}:{Fore.RESET}")
 
-        try:
-            result_dict = json.loads(response.msg.content)
-            task_result = TaskResult(**result_dict)
-        except json.JSONDecodeError as e:
-            print(
-                f"{Fore.RED}JSON parsing error for task {task.id}: "
-                f"Invalid response format - {e}{Fore.RESET}"
-            )
-            return TaskState.FAILED
+        if not self.use_structured_output_handler:
+            # Handle native structured output parsing
+            if task_result is None:
+                print(
+                    f"{Fore.RED}Error in worker step execution: Invalid "
+                    f"task result{Fore.RESET}"
+                )
+                task_result = TaskResult(
+                    content="Failed to generate valid task result.",
+                    failed=True,
+                )
 
-        color = Fore.RED if task_result.failed else Fore.GREEN
+        color = Fore.RED if task_result.failed else Fore.GREEN  # type: ignore[union-attr]
         print(
-            f"\n{color}{task_result.content}{Fore.RESET}\n======",
+            f"\n{color}{task_result.content}{Fore.RESET}\n======",  # type: ignore[union-attr]
         )
 
-        if task_result.failed:
+        if task_result.failed:  # type: ignore[union-attr]
             return TaskState.FAILED
 
-        task.result = task_result.content
+        task.result = task_result.content  # type: ignore[union-attr]
 
         if is_task_result_insufficient(task):
             print(
