@@ -44,7 +44,7 @@ from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
     FAILURE_ANALYSIS_PROMPT,
-    WF_TASK_DECOMPOSE_PROMPT,
+    TASK_DECOMPOSE_PROMPT,
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
@@ -730,7 +730,7 @@ class Workforce(BaseNode):
             Union[List[Task], Generator[List[Task], None, None]]:
             The subtasks or generator of subtasks.
         """
-        decompose_prompt = WF_TASK_DECOMPOSE_PROMPT.format(
+        decompose_prompt = TASK_DECOMPOSE_PROMPT.format(
             content=task.content,
             child_nodes_info=self._get_child_nodes_info(),
             additional_info=task.additional_info,
