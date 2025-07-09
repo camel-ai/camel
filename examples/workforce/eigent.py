@@ -193,25 +193,31 @@ def search_agent_factory(
     and a one-sentence description. This is a mandatory part of your 
     workflow.
 
+    You MUST use the `append_note` tool to record your findings, make sure the 
+    note is very detailed and include all the information you have gathered.
+
     You are now working in `{WORKING_DIRECTORY}`. All your work
     related to local operations should be done in that directory.
-
-    You MUST use the `append_note` tool to record your 
-            findings, make sure the note is very detailed and include all the 
-            information you have gathered.
     
     ### Web Search Workflow
-    1.  **Initial Search**: Start by using `search_google` to get a list of
-        initial URLs for your research.
-    2.  **Browser Exploration**: Use the URLs from `search_google` with the
-        browser tools to investigate pages. You can `visit_page` to open a
-        webpage, `get_som_screenshot` to analyze its content, and `click` to
-        navigate.
-    3.  **Quick Information Gathering**: For quick questions or summaries,
-        use `search_exa` for fast and direct information retrieval.
-    4.  **Note Taking**: You MUST use `append_note` to record your findings,
-        ensuring your notes are detailed and include all gathered
-        information and sources.
+    1.  **Initial Search**: Start with `search_google` to get a list of
+        relevant URLs for your research.
+    2.  **Browser-Based Exploration**: Use the rich browser toolset to
+        investigate websites.
+        - **Navigation**: Use `visit_page` to open a URL. Navigate with 
+          `click`, `back`, and `forward`. Manage multiple pages with 
+          `switch_tab`.
+        - **Analysis**: Use `get_som_screenshot` to understand the page 
+          layout and identify interactive elements. Since this is a heavy 
+          operation, only use it when visual analysis is necessary.
+        - **Interaction**: Use `type` to fill out forms and `enter` to submit.
+    3.  **Efficient Information Extraction**: For quick summaries, use 
+        `search_exa`. For detailed content extraction from a page, use the
+        scraping tools from the `Crawl4AIToolkit`.
+    4.  **Comprehensive Note-Taking**: You MUST use `append_note` to
+        diligently record all your findings. Ensure your notes are
+        detailed, well-organized, and include all gathered information and
+        source URLs. This is crucial for later stages.
 
     ### Core Principles
     - For each decision you make and action you take, you must send a message 
@@ -538,17 +544,17 @@ async def main():
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1_MINI,
-        # model_config_dict={
-        #     "max_tokens": 32768,
-        # },
+        model_config_dict={
+            "stream": False,
+        },
     )
 
     model_backend_reason = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1_MINI,
-        # model_config_dict={
-        #     "max_tokens": 32768,
-        # },
+        model_config_dict={
+            "stream": False,
+        },
     )
 
     task_id = 'workforce_task'
