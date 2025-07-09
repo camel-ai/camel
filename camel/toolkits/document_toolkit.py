@@ -207,7 +207,48 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             str: A message indicating the result of the operation.
         """
-        pass
+
+        # Get file extension first
+        suffix = f".{path.lower().rsplit('.', 1)[-1]}" if "." in path else ""
+        allowed_exts = _TEXT_EXTS | _CODE_EXTS | _DATA_EXTS
+        if suffix not in allowed_exts:
+            return (
+                f"Unsupported file type: {suffix} supported file types "
+                f"are {_TEXT_EXTS} {_CODE_EXTS} {_DATA_EXTS}"
+            )
+
+        file_text = self.read_file_content(path).expandtabs()
+        new_str = new_str.expandtabs()
+        file_text_lines = file_text.split('\n')
+        n_lines_file = len(file_text_lines)
+        if insert_line < 0 or insert_line > n_lines_file:
+            return (
+                f"Invalid line number: {insert_line}. "
+                f"The file has {n_lines_file} lines."
+            )
+
+        new_str_lines = new_str.split('\n')
+        new_file_text_lines = (
+            file_text_lines[:insert_line]
+            + new_str_lines
+            + file_text_lines[insert_line:]
+        )
+        new_file_text = '\n'.join(new_file_text_lines)
+        self.write_file(path, new_file_text)
+        self._file_history[path].append(
+            FileEditResult(
+                success=True,
+                message=(
+                    f"Successfully inserted {new_str} at line "
+                    f"{insert_line} in {path}."
+                ),
+                old_content=file_text,
+                new_content=new_file_text,
+            )
+        )
+        return (
+            f"Successfully inserted {new_str} at line {insert_line} in {path}."
+        )
 
     def undo_edit(self, path: str):
         r"""Undo the last edit operation on the file.
@@ -216,7 +257,12 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             str: A message indicating the result of the operation.
         """
-        pass
+        if path not in self._file_history:
+            return f"No edit history found for {path}."
+        last_edit = self._file_history[path][-1]
+        self.write_file(path, last_edit.old_content)
+        self._file_history[path].pop()
+        return f"Successfully undone the last edit in {path}."
 
     def read_file_content(
         self, path: str, start_line: int = 0, end_line: Optional[int] = None
@@ -276,7 +322,6 @@ class DocumentToolkit(BaseToolkit):
         path: str,
         old_content: str,
         new_content: str,
-        case_sensitive: bool = True,
     ) -> str:
         r"""Replace specified string in the file.
         Use for updating specific content in the file.
@@ -285,8 +330,6 @@ class DocumentToolkit(BaseToolkit):
             path (str): The path of the file to be replaced.
             old_content (str): The old content to be replaced.
             new_content (str): The new content to be replaced.
-            case_sensitive (bool): Whether to replace the content case-
-                sensitively.
 
         Returns:
             str: A message indicating the result of the operation.
@@ -323,8 +366,8 @@ class DocumentToolkit(BaseToolkit):
                 FileEditResult(
                     success=True,
                     message=f"Successfully replaced content in {path}.",
-                    old_content=old_content,
-                    new_content=new_content,
+                    old_content=file_text,
+                    new_content=new_file_content,
                 )
             )
             return (
@@ -335,32 +378,98 @@ class DocumentToolkit(BaseToolkit):
         except Exception as e:
             return f"Error replacing content in {path}: {e}"
 
-    def write_file(self, path: str, file: str):
+    def write_file(self, path: str, file: str) -> str:
+        r"""
+        Create or overwrite a file at the given path with the provided content.
+
+        Args:
+            path (str): The path of the file to write.
+            file (str): The content to write to the file.
+
+        Returns:
+            str: A message indicating the result of the operation.
+        """
         try:
             file_path = Path(path).expanduser()
             file_path.write_text(file, encoding="utf-8")
+            return f"File written at {path}."
         except Exception as e:
             return f"Error writing file {path}: {e}"
 
     def find_file(
         self,
         pattern: str,
-        directory: Optional[Path] = None,
+        directory: Optional[str] = None,  # <-- change from Optional[Path]
         recursive: bool = False,
-        case_sensitive: bool = True,
         include_hidden: bool = False,
-    ):
-        r"""Find files in the specified directory that match the given pattern.
+    ) -> list:
+        """
+        Find files in the specified directory that match the given pattern.
+
         Args:
             pattern (str): The pattern to match.
-            directory (Optional[Path]): The directory to search.
+            directory (Optional[str]): The directory to search.
             recursive (bool): Whether to search recursively.
-            case_sensitive (bool): Whether to match case-sensitively.
             include_hidden (bool): Whether to include hidden files.
+
         Returns:
-            List[Path]: A list of file paths that match the pattern.
+            List[str]: A list of file paths that match the pattern.
         """
-        pass
+        import glob
+
+        if directory is None:
+            search_dir = self.output_dir
+        else:
+            search_dir = Path(directory).resolve()
+
+        if not search_dir.exists():
+            raise FileNotFoundError(f"Directory not found: {search_dir}")
+
+        if not search_dir.is_dir():
+            raise ValueError(f"Path is not a directory: {search_dir}")
+
+        try:
+            matches = []
+
+            if recursive:
+                # Use ** for recursive search
+                if '/' in pattern or '\\' in pattern:
+                    # Pattern includes path separators
+                    glob_pattern = str(search_dir / pattern)
+                else:
+                    # Simple filename pattern
+                    glob_pattern = str(search_dir / "**" / pattern)
+
+                file_paths = glob.glob(glob_pattern, recursive=True)
+            else:
+                # Search only in the specified directory
+                glob_pattern = str(search_dir / pattern)
+                file_paths = glob.glob(glob_pattern, recursive=False)
+
+            # Filter results
+            for file_path in file_paths:
+                path_obj = Path(file_path)
+
+                # Skip directories (only return files)
+                if not path_obj.is_file():
+                    continue
+
+                # Handle hidden files
+                if not include_hidden and path_obj.name.startswith('.'):
+                    continue
+
+                matches.append(str(path_obj))
+
+            # Sort results for consistent output
+            matches.sort()
+
+            logger.debug(
+                f"Found {len(matches)} files matching pattern '{pattern}' in "
+                f"{search_dir}"
+            )
+            return matches
+        except Exception as e:
+            return f"Error finding files: {e}"
 
     # Public API methods
     @retry_on_error()
@@ -1071,9 +1180,11 @@ class DocumentToolkit(BaseToolkit):
                     "application/json": ".json",
                     "text/html": ".html",
                     "application/msword": ".doc",
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+                    "application/vnd.openxmlformats-"
+                    "officedocument.wordprocessingml.document": ".docx",
                     "application/vnd.ms-excel": ".xls",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+                    "application/vnd.openxmlformats-"
+                    "officedocument.spreadsheetml.sheet": ".xlsx",
                     "image/jpeg": ".jpg",
                     "image/png": ".png",
                     "image/gif": ".gif",
@@ -1166,7 +1277,15 @@ class DocumentToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects representing
                 the functions in the toolkit.
         """
-        return [FunctionTool(self.extract_document_content)]
+        return [
+            FunctionTool(self.extract_document_content),
+            FunctionTool(self.insert),
+            FunctionTool(self.write_file),
+            FunctionTool(self.replace_file_content),
+            FunctionTool(self.undo_edit),
+            FunctionTool(self.find_file),
+            FunctionTool(self.read_file_content),
+        ]
 
     async def _extract_async(self, document_path: str) -> str:
         r"""Asynchronous wrapper for document extraction (rarely used).
