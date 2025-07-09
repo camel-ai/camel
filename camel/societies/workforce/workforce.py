@@ -421,6 +421,11 @@ class Workforce(BaseNode):
                 "CodeExecutionToolkit, and ThinkingToolkit. To customize "
                 "runtime worker creation, pass a ChatAgent instance."
             )
+        else:
+            # Validate new_worker_agent if provided
+            self._validate_agent_compatibility(
+                new_worker_agent, "new_worker_agent"
+            )
 
         if self.share_memory:
             logger.info(
@@ -432,6 +437,42 @@ class Workforce(BaseNode):
         # ------------------------------------------------------------------
         # Helper for propagating pause control to externally supplied agents
         # ------------------------------------------------------------------
+
+    def _validate_agent_compatibility(
+        self, agent: ChatAgent, agent_context: str = "agent"
+    ) -> None:
+        r"""Validate that agent configuration is compatible with workforce
+        settings.
+
+        Args:
+            agent (ChatAgent): The agent to validate.
+            agent_context (str): Context description for error messages.
+
+        Raises:
+            ValueError: If agent has tools and stream mode enabled but
+                use_structured_output_handler is False.
+        """
+        agent_has_tools = (
+            bool(agent.tool_dict) if hasattr(agent, 'tool_dict') else False
+        )
+        agent_stream_mode = (
+            getattr(agent.model_backend, 'stream', False)
+            if hasattr(agent, 'model_backend')
+            else False
+        )
+
+        if (
+            agent_has_tools
+            and agent_stream_mode
+            and not self.use_structured_output_handler
+        ):
+            raise ValueError(
+                f"{agent_context} has tools and stream mode enabled, but "
+                "use_structured_output_handler is False. Native structured "
+                "output doesn't work with tool calls in stream mode. "
+                "Please set use_structured_output_handler=True when creating "
+                "the Workforce."
+            )
 
     def _attach_pause_event_to_agent(self, agent: ChatAgent) -> None:
         r"""Ensure the given ChatAgent shares this workforce's pause_event.
@@ -698,7 +739,7 @@ class Workforce(BaseNode):
         result = task.decompose(self.task_agent, decompose_prompt)
 
         # Handle both streaming and non-streaming results
-        if hasattr(result, '__iter__') and not isinstance(result, list):
+        if isinstance(result, Generator):
             # This is a generator (streaming mode)
             def streaming_with_dependencies():
                 all_subtasks = []
@@ -1172,9 +1213,7 @@ class Workforce(BaseNode):
         subtasks_result = self._decompose_task(task)
 
         # Handle both streaming and non-streaming results
-        if hasattr(subtasks_result, '__iter__') and not isinstance(
-            subtasks_result, list
-        ):
+        if isinstance(subtasks_result, Generator):
             # This is a generator (streaming mode)
             subtasks = []
             for new_tasks in subtasks_result:
@@ -1301,9 +1340,7 @@ class Workforce(BaseNode):
         subtasks_result = self._decompose_task(task)
 
         # Handle both streaming and non-streaming results
-        if hasattr(subtasks_result, '__iter__') and not isinstance(
-            subtasks_result, list
-        ):
+        if isinstance(subtasks_result, Generator):
             # This is a generator (streaming mode)
             subtasks = []
             for new_tasks in subtasks_result:
@@ -1480,12 +1517,18 @@ class Workforce(BaseNode):
 
         Raises:
             RuntimeError: If called while workforce is running (not paused).
+            ValueError: If worker has tools and stream mode enabled but
+                use_structured_output_handler is False.
         """
         if self._state == WorkforceState.RUNNING:
             raise RuntimeError(
                 "Cannot add workers while workforce is running. "
                 "Pause the workforce first."
             )
+
+        # Validate worker agent compatibility
+        self._validate_agent_compatibility(worker, "Worker agent")
+
         # Ensure the worker agent shares this workforce's pause control
         self._attach_pause_event_to_agent(worker)
 
@@ -2129,6 +2172,14 @@ class Workforce(BaseNode):
             new_node_conf.sys_msg,
         )
 
+        # Validate the new agent compatibility before creating worker
+        try:
+            self._validate_agent_compatibility(
+                new_agent, f"Agent for task {task.id}"
+            )
+        except ValueError as e:
+            raise ValueError(f"Cannot create worker for task {task.id}: {e!s}")
+
         new_node = SingleAgentWorker(
             description=new_node_conf.description,
             worker=new_agent,
@@ -2397,9 +2448,7 @@ class Workforce(BaseNode):
                 subtasks_result = self._decompose_task(task)
 
                 # Handle both streaming and non-streaming results
-                if hasattr(subtasks_result, '__iter__') and not isinstance(
-                    subtasks_result, list
-                ):
+                if isinstance(subtasks_result, Generator):
                     # This is a generator (streaming mode)
                     subtasks = []
                     for new_tasks in subtasks_result:
@@ -3260,6 +3309,18 @@ class Workforce(BaseNode):
                 )
 
                 agent = ChatAgent(sys_msg, **(agent_kwargs or {}))
+
+                # Validate agent compatibility
+                try:
+                    workforce_instance._validate_agent_compatibility(
+                        agent, "Worker agent"
+                    )
+                except ValueError as e:
+                    return {
+                        "status": "error",
+                        "message": str(e),
+                    }
+
                 workforce_instance.add_single_agent_worker(description, agent)
 
                 return {

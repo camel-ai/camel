@@ -437,10 +437,8 @@ class Task(BaseModel):
         from camel.agents.chat_agent import StreamingChatAgentResponse
 
         if isinstance(response, StreamingChatAgentResponse):
-            # This is a StreamingChatAgentResponse
             return self._decompose_streaming(response, task_parser)
         else:
-            # This is a regular ChatAgentResponse
             return self._decompose_non_streaming(response, task_parser)
 
     def _decompose_streaming(
@@ -448,7 +446,7 @@ class Task(BaseModel):
         response: "StreamingChatAgentResponse",
         task_parser: Callable[[str, str], List["Task"]],
     ) -> Generator[List["Task"], None, None]:
-        """Handle streaming response for task decomposition.
+        r"""Handle streaming response for task decomposition.
 
         Args:
             response: Streaming response from agent
@@ -491,7 +489,7 @@ class Task(BaseModel):
     def _decompose_non_streaming(
         self, response, task_parser: Callable[[str, str], List["Task"]]
     ) -> List["Task"]:
-        """Handle non-streaming response for task decomposition.
+        r"""Handle non-streaming response for task decomposition.
 
         Args:
             response: Regular response from agent
@@ -508,7 +506,7 @@ class Task(BaseModel):
         return tasks
 
     def _parse_partial_tasks(self, response: str) -> List["Task"]:
-        """Parse tasks from potentially incomplete response.
+        r"""Parse tasks from potentially incomplete response.
 
         Args:
             response: Partial response content
