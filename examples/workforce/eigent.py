@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+import os
 import uuid
 
 from camel.agents.chat_agent import ChatAgent
@@ -49,6 +50,8 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils.commons import api_keys_required
 
 logger = get_logger(__name__)
+
+WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or "eigent/working_dir/"
 
 
 def send_message_to_user(message: str) -> None:
@@ -94,6 +97,9 @@ def developer_agent_factory(
     action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
 
+    You are now working in `{WORKING_DIRECTORY}`. All your work
+    related to local operations should be done in that directory.
+
     Your capabilities include:
     - Writing code to solve tasks. To execute the code, you MUST first save 
     it to a file in the workspace (e.g., `script.py`), and then run it using 
@@ -129,7 +135,13 @@ def developer_agent_factory(
     )
 
 
-@api_keys_required([(None, 'EXA_API_KEY')])
+@api_keys_required(
+    [
+        (None, 'GOOGLE_API_KEY'),
+        (None, 'SEARCH_ENGINE_ID'),
+        (None, 'EXA_API_KEY'),
+    ]
+)
 def search_agent_factory(
     model: BaseModelBackend,
     task_id: str,
@@ -157,7 +169,7 @@ def search_agent_factory(
         enabled_tools=custom_tools,
         browser_log_to_file=True,
         stealth=True,
-        session_id=agent_id,  # unique session ID
+        session_id=agent_id,
         default_start_url="https://search.brave.com/",
     )
 
@@ -183,6 +195,9 @@ def search_agent_factory(
 
     You MUST use the `append_note` tool to record your findings, make sure the 
     note is very detailed and include all the information you have gathered.
+
+    You are now working in `{WORKING_DIRECTORY}`. All your work
+    related to local operations should be done in that directory.
     
     ### Web Search Workflow
     1.  **Initial Search**: Start with `search_google` to get a list of
@@ -281,6 +296,9 @@ def document_agent_factory(
     action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
 
+    You are now working in `{WORKING_DIRECTORY}`. All your work
+    related to local operations should be done in that directory.
+
     Your capabilities include:
 
     1. Information Gathering:
@@ -377,6 +395,9 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
 
+    You are now working in `{WORKING_DIRECTORY}`. All your work
+    related to local operations should be done in that directory.
+
     Your capabilities include:
 
     1. Video & Audio Analysis:
@@ -439,6 +460,10 @@ across multiple platforms. You MUST use the `send_message_to_user` tool to
 inform the user of every decision and action you take. Your message must 
 include a short title and a one-sentence description. This is a mandatory 
 part of your workflow.
+
+
+You are now working in `{WORKING_DIRECTORY}`. All your work
+related to local operations should be done in that directory.
 
 Your integrated toolkits enable you to:
 
@@ -519,8 +544,6 @@ async def main():
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1_MINI,
-        # api_key="sk-nmwYgOtNYuhcJl3X0eE49e4b987547F1B9De351c9076Ec2e",
-        # url="https://api.pumpkinaigc.online/v1",
         model_config_dict={
             "stream": False,
         },
@@ -529,8 +552,6 @@ async def main():
     model_backend_reason = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1_MINI,
-        # api_key="sk-nmwYgOtNYuhcJl3X0eE49e4b987547F1B9De351c9076Ec2e",
-        # url="https://api.pumpkinaigc.online/v1",
         model_config_dict={
             "stream": False,
         },
@@ -540,33 +561,41 @@ async def main():
 
     # Create custom agents for the workforce
     coordinator_agent = ChatAgent(
-        "You are a helpful coordinator. You MUST use the "
-        "`send_message_to_user` tool to inform the user of every "
-        "decision and action you take. Your message must include a short "
-        "title and a one-sentence description. This is a mandatory part "
-        "of your workflow.",
+        f"You are a helpful coordinator. You MUST use the "
+        f"`send_message_to_user` tool to inform the user of every "
+        f"decision and action you take. Your message must include a short "
+        f"title and a one-sentence description. This is a mandatory part "
+        f"of your workflow. You are now working in "
+        f"`{WORKING_DIRECTORY}`. "
+        "All your work related to local operations should be done in that "
+        "directory.",
         model=model_backend_reason,
         tools=[
             send_message_to_user,
         ],
     )
     task_agent = ChatAgent(
-        "You are a helpful task planner. You MUST use the "
-        "`send_message_to_user` tool to inform the user of every decision "
-        "and action you take. Your message must include a short title and "
-        "a one-sentence description. This is a mandatory part of your "
-        "workflow.",
+        f"You are a helpful task planner. You MUST use the "
+        f"`send_message_to_user` tool to inform the user of every decision "
+        f"and action you take. Your message must include a short title and "
+        f"a one-sentence description. This is a mandatory part of your "
+        f"workflow. You are now working in `{WORKING_DIRECTORY}`. "
+        "All your work related to local operations should be done in that "
+        "directory.",
         model=model_backend_reason,
         tools=[
             send_message_to_user,
         ],
     )
     new_worker_agent = ChatAgent(
-        "You are a helpful worker. You MUST use the "
-        "`send_message_to_user` tool to inform the user of every "
-        "decision and action you take. Your message must include a short "
-        "title and a one-sentence description. This is a mandatory part "
-        "of your workflow. You can also communicate with other agents "
+        f"You are a helpful worker. You MUST use the "
+        f"`send_message_to_user` tool to inform the user of every "
+        f"decision and action you take. Your message must include a short "
+        f"title and a one-sentence description. This is a mandatory part "
+        f"of your workflow. You are now working in "
+        f"`{WORKING_DIRECTORY}` All your work related to local "
+        "operations should be done in that "
+        "directory. You can also communicate with other agents "
         "using messaging tools - use `list_available_agents` to see "
         "available team members and `send_message` to coordinate work "
         "and ask for help when needed.",
