@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -27,19 +28,31 @@ class NoteTakingToolkit(BaseToolkit):
 
     def __init__(
         self,
-        note_file_path: str = "notes/notes.md",
+        working_directory: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> None:
         r"""Initialize the NoteTakingToolkit.
 
         Args:
-            note_file_path (str): The path to the note file.
-                (default: :obj:`notes/notes.md`)
+            working_directory (str, optional): The path to the note file.
+                If not provided, it will be determined by the
+                `CAMEL_WORKDIR` environment variable (if set), saving
+                the note as `notes.md` in that directory. If the
+                environment variable is not set, it defaults to
+                `camel_working_dir/notes.md`.
             timeout (Optional[float]): The timeout for the toolkit.
         """
         super().__init__(timeout=timeout)
-        self.note_file_path = Path(note_file_path)
-        self.note_file_path.parent.mkdir(parents=True, exist_ok=True)
+        camel_workdir = os.environ.get("CAMEL_WORKDIR")
+        if working_directory:
+            path = Path(working_directory)
+        elif camel_workdir:
+            path = Path(camel_workdir) / "notes.md"
+        else:
+            path = Path("camel_working_dir") / "notes.md"
+
+        self.working_directory = path
+        self.working_directory.parent.mkdir(parents=True, exist_ok=True)
 
     def append_note(self, content: str) -> str:
         r"""Appends a note to the note file.
@@ -51,9 +64,11 @@ class NoteTakingToolkit(BaseToolkit):
             str: A message indicating the result of the operation.
         """
         try:
-            with self.note_file_path.open("a", encoding="utf-8") as f:
+            with self.working_directory.open("a", encoding="utf-8") as f:
                 f.write(content + "\n")
-            return f"Note successfully appended to in {self.note_file_path}."
+            return (
+                f"Note successfully appended to in {self.working_directory}."
+            )
         except Exception as e:
             return f"Error appending note: {e}"
 
@@ -65,9 +80,9 @@ class NoteTakingToolkit(BaseToolkit):
                  file cannot be read.
         """
         try:
-            if not self.note_file_path.exists():
+            if not self.working_directory.exists():
                 return "Note file does not exist yet."
-            return self.note_file_path.read_text(encoding="utf-8")
+            return self.working_directory.read_text(encoding="utf-8")
         except Exception as e:
             return f"Error reading note: {e}"
 
