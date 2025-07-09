@@ -25,6 +25,7 @@ from typing import (
     Coroutine,
     Deque,
     Dict,
+    Generator,
     List,
     Optional,
     Set,
@@ -43,7 +44,7 @@ from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
     FAILURE_ANALYSIS_PROMPT,
-    WF_TASK_DECOMPOSE_PROMPT,
+    TASK_DECOMPOSE_PROMPT,
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
@@ -420,6 +421,11 @@ class Workforce(BaseNode):
                 "CodeExecutionToolkit, and ThinkingToolkit. To customize "
                 "runtime worker creation, pass a ChatAgent instance."
             )
+        else:
+            # Validate new_worker_agent if provided
+            self._validate_agent_compatibility(
+                new_worker_agent, "new_worker_agent"
+            )
 
         if self.share_memory:
             logger.info(
@@ -431,6 +437,42 @@ class Workforce(BaseNode):
         # ------------------------------------------------------------------
         # Helper for propagating pause control to externally supplied agents
         # ------------------------------------------------------------------
+
+    def _validate_agent_compatibility(
+        self, agent: ChatAgent, agent_context: str = "agent"
+    ) -> None:
+        r"""Validate that agent configuration is compatible with workforce
+        settings.
+
+        Args:
+            agent (ChatAgent): The agent to validate.
+            agent_context (str): Context description for error messages.
+
+        Raises:
+            ValueError: If agent has tools and stream mode enabled but
+                use_structured_output_handler is False.
+        """
+        agent_has_tools = (
+            bool(agent.tool_dict) if hasattr(agent, 'tool_dict') else False
+        )
+        agent_stream_mode = (
+            getattr(agent.model_backend, 'stream', False)
+            if hasattr(agent, 'model_backend')
+            else False
+        )
+
+        if (
+            agent_has_tools
+            and agent_stream_mode
+            and not self.use_structured_output_handler
+        ):
+            raise ValueError(
+                f"{agent_context} has tools and stream mode enabled, but "
+                "use_structured_output_handler is False. Native structured "
+                "output doesn't work with tool calls in stream mode. "
+                "Please set use_structured_output_handler=True when creating "
+                "the Workforce."
+            )
 
     def _attach_pause_event_to_agent(self, agent: ChatAgent) -> None:
         r"""Ensure the given ChatAgent shares this workforce's pause_event.
@@ -678,26 +720,46 @@ class Workforce(BaseNode):
         if task_id in self._assignees:
             del self._assignees[task_id]
 
-    def _decompose_task(self, task: Task) -> List[Task]:
+    def _decompose_task(
+        self, task: Task
+    ) -> Union[List[Task], Generator[List[Task], None, None]]:
         r"""Decompose the task into subtasks. This method will also set the
         relationship between the task and its subtasks.
 
         Returns:
-            List[Task]: The subtasks.
+            Union[List[Task], Generator[List[Task], None, None]]:
+            The subtasks or generator of subtasks.
         """
-        decompose_prompt = WF_TASK_DECOMPOSE_PROMPT.format(
+        decompose_prompt = TASK_DECOMPOSE_PROMPT.format(
             content=task.content,
             child_nodes_info=self._get_child_nodes_info(),
             additional_info=task.additional_info,
         )
         self.task_agent.reset()
-        subtasks = task.decompose(self.task_agent, decompose_prompt)
+        result = task.decompose(self.task_agent, decompose_prompt)
 
-        # Update dependency tracking for decomposed task
-        if subtasks:
-            self._update_dependencies_for_decomposition(task, subtasks)
+        # Handle both streaming and non-streaming results
+        if isinstance(result, Generator):
+            # This is a generator (streaming mode)
+            def streaming_with_dependencies():
+                all_subtasks = []
+                for new_tasks in result:
+                    all_subtasks.extend(new_tasks)
+                    # Update dependency tracking for each batch of new tasks
+                    if new_tasks:
+                        self._update_dependencies_for_decomposition(
+                            task, all_subtasks
+                        )
+                    yield new_tasks
 
-        return subtasks
+            return streaming_with_dependencies()
+        else:
+            # This is a regular list (non-streaming mode)
+            subtasks = result
+            # Update dependency tracking for decomposed task
+            if subtasks:
+                self._update_dependencies_for_decomposition(task, subtasks)
+            return subtasks
 
     def _analyze_failure(
         self, task: Task, error_message: str
@@ -1148,7 +1210,17 @@ class Workforce(BaseNode):
         task.state = TaskState.FAILED
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
-        subtasks = self._decompose_task(task)
+        subtasks_result = self._decompose_task(task)
+
+        # Handle both streaming and non-streaming results
+        if isinstance(subtasks_result, Generator):
+            # This is a generator (streaming mode)
+            subtasks = []
+            for new_tasks in subtasks_result:
+                subtasks.extend(new_tasks)
+        else:
+            # This is a regular list (non-streaming mode)
+            subtasks = subtasks_result
         if self.metrics_logger and subtasks:
             self.metrics_logger.log_task_decomposed(
                 parent_task_id=task.id, subtask_ids=[st.id for st in subtasks]
@@ -1265,7 +1337,17 @@ class Workforce(BaseNode):
         task.state = TaskState.FAILED  # TODO: Add logic for OPEN
 
         # Decompose the task into subtasks first
-        subtasks = self._decompose_task(task)
+        subtasks_result = self._decompose_task(task)
+
+        # Handle both streaming and non-streaming results
+        if isinstance(subtasks_result, Generator):
+            # This is a generator (streaming mode)
+            subtasks = []
+            for new_tasks in subtasks_result:
+                subtasks.extend(new_tasks)
+        else:
+            # This is a regular list (non-streaming mode)
+            subtasks = subtasks_result
         if subtasks:
             # If decomposition happened, the original task becomes a container.
             # We only execute its subtasks.
@@ -1435,12 +1517,18 @@ class Workforce(BaseNode):
 
         Raises:
             RuntimeError: If called while workforce is running (not paused).
+            ValueError: If worker has tools and stream mode enabled but
+                use_structured_output_handler is False.
         """
         if self._state == WorkforceState.RUNNING:
             raise RuntimeError(
                 "Cannot add workers while workforce is running. "
                 "Pause the workforce first."
             )
+
+        # Validate worker agent compatibility
+        self._validate_agent_compatibility(worker, "Worker agent")
+
         # Ensure the worker agent shares this workforce's pause control
         self._attach_pause_event_to_agent(worker)
 
@@ -2084,6 +2172,14 @@ class Workforce(BaseNode):
             new_node_conf.sys_msg,
         )
 
+        # Validate the new agent compatibility before creating worker
+        try:
+            self._validate_agent_compatibility(
+                new_agent, f"Agent for task {task.id}"
+            )
+        except ValueError as e:
+            raise ValueError(f"Cannot create worker for task {task.id}: {e!s}")
+
         new_node = SingleAgentWorker(
             description=new_node_conf.description,
             worker=new_agent,
@@ -2349,7 +2445,17 @@ class Workforce(BaseNode):
 
             elif recovery_decision.strategy == RecoveryStrategy.DECOMPOSE:
                 # Decompose the task into subtasks
-                subtasks = self._decompose_task(task)
+                subtasks_result = self._decompose_task(task)
+
+                # Handle both streaming and non-streaming results
+                if isinstance(subtasks_result, Generator):
+                    # This is a generator (streaming mode)
+                    subtasks = []
+                    for new_tasks in subtasks_result:
+                        subtasks.extend(new_tasks)
+                else:
+                    # This is a regular list (non-streaming mode)
+                    subtasks = subtasks_result
                 if self.metrics_logger and subtasks:
                     self.metrics_logger.log_task_decomposed(
                         parent_task_id=task.id,
@@ -3203,6 +3309,18 @@ class Workforce(BaseNode):
                 )
 
                 agent = ChatAgent(sys_msg, **(agent_kwargs or {}))
+
+                # Validate agent compatibility
+                try:
+                    workforce_instance._validate_agent_compatibility(
+                        agent, "Worker agent"
+                    )
+                except ValueError as e:
+                    return {
+                        "status": "error",
+                        "message": str(e),
+                    }
+
                 workforce_instance.add_single_agent_worker(description, agent)
 
                 return {

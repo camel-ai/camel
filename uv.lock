@@ -647,7 +647,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.71a8"
+version = "0.2.71a10"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -1352,11 +1352,11 @@ provides-extras = ["dev", "docs", "rag", "web-tools", "document-tools", "media-t
 
 [[package]]
 name = "certifi"
-version = "2025.6.15"
+version = "2025.7.9"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/73/f7/f14b46d4bcd21092d7d3ccef689615220d8a08fb25e564b65d20738e672e/certifi-2025.6.15.tar.gz", hash = "sha256:d747aa5a8b9bbbb1bb8c22bb13e22bd1f18e9796defa16bab421f7f7a317323b", size = 158753, upload-time = "2025-06-15T02:45:51.329Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/de/8a/c729b6b60c66a38f590c4e774decc4b2ec7b0576be8f1aa984a53ffa812a/certifi-2025.7.9.tar.gz", hash = "sha256:c1d2ec05395148ee10cf672ffc28cd37ea0ab0d99f9cc74c43e588cbd111b079", size = 160386, upload-time = "2025-07-09T02:13:58.874Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/84/ae/320161bd181fc06471eed047ecce67b693fd7515b16d495d8932db763426/certifi-2025.6.15-py3-none-any.whl", hash = "sha256:2e0c7ce7cb5d8f8634ca55d2ba7e6ec2689a2fd6537d8dec1296a477a4910057", size = 157650, upload-time = "2025-06-15T02:45:49.977Z" },
+    { url = "https://files.pythonhosted.org/packages/66/f3/80a3f974c8b535d394ff960a11ac20368e06b736da395b551a49ce950cce/certifi-2025.7.9-py3-none-any.whl", hash = "sha256:d842783a14f8fdd646895ac26f719a061408834473cfc10203f6a575beb15d39", size = 159230, upload-time = "2025-07-09T02:13:57.007Z" },
 ]
 
 [[package]]
@@ -3234,7 +3234,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/8e/ca/3c4c48c2a180e3410
 
 [[package]]
 name = "ibm-watsonx-ai"
-version = "1.3.28"
+version = "1.3.30"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cachetools" },
@@ -3248,9 +3248,9 @@ dependencies = [
     { name = "tabulate" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ca/0d/5c03c406ef2c04928d707784ab695535b64130adad267bb6c74a8b465dcc/ibm_watsonx_ai-1.3.28.tar.gz", hash = "sha256:b66c754320334e0fd5396ec3661344bb621983c0b12d89677fd7afdfdb44ddf0", size = 745752, upload-time = "2025-07-02T17:33:37.516Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/61/ba/21bcb1227985a383e5eba3069a8d69e30fc3278d7ce0a478f5f83ebcd677/ibm_watsonx_ai-1.3.30.tar.gz", hash = "sha256:e80ab0d2d603ec3b90b462522d61359055c62638fa29086a2401e54aa79285d5", size = 750357, upload-time = "2025-07-07T15:06:51.578Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7b/b7/5d38308f22166f3935e686f37a7d40c234bed7c63b7a397b992c51efbf6e/ibm_watsonx_ai-1.3.28-py3-none-any.whl", hash = "sha256:f564e1ddea5728301ed28cdc1fafda2070e3d87522c348d77e09cd419edec9b2", size = 1154449, upload-time = "2025-07-02T17:33:35.783Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/33/e54c46d9a42c491119b7c2d267f7d322ac0220e3b1763a969d0ea0e26f21/ibm_watsonx_ai-1.3.30-py3-none-any.whl", hash = "sha256:2bef0cd2d5f3ea83cc37c8993c7c7224f775852f7c5321bd842d03b1eda33bd1", size = 1159977, upload-time = "2025-07-07T15:06:49.745Z" },
 ]
 
 [[package]]
