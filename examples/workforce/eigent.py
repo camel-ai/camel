@@ -207,8 +207,8 @@ def search_agent_factory(
         available.
     2.  **Browser-Based Exploration**: Use the rich browser toolset to
         investigate websites.
-        - **Navigation**: Use `visit_page` to open a URL. Navigate with `click`,
-          `back`, and `forward`. Manage multiple pages with `switch_tab`.
+        - **Navigation**: Use `visit_page` to open a URL. Navigate with 
+        `click`,`back`, and `forward`. Manage multiple pages with `switch_tab`.
         - **Analysis**: Use `get_som_screenshot` to understand the page layout
           and identify interactive elements. Since this is a heavy operation,
           only use it when visual analysis is necessary.
