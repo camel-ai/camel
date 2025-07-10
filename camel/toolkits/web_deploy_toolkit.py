@@ -75,6 +75,23 @@ class WebDeployToolkit(BaseToolkit):
         self.remote_server_ip = remote_server_ip
         self.remote_server_port = remote_server_port
 
+    def _build_custom_url(
+        self, domain: str, subdirectory: Optional[str] = None
+    ) -> str:
+        r"""Build custom URL with optional subdirectory.
+
+        Args:
+            domain (str): Custom domain
+            subdirectory (Optional[str]): Subdirectory path
+
+        Returns:
+            str: Complete custom URL
+        """
+        custom_url = f"http://{domain}:8080"
+        if subdirectory:
+            custom_url += f"/{subdirectory}"
+        return custom_url
+
     def _load_logo_as_data_uri(self, logo_path: str) -> str:
         r"""Load a local logo file and convert it to data URI.
 
@@ -121,7 +138,15 @@ class WebDeployToolkit(BaseToolkit):
         Returns:
             str: Default logo data URI
         """
-        return """data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32' fill='none'%3E%3Crect width='32' height='32' rx='8' fill='%23333333'/%3E%3Ctext x='16' y='22' font-family='system-ui, -apple-system, sans-serif' font-size='12' font-weight='700' text-anchor='middle' fill='white'%3EAI%3C/text%3E%3C/svg%3E"""  # noqa: E501
+        default_logo_data_uri = (
+            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' "
+            "width='32' height='32' viewBox='0 0 32 32' fill='none'%3E%3Crect "
+            "width='32' height='32' rx='8' fill='%23333333'/%3E%3Ctext x='16' "
+            "y='22' font-family='system-ui, -apple-system, sans-serif' "
+            "font-size='12' font-weight='700' text-anchor='middle' "
+            "fill='white'%3EAI%3C/text%3E%3C/svg%3E"
+        )
+        return default_logo_data_uri
 
     def _generate_eigent_tag(self) -> str:
         r"""Generate the HTML/CSS/JS for the branded floating tag.
@@ -407,12 +432,11 @@ if (document.readyState === 'loading') {{
             build_dir = os.path.join(project_path, 'build')
             if not os.path.exists(build_dir):
                 build_dir = os.path.join(project_path, 'dist')
-
-            if not os.path.exists(build_dir):
-                return {
-                    'success': False,
-                    'error': 'Build output directory not found',
-                }
+                if not os.path.exists(build_dir):
+                    return {
+                        'success': False,
+                        'error': 'Build output directory not found',
+                    }
 
             return {
                 'success': True,
@@ -514,10 +538,9 @@ if (document.readyState === 'loading') {{
                 base_url = (
                     f"http://{self.remote_server_ip}:{self.remote_server_port}"
                 )
-                if subdirectory:
-                    deployed_url = f"{base_url}/{subdirectory}/"
-                else:
-                    deployed_url = base_url
+                deployed_url = (
+                    f"{base_url}/{subdirectory}/" if subdirectory else base_url
+                )
 
                 return {
                     'success': True,
@@ -597,12 +620,11 @@ if (document.readyState === 'loading') {{
                     local_url += f"/{subdirectory}"
 
                 # Custom domain URL (if provided)
-                custom_url = None
-                if domain:
-                    if subdirectory:
-                        custom_url = f"http://{domain}:8080/{subdirectory}"
-                    else:
-                        custom_url = f"http://{domain}:8080"
+                custom_url = (
+                    self._build_custom_url(domain, subdirectory)
+                    if domain
+                    else None
+                )
 
                 # Localhost fallback URL
                 localhost_url = f"http://localhost:{port}"
@@ -757,7 +779,7 @@ if (document.readyState === 'loading') {{
 
                 # Enhance HTML files with branding tag
                 html_files_enhanced = []
-                for root, _dirs, files in os.walk(deploy_path):
+                for root, _, files in os.walk(deploy_path):
                     for file in files:
                         if file.endswith('.html'):
                             html_file_path = os.path.join(root, file)
@@ -796,12 +818,11 @@ if (document.readyState === 'loading') {{
                         local_url += f"/{subdirectory}"
 
                     # Custom domain URL (if provided)
-                    custom_url = None
-                    if domain:
-                        if subdirectory:
-                            custom_url = f"http://{domain}:8080/{subdirectory}"
-                        else:
-                            custom_url = f"http://{domain}:8080"
+                    custom_url = (
+                        self._build_custom_url(domain, subdirectory)
+                        if domain
+                        else None
+                    )
 
                     # Localhost fallback URL
                     localhost_url = f"http://localhost:{port}"
@@ -865,12 +886,11 @@ if (document.readyState === 'loading') {{
                         local_url += f"/{subdirectory}"
 
                     # Custom domain URL (if provided)
-                    custom_url = None
-                    if domain:
-                        if subdirectory:
-                            custom_url = f"http://{domain}:8080/{subdirectory}"
-                        else:
-                            custom_url = f"http://{domain}:8080"
+                    custom_url = (
+                        self._build_custom_url(domain, subdirectory)
+                        if domain
+                        else None
+                    )
 
                     # Localhost fallback URL
                     localhost_url = f"http://localhost:{port}"
