@@ -13,6 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
+import asyncio
+import inspect
 import json
 import logging
 import textwrap
@@ -1589,6 +1591,27 @@ class ChatAgent(BaseAgent):
         tool = self._internal_tools[func_name]
         try:
             result = tool(**args)
+
+            # Check if result is a coroutine (async tool called synchronously)
+            if inspect.iscoroutine(result):
+                # Handle async tool synchronously by running in new event loop
+                try:
+                    # Check if we're already in an async context
+                    asyncio.get_running_loop()
+                    # If in async context, we cannot use asyncio.run()
+                    # Handle gracefully - this shouldn't happen in normal usage
+                    result.close()  # Close the coroutine to prevent warnings
+                    error_msg = (
+                        f"Async tool '{func_name}' was called from sync "
+                        f"context but an event loop is already running. "
+                        f"Use agent.astep() for async tools instead."
+                    )
+                    result = {"error": error_msg}
+                    logging.warning(error_msg)
+                except RuntimeError:
+                    # No event loop running, safe to use asyncio.run()
+                    result = asyncio.run(result)
+
         except Exception as e:
             # Capture the error message to prevent framework crash
             error_msg = f"Error executing tool '{func_name}': {e!s}"
