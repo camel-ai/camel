@@ -16,7 +16,7 @@ class RenderTree {
     await this.page.setContent(html, { waitUntil: 'networkidle0' });
     await this.page.setViewport({width:1280, height:720});
     const {elements} = await this.page.evaluate(() => {
-      const debug = [];
+      
    
       // Utility functions (must be defined inside page.evaluate context)
       function pxToIn(px) { return px ? parseFloat(px) / 96 : 0; }
@@ -77,32 +77,10 @@ class RenderTree {
       function handleDivElement(el, rect, styles, attrs, children) {
         // Check if div has no children but contains text
         const hasText = el.innerText && el.innerText.trim().length > 0;
-        const hasNoChildren = children.length === 0;
-        
-        // If div has no children but has text, treat it as a text element
-        if (hasNoChildren && hasText) {
-          const textProps = extractTextProperties(styles);
-          return {
-            tag: 'P', // Treat as paragraph for text rendering
-            ...textProps,
-            rect: createRect(rect),
-            attributes: attrs,
-            text: el.innerText.trim(),
-            innerHTML: el.innerHTML
-          };
-        }
-        
-        // Regular div processing (has children or no text)
-        const borderRadius = extractBorderRadius(styles);
-        debug.push({
-          tag: el.tagName,
-          borderRadius: styles.borderRadius,
-          borderTopLeftRadius: styles['borderTopLeftRadius'],
-          borderTopRightRadius: styles['borderTopRightRadius'],
-          borderBottomLeftRadius: styles['borderBottomLeftRadius'],
-          borderBottomRightRadius: styles['borderBottomRightRadius'],
-          class: el.className
-        });
+        const hasNoChildren = children.length === 0;    
+       
+         // Regular div processing (has children or no text)
+        const borderRadius = extractBorderRadius(styles);        
         
         // Set rectRadius for pptxgenjs (max border radius normalized by width)
         const borderRadiusVals = Object.values(borderRadius);
@@ -124,7 +102,34 @@ class RenderTree {
           style: styles.borderStyle || undefined
         };
         const rotate = el.getAttribute('data-rotate') ? parseFloat(el.getAttribute('data-rotate')) : 0;
-
+         // If div has no children but has text, treat it as a text element
+        if (hasNoChildren && hasText) {
+          const textProps = extractTextProperties(styles);
+          return {
+          tag: el.tagName,
+          align,
+          fill,
+          flipH,
+          flipV,
+          hyperlink,
+          line,
+          rectRadius,
+          borderRadius,
+          rotate,
+          rect: createRect(rect),
+          attributes: attrs,
+          text: el.innerText,
+          innerHTML: el.innerHTML,
+          children:[{
+            tag: 'P', // Treat as paragraph for text rendering
+            ...textProps,
+            rect: createRect(rect),
+            attributes: attrs,
+            text: el.innerText.trim(),
+            innerHTML: el.innerHTML}
+          ]
+          };
+        }
         return {
           tag: el.tagName,
           align,
@@ -520,6 +525,10 @@ class RenderTree {
         // Recursively extract children
         const children = [];
         for (const child of el.children) {
+          console.log(child)
+          if (typeof(child) === Object){
+            continue
+          }
           children.push(extract(child));
         }
         
@@ -587,17 +596,12 @@ class RenderTree {
       // If none found, fallback to body as a single slide
       const roots = slideDivs.length > 0 ? slideDivs : [document.body];
       const elements = roots.map(root => extract(root));
-      return { elements, debug };
+      return { elements };
     });
     
     await this.browser.close();
     
     // Save debug info to a file
-    try {
-      fs.writeFileSync('render-tree-debug.json', JSON.stringify(debug, null, 2));
-    } catch (e) {
-      console.error('Failed to write render-tree-debug.json:', e);
-    }
     
     return elements;
   }
