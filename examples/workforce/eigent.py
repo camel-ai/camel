@@ -212,7 +212,8 @@ def search_agent_factory(
         - **Analysis**: Use `get_som_screenshot` to understand the page layout
           and identify interactive elements. Since this is a heavy operation,
           only use it when visual analysis is necessary.
-        - **Interaction**: Use `type` to fill out forms and `enter` to submit.
+        - **Interaction**: Use `type` to fill out forms and `enter` 
+        to submit or confirm search.
     3.  **Detailed Content Extraction**: Prioritize using the scraping tools
         from `Crawl4AIToolkit` for in-depth information gathering from a
         webpage.
@@ -666,13 +667,9 @@ async def main():
     human_task = Task(
         content=(
             """
-Analyze the UK healthcare industry to support the planning of my next company. 
-Provide a comprehensive market overview, including current trends, growth 
-projections, and relevant regulations. Identify the top 5-10 major competitors 
-in the space, including their names, website URLs, estimated market size or 
-share, core services or products, key strengths, and notable weaknesses. Also 
-highlight any significant opportunities, gaps, or underserved segments within 
-the market. Present all findings in a well-structured, professional PDF report.
+            go to amazon and find a popular product, 
+            check the comments and reviews, 
+            and then write a report about the product.
             """
         ),
         id='0',

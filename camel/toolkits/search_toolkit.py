@@ -267,7 +267,7 @@ class SearchToolkit(BaseToolkit):
                 Country Codes. (default: :obj:`US `)
             search_lang (str): The search language preference.
                 Use ONLY these exact values, NOT standard ISO codes:
-                'ar', 'eu', 'bn', 'bg', 'ca', 'zh-hans', 'zh-hant', 'hr', 
+                'ar', 'eu', 'bn', 'bg', 'ca', 'zh-hans', 'zh-hant', 'hr',
                 'cs', 'da', 'nl', 'en', 'en-gb', 'et', 'fi', 'fr', 'gl', 'de',
                 'gu', 'he', 'hi', 'hu', 'is', 'it', 'jp', 'kn', 'ko', 'lv',
                 'lt', 'ms', 'ml', 'mr', 'nb', 'pl', 'pt-br', 'pt-pt', 'pa',
