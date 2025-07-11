@@ -270,6 +270,7 @@ class ModelType(UnifiedModelType, Enum):
     MOONSHOT_V1_8K = "moonshot-v1-8k"
     MOONSHOT_V1_32K = "moonshot-v1-32k"
     MOONSHOT_V1_128K = "moonshot-v1-128k"
+    MOONSHOT_KIMI_K2 = "kimi-k2-0711-preview"
 
     # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
@@ -833,6 +834,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_8K,
             ModelType.MOONSHOT_V1_32K,
             ModelType.MOONSHOT_V1_128K,
+            ModelType.MOONSHOT_KIMI_K2,
         }
 
     @property
@@ -1205,6 +1207,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_MEDIUM_3,
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
+            ModelType.MOONSHOT_KIMI_K2,
         }:
             return 128_000
         elif self in {
