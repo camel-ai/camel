@@ -89,7 +89,8 @@ class SearchToolkit(BaseToolkit):
             depth (Literal["standard", "deep"]): The depth of the search.
                 "standard" for a straightforward search, "deep" for a more
                 comprehensive search.
-            output_type (Literal["searchResults", "sourcedAnswer", "structured"]): The type of output:
+            output_type (Literal["searchResults", "sourcedAnswer", "structured"]):
+                The type of output:
                 - "searchResults" for raw search results,
                 - "sourcedAnswer" for an answer with supporting sources,
                 - "structured" for output based on a provided schema.
