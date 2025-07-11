@@ -550,7 +550,7 @@ if (document.readyState === 'loading') {{
                 )
 
         except Exception as e:
-            print(f"Error deploying HTML content: {e}")
+            logger.error(f"Error deploying HTML content: {e}")
             return {'success': False, 'error': str(e)}
 
     def _deploy_to_remote_server(
