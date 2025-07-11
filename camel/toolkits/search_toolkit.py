@@ -265,13 +265,18 @@ class SearchToolkit(BaseToolkit):
                 The country string is limited to 2 character country codes of
                 supported countries. For a list of supported values, see
                 Country Codes. (default: :obj:`US `)
-            search_lang (str): The search language preference. The 2 or more
-                character language code for which search results are provided.
-                For a list of possible values, see Language Codes.
+            search_lang (str): The search language preference.
+                Use ONLY these exact values, NOT standard ISO codes:
+                'ar', 'eu', 'bn', 'bg', 'ca', 'zh-hans', 'zh-hant', 'hr', 
+                'cs', 'da', 'nl', 'en', 'en-gb', 'et', 'fi', 'fr', 'gl', 'de',
+                'gu', 'he', 'hi', 'hu', 'is', 'it', 'jp', 'kn', 'ko', 'lv',
+                'lt', 'ms', 'ml', 'mr', 'nb', 'pl', 'pt-br', 'pt-pt', 'pa',
+                'ro', 'ru', 'sr', 'sk', 'sl', 'es', 'sv', 'ta', 'te', 'th',
+                'tr', 'uk', 'vi'.
             ui_lang (str): User interface language preferred in response.
-                Usually of the format '<language_code>-<country_code>'. For
-                more, see RFC 9110. For a list of supported values, see UI
-                Language Codes.
+                Format: '<language_code>-<country_code>'. Common examples:
+                'en-US', 'en-GB', 'jp-JP', 'zh-hans-CN', 'zh-hant-TW',
+                'de-DE', 'fr-FR', 'es-ES', 'pt-BR', 'ru-RU', 'ko-KR'.
             count (int): The number of search results returned in response.
                 The maximum is 20. The actual number delivered may be less than
                 requested. Combine this parameter with offset to paginate
@@ -375,10 +380,36 @@ class SearchToolkit(BaseToolkit):
             "extra_snippets": extra_snippets,
             "summary": summary,
         }
+        params = {k: v for k, v in params.items() if v is not None}
 
         response = requests.get(url, headers=headers, params=params)
-        data = response.json()["web"]
-        return data
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            raise RuntimeError(
+                f"Brave API HTTP error: {e}, body={response.text!r}"
+            )
+
+        json_data = response.json()
+        # Check if response has search results
+        content_keys = [
+            'web',
+            'news',
+            'videos',
+            'images',
+            'locations',
+            'discussions',
+            'faq',
+            'infobox',
+        ]
+        has_results = any(key in json_data for key in content_keys)
+
+        if not has_results:
+            # Return empty results structure if no content found
+            json_data['web'] = {'results': []}
+            json_data['message'] = 'No search results found for the query'
+
+        return json_data
 
     @api_keys_required(
         [
