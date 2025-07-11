@@ -91,11 +91,14 @@ class TaskChannel:
         """
         async with self._condition:
             while True:
-                for packet in self._task_dict.values():
+                for task_id, packet in list(self._task_dict.items()):
                     if packet.publisher_id != publisher_id:
                         continue
                     if packet.status != PacketStatus.RETURNED:
                         continue
+                    # Remove the task to prevent returning it again
+                    del self._task_dict[task_id]
+                    self._condition.notify_all()
                     return packet.task
                 await self._condition.wait()
 

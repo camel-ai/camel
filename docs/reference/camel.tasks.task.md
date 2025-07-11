@@ -301,8 +301,8 @@ def decompose(
 ):
 ```
 
-Decompose a task to a list of sub-tasks. It can be used for data
-generation and planner of agent.
+Decompose a task to a list of sub-tasks. Automatically detects
+streaming or non-streaming based on agent configuration.
 
 **Parameters:**
 
@@ -312,7 +312,67 @@ generation and planner of agent.
 
 **Returns:**
 
-  List[Task]: A list of tasks which are :obj:`Task` instances.
+  Union[List[Task], Generator[List[Task], None, None]]: If agent is
+configured for streaming, returns a generator that yields lists
+of new tasks as they are parsed. Otherwise returns a list of
+all tasks.
+
+<a id="camel.tasks.task.Task._decompose_streaming"></a>
+
+### _decompose_streaming
+
+```python
+def _decompose_streaming(
+    self,
+    response: 'StreamingChatAgentResponse',
+    task_parser: Callable[[str, str], List['Task']]
+):
+```
+
+Handle streaming response for task decomposition.
+
+**Parameters:**
+
+- **response**: Streaming response from agent
+- **task_parser**: Function to parse tasks from response
+- **Yields**: List[Task]: New tasks as they are parsed from streaming response
+
+<a id="camel.tasks.task.Task._decompose_non_streaming"></a>
+
+### _decompose_non_streaming
+
+```python
+def _decompose_non_streaming(self, response, task_parser: Callable[[str, str], List['Task']]):
+```
+
+Handle non-streaming response for task decomposition.
+
+**Parameters:**
+
+- **response**: Regular response from agent
+- **task_parser**: Function to parse tasks from response
+
+**Returns:**
+
+  List[Task]: All parsed tasks
+
+<a id="camel.tasks.task.Task._parse_partial_tasks"></a>
+
+### _parse_partial_tasks
+
+```python
+def _parse_partial_tasks(self, response: str):
+```
+
+Parse tasks from potentially incomplete response.
+
+**Parameters:**
+
+- **response**: Partial response content
+
+**Returns:**
+
+  List[Task]: Tasks parsed from complete `<task>``</task>` blocks
 
 <a id="camel.tasks.task.Task.compose"></a>
 

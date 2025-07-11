@@ -32,6 +32,7 @@ from camel.utils.tool_result import ToolResult
 
 from .agent import PlaywrightLLMAgent
 from .browser_session import HybridBrowserSession
+from .config_loader import ConfigLoader
 
 logger = get_logger(__name__)
 
@@ -46,11 +47,6 @@ class HybridBrowserToolkit(BaseToolkit):
     and visual analysis of the page layout through screenshots with marked
     interactive elements.
     """
-
-    # Configuration constants
-    DEFAULT_SCREENSHOT_TIMEOUT = 60000  # 60 seconds for screenshots
-    PAGE_STABILITY_TIMEOUT = 3000  # 3 seconds for DOM stability
-    NETWORK_IDLE_TIMEOUT = 2000  # 2 seconds for network idle
 
     # Default tool list - core browser functionality
     DEFAULT_TOOLS: ClassVar[List[str]] = [
@@ -98,6 +94,13 @@ class HybridBrowserToolkit(BaseToolkit):
         browser_log_to_file: bool = False,
         session_id: Optional[str] = None,
         default_start_url: str = "https://google.com/",
+        default_timeout: Optional[int] = None,
+        short_timeout: Optional[int] = None,
+        navigation_timeout: Optional[int] = None,
+        network_idle_timeout: Optional[int] = None,
+        screenshot_timeout: Optional[int] = None,
+        page_stability_timeout: Optional[int] = None,
+        dom_content_loaded_timeout: Optional[int] = None,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -140,14 +143,71 @@ class HybridBrowserToolkit(BaseToolkit):
             default_start_url (str): The default URL to navigate to when
                 open_browser() is called without a start_url parameter or with
                 None. Defaults to `"https://google.com/"`.
+            default_timeout (Optional[int]): Default timeout in milliseconds
+                for browser actions. If None, uses environment variable
+                HYBRID_BROWSER_DEFAULT_TIMEOUT or defaults to 3000ms.
+                Defaults to `None`.
+            short_timeout (Optional[int]): Short timeout in milliseconds
+                for quick browser actions. If None, uses environment variable
+                HYBRID_BROWSER_SHORT_TIMEOUT or defaults to 1000ms.
+                Defaults to `None`.
+            navigation_timeout (Optional[int]): Custom navigation timeout in
+            milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_NAVIGATION_TIMEOUT or defaults to 10000ms.
+                Defaults to `None`.
+            network_idle_timeout (Optional[int]): Custom network idle
+            timeout in milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_NETWORK_IDLE_TIMEOUT or defaults to 5000ms.
+                Defaults to `None`.
+            screenshot_timeout (Optional[int]): Custom screenshot timeout in
+            milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_SCREENSHOT_TIMEOUT or defaults to 15000ms.
+                Defaults to `None`.
+            page_stability_timeout (Optional[int]): Custom page stability
+            timeout in milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_PAGE_STABILITY_TIMEOUT or defaults to 1500ms.
+                Defaults to `None`.
+            dom_content_loaded_timeout (Optional[int]): Custom DOM content
+            loaded timeout in milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_DOM_CONTENT_LOADED_TIMEOUT or defaults to
+                5000ms.
+                Defaults to `None`.
         """
         super().__init__()
         self._headless = headless
         self._user_data_dir = user_data_dir
-        self.web_agent_model = web_agent_model
-        self.cache_dir = cache_dir
-        self.default_start_url = default_start_url
-        os.makedirs(self.cache_dir, exist_ok=True)
+        self._stealth = stealth
+        self._web_agent_model = web_agent_model
+        self._cache_dir = cache_dir
+        self._browser_log_to_file = browser_log_to_file
+        self._default_start_url = default_start_url
+        self._session_id = session_id or "default"
+
+        # Store timeout configuration
+        self._default_timeout = default_timeout
+        self._short_timeout = short_timeout
+        self._navigation_timeout = ConfigLoader.get_navigation_timeout(
+            navigation_timeout
+        )
+        self._network_idle_timeout = ConfigLoader.get_network_idle_timeout(
+            network_idle_timeout
+        )
+        self._screenshot_timeout = ConfigLoader.get_screenshot_timeout(
+            screenshot_timeout
+        )
+        self._page_stability_timeout = ConfigLoader.get_page_stability_timeout(
+            page_stability_timeout
+        )
+        self._dom_content_loaded_timeout = (
+            ConfigLoader.get_dom_content_loaded_timeout(
+                dom_content_loaded_timeout
+            )
+        )
 
         # Logging configuration - fixed values for simplicity
         self.enable_action_logging = True
@@ -203,12 +263,29 @@ class HybridBrowserToolkit(BaseToolkit):
             user_data_dir=user_data_dir,
             stealth=stealth,
             session_id=session_id,
+            default_timeout=default_timeout,
+            short_timeout=short_timeout,
         )
         # Use the session directly - singleton logic is handled in
         # ensure_browser
         self._session = temp_session
         self._agent: Optional[PlaywrightLLMAgent] = None
         self._unified_script = self._load_unified_analyzer()
+
+    @property
+    def web_agent_model(self) -> Optional[BaseModelBackend]:
+        """Get the web agent model."""
+        return self._web_agent_model
+
+    @web_agent_model.setter
+    def web_agent_model(self, value: Optional[BaseModelBackend]) -> None:
+        """Set the web agent model."""
+        self._web_agent_model = value
+
+    @property
+    def cache_dir(self) -> str:
+        """Get the cache directory."""
+        return self._cache_dir
 
     def __del__(self):
         r"""Cleanup browser resources on garbage collection."""
@@ -437,29 +514,29 @@ class HybridBrowserToolkit(BaseToolkit):
 
     async def _wait_for_page_stability(self):
         r"""Wait for page to become stable after actions that might trigger
-        updates.
+        updates. Optimized with shorter timeouts.
         """
         page = await self._require_page()
         import asyncio
 
         try:
-            # Wait for DOM content to be loaded
+            # Wait for DOM content to be loaded (reduced timeout)
             await page.wait_for_load_state(
-                'domcontentloaded', timeout=self.PAGE_STABILITY_TIMEOUT
+                'domcontentloaded', timeout=self._page_stability_timeout
             )
             logger.debug("DOM content loaded")
 
-            # Try to wait for network idle (important for AJAX/SPA)
+            # Try to wait for network idle with shorter timeout
             try:
                 await page.wait_for_load_state(
-                    'networkidle', timeout=self.NETWORK_IDLE_TIMEOUT
+                    'networkidle', timeout=self._network_idle_timeout
                 )
                 logger.debug("Network idle achieved")
             except Exception:
                 logger.debug("Network idle timeout - continuing anyway")
 
-            # Additional small delay for JavaScript execution
-            await asyncio.sleep(0.5)
+            # Reduced delay for JavaScript execution
+            await asyncio.sleep(0.2)  # Reduced from 0.5s
             logger.debug("Page stability wait completed")
 
         except Exception as e:
@@ -467,24 +544,92 @@ class HybridBrowserToolkit(BaseToolkit):
                 f"Page stability wait failed: {e} - continuing anyway"
             )
 
-    async def _get_unified_analysis(self) -> Dict[str, Any]:
-        r"""Get unified analysis data from the page."""
+    async def _get_unified_analysis(
+        self, max_retries: int = 3
+    ) -> Dict[str, Any]:
+        r"""Get unified analysis data from the page with retry mechanism for
+        navigation issues."""
         page = await self._require_page()
-        try:
-            if not self._unified_script:
-                logger.error("Unified analyzer script not loaded")
+
+        for attempt in range(max_retries):
+            try:
+                if not self._unified_script:
+                    logger.error("Unified analyzer script not loaded")
+                    return {"elements": {}, "metadata": {"elementCount": 0}}
+
+                # Wait for DOM stability before each attempt (with optimized
+                # timeout)
+                try:
+                    await page.wait_for_load_state(
+                        'domcontentloaded',
+                        timeout=self._dom_content_loaded_timeout,
+                    )
+                except Exception:
+                    # Don't fail if DOM wait times out
+                    pass
+
+                result = await page.evaluate(self._unified_script)
+
+                if not isinstance(result, dict):
+                    logger.warning(f"Invalid result type: {type(result)}")
+                    return {"elements": {}, "metadata": {"elementCount": 0}}
+
+                # Success - return result
+                if attempt > 0:
+                    logger.debug(
+                        f"Unified analysis succeeded on attempt {attempt + 1}"
+                    )
+                return result
+
+            except Exception as e:
+                error_msg = str(e)
+
+                # Check if this is a navigation-related error
+                is_navigation_error = (
+                    "Execution context was destroyed" in error_msg
+                    or "Most likely because of a navigation" in error_msg
+                    or "Target page, context or browser has been closed"
+                    in error_msg
+                )
+
+                if is_navigation_error and attempt < max_retries - 1:
+                    logger.debug(
+                        f"Navigation error in unified analysis (attempt "
+                        f"{attempt + 1}/{max_retries}): {e}. Retrying..."
+                    )
+
+                    # Wait a bit for page stability before retrying (optimized)
+                    try:
+                        await page.wait_for_load_state(
+                            'domcontentloaded',
+                            timeout=self._page_stability_timeout,
+                        )
+                        # Reduced delay for JS context to stabilize
+                        import asyncio
+
+                        await asyncio.sleep(0.1)  # Reduced from 0.2s
+                    except Exception:
+                        # Continue even if wait fails
+                        pass
+
+                    continue
+
+                # Non-navigation error or final attempt - log and return
+                # empty result
+                if attempt == max_retries - 1:
+                    logger.warning(
+                        f"Error in unified analysis after {max_retries} "
+                        f"attempts: {e}"
+                    )
+                else:
+                    logger.warning(
+                        f"Non-retryable error in unified analysis: {e}"
+                    )
+
                 return {"elements": {}, "metadata": {"elementCount": 0}}
 
-            result = await page.evaluate(self._unified_script)
-
-            if not isinstance(result, dict):
-                logger.warning(f"Invalid result type: {type(result)}")
-                return {"elements": {}, "metadata": {"elementCount": 0}}
-
-            return result
-        except Exception as e:
-            logger.warning(f"Error in unified analysis: {e}")
-            return {"elements": {}, "metadata": {"elementCount": 0}}
+        # Should not reach here, but just in case
+        return {"elements": {}, "metadata": {"elementCount": 0}}
 
     def _convert_analysis_to_rects(
         self, analysis_data: Dict[str, Any]
@@ -728,13 +873,13 @@ class HybridBrowserToolkit(BaseToolkit):
         try:
             # Get before snapshot
             logger.info("Capturing pre-action snapshot...")
-            snapshot_start = time.time()
+            snapshot_start_before = time.time()
             before_snapshot = await self._session.get_snapshot(
                 force_refresh=True, diff_only=False
             )
-            snapshot_time = time.time() - snapshot_start
+            before_snapshot_time = time.time() - snapshot_start_before
             logger.info(
-                f"Pre-action snapshot captured in {snapshot_time:.2f}s"
+                f"Pre-action snapshot captured in {before_snapshot_time:.2f}s"
             )
 
             # Execute action
@@ -780,13 +925,14 @@ class HybridBrowserToolkit(BaseToolkit):
 
             # Get after snapshot
             logger.info("Capturing post-action snapshot...")
-            snapshot_start = time.time()
+            snapshot_start_after = time.time()
             after_snapshot = await self._session.get_snapshot(
                 force_refresh=True, diff_only=False
             )
-            snapshot_time = time.time() - snapshot_start
+            after_snapshot_time = time.time() - snapshot_start_after
             logger.info(
-                f"Post-action snapshot " f"captured in {snapshot_time:.2f}s"
+                f"Post-action snapshot "
+                f"captured in {after_snapshot_time:.2f}s"
             )
 
             # Check for snapshot quality and log warnings
@@ -820,6 +966,7 @@ class HybridBrowserToolkit(BaseToolkit):
 
             # Create comprehensive output for logging
             execution_time = time.time() - action_start_time
+            total_snapshot_time = before_snapshot_time + after_snapshot_time
             outputs = {
                 "result": result_message,
                 "snapshot": snapshot,
@@ -830,6 +977,7 @@ class HybridBrowserToolkit(BaseToolkit):
                     "stability_time_ms": round(stability_time * 1000, 2)
                     if stability_time > 0
                     else None,
+                    "snapshot_time_ms": round(total_snapshot_time * 1000, 2),
                     "total_time_ms": round(execution_time * 1000, 2),
                 },
                 **tab_info,  # Include tab information
@@ -930,7 +1078,7 @@ class HybridBrowserToolkit(BaseToolkit):
 
     def _ensure_agent(self) -> PlaywrightLLMAgent:
         r"""Create PlaywrightLLMAgent on first use."""
-        if self.web_agent_model is None:
+        if self._web_agent_model is None:
             raise RuntimeError(
                 "web_agent_model required for high-level task planning"
             )
@@ -939,7 +1087,7 @@ class HybridBrowserToolkit(BaseToolkit):
             self._agent = PlaywrightLLMAgent(
                 headless=self._headless,
                 user_data_dir=self._user_data_dir,
-                model_backend=self.web_agent_model,
+                model_backend=self._web_agent_model,
             )
         return self._agent
 
@@ -950,10 +1098,10 @@ class HybridBrowserToolkit(BaseToolkit):
         default page.
 
         This method initializes the underlying browser instance and
-        automatically
-        navigates to the default start URL that was configured during toolkit
-        initialization. Agents cannot specify a custom URL - they must use the
-        visit_page tool for navigation to other URLs.
+        automatically navigates to the default start URL that was configured
+        during toolkit initialization in the first tab. Agents cannot specify
+        a custom URL - they must use the visit_page tool to open new tabs
+        with other URLs.
 
         Returns:
             Dict[str, Any]: A dictionary containing:
@@ -979,9 +1127,10 @@ class HybridBrowserToolkit(BaseToolkit):
 
         try:
             # Always use the configured default start URL
-            start_url = self.default_start_url
+            start_url = self._default_start_url
             logger.info(f"Navigating to configured default page: {start_url}")
 
+            # Use visit_page without creating a new tab
             result = await self.visit_page(start_url)
 
             # Log success
@@ -991,8 +1140,8 @@ class HybridBrowserToolkit(BaseToolkit):
                     action_name="open_browser",
                     inputs=inputs,
                     outputs={
-                        "result": "Browser opened and navigated to default "
-                        "page."
+                        "result": "Browser opened and navigated to "
+                        "default page."
                     },
                     execution_time=execution_time,
                 )
@@ -1035,21 +1184,17 @@ class HybridBrowserToolkit(BaseToolkit):
 
     @action_logger
     async def visit_page(self, url: str) -> Dict[str, Any]:
-        r"""Navigates the current browser page to a specified URL.
+        r"""Navigates to a URL.
+
+        This method creates a new tab for the URL instead of navigating
+        in the current tab, allowing better multi-tab management.
 
         Args:
-            url (str): The web address to load in the browser. Must be a
-                valid URL.
+            url (str): The web address to load in the browser.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A message indicating the outcome of the navigation,
-                  e.g., "Navigation successful.".
-                - "snapshot": A new textual snapshot of the page's interactive
-                  elements after the new page has loaded.
-                - "tabs": List of all open tabs with their information.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of open tabs.
+            Dict[str, Any]: A dictionary containing the result, snapshot, and
+                tab information.
         """
         if not url or not isinstance(url, str):
             return {
@@ -1063,22 +1208,50 @@ class HybridBrowserToolkit(BaseToolkit):
         if '://' not in url:
             url = f'https://{url}'
 
-        logger.info(f"Navigating to URL: {url}")
+        await self._ensure_browser()
+        session = await self._get_session()
+        nav_result = ""
 
-        # Navigate to page
-        nav_start = time.time()
-        nav_result = await self._session.visit(url)
-        nav_time = time.time() - nav_start
-        logger.info(f"Page navigation completed in {nav_time:.2f}s")
+        # By default, we want to create a new tab.
+        should_create_new_tab = True
+        try:
+            # If the browser has just started with a single "about:blank" tab,
+            # use that tab instead of creating a new one.
+            tab_info_data = await self._get_tab_info_for_output()
+            tabs = tab_info_data.get("tabs", [])
+            if len(tabs) == 1 and tabs[0].get("url") == "about:blank":
+                logger.info(
+                    "Found single blank tab, navigating in current tab "
+                    "instead of creating a new one."
+                )
+                should_create_new_tab = False
+        except Exception as e:
+            logger.warning(
+                "Could not get tab info to check for blank tab, "
+                f"proceeding with default behavior (new tab). Error: {e}"
+            )
+
+        if should_create_new_tab:
+            logger.info(f"Creating new tab and navigating to URL: {url}")
+            try:
+                new_tab_index = await session.create_new_tab(url)
+                await session.switch_to_tab(new_tab_index)
+                nav_result = f"Visited {url} in new tab {new_tab_index}"
+            except Exception as e:
+                logger.error(f"Failed to create new tab and navigate: {e}")
+                nav_result = f"Error creating new tab: {e}"
+        else:
+            logger.info(f"Navigating to URL in current tab: {url}")
+            nav_result = await session.visit(url)
 
         # Get snapshot
-        logger.info("Capturing page snapshot after navigation...")
-        snapshot_start = time.time()
-        snapshot = await self._session.get_snapshot(
-            force_refresh=True, diff_only=False
-        )
-        snapshot_time = time.time() - snapshot_start
-        logger.info(f"Navigation snapshot captured in {snapshot_time:.2f}s")
+        snapshot = ""
+        try:
+            snapshot = await session.get_snapshot(
+                force_refresh=True, diff_only=False
+            )
+        except Exception as e:
+            logger.warning(f"Failed to capture snapshot: {e}")
 
         # Get tab information
         tab_info = await self._get_tab_info_for_output()
@@ -1110,12 +1283,16 @@ class HybridBrowserToolkit(BaseToolkit):
         try:
             logger.info("Navigating back in browser history...")
             nav_start = time.time()
-            await page.go_back(wait_until="domcontentloaded", timeout=30000)
+            await page.go_back(
+                wait_until="domcontentloaded", timeout=self._navigation_timeout
+            )
             nav_time = time.time() - nav_start
             logger.info(f"Back navigation completed in {nav_time:.2f}s")
 
-            # Wait for page stability
-            await self._wait_for_page_stability()
+            # Minimal wait for page stability (back navigation is usually fast)
+            import asyncio
+
+            await asyncio.sleep(0.2)
 
             # Get snapshot
             logger.info("Capturing page snapshot after back navigation...")
@@ -1175,12 +1352,17 @@ class HybridBrowserToolkit(BaseToolkit):
         try:
             logger.info("Navigating forward in browser history...")
             nav_start = time.time()
-            await page.go_forward(wait_until="domcontentloaded", timeout=30000)
+            await page.go_forward(
+                wait_until="domcontentloaded", timeout=self._navigation_timeout
+            )
             nav_time = time.time() - nav_start
             logger.info(f"Forward navigation completed in {nav_time:.2f}s")
 
-            # Wait for page stability
-            await self._wait_for_page_stability()
+            # Minimal wait for page stability (forward navigation is usually
+            # fast)
+            import asyncio
+
+            await asyncio.sleep(0.2)
 
             # Get snapshot
             logger.info("Capturing page snapshot after forward navigation...")
@@ -1285,13 +1467,11 @@ class HybridBrowserToolkit(BaseToolkit):
         # Log screenshot timeout start
         logger.info(
             f"Starting screenshot capture"
-            f"with timeout: {self.DEFAULT_SCREENSHOT_TIMEOUT}ms"
+            f"with timeout: {self._screenshot_timeout}ms"
         )
 
         start_time = time.time()
-        image_data = await page.screenshot(
-            timeout=self.DEFAULT_SCREENSHOT_TIMEOUT
-        )
+        image_data = await page.screenshot(timeout=self._screenshot_timeout)
         screenshot_time = time.time() - start_time
 
         logger.info(f"Screenshot capture completed in {screenshot_time:.2f}s")
@@ -1317,7 +1497,7 @@ class HybridBrowserToolkit(BaseToolkit):
         url_name = sanitize_filename(str(parsed_url.path), max_length=241)
         timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
         file_path = os.path.join(
-            self.cache_dir, f"{url_name}_{timestamp}_som.png"
+            self._cache_dir, f"{url_name}_{timestamp}_som.png"
         )
         marked_image.save(file_path, "PNG")
 
@@ -1706,7 +1886,7 @@ class HybridBrowserToolkit(BaseToolkit):
         enabled_tools = []
 
         for tool_name in self.enabled_tools:
-            if tool_name == "solve_task" and self.web_agent_model is None:
+            if tool_name == "solve_task" and self._web_agent_model is None:
                 logger.warning(
                     f"Tool '{tool_name}' is enabled but web_agent_model "
                     f"is not provided. Skipping this tool."
@@ -1746,13 +1926,20 @@ class HybridBrowserToolkit(BaseToolkit):
         return HybridBrowserToolkit(
             headless=self._headless,
             user_data_dir=self._user_data_dir,
-            stealth=self._session._stealth if self._session else False,
-            web_agent_model=self.web_agent_model,
-            cache_dir=f"{self.cache_dir.rstrip('/')}_clone_{new_session_id}/",
+            stealth=self._stealth,
+            web_agent_model=self._web_agent_model,
+            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_{new_session_id}/",
             enabled_tools=self.enabled_tools.copy(),
-            browser_log_to_file=self.log_to_file,
+            browser_log_to_file=self._browser_log_to_file,
             session_id=new_session_id,
-            default_start_url=self.default_start_url,
+            default_start_url=self._default_start_url,
+            default_timeout=self._default_timeout,
+            short_timeout=self._short_timeout,
+            navigation_timeout=self._navigation_timeout,
+            network_idle_timeout=self._network_idle_timeout,
+            screenshot_timeout=self._screenshot_timeout,
+            page_stability_timeout=self._page_stability_timeout,
+            dom_content_loaded_timeout=self._dom_content_loaded_timeout,
         )
 
     @action_logger
