@@ -1302,8 +1302,8 @@ requires-dist = [
     { name = "textblob", marker = "extra == 'data-tools'", specifier = ">=0.17.1,<0.18" },
     { name = "tiktoken", specifier = ">=0.7.0,<0.8" },
     { name = "toml", marker = "extra == 'dev'", specifier = ">=0.10.2" },
-    { name = "traceroot", marker = "extra == 'all'", specifier = "==0.0.3a2" },
-    { name = "traceroot", marker = "extra == 'dev-tools'", specifier = "==0.0.3a2" },
+    { name = "traceroot", marker = "extra == 'all'", specifier = "==0.0.3a6" },
+    { name = "traceroot", marker = "extra == 'dev-tools'", specifier = "==0.0.3a6" },
     { name = "transformers", marker = "extra == 'all'", specifier = ">=4,<5" },
     { name = "transformers", marker = "extra == 'huggingface'", specifier = ">=4,<5" },
     { name = "transformers", marker = "extra == 'owl'", specifier = ">=4,<5" },
@@ -7806,7 +7806,7 @@ wheels = [
 
 [[package]]
 name = "traceroot"
-version = "0.0.3a2"
+version = "0.0.3a6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "opentelemetry-api" },
@@ -7827,9 +7827,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "watchtower" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f9/74/82c170b264cefbda3f4dc3cfccc13649361bbfca00a6a2ad15ab92637544/traceroot-0.0.3a2.tar.gz", hash = "sha256:ca9ec30682ff9b8c57029a555cc8e6e33f3f5fca7999b10111aeb8b4bdbfd577", size = 14933, upload-time = "2025-07-04T19:26:12.04Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9b/3d/e4bacfbaf6f50be6a5adc3d7bd0726610a3eb33d2458c08d16e1a96b915b/traceroot-0.0.3a6.tar.gz", hash = "sha256:a644470c7c9ab5ea6555d85f5579ce4474e42377ee8c784f77492ee4ec41b7a0", size = 15364, upload-time = "2025-07-11T09:45:31.848Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/d0/5e1ff3da0c0eeb0e540fd10de87d2c038ef571cb427942359fe69d6bf314/traceroot-0.0.3a2-py3-none-any.whl", hash = "sha256:d9321b7165ff5cd2532640fa650d14088e92b64635d1bb6dfe39efd7bd4f94b8", size = 12312, upload-time = "2025-07-04T19:26:10.769Z" },
+    { url = "https://files.pythonhosted.org/packages/54/fa/4b21248317a56bfca88f6192dd1358da0d5fa5df4a669883400e44318b99/traceroot-0.0.3a6-py3-none-any.whl", hash = "sha256:a374b99cbd384a68df2b1e58bf93a219f0ba77b63ca7901723d9c891235cf4f5", size = 12837, upload-time = "2025-07-11T09:45:30.517Z" },
 ]
 
 [[package]]
