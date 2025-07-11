@@ -119,7 +119,7 @@ class WebDeployToolkit(BaseToolkit):
                         'start_time': time.time(),
                         'directory': getattr(server_info, 'directory', None),
                     }
-            
+
             with open(self.server_registry_file, 'w') as f:
                 json.dump(registry_data, f, indent=2)
         except Exception as e:
@@ -760,7 +760,7 @@ if (document.readyState === 'loading') {{
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            
+
             # Store both process and metadata for persistence
             self.server_instances[port] = {
                 'process': process,
@@ -769,8 +769,6 @@ if (document.readyState === 'loading') {{
                 'directory': directory,
             }
             self._save_server_registry()
-
-            import time
 
             time.sleep(1)  # Wait a moment for server to start
 
@@ -1002,7 +1000,7 @@ if (document.readyState === 'loading') {{
         try:
             # First check persistent registry for servers
             self._load_server_registry()
-            
+
             if port not in self.server_instances:
                 # Check if there's a process running on this port by PID
                 if os.path.exists(self.server_registry_file):
@@ -1016,16 +1014,23 @@ if (document.readyState === 'loading') {{
                                     os.kill(pid, 15)  # SIGTERM
                                     # Remove from registry
                                     del data[port_str]
-                                    with open(self.server_registry_file, 'w') as f:
+                                    with open(
+                                        self.server_registry_file, 'w'
+                                    ) as f:
                                         json.dump(data, f, indent=2)
                                     return {
                                         'success': True,
                                         'port': port,
-                                        'message': f'Server on port {port} stopped successfully (from registry)',
+                                        'message': (
+                                            f'Server on port {port} stopped '
+                                            f'successfully (from registry)'
+                                        ),
                                     }
                                 except Exception as e:
-                                    logger.error(f"Error stopping server by PID: {e}")
-                
+                                    logger.error(
+                                        f"Error stopping server by PID: {e}"
+                                    )
+
                 return {
                     'success': False,
                     'error': f'No server running on port {port}',
@@ -1035,19 +1040,21 @@ if (document.readyState === 'loading') {{
             if isinstance(server_info, dict):
                 process = server_info.get('process')
                 pid = server_info.get('pid')
-                
+
                 # Stop the main server process
                 if process:
                     process.terminate()
-                    process.wait(timeout=5)  # Wait for process to terminate gracefully
+                    process.wait(
+                        timeout=5
+                    )  # Wait for process to terminate gracefully
                 elif pid and self._is_process_running(pid):
                     os.kill(pid, 15)  # SIGTERM
-                        
+
             else:
                 # Handle old-style direct process objects
                 server_info.terminate()
                 server_info.wait(timeout=5)
-            
+
             del self.server_instances[port]
             self._save_server_registry()
 
@@ -1060,7 +1067,7 @@ if (document.readyState === 'loading') {{
         except subprocess.TimeoutExpired:
             if isinstance(server_info, dict):
                 process = server_info.get('process')
-                
+
                 if process:
                     process.kill()
                     process.wait(timeout=5)
@@ -1086,30 +1093,32 @@ if (document.readyState === 'loading') {{
         """
         try:
             self._load_server_registry()
-            
+
             running_servers = []
             current_time = time.time()
-            
+
             for port, server_info in self.server_instances.items():
                 if isinstance(server_info, dict):
                     start_time = server_info.get('start_time', 0)
                     running_time = current_time - start_time
-                    
-                    running_servers.append({
-                        'port': port,
-                        'pid': server_info.get('pid'),
-                        'directory': server_info.get('directory'),
-                        'start_time': start_time,
-                        'running_time': running_time,
-                        'url': f'http://localhost:{port}',
-                    })
-            
+
+                    running_servers.append(
+                        {
+                            'port': port,
+                            'pid': server_info.get('pid'),
+                            'directory': server_info.get('directory'),
+                            'start_time': start_time,
+                            'running_time': running_time,
+                            'url': f'http://localhost:{port}',
+                        }
+                    )
+
             return {
                 'success': True,
                 'servers': running_servers,
                 'total_servers': len(running_servers),
             }
-            
+
         except Exception as e:
             logger.error(f"Error listing servers: {e}")
             return {'success': False, 'error': str(e)}
