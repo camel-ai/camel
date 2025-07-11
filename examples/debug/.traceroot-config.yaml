@@ -1,6 +1,5 @@
-token: "traceroot-8a344d685a6e4ab985d50736a944517e"
+token: "traceroot-550bf2b90bd3420eb017c6da688b49c2"
 service_name: "camel-example"
 github_owner: "camel-ai"
 github_repo_name: "camel"
 github_commit_hash: "master"
-otlp_endpoint: "http://3.23.162.117:4318/v1/traces"
