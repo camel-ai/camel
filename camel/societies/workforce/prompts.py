@@ -198,7 +198,7 @@ Now you should summarize the scenario and return the result of the task.
 
 TASK_DECOMPOSE_PROMPT = r"""You need to decompose the given task into subtasks according to the workers available in the group, following these important principles to maximize efficiency, parallelism, and clarity for the executing agents:
 
-1.  **Self-Contained Subtasks**: This is the most critical principle. Each subtask's description **must be fully self-sufficient and independently understandable**. The agent executing the subtask has **no knowledge** of the parent task, other subtasks, or the overall workflow.
+1.  **Self-Contained Subtasks**: This is critical principle. Each subtask's description **must be fully self-sufficient and independently understandable**. The agent executing the subtask has **no knowledge** of the parent task, other subtasks, or the overall workflow.
     *   **DO NOT** use relative references like "the first task," "the paper mentioned above," or "the result from the previous step."
     *   **DO** write explicit instructions. For example, instead of "Analyze the document," write "Analyze the document titled 'The Future of AI'." The system will automatically provide the necessary inputs (like the document itself) from previous steps.
 
@@ -228,11 +228,11 @@ If given a hypothetical task requiring research, analysis, and reporting with mu
 *   **Excellent decomposition (self-contained and parallel)**:
     ```
     <tasks>
-    <task>(ResearchAgent): Gather data and resources on topic X, producing a list of relevant items.</task>
-    <task>(AnalysisAgent): Analyze the provided document 'Item A'.</task>
-    <task>(AnalysisAgent): Analyze the provided document 'Item B'.</task>
-    <task>(AnalysisAgent): Analyze the provided document 'Item N'.</task>
-    <task>(ReportAgent): Compile the provided analyses of items A, B, and N into a final report.</task>
+    <task>Gather data and resources on topic X, producing a list of relevant items.</task>
+    <task>Analyze the provided document 'Item A'.</task>
+    <task>Analyze the provided document 'Item B'.</task>
+    <task>Analyze the provided document 'Item N'.</task>
+    <task>Compile the provided analyses of items A, B, and N into a final report.</task>
     </tasks>
     ```
 
