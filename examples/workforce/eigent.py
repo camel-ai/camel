@@ -214,7 +214,8 @@ def search_agent_factory(
         - **Analysis**: Use `get_som_screenshot` to understand the page layout
           and identify interactive elements. Since this is a heavy operation,
           only use it when visual analysis is necessary.
-        - **Interaction**: Use `type` to fill out forms and `enter` to submit.
+        - **Interaction**: Use `type` to fill out forms and `enter` 
+        to submit or confirm search.
     3.  **Detailed Content Extraction**: Prioritize using the scraping tools
         from `Crawl4AIToolkit` for in-depth information gathering from a
         webpage.
@@ -668,7 +669,8 @@ async def main():
     human_task = Task(
         content=(
             """
-            go to amazon and find a popular product, check the comments and reviews, 
+            go to amazon and find a popular product, 
+            check the comments and reviews, 
             and then write a report about the product.
             """
         ),
