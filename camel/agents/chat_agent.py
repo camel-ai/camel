@@ -449,6 +449,10 @@ class ChatAgent(BaseAgent):
             )
             if isinstance(system_message, str)
             else system_message
+            if system_message is not None
+            else BaseMessage.make_assistant_message(
+                role_name="Assistant", content="You are a helpful assistant."
+            )
         )
         self._output_language = output_language
         self._system_message = (
