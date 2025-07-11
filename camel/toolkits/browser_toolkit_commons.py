@@ -47,6 +47,9 @@ tasks which need multi-step browser interaction.
 OBSERVE_PROMPT_TEMPLATE = """
 Please act as a web agent to help me complete the following high-level task:
 <task>{task_prompt}</task>
+
+Current tab information: {current_tab_info}
+
 Now, I have made screenshot (only the current viewport, not the full webpage)
 based on the current browser state, and marked interactive elements in the
 webpage.
@@ -127,6 +130,12 @@ out the information you need. Sometimes they are extremely useful.
 
 GET_FINAL_ANSWER_PROMPT_TEMPLATE = """
 We are solving a complex web task which needs multi-step browser interaction. After the multi-step observation, reasoning and acting with web browser, we think that the task is currently solved.
+
+Current browser state:
+- Open tabs:
+{tab_summary}
+- Current active tab: {current_tab_id}
+
 Here are all trajectory we have taken:
 <history>{history}</history>
 Please find the final answer, or give valuable insights and founds (e.g. if previous actions contain downloading files, your output should include the path of the downloaded file) about the overall task: <task>{task_prompt}</task>
@@ -192,6 +201,10 @@ current element. It is useful when you have clicked an element but it cannot
 unfocus itself (e.g. Menu bar) to automatically render the updated webpage.
 15. `ask_question_about_video(question: str)`: Ask a question about the
 current webpage which contains video, e.g. youtube websites.
+16. `open_tab(url: str)`: Open a new tab and navigate to the specified URL.
+Returns the tab ID.
+17. `switch_tab(tab_id: int)`: Switch to the tab with the specified ID.
+18. `close_tab(tab_id: int)`: Close the tab with the specified ID.
 """
 
 ACTION_WITH_FEEDBACK_LIST = [
