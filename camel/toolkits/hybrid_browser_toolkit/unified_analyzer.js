@@ -735,11 +735,11 @@
     function renderTree(node, indent = '') {
         const lines = [];
         let meaningfulProps = '';
-        if (node.disabled) meaningfulProps += ' disabled';
-        if (node.occluded) meaningfulProps += ' occluded';
+        if (node.disabled) meaningfulProps += ' [disabled]';
+        if (node.occluded) meaningfulProps += ' [occluded]';
         if (node.checked !== undefined) meaningfulProps += ` checked=${node.checked}`;
         if (node.expanded !== undefined) meaningfulProps += ` expanded=${node.expanded}`;
-        if (node.selected) meaningfulProps += ' selected';
+        if (node.selected) meaningfulProps += ' [selected]';
 
         // Add level attribute following Playwright's format
         if (node.level !== undefined) meaningfulProps += ` [level=${node.level}]`;
