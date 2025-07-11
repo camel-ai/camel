@@ -15,11 +15,13 @@
 from __future__ import annotations
 
 import base64
+import json
 import mimetypes
 import os
 import shutil
 import subprocess
 import tempfile
+import time
 from typing import Any, Dict, List, Optional
 
 from camel.logger import get_logger
@@ -43,7 +45,7 @@ class WebDeployToolkit(BaseToolkit):
         self,
         timeout: Optional[float] = None,
         add_branding_tag: bool = True,
-        logo_path: str = "../../misc/favicon.png",
+        logo_path: str = "../camel/misc/favicon.png",
         tag_text: str = "Created by CAMEL",
         tag_url: str = "https://github.com/camel-ai/camel",
         remote_server_ip: Optional[str] = None,
@@ -74,6 +76,63 @@ class WebDeployToolkit(BaseToolkit):
         self.tag_url = tag_url
         self.remote_server_ip = remote_server_ip
         self.remote_server_port = remote_server_port
+        self.server_registry_file = os.path.join(
+            tempfile.gettempdir(), "web_deploy_servers.json"
+        )
+        self._load_server_registry()
+
+    def _load_server_registry(self):
+        r"""Load server registry from persistent storage."""
+        try:
+            if os.path.exists(self.server_registry_file):
+                with open(self.server_registry_file, 'r') as f:
+                    data = json.load(f)
+                    # Reconstruct server instances from registry
+                    for port_str, server_info in data.items():
+                        port = int(port_str)
+                        pid = server_info.get('pid')
+                        if pid and self._is_process_running(pid):
+                            # Create a mock process object for tracking
+                            self.server_instances[port] = {
+                                'pid': pid,
+                                'start_time': server_info.get('start_time'),
+                                'directory': server_info.get('directory'),
+                            }
+        except Exception as e:
+            logger.warning(f"Could not load server registry: {e}")
+
+    def _save_server_registry(self):
+        r"""Save server registry to persistent storage."""
+        try:
+            registry_data = {}
+            for port, server_info in self.server_instances.items():
+                if isinstance(server_info, dict):
+                    registry_data[str(port)] = {
+                        'pid': server_info.get('pid'),
+                        'start_time': server_info.get('start_time'),
+                        'directory': server_info.get('directory'),
+                    }
+                else:
+                    # Handle subprocess.Popen objects
+                    registry_data[str(port)] = {
+                        'pid': server_info.pid,
+                        'start_time': time.time(),
+                        'directory': getattr(server_info, 'directory', None),
+                    }
+            
+            with open(self.server_registry_file, 'w') as f:
+                json.dump(registry_data, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Could not save server registry: {e}")
+
+    def _is_process_running(self, pid: int) -> bool:
+        r"""Check if a process with given PID is still running."""
+        try:
+            # Send signal 0 to check if process exists
+            os.kill(pid, 0)
+            return True
+        except (OSError, ProcessLookupError):
+            return False
 
     def _build_custom_url(
         self, domain: str, subdirectory: Optional[str] = None
@@ -701,7 +760,15 @@ if (document.readyState === 'loading') {{
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            self.server_instances[port] = process
+            
+            # Store both process and metadata for persistence
+            self.server_instances[port] = {
+                'process': process,
+                'pid': process.pid,
+                'start_time': time.time(),
+                'directory': directory,
+            }
+            self._save_server_registry()
 
             import time
 
@@ -933,16 +1000,56 @@ if (document.readyState === 'loading') {{
             Dict[str, Any]: Result of stopping the server
         """
         try:
+            # First check persistent registry for servers
+            self._load_server_registry()
+            
             if port not in self.server_instances:
+                # Check if there's a process running on this port by PID
+                if os.path.exists(self.server_registry_file):
+                    with open(self.server_registry_file, 'r') as f:
+                        data = json.load(f)
+                        port_str = str(port)
+                        if port_str in data:
+                            pid = data[port_str].get('pid')
+                            if pid and self._is_process_running(pid):
+                                try:
+                                    os.kill(pid, 15)  # SIGTERM
+                                    # Remove from registry
+                                    del data[port_str]
+                                    with open(self.server_registry_file, 'w') as f:
+                                        json.dump(data, f, indent=2)
+                                    return {
+                                        'success': True,
+                                        'port': port,
+                                        'message': f'Server on port {port} stopped successfully (from registry)',
+                                    }
+                                except Exception as e:
+                                    logger.error(f"Error stopping server by PID: {e}")
+                
                 return {
                     'success': False,
                     'error': f'No server running on port {port}',
                 }
 
-            process = self.server_instances[port]
-            process.terminate()
-            process.wait(timeout=5)  # Wait for process to terminate gracefully
+            server_info = self.server_instances[port]
+            if isinstance(server_info, dict):
+                process = server_info.get('process')
+                pid = server_info.get('pid')
+                
+                # Stop the main server process
+                if process:
+                    process.terminate()
+                    process.wait(timeout=5)  # Wait for process to terminate gracefully
+                elif pid and self._is_process_running(pid):
+                    os.kill(pid, 15)  # SIGTERM
+                        
+            else:
+                # Handle old-style direct process objects
+                server_info.terminate()
+                server_info.wait(timeout=5)
+            
             del self.server_instances[port]
+            self._save_server_registry()
 
             return {
                 'success': True,
@@ -951,9 +1058,17 @@ if (document.readyState === 'loading') {{
             }
 
         except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait(timeout=5)
+            if isinstance(server_info, dict):
+                process = server_info.get('process')
+                
+                if process:
+                    process.kill()
+                    process.wait(timeout=5)
+            else:
+                server_info.kill()
+                server_info.wait(timeout=5)
             del self.server_instances[port]
+            self._save_server_registry()
             return {
                 'success': True,
                 'port': port,
@@ -961,6 +1076,42 @@ if (document.readyState === 'loading') {{
             }
         except Exception as e:
             logger.error(f"Error stopping server: {e}")
+            return {'success': False, 'error': str(e)}
+
+    def list_running_servers(self) -> Dict[str, Any]:
+        r"""List all currently running servers.
+
+        Returns:
+            Dict[str, Any]: Information about running servers
+        """
+        try:
+            self._load_server_registry()
+            
+            running_servers = []
+            current_time = time.time()
+            
+            for port, server_info in self.server_instances.items():
+                if isinstance(server_info, dict):
+                    start_time = server_info.get('start_time', 0)
+                    running_time = current_time - start_time
+                    
+                    running_servers.append({
+                        'port': port,
+                        'pid': server_info.get('pid'),
+                        'directory': server_info.get('directory'),
+                        'start_time': start_time,
+                        'running_time': running_time,
+                        'url': f'http://localhost:{port}',
+                    })
+            
+            return {
+                'success': True,
+                'servers': running_servers,
+                'total_servers': len(running_servers),
+            }
+            
+        except Exception as e:
+            logger.error(f"Error listing servers: {e}")
             return {'success': False, 'error': str(e)}
 
     def get_tools(self) -> List[FunctionTool]:
@@ -971,4 +1122,5 @@ if (document.readyState === 'loading') {{
             FunctionTool(self.deploy_html_content),
             FunctionTool(self.deploy_folder),
             FunctionTool(self.stop_server),
+            FunctionTool(self.list_running_servers),
         ]

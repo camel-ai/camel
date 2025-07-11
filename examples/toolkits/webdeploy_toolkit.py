@@ -41,7 +41,10 @@ camel_agent = ChatAgent(
 )
 
 # Example 1: deploy a simple web server,which can play snake game.
-query = """use html to deploy a simple web server,which can play snake game."""
+query = (
+    """use toolkit writing html to deploy a 
+simple web server,which can play snake game.deploy it in port 8005"""
+)
 
 camel_agent.reset()
 response = camel_agent.step(query)
