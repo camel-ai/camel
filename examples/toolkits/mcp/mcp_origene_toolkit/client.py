@@ -21,7 +21,7 @@ from camel.toolkits import OrigeneToolkit
 async def main():
     # Use async context manager for automatic connection management
     async with OrigeneToolkit() as origene_toolkit:
-        user_msg = "你能做啥呢"
+        user_msg = "what can you do?"
         agent = ChatAgent(
             "You are named origene assistant.",
             model="gpt-4o",

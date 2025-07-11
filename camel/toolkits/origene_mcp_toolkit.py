@@ -50,8 +50,12 @@ class OrigeneToolkit(BaseToolkit):
         self._mcp_toolkit = MCPToolkit(
             config_dict={
                 "mcpServers": {
+                    # "pubchem_mcp": {
+                    #     "url": "http://mcp4camel.lglab-origene.com/mcp_index/pubchem_mcp/mcp/",
+                    #     "mode": "streamable-http",
+                    # }
                     "pubchem_mcp": {
-                        "url": "http://mcp4camel.lglab-origene.com/mcp_index/chembl_mcp/mcp/",
+                        "url": "http://127.0.0.1:8791/mcp/",
                         "mode": "streamable-http",
                     }
                 }
