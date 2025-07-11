@@ -196,7 +196,11 @@ Now you should summarize the scenario and return the result of the task.
 """
 )
 
-WF_TASK_DECOMPOSE_PROMPT = r"""You need to decompose the given task into subtasks according to the workers available in the group, following these important principles to maximize efficiency and parallelism:
+TASK_DECOMPOSE_PROMPT = r"""You need to decompose the given task into subtasks according to the workers available in the group, following these important principles to maximize efficiency, parallelism, and clarity for the executing agents:
+
+1.  **Self-Contained Subtasks**: This is the most critical principle. Each subtask's description **must be fully self-sufficient and independently understandable**. The agent executing the subtask has **no knowledge** of the parent task, other subtasks, or the overall workflow.
+    *   **DO NOT** use relative references like "the first task," "the paper mentioned above," or "the result from the previous step."
+    *   **DO** write explicit instructions. For example, instead of "Analyze the document," write "Analyze the document titled 'The Future of AI'." The system will automatically provide the necessary inputs (like the document itself) from previous steps.
 
 1.  **Strategic Grouping for Sequential Work**:
     *   If a series of steps must be done in order *and* can be handled by the same worker type, group them into a single subtask to maintain flow and minimize handoffs.
@@ -218,17 +222,17 @@ These principles aim to reduce overall completion time by maximizing concurrent 
 
 If given a hypothetical task requiring research, analysis, and reporting with multiple items to process, you should decompose it to maximize parallelism:
 
-*   Poor decomposition (monolithic):
+*   Poor decomposition (monolithic and vague):
     `<tasks><task>Do all research, analysis, and write final report.</task></tasks>`
 
-*   Better decomposition (parallel structure):
+*   **Excellent decomposition (self-contained and parallel)**:
     ```
     <tasks>
-    <task>Subtask 1 (ResearchAgent): Gather initial data and resources.</task>
-    <task>Subtask 2.1 (AnalysisAgent): Analyze Item A from Subtask 1 results.</task>
-    <task>Subtask 2.2 (AnalysisAgent): Analyze Item B from Subtask 1 results.</task>
-    <task>Subtask 2.N (AnalysisAgent): Analyze Item N from Subtask 1 results.</task>
-    <task>Subtask 3 (ReportAgent): Compile all analyses into final report.</task>
+    <task>(ResearchAgent): Gather data and resources on topic X, producing a list of relevant items.</task>
+    <task>(AnalysisAgent): Analyze the provided document 'Item A'.</task>
+    <task>(AnalysisAgent): Analyze the provided document 'Item B'.</task>
+    <task>(AnalysisAgent): Analyze the provided document 'Item N'.</task>
+    <task>(ReportAgent): Compile the provided analyses of items A, B, and N into a final report.</task>
     </tasks>
     ```
 
@@ -261,10 +265,11 @@ You must return the subtasks as a list of individual subtasks within <tasks> tag
 </tasks>
 
 Each subtask should be:
-- Clear and concise
-- Achievable by a single worker
-- Contain all sequential steps that should be performed by the same worker type
-- Only separated from other subtasks when parallel execution by different worker types is beneficial
+- **Self-contained and independently understandable.**
+- Clear and concise.
+- Achievable by a single worker.
+- Containing all sequential steps that should be performed by the same worker type.
+- Written without any relative references (e.g., "the previous task").
 """
 
 FAILURE_ANALYSIS_PROMPT = TextPrompt(

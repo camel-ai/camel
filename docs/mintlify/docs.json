@@ -532,6 +532,7 @@
               "reference/camel.toolkits.hybrid_browser_toolkit.actions",
               "reference/camel.toolkits.hybrid_browser_toolkit.agent",
               "reference/camel.toolkits.hybrid_browser_toolkit.browser_session",
+              "reference/camel.toolkits.hybrid_browser_toolkit.config_loader",
               "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit",
               "reference/camel.toolkits.hybrid_browser_toolkit.snapshot",
               "reference/camel.toolkits.hybrid_browser_toolkit.stealth_config",
