@@ -1461,6 +1461,7 @@ class HybridBrowserToolkit(BaseToolkit):
 
         from camel.utils.tool_result import ToolResult
 
+        os.makedirs(self._cache_dir, exist_ok=True)
         # Get screenshot and analysis
         page = await self._require_page()
 
@@ -1539,14 +1540,12 @@ class HybridBrowserToolkit(BaseToolkit):
         analysis = await self._get_unified_analysis()
         elements = analysis.get("elements", {})
         if ref not in elements:
-            available_refs = list(elements.keys())
             logger.error(f"Error: Element reference '{ref}' not found. ")
             # Added snapshot to give more context on failure
             snapshot = self._format_snapshot_from_analysis(analysis)
             tab_info = await self._get_tab_info_for_output()
             return {
-                "result": f"Error: Element reference '{ref}' not found. "
-                f"Available refs: {available_refs}",
+                "result": f"Error: Element reference '{ref}' not found. ",
                 "snapshot": snapshot,
                 **tab_info,
             }
