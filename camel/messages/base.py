@@ -437,12 +437,8 @@ class BaseMessage:
         if self.image_list and len(self.image_list) > 0:
             for image in self.image_list:
                 if image.format is None:
-                    raise ValueError(
-                        f"Image's `format` is `None`, please "
-                        f"transform the `PIL.Image.Image` to  one of "
-                        f"following supported formats, such as "
-                        f"{list(OpenAIImageType)}"
-                    )
+                    # Set default format to PNG as fallback
+                    image.format = 'PNG'
 
                 image_type: str = image.format.lower()
                 if image_type not in OpenAIImageType:
@@ -537,7 +533,18 @@ class BaseMessage:
             OpenAIAssistantMessage: The converted :obj:`OpenAIAssistantMessage`
                 object.
         """
-        return {"role": "assistant", "content": self.content}
+        message_dict: Dict[str, Any] = {
+            "role": "assistant",
+            "content": self.content,
+        }
+
+        # Check if meta_dict contains tool_calls
+        if self.meta_dict and "tool_calls" in self.meta_dict:
+            tool_calls = self.meta_dict["tool_calls"]
+            if tool_calls:
+                message_dict["tool_calls"] = tool_calls
+
+        return message_dict  # type: ignore[return-value]
 
     def to_dict(self) -> Dict:
         r"""Converts the message to a dictionary.

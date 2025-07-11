@@ -31,7 +31,7 @@ description: |
 ## Ecosystem Highlights
 
 <CardGroup cols={2}>
-  <Card title="OASIS" icon="globe" href="https://oasis.camel-ai.org">
+  <Card title="OASIS" icon="globe" href="https://github.com/camel-ai/oasis">
     Large‑scale social simulation environment: model Reddit, Twitter, and user interactions
   </Card>
 
@@ -43,7 +43,7 @@ description: |
     Verifier‑driven synthetic data generation for domain‑specific QA at scale
   </Card>
 
-  <Card title="Agentic RAG Bots" icon="comments" href="/cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG">
+  <Card title="OWL 🦉" icon="brain-circuit" href="https://github.com/camel-ai/owl">
     Real‑world retrieval agents for Discord, support, and knowledge applications
   </Card>
 </CardGroup>

@@ -19,7 +19,6 @@ auto-scaling based ondemand and intelligent reuse of existing agents.
 - **initial_size** (int): Initial number of agents in the pool. (default: :obj:`1`)
 - **max_size** (int): Maximum number of agents in the pool. (default: :obj:`10`)
 - **auto_scale** (bool): Whether to automatically scale the pool size. (default: :obj:`True`)
-- **scale_factor** (float): Factor by which to scale the pool when needed. (default: :obj:`1.5`)
 - **idle_timeout** (float): Time in seconds after which idle agents are removed. (default: :obj:`180.0`)
 
 <a id="camel.societies.workforce.single_agent_worker.AgentPool.__init__"></a>
@@ -33,7 +32,6 @@ def __init__(
     initial_size: int = 1,
     max_size: int = 10,
     auto_scale: bool = True,
-    scale_factor: float = 1.5,
     idle_timeout: float = 180.0
 ):
 ```
@@ -86,6 +84,7 @@ A worker node that consists of a single agent.
 - **pool_initial_size** (int): Initial size of the agent pool. (default: :obj:`1`)
 - **pool_max_size** (int): Maximum size of the agent pool. (default: :obj:`10`)
 - **auto_scale_pool** (bool): Whether to auto-scale the agent pool. (default: :obj:`True`)
+- **use_structured_output_handler** (bool, optional): Whether to use the structured output handler instead of native structured output. When enabled, the workforce will use prompts with structured output instructions and regex extraction to parse responses. This ensures compatibility with agents that don't reliably support native structured output. When disabled, the workforce uses the native response_format parameter. (default: :obj:`True`)
 
 <a id="camel.societies.workforce.single_agent_worker.SingleAgentWorker.__init__"></a>
 
@@ -99,7 +98,8 @@ def __init__(
     use_agent_pool: bool = True,
     pool_initial_size: int = 1,
     pool_max_size: int = 10,
-    auto_scale_pool: bool = True
+    auto_scale_pool: bool = True,
+    use_structured_output_handler: bool = True
 ):
 ```
 
