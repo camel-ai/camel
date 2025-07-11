@@ -32,5 +32,39 @@ async def main():
     # Toolkit is automatically disconnected when exiting the context
 
 
+'''
+===============================================================================
+I can assist you with a variety of tasks related to chemical compounds
+and substances using the PubChem database. 
+Here are some of the things I can do:
+
+1. **Search for Compounds and Substances**:
+   - Search by chemical name, SMILES string, or molecular formula.
+   - Perform advanced searches using complex queries.
+
+2. **Retrieve Detailed Information**:
+   - Get detailed compound and substance information by PubChem CID or SID.
+   - Retrieve compound properties like molecular weight, formula, XLogP, etc.
+   - Get descriptions and related data for compounds, substances, and assays.
+
+3. **Synonyms and Identifiers**:
+   - Find synonyms for compounds and substances.
+   - Get CAS Registry Numbers, CIDs, and SIDs.
+   
+4. **3D Structure and Conformers**:
+   - Access 3D structures and conformer identifiers.
+   
+5. **Bioassay Activities**:
+   - Summarize bioassay activities for compounds and substances.
+
+6. **Download Data**:
+   - Download images of chemical structures in PNG format.
+   - Export compound properties to a CSV file.
+
+If you have any specific requests or need information on a particular compound,
+feel free to ask!
+===============================================================================
+'''
+
 if __name__ == "__main__":
     asyncio.run(main())

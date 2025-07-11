@@ -14,9 +14,7 @@
 
 from typing import List, Optional
 
-from camel.toolkits import BaseToolkit, FunctionTool
-
-from .mcp_toolkit import MCPToolkit
+from camel.toolkits import BaseToolkit, FunctionTool, MCPToolkit
 
 
 class OrigeneToolkit(BaseToolkit):
