@@ -402,7 +402,7 @@ class DocumentToolkit(BaseToolkit):
         directory: Optional[str] = None,  # <-- change from Optional[Path]
         recursive: bool = False,
         include_hidden: bool = False,
-    ) -> list:
+    ) -> Optional[list[str]]:
         """
         Find files in the specified directory that match the given pattern.
 
@@ -418,7 +418,7 @@ class DocumentToolkit(BaseToolkit):
         import glob
 
         if directory is None:
-            search_dir = self.output_dir
+            search_dir = Path.cwd()
         else:
             search_dir = Path(directory).resolve()
 
@@ -469,7 +469,8 @@ class DocumentToolkit(BaseToolkit):
             )
             return matches
         except Exception as e:
-            return f"Error finding files: {e}"
+            logger.error(f"Error finding files: {e}")
+            return None
 
     # Public API methods
     @retry_on_error()
@@ -864,7 +865,7 @@ class DocumentToolkit(BaseToolkit):
         try:
             import json
 
-            import xmltodict
+            import xmltodict  # type: ignore[import-untyped]
             import yaml
 
             suffix = Path(path).suffix.lower()
