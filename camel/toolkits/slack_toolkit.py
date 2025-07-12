@@ -239,6 +239,7 @@ class SlackToolkit(BaseToolkit):
         self,
         message: str,
         channel_id: str,
+        file_path: Optional[str] = None,
         user: Optional[str] = None,
     ) -> str:
         r"""Send a message to a Slack channel.
@@ -246,6 +247,8 @@ class SlackToolkit(BaseToolkit):
         Args:
             message (str): The message to send.
             channel_id (str): The ID of the Slack channel to send message.
+            file_path (Optional[str]): The path of the file to send.
+                Defaults to `None`.
             user (Optional[str]): The user ID of the recipient.
                 Defaults to `None`.
 
@@ -257,6 +260,13 @@ class SlackToolkit(BaseToolkit):
 
         try:
             slack_client = self._login_slack()
+            if file_path:
+                response = slack_client.files_upload_v2(
+                    channel=channel_id,
+                    file=file_path,
+                    initial_comment=message,
+                )
+                return f"File sent successfully, got response: {response}"
             if user:
                 response = slack_client.chat_postEphemeral(
                     channel=channel_id, text=message, user=user
