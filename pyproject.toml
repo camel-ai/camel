@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.71a10"
+version = "0.2.71a11"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -180,7 +180,7 @@ dev_tools = [
     "daytona-sdk==0.20.0",
     "aci-sdk>=1.0.0b1",
     "langfuse>=2.60.5",
-    "traceroot==0.0.3a2",
+    "traceroot==0.0.3",
 ]
 model_platforms = [
     "litellm>=1.38.1,<2",
@@ -390,7 +390,7 @@ all = [
     "psycopg[binary]>=3.1.18,<4",
     "pgvector>=0.2.4,<0.3",
     "chromadb>=0.6.0,<1.0.0",
-    "traceroot==0.0.3a2",
+    "traceroot==0.0.3",
     "reportlab>=4.4.2",
 ]
 
@@ -440,6 +440,9 @@ convention = "google"
 
 [tool.ruff.lint.isort]
 known-first-party = ["camel"]
+
+[tool.ruff.lint.per-file-ignores]
+"camel/toolkits/search_toolkit.py" = ["E501"] 
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
