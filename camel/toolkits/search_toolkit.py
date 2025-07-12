@@ -35,7 +35,7 @@ class SearchToolkit(BaseToolkit):
     def __init__(
         self,
         timeout: Optional[float] = None,
-        number_of_result_pages: int = 5,
+        number_of_result_pages: int = 10,
     ):
         r"""Initializes the RedditToolkit with the specified number of retries
         and delay.
@@ -44,7 +44,7 @@ class SearchToolkit(BaseToolkit):
             timeout (float): Timeout for API requests in seconds.
                 (default: :obj:`None`)
             number_of_result_pages (int): The number of result pages to
-                retrieve. (default: :obj:`5`)
+                retrieve. (default: :obj:`10`)
         """
         super().__init__(timeout=timeout)
         self.number_of_result_pages = number_of_result_pages
