@@ -126,7 +126,7 @@ class PandasLoader(BaseLoader):
         return loader_method(file_path, **kwargs)
 
     @override
-    def load(  # type: ignore[override]
+    def load(
         self,
         source: Union["DataFrame", str, List[Union[str, "DataFrame"]]],
         **kwargs: Dict[str, Any],

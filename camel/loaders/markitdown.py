@@ -229,12 +229,11 @@ class MarkItDownLoader(BaseLoader):
 
         Args:
             source: A single file path or a list of file paths.
+            **kwargs: Additional keyword arguments for loading data.
 
         Returns:
-            If a single file is provided, returns its Markdown content as
-                a string.
-            If a list of files is provided, returns a list of Markdown
-                contents.
+            List[Dict[str, Any]]: A list of loaded data. If a single source
+                is provided, the list will contain a single item.
         """
 
         if isinstance(source, (str, Path)):
