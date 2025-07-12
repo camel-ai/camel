@@ -147,6 +147,7 @@ def send_slack_message(
     self,
     message: str,
     channel_id: str,
+    file_path: Optional[str] = None,
     user: Optional[str] = None
 ):
 ```
@@ -157,6 +158,7 @@ Send a message to a Slack channel.
 
 - **message** (str): The message to send.
 - **channel_id** (str): The ID of the Slack channel to send message.
+- **file_path** (Optional[str]): The path of the file to send. Defaults to `None`.
 - **user** (Optional[str]): The user ID of the recipient. Defaults to `None`.
 
 **Returns:**
