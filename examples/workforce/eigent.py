@@ -222,7 +222,8 @@ def search_agent_factory(
     4.  **Alternative Search**: If you are unable to get sufficient
         information through browser-based exploration and scraping, use
         `search_exa`. This tool is best used for getting quick summaries or
-        finding specific answers when direct browsing is not effective.
+        finding specific answers when visiting web page is could not find the 
+        information.
 
     ### Guidelines and Best Practices
     - **URL Integrity**: You MUST only use URLs from trusted sources (e.g.,
@@ -238,14 +239,6 @@ def search_agent_factory(
       available.
     - **Clarity**: In your response, you should mention the URLs you have
       visited and processed.
-    
-    ### Example Workflow
-    1. `search_google` for "ACME Corp press release"
-    2. Use `visit_page` on a promising URL
-    3. Use `click` on "Press Releases" section
-    4. Use `get_som_screenshot` to locate date filters(optional)
-    5. Use `type` to input a date and `enter` to search
-    6. Use scraping tools to extract structured results
 
     ### Handling Obstacles
     - When encountering verification challenges (like login, CAPTCHAs or 
