@@ -91,7 +91,7 @@ def developer_agent_factory(
         *TerminalToolkit(clone_current_env=True).get_tools(),
     ]
 
-    system_message = """You are a skilled coding assistant. You can write and 
+    system_message = f"""You are a skilled coding assistant. You can write and 
     execute code by using the available terminal tools. You MUST use the 
     `send_message_to_user` tool to inform the user of every decision and 
     action you take. Your message must include a short title and a 
@@ -186,9 +186,13 @@ def search_agent_factory(
         SearchToolkit().search_bing,
     ]
 
-    system_message = """You are a helpful assistant that can search the web, 
+    system_message = f"""You are a helpful assistant that can search the web, 
     extract webpage content, simulate browser actions, and provide relevant 
     information to solve the given task.
+
+    **CRITICAL**: You MUST NOT answer from your own knowledge. All information
+    MUST be sourced from the web using the available tools. If you don't know
+    something, find it out using your tools.
 
     You are now working in `{WORKING_DIRECTORY}`. All your work
     related to local operations should be done in that directory.
@@ -276,10 +280,10 @@ def document_agent_factory(
         *TerminalToolkit().get_tools(),
     ]
 
-    system_message = """You are a Document Processing Assistant specialized in 
-    creating, modifying, and managing various document formats. You MUST use 
-    the `send_message_to_user` tool to inform the user of every decision and 
-    action you take. Your message must include a short title and a 
+    system_message = f"""You are a Document Processing Assistant specialized 
+    in creating, modifying, and managing various document formats. You MUST 
+    use the `send_message_to_user` tool to inform the user of every decision 
+    and action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
 
     You are now working in `{WORKING_DIRECTORY}`. All your work
@@ -375,11 +379,11 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *TerminalToolkit().get_tools(),
     ]
 
-    system_message = """You are a Multi-Modal Processing Assistant specialized 
-    in analyzing and generating various types of media content. You MUST use 
-    the `send_message_to_user` tool to inform the user of every decision and 
-    action you take. Your message must include a short title and a 
-    one-sentence description. This is a mandatory part of your workflow.
+    system_message = f"""You are a Multi-Modal Processing Assistant 
+    specialized in analyzing and generating various types of media content. 
+    You MUST use the `send_message_to_user` tool to inform the user of every 
+    decision and action you take. Your message must include a short title and 
+    a one-sentence description. This is a mandatory part of your workflow.
 
     You are now working in `{WORKING_DIRECTORY}`. All your work
     related to local operations should be done in that directory.
@@ -440,7 +444,7 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
     return ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Social Medium Agent",
-            content="""
+            content=f"""
 You are a Social Media Management Assistant with comprehensive capabilities 
 across multiple platforms. You MUST use the `send_message_to_user` tool to 
 inform the user of every decision and action you take. Your message must 
@@ -670,9 +674,13 @@ async def main():
     human_task = Task(
         content=(
             """
-            go to amazon and find a popular product, 
-            check the comments and reviews, 
-            and then write a report about the product.
+Identify the pharmaceutical company that had the most FDA-approved new 
+molecular entities (NMEs) between 2020 and 2024, where at least one of these 
+drugs achieved blockbuster status (over $1 billion in annual sales) within 24 
+months of approval. List the company name, total number of NMEs approved, the 
+name and indication of the fastest blockbuster drug, its peak annual sales 
+figure, and the name and specialization of the lead scientist credited with 
+its discovery.
             """
         ),
         id='0',

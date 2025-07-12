@@ -89,7 +89,7 @@ class Worker(BaseNode, ABC):
             )
 
             # Process the task
-            task_state = await self._process_task(task, [])
+            task_state = await self._process_task(task, task.dependencies)
 
             # Update the result and status of the task
             task.set_state(task_state)
