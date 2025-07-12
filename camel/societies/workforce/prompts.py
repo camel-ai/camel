@@ -147,7 +147,7 @@ Here is the content of the parent task for you to refer to:
 Here are results of some prerequisite tasks that you can refer to:
 
 ==============================
-{dependency_task_info}
+{dependency_tasks_info}
 ==============================
 
 Here are some additional information about the task:
