@@ -54,7 +54,8 @@ formats.
 **Parameters:**
 
 - **query** (str): The search query.
-- **depth** (`Literal["standard", "deep"]`): The depth of the search. "standard" for a straightforward search, "deep" for a more comprehensive search. output_type (Literal["searchResults", "sourcedAnswer", "structured"]): The type of output: - "searchResults" for raw search results, - "sourcedAnswer" for an answer with supporting sources, - "structured" for output based on a provided schema.
+- **depth** (`Literal["standard", "deep"]`): The depth of the search. "standard" for a straightforward search, "deep" for a more comprehensive search.
+- **output_type** (`Literal["searchResults", "sourcedAnswer", "structured"]`): The type of output: - "searchResults" for raw search results, - "sourcedAnswer" for an answer with supporting sources, - "structured" for output based on a provided schema.
 - **structured_output_schema** (Optional[str]): If `output_type` is "structured", specify the schema of the output. Must be a string representing a valid object JSON schema.
 
 **Returns:**
@@ -365,7 +366,9 @@ features:
 
 **Parameters:**
 
-- **query** (str): The search query string (`length ``>= 1` and `<= 100```). time_range (Literal["OneDay", "OneWeek", "OneMonth", "OneYear", "NoLimit"]): Time frame filter for search results. (default: :obj:`"NoLimit"`) industry (Optional[Literal["finance", "law", "medical", "internet", "tax", "news_province", "news_center"]]): Industry-specific search filter. When specified, only returns results from sites in the specified industries. Multiple industries can be comma-separated. (default: :obj:`None`)
+- **query** (str): The search query string (`length ``>= 1` and `<= 100```).
+- **time_range** (`Literal["OneDay", "OneWeek", "OneMonth", "OneYear", "NoLimit"]`): Time frame filter for search results. (default: :obj:`"NoLimit"`)
+- **industry** (`Optional[Literal["finance", "law", "medical", "internet", "tax", "news_province", "news_center"]]`): Industry-specific search filter. When specified, only returns results from sites in the specified industries. Multiple industries can be comma-separated. (default: :obj:`None`)
 - **page** (int): Page number for results pagination. (default: :obj:`1`)
 - **return_main_text** (bool): Whether to include the main text of the webpage in results. (default: :obj:`True`)
 - **return_markdown_text** (bool): Whether to include markdown formatted content in results. (default: :obj:`True`)

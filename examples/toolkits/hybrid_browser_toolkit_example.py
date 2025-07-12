@@ -81,7 +81,7 @@ output_dir = "./file_write_outputs"
 os.makedirs(output_dir, exist_ok=True)
 
 # Initialize the FileWriteToolkit with the output directory
-file_toolkit = FileWriteToolkit(output_dir=output_dir)
+file_toolkit = FileWriteToolkit(working_directory=output_dir)
 
 # Get the tools from the toolkit
 tools_list = file_toolkit.get_tools()
