@@ -36,7 +36,7 @@ class BaseLoader(ABC):
     def load(
         self,
         source: Union[str, Path, List[Union[str, Path]]],
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    ) -> List[Dict[str, Any]]:
         r"""Load data from one or multiple sources.
 
         Args:
@@ -46,8 +46,7 @@ class BaseLoader(ABC):
                 - A list of paths/URLs
 
         Returns:
-            Dict[str, List[Dict[str, Any]]]: A dictionary with a single key
-                "contents" containing a list of loaded data. If a single source
+            List[Dict[str, Any]]: A list of loaded data. If a single source
                 is provided, the list will contain a single item.
 
         Raises:
@@ -71,7 +70,7 @@ class BaseLoader(ABC):
                     f"Error loading source {i}/{len(sources)}: {src}"
                 ) from e
 
-        return {"contents": results}
+        return results
 
     @property
     @abstractmethod
