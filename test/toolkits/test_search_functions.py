@@ -130,7 +130,9 @@ def test_search_duckduckgo_text():
             },
         ]
 
-        mock_ddgs_instance.text.assert_called_once_with(keywords="test query")
+        mock_ddgs_instance.text.assert_called_once_with(
+            keywords="test query", max_results=10
+        )
 
 
 def test_search_duckduckgo_images():
@@ -174,7 +176,7 @@ def test_search_duckduckgo_images():
         ]
 
         mock_ddgs_instance.images.assert_called_once_with(
-            keywords="test query"
+            keywords="test query", max_results=10
         )
 
 
@@ -238,7 +240,7 @@ def test_search_baidu(mock_get, search_toolkit):
             ),
             "Referer": "https://www.baidu.com",
         },
-        params={"wd": "test query", "rn": "5"},
+        params={"wd": "test query", "rn": "10"},
     )
 
 
@@ -424,7 +426,7 @@ def test_search_bocha_success(search_toolkit):
             "query": "test query",
             "freshness": "noLimit",
             "summary": False,
-            "count": 5,
+            "count": 10,
             "page": 1,
         }
     )
@@ -476,7 +478,7 @@ def test_search_alibaba_tongxiao(mock_get, search_toolkit):
             params={
                 "query": "test query",
                 "timeRange": "NoLimit",
-                "page": 5,
+                "page": 10,
                 "returnMainText": "false",
                 "returnMarkdownText": "true",
                 "enableRerank": "true",
