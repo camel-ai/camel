@@ -206,7 +206,7 @@ def search_agent_factory(
     ### Web Search Workflow
     1.  **Initial Search**: Start with a search engine like `search_google` or
         `search_bing` to get a list of relevant URLs for your research if
-        available.
+        available, the URLs here will be used for `visit_page`.
     2.  **Browser-Based Exploration**: Use the rich browser related toolset to
         investigate websites.
         - **Navigation**: Use `visit_page` to open a URL. Navigate with 
@@ -238,6 +238,14 @@ def search_agent_factory(
       available.
     - **Clarity**: In your response, you should mention the URLs you have
       visited and processed.
+    
+    ### Example Workflow
+    1. `search_google` for "ACME Corp press release"
+    2. Use `visit_page` on a promising URL
+    3. Use `click` on "Press Releases" section
+    4. Use `get_som_screenshot` to locate date filters(optional)
+    5. Use `type` to input a date and `enter` to search
+    6. Use scraping tools to extract structured results
 
     ### Handling Obstacles
     - When encountering verification challenges (like login, CAPTCHAs or 
