@@ -21,6 +21,7 @@ from typing import (
     List,
     Optional,
     Union,
+    override,
 )
 
 from .base_loader import BaseLoader
@@ -124,11 +125,12 @@ class PandasLoader(BaseLoader):
 
         return loader_method(file_path, **kwargs)
 
-    def load(
+    @override
+    def load(  # type: ignore[override]
         self,
         source: Union["DataFrame", str, List[Union[str, "DataFrame"]]],
         **kwargs: Dict[str, Any],
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    ) -> List[Dict[str, Any]]:
         r"""Load data from one or multiple sources.
 
         Args:
@@ -143,8 +145,8 @@ class PandasLoader(BaseLoader):
         Returns:
             - If a single source is provided: returns a DataFrame or
                 SmartDataframe
-            - If multiple sources are provided: returns a dict with
-                key "contents" containing a list of DataFrames/SmartDataframes
+            - If multiple sources are provided: returns a list of
+                DataFrames/SmartDataframes
         """
 
         # Handle single source
@@ -153,8 +155,8 @@ class PandasLoader(BaseLoader):
             if hasattr(self, 'config') and 'llm' in self.config:
                 from pandasai import SmartDataframe
 
-                return {"contents": [SmartDataframe(df, config=self.config)]}
-            return {"contents": [df]}
+                return [SmartDataframe(df, config=self.config)]
+            return [df]
 
         # Handle multiple sources
         results = []
@@ -170,7 +172,7 @@ class PandasLoader(BaseLoader):
                 SmartDataframe(df, config=self.config) for df in results
             ]
 
-        return {"contents": results}
+        return results
 
     @property
     def supported_formats(self) -> set[str]:

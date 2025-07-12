@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional, Union
 
 from camel.loaders.base_loader import BaseLoader
@@ -204,27 +205,23 @@ class MarkItDownLoader(BaseLoader):
 
         return converted_files
 
-    def _load_single(  # type: ignore[override]
-        self,
-        source: str,
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
+    def _load_single(self, source: Union[str, Path]) -> Dict[str, Any]:
         """Load and convert a single file to Markdown.
 
         Args:
             source: Path to the input file.
-            **kwargs: Additional arguments to pass to the converter.
 
         Returns:
             Dict[str, Any]: Converted Markdown content.
         """
-        return {source: self.convert_file(source, **kwargs)}
+        source_str = str(source) if isinstance(source, Path) else source
+        return {source_str: self.convert_file(source_str)}
 
-    def load(  # type: ignore[override]
+    def load(
         self,
-        source: Union[str, List[str]],
-        **kwargs: Any,
-    ) -> Dict[str, List[Dict[str, Any]]]:
+        source: Union[str, Path, List[Union[str, Path]]],
+        **kwargs,
+    ) -> List[Dict[str, Any]]:
         """Load and convert one or more files to Markdown.
 
         This is a wrapper around convert_files to maintain consistent
@@ -232,7 +229,6 @@ class MarkItDownLoader(BaseLoader):
 
         Args:
             source: A single file path or a list of file paths.
-            **kwargs: Additional arguments to pass to the converter.
 
         Returns:
             If a single file is provided, returns its Markdown content as
@@ -241,12 +237,13 @@ class MarkItDownLoader(BaseLoader):
                 contents.
         """
 
-        result = []
-        if isinstance(source, str):
-            result.append(self._load_single(source, **kwargs))
-        else:
-            result.append(self.convert_files(source, **kwargs))
-        return {"contents": result}
+        if isinstance(source, (str, Path)):
+            return [self._load_single(source)]
+
+        # At this point, type checker knows source is List[Union[str, Path]]
+        file_paths = [str(path) for path in source]
+        result = self.convert_files(file_paths, **kwargs)
+        return [result]
 
     @property
     def supported_formats(self) -> set[str]:

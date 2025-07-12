@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 from warnings import warn
 
@@ -54,7 +55,6 @@ class JinaURLLoader(BaseLoader):
         return_format: JinaReturnFormat = JinaReturnFormat.DEFAULT,
         json_response: bool = False,
         timeout: int = 30,
-        **kwargs: Any,
     ) -> None:
         super().__init__()
 
@@ -74,78 +74,72 @@ class JinaURLLoader(BaseLoader):
             "X-Return-Format": return_format.value,
             "Accept": json_field,
             "X-Timeout": str(timeout),
-            **kwargs,
         }
 
         # eliminate None values
         self._headers = {k: v for k, v in raw_headers.items() if v}
         self.timeout = timeout
 
-    def _load_single(  # type: ignore[override]
+    def _load_single(
         self,
-        source: str,
-        **kwargs: Any,
-    ) -> Dict[str, str]:
+        source: Union[str, Path],
+    ) -> Dict[str, Any]:
         r"""Load content from a single URL.
 
         Args:
             source: The URL to load content from.
             (default: :obj:`None`)
-            **kwargs: Additional arguments to pass to the request.
-            (default: :obj:`None`)
 
         Returns:
-            The content of the URL as a string.
+            Dict[str, Any]: A dictionary containing the loaded data with
+                at least a "content" key.
 
         Raises:
             ValueError: If the URL is invalid or the request fails.
         """
         import requests
 
-        if not source.startswith(('http://', 'https://')):
-            raise ValueError(f"Invalid URL: {source}")
+        source_str = str(source)
+        if not source_str.startswith(('http://', 'https://')):
+            source_str = f"https://{source_str}"
 
         try:
             response = requests.get(
                 JINA_ENDPOINT,
-                params={"url": source},
+                params={"url": source_str},
                 headers=self._headers,
                 timeout=self.timeout,
-                **kwargs,
             )
             response.raise_for_status()
-            return {source: response.text}
+            return {"content": response.text, "source": source_str}
         except Exception as e:
             raise ValueError(
-                f"Failed to read content from {source}: {e}"
+                f"Failed to read content from {source_str}: {e}"
             ) from e
 
-    def load(  # type: ignore[override]
+    def load(
         self,
-        source: Union[str, List[str]],
-        **kwargs: Any,
-    ) -> Dict[str, List[Dict[str, Any]]]:
+        source: Union[str, Path, List[Union[str, Path]]],
+    ) -> List[Dict[str, Any]]:
         r"""Load content from one or more URLs.
 
         Args:
             source: A single URL or a list of URLs to load.
             (default: :obj:`None`)
-            **kwargs: Additional arguments to pass to the request.
-            (default: :obj:`None`)
 
         Returns:
-            Dict[str, List[Dict[str, Any]]]: A dictionary with a single key
-                "contents" containing a list of loaded data. If a single source
+            List[Dict[str, Any]]: A list of loaded data. If a single source
                 is provided, the list will contain a single item.
 
         Raises:
             ValueError: If any URL is invalid or the request fails.
         """
-        if isinstance(source, str):
-            return {"contents": [self._load_single(source, **kwargs)]}
-        return {
-            "contents": [self._load_single(url, **kwargs) for url in source]
-        }
+        if isinstance(source, (str, Path)):
+            return [self._load_single(source)]
+        elif isinstance(source, list):
+            return [self._load_single(url) for url in source]
+        else:
+            raise TypeError(f"Expected str, Path, or list, got {type(source)}")
 
     @property
     def supported_formats(self) -> set[str]:
