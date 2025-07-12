@@ -21,7 +21,6 @@ from typing import (
     List,
     Optional,
     Union,
-    override,
 )
 
 from .base_loader import BaseLoader
@@ -125,7 +124,6 @@ class PandasLoader(BaseLoader):
 
         return loader_method(file_path, **kwargs)
 
-    @override
     def load(
         self,
         source: Union["DataFrame", str, List[Union[str, "DataFrame"]]],
