@@ -112,9 +112,7 @@ def test_search_duckduckgo_text():
         ]
 
         # Call the function with the mocked DDGS
-        result = search_duckduckgo(
-            query="test query", source="text", max_results=2
-        )
+        result = search_duckduckgo(query="test query", source="text")
 
         # Check if the result is as expected
         assert result == [
@@ -132,9 +130,7 @@ def test_search_duckduckgo_text():
             },
         ]
 
-        mock_ddgs_instance.text.assert_called_once_with(
-            keywords="test query", max_results=2
-        )
+        mock_ddgs_instance.text.assert_called_once_with(keywords="test query")
 
 
 def test_search_duckduckgo_images():
@@ -157,9 +153,7 @@ def test_search_duckduckgo_images():
         ]
 
         # Call the function with the mocked DDGS for images
-        result = search_duckduckgo(
-            query="test query", source="images", max_results=2
-        )
+        result = search_duckduckgo(query="test query", source="images")
 
         # Check if the result matches the expected output
         assert result == [
@@ -180,7 +174,7 @@ def test_search_duckduckgo_images():
         ]
 
         mock_ddgs_instance.images.assert_called_once_with(
-            keywords="test query", max_results=2
+            keywords="test query"
         )
 
 
@@ -212,7 +206,7 @@ def test_search_baidu(mock_get, search_toolkit):
     mock_get.return_value = mock_response
 
     # Call the function under test
-    result = search_toolkit.search_baidu(query="test query", max_results=5)
+    result = search_toolkit.search_baidu(query="test query")
 
     # Expected output
     expected_output = {
@@ -274,7 +268,7 @@ def test_search_bing(mock_get, search_toolkit):
     mock_get.return_value = mock_response
 
     # Call the function under test
-    result = search_toolkit.search_bing(query="test query", max_results=5)
+    result = search_toolkit.search_bing(query="test query")
 
     # Expected output
     expected_output = {
@@ -430,7 +424,7 @@ def test_search_bocha_success(search_toolkit):
             "query": "test query",
             "freshness": "noLimit",
             "summary": False,
-            "count": 10,
+            "count": 5,
             "page": 1,
         }
     )
@@ -482,7 +476,7 @@ def test_search_alibaba_tongxiao(mock_get, search_toolkit):
             params={
                 "query": "test query",
                 "timeRange": "NoLimit",
-                "page": 1,
+                "page": 5,
                 "returnMainText": "false",
                 "returnMarkdownText": "true",
                 "enableRerank": "true",
