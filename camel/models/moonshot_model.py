@@ -20,6 +20,7 @@ from pydantic import BaseModel
 
 from camel.configs import MOONSHOT_API_PARAMS, MoonshotConfig
 from camel.messages import OpenAIMessage
+from camel.models._utils import try_modify_message_with_format
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
     ChatCompletion,
@@ -106,6 +107,38 @@ class MoonshotModel(OpenAICompatibleModel):
             **kwargs,
         )
 
+    def _prepare_request(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        r"""Prepare the request configuration for Moonshot API.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Dict[str, Any]: The prepared request configuration.
+        """
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+
+        if tools:
+            request_config["tools"] = tools
+        elif response_format:
+            # Use the same approach as DeepSeek for structured output
+            try_modify_message_with_format(messages[-1], response_format)
+            request_config["response_format"] = {"type": "json_object"}
+
+        return request_config
+
     @observe()
     async def _arun(
         self,
@@ -141,10 +174,9 @@ class MoonshotModel(OpenAICompatibleModel):
                 tags=["CAMEL-AI", str(self.model_type)],
             )
 
-        request_config = self.model_config_dict.copy()
-
-        if tools:
-            request_config["tools"] = tools
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
 
         return await self._async_client.chat.completions.create(
             messages=messages,
