@@ -51,7 +51,7 @@ from camel.utils.commons import api_keys_required
 
 logger = get_logger(__name__)
 
-WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or "eigent/working_dir/"
+WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or "working_dir/"
 
 
 def send_message_to_user(message: str) -> None:
@@ -170,18 +170,20 @@ def search_agent_factory(
         browser_log_to_file=True,
         stealth=True,
         session_id=agent_id,
+        cache_dir=WORKING_DIRECTORY,
         default_start_url="https://search.brave.com/",
     )
 
     tools = [
         *web_toolkit_custom.get_tools(),
-        *TerminalToolkit().get_tools(),
+        TerminalToolkit().shell_exec,
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
         NoteTakingToolkit().append_note,
         *Crawl4AIToolkit().get_tools(),
         SearchToolkit().search_exa,
         SearchToolkit().search_google,
+        SearchToolkit().search_bing,
     ]
 
     system_message = """You are a helpful assistant that can search the web, 
@@ -204,8 +206,8 @@ def search_agent_factory(
     ### Web Search Workflow
     1.  **Initial Search**: Start with a search engine like `search_google` or
         `search_bing` to get a list of relevant URLs for your research if
-        available.
-    2.  **Browser-Based Exploration**: Use the rich browser toolset to
+        available, the URLs here will be used for `visit_page`.
+    2.  **Browser-Based Exploration**: Use the rich browser related toolset to
         investigate websites.
         - **Navigation**: Use `visit_page` to open a URL. Navigate with 
         `click`,`back`, and `forward`. Manage multiple pages with `switch_tab`.
@@ -220,7 +222,8 @@ def search_agent_factory(
     4.  **Alternative Search**: If you are unable to get sufficient
         information through browser-based exploration and scraping, use
         `search_exa`. This tool is best used for getting quick summaries or
-        finding specific answers when direct browsing is not effective.
+        finding specific answers when visiting web page is could not find the 
+        information.
 
     ### Guidelines and Best Practices
     - **URL Integrity**: You MUST only use URLs from trusted sources (e.g.,
