@@ -22,6 +22,7 @@ from typing import Any, List, Optional
 from colorama import Fore
 
 from camel.agents import ChatAgent
+from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
@@ -285,6 +286,7 @@ class SingleAgentWorker(Worker):
         """
         # Get agent efficiently (from pool or by cloning)
         worker_agent = await self._get_worker_agent()
+        response_content = ""
 
         try:
             dependency_tasks_info = self._get_dep_tasks_info(dependencies)
@@ -314,11 +316,23 @@ class SingleAgentWorker(Worker):
                     )
                 )
                 response = await worker_agent.astep(enhanced_prompt)
+
+                # Handle streaming response
+                if isinstance(response, AsyncStreamingChatAgentResponse):
+                    content = ""
+                    async for chunk in response:
+                        if chunk.msg:
+                            content = chunk.msg.content
+                    response_content = content
+                else:
+                    # Regular ChatAgentResponse
+                    response_content = (
+                        response.msg.content if response.msg else ""
+                    )
+
                 task_result = (
                     self.structured_handler.parse_structured_response(
-                        response_text=response.msg.content
-                        if response.msg
-                        else "",
+                        response_text=response_content,
                         schema=TaskResult,
                         fallback_values={
                             "content": "Task processing failed",
@@ -331,13 +345,41 @@ class SingleAgentWorker(Worker):
                 response = await worker_agent.astep(
                     prompt, response_format=TaskResult
                 )
-                task_result = response.msg.parsed
+
+                # Handle streaming response for native output
+                if isinstance(response, AsyncStreamingChatAgentResponse):
+                    task_result = None
+                    async for chunk in response:
+                        if chunk.msg and chunk.msg.parsed:
+                            task_result = chunk.msg.parsed
+                            response_content = chunk.msg.content
+                    # If no parsed result found in streaming, create fallback
+                    if task_result is None:
+                        task_result = TaskResult(
+                            content="Failed to parse streaming response",
+                            failed=True,
+                        )
+                else:
+                    # Regular ChatAgentResponse
+                    task_result = response.msg.parsed
+                    response_content = (
+                        response.msg.content if response.msg else ""
+                    )
 
             # Get token usage from the response
-            usage_info = response.info.get("usage") or response.info.get(
-                "token_usage"
+            if isinstance(response, AsyncStreamingChatAgentResponse):
+                # For streaming responses, get the final response info
+                final_response = await response
+                usage_info = final_response.info.get(
+                    "usage"
+                ) or final_response.info.get("token_usage")
+            else:
+                usage_info = response.info.get("usage") or response.info.get(
+                    "token_usage"
+                )
+            total_tokens = (
+                usage_info.get("total_tokens", 0) if usage_info else 0
             )
-            total_tokens = usage_info.get("total_tokens", 0)
 
         except Exception as e:
             print(
@@ -369,8 +411,10 @@ class SingleAgentWorker(Worker):
             f"(from pool/clone of "
             f"{getattr(self.worker, 'agent_id', self.worker.role_name)}) "
             f"to process task {task.content}",
-            "response_content": response.msg.content,
-            "tool_calls": response.info.get("tool_calls"),
+            "response_content": response_content,
+            "tool_calls": final_response.info.get("tool_calls")
+            if isinstance(response, AsyncStreamingChatAgentResponse)
+            else response.info.get("tool_calls"),
             "total_tokens": total_tokens,
         }
 

@@ -81,9 +81,15 @@ what was accomplished
         headless: bool = False,
         stealth: bool = False,
         model_backend: Optional[BaseModelBackend] = None,
+        default_timeout: Optional[int] = None,
+        short_timeout: Optional[int] = None,
     ):
         self._session = HybridBrowserSession(
-            headless=headless, user_data_dir=user_data_dir, stealth=stealth
+            headless=headless,
+            user_data_dir=user_data_dir,
+            stealth=stealth,
+            default_timeout=default_timeout,
+            short_timeout=short_timeout,
         )
         from camel.agents import ChatAgent
 

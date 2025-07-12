@@ -53,22 +53,35 @@ class PPTXToolkit(BaseToolkit):
 
     def __init__(
         self,
-        output_dir: str = "./",
+        working_directory: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> None:
         r"""Initialize the PPTXToolkit.
 
         Args:
-            output_dir (str): The default directory for output files.
-                Defaults to the current working directory.
+            working_directory (str, optional): The default directory for
+                output files. If not provided, it will be determined by the
+                `CAMEL_WORKDIR` environment variable (if set). If the
+                environment variable is not set, it defaults to
+                `camel_working_dir`.
             timeout (Optional[float]): The timeout for the toolkit.
                 (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
-        self.output_dir = Path(output_dir).resolve()
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        if working_directory:
+            self.working_directory = Path(working_directory).resolve()
+        else:
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                self.working_directory = Path(camel_workdir).resolve()
+            else:
+                self.working_directory = Path("./camel_working_dir").resolve()
+
+        self.working_directory.mkdir(parents=True, exist_ok=True)
         logger.info(
-            f"PPTXToolkit initialized with output directory: {self.output_dir}"
+            f"PPTXToolkit initialized with output directory: "
+            f"{self.working_directory}"
         )
 
     def _resolve_filepath(self, file_path: str) -> Path:
@@ -87,7 +100,7 @@ class PPTXToolkit(BaseToolkit):
         """
         path_obj = Path(file_path)
         if not path_obj.is_absolute():
-            path_obj = self.output_dir / path_obj
+            path_obj = self.working_directory / path_obj
 
         sanitized_filename = self._sanitize_filename(path_obj.name)
         path_obj = path_obj.parent / sanitized_filename
@@ -365,7 +378,7 @@ class PPTXToolkit(BaseToolkit):
                     * Table slides: {"heading": str, "table": {"headers": list
                     of str, "rows": list of list of str}}
             filename (str): The name or path of the file. If a relative path is
-                supplied, it is resolved to self.output_dir.
+                supplied, it is resolved to self.working_directory.
             template (Optional[str]): The path to the template PPTX file.
                 Initializes a presentation from a given template file Or PPTX
                 file. (default: :obj:`None`)
