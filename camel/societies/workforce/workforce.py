@@ -1721,23 +1721,51 @@ class Workforce(BaseNode):
 
     def _get_child_nodes_info(self) -> str:
         r"""Get the information of all the child nodes under this node."""
-        info = ""
-        for child in self._children:
-            if isinstance(child, Workforce):
-                additional_info = "A Workforce node"
-            elif isinstance(child, SingleAgentWorker):
-                additional_info = "tools: " + (
-                    ", ".join(child.worker.tool_dict.keys())
-                )
-            elif isinstance(child, RolePlayingWorker):
-                additional_info = "A Role playing node"
+        return "".join(
+            f"<{child.node_id}>:<{child.description}>:<{self._get_node_info(child)}>\n"
+            for child in self._children
+        )
+
+    def _get_node_info(self, node) -> str:
+        r"""Get descriptive information for a specific node type."""
+        if isinstance(node, Workforce):
+            return "A Workforce node"
+        elif isinstance(node, SingleAgentWorker):
+            return self._get_single_agent_info(node)
+        elif isinstance(node, RolePlayingWorker):
+            return "A Role playing node"
+        else:
+            return "Unknown node"
+
+    def _get_single_agent_info(self, worker: 'SingleAgentWorker') -> str:
+        r"""Get formatted information for a SingleAgentWorker node."""
+        toolkit_tools = self._group_tools_by_toolkit(worker.worker.tool_dict)
+
+        if not toolkit_tools:
+            return "no tools available"
+
+        toolkit_info = []
+        for toolkit_name, tools in sorted(toolkit_tools.items()):
+            tools_str = ', '.join(sorted(tools))
+            toolkit_info.append(f"{toolkit_name}({tools_str})")
+
+        return " | ".join(toolkit_info)
+
+    def _group_tools_by_toolkit(self, tool_dict: dict) -> dict[str, list[str]]:
+        r"""Group tools by their parent toolkit class names."""
+        toolkit_tools: dict[str, list[str]] = {}
+
+        for tool_name, tool in tool_dict.items():
+            if hasattr(tool.func, '__self__'):
+                toolkit_name = tool.func.__self__.__class__.__name__
             else:
-                additional_info = "Unknown node"
-            info += (
-                f"<{child.node_id}>:<{child.description}>:<"
-                f"{additional_info}>\n"
-            )
-        return info
+                toolkit_name = "Standalone"
+
+            if toolkit_name not in toolkit_tools:
+                toolkit_tools[toolkit_name] = []
+            toolkit_tools[toolkit_name].append(tool_name)
+
+        return toolkit_tools
 
     def _get_valid_worker_ids(self) -> set:
         r"""Get all valid worker IDs from child nodes.
