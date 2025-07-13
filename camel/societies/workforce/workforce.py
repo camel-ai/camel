@@ -1008,7 +1008,7 @@ class Workforce(BaseNode):
         if not validate_task_content(new_content, task_id):
             logger.warning(
                 f"Task {task_id} content modification rejected: "
-                f"Invalid content. Content preview: '{new_content[:50]}...'"
+                f"Invalid content. Content preview: '{new_content}'"
             )
             return False
 
@@ -1194,7 +1194,7 @@ class Workforce(BaseNode):
             task.result = "Task failed: Invalid or empty content provided"
             logger.warning(
                 f"Task {task.id} rejected: Invalid or empty content. "
-                f"Content preview: '{task.content[:50]}...'"
+                f"Content preview: '{task.content}'"
             )
             return task
 
@@ -1327,7 +1327,7 @@ class Workforce(BaseNode):
             task.result = "Task failed: Invalid or empty content provided"
             logger.warning(
                 f"Task {task.id} rejected: Invalid or empty content. "
-                f"Content preview: '{task.content[:50]}...'"
+                f"Content preview: '{task.content}'"
             )
             return task
 
@@ -1853,7 +1853,7 @@ class Workforce(BaseNode):
                 logger.error(
                     f"JSON parsing error in task assignment: Invalid response "
                     f"format - {e}. Response content: "
-                    f"{response.msg.content[:50]}..."
+                    f"{response.msg.content}"
                 )
                 return TaskAssignResult(assignments=[])
 
@@ -1985,6 +1985,37 @@ class Workforce(BaseNode):
 
         return final_assignments
 
+    def _update_task_dependencies_from_assignments(
+        self, assignments: List[TaskAssignment], tasks: List[Task]
+    ) -> None:
+        r"""Update Task.dependencies with actual Task objects based on
+        assignments.
+
+        Args:
+            assignments (List[TaskAssignment]): The task assignments
+                containing dependency IDs.
+            tasks (List[Task]): The tasks that were assigned.
+        """
+        # Create a lookup map for all available tasks
+        all_tasks = {}
+        for task_list in [self._completed_tasks, self._pending_tasks, tasks]:
+            for task in task_list:
+                all_tasks[task.id] = task
+
+        # Update dependencies for each assigned task
+        for assignment in assignments:
+            if not assignment.dependencies:
+                continue
+
+            matching_tasks = [t for t in tasks if t.id == assignment.task_id]
+            if matching_tasks:
+                task = matching_tasks[0]
+                task.dependencies = [
+                    all_tasks[dep_id]
+                    for dep_id in assignment.dependencies
+                    if dep_id in all_tasks
+                ]
+
     async def _find_assignee(
         self,
         tasks: List[Task],
@@ -2021,19 +2052,24 @@ class Workforce(BaseNode):
 
         # if all assignments are valid and all tasks are assigned, return early
         if not invalid_assignments and not unassigned_tasks:
+            self._update_task_dependencies_from_assignments(
+                valid_assignments, tasks
+            )
             return TaskAssignResult(assignments=valid_assignments)
 
-        # handle retry and fallback for
-        # invalid assignments and unassigned tasks
-        all_problem_assignments = invalid_assignments
+        # handle retry and fallback for invalid assignments and unassigned
+        # tasks
         retry_and_fallback_assignments = (
             await self._handle_assignment_retry_and_fallback(
-                all_problem_assignments, tasks, valid_worker_ids
+                invalid_assignments, tasks, valid_worker_ids
             )
         )
-        valid_assignments.extend(retry_and_fallback_assignments)
+        all_assignments = valid_assignments + retry_and_fallback_assignments
 
-        return TaskAssignResult(assignments=valid_assignments)
+        # Update Task.dependencies for all final assignments
+        self._update_task_dependencies_from_assignments(all_assignments, tasks)
+
+        return TaskAssignResult(assignments=all_assignments)
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
         # Record the start time when a task is posted
@@ -2107,7 +2143,7 @@ class Workforce(BaseNode):
                 )
                 new_node_conf = WorkerConf(
                     description=f"Fallback worker for task: "
-                    f"{task.content[:50]}...",
+                    f"{task.content}",
                     role="General Assistant",
                     sys_msg="You are a general assistant that can help "
                     "with various tasks.",
@@ -2117,8 +2153,7 @@ class Workforce(BaseNode):
                     response.msg.content,
                     schema=WorkerConf,
                     fallback_values={
-                        "description": f"Worker for task: "
-                        f"{task.content[:50]}...",
+                        "description": f"Worker for task: " f"{task.content}",
                         "role": "Task Specialist",
                         "sys_msg": f"You are a specialist for: {task.content}",
                     },
@@ -2130,7 +2165,7 @@ class Workforce(BaseNode):
                     new_node_conf = WorkerConf(**result)
                 else:
                     new_node_conf = WorkerConf(
-                        description=f"Worker for task: {task.content[:50]}...",
+                        description=f"Worker for task: {task.content}",
                         role="Task Specialist",
                         sys_msg=f"You are a specialist for: {task.content}",
                     )
@@ -2147,7 +2182,7 @@ class Workforce(BaseNode):
                 # Create a fallback worker configuration
                 new_node_conf = WorkerConf(
                     description=f"Fallback worker for "
-                    f"task: {task.content[:50]}...",
+                    f"task: {task.content}",
                     role="General Assistant",
                     sys_msg="You are a general assistant that can help "
                     "with various tasks.",
@@ -2160,7 +2195,7 @@ class Workforce(BaseNode):
                     logger.error(
                         f"JSON parsing error in worker creation: Invalid "
                         f"response format - {e}. Response content: "
-                        f"{response.msg.content[:100]}..."
+                        f"{response.msg.content}"
                     )
                     raise RuntimeError(
                         f"Failed to create worker for task {task.id}: "
@@ -2364,7 +2399,7 @@ class Workforce(BaseNode):
                 f"Task {task.id} has exceeded maximum retry attempts "
                 f"({MAX_TASK_RETRIES}). Final failure "
                 f"reason: {detailed_error}. "
-                f"Task content: '{task.content[:100]}...'"
+                f"Task content: '{task.content}'"
             )
             self._cleanup_task_tracking(task.id)
             # Mark task as completed for dependency tracking before halting
@@ -2793,7 +2828,7 @@ class Workforce(BaseNode):
                     # useful results
                     if is_task_result_insufficient(returned_task):
                         result_preview = (
-                            returned_task.result[:100] + "..."
+                            returned_task.result
                             if returned_task.result
                             else "No result"
                         )
