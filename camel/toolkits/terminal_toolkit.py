@@ -53,7 +53,10 @@ class TerminalToolkit(BaseToolkit):
         use_shell_mode (bool): Whether to use shell mode for command execution.
             (default: :obj:`True`)
         clone_current_env (bool): Whether to clone the current Python
-            environment.(default: :obj:`False`)
+            environment. If False, a comprehensive initial environment with
+            Python 3.10, pip, Node.js and common development tools will be
+            prepared, along with automatic installation of popular libraries
+            (requests, numpy, pandas, matplotlib, etc.). (default: :obj:`False`)
         safe_mode (bool): Whether to enable safe mode to restrict operations.
             (default: :obj:`True`)
 
@@ -88,6 +91,8 @@ class TerminalToolkit(BaseToolkit):
 
         self.python_executable = sys.executable
         self.is_macos = platform.system() == 'Darwin'
+        self.initial_env = {}
+        self.clone_current_env = clone_current_env
 
         atexit.register(self.__del__)
 
@@ -108,6 +113,7 @@ class TerminalToolkit(BaseToolkit):
             self._clone_current_environment()
         else:
             self.cloned_env_path = None
+            self._prepare_initial_environment()
 
         if need_terminal:
             if self.is_macos:
@@ -161,6 +167,393 @@ class TerminalToolkit(BaseToolkit):
 
         # Replace the update method
         self._update_terminal_output = file_update
+
+    def _prepare_initial_environment(self):
+        r"""Prepare initial environment with common development tools."""
+        try:
+            self._update_terminal_output(
+                "Preparing initial environment with development tools...\n"
+            )
+            
+            # Copy current environment as base
+            self.initial_env = os.environ.copy()
+            
+            # Find Python 3.10 or fallback to available Python
+            python_candidates = [
+                'python3.10', 'python3', 'python'
+            ]
+            
+            python_path = None
+            for candidate in python_candidates:
+                try:
+                    result = subprocess.run(
+                        [candidate, '--version'], 
+                        capture_output=True, 
+                        text=True, 
+                        timeout=5
+                    )
+                    if result.returncode == 0:
+                        # Check if it's Python 3.10 or at least Python 3.x
+                        version_output = result.stdout.strip()
+                        if 'Python 3.' in version_output:
+                            python_path = candidate
+                            self._update_terminal_output(
+                                f"Found Python: {version_output}\n"
+                            )
+                            break
+                except (subprocess.SubprocessError, FileNotFoundError):
+                    continue
+            
+            if not python_path:
+                python_path = sys.executable
+                self._update_terminal_output(
+                    f"Using fallback Python: {python_path}\n"
+                )
+            
+            self.python_executable = python_path
+            
+            # Find Node.js
+            node_candidates = ['node', 'nodejs']
+            node_path = None
+            for candidate in node_candidates:
+                try:
+                    result = subprocess.run(
+                        [candidate, '--version'], 
+                        capture_output=True, 
+                        text=True, 
+                        timeout=5
+                    )
+                    if result.returncode == 0:
+                        node_path = candidate
+                        self._update_terminal_output(
+                            f"Found Node.js: {result.stdout.strip()}\n"
+                        )
+                        break
+                except (subprocess.SubprocessError, FileNotFoundError):
+                    continue
+            
+            if not node_path:
+                self._update_terminal_output(
+                    "Node.js not found in system PATH\n"
+                )
+            
+            # Find npm
+            npm_path = None
+            try:
+                result = subprocess.run(
+                    ['npm', '--version'], 
+                    capture_output=True, 
+                    text=True, 
+                    timeout=5
+                )
+                if result.returncode == 0:
+                    npm_path = 'npm'
+                    self._update_terminal_output(
+                        f"Found npm: {result.stdout.strip()}\n"
+                    )
+            except (subprocess.SubprocessError, FileNotFoundError):
+                self._update_terminal_output(
+                    "npm not found in system PATH\n"
+                )
+            
+            # Update PATH to ensure tools are accessible
+            current_path = self.initial_env.get('PATH', '')
+            additional_paths = []
+            
+            # Add common development tool paths
+            if self.os_type == 'Darwin':  # macOS
+                additional_paths.extend([
+                    '/usr/local/bin',
+                    '/opt/homebrew/bin',
+                    '/usr/bin',
+                    '/bin'
+                ])
+            elif self.os_type == 'Linux':
+                additional_paths.extend([
+                    '/usr/local/bin',
+                    '/usr/bin',
+                    '/bin'
+                ])
+            elif self.os_type == 'Windows':
+                additional_paths.extend([
+                    'C:\\Python310',
+                    'C:\\Python310\\Scripts',
+                    'C:\\Program Files\\nodejs'
+                ])
+            
+            # Filter out paths that don't exist
+            existing_paths = [p for p in additional_paths if os.path.exists(p)]
+            
+            if existing_paths:
+                path_separator = ';' if self.os_type == 'Windows' else ':'
+                new_paths = path_separator.join(existing_paths)
+                if current_path:
+                    self.initial_env['PATH'] = f"{new_paths}{path_separator}{current_path}"
+                else:
+                    self.initial_env['PATH'] = new_paths
+            
+            # Set Python-related environment variables
+            self.initial_env['PYTHONPATH'] = self.working_dir
+            self.initial_env['PYTHONUNBUFFERED'] = '1'
+            
+            # Install common libraries
+            self._install_common_libraries()
+            
+            self._update_terminal_output(
+                "Initial environment preparation completed!\n"
+            )
+            
+        except Exception as e:
+            self._update_terminal_output(
+                f"Warning: Failed to prepare initial environment: {e!s}\n"
+            )
+            logger.warning(f"Failed to prepare initial environment: {e}")
+            # Fallback to current environment
+            self.initial_env = os.environ.copy()
+
+    def _get_execution_environment(self) -> Dict[str, str]:
+        r"""Get the appropriate environment for command execution.
+        
+        Returns:
+            Dict[str, str]: Environment variables for command execution
+        """
+        if self.clone_current_env and self.cloned_env_path:
+            # Use cloned environment
+            env = os.environ.copy()
+            if self.os_type == 'Windows':
+                venv_scripts = os.path.join(self.cloned_env_path, "Scripts")
+                venv_python = os.path.join(venv_scripts, "python.exe")
+            else:
+                venv_bin = os.path.join(self.cloned_env_path, "bin")
+                venv_python = os.path.join(venv_bin, "python")
+                # Update PATH to include virtual environment
+                current_path = env.get('PATH', '')
+                path_separator = ';' if self.os_type == 'Windows' else ':'
+                env['PATH'] = f"{venv_bin}{path_separator}{current_path}"
+            
+            env['VIRTUAL_ENV'] = self.cloned_env_path
+            return env
+        else:
+            # Use prepared initial environment
+            return self.initial_env.copy()
+
+    def _install_common_libraries(self):
+        r"""Install commonly used Python and Node.js libraries."""
+        try:
+            self._update_terminal_output(
+                "Installing common development libraries...\n"
+            )
+            
+            # Common Python packages
+            python_packages = [
+                'requests',      # HTTP library
+                'numpy',         # Numerical computing
+                'pandas',        # Data manipulation
+                'matplotlib',    # Plotting
+                'beautifulsoup4', # Web scraping
+                'pillow',        # Image processing
+                'pytest',        # Testing
+                'pydantic',      # Data validation
+                'python-dotenv', # Environment variables
+                'tqdm',          # Progress bars
+                'uv',            # Package manager
+            ]
+            
+            # Try to install Python packages
+            pip_cmd = f'"{self.python_executable}" -m pip'
+            
+            # First, upgrade pip
+            try:
+                self._update_terminal_output("Upgrading pip...\n")
+                result = subprocess.run(
+                    f'{pip_cmd} install --upgrade pip',
+                    shell=True,
+                    cwd=self.working_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                    env=self.initial_env
+                )
+                if result.returncode == 0:
+                    self._update_terminal_output("✓ pip upgraded successfully\n")
+                else:
+                    self._update_terminal_output(f"⚠ pip upgrade warning: {result.stderr[:200]}\n")
+            except Exception as e:
+                self._update_terminal_output(f"⚠ pip upgrade failed: {str(e)}\n")
+            
+            # Install packages in batches to avoid timeout
+            batch_size = 5
+            for i in range(0, len(python_packages), batch_size):
+                batch = python_packages[i:i+batch_size]
+                packages_str = ' '.join(batch)
+                
+                try:
+                    self._update_terminal_output(f"Installing: {packages_str}\n")
+                    result = subprocess.run(
+                        f'{pip_cmd} install {packages_str}',
+                        shell=True,
+                        cwd=self.working_dir,
+                        capture_output=True,
+                        text=True,
+                        timeout=120,  # 2 minutes per batch
+                        env=self.initial_env
+                    )
+                    
+                    if result.returncode == 0:
+                        self._update_terminal_output(f"✓ Installed: {packages_str}\n")
+                    else:
+                        # Try installing packages individually if batch fails
+                        self._update_terminal_output(f"⚠ Batch failed, trying individually...\n")
+                        for pkg in batch:
+                            try:
+                                individual_result = subprocess.run(
+                                    f'{pip_cmd} install {pkg}',
+                                    shell=True,
+                                    cwd=self.working_dir,
+                                    capture_output=True,
+                                    text=True,
+                                    timeout=60,
+                                    env=self.initial_env
+                                )
+                                if individual_result.returncode == 0:
+                                    self._update_terminal_output(f"✓ {pkg}\n")
+                                else:
+                                    self._update_terminal_output(f"✗ {pkg} failed\n")
+                            except Exception:
+                                self._update_terminal_output(f"✗ {pkg} timeout\n")
+                                
+                except subprocess.TimeoutExpired:
+                    self._update_terminal_output(f"⚠ Batch timeout: {packages_str}\n")
+                except Exception as e:
+                    self._update_terminal_output(f"⚠ Batch error: {str(e)[:100]}\n")
+            
+            # Install common Node.js packages if npm is available
+            try:
+                npm_result = subprocess.run(
+                    ['npm', '--version'],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    env=self.initial_env
+                )
+                
+                if npm_result.returncode == 0:
+                    self._update_terminal_output("Installing common Node.js packages...\n")
+                    
+                    # Initialize package.json if it doesn't exist
+                    package_json_path = os.path.join(self.working_dir, 'package.json')
+                    if not os.path.exists(package_json_path):
+                        init_result = subprocess.run(
+                            'npm init -y',
+                            shell=True,
+                            cwd=self.working_dir,
+                            capture_output=True,
+                            text=True,
+                            timeout=30,
+                            env=self.initial_env
+                        )
+                        if init_result.returncode == 0:
+                            self._update_terminal_output("✓ Created package.json\n")
+                    
+                    # Common Node.js packages
+                    node_packages = [
+                        'axios',         # HTTP client
+                        'lodash',        # Utility library
+                        'moment',        # Date handling
+                        'cheerio',       # Server-side jQuery
+                        'fs-extra',      # Enhanced file system
+                        'commander',     # Command line interfaces
+                        'dotenv',        # Environment variables
+                        'uuid',          # UUID generation
+                    ]
+                    
+                    packages_str = ' '.join(node_packages)
+                    try:
+                        npm_install_result = subprocess.run(
+                            f'npm install {packages_str}',
+                            shell=True,
+                            cwd=self.working_dir,
+                            capture_output=True,
+                            text=True,
+                            timeout=180,  # 3 minutes
+                            env=self.initial_env
+                        )
+                        
+                        if npm_install_result.returncode == 0:
+                            self._update_terminal_output("✓ Node.js packages installed\n")
+                        else:
+                            self._update_terminal_output("⚠ Some Node.js packages failed\n")
+                            
+                    except subprocess.TimeoutExpired:
+                        self._update_terminal_output("⚠ Node.js package installation timeout\n")
+                
+            except Exception as e:
+                self._update_terminal_output(f"⚠ Node.js setup skipped: {str(e)[:100]}\n")
+            
+            # Install common system tools if possible
+            self._install_system_tools()
+            
+            self._update_terminal_output(
+                "Common libraries installation completed!\n"
+            )
+            
+        except Exception as e:
+            self._update_terminal_output(
+                f"Warning: Failed to install some libraries: {e!s}\n"
+            )
+            logger.warning(f"Failed to install common libraries: {e}")
+
+    def _install_system_tools(self):
+        r"""Install common system tools via package managers."""
+        try:
+            # Try to install git if not available
+            try:
+                git_result = subprocess.run(
+                    ['git', '--version'],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                if git_result.returncode == 0:
+                    self._update_terminal_output(f"✓ Git available: {git_result.stdout.strip()}\n")
+                else:
+                    self._update_terminal_output("⚠ Git not found\n")
+            except FileNotFoundError:
+                self._update_terminal_output("⚠ Git not installed\n")
+            
+            # Try to install curl if not available
+            try:
+                curl_result = subprocess.run(
+                    ['curl', '--version'],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                if curl_result.returncode == 0:
+                    self._update_terminal_output("✓ curl available\n")
+                else:
+                    self._update_terminal_output("⚠ curl not found\n")
+            except FileNotFoundError:
+                self._update_terminal_output("⚠ curl not installed\n")
+            
+            # Try to install wget if not available (Unix systems)
+            if self.os_type in ['Darwin', 'Linux']:
+                try:
+                    wget_result = subprocess.run(
+                        ['wget', '--version'],
+                        capture_output=True,
+                        text=True,
+                        timeout=10
+                    )
+                    if wget_result.returncode == 0:
+                        self._update_terminal_output("✓ wget available\n")
+                    else:
+                        self._update_terminal_output("⚠ wget not found\n")
+                except FileNotFoundError:
+                    self._update_terminal_output("⚠ wget not installed\n")
+                    
+        except Exception as e:
+            logger.warning(f"System tools check failed: {e}")
 
     def _clone_current_environment(self):
         r"""Create a new Python virtual environment."""
@@ -752,7 +1145,7 @@ class TerminalToolkit(BaseToolkit):
                     text=True,
                     bufsize=1,
                     universal_newlines=True,
-                    env=os.environ.copy(),
+                    env=self._get_execution_environment(),
                 )
 
                 self.shell_sessions[id]["process"] = proc

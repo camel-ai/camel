@@ -647,7 +647,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.72a1"
+version = "0.2.72a2"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -6056,14 +6056,14 @@ wheels = [
 
 [[package]]
 name = "pypdf"
-version = "5.7.0"
+version = "5.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7b/42/fbc37af367b20fa6c53da81b1780025f6046a0fac8cbf0663a17e743b033/pypdf-5.7.0.tar.gz", hash = "sha256:68c92f2e1aae878bab1150e74447f31ab3848b1c0a6f8becae9f0b1904460b6f", size = 5026120, upload-time = "2025-06-29T08:49:48.305Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/28/5a/139b1a3ec3789cc77a7cb9d5d3bc9e97e742e6d03708baeb7719f8ad0827/pypdf-5.8.0.tar.gz", hash = "sha256:f8332f80606913e6f0ce65488a870833c9d99ccdb988c17bb6c166f7c8e140cb", size = 5029494, upload-time = "2025-07-13T12:51:35.125Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/73/9f/78d096ef795a813fa0e1cb9b33fa574b205f2b563d9c1e9366c854cf0364/pypdf-5.7.0-py3-none-any.whl", hash = "sha256:203379453439f5b68b7a1cd43cdf4c5f7a02b84810cefa7f93a47b350aaaba48", size = 305524, upload-time = "2025-06-29T08:49:46.16Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/94/05d0310bfa92c26aa50a9d2dea2c6448a1febfdfcf98fb340a99d48a3078/pypdf-5.8.0-py3-none-any.whl", hash = "sha256:bfe861285cd2f79cceecefde2d46901e4ee992a9f4b42c56548c4a6e9236a0d1", size = 309718, upload-time = "2025-07-13T12:51:33.159Z" },
 ]
 
 [[package]]
