@@ -166,7 +166,7 @@ for more details.
 ### search_google
 
 ```python
-def search_google(self, query: str):
+def search_google(self, query: str, search_type: str = 'web'):
 ```
 
 Use Google search engine to search information for the given query.
@@ -174,17 +174,52 @@ Use Google search engine to search information for the given query.
 **Parameters:**
 
 - **query** (str): The query to be searched.
+- **search_type** (str): The type of search to perform. Either "web" for web pages or "image" for image search. (default: "web")
 
 **Returns:**
 
   List[Dict[str, Any]]: A list of dictionaries where each dictionary
-represents a website.
-Each dictionary contains the following keys:
+represents a search result.
+
+For web search, each dictionary contains:
 - 'result_id': A number in order.
 - 'title': The title of the website.
 - 'description': A brief description of the website.
 - 'long_description': More detail of the website.
 - 'url': The URL of the website.
+
+For image search, each dictionary contains:
+- 'result_id': A number in order.
+- 'title': The title of the image.
+- 'image_url': The URL of the image.
+- 'display_link': The website hosting the image.
+- 'context_url': The URL of the page containing the image.
+- 'width': Image width in pixels (if available).
+- 'height': Image height in pixels (if available).
+
+Example web result:
+`\{
+'result_id': 1,
+'title': 'OpenAI',
+'description': 'An organization focused on ensuring that
+artificial general intelligence benefits all of humanity.',
+'long_description': 'OpenAI is a non-profit artificial
+intelligence research company. Our goal is to advance
+digital intelligence in the way that is most likely to
+benefit humanity as a whole',
+'url': 'https://www.openai.com'
+\}`
+
+Example image result:
+`\{
+'result_id': 1,
+'title': 'Beautiful Sunset',
+'image_url': 'https://example.com/image.jpg',
+'display_link': 'example.com',
+'context_url': 'https://example.com/page.html',
+'width': 800,
+'height': 600
+\}`
 
 <a id="camel.toolkits.search_toolkit.SearchToolkit.tavily_search"></a>
 
