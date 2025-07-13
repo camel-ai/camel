@@ -38,6 +38,31 @@ def __init__(
 ):
 ```
 
+<a id="camel.models.moonshot_model.MoonshotModel._prepare_request"></a>
+
+### _prepare_request
+
+```python
+def _prepare_request(
+    self,
+    messages: List[OpenAIMessage],
+    response_format: Optional[Type[BaseModel]] = None,
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+Prepare the request configuration for Moonshot API.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): Message list with the chat history in OpenAI API format.
+- **response_format** (Optional[Type[BaseModel]]): The format of the response.
+- **tools** (Optional[List[Dict[str, Any]]]): The schema of the tools to use for the request.
+
+**Returns:**
+
+  Dict[str, Any]: The prepared request configuration.
+
 <a id="camel.models.moonshot_model.MoonshotModel.check_model_config"></a>
 
 ### check_model_config
