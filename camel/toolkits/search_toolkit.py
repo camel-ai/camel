@@ -434,23 +434,37 @@ class SearchToolkit(BaseToolkit):
             (None, 'SEARCH_ENGINE_ID'),
         ]
     )
-    def search_google(self, query: str) -> List[Dict[str, Any]]:
+    def search_google(
+        self, query: str, search_type: str = "web"
+    ) -> List[Dict[str, Any]]:
         r"""Use Google search engine to search information for the given query.
 
         Args:
             query (str): The query to be searched.
+            search_type (str): The type of search to perform. Either "web" for
+                web pages or "image" for image search. (default: "web")
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
-            represents a website.
-                Each dictionary contains the following keys:
+            represents a search result.
+
+                For web search, each dictionary contains:
                 - 'result_id': A number in order.
                 - 'title': The title of the website.
                 - 'description': A brief description of the website.
                 - 'long_description': More detail of the website.
                 - 'url': The URL of the website.
 
-                Example:
+                For image search, each dictionary contains:
+                - 'result_id': A number in order.
+                - 'title': The title of the image.
+                - 'image_url': The URL of the image.
+                - 'display_link': The website hosting the image.
+                - 'context_url': The URL of the page containing the image.
+                - 'width': Image width in pixels (if available).
+                - 'height': Image height in pixels (if available).
+
+                Example web result:
                 {
                     'result_id': 1,
                     'title': 'OpenAI',
@@ -462,7 +476,17 @@ class SearchToolkit(BaseToolkit):
                     benefit humanity as a whole',
                     'url': 'https://www.openai.com'
                 }
-            title, description, url of a website.
+
+                Example image result:
+                {
+                    'result_id': 1,
+                    'title': 'Beautiful Sunset',
+                    'image_url': 'https://example.com/image.jpg',
+                    'display_link': 'example.com',
+                    'context_url': 'https://example.com/page.html',
+                    'width': 800,
+                    'height': 600
+                }
         """
         import requests
 
@@ -477,11 +501,17 @@ class SearchToolkit(BaseToolkit):
         search_language = "en"
         # Constructing the URL
         # Doc: https://developers.google.com/custom-search/v1/using_rest
-        url = (
+        base_url = (
             f"https://www.googleapis.com/customsearch/v1?"
             f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start="
             f"{start_page_idx}&lr={search_language}&num={self.number_of_result_pages}"
         )
+
+        # Add searchType parameter for image search
+        if search_type == "image":
+            url = base_url + "&searchType=image"
+        else:
+            url = base_url
 
         responses = []
         # Fetch the results given the URL
@@ -494,37 +524,68 @@ class SearchToolkit(BaseToolkit):
             if "items" in data:
                 search_items = data.get("items")
 
-                # Iterate over 10 results found
+                # Iterate over results found
                 for i, search_item in enumerate(search_items, start=1):
-                    # Check metatags are present
-                    if "pagemap" not in search_item:
-                        continue
-                    if "metatags" not in search_item["pagemap"]:
-                        continue
-                    if (
-                        "og:description"
-                        in search_item["pagemap"]["metatags"][0]
-                    ):
-                        long_description = search_item["pagemap"]["metatags"][
-                            0
-                        ]["og:description"]
-                    else:
-                        long_description = "N/A"
-                    # Get the page title
-                    title = search_item.get("title")
-                    # Page snippet
-                    snippet = search_item.get("snippet")
+                    if search_type == "image":
+                        # Process image search results
+                        title = search_item.get("title")
+                        image_url = search_item.get("link")
+                        display_link = search_item.get("displayLink")
 
-                    # Extract the page url
-                    link = search_item.get("link")
-                    response = {
-                        "result_id": i,
-                        "title": title,
-                        "description": snippet,
-                        "long_description": long_description,
-                        "url": link,
-                    }
-                    responses.append(response)
+                        # Get context URL (page containing the image)
+                        image_info = search_item.get("image", {})
+                        context_url = image_info.get("contextLink", "")
+
+                        # Get image dimensions if available
+                        width = image_info.get("width")
+                        height = image_info.get("height")
+
+                        response = {
+                            "result_id": i,
+                            "title": title,
+                            "image_url": image_url,
+                            "display_link": display_link,
+                            "context_url": context_url,
+                        }
+
+                        # Add dimensions if available
+                        if width:
+                            response["width"] = int(width)
+                        if height:
+                            response["height"] = int(height)
+
+                        responses.append(response)
+                    else:
+                        # Process web search results (existing logic)
+                        # Check metatags are present
+                        if "pagemap" not in search_item:
+                            continue
+                        if "metatags" not in search_item["pagemap"]:
+                            continue
+                        if (
+                            "og:description"
+                            in search_item["pagemap"]["metatags"][0]
+                        ):
+                            long_description = search_item["pagemap"][
+                                "metatags"
+                            ][0]["og:description"]
+                        else:
+                            long_description = "N/A"
+                        # Get the page title
+                        title = search_item.get("title")
+                        # Page snippet
+                        snippet = search_item.get("snippet")
+
+                        # Extract the page url
+                        link = search_item.get("link")
+                        response = {
+                            "result_id": i,
+                            "title": title,
+                            "description": snippet,
+                            "long_description": long_description,
+                            "url": link,
+                        }
+                        responses.append(response)
             else:
                 error_info = data.get("error", {})
                 logger.error(
