@@ -41,4 +41,4 @@ class ToolResult:
     def __repr__(self) -> str:
         r"""Return a detailed representation of the result."""
         img_count = len(self.images) if self.images else 0
-        return f"ToolResult(text='{self.text[:50]}...', images={img_count})"
+        return f"ToolResult(text='{self.text}', images={img_count})"
