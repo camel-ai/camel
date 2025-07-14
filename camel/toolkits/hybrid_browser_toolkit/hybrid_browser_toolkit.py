@@ -766,7 +766,7 @@ class HybridBrowserToolkit(BaseToolkit):
             # Add debug info for tab info retrieval
             logger.debug("Attempting to get tab info from session...")
             tab_info = await session.get_tab_info()
-            current_tab_index = await session.get_current_tab_index()
+            current_tab_index = await session.get_current_tab_id()
 
             # Debug log the successful retrieval
             logger.debug(
@@ -814,7 +814,7 @@ class HybridBrowserToolkit(BaseToolkit):
                     try:
                         open_pages = [
                             p
-                            for p in fallback_session._pages
+                            for p in fallback_session._pages.values()
                             if not p.is_closed()
                         ]
                         actual_tab_count = len(open_pages)
@@ -1228,9 +1228,9 @@ class HybridBrowserToolkit(BaseToolkit):
         if should_create_new_tab:
             logger.info(f"Creating new tab and navigating to URL: {url}")
             try:
-                new_tab_index = await session.create_new_tab(url)
-                await session.switch_to_tab(new_tab_index)
-                nav_result = f"Visited {url} in new tab {new_tab_index}"
+                new_tab_id = await session.create_new_tab(url)
+                await session.switch_to_tab(new_tab_id)
+                nav_result = f"Visited {url} in new tab {new_tab_id}"
             except Exception as e:
                 logger.error(f"Failed to create new tab and navigate: {e}")
                 nav_result = f"Error creating new tab: {e}"
@@ -1897,14 +1897,14 @@ class HybridBrowserToolkit(BaseToolkit):
         )
 
     @action_logger
-    async def switch_tab(self, *, tab_index: int) -> Dict[str, Any]:
-        r"""Switches to a different browser tab using its index.
+    async def switch_tab(self, *, tab_id: str) -> Dict[str, Any]:
+        r"""Switches to a different browser tab using its ID.
 
         After switching, all actions will apply to the new tab. Use
-        `get_tab_info` to find the index of the tab you want to switch to.
+        `get_tab_info` to find the ID of the tab you want to switch to.
 
         Args:
-            tab_index (int): The zero-based index of the tab to activate.
+            tab_id (str): The ID of the tab to activate.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1917,7 +1917,7 @@ class HybridBrowserToolkit(BaseToolkit):
         await self._ensure_browser()
         session = await self._get_session()
 
-        success = await session.switch_to_tab(tab_index)
+        success = await session.switch_to_tab(tab_id)
 
         if success:
             snapshot = await session.get_snapshot(
@@ -1926,14 +1926,14 @@ class HybridBrowserToolkit(BaseToolkit):
             tab_info = await self._get_tab_info_for_output()
 
             result = {
-                "result": f"Successfully switched to tab {tab_index}",
+                "result": f"Successfully switched to tab {tab_id}",
                 "snapshot": snapshot,
                 **tab_info,
             }
         else:
             tab_info = await self._get_tab_info_for_output()
             result = {
-                "result": f"Failed to switch to tab {tab_index}. Tab may not "
+                "result": f"Failed to switch to tab {tab_id}. Tab may not "
                 f"exist.",
                 "snapshot": "",
                 **tab_info,
@@ -1942,14 +1942,14 @@ class HybridBrowserToolkit(BaseToolkit):
         return result
 
     @action_logger
-    async def close_tab(self, *, tab_index: int) -> Dict[str, Any]:
-        r"""Closes a browser tab using its index.
+    async def close_tab(self, *, tab_id: str) -> Dict[str, Any]:
+        r"""Closes a browser tab using its ID.
 
-        Use `get_tab_info` to find the index of the tab to close. After
+        Use `get_tab_info` to find the ID of the tab to close. After
         closing, the browser will switch to another tab if available.
 
         Args:
-            tab_index (int): The zero-based index of the tab to close.
+            tab_id (str): The ID of the tab to close.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1962,7 +1962,7 @@ class HybridBrowserToolkit(BaseToolkit):
         await self._ensure_browser()
         session = await self._get_session()
 
-        success = await session.close_tab(tab_index)
+        success = await session.close_tab(tab_id)
 
         if success:
             # Get current state after closing the tab
@@ -1976,14 +1976,14 @@ class HybridBrowserToolkit(BaseToolkit):
             tab_info = await self._get_tab_info_for_output()
 
             result = {
-                "result": f"Successfully closed tab {tab_index}",
+                "result": f"Successfully closed tab {tab_id}",
                 "snapshot": snapshot,
                 **tab_info,
             }
         else:
             tab_info = await self._get_tab_info_for_output()
             result = {
-                "result": f"Failed to close tab {tab_index}. Tab may not "
+                "result": f"Failed to close tab {tab_id}. Tab may not "
                 f"exist.",
                 "snapshot": "",
                 **tab_info,
