@@ -32,6 +32,23 @@ class SearchToolkit(BaseToolkit):
     search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave.
     """
 
+    def __init__(
+        self,
+        timeout: Optional[float] = None,
+        number_of_result_pages: int = 10,
+    ):
+        r"""Initializes the RedditToolkit with the specified number of retries
+        and delay.
+
+        Args:
+            timeout (float): Timeout for API requests in seconds.
+                (default: :obj:`None`)
+            number_of_result_pages (int): The number of result pages to
+                retrieve. (default: :obj:`10`)
+        """
+        super().__init__(timeout=timeout)
+        self.number_of_result_pages = number_of_result_pages
+
     @dependencies_required("wikipedia")
     def search_wiki(self, entity: str) -> str:
         r"""Search the entity in WikiPedia and return the summary of the
@@ -144,7 +161,7 @@ class SearchToolkit(BaseToolkit):
 
     @dependencies_required("duckduckgo_search")
     def search_duckduckgo(
-        self, query: str, source: str = "text", max_results: int = 5
+        self, query: str, source: str = "text"
     ) -> List[Dict[str, Any]]:
         r"""Use DuckDuckGo search engine to search information for
         the given query.
@@ -157,7 +174,6 @@ class SearchToolkit(BaseToolkit):
             query (str): The query to be searched.
             source (str): The type of information to query (e.g., "text",
                 "images", "videos"). Defaults to "text".
-            max_results (int): Max number of results, defaults to `5`.
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
@@ -171,7 +187,9 @@ class SearchToolkit(BaseToolkit):
 
         if source == "text":
             try:
-                results = ddgs.text(keywords=query, max_results=max_results)
+                results = ddgs.text(
+                    keywords=query, max_results=self.number_of_result_pages
+                )
             except RequestException as e:
                 # Handle specific exceptions or general request exceptions
                 responses.append({"error": f"duckduckgo search failed.{e}"})
@@ -189,7 +207,9 @@ class SearchToolkit(BaseToolkit):
 
         elif source == "images":
             try:
-                results = ddgs.images(keywords=query, max_results=max_results)
+                results = ddgs.images(
+                    keywords=query, max_results=self.number_of_result_pages
+                )
             except RequestException as e:
                 # Handle specific exceptions or general request exceptions
                 responses.append({"error": f"duckduckgo search failed.{e}"})
@@ -208,7 +228,9 @@ class SearchToolkit(BaseToolkit):
 
         elif source == "videos":
             try:
-                results = ddgs.videos(keywords=query, max_results=max_results)
+                results = ddgs.videos(
+                    keywords=query, max_results=self.number_of_result_pages
+                )
             except RequestException as e:
                 # Handle specific exceptions or general request exceptions
                 responses.append({"error": f"duckduckgo search failed.{e}"})
@@ -241,7 +263,6 @@ class SearchToolkit(BaseToolkit):
         country: str = "US",
         search_lang: str = "en",
         ui_lang: str = "en-US",
-        count: int = 20,
         offset: int = 0,
         safesearch: str = "moderate",
         freshness: Optional[str] = None,
@@ -277,10 +298,6 @@ class SearchToolkit(BaseToolkit):
                 Format: '<language_code>-<country_code>'. Common examples:
                 'en-US', 'en-GB', 'jp-JP', 'zh-hans-CN', 'zh-hant-TW',
                 'de-DE', 'fr-FR', 'es-ES', 'pt-BR', 'ru-RU', 'ko-KR'.
-            count (int): The number of search results returned in response.
-                The maximum is 20. The actual number delivered may be less than
-                requested. Combine this parameter with offset to paginate
-                search results.
             offset (int): The zero based offset that indicates number of search
                 results per page (count) to skip before returning the result.
                 The maximum is 9. The actual number delivered may be less than
@@ -368,7 +385,7 @@ class SearchToolkit(BaseToolkit):
             "country": country,
             "search_lang": search_lang,
             "ui_lang": ui_lang,
-            "count": count,
+            "count": self.number_of_result_pages,
             "offset": offset,
             "safesearch": safesearch,
             "freshness": freshness,
@@ -418,25 +435,36 @@ class SearchToolkit(BaseToolkit):
         ]
     )
     def search_google(
-        self, query: str, num_result_pages: int = 5
+        self, query: str, search_type: str = "web"
     ) -> List[Dict[str, Any]]:
         r"""Use Google search engine to search information for the given query.
 
         Args:
             query (str): The query to be searched.
-            num_result_pages (int): The number of result pages to retrieve.
+            search_type (str): The type of search to perform. Either "web" for
+                web pages or "image" for image search. (default: "web")
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
-            represents a website.
-                Each dictionary contains the following keys:
+            represents a search result.
+
+                For web search, each dictionary contains:
                 - 'result_id': A number in order.
                 - 'title': The title of the website.
                 - 'description': A brief description of the website.
                 - 'long_description': More detail of the website.
                 - 'url': The URL of the website.
 
-                Example:
+                For image search, each dictionary contains:
+                - 'result_id': A number in order.
+                - 'title': The title of the image.
+                - 'image_url': The URL of the image.
+                - 'display_link': The website hosting the image.
+                - 'context_url': The URL of the page containing the image.
+                - 'width': Image width in pixels (if available).
+                - 'height': Image height in pixels (if available).
+
+                Example web result:
                 {
                     'result_id': 1,
                     'title': 'OpenAI',
@@ -448,7 +476,17 @@ class SearchToolkit(BaseToolkit):
                     benefit humanity as a whole',
                     'url': 'https://www.openai.com'
                 }
-            title, description, url of a website.
+
+                Example image result:
+                {
+                    'result_id': 1,
+                    'title': 'Beautiful Sunset',
+                    'image_url': 'https://example.com/image.jpg',
+                    'display_link': 'example.com',
+                    'context_url': 'https://example.com/page.html',
+                    'width': 800,
+                    'height': 600
+                }
         """
         import requests
 
@@ -461,15 +499,19 @@ class SearchToolkit(BaseToolkit):
         start_page_idx = 1
         # Different language may get different result
         search_language = "en"
-        # How many pages to return
-        num_result_pages = num_result_pages
         # Constructing the URL
         # Doc: https://developers.google.com/custom-search/v1/using_rest
-        url = (
+        base_url = (
             f"https://www.googleapis.com/customsearch/v1?"
             f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start="
-            f"{start_page_idx}&lr={search_language}&num={num_result_pages}"
+            f"{start_page_idx}&lr={search_language}&num={self.number_of_result_pages}"
         )
+
+        # Add searchType parameter for image search
+        if search_type == "image":
+            url = base_url + "&searchType=image"
+        else:
+            url = base_url
 
         responses = []
         # Fetch the results given the URL
@@ -482,37 +524,68 @@ class SearchToolkit(BaseToolkit):
             if "items" in data:
                 search_items = data.get("items")
 
-                # Iterate over 10 results found
+                # Iterate over results found
                 for i, search_item in enumerate(search_items, start=1):
-                    # Check metatags are present
-                    if "pagemap" not in search_item:
-                        continue
-                    if "metatags" not in search_item["pagemap"]:
-                        continue
-                    if (
-                        "og:description"
-                        in search_item["pagemap"]["metatags"][0]
-                    ):
-                        long_description = search_item["pagemap"]["metatags"][
-                            0
-                        ]["og:description"]
-                    else:
-                        long_description = "N/A"
-                    # Get the page title
-                    title = search_item.get("title")
-                    # Page snippet
-                    snippet = search_item.get("snippet")
+                    if search_type == "image":
+                        # Process image search results
+                        title = search_item.get("title")
+                        image_url = search_item.get("link")
+                        display_link = search_item.get("displayLink")
 
-                    # Extract the page url
-                    link = search_item.get("link")
-                    response = {
-                        "result_id": i,
-                        "title": title,
-                        "description": snippet,
-                        "long_description": long_description,
-                        "url": link,
-                    }
-                    responses.append(response)
+                        # Get context URL (page containing the image)
+                        image_info = search_item.get("image", {})
+                        context_url = image_info.get("contextLink", "")
+
+                        # Get image dimensions if available
+                        width = image_info.get("width")
+                        height = image_info.get("height")
+
+                        response = {
+                            "result_id": i,
+                            "title": title,
+                            "image_url": image_url,
+                            "display_link": display_link,
+                            "context_url": context_url,
+                        }
+
+                        # Add dimensions if available
+                        if width:
+                            response["width"] = int(width)
+                        if height:
+                            response["height"] = int(height)
+
+                        responses.append(response)
+                    else:
+                        # Process web search results (existing logic)
+                        # Check metatags are present
+                        if "pagemap" not in search_item:
+                            continue
+                        if "metatags" not in search_item["pagemap"]:
+                            continue
+                        if (
+                            "og:description"
+                            in search_item["pagemap"]["metatags"][0]
+                        ):
+                            long_description = search_item["pagemap"][
+                                "metatags"
+                            ][0]["og:description"]
+                        else:
+                            long_description = "N/A"
+                        # Get the page title
+                        title = search_item.get("title")
+                        # Page snippet
+                        snippet = search_item.get("snippet")
+
+                        # Extract the page url
+                        link = search_item.get("link")
+                        response = {
+                            "result_id": i,
+                            "title": title,
+                            "description": snippet,
+                            "long_description": long_description,
+                            "url": link,
+                        }
+                        responses.append(response)
             else:
                 error_info = data.get("error", {})
                 logger.error(
@@ -529,15 +602,11 @@ class SearchToolkit(BaseToolkit):
             responses.append({"error": f"google search failed: {e!s}"})
         return responses
 
-    def tavily_search(
-        self, query: str, num_results: int = 5, **kwargs
-    ) -> List[Dict[str, Any]]:
+    def tavily_search(self, query: str, **kwargs) -> List[Dict[str, Any]]:
         r"""Use Tavily Search API to search information for the given query.
 
         Args:
             query (str): The query to be searched.
-            num_results (int): The number of search results to retrieve
-                (default is `5`).
             **kwargs: Additional optional parameters supported by Tavily's API:
                 - search_depth (str): "basic" or "advanced" search depth.
                 - topic (str): The search category, e.g., "general" or "news."
@@ -573,7 +642,9 @@ class SearchToolkit(BaseToolkit):
         client = TavilyClient(Tavily_API_KEY)
 
         try:
-            results = client.search(query, max_results=num_results, **kwargs)
+            results = client.search(
+                query, max_results=self.number_of_result_pages, **kwargs
+            )
             return results
         except Exception as e:
             return [{"error": f"An unexpected error occurred: {e!s}"}]
@@ -584,7 +655,6 @@ class SearchToolkit(BaseToolkit):
         query: str,
         freshness: str = "noLimit",
         summary: bool = False,
-        count: int = 10,
         page: int = 1,
     ) -> Dict[str, Any]:
         r"""Query the Bocha AI search API and return search results.
@@ -600,7 +670,6 @@ class SearchToolkit(BaseToolkit):
                 - 'oneYear': past year.
             summary (bool): Whether to include text summaries in results.
                 Default is False.
-            count (int): Number of results to return (1-50). Default is 10.
             page (int): Page number of results. Default is 1.
 
         Returns:
@@ -623,7 +692,7 @@ class SearchToolkit(BaseToolkit):
                 "query": query,
                 "freshness": freshness,
                 "summary": summary,
-                "count": count,
+                "count": self.number_of_result_pages,
                 "page": page,
             },
             ensure_ascii=False,
@@ -641,15 +710,13 @@ class SearchToolkit(BaseToolkit):
         except requests.exceptions.RequestException as e:
             return {"error": f"Bocha AI search failed: {e!s}"}
 
-    def search_baidu(self, query: str, max_results: int = 5) -> Dict[str, Any]:
+    def search_baidu(self, query: str) -> Dict[str, Any]:
         r"""Search Baidu using web scraping to retrieve relevant search
         results. This method queries Baidu's search engine and extracts search
         results including titles, descriptions, and URLs.
 
         Args:
             query (str): Search query string to submit to Baidu.
-            max_results (int): Maximum number of results to return.
-                (default: :obj:`5`)
 
         Returns:
             Dict[str, Any]: A dictionary containing search results or error
@@ -667,7 +734,7 @@ class SearchToolkit(BaseToolkit):
                 ),
                 "Referer": "https://www.baidu.com",
             }
-            params = {"wd": query, "rn": str(max_results)}
+            params = {"wd": query, "rn": str(self.number_of_result_pages)}
 
             response = requests.get(url, headers=headers, params=params)
             response.encoding = "utf-8"
@@ -696,7 +763,7 @@ class SearchToolkit(BaseToolkit):
                         "url": link,
                     }
                 )
-                if len(results) >= max_results:
+                if len(results) >= self.number_of_result_pages:
                     break
 
             if not results:
@@ -710,7 +777,7 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Baidu scraping error: {e!s}"}
 
-    def search_bing(self, query: str, max_results: int = 5) -> Dict[str, Any]:
+    def search_bing(self, query: str) -> Dict[str, Any]:
         r"""Use Bing search engine to search information for the given query.
 
         This function queries the Chinese version of Bing search engine (cn.
@@ -722,8 +789,6 @@ class SearchToolkit(BaseToolkit):
         Args:
             query (str): The search query string to submit to Bing. Works best
                 with Chinese queries or when Chinese results are preferred.
-            max_results (int): Maximum number of results to return.
-                (default: :obj:`5`)
 
         Returns:
             Dict ([str, Any]): A dictionary containing either:
@@ -773,7 +838,9 @@ class SearchToolkit(BaseToolkit):
             result_items = b_results_tag.find_all("li")
 
             results: List[Dict[str, Any]] = []
-            for i in range(min(len(result_items), max_results)):
+            for i in range(
+                min(len(result_items), self.number_of_result_pages)
+            ):
                 row = result_items[i]
                 if not isinstance(row, Tag):
                     continue
@@ -838,7 +905,6 @@ class SearchToolkit(BaseToolkit):
                 "financial report",
             ]
         ] = None,
-        num_results: int = 10,
         include_text: Optional[List[str]] = None,
         exclude_text: Optional[List[str]] = None,
         use_autoprompt: bool = True,
@@ -854,8 +920,6 @@ class SearchToolkit(BaseToolkit):
                 and neural search. (default: :obj:`"auto"`)
             category (Optional[Literal]): Category to focus the search on, such
                 as "research paper" or "news". (default: :obj:`None`)
-            num_results (int): Number of results to return (max 100).
-                (default: :obj:`10`)
             include_text (Optional[List[str]]): Strings that must be present in
                 webpage text. Limited to 1 string of up to 5 words.
                 (default: :obj:`None`)
@@ -884,7 +948,10 @@ class SearchToolkit(BaseToolkit):
         try:
             exa = Exa(EXA_API_KEY)
 
-            if num_results is not None and not 0 < num_results <= 100:
+            if (
+                self.number_of_result_pages is not None
+                and not 0 < self.number_of_result_pages <= 100
+            ):
                 raise ValueError("num_results must be between 1 and 100")
 
             if include_text is not None:
@@ -911,7 +978,7 @@ class SearchToolkit(BaseToolkit):
                         query=query,
                         type=search_type,
                         category=category,
-                        num_results=num_results,
+                        num_results=self.number_of_result_pages,
                         include_text=include_text,
                         exclude_text=exclude_text,
                         use_autoprompt=use_autoprompt,
@@ -925,7 +992,7 @@ class SearchToolkit(BaseToolkit):
                         query=query,
                         type=search_type,
                         category=category,
-                        num_results=num_results,
+                        num_results=self.number_of_result_pages,
                         include_text=include_text,
                         exclude_text=exclude_text,
                         use_autoprompt=use_autoprompt,
@@ -955,7 +1022,6 @@ class SearchToolkit(BaseToolkit):
                 "news_center",
             ]
         ] = None,
-        page: int = 1,
         return_main_text: bool = False,
         return_markdown_text: bool = True,
         enable_rerank: bool = True,
@@ -980,8 +1046,6 @@ class SearchToolkit(BaseToolkit):
                 results from sites in the specified industries. Multiple
                 industries can be comma-separated.
                 (default: :obj:`None`)
-            page (int): Page number for results pagination.
-                (default: :obj:`1`)
             return_main_text (bool): Whether to include the main text of the
                 webpage in results. (default: :obj:`True`)
             return_markdown_text (bool): Whether to include markdown formatted
@@ -1014,7 +1078,7 @@ class SearchToolkit(BaseToolkit):
         params: Dict[str, Union[str, int]] = {
             "query": query,
             "timeRange": time_range,
-            "page": page,
+            "page": self.number_of_result_pages,
             "returnMainText": str(return_main_text).lower(),
             "returnMarkdownText": str(return_markdown_text).lower(),
             "enableRerank": str(enable_rerank).lower(),
