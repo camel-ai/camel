@@ -61,6 +61,7 @@ from camel.agents.streaming import (
     StreamingChatAgentResponse,
     AsyncStreamingChatAgentResponse,
 )
+from camel.agents.tool_manager import ToolManager
 from camel.logger import get_logger
 from camel.memories import (
     AgentMemory,
@@ -290,20 +291,29 @@ class ChatAgent(BaseAgent):
             or RoleType.ASSISTANT
         )
 
-        # Set up tools
-        self._internal_tools = {
-            tool.get_function_name(): tool
-            for tool in [
-                convert_to_function_tool(tool) for tool in (tools or [])
-            ]
-        }
+        self.tool_manager = ToolManager()
+        # add internal tools
+        if tools:
+            self.tool_manager.add_tools(tools)
+        # external tools
+        if external_tools:
+            self.tool_manager.add_external_tools(external_tools)
 
-        self._external_tool_schemas = {
-            tool_schema["function"]["name"]: tool_schema
-            for tool_schema in [
-                convert_to_schema(tool) for tool in (external_tools or [])
-            ]
-        }
+        # # Todo to del
+        # # Set up tools
+        # self._internal_tools = {
+        #     tool.get_function_name(): tool
+        #     for tool in [
+        #         convert_to_function_tool(tool) for tool in (tools or [])
+        #     ]
+        # }
+        # # Todo to del
+        # self._external_tool_schemas = {
+        #     tool_schema["function"]["name"]: tool_schema
+        #     for tool_schema in [
+        #         convert_to_schema(tool) for tool in (external_tools or [])
+        #     ]
+        # }
 
         # Set up other properties
         self.terminated = False
@@ -317,6 +327,14 @@ class ChatAgent(BaseAgent):
         self._image_retry_count: Dict[str, int] = {}
         # Store images to attach to next user message
         self.pause_event = pause_event
+
+    @property
+    def _internal_tools(self):
+        return self.tool_manager.get_internal_tools()
+
+    @property
+    def _external_tool_schemas(self):
+        return self.tool_manager.get_external_tool_schemas()
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -469,7 +487,7 @@ class ChatAgent(BaseAgent):
     @property
     def tool_dict(self) -> Dict[str, FunctionTool]:
         r"""Returns a dictionary of internal tools."""
-        return self._internal_tools
+        return self.tool_manager.get_internal_tools()
 
     @property
     def output_language(self) -> Optional[str]:
@@ -492,10 +510,7 @@ class ChatAgent(BaseAgent):
         r"""Returns a list of tool schemas of all tools, including internal
         and external tools.
         """
-        return list(self._external_tool_schemas.values()) + [
-            func_tool.get_openai_tool_schema()
-            for func_tool in self._internal_tools.values()
-        ]
+        return self.tool_manager.get_full_tool_schemas()
 
     def _get_external_tool_names(self) -> Set[str]:
         r"""Returns a set of external tool names."""
@@ -503,19 +518,16 @@ class ChatAgent(BaseAgent):
 
     def add_tool(self, tool: Union[FunctionTool, Callable]) -> None:
         r"""Add a tool to the agent."""
-        new_tool = convert_to_function_tool(tool)
-        self._internal_tools[new_tool.get_function_name()] = new_tool
+        self.tool_manager.add_tool(tool)
 
     def add_tools(self, tools: List[Union[FunctionTool, Callable]]) -> None:
         r"""Add a list of tools to the agent."""
-        for tool in tools:
-            self.add_tool(tool)
+        self.tool_manager.add_tools(tools)
 
     def add_external_tool(
         self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
     ) -> None:
-        new_tool_schema = convert_to_schema(tool)
-        self._external_tool_schemas[new_tool_schema["name"]] = new_tool_schema
+        self.tool_manager.add_external_tool(tool)
 
     def remove_tool(self, tool_name: str) -> bool:
         r"""Remove a tool from the agent by name.
@@ -526,15 +538,12 @@ class ChatAgent(BaseAgent):
         Returns:
             bool: Whether the tool was successfully removed.
         """
-        if tool_name in self._internal_tools:
-            del self._internal_tools[tool_name]
-            return True
-        return False
+        return self.tool_manager.remove_tool(tool_name)
+
 
     def remove_tools(self, tool_names: List[str]) -> None:
         r"""Remove a list of tools from the agent by name."""
-        for tool_name in tool_names:
-            self.remove_tool(tool_name)
+        self.tool_manager.remove_tools(tool_names)
 
     def remove_external_tool(self, tool_name: str) -> bool:
         r"""Remove an external tool from the agent by name.
@@ -545,10 +554,7 @@ class ChatAgent(BaseAgent):
         Returns:
             bool: Whether the tool was successfully removed.
         """
-        if tool_name in self._external_tool_schemas:
-            del self._external_tool_schemas[tool_name]
-            return True
-        return False
+        return self.tool_manager.remove_external_tool(tool_name)
 
     def update_memory(
         self,
