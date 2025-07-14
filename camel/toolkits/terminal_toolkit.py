@@ -93,7 +93,7 @@ class TerminalToolkit(BaseToolkit):
 
         self.python_executable = sys.executable
         self.is_macos = platform.system() == 'Darwin'
-        self.initial_env_path = None
+        self.initial_env_path: Optional[str] = None
         self.initial_env_prepared = False
 
         atexit.register(self.__del__)
@@ -194,14 +194,50 @@ class TerminalToolkit(BaseToolkit):
                 return
 
             self._update_terminal_output(
-                f"Creating new Python environment at:{self.cloned_env_path}\n"
+                f"Creating new Python environment at: {self.cloned_env_path}\n"
             )
 
+            # Create virtual environment with pip
             venv.create(self.cloned_env_path, with_pip=True)
-            self._update_terminal_output(
-                "New Python environment created successfully!\n"
-            )
 
+            # Ensure pip is properly available by upgrading it
+            if self.os_type == 'Windows':
+                python_path = os.path.join(
+                    self.cloned_env_path, "Scripts", "python.exe"
+                )
+            else:
+                python_path = os.path.join(
+                    self.cloned_env_path, "bin", "python"
+                )
+
+            # Verify python executable exists
+            if os.path.exists(python_path):
+                # Use python -m pip to ensure pip is available
+                subprocess.run(
+                    [python_path, "-m", "pip", "install", "--upgrade", "pip"],
+                    check=True,
+                    capture_output=True,
+                    cwd=self.working_dir,
+                    timeout=60,
+                )
+                self._update_terminal_output(
+                    "New Python environment created successfully with pip!\n"
+                )
+            else:
+                self._update_terminal_output(
+                    f"Warning: Python executable not found at {python_path}\n"
+                )
+
+        except subprocess.CalledProcessError as e:
+            error_msg = e.stderr.decode() if e.stderr else str(e)
+            self._update_terminal_output(
+                f"Failed to upgrade pip in cloned environment: {error_msg}\n"
+            )
+            logger.error(f"Failed to upgrade pip: {error_msg}")
+        except subprocess.TimeoutExpired:
+            self._update_terminal_output(
+                "Pip upgrade timed out, but environment may still be usable\n"
+            )
         except Exception as e:
             self._update_terminal_output(
                 f"Failed to create environment: {e!s}\n"
@@ -259,6 +295,9 @@ class TerminalToolkit(BaseToolkit):
 
     def _setup_initial_env_with_uv(self):
         r"""Set up initial environment using uv."""
+        if self.initial_env_path is None:
+            raise Exception("Initial environment path not set")
+
         try:
             # Create virtual environment with Python 3.10 using uv
             subprocess.run(
@@ -312,6 +351,9 @@ class TerminalToolkit(BaseToolkit):
 
     def _setup_initial_env_with_venv(self):
         r"""Set up initial environment using standard venv."""
+        if self.initial_env_path is None:
+            raise Exception("Initial environment path not set")
+
         try:
             # Create virtual environment with system Python
             venv.create(
@@ -531,108 +573,6 @@ class TerminalToolkit(BaseToolkit):
         except Exception as e:
             logger.error(f"Failed to copy file: {e}")
             return None
-
-    def file_find_in_content(
-        self, file: str, regex: str, sudo: bool = False
-    ) -> str:
-        r"""Search for text within a file's content using a regular expression.
-
-        This function is useful for finding specific patterns or lines of text
-        within a given file. It uses `grep` on Unix-like systems and `findstr`
-        on Windows.
-
-        Args:
-            file (str): The absolute path of the file to search within.
-            regex (str): The regular expression pattern to match.
-            sudo (bool, optional): Whether to use sudo privileges for the
-                search. Defaults to False. Note: Using sudo requires the
-                process to have appropriate permissions.
-                (default: :obj:`False`)
-
-        Returns:
-            str: The matching content found in the file. If no matches are
-                found, an empty string is returned. Returns an error message
-                if the file does not exist or another error occurs.
-        """
-
-        if not os.path.exists(file):
-            return f"File not found: {file}"
-
-        if not os.path.isfile(file):
-            return f"The path provided is not a file: {file}"
-
-        command = []
-        if sudo:
-            error_msg = self._enforce_working_dir_for_execution(file)
-            if error_msg:
-                return error_msg
-            command.extend(["sudo"])
-
-        if self.os_type in ['Darwin', 'Linux']:  # macOS or Linux
-            command.extend(["grep", "-E", regex, file])
-        else:  # Windows
-            # For Windows, we could use PowerShell or findstr
-            command.extend(["findstr", "/R", regex, file])
-
-        try:
-            result = subprocess.run(
-                command, check=False, capture_output=True, text=True
-            )
-            return result.stdout.strip()
-        except subprocess.SubprocessError as e:
-            logger.error(f"Error searching in file content: {e}")
-            return f"Error: {e!s}"
-
-    def file_find_by_name(self, path: str, glob: str) -> str:
-        r"""Find files by name in a specified directory using a glob pattern.
-
-        This function recursively searches for files matching a given name or
-        pattern within a directory. It uses `find` on Unix-like systems and
-        `dir` on Windows.
-
-        Args:
-            path (str): The absolute path of the directory to search in.
-            glob (str): The filename pattern to search for, using glob syntax
-                (e.g., "*.py", "data*").
-
-        Returns:
-            str: A newline-separated string containing the paths of the files
-                that match the pattern. Returns an error message if the
-                directory does not exist or another error occurs.
-        """
-        if not os.path.exists(path):
-            return f"Directory not found: {path}"
-
-        if not os.path.isdir(path):
-            return f"The path provided is not a directory: {path}"
-
-        command = []
-        if self.os_type in ['Darwin', 'Linux']:  # macOS or Linux
-            command.extend(["find", path, "-name", glob])
-        else:  # Windows
-            # For Windows, we use dir command with /s for recursive search
-            # and /b for bare format
-
-            pattern = glob
-            file_path = os.path.join(path, pattern).replace('/', '\\')
-            command.extend(["cmd", "/c", "dir", "/s", "/b", file_path])
-
-        try:
-            result = subprocess.run(
-                command,
-                check=False,
-                capture_output=True,
-                text=True,
-                shell=False,
-            )
-
-            output = result.stdout.strip()
-            if self.os_type == 'Windows':
-                output = output.replace('\\', '/')
-            return output
-        except subprocess.SubprocessError as e:
-            logger.error(f"Error finding files by name: {e}")
-            return f"Error: {e!s}"
 
     def _sanitize_command(self, command: str, exec_dir: str) -> Tuple:
         r"""Check and modify command to ensure safety.
@@ -918,38 +858,75 @@ class TerminalToolkit(BaseToolkit):
             self._update_terminal_output(f"\n$ {command}\n")
 
             if command.startswith('python') or command.startswith('pip'):
-                if self.cloned_env_path:
-                    # Use cloned environment
+                python_path = None
+                pip_path = None
+
+                # Try cloned environment first
+                if self.cloned_env_path and os.path.exists(
+                    self.cloned_env_path
+                ):
                     if self.os_type == 'Windows':
                         base_path = os.path.join(
                             self.cloned_env_path, "Scripts"
                         )
-                        python_path = os.path.join(base_path, "python.exe")
-                        pip_path = os.path.join(base_path, "pip.exe")
+                        python_candidate = os.path.join(
+                            base_path, "python.exe"
+                        )
+                        pip_candidate = os.path.join(base_path, "pip.exe")
                     else:
                         base_path = os.path.join(self.cloned_env_path, "bin")
-                        python_path = os.path.join(base_path, "python")
-                        pip_path = os.path.join(base_path, "pip")
-                elif self.initial_env_prepared and self.initial_env_path:
-                    # Use initial prepared environment
+                        python_candidate = os.path.join(base_path, "python")
+                        pip_candidate = os.path.join(base_path, "pip")
+
+                    # Verify the executables exist
+                    if os.path.exists(python_candidate):
+                        python_path = python_candidate
+                        # For pip, use python -m pip if pip executable doesn't
+                        # exist
+                        if os.path.exists(pip_candidate):
+                            pip_path = pip_candidate
+                        else:
+                            pip_path = f'"{python_path}" -m pip'
+
+                # Try initial environment if cloned environment failed
+                if (
+                    python_path is None
+                    and self.initial_env_prepared
+                    and self.initial_env_path
+                    and os.path.exists(self.initial_env_path)
+                ):
                     if self.os_type == 'Windows':
                         base_path = os.path.join(
                             self.initial_env_path, "Scripts"
                         )
-                        python_path = os.path.join(base_path, "python.exe")
-                        pip_path = os.path.join(base_path, "pip.exe")
+                        python_candidate = os.path.join(
+                            base_path, "python.exe"
+                        )
+                        pip_candidate = os.path.join(base_path, "pip.exe")
                     else:
                         base_path = os.path.join(self.initial_env_path, "bin")
-                        python_path = os.path.join(base_path, "python")
-                        pip_path = os.path.join(base_path, "pip")
-                else:
-                    # Fall back to system Python
+                        python_candidate = os.path.join(base_path, "python")
+                        pip_candidate = os.path.join(base_path, "pip")
+
+                    # Verify the executables exist
+                    if os.path.exists(python_candidate):
+                        python_path = python_candidate
+                        # For pip, use python -m pip if pip executable doesn't
+                        # exist
+                        if os.path.exists(pip_candidate):
+                            pip_path = pip_candidate
+                        else:
+                            pip_path = f'"{python_path}" -m pip'
+
+                # Fall back to system Python
+                if python_path is None:
                     python_path = self.python_executable
                     pip_path = f'"{python_path}" -m pip'
 
-                if command.startswith('python'):
+                # Ensure we have valid paths before replacement
+                if python_path and command.startswith('python'):
                     command = command.replace('python', f'"{python_path}"', 1)
-                elif command.startswith('pip'):
+                elif pip_path and command.startswith('pip'):
                     command = command.replace('pip', pip_path, 1)
 
             if not interactive:
@@ -1548,8 +1525,6 @@ class TerminalToolkit(BaseToolkit):
                 functions in the toolkit.
         """
         return [
-            FunctionTool(self.file_find_in_content),
-            FunctionTool(self.file_find_by_name),
             FunctionTool(self.shell_exec),
             FunctionTool(self.shell_view),
             FunctionTool(self.shell_wait),
