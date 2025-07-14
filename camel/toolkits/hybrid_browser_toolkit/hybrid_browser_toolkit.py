@@ -766,7 +766,7 @@ class HybridBrowserToolkit(BaseToolkit):
             # Add debug info for tab info retrieval
             logger.debug("Attempting to get tab info from session...")
             tab_info = await session.get_tab_info()
-            current_tab_index = await session.get_current_tab_index()
+            current_tab_index = await session.get_current_tab_id()
 
             # Debug log the successful retrieval
             logger.debug(

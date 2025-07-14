@@ -434,12 +434,8 @@ class HybridBrowserSession:
 
         return tab_info
 
-    def get_current_tab_id(self) -> Optional[str]:
-        r"""Get the ID of the current active tab."""
-        return self._current_tab_id
-
-    async def get_current_tab_index(self) -> Optional[str]:
-        r"""Get the id for the current active tab (for compatibility)."""
+    async def get_current_tab_id(self) -> Optional[str]:
+        r"""Get the id for the current active tab."""
         if not self._current_tab_id or not self._pages:
             return None
         return self._current_tab_id
