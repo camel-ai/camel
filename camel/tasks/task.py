@@ -31,7 +31,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
-    from camel.agents.chat_agent import StreamingChatAgentResponse
+    from ..agents.streaming import StreamingChatAgentResponse
 import uuid
 
 from camel.logger import get_logger

@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import StreamingChatAgentResponse
+from camel.agents.streaming import StreamingChatAgentResponse
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
