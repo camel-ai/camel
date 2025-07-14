@@ -74,6 +74,7 @@ from .jina_reranker_toolkit import JinaRerankerToolkit
 from .pulse_mcp_search_toolkit import PulseMCPSearchToolkit
 from .klavis_toolkit import KlavisToolkit
 from .aci_toolkit import ACIToolkit
+from .origene_mcp_toolkit import OrigeneToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
 from .task_planning_toolkit import TaskPlanningToolkit
@@ -141,6 +142,7 @@ __all__ = [
     'OpenAIAgentToolkit',
     'SearxNGToolkit',
     'JinaRerankerToolkit',
+    'OrigeneToolkit',
     'PulseMCPSearchToolkit',
     'KlavisToolkit',
     'ACIToolkit',
