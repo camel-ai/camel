@@ -1447,44 +1447,46 @@ class TerminalToolkit(BaseToolkit):
         logger.info("TerminalToolkit cleanup initiated")
 
         # Clean up all processes in shell sessions
-        for session_id, session in self.shell_sessions.items():
-            process = session.get("process")
-            if process is not None and session.get("running", False):
-                try:
-                    logger.info(
-                        f"Terminating process in session '{session_id}'"
-                    )
-
-                    # Close process input/output streams if open
-                    if (
-                        hasattr(process, 'stdin')
-                        and process.stdin
-                        and not process.stdin.closed
-                    ):
-                        process.stdin.close()
-
-                    # Terminate the process
-                    process.terminate()
+        if hasattr(self, 'shell_sessions'):
+            for session_id, session in self.shell_sessions.items():
+                process = session.get("process")
+                if process is not None and session.get("running", False):
                     try:
-                        # Give the process a short time to terminate gracefully
-                        process.wait(timeout=3)
-                    except subprocess.TimeoutExpired:
-                        # Force kill if the process doesn't terminate
-                        # gracefully
-                        logger.warning(
-                            f"Process in session '{session_id}' did not "
-                            f"terminate gracefully, forcing kill"
+                        logger.info(
+                            f"Terminating process in session '{session_id}'"
                         )
-                        process.kill()
 
-                    # Mark the session as not running
-                    session["running"] = False
+                        # Close process input/output streams if open
+                        if (
+                            hasattr(process, 'stdin')
+                            and process.stdin
+                            and not process.stdin.closed
+                        ):
+                            process.stdin.close()
 
-                except Exception as e:
-                    logger.error(
-                        f"Error cleaning up process in session "
-                        f"'{session_id}': {e}"
-                    )
+                        # Terminate the process
+                        process.terminate()
+                        try:
+                            # Give the process a short time to terminate
+                            # gracefully
+                            process.wait(timeout=3)
+                        except subprocess.TimeoutExpired:
+                            # Force kill if the process doesn't terminate
+                            # gracefully
+                            logger.warning(
+                                f"Process in session '{session_id}' did not "
+                                f"terminate gracefully, forcing kill"
+                            )
+                            process.kill()
+
+                        # Mark the session as not running
+                        session["running"] = False
+
+                    except Exception as e:
+                        logger.error(
+                            f"Error cleaning up process in session "
+                            f"'{session_id}': {e}"
+                        )
 
         # Clean up file output if it exists
         if hasattr(self, 'log_file') and self.is_macos:
