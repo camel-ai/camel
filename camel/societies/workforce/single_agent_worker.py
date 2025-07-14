@@ -445,10 +445,10 @@ class SingleAgentWorker(Worker):
             f"\n{color}{task_result.content}{Fore.RESET}\n======",  # type: ignore[union-attr]
         )
 
+        task.result = task_result.content  # type: ignore[union-attr]
+
         if task_result.failed:  # type: ignore[union-attr]
             return TaskState.FAILED
-
-        task.result = task_result.content  # type: ignore[union-attr]
 
         if is_task_result_insufficient(task):
             print(

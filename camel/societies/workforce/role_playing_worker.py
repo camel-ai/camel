@@ -122,7 +122,7 @@ class RolePlayingWorker(Worker):
         prompt = ROLEPLAY_PROCESS_TASK_PROMPT.format(
             content=task.content,
             parent_task_content=task.parent.content if task.parent else "",
-            dependency_task_info=dependency_tasks_info,
+            dependency_tasks_info=dependency_tasks_info,
             additional_info=task.additional_info,
         )
         role_play_session = RolePlaying(

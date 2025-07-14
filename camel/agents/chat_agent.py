@@ -1236,7 +1236,7 @@ class ChatAgent(BaseAgent):
                     if not message.parsed:
                         logger.warning(
                             f"Failed to parse JSON from response: "
-                            f"{content[:100]}..."
+                            f"{content}"
                         )
 
                 except Exception as e:

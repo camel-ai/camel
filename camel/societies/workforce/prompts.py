@@ -147,7 +147,7 @@ Here is the content of the parent task for you to refer to:
 Here are results of some prerequisite tasks that you can refer to:
 
 ==============================
-{dependency_task_info}
+{dependency_tasks_info}
 ==============================
 
 Here are some additional information about the task:
@@ -198,7 +198,7 @@ Now you should summarize the scenario and return the result of the task.
 
 TASK_DECOMPOSE_PROMPT = r"""You need to decompose the given task into subtasks according to the workers available in the group, following these important principles to maximize efficiency, parallelism, and clarity for the executing agents:
 
-1.  **Self-Contained Subtasks**: This is the most critical principle. Each subtask's description **must be fully self-sufficient and independently understandable**. The agent executing the subtask has **no knowledge** of the parent task, other subtasks, or the overall workflow.
+1.  **Self-Contained Subtasks**: This is critical principle. Each subtask's description **must be fully self-sufficient and independently understandable**. The agent executing the subtask has **no knowledge** of the parent task, other subtasks, or the overall workflow.
     *   **DO NOT** use relative references like "the first task," "the paper mentioned above," or "the result from the previous step."
     *   **DO** write explicit instructions. For example, instead of "Analyze the document," write "Analyze the document titled 'The Future of AI'." The system will automatically provide the necessary inputs (like the document itself) from previous steps.
 
@@ -220,23 +220,42 @@ These principles aim to reduce overall completion time by maximizing concurrent 
 
 **EXAMPLE FORMAT ONLY** (DO NOT use this example content for actual task decomposition):
 
-If given a hypothetical task requiring research, analysis, and reporting with multiple items to process, you should decompose it to maximize parallelism:
+***
+**Example 1: Sequential Task for a Single Worker**
 
-*   Poor decomposition (monolithic and vague):
-    `<tasks><task>Do all research, analysis, and write final report.</task></tasks>`
-
-*   **Excellent decomposition (self-contained and parallel)**:
-    ```
+*   **Overall Task**: "Create a short blog post about the benefits of Python. First, research the key benefits. Then, write a 300-word article. Finally, find a suitable image to go with it."
+*   **Available Workers**:
+    *   `Document Agent`: A worker that can research topics, write articles, and find images.
+*   **Correct Decomposition**:
+    ```xml
     <tasks>
-    <task>(ResearchAgent): Gather data and resources on topic X, producing a list of relevant items.</task>
-    <task>(AnalysisAgent): Analyze the provided document 'Item A'.</task>
-    <task>(AnalysisAgent): Analyze the provided document 'Item B'.</task>
-    <task>(AnalysisAgent): Analyze the provided document 'Item N'.</task>
-    <task>(ReportAgent): Compile the provided analyses of items A, B, and N into a final report.</task>
+    <task>Create a short blog post about the benefits of Python by researching key benefits, writing a 300-word article, and finding a suitable image.</task>
     </tasks>
     ```
+*   **Reasoning**: All steps are sequential and can be handled by the same worker type (`Document Agent`). Grouping them into one subtask is efficient and maintains the workflow, following the "Strategic Grouping" principle.
 
-**END OF FORMAT EXAMPLE** - Now apply this structure to your actual task below.
+***
+**Example 2: Parallel Task Across Different Workers**
+
+*   **Overall Task**: "Write a report on the Q2 performance of Apple (AAPL) and Google (GOOGL). The report needs a financial summary and a market sentiment analysis for each company."
+*   **Available Workers**:
+    *   `financial_analyst_1`: A worker that can analyze financial data and create summaries.
+    *   `market_researcher_1`: A worker that can perform market sentiment analysis.
+    *   `report_writer_1`: A worker that compiles information into a final report.
+*   **Correct Decomposition**:
+    ```xml
+    <tasks>
+    <task>Create a financial summary for Apple (AAPL) for Q2.</task>
+    <task>Create a financial summary for Google (GOOGL) for Q2.</task>
+    <task>Perform market sentiment analysis for Apple (AAPL) for Q2.</task>
+    <task>Perform market sentiment analysis for Google (GOOGL) for Q2.</task>
+    <task>Compile the provided financial summaries and market sentiment analyses for Apple (AAPL) and Google (GOOGL) into a single Q2 performance report.</task>
+    </tasks>
+    ```
+*   **Reasoning**: The financial analysis and market research can be done in parallel for both companies. The final report depends on all previous steps. This decomposition leverages worker specialization and parallelism, following the "Aggressive Parallelization" principle.
+***
+
+**END OF EXAMPLES** - Now, apply these principles and examples to decompose the following task.
 
 The content of the task is:
 

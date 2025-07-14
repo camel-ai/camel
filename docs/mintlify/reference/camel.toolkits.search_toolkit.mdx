@@ -13,6 +13,26 @@ A class representing a toolkit for web search.
 This class provides methods for searching information on the web using
 search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave.
 
+<a id="camel.toolkits.search_toolkit.SearchToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    timeout: Optional[float] = None,
+    number_of_result_pages: int = 10
+):
+```
+
+Initializes the RedditToolkit with the specified number of retries
+and delay.
+
+**Parameters:**
+
+- **timeout** (float): Timeout for API requests in seconds. (default: :obj:`None`)
+- **number_of_result_pages** (int): The number of result pages to retrieve. (default: :obj:`10`)
+
 <a id="camel.toolkits.search_toolkit.SearchToolkit.search_wiki"></a>
 
 ### search_wiki
@@ -69,12 +89,7 @@ returns an error message.
 ### search_duckduckgo
 
 ```python
-def search_duckduckgo(
-    self,
-    query: str,
-    source: str = 'text',
-    max_results: int = 5
-):
+def search_duckduckgo(self, query: str, source: str = 'text'):
 ```
 
 Use DuckDuckGo search engine to search information for
@@ -88,7 +103,6 @@ dictionaries, each representing a search result.
 
 - **query** (str): The query to be searched.
 - **source** (str): The type of information to query (e.g., "text", "images", "videos"). Defaults to "text".
-- **max_results** (int): Max number of results, defaults to `5`. (default: 5)
 
 **Returns:**
 
@@ -106,7 +120,6 @@ def search_brave(
     country: str = 'US',
     search_lang: str = 'en',
     ui_lang: str = 'en-US',
-    count: int = 20,
     offset: int = 0,
     safesearch: str = 'moderate',
     freshness: Optional[str] = None,
@@ -132,7 +145,6 @@ for more details.
 - **search_lang** (str): The search language preference. Use ONLY these exact values, NOT standard ISO codes: 'ar', 'eu', 'bn', 'bg', 'ca', 'zh-hans', 'zh-hant', 'hr', 'cs', 'da', 'nl', 'en', 'en-gb', 'et', 'fi', 'fr', 'gl', 'de', 'gu', 'he', 'hi', 'hu', 'is', 'it', 'jp', 'kn', 'ko', 'lv', 'lt', 'ms', 'ml', 'mr', 'nb', 'pl', 'pt-br', 'pt-pt', 'pa', 'ro', 'ru', 'sr', 'sk', 'sl', 'es', 'sv', 'ta', 'te', 'th', 'tr', 'uk', 'vi'.
 - **ui_lang** (str): User interface language preferred in response.
 - **Format**: '`<language_code>`-`<country_code>`'. Common examples: 'en-US', 'en-GB', 'jp-JP', 'zh-hans-CN', 'zh-hant-TW', 'de-DE', 'fr-FR', 'es-ES', 'pt-BR', 'ru-RU', 'ko-KR'.
-- **count** (int): The number of search results returned in response. The maximum is 20. The actual number delivered may be less than requested. Combine this parameter with offset to paginate search results.
 - **offset** (int): The zero based offset that indicates number of search results per page (count) to skip before returning the result. The maximum is 9. The actual number delivered may be less than requested based on the query. In order to paginate results use this parameter together with count. For example, if your user interface displays 20 search results per page, set count to 20 and offset to 0 to show the first page of results. To get subsequent pages, increment offset by 1 (e.g. 0, 1, 2). The results may overlap across multiple pages.
 - **safesearch** (str): Filters search results for adult content. The following values are supported: - 'off': No filtering is done. - 'moderate': Filters explicit content, like images and videos, but allows adult domains in the search results. - 'strict': Drops all adult content from search results.
 - **freshness** (Optional[str]): Filters search results by when they were
@@ -154,7 +166,7 @@ for more details.
 ### search_google
 
 ```python
-def search_google(self, query: str, num_result_pages: int = 5):
+def search_google(self, query: str, search_type: str = 'web'):
 ```
 
 Use Google search engine to search information for the given query.
@@ -162,38 +174,66 @@ Use Google search engine to search information for the given query.
 **Parameters:**
 
 - **query** (str): The query to be searched.
-- **num_result_pages** (int): The number of result pages to retrieve.
+- **search_type** (str): The type of search to perform. Either "web" for web pages or "image" for image search. (default: "web")
 
 **Returns:**
 
   List[Dict[str, Any]]: A list of dictionaries where each dictionary
-represents a website.
-Each dictionary contains the following keys:
+represents a search result.
+
+For web search, each dictionary contains:
 - 'result_id': A number in order.
 - 'title': The title of the website.
 - 'description': A brief description of the website.
 - 'long_description': More detail of the website.
 - 'url': The URL of the website.
 
+For image search, each dictionary contains:
+- 'result_id': A number in order.
+- 'title': The title of the image.
+- 'image_url': The URL of the image.
+- 'display_link': The website hosting the image.
+- 'context_url': The URL of the page containing the image.
+- 'width': Image width in pixels (if available).
+- 'height': Image height in pixels (if available).
+
+Example web result:
+`\{
+'result_id': 1,
+'title': 'OpenAI',
+'description': 'An organization focused on ensuring that
+artificial general intelligence benefits all of humanity.',
+'long_description': 'OpenAI is a non-profit artificial
+intelligence research company. Our goal is to advance
+digital intelligence in the way that is most likely to
+benefit humanity as a whole',
+'url': 'https://www.openai.com'
+\}`
+
+Example image result:
+`\{
+'result_id': 1,
+'title': 'Beautiful Sunset',
+'image_url': 'https://example.com/image.jpg',
+'display_link': 'example.com',
+'context_url': 'https://example.com/page.html',
+'width': 800,
+'height': 600
+\}`
+
 <a id="camel.toolkits.search_toolkit.SearchToolkit.tavily_search"></a>
 
 ### tavily_search
 
 ```python
-def tavily_search(
-    self,
-    query: str,
-    num_results: int = 5,
-    **kwargs
-):
+def tavily_search(self, query: str, **kwargs):
 ```
 
 Use Tavily Search API to search information for the given query.
 
 **Parameters:**
 
-- **query** (str): The query to be searched.
-- **num_results** (int): The number of search results to retrieve (default is `5`). **kwargs: Additional optional parameters supported by Tavily's API: - search_depth (str): "basic" or "advanced" search depth. - topic (str): The search category, e.g., "general" or "news." - days (int): Time frame in days for news-related searches. - max_results (int): Max number of results to return (overrides `num_results`). See https://docs.tavily.com/docs/python-sdk/tavily-search/ api-reference for details.
+- **query** (str): The query to be searched. **kwargs: Additional optional parameters supported by Tavily's API: - search_depth (str): "basic" or "advanced" search depth. - topic (str): The search category, e.g., "general" or "news." - days (int): Time frame in days for news-related searches. - max_results (int): Max number of results to return (overrides `num_results`). See https://docs.tavily.com/docs/python-sdk/tavily-search/ api-reference for details.
 
 **Returns:**
 
@@ -220,7 +260,6 @@ def search_bocha(
     query: str,
     freshness: str = 'noLimit',
     summary: bool = False,
-    count: int = 10,
     page: int = 1
 ):
 ```
@@ -232,7 +271,6 @@ Query the Bocha AI search API and return search results.
 - **query** (str): The search query.
 - **freshness** (str): Time frame filter for search results. Default is "noLimit". Options include: - 'noLimit': no limit (default). - 'oneDay': past day. - 'oneWeek': past week. - 'oneMonth': past month. - 'oneYear': past year.
 - **summary** (bool): Whether to include text summaries in results. Default is False.
-- **count** (int): Number of results to return (1-50). Default is 10.
 - **page** (int): Page number of results. Default is 1.
 
 **Returns:**
@@ -246,7 +284,7 @@ follows the Bocha AI search API response format.
 ### search_baidu
 
 ```python
-def search_baidu(self, query: str, max_results: int = 5):
+def search_baidu(self, query: str):
 ```
 
 Search Baidu using web scraping to retrieve relevant search
@@ -256,7 +294,6 @@ results including titles, descriptions, and URLs.
 **Parameters:**
 
 - **query** (str): Search query string to submit to Baidu.
-- **max_results** (int): Maximum number of results to return. (default: :obj:`5`)
 
 **Returns:**
 
@@ -268,7 +305,7 @@ message.
 ### search_bing
 
 ```python
-def search_bing(self, query: str, max_results: int = 5):
+def search_bing(self, query: str):
 ```
 
 Use Bing search engine to search information for the given query.
@@ -282,7 +319,6 @@ Chinese search results are desired.
 **Parameters:**
 
 - **query** (str): The search query string to submit to Bing. Works best with Chinese queries or when Chinese results are preferred.
-- **max_results** (int): Maximum number of results to return. (default: :obj:`5`)
 
 **Returns:**
 
@@ -304,7 +340,6 @@ def search_exa(
     query: str,
     search_type: Literal['auto', 'neural', 'keyword'] = 'auto',
     category: Optional[Literal['company', 'research paper', 'news', 'pdf', 'github', 'tweet', 'personal site', 'linkedin profile', 'financial report']] = None,
-    num_results: int = 10,
     include_text: Optional[List[str]] = None,
     exclude_text: Optional[List[str]] = None,
     use_autoprompt: bool = True,
@@ -320,7 +355,6 @@ content extraction.
 - **query** (str): The search query string.
 - **search_type** (`Literal["auto", "neural", "keyword"]`): The type of search to perform. "auto" automatically decides between keyword and neural search. (default: :obj:`"auto"`)
 - **category** (Optional[Literal]): Category to focus the search on, such as "research paper" or "news". (default: :obj:`None`)
-- **num_results** (int): Number of results to return (max 100). (default: :obj:`10`)
 - **include_text** (Optional[List[str]]): Strings that must be present in webpage text. Limited to 1 string of up to 5 words. (default: :obj:`None`)
 - **exclude_text** (Optional[List[str]]): Strings that must not be present in webpage text. Limited to 1 string of up to 5 words. (default: :obj:`None`)
 - **use_autoprompt** (bool): Whether to use Exa's autoprompt feature to enhance the query. (default: :obj:`True`)
@@ -347,7 +381,6 @@ def search_alibaba_tongxiao(
     query: str,
     time_range: Literal['OneDay', 'OneWeek', 'OneMonth', 'OneYear', 'NoLimit'] = 'NoLimit',
     industry: Optional[Literal['finance', 'law', 'medical', 'internet', 'tax', 'news_province', 'news_center']] = None,
-    page: int = 1,
     return_main_text: bool = False,
     return_markdown_text: bool = True,
     enable_rerank: bool = True
@@ -369,7 +402,6 @@ features:
 - **query** (str): The search query string (`length ``>= 1` and `<= 100```).
 - **time_range** (`Literal["OneDay", "OneWeek", "OneMonth", "OneYear", "NoLimit"]`): Time frame filter for search results. (default: :obj:`"NoLimit"`)
 - **industry** (`Optional[Literal["finance", "law", "medical", "internet", "tax", "news_province", "news_center"]]`): Industry-specific search filter. When specified, only returns results from sites in the specified industries. Multiple industries can be comma-separated. (default: :obj:`None`)
-- **page** (int): Page number for results pagination. (default: :obj:`1`)
 - **return_main_text** (bool): Whether to include the main text of the webpage in results. (default: :obj:`True`)
 - **return_markdown_text** (bool): Whether to include markdown formatted content in results. (default: :obj:`True`)
 - **enable_rerank** (bool): Whether to enable result reranking. If response time is critical, setting this to False can reduce response time by approximately 140ms. (default: :obj:`True`)
