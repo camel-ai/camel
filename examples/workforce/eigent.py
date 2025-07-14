@@ -143,9 +143,10 @@ def developer_agent_factory(
         - `shell_exec(id="install", command="pip install numpy")`
         - `shell_exec(id="test", command="python my_script.py")`
 
-    5.  **Interact with Processes**: For commands that require input, you can use:
-        - `shell_exec(id="...", command="...", interactive=True)` for real-time 
-          interactive sessions.
+    5.  **Interact with Processes**: For commands that require input, you can 
+    use:
+        - `shell_exec(id="...", command="...", interactive=True)` for 
+            real-time interactive sessions.
         - `shell_write_to_process(id="...", content="...")` to send input to a 
           non-interactive running process.
 
@@ -200,6 +201,7 @@ def search_agent_factory(
         "enter",
         "get_som_screenshot",
         "visit_page",
+        "scroll",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
@@ -250,13 +252,18 @@ def search_agent_factory(
         available, the URLs here will be used for `visit_page`.
     2.  **Browser-Based Exploration**: Use the rich browser related toolset to
         investigate websites.
-        - **Navigation**: Use `visit_page` to open a URL. Navigate with 
-        `click`,`back`, and `forward`. Manage multiple pages with `switch_tab`.
+        - **Navigation and Exploration**: Use `visit_page` to open a URL.
+          `visit_page` provides a snapshot of currently visible interactive
+          elements, not the full page text. To see more content on long
+          pages, you MUST use the `scroll(direction='down')` tool. Repeat
+          scrolling to ensure you have covered the entire page. Navigate
+          with `click`, `back`, and `forward`. Manage multiple pages with
+          `switch_tab`.
         - **Analysis**: Use `get_som_screenshot` to understand the page layout
           and identify interactive elements. Since this is a heavy operation,
           only use it when visual analysis is necessary.
-        - **Interaction**: Use `type` to fill out forms and `enter` 
-        to submit or confirm search.
+        - **Interaction**: Use `type` to fill out forms and `enter` to submit
+          or confirm search.
     3.  **Detailed Content Extraction**: Prioritize using the scraping tools
         from `Crawl4AIToolkit` for in-depth information gathering from a
         webpage.
@@ -730,7 +737,9 @@ async def main():
     human_task = Task(
         content=(
             """
-Here's last month's sales data from my Amazon store : /Users/enrei/Desktop/repos/camel0709/camel/examples/workforce/Amazon_Fashion_Sales_January_2025.xlsx. Could you analyze it thoroughly with visualizations and recommend specific, data-driven strategies to boost next month's sales by 10%, the file is on the desktop.
+            go to amazon and find a popular product, 
+            check the comments and reviews, 
+            and then write a report about the product.
             """
         ),
         id='0',
