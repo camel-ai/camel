@@ -1264,7 +1264,7 @@ class ChatAgent(BaseAgent):
             openai_message: OpenAIMessage = {"role": "user", "content": prompt}
             # Explicitly set the tools to empty list to avoid calling tools
             response = self._get_model_response(
-                [openai_message], 0, response_format, []
+                [openai_message], response_format, []
             )
             message.content = response.output_messages[0].content
             if not self._try_format_message(message, response_format):
@@ -1292,7 +1292,10 @@ class ChatAgent(BaseAgent):
             prompt = SIMPLE_FORMAT_PROMPT.format(content=message.content)
             openai_message: OpenAIMessage = {"role": "user", "content": prompt}
             response = await self._aget_model_response(
-                [openai_message], 0, response_format, []
+                openai_messages=[openai_message],
+                response_format=response_format,
+                tool_schemas=[],
+                prev_num_openai_messages=0,
             )
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
@@ -1374,7 +1377,8 @@ class ChatAgent(BaseAgent):
 
         # Initialize token usage tracker
         step_token_usage = self._create_token_usage_tracker()
-        iteration_count = 0
+        iteration_count: int = 0
+        prev_num_openai_messages: int = 0
 
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
@@ -1391,10 +1395,12 @@ class ChatAgent(BaseAgent):
             # Get response from model backend
             response = self._get_model_response(
                 openai_messages,
-                accumulated_context_tokens,  # Cumulative context tokens
-                response_format,
-                self._get_full_tool_schemas(),
+                current_iteration=iteration_count,
+                response_format=response_format,
+                tool_schemas=self._get_full_tool_schemas(),
+                prev_num_openai_messages=prev_num_openai_messages,
             )
+            prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
 
             # Accumulate API token usage
@@ -1405,6 +1411,9 @@ class ChatAgent(BaseAgent):
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
+                logger.info(
+                    f"Termination triggered at iteration " f"{iteration_count}"
+                )
                 return self._step_terminate(
                     accumulated_context_tokens,
                     tool_call_records,
@@ -1439,6 +1448,7 @@ class ChatAgent(BaseAgent):
                     self.max_iteration is not None
                     and iteration_count >= self.max_iteration
                 ):
+                    logger.info(f"Max iteration reached: {iteration_count}")
                     break
 
                 # If we're still here, continue the loop
@@ -1564,7 +1574,8 @@ class ChatAgent(BaseAgent):
 
         # Initialize token usage tracker
         step_token_usage = self._create_token_usage_tracker()
-        iteration_count = 0
+        iteration_count: int = 0
+        prev_num_openai_messages: int = 0
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
                 await self.pause_event.wait()
@@ -1578,10 +1589,12 @@ class ChatAgent(BaseAgent):
 
             response = await self._aget_model_response(
                 openai_messages,
-                accumulated_context_tokens,
-                response_format,
-                self._get_full_tool_schemas(),
+                current_iteration=iteration_count,
+                response_format=response_format,
+                tool_schemas=self._get_full_tool_schemas(),
+                prev_num_openai_messages=prev_num_openai_messages,
             )
+            prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
 
             # Accumulate API token usage
@@ -1592,6 +1605,9 @@ class ChatAgent(BaseAgent):
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
+                logger.info(
+                    f"Termination triggered at iteration " f"{iteration_count}"
+                )
                 return self._step_terminate(
                     accumulated_context_tokens,
                     tool_call_records,
@@ -1900,14 +1916,30 @@ class ChatAgent(BaseAgent):
                 stripped_messages.append(msg)
         return stripped_messages
 
+    @observe()
     def _get_model_response(
         self,
         openai_messages: List[OpenAIMessage],
-        num_tokens: int,
+        current_iteration: int = 0,
         response_format: Optional[Type[BaseModel]] = None,
         tool_schemas: Optional[List[Dict[str, Any]]] = None,
+        prev_num_openai_messages: int = 0,
     ) -> ModelResponse:
-        r"""Internal function for agent step model response."""
+        r"""Internal function for agent step model response.
+        Args:
+            openai_messages (List[OpenAIMessage]): The OpenAI
+                messages to process.
+            current_iteration (int): The current iteration of the step.
+            response_format (Optional[Type[BaseModel]]): The response
+                format to use.
+            tool_schemas (Optional[List[Dict[str, Any]]]): The tool
+                schemas to use.
+            prev_num_openai_messages (int): The number of openai messages
+                logged in the previous iteration.
+
+        Returns:
+            ModelResponse: The model response.
+        """
 
         response = None
         try:
@@ -1920,7 +1952,8 @@ class ChatAgent(BaseAgent):
                 openai_messages
             ):
                 logger.warning(
-                    "Model appears to not support vision. Retrying without images."  # noqa: E501
+                    "Model appears to not support vision."
+                    "Retrying without images."
                 )
                 try:
                     stripped_messages = self._strip_images_from_messages(
@@ -1937,6 +1970,7 @@ class ChatAgent(BaseAgent):
             if not response:
                 logger.error(
                     f"An error occurred while running model "
+                    f"iteration {current_iteration}, "
                     f"{self.model_backend.model_type}, "
                     f"index: {self.model_backend.current_model_index}",
                     exc_info=exc,
@@ -1955,11 +1989,12 @@ class ChatAgent(BaseAgent):
             )
 
         sanitized_messages = self._sanitize_messages_for_logging(
-            openai_messages
+            openai_messages, prev_num_openai_messages
         )
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
+            f"iteration {current_iteration}, "
             f"processed these messages: {sanitized_messages}"
         )
         if not isinstance(response, ChatCompletion):
@@ -1972,11 +2007,26 @@ class ChatAgent(BaseAgent):
     async def _aget_model_response(
         self,
         openai_messages: List[OpenAIMessage],
-        num_tokens: int,
+        current_iteration: int = 0,
         response_format: Optional[Type[BaseModel]] = None,
         tool_schemas: Optional[List[Dict[str, Any]]] = None,
+        prev_num_openai_messages: int = 0,
     ) -> ModelResponse:
-        r"""Internal function for agent step model response."""
+        r"""Internal function for agent async step model response.
+        Args:
+            openai_messages (List[OpenAIMessage]): The OpenAI messages
+                to process.
+            current_iteration (int): The current iteration of the step.
+            response_format (Optional[Type[BaseModel]]): The response
+                format to use.
+            tool_schemas (Optional[List[Dict[str, Any]]]): The tool schemas
+                to use.
+            prev_num_openai_messages (int): The number of openai messages
+                logged in the previous iteration.
+
+        Returns:
+            ModelResponse: The model response.
+        """
 
         response = None
         try:
@@ -2024,11 +2074,12 @@ class ChatAgent(BaseAgent):
             )
 
         sanitized_messages = self._sanitize_messages_for_logging(
-            openai_messages
+            openai_messages, prev_num_openai_messages
         )
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
+            f"iteration {current_iteration}, "
             f"processed these messages: {sanitized_messages}"
         )
         if not isinstance(response, ChatCompletion):
@@ -2038,12 +2089,16 @@ class ChatAgent(BaseAgent):
             )
         return self._handle_batch_response(response)
 
-    def _sanitize_messages_for_logging(self, messages):
+    def _sanitize_messages_for_logging(
+        self, messages, prev_num_openai_messages: int
+    ):
         r"""Sanitize OpenAI messages for logging by replacing base64 image
         data with a simple message and a link to view the image.
 
         Args:
             messages (List[OpenAIMessage]): The OpenAI messages to sanitize.
+            prev_num_openai_messages (int): The number of openai messages
+                logged in the previous iteration.
 
         Returns:
             List[OpenAIMessage]: The sanitized OpenAI messages.
@@ -2056,7 +2111,7 @@ class ChatAgent(BaseAgent):
         # Create a copy of messages for logging to avoid modifying the
         # original messages
         sanitized_messages = []
-        for msg in messages:
+        for msg in messages[prev_num_openai_messages:]:
             if isinstance(msg, dict):
                 sanitized_msg = msg.copy()
                 # Check if content is a list (multimodal content with images)
@@ -2339,6 +2394,7 @@ class ChatAgent(BaseAgent):
             info=info,
         )
 
+    @observe()
     def _execute_tool(
         self,
         tool_call_request: ToolCallRequest,
@@ -2373,7 +2429,7 @@ class ChatAgent(BaseAgent):
             error_msg = f"Error executing tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
             mask_flag = False
-            logging.warning(error_msg)
+            logger.warning(f"{error_msg} with result: {result}")
 
         # Check if result is a ToolResult with images
         images_to_attach = None
@@ -2384,6 +2440,7 @@ class ChatAgent(BaseAgent):
         tool_record = self._record_tool_calling(
             func_name, args, result, tool_call_id, mask_output=mask_flag
         )
+        logger.info(f"Tool calling record:\n{tool_record}")
 
         # Store images for later attachment to next user message
         if images_to_attach:
@@ -2594,6 +2651,9 @@ class ChatAgent(BaseAgent):
         while True:
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
+                logger.info(
+                    f"Termination triggered at iteration " f"{iteration_count}"
+                )
                 yield self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
                 )
@@ -3252,6 +3312,9 @@ class ChatAgent(BaseAgent):
         while True:
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
+                logger.info(
+                    f"Termination triggered at iteration " f"{iteration_count}"
+                )
                 yield self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
                 )
