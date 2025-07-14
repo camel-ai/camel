@@ -1264,7 +1264,11 @@ class ChatAgent(BaseAgent):
             openai_message: OpenAIMessage = {"role": "user", "content": prompt}
             # Explicitly set the tools to empty list to avoid calling tools
             response = self._get_model_response(
-                [openai_message], response_format, []
+                openai_messages=[openai_message],
+                num_tokens=0,
+                response_format=response_format,
+                tool_schemas=[],
+                prev_num_openai_messages=0,
             )
             message.content = response.output_messages[0].content
             if not self._try_format_message(message, response_format):
@@ -1293,6 +1297,7 @@ class ChatAgent(BaseAgent):
             openai_message: OpenAIMessage = {"role": "user", "content": prompt}
             response = await self._aget_model_response(
                 openai_messages=[openai_message],
+                num_tokens=0,
                 response_format=response_format,
                 tool_schemas=[],
                 prev_num_openai_messages=0,
@@ -1395,6 +1400,7 @@ class ChatAgent(BaseAgent):
             # Get response from model backend
             response = self._get_model_response(
                 openai_messages,
+                num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
                 tool_schemas=self._get_full_tool_schemas(),
@@ -1589,6 +1595,7 @@ class ChatAgent(BaseAgent):
 
             response = await self._aget_model_response(
                 openai_messages,
+                num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
                 tool_schemas=self._get_full_tool_schemas(),
@@ -1920,6 +1927,7 @@ class ChatAgent(BaseAgent):
     def _get_model_response(
         self,
         openai_messages: List[OpenAIMessage],
+        num_tokens: int,
         current_iteration: int = 0,
         response_format: Optional[Type[BaseModel]] = None,
         tool_schemas: Optional[List[Dict[str, Any]]] = None,
@@ -1929,6 +1937,7 @@ class ChatAgent(BaseAgent):
         Args:
             openai_messages (List[OpenAIMessage]): The OpenAI
                 messages to process.
+            num_tokens (int): The number of tokens in the context.
             current_iteration (int): The current iteration of the step.
             response_format (Optional[Type[BaseModel]]): The response
                 format to use.
@@ -2007,6 +2016,7 @@ class ChatAgent(BaseAgent):
     async def _aget_model_response(
         self,
         openai_messages: List[OpenAIMessage],
+        num_tokens: int,
         current_iteration: int = 0,
         response_format: Optional[Type[BaseModel]] = None,
         tool_schemas: Optional[List[Dict[str, Any]]] = None,
@@ -2016,6 +2026,7 @@ class ChatAgent(BaseAgent):
         Args:
             openai_messages (List[OpenAIMessage]): The OpenAI messages
                 to process.
+            num_tokens (int): The number of tokens in the context.
             current_iteration (int): The current iteration of the step.
             response_format (Optional[Type[BaseModel]]): The response
                 format to use.
