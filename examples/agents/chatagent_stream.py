@@ -285,12 +285,12 @@ async def run_all_tests():
         print("❌ Async tool execution test failed!")
         return
 
-    # # Test sync structured output
+    # Test sync structured output
     if not test_sync_structured_output():
         print("❌ Sync structured output test failed!")
         return
 
-    # # Test async structured output
+    # Test async structured output
 
     if not await test_async_structured_output():
         print("❌ Async structured output test failed!")

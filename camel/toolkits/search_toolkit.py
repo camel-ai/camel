@@ -943,13 +943,6 @@ class SearchToolkit(BaseToolkit):
         """
         from exa_py import Exa
 
-        # Validate search_type parameter
-        if search_type not in ["auto", "neural", "keyword"]:
-            raise ValueError(
-                f"search_type must be one of 'auto', 'neural', 'keyword', "
-                f"got '{search_type}'"
-            )
-
         EXA_API_KEY = os.getenv("EXA_API_KEY")
 
         try:
