@@ -547,7 +547,7 @@ class ChatAgent(BaseAgent):
         timestamp: Optional[float] = None,
     ) -> None:
         self.memory_manager.update_memory(
-            message, role, timestamp, self.agent_id
+            message, role, self.agent_id, timestamp
         )
 
     def load_memory(self, memory: AgentMemory) -> None:
@@ -560,7 +560,7 @@ class ChatAgent(BaseAgent):
         self.memory_manager.save_memory(path)
 
     def clear_memory(self) -> None:
-        self.memory_manager.clear_memory(self.system_message)
+        self.memory_manager.clear_memory(self.agent_id, self.system_message)
 
     def _generate_system_message_for_output_language(
         self,

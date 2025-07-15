@@ -123,7 +123,7 @@ class MemoryManager:
                     message=message,
                     role_at_backend=role,
                     timestamp=timestamp,
-                    agent_id = agent_id,
+                    agent_id=agent_id,
                 )
             )
 
@@ -272,9 +272,9 @@ class MemoryManager:
         logger.info(f"Memory loaded from {memory}")
 
     def load_memory_from_path(
-            self,
-            path: str,
-            agent_id: Optional[str] = None,
+        self,
+        path: str,
+        agent_id: Optional[str] = None,
     ) -> None:
         r"""Loads memory records from a JSON file filtered by this agent's ID.
 
@@ -338,7 +338,7 @@ class MemoryManager:
         json_store.save(to_save)
         logger.info(f"Memory saved to {path}")
 
-    def clear_memory(self, system_message=None) -> None:
+    def clear_memory(self, agent_id: str, system_message=None) -> None:
         r"""Clear the agent's memory and reset to initial state.
 
         Returns:
@@ -346,7 +346,9 @@ class MemoryManager:
         """
         self.memory.clear()
         if system_message is not None:
-            self.update_memory(system_message, OpenAIBackendRole.SYSTEM)
+            self.update_memory(
+                system_message, OpenAIBackendRole.SYSTEM, agent_id
+            )
 
     def get_context(self):
         return self.memory.get_context()
