@@ -18,6 +18,19 @@ from camel.toolkits import FunctionTool
 from camel.agents._utils import convert_to_function_tool, convert_to_schema
 
 class ToolManager:
+    r"""
+    Class for unified management of internal and external tools for CAMEL Agents.
+
+    The `ToolManager` is responsible for handling all tool-related operations for agents,
+    including adding, removing, and retrieving both internal tools (used directly by the agent)
+    and external tool schemas (for tools handled externally or by other systems).
+    This class ensures tool name uniqueness, provides a single source of truth for tool
+    management, and decouples tool logic from the main agent workflow.
+
+    Attributes:
+        _internal_tools (Dict[str, FunctionTool]): Dictionary of internal tools, keyed by function name.
+        _external_tool_schemas (Dict[str, dict]): Dictionary of external tool schemas, keyed by tool name.
+    """
     def __init__(self):
         self._internal_tools: Dict[str, FunctionTool] = {}
         self._external_tool_schemas: Dict[str, dict] = {}

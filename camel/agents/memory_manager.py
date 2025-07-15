@@ -23,6 +23,31 @@ from camel.types import OpenAIBackendRole
 logger = get_logger(__name__)
 
 class MemoryManager:
+    r"""Class for unified management of agent memory in CAMEL Agents.
+
+    The `MemoryManager` is responsible for handling all memory-related operations for agents,
+    including updating, loading, saving, and clearing conversation history. It abstracts
+    the underlying memory implementation (such as `ChatHistoryMemory` or other strategies),
+    and provides a single interface for managing message context, windowing, and persistence.
+
+    Args:
+        model_backend: The model backend used for token counting and context management.
+        token_limit (int, optional): The maximum number of tokens allowed in the context window.
+            If `None`, it will use the default token limit from the model backend.
+        message_window_size (int, optional): The maximum number of previous messages to include
+            in the context window. If `None`, no windowing is performed.
+        agent_id (str, optional): The unique identifier for the agent. Used for memory records.
+        memory (AgentMemory, optional): An optional custom memory instance. If not provided,
+            a default `ChatHistoryMemory` will be used.
+
+    Attributes:
+        memory (AgentMemory): The underlying memory object used to store and retrieve messages.
+
+    Note:
+        The `MemoryManager` enables flexible memory strategies and easy extension to support
+        different memory backends, windowing policies, or distributed storage. It decouples
+        memory logic from the main agent workflow, improving maintainability and extensibility.
+    """
     def __init__(
         self,
         model_backend,
@@ -216,6 +241,8 @@ class MemoryManager:
 
             # Increment timestamp slightly to maintain order
             _write_single_record(new_msg, role, base_ts + i * 1e-6)
+
+
     def load_memory(self, memory: AgentMemory) -> None:
         r"""Load the provided memory into the agent.
 
@@ -309,4 +336,3 @@ class MemoryManager:
     def retrieve(self):
         return self.memory.retrieve()
 
-    # 可扩展更多接口，如切换策略、持久化到数据库等
