@@ -1249,3 +1249,71 @@ class TestActionExecutorTimeouts:
         mock_page.wait_for_selector.assert_called_once()
         call_args = mock_page.wait_for_selector.call_args
         assert call_args[1]["timeout"] == 7500  # Should use default_timeout
+
+
+class TestTabIdGenerator:
+    """Test cases for the TabIdGenerator class."""
+
+    @pytest.mark.asyncio
+    async def test_generate_monotonic_ids(self):
+        """Test that TabIdGenerator generates monotonic sequential IDs."""
+        from camel.toolkits.hybrid_browser_toolkit.browser_session import (
+            TabIdGenerator,
+        )
+
+        # Reset counter for clean test
+        TabIdGenerator._counter = 0
+
+        id1 = await TabIdGenerator.generate_tab_id()
+        id2 = await TabIdGenerator.generate_tab_id()
+        id3 = await TabIdGenerator.generate_tab_id()
+
+        assert id1 == "tab-001"
+        assert id2 == "tab-002"
+        assert id3 == "tab-003"
+
+    @pytest.mark.asyncio
+    async def test_concurrent_id_generation(self):
+        """Test that concurrent ID generation is thread-safe."""
+        import asyncio
+
+        from camel.toolkits.hybrid_browser_toolkit.browser_session import (
+            TabIdGenerator,
+        )
+
+        # Reset counter for clean test
+        TabIdGenerator._counter = 0
+
+        async def generate_ids():
+            return [await TabIdGenerator.generate_tab_id() for _ in range(5)]
+
+        # Run multiple concurrent generators
+        results = await asyncio.gather(
+            generate_ids(), generate_ids(), generate_ids()
+        )
+
+        # Flatten results and check all IDs are unique
+        all_ids = [id for result in results for id in result]
+        assert len(all_ids) == 15
+        assert len(set(all_ids)) == 15  # All IDs should be unique
+
+        # Check they're all properly formatted
+        for id in all_ids:
+            assert id.startswith("tab-")
+            assert len(id) == 7  # "tab-" + 3 digits
+
+    @pytest.mark.asyncio
+    async def test_id_format(self):
+        """Test that generated IDs follow the expected format."""
+        from camel.toolkits.hybrid_browser_toolkit.browser_session import (
+            TabIdGenerator,
+        )
+
+        # Reset counter for clean test
+        TabIdGenerator._counter = 0
+
+        id = await TabIdGenerator.generate_tab_id()
+
+        assert id.startswith("tab-")
+        assert len(id) == 7  # "tab-" + 3 digits
+        assert id[4:].isdigit()  # Last 3 characters should be digits
