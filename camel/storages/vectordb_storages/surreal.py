@@ -12,8 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from camel.logger import get_logger
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
@@ -23,12 +24,12 @@ from camel.storages.vectordb_storages import (
 )
 from camel.types import VectorDistance
 from camel.utils import dependencies_required
-from camel.logger import get_logger
 
 if TYPE_CHECKING:
     from surrealdb import Surreal
 
 logger = get_logger(__name__)
+
 
 class SurrealStorage(BaseVectorStorage):
     r"""An implementation of the `BaseVectorStorage` using SurrealDB,
@@ -78,27 +79,26 @@ class SurrealStorage(BaseVectorStorage):
         the target table exists.
 
         Args:
-            url (str): WebSocket URL for connecting to SurrealDB.  
+            url (str): WebSocket URL for connecting to SurrealDB.
                 (default: :obj:`"ws://localhost:8000/rpc"`)
-            table (str): Name of the table used for vector storage.  
+            table (str): Name of the table used for vector storage.
                 (default: :obj:`"vector_store"`)
-            vector_dim (int): Dimensionality of the stored vectors.  
+            vector_dim (int): Dimensionality of the stored vectors.
                 (default: :obj:`786`)
-            distance (VectorDistance): Distance metric for similarity searches.  
-                (default: :obj:`VectorDistance.COSINE`)
-            namespace (str): SurrealDB namespace to use.  
+            distance (VectorDistance): Distance metric for similarity
+                searches. (default: :obj:`VectorDistance.COSINE`)
+            namespace (str): SurrealDB namespace to use.
                 (default: :obj:`"default"`)
-            database (str): SurrealDB database name.  
+            database (str): SurrealDB database name.
                 (default: :obj:`"demo"`)
-            user (str): Username for authentication.  
+            user (str): Username for authentication.
                 (default: :obj:`"root"`)
-            password (str): Password for authentication.  
+            password (str): Password for authentication.
                 (default: :obj:`"root"`)
         """
 
         from surrealdb import Surreal
-        from surrealdb.data.types.record_id import RecordID
-        
+
         self.url = url
         self.table = table
         self.ns = namespace
@@ -118,6 +118,7 @@ class SurrealStorage(BaseVectorStorage):
             bool: True if the table exists, False otherwise.
         """
         from surrealdb import Surreal
+
         with Surreal(self.url) as db:
             db.signin({"username": self.user, "password": self.password})
             db.use(self.ns, self.db)
@@ -133,6 +134,7 @@ class SurrealStorage(BaseVectorStorage):
             dict: A dictionary with 'dim' and 'count' keys.
         """
         from surrealdb import Surreal
+
         if not self._table_exists():
             return {"dim": self.vector_dim, "count": 0}
         with Surreal(self.url) as db:
