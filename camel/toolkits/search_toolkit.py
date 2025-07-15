@@ -891,7 +891,7 @@ class SearchToolkit(BaseToolkit):
     def search_exa(
         self,
         query: str,
-        search_type: str = "auto",
+        search_type: Literal["auto", "neural", "keyword"] = "auto",
         category: Optional[
             Literal[
                 "company",
@@ -915,9 +915,9 @@ class SearchToolkit(BaseToolkit):
 
         Args:
             query (str): The search query string.
-            search_type (str): The type of search to perform. Must be one of
-                "auto", "neural", or "keyword". "auto" automatically decides
-                between keyword and neural search. (default: :obj:`"auto"`)
+            search_type (Literal["auto", "neural", "keyword"]): The type of
+                search to perform. "auto" automatically decides between keyword
+                and neural search. (default: :obj:`"auto"`)
             category (Optional[Literal]): Category to focus the search on, such
                 as "research paper" or "news". (default: :obj:`None`)
             include_text (Optional[List[str]]): Strings that must be present in
