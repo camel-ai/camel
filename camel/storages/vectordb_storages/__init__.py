@@ -42,5 +42,4 @@ __all__ = [
     'VectorRecord',
     'VectorDBStatus',
     'PgVectorStorage',
-    'SurrealStorage',
 ]
