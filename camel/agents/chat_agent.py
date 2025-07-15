@@ -2896,8 +2896,6 @@ class ChatAgent(BaseAgent):
                             status_response
                         ) in self._execute_tools_sync_with_status_accumulator(
                             accumulated_tool_calls,
-                            content_accumulator,
-                            step_token_usage,
                             tool_call_records,
                         ):
                             yield status_response
@@ -3002,15 +3000,13 @@ class ChatAgent(BaseAgent):
     def _execute_tools_sync_with_status_accumulator(
         self,
         accumulated_tool_calls: Dict[str, Any],
-        content_accumulator: StreamContentAccumulator,
-        step_token_usage: Dict[str, int],
         tool_call_records: List[ToolCallingRecord],
     ) -> Generator[ChatAgentResponse, None, None]:
         r"""Execute multiple tools synchronously with
         proper content accumulation, using threads+queue for
         non-blocking status streaming."""
 
-        def tool_worker(tool_func, args, result_queue, tool_call_data):
+        def tool_worker(result_queue, tool_call_data):
             try:
                 tool_call_record = self._execute_tool_from_stream_data(
                     tool_call_data
@@ -3692,43 +3688,6 @@ class ChatAgent(BaseAgent):
         return
         # This line is never reached but makes this an async generator function
         yield
-
-    def _create_tool_status_response_with_accumulator(
-        self,
-        accumulator: StreamContentAccumulator,
-        status_message: str,
-        status_type: str,
-        step_token_usage: Dict[str, int],
-        tool_calls: Optional[List[ToolCallingRecord]] = None,
-    ) -> ChatAgentResponse:
-        r"""Create a tool status response using content accumulator."""
-
-        # Add this status message to accumulator and get full content
-        accumulator.add_tool_status(status_message)
-        full_content = accumulator.get_full_content()
-
-        message = BaseMessage(
-            role_name=self.role_name,
-            role_type=self.role_type,
-            meta_dict={},
-            content=full_content,
-        )
-
-        return ChatAgentResponse(
-            msgs=[message],
-            terminated=False,
-            info={
-                "id": "",
-                "usage": step_token_usage.copy(),
-                "finish_reasons": [status_type],
-                "num_tokens": self._get_token_count(full_content),
-                "tool_calls": tool_calls or [],
-                "external_tool_requests": None,
-                "streaming": True,
-                "tool_status": status_type,
-                "partial": True,
-            },
-        )
 
     def _create_streaming_response_with_accumulator(
         self,

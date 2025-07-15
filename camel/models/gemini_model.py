@@ -171,6 +171,7 @@ class GeminiModel(OpenAICompatibleModel):
                 self._request_parse(messages, response_format)
             )
         else:
+            # TODO: tools = self._pre_process_tool_schema(tools)
             result = self._request_chat_completion(messages, tools)
 
         return result
@@ -224,6 +225,7 @@ class GeminiModel(OpenAICompatibleModel):
                 ChatCompletion, AsyncStream[ChatCompletionChunk]
             ] = await self._arequest_parse(messages, response_format)
         else:
+            # TODO: tools = self._pre_process_tool_schema(tools)
             result = await self._arequest_chat_completion(messages, tools)
 
         return result
