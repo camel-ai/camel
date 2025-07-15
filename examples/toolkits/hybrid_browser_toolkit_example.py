@@ -67,6 +67,7 @@ custom_tools = [
     "back",
     "forward",
     "switch_tab",
+    "enter",
 ]
 
 web_toolkit_custom = HybridBrowserToolkit(
@@ -81,7 +82,7 @@ output_dir = "./file_write_outputs"
 os.makedirs(output_dir, exist_ok=True)
 
 # Initialize the FileWriteToolkit with the output directory
-file_toolkit = FileWriteToolkit(output_dir=output_dir)
+file_toolkit = FileWriteToolkit(working_directory=output_dir)
 
 # Get the tools from the toolkit
 tools_list = file_toolkit.get_tools()
@@ -104,11 +105,9 @@ and click on other websites.
 If you encounter "snapshot": "snapshot not changed" when clicking, it might 
 be because you've clicked on plain text that doesn't lead to another page. 
 Don't be discouraged—keep trying to click on different links (but do not 
-click the same reference more than once). Note that in the Google search 
-results, the text inside the heading tags is clickable and will lead to the 
-result page.
+click the same reference more than once). 
 
-
+Use enter to confirm search or input.
 """
 
 

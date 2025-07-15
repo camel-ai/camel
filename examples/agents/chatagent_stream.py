@@ -12,14 +12,27 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
+import logging
 import time
 
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.models import ModelFactory
 from camel.toolkits import FunctionTool
 from camel.types import ModelPlatformType, ModelType
+
+# Set up logging to see debug info from chat agent
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+)
+logger = get_logger(__name__)
+
+# Also set the camel chat agent logger to INFO level to see tool execution logs
+chat_agent_logger = get_logger('camel.agents.chat_agent')
+chat_agent_logger.setLevel(logging.INFO)
 
 # Create a streaming model
 streaming_model = ModelFactory.create(
