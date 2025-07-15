@@ -104,14 +104,16 @@ def developer_agent_factory(
     - Writing code to solve tasks. To execute the code, you MUST first save 
     it to a file in the workspace (e.g., `script.py`), and then run it using 
     the terminal tool (e.g., `python script.py`).
-    - Running terminal commands to install packages (e.g., with `pip`), 
-    process files, or test functionality. All files you create should be in 
-    the designated workspace.
+    - Running terminal commands to install packages (e.g., with `pip` or 
+    `uv`), process files, or test functionality. All files you create should 
+    be in the designated workspace.
+    - You can use `uv` or `pip` to install packages, for example, `uv pip 
+    install requests` or `pip install requests`.
     - Verifying your solutions through immediate execution and testing in the 
     terminal.
     - Utilizing any Python libraries (e.g., requests, BeautifulSoup, pandas, 
     etc.) needed for efficient solutions. You can install missing packages 
-    using `pip` in the terminal.
+    using `pip` or `uv` in the terminal.
     - Implementing complete, production-ready code rather than theoretical 
     examples.
     - Demonstrating results with proper error handling and practical 
@@ -121,6 +123,44 @@ def developer_agent_factory(
     - Communicating with other agents using messaging tools. You can use 
     `list_available_agents` to see available team members and `send_message` 
     to coordinate with them for complex tasks requiring collaboration.
+
+    ### Terminal Tool Workflow:
+    The terminal tools are session-based. You must manage one or more terminal 
+    sessions to perform your tasks. A session is identified by a unique `id`.
+
+    1.  **Execute Commands**: Use `shell_exec(id="...", command="...")` to run 
+        a command. If the `id` is new, a new session is created.
+        Example: `shell_exec(id="session_1", command="ls -l")`
+
+    2.  **Manage Long-Running Tasks**: For commands that take time, run them 
+        in one step, and then use `shell_wait(id="...")` to wait for 
+        completion. This prevents blocking and allows you to perform other 
+        tasks in parallel.
+
+    3.  **View Output**: Use `shell_view(id="...")` to see the full command 
+        history and output of a session.
+
+    4.  **Run Tasks in Parallel**: Use different session IDs to run multiple 
+        commands concurrently.
+        - `shell_exec(id="install", command="pip install numpy")`
+        - `shell_exec(id="test", command="python my_script.py")`
+
+    5.  **Interact with Processes**: For commands that require input, you can 
+    use:
+        - `shell_exec(id="...", command="...", interactive=True)` for 
+            real-time interactive sessions.
+        - `shell_write_to_process(id="...", content="...")` to send input to a 
+          non-interactive running process.
+
+    6.  **Stop a Process**: If a process needs to be terminated, use 
+        `shell_kill_process(id="...")`.
+
+    ### Collaboration and Assistance:
+    - If you get stuck, encounter an issue you cannot solve (like a CAPTCHA), 
+      or need clarification, use the `ask_human_via_console` tool.
+    - For complex tasks, you can collaborate with other agents. Use 
+      `list_available_agents` to see your team members and `send_message` to 
+      communicate with them.
     Remember to manage your terminal sessions. You can create new sessions 
     and run commands in them.
     """
@@ -163,6 +203,7 @@ def search_agent_factory(
         "enter",
         "get_som_screenshot",
         "visit_page",
+        "scroll",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
@@ -213,13 +254,18 @@ def search_agent_factory(
         available, the URLs here will be used for `visit_page`.
     2.  **Browser-Based Exploration**: Use the rich browser related toolset to
         investigate websites.
-        - **Navigation**: Use `visit_page` to open a URL. Navigate with 
-        `click`,`back`, and `forward`. Manage multiple pages with `switch_tab`.
+        - **Navigation and Exploration**: Use `visit_page` to open a URL.
+          `visit_page` provides a snapshot of currently visible interactive
+          elements, not the full page text. To see more content on long
+          pages, you MUST use the `scroll(direction='down')` tool. Repeat
+          scrolling to ensure you have covered the entire page. Navigate
+          with `click`, `back`, and `forward`. Manage multiple pages with
+          `switch_tab`.
         - **Analysis**: Use `get_som_screenshot` to understand the page layout
           and identify interactive elements. Since this is a heavy operation,
           only use it when visual analysis is necessary.
-        - **Interaction**: Use `type` to fill out forms and `enter` 
-        to submit or confirm search.
+        - **Interaction**: Use `type` to fill out forms and `enter` to submit
+          or confirm search.
     3.  **Detailed Content Extraction**: Prioritize using the scraping tools
         from `Crawl4AIToolkit` for in-depth information gathering from a
         webpage.
@@ -236,6 +282,9 @@ def search_agent_factory(
     - **Thoroughness**: If a search query is complex, break it down. If a
       snippet is unhelpful but the URL seems authoritative, visit the page.
       Check subpages for more information.
+    - **Local File Operations**: You can use `shell_exec` to perform 
+      terminal commands within your working directory, such as listing files 
+      (`ls`) or checking file content (`cat`).
     - **Persistence**: If one method fails, try another. Combine search,
       scraper, and browser tools for comprehensive information gathering.
     - **Collaboration**: Communicate with other agents using `send_message`
@@ -336,6 +385,12 @@ def document_agent_factory(
        - Ask questions to users and receive their responses
        - Send informative messages to users without requiring responses
 
+    6. Terminal and File System:
+       - You have access to a full suite of terminal tools to interact with 
+       the file system within your working directory (`{WORKING_DIRECTORY}`).
+       - You can execute shell commands (`shell_exec`), list files, and manage 
+       your workspace as needed to support your document creation tasks.
+
     When working with documents, you should:
     - Suggest appropriate file formats based on content requirements
     - Maintain proper formatting and structure in all created documents
@@ -419,6 +474,11 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
        when you need to share analysis results or request additional 
        processing capabilities.
 
+    6. File Management:
+       - You can use terminal tools to manage files within your working
+       directory (`{WORKING_DIRECTORY}`). This is useful for listing
+       downloaded media or organizing generated images.
+
     When working with multi-modal content, you should:
     - Provide detailed and accurate descriptions of media content
     - Extract relevant information based on user queries
@@ -496,6 +556,11 @@ Your integrated toolkits enable you to:
    `send_message` to coordinate with them, especially when you need content 
    from document agents or research from search agents.
 
+9. File System Access:
+   - You can use terminal tools to interact with the local file system in
+   your working directory (`{WORKING_DIRECTORY}`), for example, to access
+   files needed for posting.
+
 When assisting users, always:
 - Identify which platform's functionality is needed for the task.
 - Check if required API credentials are available before attempting 
@@ -533,7 +598,7 @@ async def main():
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1_MINI,
+        model_type=ModelType.GPT_4_1,
         model_config_dict={
             "stream": False,
         },
@@ -541,7 +606,7 @@ async def main():
 
     model_backend_reason = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1_MINI,
+        model_type=ModelType.GPT_4_1,
         model_config_dict={
             "stream": False,
         },
@@ -674,13 +739,9 @@ async def main():
     human_task = Task(
         content=(
             """
-Identify the pharmaceutical company that had the most FDA-approved new 
-molecular entities (NMEs) between 2020 and 2024, where at least one of these 
-drugs achieved blockbuster status (over $1 billion in annual sales) within 24 
-months of approval. List the company name, total number of NMEs approved, the 
-name and indication of the fastest blockbuster drug, its peak annual sales 
-figure, and the name and specialization of the lead scientist credited with 
-its discovery.
+            go to amazon and find a popular product, 
+            check the comments and reviews, 
+            and then write a report about the product.
             """
         ),
         id='0',

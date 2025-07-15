@@ -837,19 +837,34 @@ def _get_model_response(
     self,
     openai_messages: List[OpenAIMessage],
     num_tokens: int,
+    current_iteration: int = 0,
     response_format: Optional[Type[BaseModel]] = None,
-    tool_schemas: Optional[List[Dict[str, Any]]] = None
+    tool_schemas: Optional[List[Dict[str, Any]]] = None,
+    prev_num_openai_messages: int = 0
 ):
 ```
 
 Internal function for agent step model response.
+
+**Parameters:**
+
+- **openai_messages** (List[OpenAIMessage]): The OpenAI messages to process.
+- **num_tokens** (int): The number of tokens in the context.
+- **current_iteration** (int): The current iteration of the step.
+- **response_format** (Optional[Type[BaseModel]]): The response format to use.
+- **tool_schemas** (Optional[List[Dict[str, Any]]]): The tool schemas to use.
+- **prev_num_openai_messages** (int): The number of openai messages logged in the previous iteration.
+
+**Returns:**
+
+  ModelResponse: The model response.
 
 <a id="camel.agents.chat_agent.ChatAgent._sanitize_messages_for_logging"></a>
 
 ### _sanitize_messages_for_logging
 
 ```python
-def _sanitize_messages_for_logging(self, messages):
+def _sanitize_messages_for_logging(self, messages, prev_num_openai_messages: int):
 ```
 
 Sanitize OpenAI messages for logging by replacing base64 image
@@ -858,6 +873,7 @@ data with a simple message and a link to view the image.
 **Parameters:**
 
 - **messages** (List[OpenAIMessage]): The OpenAI messages to sanitize.
+- **prev_num_openai_messages** (int): The number of openai messages logged in the previous iteration.
 
 **Returns:**
 
