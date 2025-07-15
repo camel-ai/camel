@@ -2896,21 +2896,13 @@ class ChatAgent(BaseAgent):
                             status_response
                         ) in self._execute_tools_sync_with_status_accumulator(
                             accumulated_tool_calls,
-                            content_accumulator,
-                            step_token_usage,
                             tool_call_records,
                         ):
                             yield status_response
 
-                        # Yield "Sending back result to model" status
+                        # Log sending status instead of adding to content
                         if tool_call_records:
-                            sending_status = self._create_tool_status_response_with_accumulator(  # noqa: E501
-                                content_accumulator,
-                                "\n------\n\nSending back result to model\n\n",
-                                "tool_sending",
-                                step_token_usage,
-                            )
-                            yield sending_status
+                            logger.info("Sending back result to model")
 
                     # Record final message only if we have content AND no tool
                     # calls. If there are tool calls, _record_tool_calling
@@ -3008,15 +3000,13 @@ class ChatAgent(BaseAgent):
     def _execute_tools_sync_with_status_accumulator(
         self,
         accumulated_tool_calls: Dict[str, Any],
-        content_accumulator: StreamContentAccumulator,
-        step_token_usage: Dict[str, int],
         tool_call_records: List[ToolCallingRecord],
     ) -> Generator[ChatAgentResponse, None, None]:
         r"""Execute multiple tools synchronously with
         proper content accumulation, using threads+queue for
         non-blocking status streaming."""
 
-        def tool_worker(tool_func, args, result_queue, tool_call_data):
+        def tool_worker(result_queue, tool_call_data):
             try:
                 tool_call_record = self._execute_tool_from_stream_data(
                     tool_call_data
@@ -3052,36 +3042,22 @@ class ChatAgent(BaseAgent):
             )
             thread.start()
 
-            status_message = (
-                f"\nCalling function: {function_name} "
-                f"with arguments:\n{args}\n"
+            # Log debug info instead of adding to content
+            logger.info(
+                f"Calling function: {function_name} with arguments: {args}"
             )
-            status_status = self._create_tool_status_response_with_accumulator(
-                content_accumulator,
-                status_message,
-                "tool_calling",
-                step_token_usage,
-            )
-            yield status_status
+
             # wait for tool thread to finish with optional timeout
             thread.join(self.tool_execution_timeout)
 
             # If timeout occurred, mark as error and continue
             if thread.is_alive():
-                timeout_msg = (
-                    f"\nFunction '{function_name}' timed out after "
-                    f"{self.tool_execution_timeout} seconds.\n---------\n"
+                # Log timeout info instead of adding to content
+                logger.warning(
+                    f"Function '{function_name}' timed out after "
+                    f"{self.tool_execution_timeout} seconds"
                 )
-                timeout_status = (
-                    self._create_tool_status_response_with_accumulator(
-                        content_accumulator,
-                        timeout_msg,
-                        "tool_timeout",
-                        step_token_usage,
-                    )
-                )
-                yield timeout_status
-                logger.error(timeout_msg.strip())
+
                 # Detach thread (it may still finish later). Skip recording.
                 continue
 
@@ -3091,22 +3067,16 @@ class ChatAgent(BaseAgent):
                 tool_call_records.append(tool_call_record)
                 raw_result = tool_call_record.result
                 result_str = str(raw_result)
-                status_message = (
-                    f"\nFunction output: {result_str}\n---------\n"
-                )
-                output_status = (
-                    self._create_tool_status_response_with_accumulator(
-                        content_accumulator,
-                        status_message,
-                        "tool_output",
-                        step_token_usage,
-                        [tool_call_record],
-                    )
-                )
-                yield output_status
+
+                # Log debug info instead of adding to content
+                logger.info(f"Function output: {result_str}")
             else:
                 # Error already logged
                 continue
+
+        # Ensure this function remains a generator (required by type signature)
+        return
+        yield  # This line is never reached but makes this a generator function
 
     def _execute_tool_from_stream_data(
         self, tool_call_data: Dict[str, Any]
@@ -3614,15 +3584,9 @@ class ChatAgent(BaseAgent):
                         ):
                             yield status_response
 
-                        # Yield "Sending back result to model" status
+                        # Log sending status instead of adding to content
                         if tool_call_records:
-                            sending_status = self._create_tool_status_response_with_accumulator(  # noqa: E501
-                                content_accumulator,
-                                "\n------\n\nSending back result to model\n\n",
-                                "tool_sending",
-                                step_token_usage,
-                            )
-                            yield sending_status
+                            logger.info("Sending back result to model")
 
                     # Record final message only if we have content AND no tool
                     # calls. If there are tool calls, _record_tool_calling
@@ -3669,21 +3633,10 @@ class ChatAgent(BaseAgent):
                 except json.JSONDecodeError:
                     args = tool_call_data['function']['arguments']
 
-                status_message = (
-                    f"\nCalling function: {function_name} "
-                    f"with arguments:\n{args}\n"
+                # Log debug info instead of adding to content
+                logger.info(
+                    f"Calling function: {function_name} with arguments: {args}"
                 )
-
-                # Immediately yield "Calling function" status
-                calling_status = (
-                    self._create_tool_status_response_with_accumulator(
-                        content_accumulator,
-                        status_message,
-                        "tool_calling",
-                        step_token_usage,
-                    )
-                )
-                yield calling_status
 
                 # Start tool execution asynchronously (non-blocking)
                 if self.tool_execution_timeout is not None:
@@ -3716,80 +3669,25 @@ class ChatAgent(BaseAgent):
                         # Create output status message
                         raw_result = tool_call_record.result
                         result_str = str(raw_result)
-                        status_message = (
-                            f"\nFunction output: {result_str}\n---------\n"
-                        )
 
-                        # Yield "Function output" status as soon as this
-                        # tool completes
-                        output_status = (
-                            self._create_tool_status_response_with_accumulator(
-                                content_accumulator,
-                                status_message,
-                                "tool_output",
-                                step_token_usage,
-                                [tool_call_record],
-                            )
-                        )
-                        yield output_status
+                        # Log debug info instead of adding to content
+                        logger.info(f"Function output: {result_str}")
 
                 except Exception as e:
                     if isinstance(e, asyncio.TimeoutError):
-                        timeout_msg = (
-                            f"\nFunction timed out after "
-                            f"{self.tool_execution_timeout} seconds.\n"
-                            f"---------\n"
+                        # Log timeout info instead of adding to content
+                        logger.warning(
+                            f"Function timed out after "
+                            f"{self.tool_execution_timeout} seconds"
                         )
-                        timeout_status = (
-                            self._create_tool_status_response_with_accumulator(
-                                content_accumulator,
-                                timeout_msg,
-                                "tool_timeout",
-                                step_token_usage,
-                            )
-                        )
-                        yield timeout_status
-                        logger.error("Async tool execution timeout")
                     else:
                         logger.error(f"Error in async tool execution: {e}")
                     continue
 
-    def _create_tool_status_response_with_accumulator(
-        self,
-        accumulator: StreamContentAccumulator,
-        status_message: str,
-        status_type: str,
-        step_token_usage: Dict[str, int],
-        tool_calls: Optional[List[ToolCallingRecord]] = None,
-    ) -> ChatAgentResponse:
-        r"""Create a tool status response using content accumulator."""
-
-        # Add this status message to accumulator and get full content
-        accumulator.add_tool_status(status_message)
-        full_content = accumulator.get_full_content()
-
-        message = BaseMessage(
-            role_name=self.role_name,
-            role_type=self.role_type,
-            meta_dict={},
-            content=full_content,
-        )
-
-        return ChatAgentResponse(
-            msgs=[message],
-            terminated=False,
-            info={
-                "id": "",
-                "usage": step_token_usage.copy(),
-                "finish_reasons": [status_type],
-                "num_tokens": self._get_token_count(full_content),
-                "tool_calls": tool_calls or [],
-                "external_tool_requests": None,
-                "streaming": True,
-                "tool_status": status_type,
-                "partial": True,
-            },
-        )
+        # Ensure this function remains an async generator
+        return
+        # This line is never reached but makes this an async generator function
+        yield
 
     def _create_streaming_response_with_accumulator(
         self,
