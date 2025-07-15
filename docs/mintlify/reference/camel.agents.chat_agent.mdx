@@ -1124,8 +1124,6 @@ any tool call is complete.
 def _execute_tools_sync_with_status_accumulator(
     self,
     accumulated_tool_calls: Dict[str, Any],
-    content_accumulator: StreamContentAccumulator,
-    step_token_usage: Dict[str, int],
     tool_call_records: List[ToolCallingRecord]
 ):
 ```
@@ -1170,23 +1168,6 @@ Record the assistant message that contains tool calls.
 
 This method creates and records an assistant message that includes
 the tool calls information, which is required by OpenAI's API format.
-
-<a id="camel.agents.chat_agent.ChatAgent._create_tool_status_response_with_accumulator"></a>
-
-### _create_tool_status_response_with_accumulator
-
-```python
-def _create_tool_status_response_with_accumulator(
-    self,
-    accumulator: StreamContentAccumulator,
-    status_message: str,
-    status_type: str,
-    step_token_usage: Dict[str, int],
-    tool_calls: Optional[List[ToolCallingRecord]] = None
-):
-```
-
-Create a tool status response using content accumulator.
 
 <a id="camel.agents.chat_agent.ChatAgent._create_streaming_response_with_accumulator"></a>
 
