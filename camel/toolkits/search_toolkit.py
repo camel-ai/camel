@@ -891,7 +891,7 @@ class SearchToolkit(BaseToolkit):
     def search_exa(
         self,
         query: str,
-        search_type: Literal["auto", "neural", "keyword"] = "auto",
+        search_type: str = "auto",
         category: Optional[
             Literal[
                 "company",
@@ -915,9 +915,9 @@ class SearchToolkit(BaseToolkit):
 
         Args:
             query (str): The search query string.
-            search_type (Literal["auto", "neural", "keyword"]): The type of
-                search to perform. "auto" automatically decides between keyword
-                and neural search. (default: :obj:`"auto"`)
+            search_type (str): The type of search to perform. Must be one of
+                "auto", "neural", or "keyword". "auto" automatically decides
+                between keyword and neural search. (default: :obj:`"auto"`)
             category (Optional[Literal]): Category to focus the search on, such
                 as "research paper" or "news". (default: :obj:`None`)
             include_text (Optional[List[str]]): Strings that must be present in
@@ -942,6 +942,13 @@ class SearchToolkit(BaseToolkit):
                 - costDollars (Dict): Breakdown of API costs
         """
         from exa_py import Exa
+
+        # Validate search_type parameter
+        if search_type not in ["auto", "neural", "keyword"]:
+            raise ValueError(
+                f"search_type must be one of 'auto', 'neural', 'keyword', "
+                f"got '{search_type}'"
+            )
 
         EXA_API_KEY = os.getenv("EXA_API_KEY")
 

@@ -12,14 +12,27 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
+import logging
 import time
 
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.models import ModelFactory
 from camel.toolkits import FunctionTool
 from camel.types import ModelPlatformType, ModelType
+
+# Set up logging to see debug info from chat agent
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+)
+logger = get_logger(__name__)
+
+# Also set the camel chat agent logger to INFO level to see tool execution logs
+chat_agent_logger = get_logger('camel.agents.chat_agent')
+chat_agent_logger.setLevel(logging.INFO)
 
 # Create a streaming model
 streaming_model = ModelFactory.create(
@@ -272,12 +285,12 @@ async def run_all_tests():
         print("❌ Async tool execution test failed!")
         return
 
-    # Test sync structured output
+    # # Test sync structured output
     if not test_sync_structured_output():
         print("❌ Sync structured output test failed!")
         return
 
-    # Test async structured output
+    # # Test async structured output
 
     if not await test_async_structured_output():
         print("❌ Async structured output test failed!")
