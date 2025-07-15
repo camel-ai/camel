@@ -86,8 +86,8 @@ class MemoryManager:
         self,
         message: BaseMessage,
         role: OpenAIBackendRole,
+        agent_id: str,
         timestamp: Optional[float] = None,
-        agent_id: Optional[str] = None,
     ) -> None:
         r"""Updates the agent memory with a new message.
 
