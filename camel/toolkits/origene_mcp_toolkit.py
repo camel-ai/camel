@@ -48,8 +48,8 @@ class OrigeneToolkit(BaseToolkit):
         self._mcp_toolkit = MCPToolkit(
             config_dict={
                 "mcpServers": {
-                    "pubchem_mcp": {
-                        "url": "http://127.0.0.1:8791/mcp/",
+                    "chembl_mcp": {
+                        "url": "http://127.0.0.1:8788/chembl_mcp/mcp/",
                         "mode": "streamable-http",
                     }
                 }
