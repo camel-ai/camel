@@ -81,14 +81,13 @@ class MemoryManager:
             window_size=message_window_size,
             agent_id=agent_id,
         )
-        self.agent_id = agent_id
-        self.system_message = system_message
 
     def update_memory(
         self,
         message: BaseMessage,
         role: OpenAIBackendRole,
         timestamp: Optional[float] = None,
+        agent_id: Optional[str] = None,
     ) -> None:
         r"""Updates the agent memory with a new message.
 
@@ -124,7 +123,7 @@ class MemoryManager:
                     message=message,
                     role_at_backend=role,
                     timestamp=timestamp,
-                    agent_id=self.agent_id,
+                    agent_id = agent_id,
                 )
             )
 
@@ -272,7 +271,11 @@ class MemoryManager:
             self.memory.write_record(context_record.memory_record)
         logger.info(f"Memory loaded from {memory}")
 
-    def load_memory_from_path(self, path: str) -> None:
+    def load_memory_from_path(
+            self,
+            path: str,
+            agent_id: Optional[str] = None,
+    ) -> None:
         r"""Loads memory records from a JSON file filtered by this agent's ID.
 
         Args:
@@ -288,7 +291,7 @@ class MemoryManager:
 
         if not all_records:
             raise ValueError(
-                f"No records found for agent_id={self.agent_id} in {path}"
+                f"No records found for agent_id={agent_id} in {path}"
             )
 
         for record_dict in all_records:
@@ -335,15 +338,15 @@ class MemoryManager:
         json_store.save(to_save)
         logger.info(f"Memory saved to {path}")
 
-    def clear_memory(self) -> None:
+    def clear_memory(self, system_message=None) -> None:
         r"""Clear the agent's memory and reset to initial state.
 
         Returns:
             None
         """
         self.memory.clear()
-        if self.system_message is not None:
-            self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
+        if system_message is not None:
+            self.update_memory(system_message, OpenAIBackendRole.SYSTEM)
 
     def get_context(self):
         return self.memory.get_context()

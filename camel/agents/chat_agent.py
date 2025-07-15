@@ -546,7 +546,9 @@ class ChatAgent(BaseAgent):
         role: OpenAIBackendRole,
         timestamp: Optional[float] = None,
     ) -> None:
-        self.memory_manager.update_memory(message, role, timestamp)
+        self.memory_manager.update_memory(
+            message, role, timestamp, self.agent_id
+        )
 
     def load_memory(self, memory: AgentMemory) -> None:
         self.memory_manager.load_memory(memory)
@@ -558,7 +560,7 @@ class ChatAgent(BaseAgent):
         self.memory_manager.save_memory(path)
 
     def clear_memory(self) -> None:
-        self.memory_manager.clear_memory()
+        self.memory_manager.clear_memory(self.system_message)
 
     def _generate_system_message_for_output_language(
         self,
