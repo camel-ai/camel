@@ -443,6 +443,7 @@
               "reference/camel.storages.vectordb_storages.oceanbase",
               "reference/camel.storages.vectordb_storages.pgvector",
               "reference/camel.storages.vectordb_storages.qdrant",
+              "reference/camel.storages.vectordb_storages.surreal",
               "reference/camel.storages.vectordb_storages.tidb",
               "reference/camel.storages.vectordb_storages.weaviate"
             ]
