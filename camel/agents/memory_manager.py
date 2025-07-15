@@ -12,15 +12,21 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from pathlib import Path
-from typing import List, Optional, Any
-from camel.memories import AgentMemory, ChatHistoryMemory, ScoreBasedContextCreator, MemoryRecord
+from typing import Optional
 
 from camel.logger import get_logger
+from camel.memories import (
+    AgentMemory,
+    ChatHistoryMemory,
+    MemoryRecord,
+    ScoreBasedContextCreator,
+)
 from camel.messages import BaseMessage, FunctionCallingMessage
 from camel.storages import JsonStorage
 from camel.types import OpenAIBackendRole
 
 logger = get_logger(__name__)
+
 
 class MemoryManager:
     r"""Class for unified management of agent memory in CAMEL Agents.
@@ -48,13 +54,15 @@ class MemoryManager:
         different memory backends, windowing policies, or distributed storage. It decouples
         memory logic from the main agent workflow, improving maintainability and extensibility.
     """
+
     def __init__(
         self,
         model_backend,
         token_limit=None,
         message_window_size=None,
         agent_id=None,
-        memory: AgentMemory = None,
+        memory: Optional[AgentMemory] = None,
+        system_message=None,
     ):
         # 初始化 context_creator
         context_creator = ScoreBasedContextCreator(
@@ -67,12 +75,14 @@ class MemoryManager:
             window_size=message_window_size,
             agent_id=agent_id,
         )
+        self.agent_id = agent_id
+        self.system_message = system_message
 
     def update_memory(
-            self,
-            message: BaseMessage,
-            role: OpenAIBackendRole,
-            timestamp: Optional[float] = None,
+        self,
+        message: BaseMessage,
+        role: OpenAIBackendRole,
+        timestamp: Optional[float] = None,
     ) -> None:
         r"""Updates the agent memory with a new message.
 
@@ -101,7 +111,7 @@ class MemoryManager:
 
         # 1. Helper to write a record to memory
         def _write_single_record(
-                message: BaseMessage, role: OpenAIBackendRole, timestamp: float
+            message: BaseMessage, role: OpenAIBackendRole, timestamp: float
         ):
             self.memory.write_record(
                 MemoryRecord(
@@ -156,7 +166,7 @@ class MemoryManager:
         is_function_result = False
 
         if isinstance(message, FunctionCallingMessage) and isinstance(
-                message.result, str
+            message.result, str
         ):
             text_to_chunk = message.result
             is_function_result = True
@@ -214,7 +224,7 @@ class MemoryManager:
             new_body = prefix + chunk_body
 
             if is_function_result and isinstance(
-                    message, FunctionCallingMessage
+                message, FunctionCallingMessage
             ):
                 new_msg: BaseMessage = FunctionCallingMessage(
                     role_name=message.role_name,
@@ -242,7 +252,6 @@ class MemoryManager:
             # Increment timestamp slightly to maintain order
             _write_single_record(new_msg, role, base_ts + i * 1e-6)
 
-
     def load_memory(self, memory: AgentMemory) -> None:
         r"""Load the provided memory into the agent.
 
@@ -260,14 +269,14 @@ class MemoryManager:
     def load_memory_from_path(self, path: str) -> None:
         r"""Loads memory records from a JSON file filtered by this agent's ID.
 
-               Args:
-                   path (str): The file path to a JSON memory file that uses
-                       JsonStorage.
+        Args:
+            path (str): The file path to a JSON memory file that uses
+                JsonStorage.
 
-               Raises:
-                   ValueError: If no matching records for the agent_id are found
-                       (optional check; commented out below).
-               """
+        Raises:
+            ValueError: If no matching records for the agent_id are found
+                (optional check; commented out below).
+        """
         json_store = JsonStorage(Path(path))
         all_records = json_store.load()
 
@@ -288,8 +297,8 @@ class MemoryManager:
 
             # Validate message structure in the record
             if (
-                    not isinstance(record_dict['message'], dict)
-                    or '__class__' not in record_dict['message']
+                not isinstance(record_dict['message'], dict)
+                or '__class__' not in record_dict['message']
             ):
                 logger.warning(
                     f"Skipping invalid record: malformed message "
@@ -309,11 +318,11 @@ class MemoryManager:
 
     def save_memory(self, path: str) -> None:
         r"""Retrieves the current conversation data from memory and writes it
-            into a JSON file using JsonStorage.
+        into a JSON file using JsonStorage.
 
-            Args:
-                path (str): Target file path to store JSON data.
-            """
+        Args:
+            path (str): Target file path to store JSON data.
+        """
         json_store = JsonStorage(Path(path))
         context_records = self.memory.retrieve()
         to_save = [cr.memory_record.to_dict() for cr in context_records]
@@ -323,9 +332,9 @@ class MemoryManager:
     def clear_memory(self) -> None:
         r"""Clear the agent's memory and reset to initial state.
 
-            Returns:
-                None
-            """
+        Returns:
+            None
+        """
         self.memory.clear()
         if self.system_message is not None:
             self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
@@ -335,4 +344,3 @@ class MemoryManager:
 
     def retrieve(self):
         return self.memory.retrieve()
-

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Generator, Optional, List, Dict, Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Dict, Generator, List, Optional
 
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse

@@ -13,9 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-from typing import Callable, Dict, List, Union, Any
-from camel.toolkits import FunctionTool
+from typing import Any, Callable, Dict, List, Union
+
 from camel.agents._utils import convert_to_function_tool, convert_to_schema
+from camel.toolkits import FunctionTool
+
 
 class ToolManager:
     r"""
@@ -31,6 +33,7 @@ class ToolManager:
         _internal_tools (Dict[str, FunctionTool]): Dictionary of internal tools, keyed by function name.
         _external_tool_schemas (Dict[str, dict]): Dictionary of external tool schemas, keyed by tool name.
     """
+
     def __init__(self):
         self._internal_tools: Dict[str, FunctionTool] = {}
         self._external_tool_schemas: Dict[str, dict] = {}
@@ -62,11 +65,15 @@ class ToolManager:
         for name in tool_names:
             self.remove_tool(name)
 
-    def add_external_tool(self, tool: Union[FunctionTool, Callable, Dict[str, Any]]) -> None:
+    def add_external_tool(
+        self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
+    ) -> None:
         new_tool_schema = convert_to_schema(tool)
         self._external_tool_schemas[new_tool_schema["name"]] = new_tool_schema
 
-    def add_external_tools(self, tools: List[Union[FunctionTool, Callable, Dict[str, Any]]]) -> None:
+    def add_external_tools(
+        self, tools: List[Union[FunctionTool, Callable, Dict[str, Any]]]
+    ) -> None:
         for tool in tools:
             self.add_external_tool(tool)
 
@@ -92,8 +99,8 @@ class ToolManager:
 
     def get_full_tool_schemas(self) -> List[dict]:
         r"""Returns a list of tool schemas of all tools, including internal
-         and external tools.
-         """
+        and external tools.
+        """
         return list(self._external_tool_schemas.values()) + [
             tool.get_openai_tool_schema()
             for tool in self._internal_tools.values()

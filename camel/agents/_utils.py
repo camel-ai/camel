@@ -11,25 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import base64
 import hashlib
 import json
-import logging
 import os
 import re
 import tempfile
 import textwrap
-from typing import Any, Callable, Dict, List, Optional, Union, Type
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ValidationError
+
+from camel.agents._types import ModelResponse, ToolCallRequest
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.toolkits import FunctionTool
 from camel.types import Choice
 from camel.types.agents import ToolCallingRecord
-from camel.agents._types import ModelResponse, ToolCallRequest
-
-
-from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -198,7 +195,7 @@ def handle_logprobs(choice: Choice) -> Optional[List[Dict[str, Any]]]:
 
 
 def try_format_message(
-        message: BaseMessage, response_format: Type[BaseModel]
+    message: BaseMessage, response_format: Type[BaseModel]
 ) -> bool:
     r"""Try to format the message if needed.
 
@@ -210,17 +207,13 @@ def try_format_message(
         return True
 
     try:
-        message.parsed = response_format.model_validate_json(
-            message.content
-        )
+        message.parsed = response_format.model_validate_json(message.content)
         return True
     except ValidationError:
         return False
 
 
-def convert_response_format_to_prompt(
-        response_format: Type[BaseModel]
-) -> str:
+def convert_response_format_to_prompt(response_format: Type[BaseModel]) -> str:
     r"""Convert a Pydantic response format to a prompt instruction.
 
     Args:
@@ -235,7 +228,7 @@ def convert_response_format_to_prompt(
 
         # Create a prompt based on the schema
         format_instruction = (
-            "\n\nPlease respond in the following JSON format:\n" "{\n"
+            "\n\nPlease respond in the following JSON format:\n{\n"
         )
 
         properties = schema.get("properties", {})
@@ -279,7 +272,7 @@ def convert_response_format_to_prompt(
 
 
 def apply_prompt_based_parsing(
-        response: ModelResponse,
+    response: ModelResponse,
     original_response_format: Type[BaseModel],
 ) -> None:
     r"""Apply manual parsing when using prompt-based formatting.
@@ -303,10 +296,8 @@ def apply_prompt_based_parsing(
                 # Try direct parsing first
                 try:
                     parsed_json = json.loads(content)
-                    message.parsed = (
-                        original_response_format.model_validate(
-                            parsed_json
-                        )
+                    message.parsed = original_response_format.model_validate(
+                        parsed_json
                     )
                     continue
                 except (json.JSONDecodeError, ValidationError):
@@ -332,8 +323,7 @@ def apply_prompt_based_parsing(
 
                 if not message.parsed:
                     logger.warning(
-                        f"Failed to parse JSON from response: "
-                        f"{content}"
+                        f"Failed to parse JSON from response: {content}"
                     )
 
             except Exception as e:
@@ -365,7 +355,7 @@ def get_token_count(model_backend, content: str) -> int:
         return len(content.split())
 
 
-def sanitize_messages_for_logging(messages):
+def sanitize_messages_for_logging(messages, prev_num_openai_messages: int):
     r"""Sanitize OpenAI messages for logging by replacing base64 image
     data with a simple message and a link to view the image.
 
@@ -375,15 +365,12 @@ def sanitize_messages_for_logging(messages):
     Returns:
         List[OpenAIMessage]: The sanitized OpenAI messages.
     """
-    import hashlib
-    import os
     import re
-    import tempfile
 
     # Create a copy of messages for logging to avoid modifying the
     # original messages
     sanitized_messages = []
-    for msg in messages:
+    for msg in messages[prev_num_openai_messages:]:
         if isinstance(msg, dict):
             sanitized_msg = msg.copy()
             # Check if content is a list (multimodal content with images)
@@ -395,12 +382,8 @@ def sanitize_messages_for_logging(messages):
                         and item.get('type') == 'image_url'
                     ):
                         # Handle image URL
-                        image_url = item.get('image_url', {}).get(
-                            'url', ''
-                        )
-                        if image_url and image_url.startswith(
-                            'data:image'
-                        ):
+                        image_url = item.get('image_url', {}).get('url', '')
+                        if image_url and image_url.startswith('data:image'):
                             # Extract image data and format
                             match = re.match(
                                 r'data:image/([^;]+);base64,(.+)',
@@ -414,9 +397,7 @@ def sanitize_messages_for_logging(messages):
                                 img_hash = hashlib.md5(
                                     base64_data[:100].encode()
                                 ).hexdigest()[:10]
-                                img_filename = (
-                                    f"image_{img_hash}.{img_format}"
-                                )
+                                img_filename = f"image_{img_hash}.{img_format}"
 
                                 # Save image to temp directory for viewing
                                 try:
@@ -431,9 +412,7 @@ def sanitize_messages_for_logging(messages):
                                     if not os.path.exists(img_path):
                                         with open(img_path, 'wb') as f:
                                             f.write(
-                                                base64.b64decode(
-                                                    base64_data
-                                                )
+                                                base64.b64decode(base64_data)
                                             )
 
                                     # Create a file:// URL that can be
@@ -504,7 +483,7 @@ def create_token_usage_tracker() -> Dict[str, int]:
 
 
 def update_token_usage_tracker(
-        tracker: Dict[str, int], usage_dict: Dict[str, int]
+    tracker: Dict[str, int], usage_dict: Dict[str, int]
 ) -> None:
     r"""Updates a token usage tracker with values from a usage dictionary.
 

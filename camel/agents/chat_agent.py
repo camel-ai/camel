@@ -21,7 +21,6 @@ import textwrap
 import threading
 import time
 import uuid
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -46,29 +45,30 @@ from pydantic import BaseModel
 
 from camel.agents._types import ModelResponse, ToolCallRequest
 from camel.agents._utils import (
-    convert_to_function_tool,
-    convert_to_schema,
+    apply_prompt_based_parsing,
+    convert_response_format_to_prompt,
+    create_token_usage_tracker,
     get_info_dict,
+    get_token_count,
     handle_logprobs,
+    is_vision_error,
     safe_model_dump,
+    sanitize_messages_for_logging,
     try_format_message,
-    convert_response_format_to_prompt, apply_prompt_based_parsing, is_vision_error, get_token_count,
-    sanitize_messages_for_logging, create_token_usage_tracker, update_token_usage_tracker,
+    update_token_usage_tracker,
 )
 from camel.agents.base import BaseAgent
+from camel.agents.memory_manager import MemoryManager
 from camel.agents.streaming import (
+    AsyncStreamingChatAgentResponse,
     StreamContentAccumulator,
     StreamingChatAgentResponse,
-    AsyncStreamingChatAgentResponse,
 )
 from camel.agents.tool_manager import ToolManager
-from camel.agents.memory_manager import MemoryManager
 from camel.logger import get_logger
 from camel.memories import (
     AgentMemory,
-    ChatHistoryMemory,
     MemoryRecord,
-    ScoreBasedContextCreator,
 )
 from camel.messages import (
     BaseMessage,
@@ -83,7 +83,6 @@ from camel.models import (
 )
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
-from camel.storages import JsonStorage
 from camel.toolkits import FunctionTool
 from camel.types import (
     ChatCompletion,
@@ -255,11 +254,11 @@ class ChatAgent(BaseAgent):
 
         # init memory_manager
         self.memory_manager = MemoryManager(
-            model_backend = self.model_backend,
-            token_limit = token_limit,
-            message_window_size = message_window_size,
-            agent_id = self.agent_id,
-            memory = memory,
+            model_backend=self.model_backend,
+            token_limit=token_limit,
+            message_window_size=message_window_size,
+            agent_id=self.agent_id,
+            memory=memory,
         )
 
         # So we don't have to pass agent_id when we define memory
@@ -296,7 +295,6 @@ class ChatAgent(BaseAgent):
         # external tools
         if external_tools:
             self.tool_manager.add_external_tools(external_tools)
-
 
         # Set up other properties
         self.terminated = False
@@ -527,7 +525,6 @@ class ChatAgent(BaseAgent):
         """
         return self.tool_manager.remove_tool(tool_name)
 
-
     def remove_tools(self, tool_names: List[str]) -> None:
         r"""Remove a list of tools from the agent by name."""
         self.tool_manager.remove_tools(tool_names)
@@ -661,9 +658,7 @@ class ChatAgent(BaseAgent):
             "prompt-based formatting."
         )
 
-        format_prompt = convert_response_format_to_prompt(
-            response_format
-        )
+        format_prompt = convert_response_format_to_prompt(response_format)
 
         # Modify the message to include format instruction
         modified_message: Union[BaseMessage, str]
@@ -846,15 +841,13 @@ class ChatAgent(BaseAgent):
             iteration_count += 1
 
             # Accumulate API token usage
-            update_token_usage_tracker(
-                step_token_usage, response.usage_dict
-            )
+            update_token_usage_tracker(step_token_usage, response.usage_dict)
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
                 logger.info(
-                    f"Termination triggered at iteration " f"{iteration_count}"
+                    f"Termination triggered at iteration {iteration_count}"
                 )
                 return self._step_terminate(
                     accumulated_context_tokens,
@@ -902,9 +895,7 @@ class ChatAgent(BaseAgent):
 
         # Apply manual parsing if we used prompt-based formatting
         if used_prompt_formatting and original_response_format:
-            apply_prompt_based_parsing(
-                response, original_response_format
-            )
+            apply_prompt_based_parsing(response, original_response_format)
 
         self._record_final_output(response.output_messages)
 
@@ -1042,15 +1033,13 @@ class ChatAgent(BaseAgent):
             iteration_count += 1
 
             # Accumulate API token usage
-            update_token_usage_tracker(
-                step_token_usage, response.usage_dict
-            )
+            update_token_usage_tracker(step_token_usage, response.usage_dict)
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
                 logger.info(
-                    f"Termination triggered at iteration " f"{iteration_count}"
+                    f"Termination triggered at iteration {iteration_count}"
                 )
                 return self._step_terminate(
                     accumulated_context_tokens,
@@ -1161,9 +1150,7 @@ class ChatAgent(BaseAgent):
 
         # Apply manual parsing if we used prompt-based formatting
         if used_prompt_formatting and original_response_format:
-            apply_prompt_based_parsing(
-                response, original_response_format
-            )
+            apply_prompt_based_parsing(response, original_response_format)
 
         self._record_final_output(response.output_messages)
 
@@ -1357,9 +1344,7 @@ class ChatAgent(BaseAgent):
             )
         except Exception as exc:
             # Try again without images if the error might be vision-related
-            if is_vision_error(exc) and self._has_images(
-                openai_messages
-            ):
+            if is_vision_error(exc) and self._has_images(openai_messages):
                 logger.warning(
                     "Model appears to not support vision."
                     "Retrying without images."
@@ -1446,9 +1431,7 @@ class ChatAgent(BaseAgent):
             )
         except Exception as exc:
             # Try again without images if the error might be vision-related
-            if is_vision_error(exc) and self._has_images(
-                openai_messages
-            ):
+            if is_vision_error(exc) and self._has_images(openai_messages):
                 logger.warning(
                     "Model appears to not support vision. Retrying without images."  # noqa: E501
                 )
@@ -1924,7 +1907,7 @@ class ChatAgent(BaseAgent):
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
                 logger.info(
-                    f"Termination triggered at iteration " f"{iteration_count}"
+                    f"Termination triggered at iteration {iteration_count}"
                 )
                 yield self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
@@ -2059,9 +2042,9 @@ class ChatAgent(BaseAgent):
                                     choice.finish_reason or "stop"
                                     for choice in final_completion.choices
                                 ],
-                                "num_tokens": get_token_count(self.model_backend,
-                                                              final_content
-                                                              ),
+                                "num_tokens": get_token_count(
+                                    self.model_backend, final_content
+                                ),
                                 "tool_calls": tool_call_records,
                                 "external_tool_requests": None,
                                 "streaming": False,
@@ -2178,9 +2161,7 @@ class ChatAgent(BaseAgent):
                         )
 
                         if response_format:
-                            try_format_message(
-                                final_message, response_format
-                            )
+                            try_format_message(final_message, response_format)
 
                         self.record_message(final_message)
                     break
@@ -2555,7 +2536,7 @@ class ChatAgent(BaseAgent):
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
                 logger.info(
-                    f"Termination triggered at iteration " f"{iteration_count}"
+                    f"Termination triggered at iteration {iteration_count}"
                 )
                 yield self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
@@ -2703,9 +2684,9 @@ class ChatAgent(BaseAgent):
                                     choice.finish_reason or "stop"
                                     for choice in final_completion.choices
                                 ],
-                                "num_tokens": get_token_count(self.model_backend,
-                                                              final_content
-                                                              ),
+                                "num_tokens": get_token_count(
+                                    self.model_backend, final_content
+                                ),
                                 "tool_calls": tool_call_records,
                                 "external_tool_requests": None,
                                 "streaming": False,
@@ -2862,9 +2843,7 @@ class ChatAgent(BaseAgent):
                         )
 
                         if response_format:
-                            try_format_message(
-                                final_message, response_format
-                            )
+                            try_format_message(final_message, response_format)
 
                         self.record_message(final_message)
                     break
@@ -2945,7 +2924,6 @@ class ChatAgent(BaseAgent):
                         logger.error(f"Error in async tool execution: {e}")
                     continue
 
-
     def _create_tool_status_response_with_accumulator(
         self,
         accumulator: StreamContentAccumulator,
@@ -2974,7 +2952,9 @@ class ChatAgent(BaseAgent):
                 "id": "",
                 "usage": step_token_usage.copy(),
                 "finish_reasons": [status_type],
-                "num_tokens": get_token_count(self.model_backend, full_content),
+                "num_tokens": get_token_count(
+                    self.model_backend, full_content
+                ),
                 "tool_calls": tool_calls or [],
                 "external_tool_requests": None,
                 "streaming": True,
@@ -3011,7 +2991,9 @@ class ChatAgent(BaseAgent):
                 "id": response_id,
                 "usage": step_token_usage.copy(),
                 "finish_reasons": ["streaming"],
-                "num_tokens": get_token_count(self.model_backend, full_content),
+                "num_tokens": get_token_count(
+                    self.model_backend, full_content
+                ),
                 "tool_calls": tool_call_records or [],
                 "external_tool_requests": None,
                 "streaming": True,
