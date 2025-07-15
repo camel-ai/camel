@@ -506,6 +506,7 @@
               "reference/camel.toolkits.openai_agent_toolkit",
               "reference/camel.toolkits.openai_image_toolkit",
               "reference/camel.toolkits.openbb_toolkit",
+              "reference/camel.toolkits.origene_mcp_toolkit",
               "reference/camel.toolkits.playwright_mcp_toolkit",
               "reference/camel.toolkits.pptx_toolkit",
               "reference/camel.toolkits.pubmed_toolkit",

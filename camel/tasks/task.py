@@ -99,7 +99,7 @@ def validate_task_content(
         logger.warning(
             f"Task {task_id}: Content too short ({len(stripped_content)} "
             f"chars < {min_length} minimum). Content preview: "
-            f"'{stripped_content[:50]}...'"
+            f"'{stripped_content}'"
         )
         return False
 
@@ -124,7 +124,7 @@ def validate_task_content(
         if any(indicator in content_lower for indicator in failure_indicators):
             logger.warning(
                 f"Task {task_id}: Failure indicator detected in result. "
-                f"Content preview: '{stripped_content[:100]}...'"
+                f"Content preview: '{stripped_content}'"
             )
             return False
 
@@ -132,7 +132,7 @@ def validate_task_content(
         if content_lower.startswith(("error", "failed", "cannot", "unable")):
             logger.warning(
                 f"Task {task_id}: Error/refusal pattern detected at start. "
-                f"Content preview: '{stripped_content[:100]}...'"
+                f"Content preview: '{stripped_content}'"
             )
             return False
 
@@ -195,7 +195,7 @@ def parse_response(
             logger.warning(
                 f"Skipping invalid subtask {task_id}.{i} "
                 f"during decomposition: "
-                f"Content '{stripped_content[:50]}...' failed validation"
+                f"Content '{stripped_content}' failed validation"
             )
     return tasks
 
@@ -233,6 +233,8 @@ class Task(BaseModel):
             (default: :obj:`0`)
         assigned_worker_id (Optional[str]): The ID of the worker assigned to
             this task. (default: :obj:`None`)
+        dependencies (List[Task]): The dependencies for the task.
+            (default: :obj:`[]`)
         additional_info (Optional[Dict[str, Any]]): Additional information for
             the task. (default: :obj:`None`)
         image_list (Optional[List[Image.Image]]): Optional list of PIL Image
@@ -264,6 +266,8 @@ class Task(BaseModel):
     failure_count: int = 0
 
     assigned_worker_id: Optional[str] = None
+
+    dependencies: List["Task"] = []
 
     additional_info: Optional[Dict[str, Any]] = None
 
@@ -530,7 +534,7 @@ class Task(BaseModel):
                 logger.warning(
                     f"Skipping invalid subtask {task_id}.{i} "
                     f"during streaming decomposition: "
-                    f"Content '{stripped_content[:50]}...' failed validation"
+                    f"Content '{stripped_content}' failed validation"
                 )
         return tasks
 

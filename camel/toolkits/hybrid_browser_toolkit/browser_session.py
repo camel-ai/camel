@@ -33,6 +33,20 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
+class TabIdGenerator:
+    """Monotonically increasing tab ID generator."""
+
+    _counter: int = 0
+    _lock: ClassVar[asyncio.Lock] = asyncio.Lock()
+
+    @classmethod
+    async def generate_tab_id(cls) -> str:
+        """Generate a monotonically increasing tab ID."""
+        async with cls._lock:
+            cls._counter += 1
+            return f"tab-{cls._counter:03d}"
+
+
 class HybridBrowserSession:
     """Lightweight wrapper around Playwright for
     browsing with multi-tab support.
@@ -172,9 +186,9 @@ class HybridBrowserSession:
         self._context: Optional[BrowserContext] = None
         self._page: Optional[Page] = None
 
-        # Multi-tab support
-        self._pages: List[Page] = []  # All tabs
-        self._current_tab_index: int = 0  # Current active tab index
+        # Dictionary-based tab management with monotonic IDs
+        self._pages: Dict[str, Page] = {}  # tab_id -> Page object
+        self._current_tab_id: Optional[str] = None  # Current active tab ID
 
         self.snapshot: Optional[PageSnapshot] = None
         self.executor: Optional[ActionExecutor] = None
@@ -221,19 +235,22 @@ class HybridBrowserSession:
     # ------------------------------------------------------------------
     # Multi-tab management methods
     # ------------------------------------------------------------------
-    async def create_new_tab(self, url: Optional[str] = None) -> int:
+    async def create_new_tab(self, url: Optional[str] = None) -> str:
         r"""Create a new tab and optionally navigate to a URL.
 
         Args:
             url: Optional URL to navigate to in the new tab
 
         Returns:
-            int: Index of the newly created tab
+            str: ID of the newly created tab
         """
         await self.ensure_browser()
 
         if self._context is None:
             raise RuntimeError("Browser context is not available")
+
+        # Generate unique tab ID
+        tab_id = await TabIdGenerator.generate_tab_id()
 
         # Create new page
         new_page = await self._context.new_page()
@@ -248,9 +265,8 @@ class HybridBrowserSession:
                     f"Failed to apply stealth script to new tab: {e}"
                 )
 
-        # Add to our pages list
-        self._pages.append(new_page)
-        new_tab_index = len(self._pages) - 1
+        # Store in pages dictionary
+        self._pages[tab_id] = new_page
 
         # Navigate if URL provided
         if url:
@@ -261,196 +277,168 @@ class HybridBrowserSession:
                 logger.warning(f"Failed to navigate new tab to {url}: {e}")
 
         logger.info(
-            f"Created new tab {new_tab_index}, total tabs: {len(self._pages)}"
+            f"Created new tab {tab_id}, total tabs: {len(self._pages)}"
         )
-        return new_tab_index
+        return tab_id
 
-    async def register_page(self, new_page: "Page") -> int:
+    async def register_page(self, new_page: "Page") -> str:
         r"""Register a page that was created externally (e.g., by a click).
 
         Args:
             new_page (Page): The new page object to register.
 
         Returns:
-            int: The index of the (newly) registered tab.
+            str: The ID of the (newly) registered tab.
         """
-        if new_page in self._pages:
-            try:
-                # Page is already known, just return its index
-                return self._pages.index(new_page)
-            except ValueError:
-                # Should not happen if `in` check passed, but handle anyway
-                pass
+        # Check if page is already registered
+        for tab_id, page in self._pages.items():
+            if page is new_page:
+                return tab_id
 
-        # Add new page to our list
-        self._pages.append(new_page)
-        new_tab_index = len(self._pages) - 1
+        # Create new ID for the page
+        tab_id = await TabIdGenerator.generate_tab_id()
+        self._pages[tab_id] = new_page
+
         logger.info(
-            f"Registered new tab {new_tab_index} (opened by user action). "
+            f"Registered new tab {tab_id} (opened by user action). "
             f"Total tabs: {len(self._pages)}"
         )
-        return new_tab_index
+        return tab_id
 
-    async def switch_to_tab(self, tab_index: int) -> bool:
-        r"""Switch to a specific tab by index.
+    async def switch_to_tab(self, tab_id: str) -> bool:
+        r"""Switch to a specific tab by ID.
 
         Args:
-            tab_index: Index of the tab to switch to
+            tab_id: ID of the tab to switch to
 
         Returns:
-            bool: True if successful, False if tab index is invalid
+            bool: True if successful, False if tab ID is invalid
         """
-        # Use a more robust bounds check to prevent race conditions
+        if tab_id not in self._pages:
+            logger.warning(f"Invalid tab ID: {tab_id}")
+            return False
+
+        page = self._pages[tab_id]
+
+        # Check if page is still valid
+        if page.is_closed():
+            logger.warning(f"Tab {tab_id} is closed, removing from registry")
+            # Clean up closed tab
+            del self._pages[tab_id]
+            return False
+
         try:
-            if not self._pages:
-                logger.warning("No tabs available")
-                return False
-
-            # Capture current state to avoid race conditions
-            current_pages = self._pages.copy()
-            pages_count = len(current_pages)
-
-            if tab_index < 0 or tab_index >= pages_count:
-                logger.warning(
-                    f"Invalid tab index {tab_index}, available "
-                    f"tabs: {pages_count}"
-                )
-                return False
-
-            # Check if the page is still valid
-            page = current_pages[tab_index]
-            if page.is_closed():
-                logger.warning(
-                    f"Tab {tab_index} is closed, removing from list"
-                )
-                # Remove closed page from original list
-                if (
-                    tab_index < len(self._pages)
-                    and self._pages[tab_index] is page
-                ):
-                    self._pages.pop(tab_index)
-                    # Adjust current tab index if necessary
-                    if self._current_tab_index >= len(self._pages):
-                        self._current_tab_index = max(0, len(self._pages) - 1)
-                return False
-
-            self._current_tab_index = tab_index
+            # Switch to the tab
+            self._current_tab_id = tab_id
             self._page = page
 
             # Bring the tab to the front in the browser window
-            await self._page.bring_to_front()
+            await page.bring_to_front()
 
-            # Update executor and snapshot for new tab
+            # Update utilities for new tab
             self.executor = ActionExecutor(
-                self._page,
+                page,
                 self,
                 default_timeout=self._default_timeout,
                 short_timeout=self._short_timeout,
             )
-            self.snapshot = PageSnapshot(self._page)
+            self.snapshot = PageSnapshot(page)
 
-            logger.info(f"Switched to tab {tab_index}")
+            logger.info(f"Switched to tab {tab_id}")
             return True
 
         except Exception as e:
-            logger.warning(f"Error switching to tab {tab_index}: {e}")
+            logger.warning(f"Error switching to tab {tab_id}: {e}")
             return False
 
-    async def close_tab(self, tab_index: int) -> bool:
-        r"""Close a specific tab.
+    async def close_tab(self, tab_id: str) -> bool:
+        r"""Close a specific tab by ID.
 
         Args:
-            tab_index: Index of the tab to close
+            tab_id: ID of the tab to close
 
         Returns:
-            bool: True if successful, False if tab index is invalid
+            bool: True if successful, False if tab ID is invalid
         """
-        if not self._pages or tab_index < 0 or tab_index >= len(self._pages):
+        if tab_id not in self._pages:
+            logger.warning(f"Invalid tab ID: {tab_id}")
             return False
 
+        page = self._pages[tab_id]
+
         try:
-            page = self._pages[tab_index]
+            # Close the page if not already closed
             if not page.is_closed():
                 await page.close()
 
-            # Remove from our list
-            self._pages.pop(tab_index)
+            # Remove from our dictionary
+            del self._pages[tab_id]
 
             # If we closed the current tab, switch to another one
-            if tab_index == self._current_tab_index:
+            if tab_id == self._current_tab_id:
                 if self._pages:
-                    # Switch to the previous tab, or first tab if we closed
-                    # the first one
-                    new_index = max(
-                        0, min(tab_index - 1, len(self._pages) - 1)
-                    )
-                    await self.switch_to_tab(new_index)
+                    # Switch to any available tab (first one we find)
+                    next_tab_id = next(iter(self._pages.keys()))
+                    await self.switch_to_tab(next_tab_id)
                 else:
                     # No tabs left
-                    self._current_tab_index = 0
+                    self._current_tab_id = None
                     self._page = None
                     self.executor = None
                     self.snapshot = None
-            elif tab_index < self._current_tab_index:
-                # Adjust current tab index since we removed a tab before it
-                self._current_tab_index -= 1
 
             logger.info(
-                f"Closed tab {tab_index}, remaining tabs: {len(self._pages)}"
+                f"Closed tab {tab_id}, remaining tabs: {len(self._pages)}"
             )
             return True
 
         except Exception as e:
-            logger.warning(f"Error closing tab {tab_index}: {e}")
+            logger.warning(f"Error closing tab {tab_id}: {e}")
             return False
 
     async def get_tab_info(self) -> List[Dict[str, Any]]:
-        r"""Get information about all open tabs.
+        r"""Get information about all open tabs including IDs.
 
         Returns:
             List of dictionaries containing tab information
         """
         tab_info = []
-        for i, page in enumerate(self._pages):
+        tabs_to_cleanup = []
+
+        # Process all tabs in dictionary
+        for tab_id, page in list(self._pages.items()):
             try:
                 if not page.is_closed():
                     title = await page.title()
                     url = page.url
-                    is_current = i == self._current_tab_index
+                    is_current = tab_id == self._current_tab_id
                     tab_info.append(
                         {
-                            "index": i,
+                            "tab_id": tab_id,
                             "title": title,
                             "url": url,
                             "is_current": is_current,
                         }
                     )
                 else:
-                    # Mark closed tab for removal
-                    tab_info.append(
-                        {
-                            "index": i,
-                            "title": "[CLOSED]",
-                            "url": "",
-                            "is_current": False,
-                        }
-                    )
+                    # Mark for cleanup
+                    tabs_to_cleanup.append(tab_id)
             except Exception as e:
-                logger.warning(f"Error getting info for tab {i}: {e}")
-                tab_info.append(
-                    {
-                        "index": i,
-                        "title": "[ERROR]",
-                        "url": "",
-                        "is_current": False,
-                    }
-                )
+                logger.warning(f"Error getting info for tab {tab_id}: {e}")
+                tabs_to_cleanup.append(tab_id)
+
+        # Clean up closed/invalid tabs
+        for tab_id in tabs_to_cleanup:
+            if tab_id in self._pages:
+                del self._pages[tab_id]
 
         return tab_info
 
-    async def get_current_tab_index(self) -> int:
-        r"""Get the index of the current active tab."""
-        return self._current_tab_index
+    async def get_current_tab_id(self) -> Optional[str]:
+        r"""Get the id for the current active tab."""
+        if not self._current_tab_id or not self._pages:
+            return None
+        return self._current_tab_id
 
     # ------------------------------------------------------------------
     # Browser lifecycle helpers
@@ -470,7 +458,7 @@ class HybridBrowserSession:
             self._context = singleton_instance._context
             self._page = singleton_instance._page
             self._pages = singleton_instance._pages
-            self._current_tab_index = singleton_instance._current_tab_index
+            self._current_tab_id = singleton_instance._current_tab_id
             self.snapshot = singleton_instance.snapshot
             self.executor = singleton_instance.executor
             return
@@ -512,17 +500,30 @@ class HybridBrowserSession:
             pages = context.pages
             if pages:
                 self._page = pages[0]
-                self._pages = list(pages)
+                # Create ID for initial page
+                initial_tab_id = await TabIdGenerator.generate_tab_id()
+                self._pages[initial_tab_id] = pages[0]
+                self._current_tab_id = initial_tab_id
+                # Handle additional pages if any
+                for page in pages[1:]:
+                    tab_id = await TabIdGenerator.generate_tab_id()
+                    self._pages[tab_id] = page
             else:
                 self._page = await context.new_page()
-                self._pages = [self._page]
+                initial_tab_id = await TabIdGenerator.generate_tab_id()
+                self._pages[initial_tab_id] = self._page
+                self._current_tab_id = initial_tab_id
         else:
             self._browser = await self._playwright.chromium.launch(
                 **launch_options
             )
             self._context = await self._browser.new_context(**context_options)
             self._page = await self._context.new_page()
-            self._pages = [self._page]
+
+            # Create ID for initial page
+            initial_tab_id = await TabIdGenerator.generate_tab_id()
+            self._pages[initial_tab_id] = self._page
+            self._current_tab_id = initial_tab_id
 
         # Apply stealth modifications if enabled
         if self._stealth and self._stealth_script:
@@ -544,7 +545,6 @@ class HybridBrowserSession:
             default_timeout=self._default_timeout,
             short_timeout=self._short_timeout,
         )
-        self._current_tab_index = 0
 
         logger.info("Browser session initialized successfully")
 
@@ -593,8 +593,8 @@ class HybridBrowserSession:
             logger.error(f"Error during browser session close: {e}")
         finally:
             self._page = None
-            self._pages = []
-            self._current_tab_index = 0
+            self._pages = {}
+            self._current_tab_id = None
             self.snapshot = None
             self.executor = None
 
@@ -602,7 +602,7 @@ class HybridBrowserSession:
         r"""Internal session close logic with thorough cleanup."""
         try:
             # Close all pages first
-            pages_to_close = self._pages.copy()
+            pages_to_close = list(self._pages.values())
             for page in pages_to_close:
                 try:
                     if not page.is_closed():
@@ -614,7 +614,7 @@ class HybridBrowserSession:
                 except Exception as e:
                     logger.warning(f"Error closing page: {e}")
 
-            # Clear the pages list
+            # Clear the pages dictionary
             self._pages.clear()
 
             # Close context with explicit wait
@@ -658,7 +658,8 @@ class HybridBrowserSession:
         finally:
             # Ensure all attributes are cleared regardless of errors
             self._page = None
-            self._pages = []
+            self._pages = {}
+            self._current_tab_id = None
             self._context = None
             self._browser = None
             self._playwright = None
