@@ -2923,6 +2923,10 @@ class ChatAgent(BaseAgent):
                     else:
                         logger.error(f"Error in async tool execution: {e}")
                     continue
+        # Ensure this function remains an async generator
+        return
+        # This line is never reached but makes this an async generator function
+        yield
 
     def _create_tool_status_response_with_accumulator(
         self,
