@@ -38,6 +38,43 @@ Initialize the HybridBrowserToolkit.
 - **browser_log_to_file** (bool): Whether to save detailed browser action logs to file. When enabled, logs action inputs/outputs, execution times, and page loading times. Logs are saved to an auto-generated timestamped file. Defaults to `False`.
 - **session_id** (Optional[str]): A unique identifier for this browser session. When multiple HybridBrowserToolkit instances are used concurrently, different session IDs prevent them from sharing the same browser session and causing conflicts. If None, a default session will be used. Defaults to `None`.
 - **default_start_url** (str): The default URL to navigate to when open_browser() is called without a start_url parameter or with None. Defaults to `"https://google.com/"`.
+- **default_timeout** (Optional[int]): Default timeout in milliseconds for browser actions. If None, uses environment variable HYBRID_BROWSER_DEFAULT_TIMEOUT or defaults to 3000ms. Defaults to `None`.
+- **short_timeout** (Optional[int]): Short timeout in milliseconds for quick browser actions. If None, uses environment variable HYBRID_BROWSER_SHORT_TIMEOUT or defaults to 1000ms. Defaults to `None`.
+- **navigation_timeout** (Optional[int]): Custom navigation timeout in milliseconds. If None, uses environment variable HYBRID_BROWSER_NAVIGATION_TIMEOUT or defaults to 10000ms. Defaults to `None`.
+- **network_idle_timeout** (Optional[int]): Custom network idle timeout in milliseconds. If None, uses environment variable HYBRID_BROWSER_NETWORK_IDLE_TIMEOUT or defaults to 5000ms. Defaults to `None`.
+- **screenshot_timeout** (Optional[int]): Custom screenshot timeout in milliseconds. If None, uses environment variable HYBRID_BROWSER_SCREENSHOT_TIMEOUT or defaults to 15000ms. Defaults to `None`.
+- **page_stability_timeout** (Optional[int]): Custom page stability timeout in milliseconds. If None, uses environment variable HYBRID_BROWSER_PAGE_STABILITY_TIMEOUT or defaults to 1500ms. Defaults to `None`.
+- **dom_content_loaded_timeout** (Optional[int]): Custom DOM content loaded timeout in milliseconds. If None, uses environment variable HYBRID_BROWSER_DOM_CONTENT_LOADED_TIMEOUT or defaults to 5000ms. Defaults to `None`.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.web_agent_model"></a>
+
+### web_agent_model
+
+```python
+def web_agent_model(self):
+```
+
+Get the web agent model.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.web_agent_model"></a>
+
+### web_agent_model
+
+```python
+def web_agent_model(self, value: Optional[BaseModelBackend]):
+```
+
+Set the web agent model.
+
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.cache_dir"></a>
+
+### cache_dir
+
+```python
+def cache_dir(self):
+```
+
+Get the cache directory.
 
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.__del__"></a>
 

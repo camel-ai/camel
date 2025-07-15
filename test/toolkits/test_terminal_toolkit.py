@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import os
 import platform
 import tempfile
 from pathlib import Path
@@ -23,7 +22,7 @@ from camel.toolkits import TerminalToolkit
 
 @pytest.fixture
 def terminal_toolkit(temp_dir):
-    return TerminalToolkit(working_dir=temp_dir, safe_mode=False)
+    return TerminalToolkit(working_directory=temp_dir, safe_mode=False)
 
 
 @pytest.fixture
@@ -45,55 +44,6 @@ def test_init():
     assert toolkit.timeout is None
     assert isinstance(toolkit.shell_sessions, dict)
     assert toolkit.os_type == platform.system()
-
-
-def test_file_find_in_content(terminal_toolkit, test_file):
-    # Test basic pattern matching
-    result = terminal_toolkit.file_find_in_content(str(test_file), "World")
-    assert "World" in result
-
-    # Test regex pattern
-    result = terminal_toolkit.file_find_in_content(str(test_file), "^Test$")
-    assert "Test" in result
-
-    # Test non-existent pattern
-    result = terminal_toolkit.file_find_in_content(str(test_file), "NotFound")
-    assert result == ""
-
-    # Test with directory instead of file
-    result = terminal_toolkit.file_find_in_content(
-        str(test_file.parent), "pattern"
-    )
-    assert "not a file" in result.lower()
-
-
-def test_file_find_by_name(terminal_toolkit, temp_dir):
-    # Create test files
-    (temp_dir / "test1.txt").touch()
-    (temp_dir / "test2.txt").touch()
-    (temp_dir / "other.log").touch()
-    os.makedirs(temp_dir / "subdir")
-    (temp_dir / "subdir" / "test3.txt").touch()
-
-    # Test basic glob pattern
-    result = terminal_toolkit.file_find_by_name(str(temp_dir), "*.txt")
-    assert "test1.txt" in result
-    assert "test2.txt" in result
-    assert "test3.txt" in result
-    assert "other.log" not in result
-
-    # Test specific filename
-    result = terminal_toolkit.file_find_by_name(str(temp_dir), "other.log")
-    assert "other.log" in result
-
-    # Test non-existent pattern
-    result = terminal_toolkit.file_find_by_name(str(temp_dir), "nonexistent*")
-    assert result == ""
-
-    # Test with file instead of directory
-    test_file = temp_dir / "test1.txt"
-    result = terminal_toolkit.file_find_by_name(str(test_file), "*.txt")
-    assert "not a directory" in result.lower()
 
 
 def test_shell_exec(terminal_toolkit, temp_dir):

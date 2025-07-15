@@ -35,7 +35,7 @@ sys_msg = (
 )
 
 # Set model config
-tools = TerminalToolkit(working_dir=workspace_dir).get_tools()
+tools = TerminalToolkit(working_directory=workspace_dir).get_tools()
 
 model_config_dict = ChatGPTConfig(
     temperature=0.0,

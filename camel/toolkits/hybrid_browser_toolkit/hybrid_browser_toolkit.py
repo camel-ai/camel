@@ -32,6 +32,7 @@ from camel.utils.tool_result import ToolResult
 
 from .agent import PlaywrightLLMAgent
 from .browser_session import HybridBrowserSession
+from .config_loader import ConfigLoader
 
 logger = get_logger(__name__)
 
@@ -46,11 +47,6 @@ class HybridBrowserToolkit(BaseToolkit):
     and visual analysis of the page layout through screenshots with marked
     interactive elements.
     """
-
-    # Configuration constants
-    DEFAULT_SCREENSHOT_TIMEOUT = 60000  # 60 seconds for screenshots
-    PAGE_STABILITY_TIMEOUT = 3000  # 3 seconds for DOM stability
-    NETWORK_IDLE_TIMEOUT = 2000  # 2 seconds for network idle
 
     # Default tool list - core browser functionality
     DEFAULT_TOOLS: ClassVar[List[str]] = [
@@ -98,6 +94,13 @@ class HybridBrowserToolkit(BaseToolkit):
         browser_log_to_file: bool = False,
         session_id: Optional[str] = None,
         default_start_url: str = "https://google.com/",
+        default_timeout: Optional[int] = None,
+        short_timeout: Optional[int] = None,
+        navigation_timeout: Optional[int] = None,
+        network_idle_timeout: Optional[int] = None,
+        screenshot_timeout: Optional[int] = None,
+        page_stability_timeout: Optional[int] = None,
+        dom_content_loaded_timeout: Optional[int] = None,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -140,14 +143,71 @@ class HybridBrowserToolkit(BaseToolkit):
             default_start_url (str): The default URL to navigate to when
                 open_browser() is called without a start_url parameter or with
                 None. Defaults to `"https://google.com/"`.
+            default_timeout (Optional[int]): Default timeout in milliseconds
+                for browser actions. If None, uses environment variable
+                HYBRID_BROWSER_DEFAULT_TIMEOUT or defaults to 3000ms.
+                Defaults to `None`.
+            short_timeout (Optional[int]): Short timeout in milliseconds
+                for quick browser actions. If None, uses environment variable
+                HYBRID_BROWSER_SHORT_TIMEOUT or defaults to 1000ms.
+                Defaults to `None`.
+            navigation_timeout (Optional[int]): Custom navigation timeout in
+            milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_NAVIGATION_TIMEOUT or defaults to 10000ms.
+                Defaults to `None`.
+            network_idle_timeout (Optional[int]): Custom network idle
+            timeout in milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_NETWORK_IDLE_TIMEOUT or defaults to 5000ms.
+                Defaults to `None`.
+            screenshot_timeout (Optional[int]): Custom screenshot timeout in
+            milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_SCREENSHOT_TIMEOUT or defaults to 15000ms.
+                Defaults to `None`.
+            page_stability_timeout (Optional[int]): Custom page stability
+            timeout in milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_PAGE_STABILITY_TIMEOUT or defaults to 1500ms.
+                Defaults to `None`.
+            dom_content_loaded_timeout (Optional[int]): Custom DOM content
+            loaded timeout in milliseconds.
+                If None, uses environment variable
+                HYBRID_BROWSER_DOM_CONTENT_LOADED_TIMEOUT or defaults to
+                5000ms.
+                Defaults to `None`.
         """
         super().__init__()
         self._headless = headless
         self._user_data_dir = user_data_dir
-        self.web_agent_model = web_agent_model
-        self.cache_dir = cache_dir
-        self.default_start_url = default_start_url
-        os.makedirs(self.cache_dir, exist_ok=True)
+        self._stealth = stealth
+        self._web_agent_model = web_agent_model
+        self._cache_dir = cache_dir
+        self._browser_log_to_file = browser_log_to_file
+        self._default_start_url = default_start_url
+        self._session_id = session_id or "default"
+
+        # Store timeout configuration
+        self._default_timeout = default_timeout
+        self._short_timeout = short_timeout
+        self._navigation_timeout = ConfigLoader.get_navigation_timeout(
+            navigation_timeout
+        )
+        self._network_idle_timeout = ConfigLoader.get_network_idle_timeout(
+            network_idle_timeout
+        )
+        self._screenshot_timeout = ConfigLoader.get_screenshot_timeout(
+            screenshot_timeout
+        )
+        self._page_stability_timeout = ConfigLoader.get_page_stability_timeout(
+            page_stability_timeout
+        )
+        self._dom_content_loaded_timeout = (
+            ConfigLoader.get_dom_content_loaded_timeout(
+                dom_content_loaded_timeout
+            )
+        )
 
         # Logging configuration - fixed values for simplicity
         self.enable_action_logging = True
@@ -203,12 +263,29 @@ class HybridBrowserToolkit(BaseToolkit):
             user_data_dir=user_data_dir,
             stealth=stealth,
             session_id=session_id,
+            default_timeout=default_timeout,
+            short_timeout=short_timeout,
         )
         # Use the session directly - singleton logic is handled in
         # ensure_browser
         self._session = temp_session
         self._agent: Optional[PlaywrightLLMAgent] = None
         self._unified_script = self._load_unified_analyzer()
+
+    @property
+    def web_agent_model(self) -> Optional[BaseModelBackend]:
+        """Get the web agent model."""
+        return self._web_agent_model
+
+    @web_agent_model.setter
+    def web_agent_model(self, value: Optional[BaseModelBackend]) -> None:
+        """Set the web agent model."""
+        self._web_agent_model = value
+
+    @property
+    def cache_dir(self) -> str:
+        """Get the cache directory."""
+        return self._cache_dir
 
     def __del__(self):
         r"""Cleanup browser resources on garbage collection."""
@@ -437,29 +514,29 @@ class HybridBrowserToolkit(BaseToolkit):
 
     async def _wait_for_page_stability(self):
         r"""Wait for page to become stable after actions that might trigger
-        updates.
+        updates. Optimized with shorter timeouts.
         """
         page = await self._require_page()
         import asyncio
 
         try:
-            # Wait for DOM content to be loaded
+            # Wait for DOM content to be loaded (reduced timeout)
             await page.wait_for_load_state(
-                'domcontentloaded', timeout=self.PAGE_STABILITY_TIMEOUT
+                'domcontentloaded', timeout=self._page_stability_timeout
             )
             logger.debug("DOM content loaded")
 
-            # Try to wait for network idle (important for AJAX/SPA)
+            # Try to wait for network idle with shorter timeout
             try:
                 await page.wait_for_load_state(
-                    'networkidle', timeout=self.NETWORK_IDLE_TIMEOUT
+                    'networkidle', timeout=self._network_idle_timeout
                 )
                 logger.debug("Network idle achieved")
             except Exception:
                 logger.debug("Network idle timeout - continuing anyway")
 
-            # Additional small delay for JavaScript execution
-            await asyncio.sleep(0.5)
+            # Reduced delay for JavaScript execution
+            await asyncio.sleep(0.2)  # Reduced from 0.5s
             logger.debug("Page stability wait completed")
 
         except Exception as e:
@@ -467,24 +544,92 @@ class HybridBrowserToolkit(BaseToolkit):
                 f"Page stability wait failed: {e} - continuing anyway"
             )
 
-    async def _get_unified_analysis(self) -> Dict[str, Any]:
-        r"""Get unified analysis data from the page."""
+    async def _get_unified_analysis(
+        self, max_retries: int = 3
+    ) -> Dict[str, Any]:
+        r"""Get unified analysis data from the page with retry mechanism for
+        navigation issues."""
         page = await self._require_page()
-        try:
-            if not self._unified_script:
-                logger.error("Unified analyzer script not loaded")
+
+        for attempt in range(max_retries):
+            try:
+                if not self._unified_script:
+                    logger.error("Unified analyzer script not loaded")
+                    return {"elements": {}, "metadata": {"elementCount": 0}}
+
+                # Wait for DOM stability before each attempt (with optimized
+                # timeout)
+                try:
+                    await page.wait_for_load_state(
+                        'domcontentloaded',
+                        timeout=self._dom_content_loaded_timeout,
+                    )
+                except Exception:
+                    # Don't fail if DOM wait times out
+                    pass
+
+                result = await page.evaluate(self._unified_script)
+
+                if not isinstance(result, dict):
+                    logger.warning(f"Invalid result type: {type(result)}")
+                    return {"elements": {}, "metadata": {"elementCount": 0}}
+
+                # Success - return result
+                if attempt > 0:
+                    logger.debug(
+                        f"Unified analysis succeeded on attempt {attempt + 1}"
+                    )
+                return result
+
+            except Exception as e:
+                error_msg = str(e)
+
+                # Check if this is a navigation-related error
+                is_navigation_error = (
+                    "Execution context was destroyed" in error_msg
+                    or "Most likely because of a navigation" in error_msg
+                    or "Target page, context or browser has been closed"
+                    in error_msg
+                )
+
+                if is_navigation_error and attempt < max_retries - 1:
+                    logger.debug(
+                        f"Navigation error in unified analysis (attempt "
+                        f"{attempt + 1}/{max_retries}): {e}. Retrying..."
+                    )
+
+                    # Wait a bit for page stability before retrying (optimized)
+                    try:
+                        await page.wait_for_load_state(
+                            'domcontentloaded',
+                            timeout=self._page_stability_timeout,
+                        )
+                        # Reduced delay for JS context to stabilize
+                        import asyncio
+
+                        await asyncio.sleep(0.1)  # Reduced from 0.2s
+                    except Exception:
+                        # Continue even if wait fails
+                        pass
+
+                    continue
+
+                # Non-navigation error or final attempt - log and return
+                # empty result
+                if attempt == max_retries - 1:
+                    logger.warning(
+                        f"Error in unified analysis after {max_retries} "
+                        f"attempts: {e}"
+                    )
+                else:
+                    logger.warning(
+                        f"Non-retryable error in unified analysis: {e}"
+                    )
+
                 return {"elements": {}, "metadata": {"elementCount": 0}}
 
-            result = await page.evaluate(self._unified_script)
-
-            if not isinstance(result, dict):
-                logger.warning(f"Invalid result type: {type(result)}")
-                return {"elements": {}, "metadata": {"elementCount": 0}}
-
-            return result
-        except Exception as e:
-            logger.warning(f"Error in unified analysis: {e}")
-            return {"elements": {}, "metadata": {"elementCount": 0}}
+        # Should not reach here, but just in case
+        return {"elements": {}, "metadata": {"elementCount": 0}}
 
     def _convert_analysis_to_rects(
         self, analysis_data: Dict[str, Any]
@@ -621,7 +766,7 @@ class HybridBrowserToolkit(BaseToolkit):
             # Add debug info for tab info retrieval
             logger.debug("Attempting to get tab info from session...")
             tab_info = await session.get_tab_info()
-            current_tab_index = await session.get_current_tab_index()
+            current_tab_index = await session.get_current_tab_id()
 
             # Debug log the successful retrieval
             logger.debug(
@@ -669,7 +814,7 @@ class HybridBrowserToolkit(BaseToolkit):
                     try:
                         open_pages = [
                             p
-                            for p in fallback_session._pages
+                            for p in fallback_session._pages.values()
                             if not p.is_closed()
                         ]
                         actual_tab_count = len(open_pages)
@@ -728,13 +873,13 @@ class HybridBrowserToolkit(BaseToolkit):
         try:
             # Get before snapshot
             logger.info("Capturing pre-action snapshot...")
-            snapshot_start = time.time()
+            snapshot_start_before = time.time()
             before_snapshot = await self._session.get_snapshot(
                 force_refresh=True, diff_only=False
             )
-            snapshot_time = time.time() - snapshot_start
+            before_snapshot_time = time.time() - snapshot_start_before
             logger.info(
-                f"Pre-action snapshot captured in {snapshot_time:.2f}s"
+                f"Pre-action snapshot captured in {before_snapshot_time:.2f}s"
             )
 
             # Execute action
@@ -780,13 +925,14 @@ class HybridBrowserToolkit(BaseToolkit):
 
             # Get after snapshot
             logger.info("Capturing post-action snapshot...")
-            snapshot_start = time.time()
+            snapshot_start_after = time.time()
             after_snapshot = await self._session.get_snapshot(
                 force_refresh=True, diff_only=False
             )
-            snapshot_time = time.time() - snapshot_start
+            after_snapshot_time = time.time() - snapshot_start_after
             logger.info(
-                f"Post-action snapshot " f"captured in {snapshot_time:.2f}s"
+                f"Post-action snapshot "
+                f"captured in {after_snapshot_time:.2f}s"
             )
 
             # Check for snapshot quality and log warnings
@@ -820,6 +966,7 @@ class HybridBrowserToolkit(BaseToolkit):
 
             # Create comprehensive output for logging
             execution_time = time.time() - action_start_time
+            total_snapshot_time = before_snapshot_time + after_snapshot_time
             outputs = {
                 "result": result_message,
                 "snapshot": snapshot,
@@ -830,6 +977,7 @@ class HybridBrowserToolkit(BaseToolkit):
                     "stability_time_ms": round(stability_time * 1000, 2)
                     if stability_time > 0
                     else None,
+                    "snapshot_time_ms": round(total_snapshot_time * 1000, 2),
                     "total_time_ms": round(execution_time * 1000, 2),
                 },
                 **tab_info,  # Include tab information
@@ -930,7 +1078,7 @@ class HybridBrowserToolkit(BaseToolkit):
 
     def _ensure_agent(self) -> PlaywrightLLMAgent:
         r"""Create PlaywrightLLMAgent on first use."""
-        if self.web_agent_model is None:
+        if self._web_agent_model is None:
             raise RuntimeError(
                 "web_agent_model required for high-level task planning"
             )
@@ -939,32 +1087,26 @@ class HybridBrowserToolkit(BaseToolkit):
             self._agent = PlaywrightLLMAgent(
                 headless=self._headless,
                 user_data_dir=self._user_data_dir,
-                model_backend=self.web_agent_model,
+                model_backend=self._web_agent_model,
             )
         return self._agent
 
     # Public API Methods
 
     async def open_browser(self) -> Dict[str, Any]:
-        r"""Launches a new browser session and navigates to the configured
-        default page.
+        r"""Starts a new browser session. This must be the first browser
+        action.
 
-        This method initializes the underlying browser instance and
-        automatically
-        navigates to the default start URL that was configured during toolkit
-        initialization. Agents cannot specify a custom URL - they must use the
-        visit_page tool for navigation to other URLs.
+        This method initializes the browser and navigates to a default start
+        page. To visit a specific URL, use `visit_page` after this.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A string confirming that the browser session has
-                  started and the default page has been loaded.
-                - "snapshot": A textual representation of the current page's
-                  interactive elements. This snapshot is crucial for
-                  identifying elements for subsequent actions.
-                - "tabs": List of all open tabs with their information.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of open tabs.
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A textual snapshot of interactive elements.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
         """
         # Add logging if enabled
         action_start = time.time()
@@ -979,9 +1121,10 @@ class HybridBrowserToolkit(BaseToolkit):
 
         try:
             # Always use the configured default start URL
-            start_url = self.default_start_url
+            start_url = self._default_start_url
             logger.info(f"Navigating to configured default page: {start_url}")
 
+            # Use visit_page without creating a new tab
             result = await self.visit_page(start_url)
 
             # Log success
@@ -991,8 +1134,8 @@ class HybridBrowserToolkit(BaseToolkit):
                     action_name="open_browser",
                     inputs=inputs,
                     outputs={
-                        "result": "Browser opened and navigated to default "
-                        "page."
+                        "result": "Browser opened and navigated to "
+                        "default page."
                     },
                     execution_time=execution_time,
                 )
@@ -1014,14 +1157,12 @@ class HybridBrowserToolkit(BaseToolkit):
 
     @action_logger
     async def close_browser(self) -> str:
-        r"""Closes the current browser session and releases all associated
-        resources.
+        r"""Closes the browser session, releasing all resources.
 
-        This should be called at the end of a web automation task to ensure a
-        clean shutdown of the browser instance.
+        This should be called at the end of a task for cleanup.
 
         Returns:
-            str: A confirmation message indicating the session is closed.
+            str: A confirmation message.
         """
         if self._agent is not None:
             try:
@@ -1035,21 +1176,19 @@ class HybridBrowserToolkit(BaseToolkit):
 
     @action_logger
     async def visit_page(self, url: str) -> Dict[str, Any]:
-        r"""Navigates the current browser page to a specified URL.
+        r"""Opens a URL in a new browser tab and switches to it.
 
         Args:
-            url (str): The web address to load in the browser. Must be a
-                valid URL.
+            url (str): The web address to load. This should be a valid and
+                existing URL.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A message indicating the outcome of the navigation,
-                  e.g., "Navigation successful.".
-                - "snapshot": A new textual snapshot of the page's interactive
-                  elements after the new page has loaded.
-                - "tabs": List of all open tabs with their information.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of open tabs.
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A textual snapshot of the new page.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the new active tab.
+                - "total_tabs" (int): Total number of open tabs.
         """
         if not url or not isinstance(url, str):
             return {
@@ -1063,22 +1202,50 @@ class HybridBrowserToolkit(BaseToolkit):
         if '://' not in url:
             url = f'https://{url}'
 
-        logger.info(f"Navigating to URL: {url}")
+        await self._ensure_browser()
+        session = await self._get_session()
+        nav_result = ""
 
-        # Navigate to page
-        nav_start = time.time()
-        nav_result = await self._session.visit(url)
-        nav_time = time.time() - nav_start
-        logger.info(f"Page navigation completed in {nav_time:.2f}s")
+        # By default, we want to create a new tab.
+        should_create_new_tab = True
+        try:
+            # If the browser has just started with a single "about:blank" tab,
+            # use that tab instead of creating a new one.
+            tab_info_data = await self._get_tab_info_for_output()
+            tabs = tab_info_data.get("tabs", [])
+            if len(tabs) == 1 and tabs[0].get("url") == "about:blank":
+                logger.info(
+                    "Found single blank tab, navigating in current tab "
+                    "instead of creating a new one."
+                )
+                should_create_new_tab = False
+        except Exception as e:
+            logger.warning(
+                "Could not get tab info to check for blank tab, "
+                f"proceeding with default behavior (new tab). Error: {e}"
+            )
+
+        if should_create_new_tab:
+            logger.info(f"Creating new tab and navigating to URL: {url}")
+            try:
+                new_tab_id = await session.create_new_tab(url)
+                await session.switch_to_tab(new_tab_id)
+                nav_result = f"Visited {url} in new tab {new_tab_id}"
+            except Exception as e:
+                logger.error(f"Failed to create new tab and navigate: {e}")
+                nav_result = f"Error creating new tab: {e}"
+        else:
+            logger.info(f"Navigating to URL in current tab: {url}")
+            nav_result = await session.visit(url)
 
         # Get snapshot
-        logger.info("Capturing page snapshot after navigation...")
-        snapshot_start = time.time()
-        snapshot = await self._session.get_snapshot(
-            force_refresh=True, diff_only=False
-        )
-        snapshot_time = time.time() - snapshot_start
-        logger.info(f"Navigation snapshot captured in {snapshot_time:.2f}s")
+        snapshot = ""
+        try:
+            snapshot = await session.get_snapshot(
+                force_refresh=True, diff_only=False
+            )
+        except Exception as e:
+            logger.warning(f"Failed to capture snapshot: {e}")
 
         # Get tab information
         tab_info = await self._get_tab_info_for_output()
@@ -1087,35 +1254,34 @@ class HybridBrowserToolkit(BaseToolkit):
 
     @action_logger
     async def back(self) -> Dict[str, Any]:
-        r"""Navigates the browser back to the previous page in history.
+        r"""Goes back to the previous page in the browser history.
 
-        This function simulates clicking the browser's back button, taking
-        you to the previously visited page if one exists in the browser
-        history.
+        This action simulates using the browser's "back" button in the
+        currently active tab.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A message indicating the outcome of the back
-                  navigation, e.g., "Back navigation successful." or an error
-                  message if no previous page exists.
-                - "snapshot": A new textual snapshot of the page after
-                  navigation. If the snapshot is unchanged, it will be the
-                  string "snapshot not changed".
-                - "tabs": List of all open tabs with their information.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of open tabs.
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A textual snapshot of the previous page.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
         """
         page = await self._require_page()
 
         try:
             logger.info("Navigating back in browser history...")
             nav_start = time.time()
-            await page.go_back(wait_until="domcontentloaded", timeout=30000)
+            await page.go_back(
+                wait_until="domcontentloaded", timeout=self._navigation_timeout
+            )
             nav_time = time.time() - nav_start
             logger.info(f"Back navigation completed in {nav_time:.2f}s")
 
-            # Wait for page stability
-            await self._wait_for_page_stability()
+            # Minimal wait for page stability (back navigation is usually fast)
+            import asyncio
+
+            await asyncio.sleep(0.2)
 
             # Get snapshot
             logger.info("Capturing page snapshot after back navigation...")
@@ -1152,35 +1318,35 @@ class HybridBrowserToolkit(BaseToolkit):
 
     @action_logger
     async def forward(self) -> Dict[str, Any]:
-        r"""Navigates the browser forward to the next page in history.
+        r"""Goes forward to the next page in the browser history.
 
-        This function simulates clicking the browser's forward button, taking
-        you to the next page in the browser history if one exists (i.e.,
-        if you have previously navigated back).
+        This action simulates using the browser's "forward" button in the
+        currently active tab.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A message indicating the outcome of the forward
-                  navigation, e.g., "Forward navigation successful." or an
-                  error message if no next page exists.
-                - "snapshot": A new textual snapshot of the page after
-                  navigation. If the snapshot is unchanged, it will be the
-                  string "snapshot not changed".
-                - "tabs": List of all open tabs with their information.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of open tabs.
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A textual snapshot of the next page.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
         """
         page = await self._require_page()
 
         try:
             logger.info("Navigating forward in browser history...")
             nav_start = time.time()
-            await page.go_forward(wait_until="domcontentloaded", timeout=30000)
+            await page.go_forward(
+                wait_until="domcontentloaded", timeout=self._navigation_timeout
+            )
             nav_time = time.time() - nav_start
             logger.info(f"Forward navigation completed in {nav_time:.2f}s")
 
-            # Wait for page stability
-            await self._wait_for_page_stability()
+            # Minimal wait for page stability (forward navigation is usually
+            # fast)
+            import asyncio
+
+            await asyncio.sleep(0.2)
 
             # Get snapshot
             logger.info("Capturing page snapshot after forward navigation...")
@@ -1217,20 +1383,16 @@ class HybridBrowserToolkit(BaseToolkit):
 
     @action_logger
     async def get_page_snapshot(self) -> str:
-        r"""Captures a textual representation of the current page's content.
+        r"""Gets a textual snapshot of the page's interactive elements.
 
-        This "snapshot" provides a simplified view of the DOM, focusing on
-        interactive elements like links, buttons, and input fields. Each
-        element is assigned a unique reference ID (`ref`) that can be used in
-        other actions like `click` or `type`.
-
-        The snapshot is useful for understanding the page structure and
-        identifying elements to interact with without needing to parse raw
-        HTML. A new snapshot is generated on each call.
+        The snapshot lists elements like buttons, links, and inputs, each with
+        a unique `ref` ID. This ID is used by other tools (e.g., `click`,
+        `type`) to interact with a specific element. This tool provides no
+        visual information.
 
         Returns:
-            str: A formatted string representing the interactive elements on
-                the page. For example:
+            str: A formatted string representing the interactive elements and
+                their `ref` IDs. For example:
                 '- link "Sign In" [ref=1]'
                 '- textbox "Username" [ref=2]'
         """
@@ -1253,45 +1415,36 @@ class HybridBrowserToolkit(BaseToolkit):
     @dependencies_required('PIL')
     @action_logger
     async def get_som_screenshot(self):
-        r"""Captures a screenshot of the current webpage and visually marks all
-        interactive elements. "SoM" stands for "Set of Marks".
+        r"""Captures a screenshot with interactive elements highlighted.
 
-        This method is essential for tasks requiring visual understanding of
-        the page layout. It works by:
-        1. Taking a full-page screenshot.
-        2. Identifying all interactive elements (buttons, links, inputs, etc.).
-        3. Drawing colored boxes and reference IDs (`ref`) over these elements
-           on the screenshot.
-        4. Saving the annotated image to a cache directory.
-        5. Returning the image as a base64-encoded string along with a summary.
-
-        Use this when the textual snapshot from `get_page_snapshot` is
-        insufficient and visual context is needed to decide the next action.
+        "SoM" stands for "Set of Marks". This tool takes a screenshot and draws
+        boxes around clickable elements, overlaying a `ref` ID on each. Use
+        this for a visual understanding of the page, especially when the
+        textual snapshot is not enough.
 
         Returns:
             ToolResult: An object containing:
-                - `text`: A summary string, e.g., "Visual webpage screenshot
+                - `text` (str): A summary, e.g., "Visual webpage screenshot
                   captured with 42 interactive elements".
-                - `images`: A list containing a single base64-encoded PNG image
-                  as a data URL.
+                - `images` (List[str]): A list containing one base64-encoded
+                  PNG image data URL.
         """
         from PIL import Image
 
         from camel.utils.tool_result import ToolResult
 
+        os.makedirs(self._cache_dir, exist_ok=True)
         # Get screenshot and analysis
         page = await self._require_page()
 
         # Log screenshot timeout start
         logger.info(
             f"Starting screenshot capture"
-            f"with timeout: {self.DEFAULT_SCREENSHOT_TIMEOUT}ms"
+            f"with timeout: {self._screenshot_timeout}ms"
         )
 
         start_time = time.time()
-        image_data = await page.screenshot(
-            timeout=self.DEFAULT_SCREENSHOT_TIMEOUT
-        )
+        image_data = await page.screenshot(timeout=self._screenshot_timeout)
         screenshot_time = time.time() - start_time
 
         logger.info(f"Screenshot capture completed in {screenshot_time:.2f}s")
@@ -1317,7 +1470,7 @@ class HybridBrowserToolkit(BaseToolkit):
         url_name = sanitize_filename(str(parsed_url.path), max_length=241)
         timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
         file_path = os.path.join(
-            self.cache_dir, f"{url_name}_{timestamp}_som.png"
+            self._cache_dir, f"{url_name}_{timestamp}_som.png"
         )
         marked_image.save(file_path, "PNG")
 
@@ -1336,37 +1489,33 @@ class HybridBrowserToolkit(BaseToolkit):
         return ToolResult(text=text_result, images=[img_data_url])
 
     async def click(self, *, ref: str) -> Dict[str, Any]:
-        r"""Clicks on an interactive element on the page.
+        r"""Performs a click on an element on the page.
 
         Args:
-            ref (str): The reference ID of the element to click. This ID is
-                obtained from the page snapshot (see `get_page_snapshot` or
+            ref (str): The `ref` ID of the element to click. This ID is
+                obtained from a page snapshot (`get_page_snapshot` or
                 `get_som_screenshot`).
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A message confirming the click action.
-                - "snapshot": A new textual snapshot of the page after the
-                  click, which may have changed as a result of the action. If
-                  the snapshot is unchanged, it will be the string "snapshot
-                  not changed".
-                - "tabs": List of all open tabs with their information.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of open tabs.
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A textual snapshot of the page after the
+                  click.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
         """
         self._validate_ref(ref, "click")
 
         analysis = await self._get_unified_analysis()
         elements = analysis.get("elements", {})
         if ref not in elements:
-            available_refs = list(elements.keys())
             logger.error(f"Error: Element reference '{ref}' not found. ")
             # Added snapshot to give more context on failure
             snapshot = self._format_snapshot_from_analysis(analysis)
             tab_info = await self._get_tab_info_for_output()
             return {
-                "result": f"Error: Element reference '{ref}' not found. "
-                f"Available refs: {available_refs}",
+                "result": f"Error: Element reference '{ref}' not found. ",
                 "snapshot": snapshot,
                 **tab_info,
             }
@@ -1384,20 +1533,20 @@ class HybridBrowserToolkit(BaseToolkit):
         return result
 
     async def type(self, *, ref: str, text: str) -> Dict[str, Any]:
-        r"""Types text into an input field, such as a textbox or search bar.
+        r"""Types text into an input element on the page.
 
         Args:
-            ref (str): The reference ID of the input element.
-            text (str): The text to be typed into the element.
+            ref (str): The `ref` ID of the input element, from a snapshot.
+            text (str): The text to type into the element.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A message confirming the type action.
-                - "snapshot": A new textual snapshot of the page after the
-                  text has been entered.
-                - "tabs": List of all open tabs with their information.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of open tabs.
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A textual snapshot of the page after
+                  typing.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
         """
         self._validate_ref(ref, "type")
         await self._get_unified_analysis()  # Ensure aria-ref attributes
@@ -1412,21 +1561,21 @@ class HybridBrowserToolkit(BaseToolkit):
         return result
 
     async def select(self, *, ref: str, value: str) -> Dict[str, Any]:
-        r"""Selects an option from a dropdown (`<select>`) element.
+        r"""Selects an option in a dropdown (`<select>`) element.
 
         Args:
-            ref (str): The reference ID of the `<select>` element.
-            value (str): The value of the `<option>` to be selected. This
-                should match the `value` attribute of the option, not the
-                visible text.
+            ref (str): The `ref` ID of the `<select>` element.
+            value (str): The `value` attribute of the `<option>` to select,
+                not its visible text.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A message confirming the select action.
-                - "snapshot": A new snapshot of the page after the selection.
-                - "tabs": List of all open tabs with their information.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of open tabs.
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A snapshot of the page after the
+                  selection.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
         """
         self._validate_ref(ref, "select")
         await self._get_unified_analysis()
@@ -1441,20 +1590,19 @@ class HybridBrowserToolkit(BaseToolkit):
         return result
 
     async def scroll(self, *, direction: str, amount: int) -> Dict[str, Any]:
-        r"""Scrolls the page window up or down by a specified amount.
+        r"""Scrolls the current page window.
 
         Args:
-            direction (str): The direction to scroll. Must be either 'up' or
-                'down'.
+            direction (str): The direction to scroll: 'up' or 'down'.
             amount (int): The number of pixels to scroll.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A confirmation of the scroll action.
-                - "snapshot": A new snapshot of the page after scrolling.
-                - "tabs": List of all open tabs with their information.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of open tabs.
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A snapshot of the page after scrolling.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
         """
         if direction not in ("up", "down"):
             tab_info = await self._get_tab_info_for_output()
@@ -1476,25 +1624,17 @@ class HybridBrowserToolkit(BaseToolkit):
     async def enter(self) -> Dict[str, Any]:
         r"""Simulates pressing the Enter key on the currently focused element.
 
-        This tool is used to execute or confirm an action after interacting
-        with
-        an element, such as:
-        - Submitting a search query after typing in a search box.
-        - Confirming a form submission.
-        - Executing a command in a text input field.
-
-        The common usage pattern is to first use the 'type' tool to input
-        text, which sets the focus, and then call 'enter' without any
-        parameters to trigger the action.
+        This is useful for submitting forms or search queries after using the
+        `type` tool.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A confirmation of the Enter key action.
-                - "snapshot": A new page snapshot, as this action often
-                  triggers navigation or page updates.
-                - "tabs": List of all open tabs with their information.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of open tabs.
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A new page snapshot, as this action often
+                  triggers navigation.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
         """
         # Always press Enter on the currently focused element
         action = {"type": "enter"}
@@ -1511,25 +1651,22 @@ class HybridBrowserToolkit(BaseToolkit):
     async def wait_user(
         self, timeout_sec: Optional[float] = None
     ) -> Dict[str, Any]:
-        r"""Pauses the agent's execution and waits for human intervention.
+        r"""Pauses execution and waits for human input from the console.
 
-        This is useful for tasks that require manual steps, like solving a
-        CAPTCHA. The agent will print a message to the console and wait
-        until the user presses the Enter key.
+        Use this for tasks requiring manual steps, like solving a CAPTCHA. The
+        agent will resume after the user presses Enter in the console.
 
         Args:
-            timeout_sec (Optional[float]): The maximum time to wait in
-                seconds. If the timeout is reached, the agent will resume
-                automatically. If `None`, it will wait indefinitely.
+            timeout_sec (Optional[float]): Max time to wait in seconds. If
+                `None`, it will wait indefinitely.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A message indicating how the wait ended (e.g.,
-                  "User resumed." or "Timeout... reached, auto-resumed.").
-                - "snapshot": The current page snapshot after the wait.
-                - "tabs": List of all open tabs with their information.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of open tabs.
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): A message indicating how the wait ended.
+                - "snapshot" (str): The page snapshot after the wait.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
         """
         import asyncio
 
@@ -1576,20 +1713,18 @@ class HybridBrowserToolkit(BaseToolkit):
 
     @action_logger
     async def get_page_links(self, *, ref: List[str]) -> Dict[str, Any]:
-        r"""Retrieves the full URLs for a given list of link reference IDs.
+        r"""Gets the destination URLs for a list of link elements.
 
-        This is useful when you need to know the destination of a link before
-        clicking it.
+        This is useful to know where a link goes before clicking it.
 
         Args:
-            ref (List[str]): A list of reference IDs for link elements,
-                obtained from a page snapshot.
+            ref (List[str]): A list of `ref` IDs for link elements, obtained
+                from a page snapshot.
 
         Returns:
             Dict[str, Any]: A dictionary containing:
-                - "links": A list of dictionaries, where each dictionary
-                  represents a found link and has "text", "ref", and "url"
-                  keys.
+                - "links" (List[Dict]): A list of found links, where each
+                  link has "text", "ref", and "url" keys.
         """
         if not ref or not isinstance(ref, list):
             return {"links": []}
@@ -1610,26 +1745,25 @@ class HybridBrowserToolkit(BaseToolkit):
     async def solve_task(
         self, task_prompt: str, start_url: str, max_steps: int = 15
     ) -> str:
-        r"""Uses a high-level LLM agent to autonomously complete a task.
+        r"""Delegates a complex, high-level task to a specialized web agent.
 
-        This function delegates control to another agent that can reason about
-        a task, break it down into steps, and execute browser actions to
-        achieve the goal. It is suitable for complex, multi-step tasks.
+        Use this for multi-step tasks that can be described in a single prompt
+        (e.g., "log into my account and check for new messages"). The agent
+        will autonomously perform the necessary browser actions.
 
-        Note: `web_agent_model` must be provided during the toolkit's
-        initialization to use this function.
+        NOTE: This is a high-level action; for simple interactions, use tools
+        like `click` and `type`. `web_agent_model` must be provided during
+        toolkit initialization.
 
         Args:
-            task_prompt (str): A natural language description of the task to
-                be completed (e.g., "log into my account on example.com").
-            start_url (str): The URL to start the task from.
-            max_steps (int): The maximum number of steps the agent is allowed
-                to take before stopping.
+            task_prompt (str): A natural language description of the task.
+            start_url (str): The URL to start the task from. This should be a
+                valid and existing URL, as agents may generate non-existent
+                ones.
+            max_steps (int): The maximum number of steps the agent can take.
 
         Returns:
-            str: A summary message indicating that the task processing has
-                finished. The detailed trace of the agent's actions will be
-                printed to the standard output.
+            str: A summary message indicating the task has finished.
         """
         agent = self._ensure_agent()
         await agent.navigate(start_url)
@@ -1706,7 +1840,7 @@ class HybridBrowserToolkit(BaseToolkit):
         enabled_tools = []
 
         for tool_name in self.enabled_tools:
-            if tool_name == "solve_task" and self.web_agent_model is None:
+            if tool_name == "solve_task" and self._web_agent_model is None:
                 logger.warning(
                     f"Tool '{tool_name}' is enabled but web_agent_model "
                     f"is not provided. Skipping this tool."
@@ -1746,41 +1880,44 @@ class HybridBrowserToolkit(BaseToolkit):
         return HybridBrowserToolkit(
             headless=self._headless,
             user_data_dir=self._user_data_dir,
-            stealth=self._session._stealth if self._session else False,
-            web_agent_model=self.web_agent_model,
-            cache_dir=f"{self.cache_dir.rstrip('/')}_clone_{new_session_id}/",
+            stealth=self._stealth,
+            web_agent_model=self._web_agent_model,
+            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_{new_session_id}/",
             enabled_tools=self.enabled_tools.copy(),
-            browser_log_to_file=self.log_to_file,
+            browser_log_to_file=self._browser_log_to_file,
             session_id=new_session_id,
-            default_start_url=self.default_start_url,
+            default_start_url=self._default_start_url,
+            default_timeout=self._default_timeout,
+            short_timeout=self._short_timeout,
+            navigation_timeout=self._navigation_timeout,
+            network_idle_timeout=self._network_idle_timeout,
+            screenshot_timeout=self._screenshot_timeout,
+            page_stability_timeout=self._page_stability_timeout,
+            dom_content_loaded_timeout=self._dom_content_loaded_timeout,
         )
 
     @action_logger
-    async def switch_tab(self, *, tab_index: int) -> Dict[str, Any]:
-        r"""Switches to a specific browser tab by its index.
+    async def switch_tab(self, *, tab_id: str) -> Dict[str, Any]:
+        r"""Switches to a different browser tab using its ID.
 
-        This allows you to control which tab is currently active. After
-        switching, all subsequent browser actions will operate on the newly
-        selected tab.
+        After switching, all actions will apply to the new tab. Use
+        `get_tab_info` to find the ID of the tab you want to switch to.
 
         Args:
-            tab_index (int): The zero-based index of the tab to switch to.
-                Use `get_tab_info` to see available tabs and their indices.
+            tab_id (str): The ID of the tab to activate.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A message indicating success or failure of the
-                  tab switch.
-                - "snapshot": A textual snapshot of the newly active tab's
-                  content.
-                - "tabs": List of all open tabs with their information.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of open tabs.
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A snapshot of the newly active tab.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the new active tab.
+                - "total_tabs" (int): Total number of open tabs.
         """
         await self._ensure_browser()
         session = await self._get_session()
 
-        success = await session.switch_to_tab(tab_index)
+        success = await session.switch_to_tab(tab_id)
 
         if success:
             snapshot = await session.get_snapshot(
@@ -1789,14 +1926,14 @@ class HybridBrowserToolkit(BaseToolkit):
             tab_info = await self._get_tab_info_for_output()
 
             result = {
-                "result": f"Successfully switched to tab {tab_index}",
+                "result": f"Successfully switched to tab {tab_id}",
                 "snapshot": snapshot,
                 **tab_info,
             }
         else:
             tab_info = await self._get_tab_info_for_output()
             result = {
-                "result": f"Failed to switch to tab {tab_index}. Tab may not "
+                "result": f"Failed to switch to tab {tab_id}. Tab may not "
                 f"exist.",
                 "snapshot": "",
                 **tab_info,
@@ -1805,30 +1942,27 @@ class HybridBrowserToolkit(BaseToolkit):
         return result
 
     @action_logger
-    async def close_tab(self, *, tab_index: int) -> Dict[str, Any]:
-        r"""Closes a specific browser tab by its index.
+    async def close_tab(self, *, tab_id: str) -> Dict[str, Any]:
+        r"""Closes a browser tab using its ID.
 
-        After closing a tab, the browser will automatically switch to another
-        available tab. If the closed tab was the only one open, the browser
-        session will remain active but without any pages.
+        Use `get_tab_info` to find the ID of the tab to close. After
+        closing, the browser will switch to another tab if available.
 
         Args:
-            tab_index (int): The zero-based index of the tab to close.
+            tab_id (str): The ID of the tab to close.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "result": A message indicating success or failure of the
-                  tab closure.
-                - "snapshot": A textual snapshot of the currently active tab
-                  after the closure (empty if no tabs remain).
-                - "tabs": List of remaining open tabs.
-                - "current_tab": Index of the currently active tab.
-                - "total_tabs": Total number of remaining open tabs.
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A snapshot of the active tab after closure.
+                - "tabs" (List[Dict]): Information about remaining tabs.
+                - "current_tab" (int): Index of the new active tab.
+                - "total_tabs" (int): Total number of remaining tabs.
         """
         await self._ensure_browser()
         session = await self._get_session()
 
-        success = await session.close_tab(tab_index)
+        success = await session.close_tab(tab_id)
 
         if success:
             # Get current state after closing the tab
@@ -1842,14 +1976,14 @@ class HybridBrowserToolkit(BaseToolkit):
             tab_info = await self._get_tab_info_for_output()
 
             result = {
-                "result": f"Successfully closed tab {tab_index}",
+                "result": f"Successfully closed tab {tab_id}",
                 "snapshot": snapshot,
                 **tab_info,
             }
         else:
             tab_info = await self._get_tab_info_for_output()
             result = {
-                "result": f"Failed to close tab {tab_index}. Tab may not "
+                "result": f"Failed to close tab {tab_id}. Tab may not "
                 f"exist.",
                 "snapshot": "",
                 **tab_info,
@@ -1859,20 +1993,20 @@ class HybridBrowserToolkit(BaseToolkit):
 
     @action_logger
     async def get_tab_info(self) -> Dict[str, Any]:
-        r"""Retrieves information about all currently open browser tabs.
+        r"""Gets a list of all open browser tabs and their information.
 
-        This provides a comprehensive overview of the browser state, including
-        all open tabs, their titles, URLs, and which one is currently active.
+        This includes each tab's index, title, and URL, and indicates which
+        tab is currently active. Use this to manage multiple tabs.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - "tabs": A list of dictionaries, each representing a tab with:
-                  - "index": The zero-based index of the tab
-                  - "title": The page title
-                  - "url": The current URL
-                  - "is_current": Whether this is the currently active tab
-                - "current_tab": Index of the currently active tab
-                - "total_tabs": Total number of open tabs
+            Dict[str, Any]: A dictionary with tab information:
+                - "tabs" (List[Dict]): A list of open tabs, each with:
+                  - "index" (int): The tab's zero-based index.
+                  - "title" (str): The page title.
+                  - "url" (str): The current URL.
+                  - "is_current" (bool): True if the tab is active.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
         """
         await self._ensure_browser()
         return await self._get_tab_info_for_output()

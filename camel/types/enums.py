@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from enum import Enum, EnumMeta
-from typing import cast
+from typing import Union, cast
 
 from camel.logger import get_logger
 from camel.types.unified_model_type import UnifiedModelType
@@ -270,6 +270,7 @@ class ModelType(UnifiedModelType, Enum):
     MOONSHOT_V1_8K = "moonshot-v1-8k"
     MOONSHOT_V1_32K = "moonshot-v1-32k"
     MOONSHOT_V1_128K = "moonshot-v1-128k"
+    MOONSHOT_KIMI_K2 = "kimi-k2-0711-preview"
 
     # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
@@ -419,11 +420,14 @@ class ModelType(UnifiedModelType, Enum):
     def __str__(self):
         return self.value
 
-    def __new__(cls, value) -> "ModelType":
+    def __repr__(self):
+        return self.value
+
+    def __new__(cls, value: Union["ModelType", str]) -> "ModelType":
         return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
     @classmethod
-    def from_name(cls, name):
+    def from_name(cls, name: str) -> "ModelType":
         r"""Returns the ModelType enum value from a string."""
         for model_type in cls:
             if model_type.value == name:
@@ -833,6 +837,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_8K,
             ModelType.MOONSHOT_V1_32K,
             ModelType.MOONSHOT_V1_128K,
+            ModelType.MOONSHOT_KIMI_K2,
         }
 
     @property
@@ -1205,6 +1210,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_MEDIUM_3,
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
+            ModelType.MOONSHOT_KIMI_K2,
         }:
             return 128_000
         elif self in {

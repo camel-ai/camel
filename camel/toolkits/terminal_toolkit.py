@@ -16,6 +16,7 @@ import atexit
 import os
 import platform
 import queue
+import shutil
 import subprocess
 import sys
 import threading
@@ -41,21 +42,25 @@ class TerminalToolkit(BaseToolkit):
 
     Args:
         timeout (Optional[float]): The timeout for terminal operations.
+            (default: :obj:`None`)
         shell_sessions (Optional[Dict[str, Any]]): A dictionary to store
-            shell session information. If None, an empty dictionary will be
-            used. (default: :obj:`{}`)
-        working_dir (str): The working directory for operations.
-            If specified, all execution and write operations will be restricted
-            to this directory. Read operations can access paths outside this
-            directory.(default: :obj:`"./workspace"`)
+            shell session information. If :obj:`None`, an empty dictionary
+            will be used. (default: :obj:`None`)
+        working_directory (Optional[str]): The working directory for
+            operations. If not provided, it will be determined by the
+            `CAMEL_WORKDIR` environment variable (if set). If the
+            environment variable is not set, it defaults to `./workspace`. All
+            execution and write operations will be restricted to this
+            directory. Read operations can access paths outside this
+            directory. (default: :obj:`None`)
         need_terminal (bool): Whether to create a terminal interface.
             (default: :obj:`True`)
-        use_shell_mode (bool): Whether to use shell mode for command execution.
-            (default: :obj:`True`)
+        use_shell_mode (bool): Whether to use shell mode for command
+            execution. (default: :obj:`True`)
         clone_current_env (bool): Whether to clone the current Python
-            environment.(default: :obj:`False`)
-        safe_mode (bool): Whether to enable safe mode to restrict operations.
-            (default: :obj:`True`)
+            environment. (default: :obj:`False`)
+        safe_mode (bool): Whether to enable safe mode to restrict
+            operations. (default: :obj:`True`)
 
     Note:
         Most functions are compatible with Unix-based systems (macOS, Linux).
@@ -67,7 +72,7 @@ class TerminalToolkit(BaseToolkit):
         self,
         timeout: Optional[float] = None,
         shell_sessions: Optional[Dict[str, Any]] = None,
-        working_dir: str = "./workspace",
+        working_directory: Optional[str] = None,
         need_terminal: bool = True,
         use_shell_mode: bool = True,
         clone_current_env: bool = False,
@@ -88,12 +93,22 @@ class TerminalToolkit(BaseToolkit):
 
         self.python_executable = sys.executable
         self.is_macos = platform.system() == 'Darwin'
+        self.initial_env_path: Optional[str] = None
+        self.initial_env_prepared = False
 
         atexit.register(self.__del__)
 
-        if not os.path.exists(working_dir):
-            os.makedirs(working_dir, exist_ok=True)
-        self.working_dir = os.path.abspath(working_dir)
+        if working_directory:
+            self.working_dir = os.path.abspath(working_directory)
+        else:
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                self.working_dir = os.path.abspath(camel_workdir)
+            else:
+                self.working_dir = os.path.abspath("./workspace")
+
+        if not os.path.exists(self.working_dir):
+            os.makedirs(self.working_dir, exist_ok=True)
         self._update_terminal_output(
             f"Working directory set to: {self.working_dir}\n"
         )
@@ -108,6 +123,7 @@ class TerminalToolkit(BaseToolkit):
             self._clone_current_environment()
         else:
             self.cloned_env_path = None
+            self._prepare_initial_environment()
 
         if need_terminal:
             if self.is_macos:
@@ -178,19 +194,242 @@ class TerminalToolkit(BaseToolkit):
                 return
 
             self._update_terminal_output(
-                f"Creating new Python environment at:{self.cloned_env_path}\n"
+                f"Creating new Python environment at: {self.cloned_env_path}\n"
             )
 
+            # Create virtual environment with pip
             venv.create(self.cloned_env_path, with_pip=True)
-            self._update_terminal_output(
-                "New Python environment created successfully!\n"
-            )
 
+            # Ensure pip is properly available by upgrading it
+            if self.os_type == 'Windows':
+                python_path = os.path.join(
+                    self.cloned_env_path, "Scripts", "python.exe"
+                )
+            else:
+                python_path = os.path.join(
+                    self.cloned_env_path, "bin", "python"
+                )
+
+            # Verify python executable exists
+            if os.path.exists(python_path):
+                # Use python -m pip to ensure pip is available
+                subprocess.run(
+                    [python_path, "-m", "pip", "install", "--upgrade", "pip"],
+                    check=True,
+                    capture_output=True,
+                    cwd=self.working_dir,
+                    timeout=60,
+                )
+                self._update_terminal_output(
+                    "New Python environment created successfully with pip!\n"
+                )
+            else:
+                self._update_terminal_output(
+                    f"Warning: Python executable not found at {python_path}\n"
+                )
+
+        except subprocess.CalledProcessError as e:
+            error_msg = e.stderr.decode() if e.stderr else str(e)
+            self._update_terminal_output(
+                f"Failed to upgrade pip in cloned environment: {error_msg}\n"
+            )
+            logger.error(f"Failed to upgrade pip: {error_msg}")
+        except subprocess.TimeoutExpired:
+            self._update_terminal_output(
+                "Pip upgrade timed out, but environment may still be usable\n"
+            )
         except Exception as e:
             self._update_terminal_output(
                 f"Failed to create environment: {e!s}\n"
             )
             logger.error(f"Failed to create environment: {e}")
+
+    def _is_uv_environment(self) -> bool:
+        r"""Detect whether the current Python runtime is managed by uv."""
+        return (
+            "UV_CACHE_DIR" in os.environ
+            or "uv" in sys.executable
+            or shutil.which("uv") is not None
+        )
+
+    def _prepare_initial_environment(self):
+        r"""Prepare initial environment with Python 3.10, pip, and other
+        essential tools.
+        """
+        try:
+            self.initial_env_path = os.path.join(
+                self.working_dir, ".initial_env"
+            )
+
+            if os.path.exists(self.initial_env_path):
+                self._update_terminal_output(
+                    f"Using existing initial environment"
+                    f": {self.initial_env_path}\n"
+                )
+                self.initial_env_prepared = True
+                return
+
+            self._update_terminal_output(
+                f"Preparing initial environment at: {self.initial_env_path}\n"
+            )
+
+            # Create the initial environment directory
+            os.makedirs(self.initial_env_path, exist_ok=True)
+
+            # Check if we should use uv
+            if self._is_uv_environment():
+                self._setup_initial_env_with_uv()
+            else:
+                self._setup_initial_env_with_venv()
+
+            self.initial_env_prepared = True
+            self._update_terminal_output(
+                "Initial environment prepared successfully!\n"
+            )
+
+        except Exception as e:
+            self._update_terminal_output(
+                f"Failed to prepare initial environment: {e!s}\n"
+            )
+            logger.error(f"Failed to prepare initial environment: {e}")
+
+    def _setup_initial_env_with_uv(self):
+        r"""Set up initial environment using uv."""
+        if self.initial_env_path is None:
+            raise Exception("Initial environment path not set")
+
+        try:
+            # Create virtual environment with Python 3.10 using uv
+            subprocess.run(
+                ["uv", "venv", "--python", "3.10", self.initial_env_path],
+                check=True,
+                capture_output=True,
+                cwd=self.working_dir,
+                timeout=300,
+            )
+
+            # Get the python path from the new environment
+            if self.os_type == 'Windows':
+                python_path = os.path.join(
+                    self.initial_env_path, "Scripts", "python.exe"
+                )
+            else:
+                python_path = os.path.join(
+                    self.initial_env_path, "bin", "python"
+                )
+
+            # Install essential packages using uv
+            essential_packages = ["pip", "setuptools", "wheel"]
+            subprocess.run(
+                [
+                    "uv",
+                    "pip",
+                    "install",
+                    "--python",
+                    python_path,
+                    *essential_packages,
+                ],
+                check=True,
+                capture_output=True,
+                cwd=self.working_dir,
+                timeout=300,
+            )
+
+            # Check if Node.js is available (but don't install it)
+            self._check_nodejs_availability()
+
+            self._update_terminal_output(
+                "[UV] Initial environment created with Python 3.10 "
+                "and essential packages\n"
+            )
+
+        except subprocess.CalledProcessError as e:
+            error_msg = e.stderr.decode() if e.stderr else str(e)
+            raise Exception(f"UV setup failed: {error_msg}")
+        except subprocess.TimeoutExpired:
+            raise Exception("UV setup timed out after 5 minutes")
+
+    def _setup_initial_env_with_venv(self):
+        r"""Set up initial environment using standard venv."""
+        if self.initial_env_path is None:
+            raise Exception("Initial environment path not set")
+
+        try:
+            # Create virtual environment with system Python
+            venv.create(
+                self.initial_env_path,
+                with_pip=True,
+                system_site_packages=False,
+            )
+
+            # Get pip path
+            if self.os_type == 'Windows':
+                pip_path = os.path.join(
+                    self.initial_env_path, "Scripts", "pip.exe"
+                )
+            else:
+                pip_path = os.path.join(self.initial_env_path, "bin", "pip")
+
+            # Upgrade pip and install essential packages
+            essential_packages = ["pip", "setuptools", "wheel"]
+            subprocess.run(
+                [pip_path, "install", "--upgrade", *essential_packages],
+                check=True,
+                capture_output=True,
+                cwd=self.working_dir,
+                timeout=300,
+            )
+
+            # Check if Node.js is available (but don't install it)
+            self._check_nodejs_availability()
+
+            self._update_terminal_output(
+                "Initial environment created with system Python and "
+                "essential packages\n"
+            )
+
+        except subprocess.CalledProcessError as e:
+            error_msg = e.stderr.decode() if e.stderr else str(e)
+            raise Exception(f"Venv setup failed: {error_msg}")
+        except subprocess.TimeoutExpired:
+            raise Exception("Venv setup timed out after 5 minutes")
+
+    def _check_nodejs_availability(self):
+        r"""Check if Node.js is available without modifying the system."""
+        try:
+            # Check if Node.js is already available in the system
+            node_result = subprocess.run(
+                ["node", "--version"],
+                check=False,
+                capture_output=True,
+                timeout=10,
+            )
+
+            npm_result = subprocess.run(
+                ["npm", "--version"],
+                check=False,
+                capture_output=True,
+                timeout=10,
+            )
+
+            if node_result.returncode == 0 and npm_result.returncode == 0:
+                node_version = node_result.stdout.decode().strip()
+                npm_version = npm_result.stdout.decode().strip()
+                self._update_terminal_output(
+                    f"Node.js {node_version} and npm {npm_version} "
+                    "are available\n"
+                )
+            else:
+                self._update_terminal_output(
+                    "Note: Node.js not found. If needed, please install it "
+                    "manually.\n"
+                )
+
+        except Exception as e:
+            self._update_terminal_output(
+                f"Note: Could not check Node.js availability - {e}.\n"
+            )
+            logger.warning(f"Failed to check Node.js: {e}")
 
     def _create_terminal(self):
         r"""Create a terminal GUI. If GUI creation fails, fallback
@@ -334,108 +573,6 @@ class TerminalToolkit(BaseToolkit):
         except Exception as e:
             logger.error(f"Failed to copy file: {e}")
             return None
-
-    def file_find_in_content(
-        self, file: str, regex: str, sudo: bool = False
-    ) -> str:
-        r"""Search for text within a file's content using a regular expression.
-
-        This function is useful for finding specific patterns or lines of text
-        within a given file. It uses `grep` on Unix-like systems and `findstr`
-        on Windows.
-
-        Args:
-            file (str): The absolute path of the file to search within.
-            regex (str): The regular expression pattern to match.
-            sudo (bool, optional): Whether to use sudo privileges for the
-                search. Defaults to False. Note: Using sudo requires the
-                process to have appropriate permissions.
-                (default: :obj:`False`)
-
-        Returns:
-            str: The matching content found in the file. If no matches are
-                found, an empty string is returned. Returns an error message
-                if the file does not exist or another error occurs.
-        """
-
-        if not os.path.exists(file):
-            return f"File not found: {file}"
-
-        if not os.path.isfile(file):
-            return f"The path provided is not a file: {file}"
-
-        command = []
-        if sudo:
-            error_msg = self._enforce_working_dir_for_execution(file)
-            if error_msg:
-                return error_msg
-            command.extend(["sudo"])
-
-        if self.os_type in ['Darwin', 'Linux']:  # macOS or Linux
-            command.extend(["grep", "-E", regex, file])
-        else:  # Windows
-            # For Windows, we could use PowerShell or findstr
-            command.extend(["findstr", "/R", regex, file])
-
-        try:
-            result = subprocess.run(
-                command, check=False, capture_output=True, text=True
-            )
-            return result.stdout.strip()
-        except subprocess.SubprocessError as e:
-            logger.error(f"Error searching in file content: {e}")
-            return f"Error: {e!s}"
-
-    def file_find_by_name(self, path: str, glob: str) -> str:
-        r"""Find files by name in a specified directory using a glob pattern.
-
-        This function recursively searches for files matching a given name or
-        pattern within a directory. It uses `find` on Unix-like systems and
-        `dir` on Windows.
-
-        Args:
-            path (str): The absolute path of the directory to search in.
-            glob (str): The filename pattern to search for, using glob syntax
-                (e.g., "*.py", "data*").
-
-        Returns:
-            str: A newline-separated string containing the paths of the files
-                that match the pattern. Returns an error message if the
-                directory does not exist or another error occurs.
-        """
-        if not os.path.exists(path):
-            return f"Directory not found: {path}"
-
-        if not os.path.isdir(path):
-            return f"The path provided is not a directory: {path}"
-
-        command = []
-        if self.os_type in ['Darwin', 'Linux']:  # macOS or Linux
-            command.extend(["find", path, "-name", glob])
-        else:  # Windows
-            # For Windows, we use dir command with /s for recursive search
-            # and /b for bare format
-
-            pattern = glob
-            file_path = os.path.join(path, pattern).replace('/', '\\')
-            command.extend(["cmd", "/c", "dir", "/s", "/b", file_path])
-
-        try:
-            result = subprocess.run(
-                command,
-                check=False,
-                capture_output=True,
-                text=True,
-                shell=False,
-            )
-
-            output = result.stdout.strip()
-            if self.os_type == 'Windows':
-                output = output.replace('\\', '/')
-            return output
-        except subprocess.SubprocessError as e:
-            logger.error(f"Error finding files by name: {e}")
-            return f"Error: {e!s}"
 
     def _sanitize_command(self, command: str, exec_dir: str) -> Tuple:
         r"""Check and modify command to ensure safety.
@@ -721,24 +858,75 @@ class TerminalToolkit(BaseToolkit):
             self._update_terminal_output(f"\n$ {command}\n")
 
             if command.startswith('python') or command.startswith('pip'):
-                if self.cloned_env_path:
+                python_path = None
+                pip_path = None
+
+                # Try cloned environment first
+                if self.cloned_env_path and os.path.exists(
+                    self.cloned_env_path
+                ):
                     if self.os_type == 'Windows':
                         base_path = os.path.join(
                             self.cloned_env_path, "Scripts"
                         )
-                        python_path = os.path.join(base_path, "python.exe")
-                        pip_path = os.path.join(base_path, "pip.exe")
+                        python_candidate = os.path.join(
+                            base_path, "python.exe"
+                        )
+                        pip_candidate = os.path.join(base_path, "pip.exe")
                     else:
                         base_path = os.path.join(self.cloned_env_path, "bin")
-                        python_path = os.path.join(base_path, "python")
-                        pip_path = os.path.join(base_path, "pip")
-                else:
+                        python_candidate = os.path.join(base_path, "python")
+                        pip_candidate = os.path.join(base_path, "pip")
+
+                    # Verify the executables exist
+                    if os.path.exists(python_candidate):
+                        python_path = python_candidate
+                        # For pip, use python -m pip if pip executable doesn't
+                        # exist
+                        if os.path.exists(pip_candidate):
+                            pip_path = pip_candidate
+                        else:
+                            pip_path = f'"{python_path}" -m pip'
+
+                # Try initial environment if cloned environment failed
+                if (
+                    python_path is None
+                    and self.initial_env_prepared
+                    and self.initial_env_path
+                    and os.path.exists(self.initial_env_path)
+                ):
+                    if self.os_type == 'Windows':
+                        base_path = os.path.join(
+                            self.initial_env_path, "Scripts"
+                        )
+                        python_candidate = os.path.join(
+                            base_path, "python.exe"
+                        )
+                        pip_candidate = os.path.join(base_path, "pip.exe")
+                    else:
+                        base_path = os.path.join(self.initial_env_path, "bin")
+                        python_candidate = os.path.join(base_path, "python")
+                        pip_candidate = os.path.join(base_path, "pip")
+
+                    # Verify the executables exist
+                    if os.path.exists(python_candidate):
+                        python_path = python_candidate
+                        # For pip, use python -m pip if pip executable doesn't
+                        # exist
+                        if os.path.exists(pip_candidate):
+                            pip_path = pip_candidate
+                        else:
+                            pip_path = f'"{python_path}" -m pip'
+
+                # Fall back to system Python
+                if python_path is None:
                     python_path = self.python_executable
                     pip_path = f'"{python_path}" -m pip'
 
-                if command.startswith('python'):
+                # Ensure we have valid paths before replacement
+                if python_path and command.startswith('python'):
                     command = command.replace('python', f'"{python_path}"', 1)
-                elif command.startswith('pip'):
+                elif pip_path and command.startswith('pip'):
                     command = command.replace('pip', pip_path, 1)
 
             if not interactive:
@@ -1259,51 +1447,65 @@ class TerminalToolkit(BaseToolkit):
         logger.info("TerminalToolkit cleanup initiated")
 
         # Clean up all processes in shell sessions
-        for session_id, session in self.shell_sessions.items():
-            process = session.get("process")
-            if process is not None and session.get("running", False):
-                try:
-                    logger.info(
-                        f"Terminating process in session '{session_id}'"
-                    )
-
-                    # Close process input/output streams if open
-                    if (
-                        hasattr(process, 'stdin')
-                        and process.stdin
-                        and not process.stdin.closed
-                    ):
-                        process.stdin.close()
-
-                    # Terminate the process
-                    process.terminate()
+        if hasattr(self, 'shell_sessions'):
+            for session_id, session in self.shell_sessions.items():
+                process = session.get("process")
+                if process is not None and session.get("running", False):
                     try:
-                        # Give the process a short time to terminate gracefully
-                        process.wait(timeout=3)
-                    except subprocess.TimeoutExpired:
-                        # Force kill if the process doesn't terminate
-                        # gracefully
-                        logger.warning(
-                            f"Process in session '{session_id}' did not "
-                            f"terminate gracefully, forcing kill"
+                        logger.info(
+                            f"Terminating process in session '{session_id}'"
                         )
-                        process.kill()
 
-                    # Mark the session as not running
-                    session["running"] = False
+                        # Close process input/output streams if open
+                        if (
+                            hasattr(process, 'stdin')
+                            and process.stdin
+                            and not process.stdin.closed
+                        ):
+                            process.stdin.close()
 
-                except Exception as e:
-                    logger.error(
-                        f"Error cleaning up process in session "
-                        f"'{session_id}': {e}"
-                    )
+                        # Terminate the process
+                        process.terminate()
+                        try:
+                            # Give the process a short time to terminate
+                            # gracefully
+                            process.wait(timeout=3)
+                        except subprocess.TimeoutExpired:
+                            # Force kill if the process doesn't terminate
+                            # gracefully
+                            logger.warning(
+                                f"Process in session '{session_id}' did not "
+                                f"terminate gracefully, forcing kill"
+                            )
+                            process.kill()
 
-        # Close file output if it exists
+                        # Mark the session as not running
+                        session["running"] = False
+
+                    except Exception as e:
+                        logger.error(
+                            f"Error cleaning up process in session "
+                            f"'{session_id}': {e}"
+                        )
+
+        # Clean up file output if it exists
         if hasattr(self, 'log_file') and self.is_macos:
             try:
                 logger.info(f"Final terminal log saved to: {self.log_file}")
             except Exception as e:
                 logger.error(f"Error logging file information: {e}")
+
+        # Clean up initial environment if it exists
+        if hasattr(self, 'initial_env_path') and self.initial_env_path:
+            try:
+                if os.path.exists(self.initial_env_path):
+                    shutil.rmtree(self.initial_env_path)
+                    logger.info(
+                        f"Cleaned up initial environment: "
+                        f"{self.initial_env_path}"
+                    )
+            except Exception as e:
+                logger.error(f"Error cleaning up initial environment: {e}")
 
         # Clean up GUI resources if they exist
         if hasattr(self, 'root') and self.root:
@@ -1325,8 +1527,6 @@ class TerminalToolkit(BaseToolkit):
                 functions in the toolkit.
         """
         return [
-            FunctionTool(self.file_find_in_content),
-            FunctionTool(self.file_find_by_name),
             FunctionTool(self.shell_exec),
             FunctionTool(self.shell_view),
             FunctionTool(self.shell_wait),

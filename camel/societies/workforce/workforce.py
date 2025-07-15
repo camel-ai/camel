@@ -25,6 +25,7 @@ from typing import (
     Coroutine,
     Deque,
     Dict,
+    Generator,
     List,
     Optional,
     Set,
@@ -43,7 +44,7 @@ from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
     FAILURE_ANALYSIS_PROMPT,
-    WF_TASK_DECOMPOSE_PROMPT,
+    TASK_DECOMPOSE_PROMPT,
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
@@ -420,6 +421,11 @@ class Workforce(BaseNode):
                 "CodeExecutionToolkit, and ThinkingToolkit. To customize "
                 "runtime worker creation, pass a ChatAgent instance."
             )
+        else:
+            # Validate new_worker_agent if provided
+            self._validate_agent_compatibility(
+                new_worker_agent, "new_worker_agent"
+            )
 
         if self.share_memory:
             logger.info(
@@ -431,6 +437,42 @@ class Workforce(BaseNode):
         # ------------------------------------------------------------------
         # Helper for propagating pause control to externally supplied agents
         # ------------------------------------------------------------------
+
+    def _validate_agent_compatibility(
+        self, agent: ChatAgent, agent_context: str = "agent"
+    ) -> None:
+        r"""Validate that agent configuration is compatible with workforce
+        settings.
+
+        Args:
+            agent (ChatAgent): The agent to validate.
+            agent_context (str): Context description for error messages.
+
+        Raises:
+            ValueError: If agent has tools and stream mode enabled but
+                use_structured_output_handler is False.
+        """
+        agent_has_tools = (
+            bool(agent.tool_dict) if hasattr(agent, 'tool_dict') else False
+        )
+        agent_stream_mode = (
+            getattr(agent.model_backend, 'stream', False)
+            if hasattr(agent, 'model_backend')
+            else False
+        )
+
+        if (
+            agent_has_tools
+            and agent_stream_mode
+            and not self.use_structured_output_handler
+        ):
+            raise ValueError(
+                f"{agent_context} has tools and stream mode enabled, but "
+                "use_structured_output_handler is False. Native structured "
+                "output doesn't work with tool calls in stream mode. "
+                "Please set use_structured_output_handler=True when creating "
+                "the Workforce."
+            )
 
     def _attach_pause_event_to_agent(self, agent: ChatAgent) -> None:
         r"""Ensure the given ChatAgent shares this workforce's pause_event.
@@ -551,6 +593,10 @@ class Workforce(BaseNode):
                     continue
 
             if not memory_records:
+                logger.warning(
+                    "No valid memory records could be reconstructed "
+                    "for sharing"
+                )
                 return
 
             # Share with coordinator agent
@@ -668,26 +714,52 @@ class Workforce(BaseNode):
         if task_id in self._task_start_times:
             del self._task_start_times[task_id]
 
-    def _decompose_task(self, task: Task) -> List[Task]:
+        if task_id in self._task_dependencies:
+            del self._task_dependencies[task_id]
+
+        if task_id in self._assignees:
+            del self._assignees[task_id]
+
+    def _decompose_task(
+        self, task: Task
+    ) -> Union[List[Task], Generator[List[Task], None, None]]:
         r"""Decompose the task into subtasks. This method will also set the
         relationship between the task and its subtasks.
 
         Returns:
-            List[Task]: The subtasks.
+            Union[List[Task], Generator[List[Task], None, None]]:
+            The subtasks or generator of subtasks.
         """
-        decompose_prompt = WF_TASK_DECOMPOSE_PROMPT.format(
+        decompose_prompt = TASK_DECOMPOSE_PROMPT.format(
             content=task.content,
             child_nodes_info=self._get_child_nodes_info(),
             additional_info=task.additional_info,
         )
         self.task_agent.reset()
-        subtasks = task.decompose(self.task_agent, decompose_prompt)
+        result = task.decompose(self.task_agent, decompose_prompt)
 
-        # Update dependency tracking for decomposed task
-        if subtasks:
-            self._update_dependencies_for_decomposition(task, subtasks)
+        # Handle both streaming and non-streaming results
+        if isinstance(result, Generator):
+            # This is a generator (streaming mode)
+            def streaming_with_dependencies():
+                all_subtasks = []
+                for new_tasks in result:
+                    all_subtasks.extend(new_tasks)
+                    # Update dependency tracking for each batch of new tasks
+                    if new_tasks:
+                        self._update_dependencies_for_decomposition(
+                            task, all_subtasks
+                        )
+                    yield new_tasks
 
-        return subtasks
+            return streaming_with_dependencies()
+        else:
+            # This is a regular list (non-streaming mode)
+            subtasks = result
+            # Update dependency tracking for decomposed task
+            if subtasks:
+                self._update_dependencies_for_decomposition(task, subtasks)
+            return subtasks
 
     def _analyze_failure(
         self, task: Task, error_message: str
@@ -936,7 +1008,7 @@ class Workforce(BaseNode):
         if not validate_task_content(new_content, task_id):
             logger.warning(
                 f"Task {task_id} content modification rejected: "
-                f"Invalid content. Content preview: '{new_content[:50]}...'"
+                f"Invalid content. Content preview: '{new_content}'"
             )
             return False
 
@@ -991,8 +1063,13 @@ class Workforce(BaseNode):
         tasks_dict = {task.id: task for task in self._pending_tasks}
 
         # Check if all provided IDs exist
-        if not all(task_id in tasks_dict for task_id in task_ids):
-            logger.warning("Some task IDs not found in pending tasks.")
+        invalid_ids = [
+            task_id for task_id in task_ids if task_id not in tasks_dict
+        ]
+        if invalid_ids:
+            logger.warning(
+                f"Task IDs not found in pending tasks: {invalid_ids}"
+            )
             return False
 
         # Check if we have the same number of tasks
@@ -1117,7 +1194,7 @@ class Workforce(BaseNode):
             task.result = "Task failed: Invalid or empty content provided"
             logger.warning(
                 f"Task {task.id} rejected: Invalid or empty content. "
-                f"Content preview: '{task.content[:50]}...'"
+                f"Content preview: '{task.content}'"
             )
             return task
 
@@ -1133,7 +1210,17 @@ class Workforce(BaseNode):
         task.state = TaskState.FAILED
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
-        subtasks = self._decompose_task(task)
+        subtasks_result = self._decompose_task(task)
+
+        # Handle both streaming and non-streaming results
+        if isinstance(subtasks_result, Generator):
+            # This is a generator (streaming mode)
+            subtasks = []
+            for new_tasks in subtasks_result:
+                subtasks.extend(new_tasks)
+        else:
+            # This is a regular list (non-streaming mode)
+            subtasks = subtasks_result
         if self.metrics_logger and subtasks:
             self.metrics_logger.log_task_decomposed(
                 parent_task_id=task.id, subtask_ids=[st.id for st in subtasks]
@@ -1240,7 +1327,7 @@ class Workforce(BaseNode):
             task.result = "Task failed: Invalid or empty content provided"
             logger.warning(
                 f"Task {task.id} rejected: Invalid or empty content. "
-                f"Content preview: '{task.content[:50]}...'"
+                f"Content preview: '{task.content}'"
             )
             return task
 
@@ -1250,7 +1337,17 @@ class Workforce(BaseNode):
         task.state = TaskState.FAILED  # TODO: Add logic for OPEN
 
         # Decompose the task into subtasks first
-        subtasks = self._decompose_task(task)
+        subtasks_result = self._decompose_task(task)
+
+        # Handle both streaming and non-streaming results
+        if isinstance(subtasks_result, Generator):
+            # This is a generator (streaming mode)
+            subtasks = []
+            for new_tasks in subtasks_result:
+                subtasks.extend(new_tasks)
+        else:
+            # This is a regular list (non-streaming mode)
+            subtasks = subtasks_result
         if subtasks:
             # If decomposition happened, the original task becomes a container.
             # We only execute its subtasks.
@@ -1420,12 +1517,18 @@ class Workforce(BaseNode):
 
         Raises:
             RuntimeError: If called while workforce is running (not paused).
+            ValueError: If worker has tools and stream mode enabled but
+                use_structured_output_handler is False.
         """
         if self._state == WorkforceState.RUNNING:
             raise RuntimeError(
                 "Cannot add workers while workforce is running. "
                 "Pause the workforce first."
             )
+
+        # Validate worker agent compatibility
+        self._validate_agent_compatibility(worker, "Worker agent")
+
         # Ensure the worker agent shares this workforce's pause control
         self._attach_pause_event_to_agent(worker)
 
@@ -1618,23 +1721,51 @@ class Workforce(BaseNode):
 
     def _get_child_nodes_info(self) -> str:
         r"""Get the information of all the child nodes under this node."""
-        info = ""
-        for child in self._children:
-            if isinstance(child, Workforce):
-                additional_info = "A Workforce node"
-            elif isinstance(child, SingleAgentWorker):
-                additional_info = "tools: " + (
-                    ", ".join(child.worker.tool_dict.keys())
-                )
-            elif isinstance(child, RolePlayingWorker):
-                additional_info = "A Role playing node"
+        return "".join(
+            f"<{child.node_id}>:<{child.description}>:<{self._get_node_info(child)}>\n"
+            for child in self._children
+        )
+
+    def _get_node_info(self, node) -> str:
+        r"""Get descriptive information for a specific node type."""
+        if isinstance(node, Workforce):
+            return "A Workforce node"
+        elif isinstance(node, SingleAgentWorker):
+            return self._get_single_agent_info(node)
+        elif isinstance(node, RolePlayingWorker):
+            return "A Role playing node"
+        else:
+            return "Unknown node"
+
+    def _get_single_agent_info(self, worker: 'SingleAgentWorker') -> str:
+        r"""Get formatted information for a SingleAgentWorker node."""
+        toolkit_tools = self._group_tools_by_toolkit(worker.worker.tool_dict)
+
+        if not toolkit_tools:
+            return "no tools available"
+
+        toolkit_info = []
+        for toolkit_name, tools in sorted(toolkit_tools.items()):
+            tools_str = ', '.join(sorted(tools))
+            toolkit_info.append(f"{toolkit_name}({tools_str})")
+
+        return " | ".join(toolkit_info)
+
+    def _group_tools_by_toolkit(self, tool_dict: dict) -> dict[str, list[str]]:
+        r"""Group tools by their parent toolkit class names."""
+        toolkit_tools: dict[str, list[str]] = {}
+
+        for tool_name, tool in tool_dict.items():
+            if hasattr(tool.func, '__self__'):
+                toolkit_name = tool.func.__self__.__class__.__name__
             else:
-                additional_info = "Unknown node"
-            info += (
-                f"<{child.node_id}>:<{child.description}>:<"
-                f"{additional_info}>\n"
-            )
-        return info
+                toolkit_name = "Standalone"
+
+            if toolkit_name not in toolkit_tools:
+                toolkit_tools[toolkit_name] = []
+            toolkit_tools[toolkit_name].append(tool_name)
+
+        return toolkit_tools
 
     def _get_valid_worker_ids(self) -> set:
         r"""Get all valid worker IDs from child nodes.
@@ -1750,7 +1881,7 @@ class Workforce(BaseNode):
                 logger.error(
                     f"JSON parsing error in task assignment: Invalid response "
                     f"format - {e}. Response content: "
-                    f"{response.msg.content[:50]}..."
+                    f"{response.msg.content}"
                 )
                 return TaskAssignResult(assignments=[])
 
@@ -1882,6 +2013,37 @@ class Workforce(BaseNode):
 
         return final_assignments
 
+    def _update_task_dependencies_from_assignments(
+        self, assignments: List[TaskAssignment], tasks: List[Task]
+    ) -> None:
+        r"""Update Task.dependencies with actual Task objects based on
+        assignments.
+
+        Args:
+            assignments (List[TaskAssignment]): The task assignments
+                containing dependency IDs.
+            tasks (List[Task]): The tasks that were assigned.
+        """
+        # Create a lookup map for all available tasks
+        all_tasks = {}
+        for task_list in [self._completed_tasks, self._pending_tasks, tasks]:
+            for task in task_list:
+                all_tasks[task.id] = task
+
+        # Update dependencies for each assigned task
+        for assignment in assignments:
+            if not assignment.dependencies:
+                continue
+
+            matching_tasks = [t for t in tasks if t.id == assignment.task_id]
+            if matching_tasks:
+                task = matching_tasks[0]
+                task.dependencies = [
+                    all_tasks[dep_id]
+                    for dep_id in assignment.dependencies
+                    if dep_id in all_tasks
+                ]
+
     async def _find_assignee(
         self,
         tasks: List[Task],
@@ -1918,19 +2080,24 @@ class Workforce(BaseNode):
 
         # if all assignments are valid and all tasks are assigned, return early
         if not invalid_assignments and not unassigned_tasks:
+            self._update_task_dependencies_from_assignments(
+                valid_assignments, tasks
+            )
             return TaskAssignResult(assignments=valid_assignments)
 
-        # handle retry and fallback for
-        # invalid assignments and unassigned tasks
-        all_problem_assignments = invalid_assignments
+        # handle retry and fallback for invalid assignments and unassigned
+        # tasks
         retry_and_fallback_assignments = (
             await self._handle_assignment_retry_and_fallback(
-                all_problem_assignments, tasks, valid_worker_ids
+                invalid_assignments, tasks, valid_worker_ids
             )
         )
-        valid_assignments.extend(retry_and_fallback_assignments)
+        all_assignments = valid_assignments + retry_and_fallback_assignments
 
-        return TaskAssignResult(assignments=valid_assignments)
+        # Update Task.dependencies for all final assignments
+        self._update_task_dependencies_from_assignments(all_assignments, tasks)
+
+        return TaskAssignResult(assignments=all_assignments)
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
         # Record the start time when a task is posted
@@ -2004,7 +2171,7 @@ class Workforce(BaseNode):
                 )
                 new_node_conf = WorkerConf(
                     description=f"Fallback worker for task: "
-                    f"{task.content[:50]}...",
+                    f"{task.content}",
                     role="General Assistant",
                     sys_msg="You are a general assistant that can help "
                     "with various tasks.",
@@ -2014,8 +2181,7 @@ class Workforce(BaseNode):
                     response.msg.content,
                     schema=WorkerConf,
                     fallback_values={
-                        "description": f"Worker for task: "
-                        f"{task.content[:50]}...",
+                        "description": f"Worker for task: " f"{task.content}",
                         "role": "Task Specialist",
                         "sys_msg": f"You are a specialist for: {task.content}",
                     },
@@ -2027,7 +2193,7 @@ class Workforce(BaseNode):
                     new_node_conf = WorkerConf(**result)
                 else:
                     new_node_conf = WorkerConf(
-                        description=f"Worker for task: {task.content[:50]}...",
+                        description=f"Worker for task: {task.content}",
                         role="Task Specialist",
                         sys_msg=f"You are a specialist for: {task.content}",
                     )
@@ -2044,7 +2210,7 @@ class Workforce(BaseNode):
                 # Create a fallback worker configuration
                 new_node_conf = WorkerConf(
                     description=f"Fallback worker for "
-                    f"task: {task.content[:50]}...",
+                    f"task: {task.content}",
                     role="General Assistant",
                     sys_msg="You are a general assistant that can help "
                     "with various tasks.",
@@ -2057,8 +2223,7 @@ class Workforce(BaseNode):
                     logger.error(
                         f"JSON parsing error in worker creation: Invalid "
                         f"response format - {e}. Response content: "
-                        f"format - {e}. Response content: "
-                        f"{response.msg.content[:100]}..."
+                        f"{response.msg.content}"
                     )
                     raise RuntimeError(
                         f"Failed to create worker for task {task.id}: "
@@ -2069,6 +2234,14 @@ class Workforce(BaseNode):
             new_node_conf.role,
             new_node_conf.sys_msg,
         )
+
+        # Validate the new agent compatibility before creating worker
+        try:
+            self._validate_agent_compatibility(
+                new_agent, f"Agent for task {task.id}"
+            )
+        except ValueError as e:
+            raise ValueError(f"Cannot create worker for task {task.id}: {e!s}")
 
         new_node = SingleAgentWorker(
             description=new_node_conf.description,
@@ -2145,17 +2318,7 @@ class Workforce(BaseNode):
                 f"Current pending tasks: {len(self._pending_tasks)}, "
                 f"In-flight tasks: {self._in_flight_tasks}"
             )
-            logger.warning(error_msg)
-
-            if self._pending_tasks and self._assignees:
-                for task in self._pending_tasks:
-                    if task.id in self._assignees:
-                        # Mark task as failed and decrement counter
-                        task.set_state(TaskState.FAILED)
-                        self._decrement_in_flight_tasks(
-                            task.id, "timeout/error in _get_returned_task"
-                        )
-                        return task
+            logger.error(error_msg, exc_info=True)
             return None
 
     async def _post_ready_tasks(self) -> None:
@@ -2231,12 +2394,8 @@ class Workforce(BaseNode):
         task.failure_count += 1
 
         # Determine detailed failure information
-        if is_task_result_insufficient(task):
-            failure_reason = "Worker returned unhelpful "
-            f"response: {task.result[:100] if task.result else ''}..."
-        else:
-            failure_reason = "Task marked as failed despite "
-            f"having result: {(task.result or '')[:100]}..."
+        # Use the actual error/result stored in task.result
+        failure_reason = task.result or "Unknown error"
 
         # Add context about the worker and task
         worker_id = task.assigned_worker_id or "unknown"
@@ -2268,7 +2427,7 @@ class Workforce(BaseNode):
                 f"Task {task.id} has exceeded maximum retry attempts "
                 f"({MAX_TASK_RETRIES}). Final failure "
                 f"reason: {detailed_error}. "
-                f"Task content: '{task.content[:100]}...'"
+                f"Task content: '{task.content}'"
             )
             self._cleanup_task_tracking(task.id)
             # Mark task as completed for dependency tracking before halting
@@ -2349,7 +2508,17 @@ class Workforce(BaseNode):
 
             elif recovery_decision.strategy == RecoveryStrategy.DECOMPOSE:
                 # Decompose the task into subtasks
-                subtasks = self._decompose_task(task)
+                subtasks_result = self._decompose_task(task)
+
+                # Handle both streaming and non-streaming results
+                if isinstance(subtasks_result, Generator):
+                    # This is a generator (streaming mode)
+                    subtasks = []
+                    for new_tasks in subtasks_result:
+                        subtasks.extend(new_tasks)
+                else:
+                    # This is a regular list (non-streaming mode)
+                    subtasks = subtasks_result
                 if self.metrics_logger and subtasks:
                     self.metrics_logger.log_task_decomposed(
                         parent_task_id=task.id,
@@ -2687,7 +2856,7 @@ class Workforce(BaseNode):
                     # useful results
                     if is_task_result_insufficient(returned_task):
                         result_preview = (
-                            returned_task.result[:100] + "..."
+                            returned_task.result
                             if returned_task.result
                             else "No result"
                         )
@@ -3203,6 +3372,18 @@ class Workforce(BaseNode):
                 )
 
                 agent = ChatAgent(sys_msg, **(agent_kwargs or {}))
+
+                # Validate agent compatibility
+                try:
+                    workforce_instance._validate_agent_compatibility(
+                        agent, "Worker agent"
+                    )
+                except ValueError as e:
+                    return {
+                        "status": "error",
+                        "message": str(e),
+                    }
+
                 workforce_instance.add_single_agent_worker(description, agent)
 
                 return {
