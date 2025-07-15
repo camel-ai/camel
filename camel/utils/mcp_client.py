@@ -357,6 +357,7 @@ class MCPClient:
             # This prevents "Event loop is closed" errors during shutdown
             import asyncio
             import sys
+
             if sys.platform == "win32":
                 await asyncio.sleep(0.01)
 
