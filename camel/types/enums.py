@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from enum import Enum, EnumMeta
-from typing import cast
+from typing import Union, cast
 
 from camel.logger import get_logger
 from camel.types.unified_model_type import UnifiedModelType
@@ -420,11 +420,14 @@ class ModelType(UnifiedModelType, Enum):
     def __str__(self):
         return self.value
 
-    def __new__(cls, value) -> "ModelType":
+    def __repr__(self):
+        return self.value
+
+    def __new__(cls, value: Union["ModelType", str]) -> "ModelType":
         return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
     @classmethod
-    def from_name(cls, name):
+    def from_name(cls, name: str) -> "ModelType":
         r"""Returns the ModelType enum value from a string."""
         for model_type in cls:
             if model_type.value == name:
