@@ -19,6 +19,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generator,
     List,
     Literal,
     Optional,
@@ -30,6 +31,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
+    from camel.agents.chat_agent import StreamingChatAgentResponse
 import uuid
 
 from camel.logger import get_logger
@@ -97,7 +99,7 @@ def validate_task_content(
         logger.warning(
             f"Task {task_id}: Content too short ({len(stripped_content)} "
             f"chars < {min_length} minimum). Content preview: "
-            f"'{stripped_content[:50]}...'"
+            f"'{stripped_content}'"
         )
         return False
 
@@ -122,7 +124,7 @@ def validate_task_content(
         if any(indicator in content_lower for indicator in failure_indicators):
             logger.warning(
                 f"Task {task_id}: Failure indicator detected in result. "
-                f"Content preview: '{stripped_content[:100]}...'"
+                f"Content preview: '{stripped_content}'"
             )
             return False
 
@@ -130,7 +132,7 @@ def validate_task_content(
         if content_lower.startswith(("error", "failed", "cannot", "unable")):
             logger.warning(
                 f"Task {task_id}: Error/refusal pattern detected at start. "
-                f"Content preview: '{stripped_content[:100]}...'"
+                f"Content preview: '{stripped_content}'"
             )
             return False
 
@@ -184,7 +186,7 @@ def parse_response(
     tasks = []
     if task_id is None:
         task_id = "0"
-    for i, content in enumerate(tasks_content):
+    for i, content in enumerate(tasks_content, 1):
         stripped_content = content.strip()
         # validate subtask content before creating the task
         if validate_task_content(stripped_content, f"{task_id}.{i}"):
@@ -193,7 +195,7 @@ def parse_response(
             logger.warning(
                 f"Skipping invalid subtask {task_id}.{i} "
                 f"during decomposition: "
-                f"Content '{stripped_content[:50]}...' failed validation"
+                f"Content '{stripped_content}' failed validation"
             )
     return tasks
 
@@ -231,6 +233,8 @@ class Task(BaseModel):
             (default: :obj:`0`)
         assigned_worker_id (Optional[str]): The ID of the worker assigned to
             this task. (default: :obj:`None`)
+        dependencies (List[Task]): The dependencies for the task.
+            (default: :obj:`[]`)
         additional_info (Optional[Dict[str, Any]]): Additional information for
             the task. (default: :obj:`None`)
         image_list (Optional[List[Image.Image]]): Optional list of PIL Image
@@ -262,6 +266,8 @@ class Task(BaseModel):
     failure_count: int = 0
 
     assigned_worker_id: Optional[str] = None
+
+    dependencies: List["Task"] = []
 
     additional_info: Optional[Dict[str, Any]] = None
 
@@ -402,9 +408,9 @@ class Task(BaseModel):
         agent: "ChatAgent",
         prompt: Optional[str] = None,
         task_parser: Callable[[str, str], List["Task"]] = parse_response,
-    ) -> List["Task"]:
-        r"""Decompose a task to a list of sub-tasks. It can be used for data
-        generation and planner of agent.
+    ) -> Union[List["Task"], Generator[List["Task"], None, None]]:
+        r"""Decompose a task to a list of sub-tasks. Automatically detects
+        streaming or non-streaming based on agent configuration.
 
         Args:
             agent (ChatAgent): An agent that used to decompose the task.
@@ -415,7 +421,10 @@ class Task(BaseModel):
                 the default parse_response will be used.
 
         Returns:
-            List[Task]: A list of tasks which are :obj:`Task` instances.
+            Union[List[Task], Generator[List[Task], None, None]]: If agent is
+                configured for streaming, returns a generator that yields lists
+                of new tasks as they are parsed. Otherwise returns a list of
+                all tasks.
         """
 
         role_name = agent.role_name
@@ -427,9 +436,106 @@ class Task(BaseModel):
             role_name=role_name, content=content
         )
         response = agent.step(msg)
+
+        # Auto-detect streaming based on response type
+        from camel.agents.chat_agent import StreamingChatAgentResponse
+
+        if isinstance(response, StreamingChatAgentResponse):
+            return self._decompose_streaming(response, task_parser)
+        else:
+            return self._decompose_non_streaming(response, task_parser)
+
+    def _decompose_streaming(
+        self,
+        response: "StreamingChatAgentResponse",
+        task_parser: Callable[[str, str], List["Task"]],
+    ) -> Generator[List["Task"], None, None]:
+        r"""Handle streaming response for task decomposition.
+
+        Args:
+            response: Streaming response from agent
+            task_parser: Function to parse tasks from response
+
+        Yields:
+            List[Task]: New tasks as they are parsed from streaming response
+        """
+        accumulated_content = ""
+        yielded_count = 0
+
+        # Process streaming response
+        for chunk in response:
+            accumulated_content = chunk.msg.content
+
+            # Try to parse partial tasks from accumulated content
+            try:
+                current_tasks = self._parse_partial_tasks(accumulated_content)
+
+                # Yield new tasks if we have more than previously yielded
+                if len(current_tasks) > yielded_count:
+                    new_tasks = current_tasks[yielded_count:]
+                    for task in new_tasks:
+                        task.additional_info = self.additional_info
+                        task.parent = self
+                    yield new_tasks
+                    yielded_count = len(current_tasks)
+
+            except Exception:
+                # If parsing fails, continue accumulating
+                continue
+
+        # Final complete parsing
+        final_tasks = task_parser(accumulated_content, self.id)
+        for task in final_tasks:
+            task.additional_info = self.additional_info
+            task.parent = self
+        self.subtasks = final_tasks
+
+    def _decompose_non_streaming(
+        self, response, task_parser: Callable[[str, str], List["Task"]]
+    ) -> List["Task"]:
+        r"""Handle non-streaming response for task decomposition.
+
+        Args:
+            response: Regular response from agent
+            task_parser: Function to parse tasks from response
+
+        Returns:
+            List[Task]: All parsed tasks
+        """
         tasks = task_parser(response.msg.content, self.id)
         for task in tasks:
             task.additional_info = self.additional_info
+            task.parent = self
+        self.subtasks = tasks
+        return tasks
+
+    def _parse_partial_tasks(self, response: str) -> List["Task"]:
+        r"""Parse tasks from potentially incomplete response.
+
+        Args:
+            response: Partial response content
+
+        Returns:
+            List[Task]: Tasks parsed from complete <task></task> blocks
+        """
+        pattern = r"<task>(.*?)</task>"
+        tasks_content = re.findall(pattern, response, re.DOTALL)
+
+        tasks = []
+        task_id = self.id or "0"
+
+        for i, content in enumerate(tasks_content, 1):
+            stripped_content = content.strip()
+            if validate_task_content(stripped_content, f"{task_id}.{i}"):
+                tasks.append(
+                    Task(content=stripped_content, id=f"{task_id}.{i}")
+                )
+            else:
+                logger.warning(
+                    f"Skipping invalid subtask {task_id}.{i} "
+                    f"during streaming decomposition: "
+                    f"Content '{stripped_content}' failed validation"
+                )
         return tasks
 
     def compose(

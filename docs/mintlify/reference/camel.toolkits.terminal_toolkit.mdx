@@ -16,12 +16,12 @@ managing terminal sessions.
 
 **Parameters:**
 
-- **timeout** (Optional[float]): The timeout for terminal operations.
-- **shell_sessions** (Optional[Dict[str, Any]]): A dictionary to store shell session information. If None, an empty dictionary will be used. (default: :obj:`{}`)
-- **working_dir** (str): The working directory for operations. If specified, all execution and write operations will be restricted to this directory. Read operations can access paths outside this directory.(default: :obj:`"./workspace"`)
+- **timeout** (Optional[float]): The timeout for terminal operations. (default: :obj:`None`)
+- **shell_sessions** (Optional[Dict[str, Any]]): A dictionary to store shell session information. If :obj:`None`, an empty dictionary will be used. (default: :obj:`None`)
+- **working_directory** (Optional[str]): The working directory for operations. If not provided, it will be determined by the `CAMEL_WORKDIR` environment variable (if set). If the environment variable is not set, it defaults to `./workspace`. All execution and write operations will be restricted to this directory. Read operations can access paths outside this directory. (default: :obj:`None`)
 - **need_terminal** (bool): Whether to create a terminal interface. (default: :obj:`True`)
 - **use_shell_mode** (bool): Whether to use shell mode for command execution. (default: :obj:`True`)
-- **clone_current_env** (bool): Whether to clone the current Python environment.(default: :obj:`False`)
+- **clone_current_env** (bool): Whether to clone the current Python environment. (default: :obj:`False`)
 - **safe_mode** (bool): Whether to enable safe mode to restrict operations. (default: :obj:`True`)
 
 **Note:**
@@ -39,7 +39,7 @@ def __init__(
     self,
     timeout: Optional[float] = None,
     shell_sessions: Optional[Dict[str, Any]] = None,
-    working_dir: str = './workspace',
+    working_directory: Optional[str] = None,
     need_terminal: bool = True,
     use_shell_mode: bool = True,
     clone_current_env: bool = False,
@@ -67,6 +67,57 @@ def _clone_current_environment(self):
 ```
 
 Create a new Python virtual environment.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit._is_uv_environment"></a>
+
+### _is_uv_environment
+
+```python
+def _is_uv_environment(self):
+```
+
+Detect whether the current Python runtime is managed by uv.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit._prepare_initial_environment"></a>
+
+### _prepare_initial_environment
+
+```python
+def _prepare_initial_environment(self):
+```
+
+Prepare initial environment with Python 3.10, pip, and other
+essential tools.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit._setup_initial_env_with_uv"></a>
+
+### _setup_initial_env_with_uv
+
+```python
+def _setup_initial_env_with_uv(self):
+```
+
+Set up initial environment using uv.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit._setup_initial_env_with_venv"></a>
+
+### _setup_initial_env_with_venv
+
+```python
+def _setup_initial_env_with_venv(self):
+```
+
+Set up initial environment using standard venv.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit._check_nodejs_availability"></a>
+
+### _check_nodejs_availability
+
+```python
+def _check_nodejs_availability(self):
+```
+
+Check if Node.js is available without modifying the system.
 
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit._create_terminal"></a>
 
@@ -150,62 +201,6 @@ Copy external file to working directory.
 
   Optional[str]: New path after copying to the working directory,
 returns None on failure
-
-<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.file_find_in_content"></a>
-
-### file_find_in_content
-
-```python
-def file_find_in_content(
-    self,
-    file: str,
-    regex: str,
-    sudo: bool = False
-):
-```
-
-Search for text within a file's content using a regular expression.
-
-This function is useful for finding specific patterns or lines of text
-within a given file. It uses `grep` on Unix-like systems and `findstr`
-on Windows.
-
-**Parameters:**
-
-- **file** (str): The absolute path of the file to search within.
-- **regex** (str): The regular expression pattern to match.
-- **sudo** (bool, optional): Whether to use sudo privileges for the search. Defaults to False. Note: Using sudo requires the process to have appropriate permissions. (default: :obj:`False`)
-
-**Returns:**
-
-  str: The matching content found in the file. If no matches are
-found, an empty string is returned. Returns an error message
-if the file does not exist or another error occurs.
-
-<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.file_find_by_name"></a>
-
-### file_find_by_name
-
-```python
-def file_find_by_name(self, path: str, glob: str):
-```
-
-Find files by name in a specified directory using a glob pattern.
-
-This function recursively searches for files matching a given name or
-pattern within a directory. It uses `find` on Unix-like systems and
-`dir` on Windows.
-
-**Parameters:**
-
-- **path** (str): The absolute path of the directory to search in.
-- **glob** (str): The filename pattern to search for, using glob syntax (e.g., "*.py", "data*").
-
-**Returns:**
-
-  str: A newline-separated string containing the paths of the files
-that match the pattern. Returns an error message if the
-directory does not exist or another error occurs.
 
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit._sanitize_command"></a>
 

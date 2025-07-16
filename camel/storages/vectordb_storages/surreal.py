@@ -11,12 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import logging
 import re
-from typing import Any, Dict, List, Optional
-
-from surrealdb import Surreal
-from surrealdb.data.types.record_id import RecordID
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
@@ -27,11 +23,43 @@ from camel.storages.vectordb_storages import (
 )
 from camel.types import VectorDistance
 from camel.utils import dependencies_required
+from camel.logger import get_logger
 
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from surrealdb import Surreal
 
+logger = get_logger(__name__)
 
 class SurrealStorage(BaseVectorStorage):
+    r"""An implementation of the `BaseVectorStorage` using SurrealDB,
+    a scalable, distributed database with WebSocket support, for
+    efficient vector storage and similarity search.
+
+    SurrealDB official site and documentation can be found at:
+    `SurrealDB <https://surrealdb.com>`_
+
+    Args:
+        url (str): WebSocket URL for connecting to SurrealDB
+            (default: "ws://localhost:8000/rpc").
+        table (str): Name of the table used for storing vectors
+            (default: "vector_store").
+        vector_dim (int): Dimensionality of the stored vectors.
+        distance (VectorDistance): Distance metric used for similarity
+            comparisons (default: VectorDistance.COSINE).
+        namespace (str): SurrealDB namespace to use (default: "default").
+        database (str): SurrealDB database name (default: "demo").
+        user (str): Username for authentication (default: "root").
+        password (str): Password for authentication (default: "root").
+
+    Notes:
+        - SurrealDB supports flexible schema and powerful querying capabilities
+        via SQL-like syntax over WebSocket.
+        - This implementation manages connection setup and ensures the target
+        table exists.
+        - Suitable for applications requiring distributed vector storage and
+        search with real-time updates.
+    """
+
     @dependencies_required('surrealdb')
     def __init__(
         self,
@@ -50,15 +78,27 @@ class SurrealStorage(BaseVectorStorage):
         the target table exists.
 
         Args:
-            url (str): WebSocket URL for connecting to SurrealDB.
-            table (str): Name of the table used for vector storage.
-            vector_dim (int): Dimensionality of the stored vectors.
-            distance (VectorDistance): Distance metric for similarity searches.
-            namespace (str): SurrealDB namespace to use.
-            database (str): SurrealDB database name.
-            user (str): Username for authentication.
-            password (str): Password for authentication.
+            url (str): WebSocket URL for connecting to SurrealDB.  
+                (default: :obj:`"ws://localhost:8000/rpc"`)
+            table (str): Name of the table used for vector storage.  
+                (default: :obj:`"vector_store"`)
+            vector_dim (int): Dimensionality of the stored vectors.  
+                (default: :obj:`786`)
+            distance (VectorDistance): Distance metric for similarity searches.  
+                (default: :obj:`VectorDistance.COSINE`)
+            namespace (str): SurrealDB namespace to use.  
+                (default: :obj:`"default"`)
+            database (str): SurrealDB database name.  
+                (default: :obj:`"demo"`)
+            user (str): Username for authentication.  
+                (default: :obj:`"root"`)
+            password (str): Password for authentication.  
+                (default: :obj:`"root"`)
         """
+
+        from surrealdb import Surreal
+        from surrealdb.data.types.record_id import RecordID
+        
         self.url = url
         self.table = table
         self.ns = namespace
@@ -77,6 +117,7 @@ class SurrealStorage(BaseVectorStorage):
         Returns:
             bool: True if the table exists, False otherwise.
         """
+        from surrealdb import Surreal
         with Surreal(self.url) as db:
             db.signin({"username": self.user, "password": self.password})
             db.use(self.ns, self.db)
@@ -91,6 +132,7 @@ class SurrealStorage(BaseVectorStorage):
         Returns:
             dict: A dictionary with 'dim' and 'count' keys.
         """
+        from surrealdb import Surreal
         if not self._table_exists():
             return {"dim": self.vector_dim, "count": 0}
         with Surreal(self.url) as db:
@@ -121,6 +163,8 @@ class SurrealStorage(BaseVectorStorage):
         r"""
         Define and create the vector storage table with HNSW index.
         """
+        from surrealdb import Surreal
+
         with Surreal(self.url) as db:
             db.signin({"username": self.user, "password": self.password})
             db.use(self.ns, self.db)
@@ -139,6 +183,8 @@ class SurrealStorage(BaseVectorStorage):
         r"""
         Drop the vector storage table if it exists.
         """
+        from surrealdb import Surreal
+
         with Surreal(self.url) as db:
             db.signin({"username": self.user, "password": self.password})
             db.use(self.ns, self.db)
@@ -192,13 +238,15 @@ class SurrealStorage(BaseVectorStorage):
         Perform a top-k similarity search using the configured distance metric.
 
         Args:
-            q (VectorDBQuery): Query containing the query vector
+            query (VectorDBQuery): Query containing the query vector
                 and top_k value.
 
         Returns:
             List[VectorDBQueryResult]: Ranked list of matching records
                 with similarity scores.
         """
+        from surrealdb import Surreal
+
         metric = {
             VectorDistance.COSINE: "cosine",
             VectorDistance.EUCLIDEAN: "euclidean",
@@ -249,6 +297,8 @@ class SurrealStorage(BaseVectorStorage):
         logger.info(
             "Adding %d records to table '%s'.", len(records), self.table
         )
+        from surrealdb import Surreal
+
         try:
             with Surreal(self.url) as db:
                 db.signin({"username": self.user, "password": self.password})
@@ -282,6 +332,9 @@ class SurrealStorage(BaseVectorStorage):
             ids (Optional[List[str]]): List of record IDs to delete.
             if_all (bool): Whether to delete all records in the table.
         """
+        from surrealdb import Surreal
+        from surrealdb.data.types.record_id import RecordID
+
         try:
             with Surreal(self.url) as db:
                 db.signin({"username": self.user, "password": self.password})
