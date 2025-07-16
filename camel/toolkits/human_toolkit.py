@@ -52,7 +52,7 @@ class HumanToolkit(BaseToolkit):
         logger.info(f"User reply: {reply}")
         return reply
 
-    def send_message_to_user(self, message: str) -> None:
+    def send_message_to_user(self, message: str) -> str:
         r"""Use this tool to send a tidy message to the user in one short
         sentence.
 
@@ -68,9 +68,13 @@ class HumanToolkit(BaseToolkit):
 
         Args:
             message (str): The tidy and informative message for the user.
+
+        Returns:
+            str: Confirmation that the message was successfully sent.
         """
         print(f"\nAgent Message:\n{message}")
         logger.info(f"\nAgent Message:\n{message}")
+        return f"Message successfully sent to user: '{message}'"
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the

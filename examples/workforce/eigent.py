@@ -54,7 +54,7 @@ logger = get_logger(__name__)
 WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or "working_dir/"
 
 
-def send_message_to_user(message: str) -> None:
+def send_message_to_user(message: str) -> str:
     r"""Use this tool to send a tidy message to the user, including a
     short title and a one-sentence description.
 
@@ -75,9 +75,13 @@ def send_message_to_user(message: str) -> None:
     Args:
         message (str): The tidy and informative message for the user,
             which should contain a title and a description.
+
+    Returns:
+        str: Confirmation that the message was successfully sent.
     """
     print(f"\nAgent Message:\n{message}")
     logger.info(f"\nAgent Message:\n{message}")
+    return f"Message successfully sent to user: '{message}'"
 
 
 def developer_agent_factory(
