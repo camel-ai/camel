@@ -25,7 +25,7 @@ Before using TraceRoot, set the following environment variables:
 ```bash
 # Enable TraceRoot for debugging
 export TRACEROOT_ENABLED="true"
-python camel/examples/debug/traceroot_example.py
+python examples/debug/traceroot_example.py
 ```
 
 Some of the configuration options specified in the `.traceroot-config.yaml` file.
