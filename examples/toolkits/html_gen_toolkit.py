@@ -40,9 +40,7 @@ html_toolkit = HtmlGenToolkit(workspace=output_dir)
 tools_list = html_toolkit.get_tools()
 
 # Initialize a ChatAgent with the tools
-camel_agent = ChatAgent(
-    system_message=sys_msg, model=model, tools=tools_list
-)
+camel_agent = ChatAgent(system_message=sys_msg, model=model, tools=tools_list)
 
 query = """Please generate a for a ppt slide. the style can be purple 
 and gold. i need 5 pages html, the slide is about the benefits of AI and you can generate a chart 

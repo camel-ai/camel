@@ -19,10 +19,8 @@ import os
 from typing import List, Optional
 
 from camel.logger import get_logger
-from camel.models import BaseModelBackend, ModelFactory
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.types import ModelPlatformType, ModelType
 from camel.utils import MCPServer
 
 logger = get_logger(__name__)
@@ -52,14 +50,13 @@ class HtmlGenToolkit(BaseToolkit):
             workspace (Optional[str]): The workspace to use for the generation.
                 (default: :obj:`.`)
         """
-        from camel.agents.chat_agent import ChatAgent
 
         super().__init__(timeout=timeout)
-       
+
         self.workspace = workspace
         self.plan_generated = False
-        
-    def generate_plan(self,plan:str) -> str:
+
+    def generate_plan(self, plan: str) -> str:
         r"""Generates a plan for the html generation.
 
         Args:
@@ -73,24 +70,25 @@ class HtmlGenToolkit(BaseToolkit):
               - the style of the html
               - the layout of the html
               - some other factors you think is important
-              - when you need to generate serveral html files, you need to plan
-              a final html file, and the final html file should be a viewer html file.
-              if user don't define the size of the html, default size is 16:9	(1280 * 720)
+              - when you need to generate several html files, you need to plan
+              a final html file, and the final html file should be a
+              viewer html file. if user don't define the size of the html,
+              default size is 16:9(1280 * 720)
         Returns:
             str: The plan for the html generation.
         """
         self.plan_generated = True
         return plan
 
-
     def generate_one_page_html(self, content: str, filename: str) -> str:
-        r"""Generates HTML content for one page html.This function should 
+        r"""Generates HTML content for one page html.This function should
         be called after the plan is generated. And this function will generate
-        the html content based on the plan, will generate the html file one by one.
+        the html content based on the plan, will generate the html file
+        one by one.
 
         Args:
-            content (str): The content of the html generation,you need to 
-              make good use of the layout of the entire page to make the 
+            content (str): The content of the html generation,you need to
+              make good use of the layout of the entire page to make the
               HTML page as beautiful as possible.
 
             filename (str): The filename of the html file.
