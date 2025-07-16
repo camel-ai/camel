@@ -157,8 +157,7 @@ class SurrealStorage(BaseVectorStorage):
             return {"dim": dim, "count": count}
 
     def _create_table(self):
-        r"""Define and create the vector storage table with HNSW index.
-        """
+        r"""Define and create the vector storage table with HNSW index."""
         from surrealdb import Surreal  # type: ignore[import-not-found]
 
         with Surreal(self.url) as db:
