@@ -219,7 +219,7 @@ class SurrealStorage(BaseVectorStorage):
             db.use(self.ns, self.db)
 
             sql_query = f"""
-                SELECT payload,
+                SELECT payload, embedding
                     {metric_func}(embedding, {query.query_vector}) AS score
                 FROM {self.table}
                 WHERE embedding <|{query.top_k},{metric}|> {query.query_vector}
@@ -231,7 +231,7 @@ class SurrealStorage(BaseVectorStorage):
 
             return [
                 VectorDBQueryResult(
-                    record=VectorRecord(vector=[], payload=row["payload"]),
+                    record=VectorRecord(vector=row["embedding"], payload=row["payload"]),
                     similarity=1.0 - row["score"]
                     if self.distance == VectorDistance.COSINE
                     else -row["score"],
