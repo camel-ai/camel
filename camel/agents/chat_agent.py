@@ -375,6 +375,10 @@ class ChatAgent(BaseAgent):
         pause_event (Optional[asyncio.Event]): Event to signal pause of the
             agent's operation. When clear, the agent will pause its execution.
             (default: :obj:`None`)
+        prune_tool_calls (bool): Whether to prune tool calling details after
+            tool execution to save tokens. When enabled, tool arguments are
+            replaced with "<<PRUNED>>" and a schema version is added.
+            (default: :obj:`False`)
     """
 
     def __init__(
@@ -411,6 +415,7 @@ class ChatAgent(BaseAgent):
         tool_execution_timeout: Optional[float] = None,
         mask_tool_output: bool = False,
         pause_event: Optional[asyncio.Event] = None,
+        prune_tool_calls: bool = False,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -492,6 +497,7 @@ class ChatAgent(BaseAgent):
         self._image_retry_count: Dict[str, int] = {}
         # Store images to attach to next user message
         self.pause_event = pause_event
+        self.prune_tool_calls = prune_tool_calls
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -2595,6 +2601,10 @@ class ChatAgent(BaseAgent):
             tool_call_id=tool_call_id,
         )
 
+        # Prune tool calling messages if feature is enabled
+        if self.prune_tool_calls:
+            self._prune_tool_calling_messages(tool_call_id)
+
         return tool_record
 
     def _stream(
@@ -3799,6 +3809,7 @@ class ChatAgent(BaseAgent):
             stop_event=self.stop_event,
             tool_execution_timeout=self.tool_execution_timeout,
             pause_event=self.pause_event,
+            prune_tool_calls=self.prune_tool_calls,
         )
 
         # Copy memory if requested
@@ -4009,3 +4020,89 @@ class ChatAgent(BaseAgent):
         mcp_server.tool()(get_available_tools)
 
         return mcp_server
+
+    def _prune_tool_calling_messages(self, tool_call_id: str) -> bool:
+        r"""Prune tool calling messages to save tokens after tool execution.
+
+        This method finds the most recent assistant message with the specified
+        tool_call_id and prunes it by replacing the "arguments" with
+        "[PRUNED]".
+
+        Args:
+            tool_call_id (str): The unique identifier of the tool call that
+                should be pruned.
+
+        Returns:
+            bool: True if the tool call was found and successfully pruned,
+                False if the tool call ID was not found in the conversation
+                history.
+        """
+        PRUNED_PLACEHOLDER = '[PRUNED]'
+
+        # get recent memory records
+        context_records = self.memory.retrieve()
+
+        # search backwards for efficiency (most recent messages first)
+        for context_record in reversed(context_records):
+            memory_record = context_record.memory_record
+            message = memory_record.message
+
+            # we're looking for assistant messages
+            if memory_record.role_at_backend != OpenAIBackendRole.ASSISTANT:
+                continue
+
+            # handle FunctionCallingMessage objects (direct tool call storage)
+            if hasattr(message, 'tool_call_id') and hasattr(message, 'args'):
+                if (
+                    message.tool_call_id == tool_call_id
+                    and message.args is not None
+                    and message.args != PRUNED_PLACEHOLDER
+                ):  # not already pruned
+                    # prune the arguments directly
+                    message.args = PRUNED_PLACEHOLDER
+
+                    # force memory refresh
+                    # in-place modification doesn't persist
+                    self._force_memory_refresh_for_record(
+                        memory_record, context_records
+                    )
+
+                    return True
+
+        # tool_call_id not found
+        return False
+
+    def _force_memory_refresh_for_record(
+        self, target_record: MemoryRecord, all_context_records: List[Any]
+    ) -> None:
+        r"""Update a specific record in the agent's memory.
+
+        Args:
+            target_record (MemoryRecord): The specific memory record that
+                contains the modified message and needs to be refreshed in the
+                memory system. This record should already have its message
+                object modified in place (e.g., message.args = "[PRUNED]").
+            all_context_records (List[Any]): The complete list of context
+                records retrieved from memory.retrieve(). Each context record
+                has a .memory_record attribute that contains the actual
+                MemoryRecord object. This list is used to rebuild the memory
+                with the updated target record.
+        """
+        all_records = [cr.memory_record for cr in all_context_records]
+
+        # search backwards since tool calls are typically in recent messages
+        for i in range(len(all_records) - 1, -1, -1):
+            if all_records[i] == target_record:
+                # create updated record with the modified message
+                updated_record = MemoryRecord(
+                    message=target_record.message,
+                    role_at_backend=target_record.role_at_backend,
+                    timestamp=target_record.timestamp,
+                    agent_id=target_record.agent_id,
+                )
+                all_records[i] = updated_record
+                break
+
+        self.memory.clear()
+        for record in all_records:
+            self.memory.write_record(record)
