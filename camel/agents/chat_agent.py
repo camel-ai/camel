@@ -375,6 +375,11 @@ class ChatAgent(BaseAgent):
         pause_event (Optional[asyncio.Event]): Event to signal pause of the
             agent's operation. When clear, the agent will pause its execution.
             (default: :obj:`None`)
+        clean_tool_calls_from_memory (bool): Whether to clean tool call
+            messages from memory after response generation to save token
+            usage. When enabled, removes FUNCTION/TOOL role messages and
+            ASSISTANT messages with tool_calls after each step.
+            (default: :obj:`False`)
     """
 
     def __init__(
@@ -411,6 +416,7 @@ class ChatAgent(BaseAgent):
         tool_execution_timeout: Optional[float] = None,
         mask_tool_output: bool = False,
         pause_event: Optional[asyncio.Event] = None,
+        clean_tool_calls_from_memory: bool = False,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -492,6 +498,7 @@ class ChatAgent(BaseAgent):
         self._image_retry_count: Dict[str, int] = {}
         # Store images to attach to next user message
         self.pause_event = pause_event
+        self.clean_tool_calls_from_memory = clean_tool_calls_from_memory
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -501,6 +508,15 @@ class ChatAgent(BaseAgent):
         self._image_retry_count = {}
         for terminator in self.response_terminators:
             terminator.reset()
+
+    def clean_tool_calls(self):
+        r"""Removes tool call messages from memory after response generation.
+
+        This method delegates to the memory's clean_tool_calls method to remove
+        all FUNCTION/TOOL role messages and any ASSISTANT messages that contain
+        tool_calls in their meta_dict to save token usage.
+        """
+        self.memory.clean_tool_calls()
 
     def _resolve_models(
         self,
@@ -1472,6 +1488,10 @@ class ChatAgent(BaseAgent):
 
         self._record_final_output(response.output_messages)
 
+        # Clean tool call messages from memory after response generation
+        if self.clean_tool_calls_from_memory and tool_call_records:
+            self.clean_tool_calls()
+
         return self._convert_to_chatagent_response(
             response,
             tool_call_records,
@@ -1729,6 +1749,10 @@ class ChatAgent(BaseAgent):
             )
 
         self._record_final_output(response.output_messages)
+
+        # Clean tool call messages from memory after response generation
+        if self.clean_tool_calls_from_memory and tool_call_records:
+            self.clean_tool_calls()
 
         return self._convert_to_chatagent_response(
             response,
