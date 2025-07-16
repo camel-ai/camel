@@ -375,7 +375,7 @@ class ChatAgent(BaseAgent):
         pause_event (Optional[asyncio.Event]): Event to signal pause of the
             agent's operation. When clear, the agent will pause its execution.
             (default: :obj:`None`)
-        prune_tool_calls_from_memory_from_memory (bool): Whether to clean tool
+        prune_tool_calls_from_memory (bool): Whether to clean tool
             call messages from memory after response generation to save token
             usage. When enabled, removes FUNCTION/TOOL role messages and
             ASSISTANT messages with tool_calls after each step.
@@ -3285,10 +3285,19 @@ class ChatAgent(BaseAgent):
             return
 
         # Start async streaming response
+        last_response = None
         async for response in self._astream_response(
             openai_messages, num_tokens, response_format
         ):
+            last_response = response
             yield response
+
+        # Clean tool call messages from memory after response generation
+        if self.prune_tool_calls_from_memory and last_response:
+            # Extract tool_calls from the last response info
+            tool_calls = last_response.info.get("tool_calls", [])
+            if tool_calls:
+                self.memory.clean_tool_calls()
 
     async def _astream_response(
         self,
