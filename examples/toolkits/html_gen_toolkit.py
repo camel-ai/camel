@@ -22,8 +22,8 @@ from camel.types.enums import ModelType
 
 # Create a model instance
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.DEFAULT,
-    model_type=ModelType.DEFAULT,
+    model_platform=ModelPlatformType.GEMINI,
+    model_type=ModelType.GEMINI_2_5_PRO,
     model_config_dict={"temperature": 0},
 )
 
@@ -41,11 +41,11 @@ tools_list = html_toolkit.get_tools()
 
 # Initialize a ChatAgent with the tools
 camel_agent = ChatAgent(
-    system_message=sys_msg, model=model, tools=tools_list, max_iteration=1
+    system_message=sys_msg, model=model, tools=tools_list
 )
 
 query = """Please generate a for a ppt slide. the style can be purple 
-and gold. the slide is about the benefits of AI and you can generate a chart 
+and gold. i need 5 pages html, the slide is about the benefits of AI and you can generate a chart 
 to show the benefits. and add a image to the slide.the image is 
 https://ghli.org/camel/wechat.png,its our community logo welcome to join us.
 """
