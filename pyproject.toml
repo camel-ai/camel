@@ -392,7 +392,6 @@ all = [
     "chromadb>=0.6.0,<1.0.0",
     "traceroot==0.0.4a2",
     "reportlab>=4.4.2",
-    "surrealdb>=0.4.1",
 ]
 
 [project.urls]

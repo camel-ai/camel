@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
-from surrealdb.data.types.record_id import RecordID
 
 from camel.storages.vectordb_storages.surreal import (
     SurrealStorage,
@@ -24,17 +24,28 @@ from camel.storages.vectordb_storages.surreal import (
     VectorRecord,
 )
 
+# Mock the module if surrealdb is not installed
+sys.modules['surrealdb'] = MagicMock()
+sys.modules['surrealdb.data'] = MagicMock()
+sys.modules['surrealdb.data.types'] = MagicMock()
+sys.modules['surrealdb.data.types.record_id'] = MagicMock()
+
 
 @pytest.fixture
 def storage():
-    with patch(
-        "camel.storages.vectordb_storages.surreal.Surreal"
-    ) as mock_surreal:
+    with patch("surrealdb.Surreal") as mock_surreal:
         mock_db = MagicMock()
         mock_surreal.return_value.__enter__ = MagicMock(return_value=mock_db)
         mock_surreal.return_value.__exit__ = MagicMock(return_value=None)
-        storage = SurrealStorage(vector_dim=3)
 
+        # Mock the methods that would be called during initialization
+        mock_db.signin = MagicMock()
+        mock_db.use = MagicMock()
+        mock_db.query_raw = MagicMock(
+            return_value={"result": [{"result": {"tables": {}}}]}
+        )
+
+        storage = SurrealStorage(vector_dim=3)
         yield storage, mock_db
 
 
@@ -62,8 +73,16 @@ def test_query(storage):
         "result": [
             {
                 "result": [
-                    {"payload": {"id": "1"}, "score": 0.1},
-                    {"payload": {"id": "2"}, "score": 0.2},
+                    {
+                        "payload": {"id": "1"},
+                        "embedding": [0.1, 0.2, 0.3],
+                        "score": 0.1,
+                    },
+                    {
+                        "payload": {"id": "2"},
+                        "embedding": [0.4, 0.5, 0.6],
+                        "score": 0.2,
+                    },
                 ]
             }
         ]
@@ -83,7 +102,7 @@ def test_status(storage):
     mock_db.query_raw.side_effect = [
         {"result": [{"result": {"tables": {storage_instance.table: {}}}}]},
         {"result": [{"result": {"indexes": {"hnsw_idx": "DIMENSION 3"}}}]},
-        {"result": [{"result": [{"count": 1} for _ in range(5)]}]},
+        {"result": [{"result": [{"count": 5}]}]},
     ]
 
     status = storage_instance.status()
@@ -104,10 +123,16 @@ def test_delete_all(storage):
 def test_delete_ids(storage):
     storage_instance, mock_db = storage
 
-    storage_instance.delete(ids=["id1", "id2"])
+    # Mock RecordID class
+    with patch("surrealdb.data.types.record_id.RecordID") as mock_record_id:
+        mock_record_instance = MagicMock()
+        mock_record_id.return_value = mock_record_instance
 
-    assert mock_db.delete.call_count == 2
-    calls_args = [
-        call_args[0][0] for call_args in mock_db.delete.call_args_list
-    ]
-    assert all(isinstance(arg, RecordID) for arg in calls_args)
+        storage_instance.delete(ids=["id1", "id2"])
+
+        assert mock_record_id.call_count == 2
+        assert mock_db.delete.call_count == 2
+
+        # Verify RecordID was called with correct parameters
+        mock_record_id.assert_any_call(storage_instance.table, "id1")
+        mock_record_id.assert_any_call(storage_instance.table, "id2")
