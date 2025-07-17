@@ -19,8 +19,25 @@ from camel.toolkits import OrigeneToolkit
 
 
 async def main():
+    r"""Main function demonstrating OrigeneToolkit usage with custom
+    configuration.
+
+    This example shows how to pass a custom config_dict to the
+    OrigeneToolkit instead of using hardcoded configuration.
+    """
+    # Define custom configuration for MCP servers
+    config_dict = {
+        "mcpServers": {
+            "chembl_mcp": {
+                "url": "http://127.0.0.1:8788/chembl_mcp/mcp/",
+                "mode": "streamable-http",
+            }
+        }
+    }
+
     # Use async context manager for automatic connection management
-    async with OrigeneToolkit() as origene_toolkit:
+    # Pass config_dict as parameter instead of hardcoding it
+    async with OrigeneToolkit(config_dict=config_dict) as origene_toolkit:
         user_msg = "what can you do?"
         agent = ChatAgent(
             "You are named origene assistant.",
