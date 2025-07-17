@@ -79,6 +79,19 @@ def get_context_creator(self):
 def clear(self):
 ```
 
+<a id="camel.memories.agent_memories.ChatHistoryMemory.clean_tool_calls"></a>
+
+### clean_tool_calls
+
+```python
+def clean_tool_calls(self):
+```
+
+Removes tool call messages from memory.
+This method removes all FUNCTION/TOOL role messages and any ASSISTANT
+messages that contain tool_calls in their meta_dict to save token
+usage.
+
 <a id="camel.memories.agent_memories.VectorDBMemory"></a>
 
 ## VectorDBMemory
