@@ -176,7 +176,7 @@ dev_tools = [
     "daytona-sdk==0.20.0",
     "aci-sdk>=1.0.0b1",
     "langfuse>=2.60.5",
-    "traceroot==0.0.4a2",
+    "traceroot==0.0.4a4",
 ]
 model_platforms = [
     "litellm>=1.38.1,<2",
@@ -387,7 +387,7 @@ all = [
     "psycopg[binary]>=3.1.18,<4",
     "pgvector>=0.2.4,<0.3",
     "chromadb>=0.6.0,<1.0.0",
-    "traceroot==0.0.4a2",
+    "traceroot==0.0.4a4",
     "reportlab>=4.4.2",
     "surrealdb @ https://github.com/surrealdb/surrealdb.py.git",
 ]

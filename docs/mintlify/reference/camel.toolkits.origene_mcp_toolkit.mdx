@@ -14,12 +14,13 @@ Origene MCP server.
 This toolkit can be used as an async context manager for automatic
 connection management:
 
-async with OrigeneToolkit() as toolkit:
+async with OrigeneToolkit(config_dict=config) as toolkit:
 tools = toolkit.get_tools()
 # Toolkit is automatically disconnected when exiting
 
 **Parameters:**
 
+- **config_dict** (Dict): Configuration dictionary for MCP servers.
 - **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
 
 <a id="camel.toolkits.origene_mcp_toolkit.OrigeneToolkit.__init__"></a>
@@ -27,13 +28,18 @@ tools = toolkit.get_tools()
 ### __init__
 
 ```python
-def __init__(self, timeout: Optional[float] = None):
+def __init__(
+    self,
+    config_dict: Optional[Dict] = None,
+    timeout: Optional[float] = None
+):
 ```
 
 Initializes the OrigeneToolkit.
 
 **Parameters:**
 
+- **config_dict** (Optional[Dict]): Configuration dictionary for MCP servers. If None, uses default configuration for chembl_mcp. (default: :obj:`None`)
 - **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
 
 <a id="camel.toolkits.origene_mcp_toolkit.OrigeneToolkit.get_tools"></a>

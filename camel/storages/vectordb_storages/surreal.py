@@ -26,7 +26,7 @@ from camel.types import VectorDistance
 from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
-    from surrealdb import Surreal
+    from surrealdb import Surreal  # type: ignore[import-not-found]
 
 logger = get_logger(__name__)
 # logger.setLevel("DEBUG")
@@ -88,8 +88,8 @@ class SurrealStorage(BaseVectorStorage):
                 (default: :obj:`"vector_store"`)
             vector_dim (int): Dimensionality of the stored vectors.
                 (default: :obj:`786`)
-            distance (VectorDistance): Distance metric for similarity searches.
-                (default: :obj:`VectorDistance.COSINE`)
+            distance (VectorDistance): Distance metric for similarity
+                searches. (default: :obj:`VectorDistance.COSINE`)
             namespace (str): SurrealDB namespace to use.
                 (default: :obj:`"default"`)
             database (str): SurrealDB database name.
@@ -135,7 +135,7 @@ class SurrealStorage(BaseVectorStorage):
         Retrieve dimension and record count from the table metadata.
 
         Returns:
-            dict: A dictionary with 'dim' and 'count' keys.
+            Dict[str, int]: A dictionary with 'dim' and 'count' keys.
         """
         if not self._table_exists():
             return {"dim": self.vector_dim, "count": 0}
@@ -227,8 +227,13 @@ class SurrealStorage(BaseVectorStorage):
         """
         validate_data = []
         for record in records:
+            if len(record.vector) != self.vector_dim:
+                raise ValueError(
+                    f"Vector dimension mismatch: expected {self.vector_dim}, "
+                    f"got {len(record.vector)}"
+                )
             record_dict = {
-                "payload": record.payload if record.payload else "",
+                "payload": record.payload if record.payload else {},
                 "embedding": record.vector,
             }
             validate_data.append(record_dict)
@@ -371,7 +376,7 @@ class SurrealStorage(BaseVectorStorage):
     def load(self) -> None:
         """Load the collection hosted on cloud service."""
         # SurrealDB doesn't require explicit loading
-        pass
+        raise NotImplementedError("SurrealDB does not support loading")
 
     @property
     def client(self) -> "Surreal":

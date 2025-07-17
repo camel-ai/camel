@@ -375,6 +375,11 @@ class ChatAgent(BaseAgent):
         pause_event (Optional[asyncio.Event]): Event to signal pause of the
             agent's operation. When clear, the agent will pause its execution.
             (default: :obj:`None`)
+        prune_tool_calls_from_memory (bool): Whether to clean tool
+            call messages from memory after response generation to save token
+            usage. When enabled, removes FUNCTION/TOOL role messages and
+            ASSISTANT messages with tool_calls after each step.
+            (default: :obj:`False`)
     """
 
     def __init__(
@@ -411,6 +416,7 @@ class ChatAgent(BaseAgent):
         tool_execution_timeout: Optional[float] = None,
         mask_tool_output: bool = False,
         pause_event: Optional[asyncio.Event] = None,
+        prune_tool_calls_from_memory: bool = False,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -492,6 +498,7 @@ class ChatAgent(BaseAgent):
         self._image_retry_count: Dict[str, int] = {}
         # Store images to attach to next user message
         self.pause_event = pause_event
+        self.prune_tool_calls_from_memory = prune_tool_calls_from_memory
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -1472,6 +1479,10 @@ class ChatAgent(BaseAgent):
 
         self._record_final_output(response.output_messages)
 
+        # Clean tool call messages from memory after response generation
+        if self.prune_tool_calls_from_memory and tool_call_records:
+            self.memory.clean_tool_calls()
+
         return self._convert_to_chatagent_response(
             response,
             tool_call_records,
@@ -1729,6 +1740,10 @@ class ChatAgent(BaseAgent):
             )
 
         self._record_final_output(response.output_messages)
+
+        # Clean tool call messages from memory after response generation
+        if self.prune_tool_calls_from_memory and tool_call_records:
+            self.memory.clean_tool_calls()
 
         return self._convert_to_chatagent_response(
             response,
@@ -3270,10 +3285,19 @@ class ChatAgent(BaseAgent):
             return
 
         # Start async streaming response
+        last_response = None
         async for response in self._astream_response(
             openai_messages, num_tokens, response_format
         ):
+            last_response = response
             yield response
+
+        # Clean tool call messages from memory after response generation
+        if self.prune_tool_calls_from_memory and last_response:
+            # Extract tool_calls from the last response info
+            tool_calls = last_response.info.get("tool_calls", [])
+            if tool_calls:
+                self.memory.clean_tool_calls()
 
     async def _astream_response(
         self,
@@ -3799,6 +3823,7 @@ class ChatAgent(BaseAgent):
             stop_event=self.stop_event,
             tool_execution_timeout=self.tool_execution_timeout,
             pause_event=self.pause_event,
+            prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
         )
 
         # Copy memory if requested
