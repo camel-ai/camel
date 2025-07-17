@@ -40,7 +40,7 @@ def test_initialization():
 
     assert toolkit.timeout is None
     assert toolkit.add_branding_tag is True
-    assert toolkit.logo_path == "../../misc/favicon.png"
+    assert toolkit.logo_path == "../camel/misc/favicon.png"
     assert toolkit.tag_text == "Created by CAMEL"
     assert toolkit.tag_url == "https://github.com/camel-ai/camel"
     assert toolkit.remote_server_ip is None
@@ -111,119 +111,21 @@ def test_load_logo_as_data_uri_with_valid_file(web_deploy_toolkit, temp_dir):
     assert result.startswith("data:image/svg+xml;base64,")
 
 
-def test_inject_eigent_tag_with_body(web_deploy_toolkit):
-    r"""Test injecting branding tag into HTML with body tag."""
-    html_content = "<html><body><h1>Test</h1></body></html>"
-    result = web_deploy_toolkit._inject_eigent_tag(html_content)
-
-    assert "<h1>Test</h1>" in result
-    assert "eigent-floating-ball" in result
-    assert result.count("</body>") == 1
-
-
-def test_inject_eigent_tag_without_body(web_deploy_toolkit):
-    r"""Test injecting branding tag into HTML without body tag."""
-    html_content = "<h1>Test</h1>"
-    result = web_deploy_toolkit._inject_eigent_tag(html_content)
-
-    assert "<h1>Test</h1>" in result
-    assert "eigent-floating-ball" in result
-
-
-def test_inject_eigent_tag_disabled(web_deploy_toolkit):
-    r"""Test that branding tag is not injected when disabled."""
-    web_deploy_toolkit.add_branding_tag = False
-    html_content = "<html><body><h1>Test</h1></body></html>"
-    result = web_deploy_toolkit._inject_eigent_tag(html_content)
-
-    assert result == html_content
-    assert "eigent-floating-ball" not in result
-
-
-@patch('subprocess.run')
-def test_init_react_project_success(mock_run, web_deploy_toolkit, temp_dir):
-    r"""Test successful React project initialization."""
-    mock_run.return_value = Mock(returncode=0, stderr="")
-
-    with patch('os.path.exists', return_value=False):
-        result = web_deploy_toolkit.init_react_project(
-            "test-project", directory=temp_dir
-        )
-
-    assert result['success'] is True
-    assert 'test-project' in result['project_name']
-    assert 'created successfully' in result['message']
-
-
-@patch('subprocess.run')
-def test_init_react_project_already_exists(
-    mock_run, web_deploy_toolkit, temp_dir
-):
-    r"""Test React project initialization when directory already exists."""
-    project_path = os.path.join(temp_dir, "existing-project")
-    os.makedirs(project_path)
-
-    result = web_deploy_toolkit.init_react_project(
-        "existing-project", directory=temp_dir
-    )
-
-    assert result['success'] is False
-    assert 'already exists' in result['error']
-
-
-@patch('subprocess.run')
-def test_build_react_project_success(mock_run, web_deploy_toolkit, temp_dir):
-    r"""Test successful React project build."""
-    # Create a mock React project structure
-    project_path = os.path.join(temp_dir, "test-project")
-    os.makedirs(project_path)
-
-    # Create package.json
-    package_json = os.path.join(project_path, "package.json")
-    with open(package_json, 'w') as f:
-        f.write('{"name": "test-project"}')
-
-    # Create node_modules directory
-    node_modules = os.path.join(project_path, "node_modules")
-    os.makedirs(node_modules)
-
-    # Create build directory
-    build_dir = os.path.join(project_path, "build")
-    os.makedirs(build_dir)
-
-    mock_run.return_value = Mock(returncode=0, stderr="")
-
-    result = web_deploy_toolkit.build_react_project(project_path)
-
-    assert result['success'] is True
-    assert result['build_path'] == build_dir
-    assert 'built successfully' in result['message']
-
-
-def test_build_react_project_not_found(web_deploy_toolkit):
-    r"""Test building React project when directory doesn't exist."""
-    result = web_deploy_toolkit.build_react_project("/nonexistent/path")
-
-    assert result['success'] is False
-    assert 'does not exist' in result['error']
-
-
-def test_build_react_project_no_package_json(web_deploy_toolkit, temp_dir):
-    r"""Test building React project without package.json."""
-    result = web_deploy_toolkit.build_react_project(temp_dir)
-
-    assert result['success'] is False
-    assert 'package.json not found' in result['error']
-
-
 @patch('subprocess.Popen')
 def test_serve_static_files_success(mock_popen, web_deploy_toolkit, temp_dir):
     r"""Test successful static file serving."""
     mock_process = Mock()
+    mock_process.pid = 12345
     mock_popen.return_value = mock_process
 
     with patch('time.sleep'):
-        result = web_deploy_toolkit._serve_static_files(temp_dir, 8000)
+        with patch.object(
+            web_deploy_toolkit, '_is_port_available'
+        ) as mock_port:
+            # First call returns True (port available), second call returns
+            # False (server started)
+            mock_port.side_effect = [True, False]
+            result = web_deploy_toolkit._serve_static_files(temp_dir, 8000)
 
     assert result['success'] is True
     assert result['port'] == 8000
@@ -258,7 +160,9 @@ def test_deploy_html_content_local(web_deploy_toolkit):
         web_deploy_toolkit, '_deploy_to_local_server'
     ) as mock_deploy:
         mock_deploy.return_value = {'success': True}
-        result = web_deploy_toolkit.deploy_html_content(html_content)
+        result = web_deploy_toolkit.deploy_html_content(
+            html_content=html_content
+        )
 
     assert result['success'] is True
     mock_deploy.assert_called_once()
@@ -273,16 +177,85 @@ def test_deploy_html_content_remote(web_deploy_toolkit):
         web_deploy_toolkit, '_deploy_to_remote_server'
     ) as mock_deploy:
         mock_deploy.return_value = {'success': True}
-        result = web_deploy_toolkit.deploy_html_content(html_content)
+        result = web_deploy_toolkit.deploy_html_content(
+            html_content=html_content
+        )
 
     assert result['success'] is True
     mock_deploy.assert_called_once()
 
 
+def test_deploy_html_content_from_file(web_deploy_toolkit, temp_dir):
+    r"""Test deploying HTML content from a file path."""
+    # Create a test HTML file
+    html_content = "<html><body><h1>Test from File</h1></body></html>"
+    html_file = os.path.join(temp_dir, "test.html")
+    with open(html_file, 'w') as f:
+        f.write(html_content)
+
+    with patch.object(
+        web_deploy_toolkit, '_deploy_to_local_server'
+    ) as mock_deploy:
+        mock_deploy.return_value = {'success': True}
+        result = web_deploy_toolkit.deploy_html_content(
+            html_file_path=html_file
+        )
+
+    assert result['success'] is True
+    mock_deploy.assert_called_once()
+    # Verify the HTML content was read correctly
+    call_args = mock_deploy.call_args[0]
+    assert call_args[0] == html_content
+    assert call_args[1] == "test.html"  # filename from path
+
+
+def test_deploy_html_content_file_not_found(web_deploy_toolkit):
+    r"""Test deploying HTML content with non-existent file."""
+    result = web_deploy_toolkit.deploy_html_content(
+        html_file_path="/nonexistent/file.html"
+    )
+
+    assert result['success'] is False
+    assert 'HTML file not found' in result['error']
+
+
+def test_deploy_html_content_no_input(web_deploy_toolkit):
+    r"""Test deploying HTML content without any input."""
+    result = web_deploy_toolkit.deploy_html_content()
+
+    assert result['success'] is False
+    assert (
+        'Either html_content or html_file_path must be provided'
+        in result['error']
+    )
+
+
+def test_deploy_html_content_both_inputs(web_deploy_toolkit, temp_dir):
+    r"""Test deploying HTML content with both content and file path."""
+    html_file = os.path.join(temp_dir, "test.html")
+    with open(html_file, 'w') as f:
+        f.write("<html></html>")
+
+    result = web_deploy_toolkit.deploy_html_content(
+        html_content="<html><body></body></html>", html_file_path=html_file
+    )
+
+    assert result['success'] is False
+    assert (
+        'Cannot provide both html_content and html_file_path'
+        in result['error']
+    )
+
+
 def test_stop_server_success(web_deploy_toolkit):
     r"""Test successfully stopping a server."""
     mock_process = Mock()
-    web_deploy_toolkit.server_instances[8000] = mock_process
+    web_deploy_toolkit.server_instances[8000] = {
+        'process': mock_process,
+        'pid': 12345,
+        'start_time': 1234567890,
+        'directory': '/tmp/test',
+    }
 
     result = web_deploy_toolkit.stop_server(8000)
 
@@ -346,16 +319,15 @@ def test_get_tools(web_deploy_toolkit):
     tools = web_deploy_toolkit.get_tools()
 
     # Check that we have the expected number of tools
-    assert len(tools) == 5
+    assert len(tools) == 4
 
     # Check that the tools have the correct function names
     tool_names = [tool.get_function_name() for tool in tools]
     expected_names = [
-        'init_react_project',
-        'build_react_project',
         'deploy_html_content',
         'deploy_folder',
         'stop_server',
+        'list_running_servers',
     ]
 
     for expected_name in expected_names:

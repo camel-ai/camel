@@ -18,7 +18,9 @@ import base64
 import json
 import mimetypes
 import os
+import re
 import shutil
+import socket
 import subprocess
 import tempfile
 import time
@@ -54,32 +56,114 @@ class WebDeployToolkit(BaseToolkit):
         r"""Initialize the WebDeployToolkit.
 
         Args:
-            timeout (Optional[float]): Command timeout in seconds
-            add_branding_tag (bool): Whether to add brand tag to deployed pages
+            timeout (Optional[float]): Command timeout in seconds.
+                (default: :obj:`None`)
+            add_branding_tag (bool): Whether to add brand tag to deployed
+                pages. (default: :obj:`True`)
             logo_path (str): Path to custom logo file (SVG, PNG, JPG, ICO).
-                (default: .../misc/favicon.png)
-            tag_text (str): Text to display in the tag
-                (default: "Created by CAMEL")
-            tag_url (str): URL to open when tag is clicked
-                (default: "https://github.com/camel-ai/camel")
-            remote_server_ip (Optional[str]): Remote server IP for deployment
-                (default: None - use local deployment)
-            remote_server_port (int): Remote server port
-                (default: 8080)
+                (default: :obj:`../camel/misc/favicon.png`)
+            tag_text (str): Text to display in the tag.
+                (default: :obj:`Created by CAMEL`)
+            tag_url (str): URL to open when tag is clicked.
+                (default: :obj:`https://github.com/camel-ai/camel`)
+            remote_server_ip (Optional[str]): Remote server IP for deployment.
+                (default: :obj:`None` - use local deployment)
+            remote_server_port (int): Remote server port.
+                (default: :obj:`8080`)
         """
-        super().__init__()
+        super().__init__(timeout=timeout)
         self.timeout = timeout
         self.server_instances: Dict[int, Any] = {}  # Track running servers
         self.add_branding_tag = add_branding_tag
         self.logo_path = logo_path
-        self.tag_text = tag_text
-        self.tag_url = tag_url
-        self.remote_server_ip = remote_server_ip
-        self.remote_server_port = remote_server_port
+        self.tag_text = self._sanitize_text(tag_text)
+        self.tag_url = self._validate_url(tag_url)
+        self.remote_server_ip = (
+            self._validate_ip(remote_server_ip) if remote_server_ip else None
+        )
+        self.remote_server_port = self._validate_port(remote_server_port)
         self.server_registry_file = os.path.join(
             tempfile.gettempdir(), "web_deploy_servers.json"
         )
         self._load_server_registry()
+
+    def _validate_ip(self, ip: str) -> str:
+        """Validate IP address format."""
+        import ipaddress
+
+        try:
+            ipaddress.ip_address(ip)
+            return ip
+        except ValueError:
+            raise ValueError(f"Invalid IP address: {ip}")
+
+    def _validate_port(self, port: int) -> int:
+        """Validate port number."""
+        if not isinstance(port, int) or port < 1 or port > 65535:
+            raise ValueError(f"Invalid port number: {port}")
+        return port
+
+    def _sanitize_text(self, text: str) -> str:
+        """Sanitize text to prevent XSS."""
+        if not isinstance(text, str):
+            return ""
+        # Remove any HTML/script tags
+        text = re.sub(r'<[^>]+>', '', text)
+        # Escape special characters
+        text = (
+            text.replace('&', '&amp;')
+            .replace('<', '&lt;')
+            .replace('>', '&gt;')
+        )
+        text = text.replace('"', '&quot;').replace("'", '&#x27;')
+        return text[:100]  # Limit length
+
+    def _validate_url(self, url: str) -> str:
+        """Validate URL format."""
+        if not isinstance(url, str):
+            raise ValueError("URL must be a string")
+        # Basic URL validation
+        url_pattern = re.compile(
+            r'^https?://'
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'
+            r'localhost|'
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'
+            r'(?::\d+)?'
+            r'(?:/?|[/?]\S+)$',
+            re.IGNORECASE,
+        )
+        if not url_pattern.match(url):
+            raise ValueError(f"Invalid URL format: {url}")
+        return url
+
+    def _validate_subdirectory(
+        self, subdirectory: Optional[str]
+    ) -> Optional[str]:
+        """Validate subdirectory to prevent path traversal."""
+        if subdirectory is None:
+            return None
+
+        # Remove any leading/trailing slashes
+        subdirectory = subdirectory.strip('/')
+
+        # Check for path traversal attempts
+        if '..' in subdirectory or subdirectory.startswith('/'):
+            raise ValueError(f"Invalid subdirectory: {subdirectory}")
+
+        # Only allow alphanumeric, dash, underscore, and forward slashes
+        if not re.match(r'^[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*$', subdirectory):
+            raise ValueError(f"Invalid subdirectory format: {subdirectory}")
+
+        return subdirectory
+
+    def _is_port_available(self, port: int) -> bool:
+        """Check if a port is available for binding."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            try:
+                sock.bind(('127.0.0.1', port))
+                return True
+            except OSError:
+                return False
 
     def _load_server_registry(self):
         r"""Load server registry from persistent storage."""
@@ -146,8 +230,12 @@ class WebDeployToolkit(BaseToolkit):
         Returns:
             str: Complete custom URL
         """
+        # Validate domain
+        if not re.match(r'^[a-zA-Z0-9.-]+$', domain):
+            raise ValueError(f"Invalid domain format: {domain}")
         custom_url = f"http://{domain}:8080"
         if subdirectory:
+            subdirectory = self._validate_subdirectory(subdirectory)
             custom_url += f"/{subdirectory}"
         return custom_url
 
@@ -192,7 +280,7 @@ class WebDeployToolkit(BaseToolkit):
             return self._get_default_logo()
 
     def _get_default_logo(self) -> str:
-        r"""Get the default Eigent logo as data URI.
+        r"""Get the default logo as data URI.
 
         Returns:
             str: Default logo data URI
@@ -207,160 +295,10 @@ class WebDeployToolkit(BaseToolkit):
         )
         return default_logo_data_uri
 
-    def _generate_eigent_tag(self) -> str:
-        r"""Generate the HTML/CSS/JS for the branded floating tag.
-
-        Returns:
-            str: Complete HTML code for the branded tag
-        """
-        # Load the logo from the specified path
-        logo_data_uri = self._load_logo_as_data_uri(self.logo_path)
-
-        return f"""
-<style>
-#eigent-floating-ball {{
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 10px 12px;
-  background: #333333;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  color: #F8F8F8;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  z-index: 9999;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}}
-
-#eigent-floating-ball:hover {{
-  transform: translateY(-2px);
-  background: #444444;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}}
-
-.eigent-ball-content {{
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}}
-
-  .eigent-logo {{
-   width: 24px;
-   height: 24px;
-   background-image: url("{logo_data_uri}");
-   background-repeat: no-repeat;
-   background-position: center;
-   background-size: cover;
- }}
-
-.eigent-ball-text {{
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}}
-
-.eigent-close-icon {{
-  margin-left: 8px;
-  font-size: 16px;
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
-}}
-
-.eigent-close-icon:hover {{
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.1);
-}}
-</style>
- <div id="eigent-floating-ball">
-   <div class="eigent-ball-content">
-     <div class="eigent-logo"></div>
-     <span class="eigent-ball-text">{self.tag_text}</span>
-   </div>
-   <div class="eigent-close-icon">x</div>
- </div>
-<script>
-// Initialize Eigent floating ball functionality
-function initEigentFloatingBall() {{
-  const ball = document.getElementById('eigent-floating-ball');
-  if (!ball) return;
-
-  // Initial animation
-  ball.style.opacity = '0';
-  ball.style.transform = 'translateY(20px)';
-
-  setTimeout(() => {{
-    ball.style.opacity = '1';
-    ball.style.transform = 'translateY(0)';
-  }}, 500);
-
-     // Handle logo click
-   const ballContent = ball.querySelector('.eigent-ball-content');
-   ballContent.addEventListener('click', function (e) {{
-     e.stopPropagation();
-     window.open('{self.tag_url}', '_blank');
-     ball.style.transform = 'scale(0.95)';
-     setTimeout(() => {{
-       ball.style.transform = 'scale(1)';
-     }}, 100);
-   }});
-
-  // Handle close button click
-  const closeIcon = ball.querySelector('.eigent-close-icon');
-  closeIcon.addEventListener('click', function (e) {{
-    e.stopPropagation();
-    ball.style.opacity = '0';
-    ball.style.transform = 'translateY(20px)';
-
-    setTimeout(() => {{
-      ball.style.display = 'none';
-    }}, 300);
-  }});
-}}
-
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {{
-  document.addEventListener('DOMContentLoaded', initEigentFloatingBall);
-}} else {{
-  initEigentFloatingBall();
-}}
-</script>"""  # noqa: E501
-
-    def _inject_eigent_tag(self, html_content: str) -> str:
-        r"""Inject branded tag into HTML content.
-
-        Args:
-            html_content (str): Original HTML content
-
-        Returns:
-            str: HTML content with branded tag injected
-        """
-        if not self.add_branding_tag:
-            return html_content
-
-        branded_tag = self._generate_eigent_tag()
-
-        # Try to inject before closing body tag
-        if '</body>' in html_content:
-            return html_content.replace('</body>', f'{branded_tag}\n</body>')
-
-        # If no body tag, append to end
-        return html_content + branded_tag
-
-
     def deploy_html_content(
         self,
-        html_content: str,
+        html_content: Optional[str] = None,
+        html_file_path: Optional[str] = None,
         file_name: str = "index.html",
         port: int = 8000,
         domain: Optional[str] = None,
@@ -369,27 +307,75 @@ if (document.readyState === 'loading') {{
         r"""Deploy HTML content to a local server or remote server.
 
         Args:
-            html_content (str): HTML content to deploy
-            file_name (str): Name for the HTML file (default: 'index.html')
-            port (int): Port to serve on (default: 8000)
-            domain (Optional[str]): Custom domain to access the content
-                (e.g., 'example.com')
+            html_content (Optional[str]): HTML content to deploy. Either this
+                or html_file_path must be provided.
+            html_file_path (Optional[str]): Path to HTML file to deploy. Either
+                this or html_content must be provided.
+            file_name (str): Name for the HTML file when using html_content.
+                (default: :obj:`index.html`)
+            port (int): Port to serve on. (default: :obj:`8000`)
+            domain (Optional[str]): Custom domain to access the content.
+                (e.g., :obj:`example.com`)
             subdirectory (Optional[str]): Subdirectory path for multi-user
-                deployment (e.g., 'user123')
+                deployment. (e.g., :obj:`user123`)
 
         Returns:
             Dict[str, Any]: Deployment result with server URL and custom domain
-                info
+                info.
         """
         try:
+            # Validate inputs
+            if html_content is None and html_file_path is None:
+                return {
+                    'success': False,
+                    'error': (
+                        'Either html_content or html_file_path must be '
+                        'provided'
+                    ),
+                }
+
+            if html_content is not None and html_file_path is not None:
+                return {
+                    'success': False,
+                    'error': (
+                        'Cannot provide both html_content and '
+                        'html_file_path'
+                    ),
+                }
+
+            # Read content from file if file path is provided
+            if html_file_path:
+                if not os.path.exists(html_file_path):
+                    return {
+                        'success': False,
+                        'error': f'HTML file not found: {html_file_path}',
+                    }
+
+                try:
+                    with open(html_file_path, 'r', encoding='utf-8') as f:
+                        html_content = f.read()
+                    # Use the original filename if deploying from file
+                    file_name = os.path.basename(html_file_path)
+                except Exception as e:
+                    return {
+                        'success': False,
+                        'error': f'Error reading HTML file: {e}',
+                    }
+
             # Check if remote deployment is configured
             if self.remote_server_ip:
                 return self._deploy_to_remote_server(
-                    html_content, subdirectory, domain
+                    html_content,  # type: ignore[arg-type]
+                    subdirectory,
+                    domain,
                 )
             else:
                 return self._deploy_to_local_server(
-                    html_content, file_name, port, domain, subdirectory
+                    html_content,  # type: ignore[arg-type]
+                    file_name,
+                    port,
+                    domain,
+                    subdirectory,
                 )
 
         except Exception as e:
@@ -413,16 +399,14 @@ if (document.readyState === 'loading') {{
             Dict[str, Any]: Deployment result
         """
         try:
-            import time
-
             import requests
 
-            # Inject branding tag
-            enhanced_html = self._inject_eigent_tag(html_content)
+            # Validate subdirectory
+            subdirectory = self._validate_subdirectory(subdirectory)
 
             # Prepare deployment data
             deploy_data = {
-                "html_content": enhanced_html,
+                "html_content": html_content,
                 "subdirectory": subdirectory,
                 "domain": domain,
                 "timestamp": time.time(),
@@ -431,7 +415,15 @@ if (document.readyState === 'loading') {{
             # Send to remote server API
             api_url = f"http://{self.remote_server_ip}:{self.remote_server_port}/api/deploy"
 
-            response = requests.post(api_url, json=deploy_data, timeout=30)
+            response = requests.post(
+                api_url,
+                json=deploy_data,
+                timeout=self.timeout,
+                # Security: disable redirects to prevent SSRF
+                allow_redirects=False,
+                # Add headers for security
+                headers={'Content-Type': 'application/json'},
+            )
 
             if response.status_code == 200:
                 response.json()
@@ -494,9 +486,11 @@ if (document.readyState === 'loading') {{
         Returns:
             Dict[str, Any]: Deployment result
         """
-        # Inject Eigent tag into HTML content
-        enhanced_html = self._inject_eigent_tag(html_content)
+        temp_dir = None
         try:
+            # Validate subdirectory
+            subdirectory = self._validate_subdirectory(subdirectory)
+
             # Create temporary directory
             temp_dir = tempfile.mkdtemp(prefix="web_deploy_")
 
@@ -510,7 +504,7 @@ if (document.readyState === 'loading') {{
 
             # Write enhanced HTML content to file
             with open(html_file_path, 'w', encoding='utf-8') as f:
-                f.write(enhanced_html)
+                f.write(html_content)
 
             # Start server
             server_result = self._serve_static_files(temp_dir, port)
@@ -561,6 +555,12 @@ if (document.readyState === 'loading') {{
             return server_result
 
         except Exception as e:
+            # Clean up temp directory on error
+            if temp_dir and os.path.exists(temp_dir):
+                try:
+                    shutil.rmtree(temp_dir)
+                except Exception:
+                    pass
             return {'success': False, 'error': str(e)}
 
     def _serve_static_files(self, directory: str, port: int) -> Dict[str, Any]:
@@ -589,6 +589,9 @@ if (document.readyState === 'loading') {{
                     'error': f'{directory} is not a directory',
                 }
 
+            # Validate port
+            port = self._validate_port(port)
+
             # Check if port is already in use
             if port in self.server_instances:
                 return {
@@ -596,12 +599,31 @@ if (document.readyState === 'loading') {{
                     'error': f'Port {port} is already in use by this toolkit',
                 }
 
-            # Start http.server as a background process
+            # Check if port is available
+            if not self._is_port_available(port):
+                return {
+                    'success': False,
+                    'error': (
+                        f'Port {port} is already in use by ' f'another process'
+                    ),
+                }
+
+            # Start http.server as a background process with security
+            # improvements
             process = subprocess.Popen(
-                ["python3", "-m", "http.server", str(port)],
+                [
+                    "python3",
+                    "-m",
+                    "http.server",
+                    str(port),
+                    "--bind",
+                    "127.0.0.1",
+                ],
                 cwd=directory,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                shell=False,  # Prevent shell injection
+                env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'},
             )
 
             # Store both process and metadata for persistence
@@ -613,7 +635,21 @@ if (document.readyState === 'loading') {{
             }
             self._save_server_registry()
 
-            time.sleep(1)  # Wait a moment for server to start
+            # Wait for server to start with timeout
+            start_time = time.time()
+            while time.time() - start_time < 5:
+                if not self._is_port_available(port):
+                    # Port is now in use, server started
+                    break
+                time.sleep(0.1)
+            else:
+                # Server didn't start in time
+                process.terminate()
+                del self.server_instances[port]
+                return {
+                    'success': False,
+                    'error': f'Server failed to start on port {port}',
+                }
 
             server_url = f"http://localhost:{port}"
 
@@ -640,15 +676,15 @@ if (document.readyState === 'loading') {{
         r"""Deploy a folder containing web files.
 
         Args:
-            folder_path (str): Path to the folder to deploy
-            port (int): Port to serve on (default: 8000)
-            domain (Optional[str]): Custom domain to access the content
-                (e.g., 'example.com')
+            folder_path (str): Path to the folder to deploy.
+            port (int): Port to serve on. (default: :obj:`8000`)
+            domain (Optional[str]): Custom domain to access the content.
+                (e.g., :obj:`example.com`)
             subdirectory (Optional[str]): Subdirectory path for multi-user
-                deployment (e.g., 'user123')
+                deployment. (e.g., :obj:`user123`)
 
         Returns:
-            Dict[str, Any]: Deployment result with custom domain info
+            Dict[str, Any]: Deployment result with custom domain info.
         """
         try:
             if not os.path.exists(folder_path):
@@ -663,6 +699,10 @@ if (document.readyState === 'loading') {{
                     'error': f'{folder_path} is not a directory',
                 }
 
+            # Validate subdirectory
+            subdirectory = self._validate_subdirectory(subdirectory)
+
+            temp_dir = None
             if self.add_branding_tag:
                 # Create temporary directory and copy all files
                 temp_dir = tempfile.mkdtemp(prefix="web_deploy_enhanced_")
@@ -697,14 +737,10 @@ if (document.readyState === 'loading') {{
                                 ) as f:
                                     original_content = f.read()
 
-                                enhanced_content = self._inject_eigent_tag(
-                                    original_content
-                                )
-
                                 with open(
                                     html_file_path, 'w', encoding='utf-8'
                                 ) as f:
-                                    f.write(enhanced_content)
+                                    f.write(original_content)
 
                                 html_files_enhanced.append(
                                     os.path.relpath(
@@ -828,6 +864,16 @@ if (document.readyState === 'loading') {{
                 return server_result
 
         except Exception as e:
+            # Clean up temp directory on error
+            if (
+                'temp_dir' in locals()
+                and temp_dir
+                and os.path.exists(temp_dir)
+            ):
+                try:
+                    shutil.rmtree(temp_dir)
+                except Exception:
+                    pass
             logger.error(f"Error deploying folder: {e}")
             return {'success': False, 'error': str(e)}
 
@@ -835,12 +881,14 @@ if (document.readyState === 'loading') {{
         r"""Stop a running server on the specified port.
 
         Args:
-            port (int): Port of the server to stop
+            port (int): Port of the server to stop.
 
         Returns:
-            Dict[str, Any]: Result of stopping the server
+            Dict[str, Any]: Result of stopping the server.
         """
         try:
+            # Validate port
+            port = self._validate_port(port)
             # First check persistent registry for servers
             self._load_server_registry()
 
