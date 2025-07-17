@@ -12,8 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from camel.logger import get_logger
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
@@ -23,15 +24,16 @@ from camel.storages.vectordb_storages import (
 )
 from camel.types import VectorDistance
 from camel.utils import dependencies_required
-from camel.logger import get_logger
 
 if TYPE_CHECKING:
     from surrealdb import Surreal
 
 logger = get_logger(__name__)
+# logger.setLevel("DEBUG")
+
 
 class SurrealStorage(BaseVectorStorage):
-    r"""An implementation of the `BaseVectorStorage` using SurrealDB,
+    """An implementation of the `BaseVectorStorage` using SurrealDB,
     a scalable, distributed database with WebSocket support, for
     efficient vector storage and similarity search.
 
@@ -67,38 +69,39 @@ class SurrealStorage(BaseVectorStorage):
         url: str = "ws://localhost:8000/rpc",
         table: str = "vector_store",
         vector_dim: int = 786,
+        vector_type: str = "F64",
         distance: VectorDistance = VectorDistance.COSINE,
+        hnsw_effort: int = 40,
         namespace: str = "default",
         database: str = "demo",
         user: str = "root",
         password: str = "root",
     ) -> None:
-        r"""
+        """
         Initialize SurrealStorage with connection settings and ensure
         the target table exists.
 
         Args:
-            url (str): WebSocket URL for connecting to SurrealDB.  
+            url (str): WebSocket URL for connecting to SurrealDB.
                 (default: :obj:`"ws://localhost:8000/rpc"`)
-            table (str): Name of the table used for vector storage.  
+            table (str): Name of the table used for vector storage.
                 (default: :obj:`"vector_store"`)
-            vector_dim (int): Dimensionality of the stored vectors.  
+            vector_dim (int): Dimensionality of the stored vectors.
                 (default: :obj:`786`)
-            distance (VectorDistance): Distance metric for similarity searches.  
+            distance (VectorDistance): Distance metric for similarity searches.
                 (default: :obj:`VectorDistance.COSINE`)
-            namespace (str): SurrealDB namespace to use.  
+            namespace (str): SurrealDB namespace to use.
                 (default: :obj:`"default"`)
-            database (str): SurrealDB database name.  
+            database (str): SurrealDB database name.
                 (default: :obj:`"demo"`)
-            user (str): Username for authentication.  
+            user (str): Username for authentication.
                 (default: :obj:`"root"`)
-            password (str): Password for authentication.  
+            password (str): Password for authentication.
                 (default: :obj:`"root"`)
         """
 
         from surrealdb import Surreal
-        from surrealdb.data.types.record_id import RecordID
-        
+
         self.url = url
         self.table = table
         self.ns = namespace
@@ -106,93 +109,96 @@ class SurrealStorage(BaseVectorStorage):
         self.user = user
         self.password = password
         self.vector_dim = vector_dim
+        self.vector_type = vector_type
         self.distance = distance
-        self._check_and_create_table()
+        self._hnsw_effort = hnsw_effort
         self._surreal_client = Surreal(self.url)
+        self._surreal_client.signin({"username": user, "password": password})
+        self._surreal_client.use(namespace, database)
+
+        self._check_and_create_table()
 
     def _table_exists(self) -> bool:
-        r"""
+        """
         Check whether the target table exists in the database.
 
         Returns:
             bool: True if the table exists, False otherwise.
         """
-        from surrealdb import Surreal
-        with Surreal(self.url) as db:
-            db.signin({"username": self.user, "password": self.password})
-            db.use(self.ns, self.db)
-            res = db.query_raw("INFO FOR DB;")
-            tables = res['result'][0]['result'].get('tables', {})
-            return self.table in tables
+        res = self._surreal_client.query("INFO FOR DB;")
+        tables = res.get('tables', {})
+        logger.debug(f"_table_exists: {res}")
+        return self.table in tables
 
     def _get_table_info(self) -> dict[str, int | None]:
-        r"""
+        """
         Retrieve dimension and record count from the table metadata.
 
         Returns:
             dict: A dictionary with 'dim' and 'count' keys.
         """
-        from surrealdb import Surreal
         if not self._table_exists():
             return {"dim": self.vector_dim, "count": 0}
-        with Surreal(self.url) as db:
-            db.signin({"username": self.user, "password": self.password})
-            db.use(self.ns, self.db)
-            res = db.query_raw(f"INFO FOR TABLE {self.table};")
+        res = self._surreal_client.query(f"INFO FOR TABLE {self.table};")
+        logger.debug(f"_get_table_info: {res}")
+        indexes = res.get("indexes", {})
 
-            indexes = res['result'][0]['result'].get("indexes", {})
+        dim = self.vector_dim
+        idx_def = indexes.get("hnsw_idx")
+        if idx_def and isinstance(idx_def, str):
+            m = re.search(r"DIMENSION\s+(\d+)", idx_def)
+            if m:
+                dim = int(m.group(1))
+        cnt = self._surreal_client.query_raw(
+            f"SELECT COUNT() FROM {self.table};"
+        )
+        try:
+            count = len(cnt['result'][0]['result'])
+        except (KeyError, IndexError, TypeError):
+            logger.warning(
+                "Unexpected result format when counting records: %s", cnt
+            )
+            count = 0
 
-            dim = self.vector_dim
-            idx_def = indexes.get("hnsw_idx")
-            if idx_def and isinstance(idx_def, str):
-                m = re.search(r"DIMENSION\s+(\d+)", idx_def)
-                if m:
-                    dim = int(m.group(1))
-            cnt = db.query_raw(f"SELECT COUNT() FROM {self.table};")
-            try:
-                count = len(cnt['result'][0]['result'])
-            except (KeyError, IndexError, TypeError):
-                logger.warning(
-                    "Unexpected result format when counting records: %s", cnt
-                )
-                count = 0
-
-            return {"dim": dim, "count": count}
+        return {"dim": dim, "count": count}
 
     def _create_table(self):
-        r"""
-        Define and create the vector storage table with HNSW index.
         """
-        from surrealdb import Surreal
+        Define and create the vector storage table with HNSW index.
 
-        with Surreal(self.url) as db:
-            db.signin({"username": self.user, "password": self.password})
-            db.use(self.ns, self.db)
-            db.query_raw(
-                f"""
-                DEFINE TABLE $table SCHEMALESS;
-                DEFINE FIELD payload    ON {self.table} TYPE object;
-                DEFINE FIELD embedding  ON {self.table} TYPE array;
-                DEFINE INDEX hnsw_idx   ON {self.table}
-                            FIELDS embedding HNSW DIMENSION {self.vector_dim};
-                """
+        Documentation: https://surrealdb.com/docs/surrealdb/reference-guide/vector-search#vector-search-cheat-sheet
+        """
+        if self.distance.value not in ["cosine", "euclidean", "manhattan"]:
+            raise ValueError(
+                f"Unsupported distance metric: {self.distance.value}"
             )
+        surql_query = f"""
+        DEFINE TABLE {self.table} SCHEMALESS;
+        DEFINE FIELD payload    ON {self.table} FLEXIBLE TYPE object;
+        DEFINE FIELD embedding  ON {self.table} TYPE array<float>;
+        DEFINE INDEX hnsw_idx   ON {self.table}
+                    FIELDS embedding
+                    HNSW DIMENSION {self.vector_dim}
+                    DIST {self.distance.value}
+                    TYPE {self.vector_type}
+                    EFC 150 M 12 M0 24;
+        """
+        logger.debug(f"_create_table query: {surql_query}")
+        res = self._surreal_client.query_raw(surql_query)
+        logger.debug(f"_create_table response: {res}")
+        if "error" in res:
+            raise ValueError(f"Failed to create table: {res['error']}")
         logger.info(f"Table '{self.table}' created successfully.")
 
     def _drop_table(self):
-        r"""
+        """
         Drop the vector storage table if it exists.
         """
-        from surrealdb import Surreal
-
-        with Surreal(self.url) as db:
-            db.signin({"username": self.user, "password": self.password})
-            db.use(self.ns, self.db)
-            db.query_raw(f"REMOVE TABLE IF EXISTS {self.table};")
+        self._surreal_client.query_raw(f"REMOVE TABLE IF EXISTS {self.table};")
         logger.info(f"Table '{self.table}' deleted successfully.")
 
     def _check_and_create_table(self):
-        r"""
+        """
         Check if the table exists and matches the expected vector dimension.
         If not, create a new table.
         """
@@ -209,7 +215,7 @@ class SurrealStorage(BaseVectorStorage):
     def _validate_and_convert_records(
         self, records: List[VectorRecord]
     ) -> List[Dict]:
-        r"""
+        """
         Validate and convert VectorRecord instances into
         SurrealDB-compatible dictionaries.
 
@@ -234,7 +240,7 @@ class SurrealStorage(BaseVectorStorage):
         query: VectorDBQuery,
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
-        r"""
+        """
         Perform a top-k similarity search using the configured distance metric.
 
         Args:
@@ -245,50 +251,37 @@ class SurrealStorage(BaseVectorStorage):
             List[VectorDBQueryResult]: Ranked list of matching records
                 with similarity scores.
         """
-        from surrealdb import Surreal
+        surql_query = f"""
+            SELECT id, embedding, payload, vector::distance::knn() AS dist
+            FROM {self.table}
+            WHERE embedding <|{query.top_k},{self._hnsw_effort}|> $vector
+            ORDER BY dist;
+        """
+        logger.debug(
+            f"query surql: {surql_query} with $vector = {query.query_vector}"
+        )
 
-        metric = {
-            VectorDistance.COSINE: "cosine",
-            VectorDistance.EUCLIDEAN: "euclidean",
-            VectorDistance.DOT: "dot",
-        }[self.distance]
+        response = self._surreal_client.query(
+            surql_query, {"vector": query.query_vector}
+        )
+        logger.debug(f"query response: {response}")
 
-        metric_func = {
-            VectorDistance.COSINE: "vector::similarity::cosine",
-            VectorDistance.EUCLIDEAN: "vector::distance::euclidean",
-            VectorDistance.DOT: "vector::dot",
-        }.get(self.distance)
-
-        if not metric_func:
-            raise ValueError(f"Unsupported distance metric: {self.distance}")
-
-        with Surreal(self.url) as db:
-            db.signin({"username": self.user, "password": self.password})
-            db.use(self.ns, self.db)
-
-            sql_query = f"""
-                SELECT payload, embedding
-                    {metric_func}(embedding, {query.query_vector}) AS score
-                FROM {self.table}
-                WHERE embedding <|{query.top_k},{metric}|> {query.query_vector}
-                ORDER BY score;
-            """
-
-            response = db.query_raw(sql_query)
-            results = response["result"][0]
-
-            return [
-                VectorDBQueryResult(
-                    record=VectorRecord(vector=row["embedding"], payload=row["payload"]),
-                    similarity=1.0 - row["score"]
-                    if self.distance == VectorDistance.COSINE
-                    else -row["score"],
-                )
-                for row in results["result"]
-            ]
+        return [
+            VectorDBQueryResult(
+                record=VectorRecord(
+                    id=row["id"].id,
+                    vector=row["embedding"],
+                    payload=row["payload"],
+                ),
+                similarity=1.0 - row["dist"]
+                if self.distance == VectorDistance.COSINE
+                else -row["score"],
+            )
+            for row in response
+        ]
 
     def add(self, records: List[VectorRecord], **kwargs) -> None:
-        r"""
+        """
         Insert validated vector records into the SurrealDB table.
 
         Args:
@@ -297,16 +290,10 @@ class SurrealStorage(BaseVectorStorage):
         logger.info(
             "Adding %d records to table '%s'.", len(records), self.table
         )
-        from surrealdb import Surreal
-
         try:
-            with Surreal(self.url) as db:
-                db.signin({"username": self.user, "password": self.password})
-                db.use(self.ns, self.db)
-
-                validated_records = self._validate_and_convert_records(records)
-                for record in validated_records:
-                    db.create(self.table, record)
+            validated_records = self._validate_and_convert_records(records)
+            for record in validated_records:
+                self._surreal_client.create(self.table, record)
 
             logger.info(
                 "Successfully added %d records to table '%s'.",
@@ -325,44 +312,37 @@ class SurrealStorage(BaseVectorStorage):
     def delete(
         self, ids: Optional[List[str]] = None, if_all: bool = False, **kwargs
     ) -> None:
-        r"""
+        """
         Delete specific records by ID or clear the entire table.
 
         Args:
             ids (Optional[List[str]]): List of record IDs to delete.
             if_all (bool): Whether to delete all records in the table.
         """
-        from surrealdb import Surreal
         from surrealdb.data.types.record_id import RecordID
 
         try:
-            with Surreal(self.url) as db:
-                db.signin({"username": self.user, "password": self.password})
-                db.use(self.ns, self.db)
+            if if_all:
+                self._surreal_client.delete(self.table, **kwargs)
+                logger.info(f"Deleted all records from table '{self.table}'")
+                return
 
-                if if_all:
-                    db.delete(self.table, **kwargs)
-                    logger.info(
-                        f"Deleted all records from table '{self.table}'"
-                    )
-                    return
+            if not ids:
+                raise ValueError(
+                    "Either `ids` must be provided or `if_all=True`"
+                )
 
-                if not ids:
-                    raise ValueError(
-                        "Either `ids` must be provided or `if_all=True`"
-                    )
-
-                for id_str in ids:
-                    rec = RecordID(self.table, id_str)
-                    db.delete(rec, **kwargs)
-                    logger.info(f"Deleted record {rec}")
+            for id_str in ids:
+                rec = RecordID(self.table, id_str)
+                self._surreal_client.delete(rec, **kwargs)
+                logger.info(f"Deleted record {rec}")
 
         except Exception as e:
             logger.exception("Error deleting records from SurrealDB")
             raise RuntimeError(f"Failed to delete records {ids!r}") from e
 
     def status(self) -> VectorDBStatus:
-        r"""
+        """
         Retrieve the status of the vector table including dimension and count.
 
         Returns:
@@ -382,18 +362,18 @@ class SurrealStorage(BaseVectorStorage):
         )
 
     def clear(self) -> None:
-        r"""
+        """
         Reset the vector table by dropping and recreating it.
         """
         self._drop_table()
         self._create_table()
 
     def load(self) -> None:
-        r"""Load the collection hosted on cloud service."""
+        """Load the collection hosted on cloud service."""
         # SurrealDB doesn't require explicit loading
         pass
 
     @property
     def client(self) -> "Surreal":
-        r"""Provides access to the underlying SurrealDB client."""
+        """Provides access to the underlying SurrealDB client."""
         return self._surreal_client
