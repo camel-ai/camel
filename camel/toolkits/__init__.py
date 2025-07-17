@@ -85,6 +85,7 @@ from .craw4ai_toolkit import Crawl4AIToolkit
 from .markitdown_toolkit import MarkItDownToolkit
 from .note_taking_toolkit import NoteTakingToolkit
 from .message_agent_toolkit import AgentCommunicationToolkit
+from .screenshot_toolkit import ScreenshotToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -158,4 +159,5 @@ __all__ = [
     'MarkItDownToolkit',
     'NoteTakingToolkit',
     'AgentCommunicationToolkit',
+    'ScreenshotToolkit',
 ]
