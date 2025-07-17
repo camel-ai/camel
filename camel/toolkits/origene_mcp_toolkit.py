@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from camel.toolkits import BaseToolkit, FunctionTool, MCPToolkit
 
@@ -24,36 +24,38 @@ class OrigeneToolkit(BaseToolkit):
     This toolkit can be used as an async context manager for automatic
     connection management:
 
-        async with OrigeneToolkit() as toolkit:
+        async with OrigeneToolkit(config_dict=config) as toolkit:
             tools = toolkit.get_tools()
             # Toolkit is automatically disconnected when exiting
 
     Attributes:
+        config_dict (Dict): Configuration dictionary for MCP servers.
         timeout (Optional[float]): Connection timeout in seconds.
             (default: :obj:`None`)
     """
 
     def __init__(
         self,
+        config_dict: Optional[Dict] = None,
         timeout: Optional[float] = None,
     ) -> None:
         r"""Initializes the OrigeneToolkit.
 
         Args:
+            config_dict (Optional[Dict]): Configuration dictionary for MCP
+                servers. If None, uses default configuration for chembl_mcp.
+                (default: :obj:`None`)
             timeout (Optional[float]): Connection timeout in seconds.
                 (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
 
+        # Use default configuration if none provided
+        if config_dict is None:
+            raise ValueError("config_dict must be provided")
+
         self._mcp_toolkit = MCPToolkit(
-            config_dict={
-                "mcpServers": {
-                    "pubchem_mcp": {
-                        "url": "http://127.0.0.1:8791/mcp/",
-                        "mode": "streamable-http",
-                    }
-                }
-            },
+            config_dict=config_dict,
             timeout=timeout,
         )
 
@@ -72,7 +74,7 @@ class OrigeneToolkit(BaseToolkit):
             OrigeneToolkit: The connected toolkit instance.
 
         Example:
-            async with OrigeneToolkit() as toolkit:
+            async with OrigeneToolkit(config_dict=config) as toolkit:
                 tools = toolkit.get_tools()
         """
         await self.connect()
