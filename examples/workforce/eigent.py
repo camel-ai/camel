@@ -46,6 +46,7 @@ from camel.toolkits import (
     TerminalToolkit,
     TwitterToolkit,
     VideoDownloaderToolkit,
+    WebDeployToolkit,
     WhatsAppToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
@@ -111,6 +112,7 @@ def developer_agent_factory(
         HumanToolkit().ask_human_via_console,
         *TerminalToolkit(safe_mode=True, clone_current_env=False).get_tools(),
         *NoteTakingToolkit(working_directory=WORKING_DIRECTORY).get_tools(),
+        *WebDeployToolkit().get_tools(),
     ]
 
     system_message = f"""
@@ -155,10 +157,13 @@ terminal.
 - Utilizing any Python libraries (e.g., requests, BeautifulSoup, pandas, 
 etc.) needed for efficient solutions. You can install missing packages 
 using `pip3` or `uv` in the terminal.
-- Implementing complete, production-ready code rather than theoretical 
-examples.
-- Demonstrating results with proper error handling and practical 
-implementation.
+- Deploying web applications and content. You can:
+    - Serve a single HTML file or a string of HTML content on a local web 
+    server.
+    - Deploy an entire folder as a static website—for example, a built 
+    React application.
+    - Manage your deployments by stopping servers on specific ports.
+    - List all currently running web servers to keep track of your work.
 - Asking for human input via the console if you are stuck or need 
 clarification.
 - Write and check notes from other agents to keep track of your work.
