@@ -79,7 +79,7 @@ def _get_table_info(self):
 
 **Returns:**
 
-  dict: A dictionary with 'dim' and 'count' keys.
+  Dict[str, int]: A dictionary with 'dim' and 'count' keys.
 
 <a id="camel.storages.vectordb_storages.surreal.SurrealStorage._create_table"></a>
 
@@ -109,8 +109,8 @@ Drop the vector storage table if it exists.
 def _check_and_create_table(self):
 ```
 
-Check if the table exists and matches the expected vector dimension.
-If not, create a new table.
+Check if the table exists and matches the expected vector
+dimension. If not, create a new table.
 
 <a id="camel.storages.vectordb_storages.surreal.SurrealStorage._validate_and_convert_records"></a>
 
@@ -139,7 +139,8 @@ SurrealDB-compatible dictionaries.
 def query(self, query: VectorDBQuery, **kwargs: Any):
 ```
 
-Perform a top-k similarity search using the configured distance metric.
+Perform a top-k similarity search using the configured distance
+metric.
 
 **Parameters:**
 
