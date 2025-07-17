@@ -33,7 +33,7 @@ class MarkItDownToolkit(BaseToolkit):
     ):
         super().__init__(timeout=timeout)
 
-    def load_files(self, file_paths: List[str]) -> Dict[str, str]:
+    def read_files(self, file_paths: List[str]) -> Dict[str, str]:
         r"""Scrapes content from a list of files and converts it to Markdown.
 
         This function takes a list of local file paths, attempts to convert
@@ -74,5 +74,5 @@ class MarkItDownToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(self.load_files),
+            FunctionTool(self.read_files),
         ]
