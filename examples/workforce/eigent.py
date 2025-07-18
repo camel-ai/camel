@@ -17,7 +17,6 @@ import datetime
 import os
 import platform
 import uuid
-from typing import Optional
 
 from camel.agents.chat_agent import ChatAgent
 from camel.logger import get_logger
@@ -60,38 +59,45 @@ WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or "working_dir/"
 def send_message_to_user(
     message_title: str,
     message_description: str,
-    message_attachment: Optional[str] = None,
+    message_attachment: str = "",
 ) -> str:
     r"""Use this tool to send a tidy message to the user, including a
-    short title and a one-sentence description and an optional attachment like
-    file path or url.
+    short title, a one-sentence description, and an optional attachment.
 
     This one-way tool keeps the user informed about your progress,
     decisions, or actions. It does not require a response.
     You should use it to:
-    - Announce what you are about to do (e.g.,
-        'Starting Task\nSearching for papers on
-        GUI Agents.').
-    - Report the result of an action (e.g.,
-        'Search Complete\nFound 15 relevant
-        papers.').
-    - State a decision (e.g.,
-        'Next Step\nAnalyzing the top 10
-        papers.').
+    - Announce what you are about to do.
+      For example:
+      message_title="Starting Task"
+      message_description="Searching for papers on GUI Agents."
+    - Report the result of an action.
+      For example:
+      message_title="Search Complete"
+      message_description="Found 15 relevant papers."
+    - Report a created file.
+      For example:
+      message_title="File Ready"
+      message_description="The report is ready for your review."
+      message_attachment="report.pdf"
+    - State a decision.
+      For example:
+      message_title="Next Step"
+      message_description="Analyzing the top 10 papers."
     - Give a status update during a long-running task.
 
     Args:
         message_title (str): The title of the message.
         message_description (str): The short description.
-        message_attachment (Optional[str]): The attachment of the message.
+        message_attachment (str): The attachment of the message,
+            which can be a file path or a URL.
 
     Returns:
         str: Confirmation that the message was successfully sent.
     """
-    print(
-        f"\nAgent Message:\n{message_title} "
-        f"{message_description} {message_attachment}"
-    )
+    print(f"\nAgent Message:\n{message_title} " f"\n{message_description}\n")
+    if message_attachment:
+        print(message_attachment)
     logger.info(
         f"\nAgent Message:\n{message_title} "
         f"{message_description} {message_attachment}"
@@ -140,6 +146,11 @@ decision and action you take. Your message must include a short title and
 a one-sentence description. This is a mandatory part of your workflow.
 
 - You MUST use the `read_note` tool to read the notes from other agents.
+
+- When you complete your task, your final response must be a comprehensive 
+summary of your work and the outcome, presented in a clear, detailed, and 
+easy-to-read format. Avoid using markdown tables for presenting data; use 
+plain text formatting instead.
 <mandatory_instructions>
 
 <capabilities>
@@ -256,7 +267,6 @@ def search_agent_factory(
         "enter",
         "get_som_screenshot",
         "visit_page",
-        "scroll",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
@@ -306,18 +316,38 @@ The current time is {datetime.datetime.now()}.
     decision and action you take. Your message must include a short title and 
     a one-sentence description. This is a mandatory part of your workflow.
 
-- You MUST use the note-taking tools to record your findings. Ensure notes 
-    are detailed, well-organized, and include source URLs. Your notes are 
-    crucial for other team members so make sure to write down all the 
-    information you find.
+- You MUST use the note-taking tools to record your findings. This is a 
+    critical part of your role. Your notes are the primary source of 
+    information for your teammates. To avoid information loss, you must not
+    summarize your findings. Instead, record all information in detail.
+    For every piece of information you gather, you must:
+    1.  **Extract ALL relevant details**: Quote all important sentences, 
+        statistics, or data points. Your goal is to capture the information 
+        as completely as possible.
+    2.  **Cite your source**: Include the exact URL where you found the 
+        information.
+    3.  **Explain relevance**: Briefly state why this information is 
+        useful for the overall task.
+    Your notes should be a detailed and complete record of the information 
+    you have discovered. High-quality, detailed notes are essential for the 
+    team's success.
 
-- You MUST only use URLs from trusted sources (e.g., search engine results 
-    or links on from search engine like brave search, google search, bing 
-    search, etc.). NEVER invent or guess URLs.
+- You MUST only use URLs from trusted sources. A trusted source is a URL
+    that is either:
+    1. Returned by a search tool (like `search_google`, `search_bing`, 
+        or `search_exa`).
+    2. Found on a webpage you have visited.
+- You are strictly forbidden from inventing, guessing, or constructing URLs 
+    yourself. Fabricating URLs will be considered a critical error.
 
 - You MUST NOT answer from your own knowledge. All information
     MUST be sourced from the web using the available tools. If you don't know
     something, find it out using your tools.
+
+- When you complete your task, your final response must be a comprehensive 
+    summary of your findings, presented in a clear, detailed, and 
+    easy-to-read format. Avoid using markdown tables for presenting data; 
+    use plain text formatting instead.
 <mandatory_instructions>
 
 <capabilities>
@@ -365,6 +395,7 @@ Your capabilities include:
         ),
         model=model,
         tools=tools,
+        prune_tool_calls_from_memory=True,
     )
 
 
@@ -392,10 +423,7 @@ def document_agent_factory(
     system_message = f"""
 <intro>
 You are a Document Processing Assistant specialized 
-in creating, modifying, and managing various document formats. You MUST 
-use the `send_message_to_user` tool to inform the user of every decision 
-and action you take. Your message must include a short title and a 
-one-sentence description. This is a mandatory part of your workflow.
+in creating, modifying, and managing various document formats.
 
 You are working in a team with team members. Your team members are:
 - Developer Agent: A skilled coding assistant that can write and execute code, 
@@ -416,8 +444,20 @@ The current time is {datetime.datetime.now()}.
     decision and action you take. Your message must include a short title and 
     a one-sentence description. This is a mandatory part of your workflow.
 
-- Before creating any document, you MUST use the `read_note` tool to to gather 
-all information collected by other team members.
+- Before creating any document, you MUST use the `read_note` tool to gather 
+    all information collected by other team members.
+
+- You MUST use the available tools to create or modify documents (e.g.,
+    `write_to_file`, `create_presentation`). Your primary output should be
+    a file, not just content within your response.
+
+- If the document has many data, you MUST use the terminal tool to 
+    generate charts and graphs and add them to the document.
+
+- When you complete your task, your final response must be a summary of 
+    your work and the path to the final document, presented in a clear, 
+    detailed, and easy-to-read format. Avoid using markdown tables for 
+    presenting data; use plain text formatting instead.
 <mandatory_instructions>
 
 <capabilities>
@@ -433,6 +473,7 @@ Your capabilities include:
         - Audio (.mp3, .wav) for transcription
         - Text-based formats (.csv, .json, .xml, .txt)
         - ZIP archives (.zip) using the `read_files` tool.
+
 - Document Creation & Editing:
     - Create and write to various file formats including Markdown (.md), 
     Word documents (.docx), PDFs, CSV files, JSON, YAML, and HTML
@@ -464,15 +505,19 @@ Your capabilities include:
     - Handle complex data structures with proper formatting and validation
     - Support for both programmatic data entry and manual cell updates
 
-- Human Interaction:
-    - Ask questions to users and receive their responses
-    - Send informative messages to users without requiring responses
-
 - Terminal and File System:
     - You have access to a full suite of terminal tools to interact with 
     the file system within your working directory (`{WORKING_DIRECTORY}`).
     - You can execute shell commands (`shell_exec`), list files, and manage 
     your workspace as needed to support your document creation tasks.
+    - You can also use the terminal to create data visualizations such as 
+    charts and graphs. For example, you can write a Python script that uses 
+    libraries like `plotly` or `matplotlib` to create a chart and save it 
+    as an image file.
+
+- Human Interaction:
+    - Ask questions to users and receive their responses
+    - Send informative messages to users without requiring responses
 </capabilities>
 
 <document_creation_workflow>
@@ -485,6 +530,9 @@ When working with documents, you should:
 - For Excel files, always provide clear data structure and organization
 - When creating spreadsheets, consider data relationships and use 
 appropriate sheet naming conventions
+- To include data visualizations, write and execute Python scripts using
+  the terminal. Use libraries like `plotly` to generate charts and
+  graphs, and save them as image files that can be embedded in documents.
 </document_creation_workflow>
 
 Your goal is to help users efficiently create, modify, and manage their 
@@ -549,6 +597,11 @@ The current time is {datetime.datetime.now()}.
 
 - You MUST use the `read_note` tool to to gather all information collected 
     by other team members and write down your findings in the notes.
+
+- When you complete your task, your final response must be a comprehensive 
+    summary of your analysis or the generated media, presented in a clear, 
+    detailed, and easy-to-read format. Avoid using markdown tables for 
+    presenting data; use plain text formatting instead.
 <mandatory_instructions>
 
 <capabilities>
@@ -610,7 +663,10 @@ You are a Social Media Management Assistant with comprehensive capabilities
 across multiple platforms. You MUST use the `send_message_to_user` tool to 
 inform the user of every decision and action you take. Your message must 
 include a short title and a one-sentence description. This is a mandatory 
-part of your workflow.
+part of your workflow. When you complete your task, your final response must 
+be a comprehensive summary of your actions, presented in a clear, detailed, 
+and easy-to-read format. Avoid using markdown tables for presenting data; 
+use plain text formatting instead.
 
 You are now working in `{WORKING_DIRECTORY}`. All your work
 related to local operations should be done in that directory.
@@ -701,7 +757,7 @@ async def main():
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1,
+        model_type=ModelType.GPT_4_1_MINI,
         model_config_dict={
             "stream": False,
         },
@@ -761,7 +817,11 @@ async def main():
         f"`send_message_to_user` tool to inform the user of every "
         f"decision and action you take. Your message must include a short "
         f"title and a one-sentence description. This is a mandatory part "
-        f"of your workflow. You are now working in "
+        f"of your workflow. When you complete your task, your final response "
+        f"must be a comprehensive summary of your work, presented in a clear, "
+        f"detailed, and easy-to-read format. Avoid using markdown tables for "
+        f"presenting data; use plain text formatting instead. You are now "
+        f"working in "
         f"`{WORKING_DIRECTORY}` All your work related to local "
         "operations should be done in that "
         "directory. You can also communicate with other agents "
@@ -778,18 +838,20 @@ async def main():
         tools=[
             send_message_to_user,
             HumanToolkit().ask_human_via_console,
-            *NoteTakingToolkit().get_tools(),
+            *NoteTakingToolkit(
+                working_directory=WORKING_DIRECTORY
+            ).get_tools(),
         ],
     )
 
     # Create agents using factory functions
     search_agent = search_agent_factory(model_backend, task_id)
     developer_agent = developer_agent_factory(
-        model_backend,
+        model_backend_reason,
         task_id,
     )
     document_agent = document_agent_factory(
-        model_backend,
+        model_backend_reason,
         task_id,
         # google_drive_mcp_toolkit
     )

@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import fcntl
 import os
 import time
 from pathlib import Path
@@ -88,58 +87,48 @@ class NoteTakingToolkit(BaseToolkit):
             return f"Error appending note: {e}"
 
     def _load_registry(self) -> None:
-        r"""Load the note registry from file with file locking."""
+        r"""Load the note registry from file."""
         max_retries = 5
         retry_delay = 0.1
 
         for attempt in range(max_retries):
             try:
                 if self.registry_file.exists():
-                    with open(self.registry_file, 'r') as f:
-                        fcntl.flock(f.fileno(), fcntl.LOCK_SH)
-                        try:
-                            content = f.read().strip()
-                            self.registry = (
-                                content.split('\n') if content else []
-                            )
-                        finally:
-                            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-                    return
+                    content = self.registry_file.read_text(
+                        encoding='utf-8'
+                    ).strip()
+                    self.registry = content.split('\n') if content else []
                 else:
                     self.registry = []
-                    return
-            except IOError:
+                return
+            except (IOError, OSError):
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay * (attempt + 1))
                 else:
+                    # If all retries failed, initialize with empty registry
                     self.registry = []
-            except Exception:
-                self.registry = []
-                return
 
     def _save_registry(self) -> None:
-        r"""Save the note registry to file with file locking."""
+        r"""Save the note registry to file using atomic write."""
         max_retries = 5
         retry_delay = 0.1
 
         for attempt in range(max_retries):
             try:
-                with open(self.registry_file, 'w') as f:
-                    fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-                    try:
-                        f.write('\n'.join(self.registry))
-                        f.flush()
-                        os.fsync(f.fileno())
-                    finally:
-                        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                # Use atomic write with temporary file for all platforms
+                temp_file = self.registry_file.with_suffix('.tmp')
+                temp_file.write_text(
+                    '\n'.join(self.registry), encoding='utf-8'
+                )
+
+                # Atomic rename - works on all platforms
+                temp_file.replace(self.registry_file)
                 return
-            except IOError:
+            except (IOError, OSError):
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay * (attempt + 1))
                 else:
                     raise
-            except Exception:
-                pass
 
     def _register_note(self, note_name: str) -> None:
         r"""Register a new note in the registry with thread-safe operations."""
