@@ -148,6 +148,7 @@ def ubuntu_docker_runtime(task: str = "play-zork", task_description: str = None,
                 "PATH": "/app/venv/bin:${PATH}",
                 "VIRTUAL_ENV": "/app/venv",
                 "CAMEL_MODEL_LOG_ENABLED": "true",
+                "CAMEL_WORKDIR": "/app",
             },
             detach=True,
             # volumes={
