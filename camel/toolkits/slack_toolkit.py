@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.utils import MCPServer
@@ -241,6 +241,7 @@ class SlackToolkit(BaseToolkit):
         channel_id: str,
         file_path: Optional[str] = None,
         user: Optional[str] = None,
+        blocks: Optional[list[Any]] = None,
     ) -> str:
         r"""Send a message to a Slack channel.
 
@@ -251,6 +252,7 @@ class SlackToolkit(BaseToolkit):
                 Defaults to `None`.
             user (Optional[str]): The user ID of the recipient.
                 Defaults to `None`.
+            blocks (Optional[list[Any]): JSON list of Block Kit layout blocks.
 
         Returns:
             str: A confirmation message indicating whether the message was sent
@@ -269,11 +271,11 @@ class SlackToolkit(BaseToolkit):
                 return f"File sent successfully, got response: {response}"
             if user:
                 response = slack_client.chat_postEphemeral(
-                    channel=channel_id, text=message, user=user
+                    channel=channel_id, text=message, user=user, blocks=blocks
                 )
             else:
                 response = slack_client.chat_postMessage(
-                    channel=channel_id, text=message
+                    channel=channel_id, text=message, blocks=blocks
                 )
             return (
                 f"Message: {message} sent successfully, "
@@ -281,6 +283,169 @@ class SlackToolkit(BaseToolkit):
             )
         except SlackApiError as e:
             return f"Error creating conversation: {e.response['error']}"
+
+    def make_button(
+        self,
+        text: str,
+        action_id: str,
+        *,
+        value: Optional[str] = None,
+        style: Optional[str] = None,
+        url: Optional[str] = None,
+    ) -> dict:
+        r"""Creates a button element for Slack Block Kit.
+
+        Args:
+            text (str): The text to display on the button.
+            action_id (str): A unique identifier for the button action.
+            value (Optional[str]): The value to send when the button
+                is clicked. Defaults to `None`
+            style (Optional[str]): The button style ('primary' or 'danger').
+                Defaults to `None`
+            url (Optional[str]): URL to open when the button is clicked.
+                Defaults to `None`.
+
+        Returns:
+            dict: A dictionary representing a Slack Block Kit button element.
+        """
+        return {
+            "type": "button",
+            "text": {"type": "plain_text", "text": text},
+            "action_id": action_id,
+            **({"value": value} if value else {}),
+            **({"style": style} if style else {}),
+            **({"url": url} if url else {}),
+        }
+
+    def make_select_menu(
+        self,
+        action_id: str,
+        options: list[Any],
+        *,
+        placeholder: Optional[str] = None,
+    ) -> dict:
+        r"""Creates a static select menu for Slack Block Kit.
+
+        Args:
+            action_id (str): A unique identifier for the select menu action.
+            options (list[Any]): List of option dictionaries created
+                with make_option().
+            placeholder (Optional[str]): Placeholder text to display when no
+                option is selected. Defaults to `None`
+
+        Returns:
+            dict: A dictionary representing a Slack Block Kit static
+                select menu.
+        """
+        return {
+            "type": "static_select",
+            "action_id": action_id,
+            "options": options,
+            **(
+                {"placeholder": {"type": "plain_text", "text": placeholder}}
+                if placeholder
+                else {}
+            ),
+        }
+
+    def make_plain_text_input(
+        self,
+        action_id: str,
+        *,
+        multiline: bool = False,
+        placeholder: Optional[str] = None,
+    ) -> dict:
+        r"""Creates a plain text input field for Slack Block Kit.
+
+        Args:
+            action_id (str): A unique identifier for the input field action.
+            multiline (bool): Whether the input field should support
+                multiple lines. Defaults to `False`
+            placeholder (Optional[str]): Placeholder text to display in the
+                input field. Defaults to `None`
+
+        Returns:
+            dict: A dictionary representing a Slack Block Kit plain
+                text input element.
+        """
+        return {
+            "type": "plain_text_input",
+            "action_id": action_id,
+            "multiline": multiline,
+            **(
+                {"placeholder": {"type": "plain_text", "text": placeholder}}
+                if placeholder
+                else {}
+            ),
+        }
+
+    def make_date_picker(
+        self,
+        action_id: str,
+        *,
+        placeholder: Optional[str] = None,
+        initial_date: Optional[str] = None,
+    ) -> dict:
+        r"""Creates a date picker for Slack Block Kit.
+
+        Args:
+            action_id (str): A unique identifier for the date picker action.
+            placeholder (Optional[str]): Placeholder text to display when
+                no date is selected. Defaults to `None`
+            initial_date (Optional[str]): The initial date to display
+                (YYYY-MM-DD format). Defaults to `None`
+
+        Returns:
+            dict: A dictionary representing a Slack Block Kit date
+                picker element.
+        """
+        return {
+            "type": "datepicker",
+            "action_id": action_id,
+            **(
+                {"placeholder": {"type": "plain_text", "text": placeholder}}
+                if placeholder
+                else {}
+            ),
+            **({"initial_date": initial_date} if initial_date else {}),
+        }
+
+    def make_image(
+        self, image_url: str, alt_text: str, *, title: Optional[str] = None
+    ) -> dict:
+        r"""Creates an image block for Slack Block Kit.
+
+        Args:
+            image_url (str): The URL of the image to display.
+            alt_text (str): Alternative text for accessibility.
+            title (Optional[str]): The title to display with the image.
+                Defaults to `None`.
+
+        Returns:
+            dict: A dictionary representing a Slack Block Kit image element.
+        """
+        return {
+            "type": "image",
+            "image_url": image_url,
+            "alt_text": alt_text,
+            **(
+                {"title": {"type": "plain_text", "text": title}}
+                if title
+                else {}
+            ),
+        }
+
+    def make_option(self, text: str, value: str) -> dict:
+        r"""Creates an option for select menus in Slack Block Kit.
+
+        Args:
+            text (str): The text to display for the option.
+            value (str): The value to send when this option is selected.
+
+        Returns:
+            dict: A dictionary representing a Slack Block Kit option element.
+        """
+        return {"text": {"type": "plain_text", "text": text}, "value": value}
 
     def delete_slack_message(
         self,
@@ -327,4 +492,10 @@ class SlackToolkit(BaseToolkit):
             FunctionTool(self.get_slack_channel_message),
             FunctionTool(self.send_slack_message),
             FunctionTool(self.delete_slack_message),
+            FunctionTool(self.make_button),
+            FunctionTool(self.make_select_menu),
+            FunctionTool(self.make_plain_text_input),
+            FunctionTool(self.make_date_picker),
+            FunctionTool(self.make_image),
+            FunctionTool(self.make_option),
         ]
