@@ -88,6 +88,44 @@ class ChatHistoryMemory(AgentMemory):
     def clear(self) -> None:
         self._chat_history_block.clear()
 
+    def clean_tool_calls(self) -> None:
+        r"""Removes tool call messages from memory.
+        This method removes all FUNCTION/TOOL role messages and any ASSISTANT
+        messages that contain tool_calls in their meta_dict to save token
+        usage.
+        """
+        from camel.types import OpenAIBackendRole
+
+        # Get all messages from storage
+        record_dicts = self._chat_history_block.storage.load()
+        if not record_dicts:
+            return
+
+        # Filter out tool-related messages
+        cleaned_records = []
+        for record in record_dicts:
+            role = record.get('role_at_backend')
+
+            # Skip FUNCTION messages
+            if role == OpenAIBackendRole.FUNCTION.value:
+                continue
+
+            # Skip TOOL messages
+            if role == OpenAIBackendRole.TOOL.value:
+                continue
+
+            # Skip ASSISTANT messages with tool_calls
+            if role == OpenAIBackendRole.ASSISTANT.value:
+                meta_dict = record.get('meta_dict', {})
+                if meta_dict and 'tool_calls' in meta_dict:
+                    continue
+
+            # Keep all other messages
+            cleaned_records.append(record)
+
+        # Save the cleaned records back to storage
+        self._chat_history_block.storage.save(cleaned_records)
+
 
 class VectorDBMemory(AgentMemory):
     r"""An agent memory wrapper of :obj:`VectorDBBlock`. This memory queries
