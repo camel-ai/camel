@@ -15,20 +15,13 @@ import asyncio
 import datetime
 import traceback
 import uuid
-from typing import Any, List
+from typing import TYPE_CHECKING, Any, List
 
-from a2a.client import A2ACardResolver, A2AClient
-from a2a.types import (
-    InvalidAgentResponseError,
-    JSONRPCErrorResponse,
-    Message,
-    MessageSendParams,
-    Part,
-    Role,
-    SendMessageRequest,
-    SendMessageSuccessResponse,
-    TextPart,
-)
+if TYPE_CHECKING:
+    from a2a.types import (
+        InvalidAgentResponseError,
+        SendMessageSuccessResponse,
+    )
 from colorama import Fore
 from httpx import AsyncClient
 
@@ -63,6 +56,8 @@ class A2AAgent(Worker):
         agent_card: Any,
         use_structured_output_handler: bool = True,
     ) -> None:
+        from a2a.client import A2ACardResolver, A2AClient
+
         self.base_url = base_url.rstrip("/")
         self.http_client = AsyncClient(**http_kwargs)
         self.resolver = A2ACardResolver(
@@ -85,6 +80,8 @@ class A2AAgent(Worker):
         r"""Creates a new instance of the A2AAgent by fetching the agent
         card from the remote service.
         """
+        from a2a.client import A2ACardResolver
+
         http_kwargs = http_kwargs or {}
         http_client = AsyncClient(**http_kwargs)
         resolver = A2ACardResolver(base_url=base_url, httpx_client=http_client)
@@ -98,7 +95,7 @@ class A2AAgent(Worker):
         self.context_id = None
 
     async def aclose(self):
-        """Close the underlying HTTP client and cleanup resources."""
+        r"""Close the underlying HTTP client and cleanup resources."""
         await self.http_client.aclose()
 
     async def __aenter__(self):
@@ -108,7 +105,7 @@ class A2AAgent(Worker):
         await self.aclose()
 
     async def cleanup(self):
-        """Explicit cleanup method for better resource management."""
+        r"""Explicit cleanup method for better resource management."""
         try:
             if hasattr(self, 'http_client') and not self.http_client.is_closed:
                 await self.http_client.aclose()
@@ -116,14 +113,16 @@ class A2AAgent(Worker):
             print(f"Error during A2A agent cleanup: {e}")
 
     def __del__(self):
-        """Destructor to ensure cleanup on garbage collection."""
+        r"""Destructor to ensure cleanup on garbage collection."""
         try:
             if hasattr(self, 'http_client') and not self.http_client.is_closed:
                 # Schedule cleanup if event loop is still running
                 try:
                     loop = asyncio.get_event_loop()
                     if not loop.is_closed():
-                        loop.create_task(self.http_client.aclose())
+                        task = loop.create_task(self.http_client.aclose())
+                        # Store reference to prevent RUF006 warning
+                        _ = task
                 except RuntimeError:
                     # Event loop is closed, skip cleanup
                     pass
@@ -132,7 +131,9 @@ class A2AAgent(Worker):
             pass
 
     def _extract_text_from_parts(self, parts) -> str:
-        """Extract text content from parts list."""
+        r"""Extract text content from parts list."""
+        from a2a.types import TextPart
+
         for part in parts:
             if hasattr(part, 'root') and isinstance(part.root, TextPart):
                 return part.root.text
@@ -140,10 +141,22 @@ class A2AAgent(Worker):
 
     async def _send_a2a_message(
         self, message: str
-    ) -> SendMessageSuccessResponse | InvalidAgentResponseError:
-        """Sends a message to the A2A agent and returns the structured
+    ) -> "SendMessageSuccessResponse | InvalidAgentResponseError":
+        r"""Sends a message to the A2A agent and returns the structured
         response.
         """
+        from a2a.types import (
+            InvalidAgentResponseError,
+            JSONRPCErrorResponse,
+            Message,
+            MessageSendParams,
+            Part,
+            Role,
+            SendMessageRequest,
+            SendMessageSuccessResponse,
+            TextPart,
+        )
+
         msg_obj = Message(
             role=Role.user,
             parts=[Part(root=TextPart(kind="text", text=message))],
@@ -182,6 +195,11 @@ class A2AAgent(Worker):
         Returns:
             TaskState: The final state of the task after processing.
         """
+        from a2a.types import (
+            InvalidAgentResponseError,
+            SendMessageSuccessResponse,
+        )
+
         try:
             dependency_tasks_info = self._get_dep_tasks_info(dependencies)
             prompt = PROCESS_TASK_PROMPT.format(
@@ -233,7 +251,7 @@ class A2AAgent(Worker):
                     )
 
                 if not task_result_content:
-                    task_result_content = "Task completed, but no text content found in response."
+                    task_result_content = "Task completed, but no text content found in response"
 
                 task.result = task_result_content
                 print(f"======\n{Fore.GREEN}Response from {self}:{Fore.RESET}")
@@ -256,7 +274,8 @@ class A2AAgent(Worker):
         except Exception as e:
             error_msg = f"Exception during A2A call: {type(e).__name__}: {e!s}"
             print(
-                f"{Fore.RED}Error processing task {task.id}: {error_msg}{Fore.RESET}"
+                f"{Fore.RED}Error processing task {task.id}: "
+                f"{error_msg}{Fore.RESET}"
             )
             print(traceback.format_exc())
             task.result = error_msg
@@ -273,7 +292,10 @@ class A2AAgent(Worker):
                 {
                     "agent_id": self.node_id,
                     "timestamp": str(datetime.datetime.now()),
-                    "description": f"A2A worker {self.node_id} processed task: {task.content}",
+                    "description": (
+                        f"A2A worker {self.node_id} processed task: "
+                        f"{task.content}"
+                    ),
                     "response_content": str(response)
                     if 'response' in locals()
                     else "",
@@ -285,7 +307,8 @@ class A2AAgent(Worker):
 
         if is_task_result_insufficient(task):
             print(
-                f"{Fore.RED}Task {task.id}: Content validation failed{Fore.RESET}"
+                f"{Fore.RED}Task {task.id}: Content validation failed"
+                f"{Fore.RESET}"
             )
             return TaskState.FAILED
 
