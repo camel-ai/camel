@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from camel.toolkits import BaseToolkit, FunctionTool, MCPToolkit
 
@@ -24,7 +24,7 @@ class OrigeneToolkit(BaseToolkit):
     This toolkit can be used as an async context manager for automatic
     connection management:
 
-        async with OrigeneToolkit(config_dict=config) as toolkit:
+        async with OrigeneToolkit(tool_packages=["chembl", "kegg"]) as toolkit:
             tools = toolkit.get_tools()
             # Toolkit is automatically disconnected when exiting
 
@@ -36,13 +36,30 @@ class OrigeneToolkit(BaseToolkit):
 
     def __init__(
         self,
-        config_dict: Optional[Dict] = None,
+        tool_packages: List[str] = [
+            "chembl",
+            "kegg",
+            "string",
+            "search",
+            "pubchem",
+            "ncbi",
+            "uniprot",
+            "tcga",
+            "ensembl",
+            "ucsc",
+            "fda_drug",
+            "pdb",
+            "monarch",
+            "clinicaltrials",
+            "dbsearch",
+            "opentargets",
+        ],
         timeout: Optional[float] = None,
     ) -> None:
         r"""Initializes the OrigeneToolkit.
 
         Args:
-            config_dict (Optional[Dict]): Configuration dictionary for MCP
+            tool_packages (Optional[Dict]): Configuration dictionary for MCP
                 servers. If None, uses default configuration for chembl_mcp.
                 (default: :obj:`None`)
             timeout (Optional[float]): Connection timeout in seconds.
@@ -50,12 +67,16 @@ class OrigeneToolkit(BaseToolkit):
         """
         super().__init__(timeout=timeout)
 
-        # Use default configuration if none provided
-        if config_dict is None:
-            raise ValueError("config_dict must be provided")
-
         self._mcp_toolkit = MCPToolkit(
-            config_dict=config_dict,
+            config_dict={
+                "mcpServers": {
+                package: {
+                    "transport": "streamable_http",
+                        "url": f"http://127.0.0.1:8788/{package}/mcp/",
+                    }
+                    for package in tool_packages
+                }
+            },
             timeout=timeout,
         )
 

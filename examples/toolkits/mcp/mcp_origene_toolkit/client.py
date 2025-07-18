@@ -26,18 +26,11 @@ async def main():
     OrigeneToolkit instead of using hardcoded configuration.
     """
     # Define custom configuration for MCP servers
-    config_dict = {
-        "mcpServers": {
-            "chembl_mcp": {
-                "url": "http://127.0.0.1:8788/chembl_mcp/mcp/",
-                "mode": "streamable-http",
-            }
-        }
-    }
+    # reference:https://github.com/GENTEL-lab/OrigeneMCP
 
     # Use async context manager for automatic connection management
     # Pass config_dict as parameter instead of hardcoding it
-    async with OrigeneToolkit(config_dict=config_dict) as origene_toolkit:
+    async with OrigeneToolkit() as origene_toolkit:
         user_msg = "what can you do?"
         agent = ChatAgent(
             "You are named origene assistant.",
