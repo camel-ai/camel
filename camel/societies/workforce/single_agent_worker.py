@@ -22,7 +22,7 @@ from typing import Any, List, Optional
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
+from camel.agents.streaming import AsyncStreamingChatAgentResponse
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
