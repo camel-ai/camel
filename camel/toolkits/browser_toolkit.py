@@ -20,6 +20,7 @@ import io
 import os
 import re
 import shutil
+import threading
 import time
 import urllib.parse
 from copy import deepcopy
@@ -189,6 +190,11 @@ class BaseBrowser:
         self.web_agent_model: Optional[BaseModelBackend] = (
             None  # Added for type hinting
         )
+        self.tabs: Dict[int, Page] = {}
+        self.current_tab_id: Optional[int] = 0
+
+        # Add threading lock for thread-safe tab ID generation
+        self._tab_id_lock = threading.Lock()
 
     def init(self) -> None:
         r"""Initialize the browser."""
@@ -221,6 +227,8 @@ class BaseBrowser:
                 self.page = self.context.pages[0]
             else:
                 self.page = self.context.new_page()
+                self.tabs[0] = self.page
+                self.current_tab_id = 0
         else:
             # Launch a fresh browser instance
             self.browser = self.playwright.chromium.launch(
@@ -240,6 +248,9 @@ class BaseBrowser:
             self.context = self.browser.new_context(**new_context_kwargs)
             self.page = self.context.new_page()
 
+            self.tabs[0] = self.page
+            self.current_tab_id = 0
+
         assert self.context is not None
         assert self.page is not None
 
@@ -247,6 +258,72 @@ class BaseBrowser:
         r"""Delete the cache directory and its contents."""
         if os.path.exists(self.cache_dir):
             shutil.rmtree(self.cache_dir)
+
+    def open_tab(self, url: str) -> int:
+        r"""Open a new tab and navigate to URL; return tab_id.
+
+        Args:
+            url (str): The target URL to navigate to in the new tab.
+
+        Returns:
+            int: The ID of the newly opened tab.
+        """
+        assert self.context, "Context not initialized"
+        page = self.context.new_page()
+        try:
+            page.goto(url)
+            page.wait_for_load_state("load", timeout=20000)
+        except Exception as e:
+            page.close()
+            raise ValueError(f"Failed to navigate to {url}: {e}")
+
+        # Atomic tab ID assignment using threading lock
+        with self._tab_id_lock:
+            new_id = max(self.tabs.keys()) + 1 if self.tabs else 0
+            self.tabs[new_id] = page
+
+        return new_id
+
+    def switch_tab(self, tab_id: int) -> None:
+        r"""Switch active page to the designated tab.
+
+        Args:
+            tab_id (int): The ID of the tab to activate.
+
+        Raises:
+            ValueError: If the tab ID does not exist or refers to a closed tab.
+        """
+        if tab_id not in self.tabs:
+            raise ValueError(f"Tab {tab_id} does not exist")
+
+        page = self.tabs[tab_id]
+        if page.is_closed():
+            del self.tabs[tab_id]
+            raise ValueError(f"Tab {tab_id} has been closed")
+
+        self.page = page
+        self.current_tab_id = tab_id
+
+    def close_tab(self, tab_id: int) -> None:
+        r"""Close the specified tab and adjust active tab.
+
+        Args:
+            tab_id (int): The ID of the tab to close.
+
+        Raises:
+            ValueError: If the specified tab does not exist.
+        """
+        if tab_id not in self.tabs:
+            raise ValueError("This tab does not exist")
+        self.tabs[tab_id].close()
+        del self.tabs[tab_id]
+        if self.current_tab_id is not None and tab_id == self.current_tab_id:
+            remaining = sorted(self.tabs.keys())
+            if remaining:
+                self.switch_tab(remaining[0])
+            else:
+                self.page = None
+                self.current_tab_id = None
 
     def _wait_for_load(self, timeout: int = 20) -> None:
         r"""Wait for a certain amount of time for the page to load."""
@@ -320,7 +397,7 @@ class BaseBrowser:
             image and the path to the image file if saved, otherwise
             :obj:`None`.
         """
-        assert self.page is not None
+        assert self.page is not None, "No active page available"
         image_data = self.page.screenshot(timeout=60000)
         image = Image.open(io.BytesIO(image_data))
 
@@ -356,15 +433,16 @@ class BaseBrowser:
         Returns:
             List[str]: A list of paths to the screenshot files.
         """
+        assert self.page is not None, "No active page available"
+        if self.page.viewport_size is None:
+            raise RuntimeError("Page viewport size not available")
         screenshots: List[str] = []  # Ensure screenshots is typed
-        assert self.page is not None
         scroll_height_eval = self.page.evaluate("document.body.scrollHeight")
         scroll_height = cast(
             float, scroll_height_eval
         )  # Ensure scroll_height is
         # float
 
-        assert self.page.viewport_size is not None
         viewport_height = self.page.viewport_size["height"]
         current_scroll_eval = self.page.evaluate("window.scrollY")
         current_scroll = cast(float, current_scroll_eval)
@@ -460,6 +538,7 @@ class BaseBrowser:
                 and an optional path to the image file if saved, otherwise
                 :obj:`None`.
         """
+        assert self.page is not None, "No active page available"
 
         self._wait_for_load()
         screenshot, _ = self.get_screenshot(save_image=False)
@@ -498,7 +577,7 @@ class BaseBrowser:
 
     def get_url(self) -> str:
         r"""Get the URL of the current page."""
-        assert self.page is not None
+        assert self.page is not None, "No active page available"
         return self.page.url
 
     def click_id(self, identifier: Union[str, int]) -> None:
@@ -535,7 +614,9 @@ class BaseBrowser:
                 # If a new page is opened, switch to it
                 if new_page:
                     self.page_history.append(deepcopy(self.page.url))
-                    self.page = new_page
+
+                    if new_page is not None:
+                        self.page = new_page
 
         except Exception as e:  # Consider using playwright specific
             # TimeoutError
@@ -546,7 +627,7 @@ class BaseBrowser:
 
     def extract_url_content(self) -> str:
         r"""Extract the content of the current page."""
-        assert self.page is not None
+        assert self.page is not None, "No active page available"
         content = self.page.content()
         return content
 
@@ -756,7 +837,8 @@ class BaseBrowser:
     def get_webpage_content(self) -> str:
         from html2text import html2text
 
-        assert self.page is not None
+        assert self.page is not None, "No active page available"
+
         self._wait_for_load()
         html_content = self.page.content()
 
@@ -875,10 +957,26 @@ class BrowserToolkit(BaseToolkit):
         )
 
     def _reset(self):
+        r"""Reset the internal state of the browser toolkit."""
+
+        # Reset agents
         self.web_agent.reset()
         self.planning_agent.reset()
         self.history = []
+
         os.makedirs(self.browser.cache_dir, exist_ok=True)
+
+        if hasattr(self.browser, 'tabs'):
+            for tab_id, page in list(self.browser.tabs.items()):
+                if page is not None and not page.is_closed():
+                    logger.debug(f"Closing tab {tab_id}")
+                    page.close()
+            self.browser.tabs.clear()
+            self.browser.current_tab_id = None
+
+        self.browser.page = None
+        self.browser.page_url = None
+        self.browser.page_history = []
 
     def _initialize_agent(
         self,
@@ -937,12 +1035,15 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 <detailed_plan>{detailed_plan}<detailed_plan>
         """
 
+        current_tab_info = f"Current tab ID: {self.browser.current_tab_id}, URL: {self.browser.get_url()}"
+
         observe_prompt = OBSERVE_PROMPT_TEMPLATE.format(
             task_prompt=task_prompt,
             detailed_plan_prompt=detailed_plan_prompt_str,
             AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
             history_window=self.history_window,
             history=self.history[-self.history_window :],
+            current_tab_info=current_tab_info,
         )
 
         # get current state
@@ -1090,9 +1191,17 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         without any further action, and answer can be directly found in the
         current viewport.
         """
+        tab_info = []
+        for tab_id, page in self.browser.tabs.items():
+            tab_info.append(f"Tab {tab_id}: {page.url}")
+
+        tab_summary = "\n".join(tab_info) if tab_info else "No tabs open"
 
         prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
-            history=self.history, task_prompt=task_prompt
+            history=self.history,
+            task_prompt=task_prompt,
+            tab_summary=tab_summary,
+            current_tab_id=self.browser.current_tab_id,
         )
 
         message = BaseMessage.make_user_message(
@@ -1178,6 +1287,14 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         self.browser.init()
         self.browser.visit_page(start_url)
 
+        if self.browser.page is None:
+            raise RuntimeError(
+                "Browser page initialization failed - page is None"
+            )
+
+        self.browser.tabs[0] = self.browser.page
+        self.browser.current_tab_id = 0
+
         for i in range(round_limit):
             observation, reasoning, action_code = self._observe(
                 task_prompt, detailed_plan
@@ -1196,6 +1313,8 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                     "action_if_success": True,
                     "info": None,
                     "current_url": self.browser.get_url(),
+                    "current_tab_id": self.browser.current_tab_id,
+                    "open_tabs": list(self.browser.tabs.keys()),
                 }
                 self.history.append(trajectory_info)
                 break
@@ -1213,6 +1332,8 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                     "action_if_success": success,
                     "info": info,
                     "current_url": self.browser.get_url(),
+                    "current_tab_id": self.browser.current_tab_id,
+                    "open_tabs": list(self.browser.tabs.keys()),
                 }
                 self.history.append(trajectory_info)
 
@@ -1240,5 +1361,44 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         # reached
         return simulation_result
 
+    def open_tab(self, url: str) -> int:
+        r"""Open a new tab and navigate to URL; return tab_id.
+
+        Args:
+            url (str): The target URL to navigate to in the new tab.
+
+        Returns:
+            int: The ID of the newly opened tab.
+        """
+        return self.browser.open_tab(url)
+
+    def switch_tab(self, tab_id: int) -> None:
+        r"""Switch active page to the designated tab.
+
+        Args:
+            tab_id (int): The ID of the tab to activate.
+
+        Raises:
+            ValueError: If the tab ID does not exist or refers to a closed tab.
+        """
+        self.browser.switch_tab(tab_id)
+
+    def close_tab(self, tab_id: int) -> None:
+        r"""Close the specified tab and adjust active tab.
+
+        Args:
+            tab_id (int): The ID of the tab to close.
+
+        Raises:
+            ValueError: If the specified tab does not exist.
+        """
+        self.browser.close_tab(tab_id)
+
     def get_tools(self) -> List[FunctionTool]:
-        return [FunctionTool(self.browse_url)]
+        tools = [
+            FunctionTool(self.browse_url),
+            FunctionTool(self.open_tab),
+            FunctionTool(self.switch_tab),
+            FunctionTool(self.close_tab),
+        ]
+        return tools
