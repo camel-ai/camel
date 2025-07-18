@@ -443,6 +443,7 @@
               "reference/camel.storages.vectordb_storages.oceanbase",
               "reference/camel.storages.vectordb_storages.pgvector",
               "reference/camel.storages.vectordb_storages.qdrant",
+              "reference/camel.storages.vectordb_storages.surreal",
               "reference/camel.storages.vectordb_storages.tidb",
               "reference/camel.storages.vectordb_storages.weaviate"
             ]
@@ -506,6 +507,7 @@
               "reference/camel.toolkits.openai_agent_toolkit",
               "reference/camel.toolkits.openai_image_toolkit",
               "reference/camel.toolkits.openbb_toolkit",
+              "reference/camel.toolkits.origene_mcp_toolkit",
               "reference/camel.toolkits.playwright_mcp_toolkit",
               "reference/camel.toolkits.pptx_toolkit",
               "reference/camel.toolkits.pubmed_toolkit",

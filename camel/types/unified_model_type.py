@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
+from enum import Enum
 from threading import Lock
 from typing import TYPE_CHECKING, ClassVar, Dict, Union, cast
 
@@ -32,16 +33,27 @@ class UnifiedModelType(str):
     _lock: ClassVar[Lock] = Lock()
 
     def __new__(cls, value: Union["ModelType", str]) -> "UnifiedModelType":
+        if isinstance(value, Enum):
+            str_value = value.value
+        else:
+            str_value = str(value)
+
         with cls._lock:
-            if value not in cls._cache:
-                instance = super().__new__(cls, value)
-                cls._cache[value] = cast(UnifiedModelType, instance)
+            if str_value not in cls._cache:
+                instance = super().__new__(cls, str_value)
+                cls._cache[str_value] = cast(UnifiedModelType, instance)
             else:
-                instance = cls._cache[value]
+                instance = cls._cache[str_value]
         return instance
 
     def __init__(self, value: Union["ModelType", str]) -> None:
         pass
+
+    def __repr__(self) -> str:
+        return super().__str__()
+
+    def __str__(self) -> str:
+        return super().__str__()
 
     @property
     def value_for_tiktoken(self) -> str:

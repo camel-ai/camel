@@ -51,7 +51,7 @@ from camel.utils.commons import api_keys_required
 
 logger = get_logger(__name__)
 
-WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or "eigent/working_dir/"
+WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or "working_dir/"
 
 
 def send_message_to_user(message: str) -> None:
@@ -91,7 +91,7 @@ def developer_agent_factory(
         *TerminalToolkit(clone_current_env=True).get_tools(),
     ]
 
-    system_message = """You are a skilled coding assistant. You can write and 
+    system_message = f"""You are a skilled coding assistant. You can write and 
     execute code by using the available terminal tools. You MUST use the 
     `send_message_to_user` tool to inform the user of every decision and 
     action you take. Your message must include a short title and a 
@@ -104,14 +104,16 @@ def developer_agent_factory(
     - Writing code to solve tasks. To execute the code, you MUST first save 
     it to a file in the workspace (e.g., `script.py`), and then run it using 
     the terminal tool (e.g., `python script.py`).
-    - Running terminal commands to install packages (e.g., with `pip`), 
-    process files, or test functionality. All files you create should be in 
-    the designated workspace.
+    - Running terminal commands to install packages (e.g., with `pip` or 
+    `uv`), process files, or test functionality. All files you create should 
+    be in the designated workspace.
+    - You can use `uv` or `pip` to install packages, for example, `uv pip 
+    install requests` or `pip install requests`.
     - Verifying your solutions through immediate execution and testing in the 
     terminal.
     - Utilizing any Python libraries (e.g., requests, BeautifulSoup, pandas, 
     etc.) needed for efficient solutions. You can install missing packages 
-    using `pip` in the terminal.
+    using `pip` or `uv` in the terminal.
     - Implementing complete, production-ready code rather than theoretical 
     examples.
     - Demonstrating results with proper error handling and practical 
@@ -121,6 +123,44 @@ def developer_agent_factory(
     - Communicating with other agents using messaging tools. You can use 
     `list_available_agents` to see available team members and `send_message` 
     to coordinate with them for complex tasks requiring collaboration.
+
+    ### Terminal Tool Workflow:
+    The terminal tools are session-based. You must manage one or more terminal 
+    sessions to perform your tasks. A session is identified by a unique `id`.
+
+    1.  **Execute Commands**: Use `shell_exec(id="...", command="...")` to run 
+        a command. If the `id` is new, a new session is created.
+        Example: `shell_exec(id="session_1", command="ls -l")`
+
+    2.  **Manage Long-Running Tasks**: For commands that take time, run them 
+        in one step, and then use `shell_wait(id="...")` to wait for 
+        completion. This prevents blocking and allows you to perform other 
+        tasks in parallel.
+
+    3.  **View Output**: Use `shell_view(id="...")` to see the full command 
+        history and output of a session.
+
+    4.  **Run Tasks in Parallel**: Use different session IDs to run multiple 
+        commands concurrently.
+        - `shell_exec(id="install", command="pip install numpy")`
+        - `shell_exec(id="test", command="python my_script.py")`
+
+    5.  **Interact with Processes**: For commands that require input, you can 
+    use:
+        - `shell_exec(id="...", command="...", interactive=True)` for 
+            real-time interactive sessions.
+        - `shell_write_to_process(id="...", content="...")` to send input to a 
+          non-interactive running process.
+
+    6.  **Stop a Process**: If a process needs to be terminated, use 
+        `shell_kill_process(id="...")`.
+
+    ### Collaboration and Assistance:
+    - If you get stuck, encounter an issue you cannot solve (like a CAPTCHA), 
+      or need clarification, use the `ask_human_via_console` tool.
+    - For complex tasks, you can collaborate with other agents. Use 
+      `list_available_agents` to see your team members and `send_message` to 
+      communicate with them.
     Remember to manage your terminal sessions. You can create new sessions 
     and run commands in them.
     """
@@ -163,6 +203,7 @@ def search_agent_factory(
         "enter",
         "get_som_screenshot",
         "visit_page",
+        "scroll",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
@@ -170,23 +211,29 @@ def search_agent_factory(
         browser_log_to_file=True,
         stealth=True,
         session_id=agent_id,
+        cache_dir=WORKING_DIRECTORY,
         default_start_url="https://search.brave.com/",
     )
 
     tools = [
         *web_toolkit_custom.get_tools(),
-        *TerminalToolkit().get_tools(),
+        TerminalToolkit().shell_exec,
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
         NoteTakingToolkit().append_note,
         *Crawl4AIToolkit().get_tools(),
         SearchToolkit().search_exa,
         SearchToolkit().search_google,
+        SearchToolkit().search_bing,
     ]
 
-    system_message = """You are a helpful assistant that can search the web, 
+    system_message = f"""You are a helpful assistant that can search the web, 
     extract webpage content, simulate browser actions, and provide relevant 
     information to solve the given task.
+
+    **CRITICAL**: You MUST NOT answer from your own knowledge. All information
+    MUST be sourced from the web using the available tools. If you don't know
+    something, find it out using your tools.
 
     You are now working in `{WORKING_DIRECTORY}`. All your work
     related to local operations should be done in that directory.
@@ -204,22 +251,29 @@ def search_agent_factory(
     ### Web Search Workflow
     1.  **Initial Search**: Start with a search engine like `search_google` or
         `search_bing` to get a list of relevant URLs for your research if
-        available.
-    2.  **Browser-Based Exploration**: Use the rich browser toolset to
+        available, the URLs here will be used for `visit_page`.
+    2.  **Browser-Based Exploration**: Use the rich browser related toolset to
         investigate websites.
-        - **Navigation**: Use `visit_page` to open a URL. Navigate with 
-        `click`,`back`, and `forward`. Manage multiple pages with `switch_tab`.
+        - **Navigation and Exploration**: Use `visit_page` to open a URL.
+          `visit_page` provides a snapshot of currently visible interactive
+          elements, not the full page text. To see more content on long
+          pages, you MUST use the `scroll(direction='down')` tool. Repeat
+          scrolling to ensure you have covered the entire page. Navigate
+          with `click`, `back`, and `forward`. Manage multiple pages with
+          `switch_tab`.
         - **Analysis**: Use `get_som_screenshot` to understand the page layout
           and identify interactive elements. Since this is a heavy operation,
           only use it when visual analysis is necessary.
-        - **Interaction**: Use `type` to fill out forms and `enter` to submit.
+        - **Interaction**: Use `type` to fill out forms and `enter` to submit
+          or confirm search.
     3.  **Detailed Content Extraction**: Prioritize using the scraping tools
         from `Crawl4AIToolkit` for in-depth information gathering from a
         webpage.
     4.  **Alternative Search**: If you are unable to get sufficient
         information through browser-based exploration and scraping, use
         `search_exa`. This tool is best used for getting quick summaries or
-        finding specific answers when direct browsing is not effective.
+        finding specific answers when visiting web page is could not find the 
+        information.
 
     ### Guidelines and Best Practices
     - **URL Integrity**: You MUST only use URLs from trusted sources (e.g.,
@@ -228,6 +282,9 @@ def search_agent_factory(
     - **Thoroughness**: If a search query is complex, break it down. If a
       snippet is unhelpful but the URL seems authoritative, visit the page.
       Check subpages for more information.
+    - **Local File Operations**: You can use `shell_exec` to perform 
+      terminal commands within your working directory, such as listing files 
+      (`ls`) or checking file content (`cat`).
     - **Persistence**: If one method fails, try another. Combine search,
       scraper, and browser tools for comprehensive information gathering.
     - **Collaboration**: Communicate with other agents using `send_message`
@@ -272,10 +329,10 @@ def document_agent_factory(
         *TerminalToolkit().get_tools(),
     ]
 
-    system_message = """You are a Document Processing Assistant specialized in 
-    creating, modifying, and managing various document formats. You MUST use 
-    the `send_message_to_user` tool to inform the user of every decision and 
-    action you take. Your message must include a short title and a 
+    system_message = f"""You are a Document Processing Assistant specialized 
+    in creating, modifying, and managing various document formats. You MUST 
+    use the `send_message_to_user` tool to inform the user of every decision 
+    and action you take. Your message must include a short title and a 
     one-sentence description. This is a mandatory part of your workflow.
 
     You are now working in `{WORKING_DIRECTORY}`. All your work
@@ -328,6 +385,12 @@ def document_agent_factory(
        - Ask questions to users and receive their responses
        - Send informative messages to users without requiring responses
 
+    6. Terminal and File System:
+       - You have access to a full suite of terminal tools to interact with 
+       the file system within your working directory (`{WORKING_DIRECTORY}`).
+       - You can execute shell commands (`shell_exec`), list files, and manage 
+       your workspace as needed to support your document creation tasks.
+
     When working with documents, you should:
     - Suggest appropriate file formats based on content requirements
     - Maintain proper formatting and structure in all created documents
@@ -371,11 +434,11 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         *TerminalToolkit().get_tools(),
     ]
 
-    system_message = """You are a Multi-Modal Processing Assistant specialized 
-    in analyzing and generating various types of media content. You MUST use 
-    the `send_message_to_user` tool to inform the user of every decision and 
-    action you take. Your message must include a short title and a 
-    one-sentence description. This is a mandatory part of your workflow.
+    system_message = f"""You are a Multi-Modal Processing Assistant 
+    specialized in analyzing and generating various types of media content. 
+    You MUST use the `send_message_to_user` tool to inform the user of every 
+    decision and action you take. Your message must include a short title and 
+    a one-sentence description. This is a mandatory part of your workflow.
 
     You are now working in `{WORKING_DIRECTORY}`. All your work
     related to local operations should be done in that directory.
@@ -411,6 +474,11 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
        when you need to share analysis results or request additional 
        processing capabilities.
 
+    6. File Management:
+       - You can use terminal tools to manage files within your working
+       directory (`{WORKING_DIRECTORY}`). This is useful for listing
+       downloaded media or organizing generated images.
+
     When working with multi-modal content, you should:
     - Provide detailed and accurate descriptions of media content
     - Extract relevant information based on user queries
@@ -436,7 +504,7 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
     return ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Social Medium Agent",
-            content="""
+            content=f"""
 You are a Social Media Management Assistant with comprehensive capabilities 
 across multiple platforms. You MUST use the `send_message_to_user` tool to 
 inform the user of every decision and action you take. Your message must 
@@ -488,6 +556,11 @@ Your integrated toolkits enable you to:
    `send_message` to coordinate with them, especially when you need content 
    from document agents or research from search agents.
 
+9. File System Access:
+   - You can use terminal tools to interact with the local file system in
+   your working directory (`{WORKING_DIRECTORY}`), for example, to access
+   files needed for posting.
+
 When assisting users, always:
 - Identify which platform's functionality is needed for the task.
 - Check if required API credentials are available before attempting 
@@ -525,7 +598,7 @@ async def main():
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1_MINI,
+        model_type=ModelType.GPT_4_1,
         model_config_dict={
             "stream": False,
         },
@@ -533,7 +606,7 @@ async def main():
 
     model_backend_reason = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1_MINI,
+        model_type=ModelType.GPT_4_1,
         model_config_dict={
             "stream": False,
         },
@@ -666,13 +739,9 @@ async def main():
     human_task = Task(
         content=(
             """
-Analyze the UK healthcare industry to support the planning of my next company. 
-Provide a comprehensive market overview, including current trends, growth 
-projections, and relevant regulations. Identify the top 5-10 major competitors 
-in the space, including their names, website URLs, estimated market size or 
-share, core services or products, key strengths, and notable weaknesses. Also 
-highlight any significant opportunities, gaps, or underserved segments within 
-the market. Present all findings in a well-structured, professional PDF report.
+            go to amazon and find a popular product, 
+            check the comments and reviews, 
+            and then write a report about the product.
             """
         ),
         id='0',

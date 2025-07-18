@@ -117,6 +117,7 @@ Task is specific assignment that can be passed to a agent.
 - **result** (Optional[str]): The answer for the task. (default: :obj:`""`)
 - **failure_count** (int): The failure count for the task. (default: :obj:`0`)
 - **assigned_worker_id** (Optional[str]): The ID of the worker assigned to this task. (default: :obj:`None`)
+- **dependencies** (List[Task]): The dependencies for the task. (default: :obj:`[]`)
 - **additional_info** (Optional[Dict[str, Any]]): Additional information for the task. (default: :obj:`None`)
 - **image_list** (Optional[List[Image.Image]]): Optional list of PIL Image objects associated with the task. (default: :obj:`None`)
 - **image_detail** (`Literal["auto", "low", "high"]`): Detail level of the images associated with the task. (default: :obj:`auto`)
