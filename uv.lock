@@ -647,7 +647,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.72a9"
+version = "0.2.72a10"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -2177,7 +2177,7 @@ wheels = [
 
 [[package]]
 name = "e2b"
-version = "1.6.0"
+version = "1.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -2188,9 +2188,9 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/36/c0/adbc6f73c69936c9bfe55afde1a13276457cf71043293e0b4ae6e9337b49/e2b-1.6.0.tar.gz", hash = "sha256:0552115ee0a18c4e5a5aa97290d4a454478c547371386cabb76e367b8e914753", size = 56083, upload-time = "2025-07-17T13:15:57.495Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6c/d5/989b74badfcfe9c1c114e6c4143bedcfcdea23b1be14423bd99cc27b78a1/e2b-1.7.0.tar.gz", hash = "sha256:7783408c2cdf7aee9b088d31759364f2b13b21100cc4e132ba36fd84cfc72e31", size = 57304, upload-time = "2025-07-18T11:19:29.426Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cf/6d/6aa9c0034e1198bbe6bcb1bd4c069dfd480baf922666f3e6c7b7d09ad591/e2b-1.6.0-py3-none-any.whl", hash = "sha256:c4606ed0a3d4e45412ce81e2e8ee224b2d81b927fd8d6519a1a81437d8d4a22a", size = 104354, upload-time = "2025-07-17T13:15:55.898Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/e8/c856caa5d36e8fa1081c3987942fbff4583b087c7526a6ed9c69dca41f98/e2b-1.7.0-py3-none-any.whl", hash = "sha256:6bd3d935249fcf5684494a97178d4d58446b4ed4018ac09087e4000046e82aab", size = 106254, upload-time = "2025-07-18T11:19:27.577Z" },
 ]
 
 [[package]]
