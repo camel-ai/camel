@@ -30,7 +30,7 @@ async def main():
     config_dict = {
         "mcpServers": {
             "pubchem_mcp": {
-                "url": "http://127.0.0.1:8788/pubchem/mcp/",
+                "url": "http://127.0.0.1:8788/pubchem_mcp/mcp/",
                 "mode": "streamable-http",
             }
         }
