@@ -14,7 +14,7 @@
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from PIL import Image
 
@@ -23,9 +23,6 @@ from camel.messages import BaseMessage
 from camel.toolkits import BaseToolkit, FunctionTool
 from camel.toolkits.base import RegisteredAgentToolkit
 from camel.utils import dependencies_required
-
-if TYPE_CHECKING:
-    pass
 
 logger = get_logger(__name__)
 
@@ -67,22 +64,27 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
         self.screenshots_dir = path / "screenshots"
         self.screenshots_dir.mkdir(parents=True, exist_ok=True)
 
-    def read_screenshot(
+    def read_image(
         self,
-        screenshot_path: str,
+        image_path: str,
         instruction: str = "",
     ) -> str:
-        r"""Read a screenshot from a file.
+        r"""Analyzes an image from a local file path.
 
-        This method requires the toolkit to be registered with a ChatAgent
-        via the `toolkits_to_register_agent` parameter.
+        This function enables you to "see" and interpret an image from a
+        file. It's useful for tasks where you need to understand visual
+        information, such as reading a screenshot of a webpage or a diagram.
 
         Args:
-            screenshot_path (str): The path to the screenshot to read.
-            instruction (str): The instruction for the read the screenshot.
+            image_path (str): The local file path to the image.
+                For example: 'screenshots/login_page.png'.
+            instruction (str, optional): Specific instructions for what to look
+                for or what to do with the image. For example: "What is the
+                main headline on this page?" or "Find the 'Submit' button.".
 
         Returns:
-            str: The response from the agent.
+            str: The response after analyzing the image, which could be a
+                 description, an answer, or a confirmation of an action.
         """
         if self.agent is None:
             logger.error(
@@ -90,10 +92,20 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "Please pass this toolkit to ChatAgent via "
                 "toolkits_to_register_agent parameter."
             )
+            return (
+                "Error: No agent registered. Please pass this toolkit to "
+                "ChatAgent via toolkits_to_register_agent parameter."
+            )
 
         try:
+            # Check if file exists before trying to open
+            if not os.path.exists(image_path):
+                error_msg = f"Screenshot file not found: {image_path}"
+                logger.error(error_msg)
+                return f"Error: {error_msg}"
+
             # Load the image from the path
-            img = Image.open(screenshot_path)
+            img = Image.open(image_path)
 
             # Create a message with the screenshot image
             message = BaseMessage.make_user_message(
@@ -103,43 +115,45 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
 
             # Record the message in agent's memory
-            if self.agent is not None:
-                response = self.agent.step(message)
-                return response.msgs[0].content
-            else:
-                return "Error: No agent registered to process screenshot."
-        except Exception as e:
-            logger.error(f"Error recording screenshot: {e}")
-            return f"Error recording screenshot: {e}"
+            response = self.agent.step(message)
+            return response.msgs[0].content
 
-    def take_screenshot(
+        except Exception as e:
+            logger.error(f"Error reading screenshot: {e}")
+            return f"Error reading screenshot: {e}"
+
+    def take_and_read_image(
         self,
         filename: str,
         save_to_file: bool = True,
-        read_screenshot: bool = False,
+        read_image: bool = True,
         instruction: Optional[str] = None,
     ) -> str:
-        r"""Take a screenshot of the entire screen.
+        r"""Captures a screenshot of the entire screen.
 
-        The screenshot can be saved to a file and is returned as a
-        base64-encoded data URL.
+        This function can save the screenshot to a file and optionally analyze
+        it. It's useful for capturing the current state of the UI for
+        documentation, analysis, or to guide subsequent actions.
 
         Args:
-            filename (str): The name of the file for the screenshot. It must
-                end with `.png`. The file is saved in a `screenshots`
-                subdirectory within the toolkit's working directory.
-                Example: "desktop_view.png".
-            save_to_file (bool, optional): If `True`, the screenshot is saved
-                to a file. Defaults to `True`.
-            read_screenshot (bool, optional): If `True` and an agent is
-                registered, the screenshot will be read by the agent.
-                Defaults to `False`.
-            instruction (Optional[str]): Optional instruction for the
-                screenshot when reading. Only used if
-                `read_screenshot` is `True`.
+            filename (str): The name for the screenshot file (e.g.,
+                "homepage.png"). The file is saved in a `screenshots`
+                subdirectory within the working directory. Must end with
+                `.png`. (default: :obj:`None`)
+            save_to_file (bool, optional): If `True`, saves the screenshot to
+                a file. (default: :obj:`True`)
+            read_image (bool, optional): If `True`, the agent will analyze
+                the screenshot. `save_to_file` must also be `True`.
+                (default: :obj:`True`)
+            instruction (Optional[str], optional): A specific question or
+                command for the agent regarding the screenshot, used only if
+                `read_image` is `True`. For example: "Confirm that the
+                user is logged in.".
 
         Returns:
-
+            str: A confirmation message indicating success or failure,
+                 including the file path if saved, and the agent's response
+                 if `read_image` is `True`.
         """
         try:
             # Take screenshot of entire screen
@@ -151,7 +165,18 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                 # Create directory if it doesn't exist
                 os.makedirs(self.screenshots_dir, exist_ok=True)
 
-                file_path = os.path.join(self.screenshots_dir, filename)
+                # Create unique filename if file already exists
+                base_path = os.path.join(self.screenshots_dir, filename)
+                file_path = base_path
+                counter = 1
+                while os.path.exists(file_path):
+                    name, ext = os.path.splitext(filename)
+                    unique_filename = f"{name}_{counter}{ext}"
+                    file_path = os.path.join(
+                        self.screenshots_dir, unique_filename
+                    )
+                    counter += 1
+
                 screenshot.save(file_path)
                 logger.info(f"Screenshot saved to {file_path}")
 
@@ -161,16 +186,16 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                 result_text += f" and saved to {file_path}"
 
             # Record in agent memory if requested
-            if read_screenshot and file_path is not None:
+            if read_image and file_path is not None:
                 inst = instruction if instruction is not None else ""
-                response = self.read_screenshot(file_path, inst)
-                result_text += response
+                response = self.read_image(file_path, inst)
+                result_text += f". Agent response: {response}"
 
-            return "screenshot taken successfully and be read by the agent"
+            return result_text
 
         except Exception as e:
             logger.error(f"Error taking screenshot: {e}")
-            return "screenshot taken failed"
+            return f"Error taking screenshot: {e}"
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects for screenshot operations.
@@ -179,6 +204,6 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
             List[FunctionTool]: List of screenshot functions.
         """
         return [
-            FunctionTool(self.take_screenshot),
-            FunctionTool(self.read_screenshot),
+            FunctionTool(self.take_and_read_image),
+            FunctionTool(self.read_image),
         ]

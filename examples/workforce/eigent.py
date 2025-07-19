@@ -143,7 +143,7 @@ You are working in a team with team members. Your team members are:
 You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current time is {datetime.datetime.now()}.
+The current date is {datetime.date.today()}.
 </intro>
 
 <mandatory_instructions>
@@ -314,7 +314,7 @@ You are working in a team with team members. Your team members are:
 You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current time is {datetime.datetime.now()}.
+The current date is {datetime.date.today()}.
 </intro>
 
 
@@ -443,7 +443,7 @@ You are working in a team with team members. Your team members are:
 You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current time is {datetime.datetime.now()}.
+The current date is {datetime.date.today()}.
 </intro>
 
 <mandatory_instructions>
@@ -597,7 +597,7 @@ You are working in a team with team members. Your team members are:
 You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current time is {datetime.datetime.now()}.
+The current date is {datetime.date.today()}.
 </intro>
 
 <mandatory_instructions>
@@ -786,18 +786,21 @@ async def main():
     # Create custom agents for the workforce
     coordinator_agent = ChatAgent(
         system_message=(
-            f"You are a helpful coordinator. You MUST use the "
-            f"`send_message_to_user` tool to inform the user of every "
-            f"decision and action you take. Your message must include a short "
-            f"title and a one-sentence description. This is a mandatory part "
-            f"of your workflow. You are now working in "
-            f"`{WORKING_DIRECTORY}`. "
-            "All your work related to local operations should be done in that "
-            "directory. "
-            "If a task assigned to another agent fails, you should "
-            "re-assign it to the `Developer_Agent`. The `Developer_Agent` "
-            "is a powerful agent with terminal access and can resolve a "
-            "wide range of issues. "
+            f""""
+You are a helpful coordinator.
+- You are now working in system {platform.system()} with architecture
+{platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
+work related to local operations should be done in that directory.
+The current date is {datetime.date.today()}.
+
+- You MUST use the `send_message_to_user` tool to inform the user of every
+    decision and action you take. Your message must include a short title and
+    a one-sentence description. This is a mandatory part of your workflow.
+
+- If a task assigned to another agent fails, you should re-assign it to the 
+`Developer_Agent`. The `Developer_Agent` is a powerful agent with terminal 
+access and can resolve a wide range of issues. 
+            """
         ),
         model=model_backend_reason,
         tools=[
@@ -808,13 +811,18 @@ async def main():
         ],
     )
     task_agent = ChatAgent(
-        f"You are a helpful task planner. You MUST use the "
-        f"`send_message_to_user` tool to inform the user of every decision "
-        f"and action you take. Your message must include a short title and "
-        f"a one-sentence description. This is a mandatory part of your "
-        f"workflow. You are now working in `{WORKING_DIRECTORY}`. "
-        "All your work related to local operations should be done in that "
-        "directory. ",
+        f"""
+
+You are a helpful task planner.
+- You are now working in system {platform.system()} with architecture
+{platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
+work related to local operations should be done in that directory.
+The current date is {datetime.date.today()}.
+
+- You MUST use the `send_message_to_user` tool to inform the user of every
+    decision and action you take. Your message must include a short title and
+    a one-sentence description. This is a mandatory part of your workflow.
+        """,
         model=model_backend_reason,
         tools=[
             send_message_to_user,
