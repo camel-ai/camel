@@ -122,7 +122,7 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
             logger.error(f"Error reading screenshot: {e}")
             return f"Error reading screenshot: {e}"
 
-    def take_and_read_image(
+    def take_screenshot_and_read_image(
         self,
         filename: str,
         save_to_file: bool = True,
@@ -204,6 +204,6 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
             List[FunctionTool]: List of screenshot functions.
         """
         return [
-            FunctionTool(self.take_and_read_image),
+            FunctionTool(self.take_screenshot_and_read_image),
             FunctionTool(self.read_image),
         ]
