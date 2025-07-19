@@ -74,6 +74,7 @@ from .jina_reranker_toolkit import JinaRerankerToolkit
 from .pulse_mcp_search_toolkit import PulseMCPSearchToolkit
 from .klavis_toolkit import KlavisToolkit
 from .aci_toolkit import ACIToolkit
+from .origene_mcp_toolkit import OrigeneToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
 from .task_planning_toolkit import TaskPlanningToolkit
@@ -85,6 +86,8 @@ from .craw4ai_toolkit import Crawl4AIToolkit
 from .markitdown_toolkit import MarkItDownToolkit
 from .note_taking_toolkit import NoteTakingToolkit
 from .message_agent_toolkit import AgentCommunicationToolkit
+from .web_deploy_toolkit import WebDeployToolkit
+from .screenshot_toolkit import ScreenshotToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -142,6 +145,7 @@ __all__ = [
     'OpenAIAgentToolkit',
     'SearxNGToolkit',
     'JinaRerankerToolkit',
+    'OrigeneToolkit',
     'PulseMCPSearchToolkit',
     'KlavisToolkit',
     'ACIToolkit',
@@ -158,4 +162,6 @@ __all__ = [
     'MarkItDownToolkit',
     'NoteTakingToolkit',
     'AgentCommunicationToolkit',
+    'WebDeployToolkit',
+    'ScreenshotToolkit',
 ]

@@ -1,0 +1,64 @@
+<a id="camel.toolkits.screenshot_toolkit"></a>
+
+<a id="camel.toolkits.screenshot_toolkit.ScreenshotToolkit"></a>
+
+## ScreenshotToolkit
+
+```python
+class ScreenshotToolkit(BaseToolkit):
+```
+
+A toolkit for taking screenshots.
+
+<a id="camel.toolkits.screenshot_toolkit.ScreenshotToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    working_directory: Optional[str] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Initializes the ScreenshotToolkit.
+
+**Parameters:**
+
+- **working_directory** (str, optional): The directory path where notes will be stored. If not provided, it will be determined by the `CAMEL_WORKDIR` environment variable (if set). If the environment variable is not set, it defaults to `camel_working_dir`.
+- **timeout** (Optional[float]): Timeout for API requests in seconds. (default: :obj:`None`)
+
+<a id="camel.toolkits.screenshot_toolkit.ScreenshotToolkit.take_screenshot"></a>
+
+### take_screenshot
+
+```python
+def take_screenshot(self, save_to_file: bool = True):
+```
+
+Take a screenshot of the entire screen and return it as a
+base64-encoded image.
+
+**Parameters:**
+
+- **save_to_file** (bool): Whether to save the screenshot to a file. (default: :obj:`True`)
+
+**Returns:**
+
+  ToolResult: An object containing:
+- text (str): A description of the screenshot.
+- images (List[str]): A list containing one base64-encoded
+PNG image data URL.
+
+<a id="camel.toolkits.screenshot_toolkit.ScreenshotToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: List of screenshot functions.

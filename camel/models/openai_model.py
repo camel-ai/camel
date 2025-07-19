@@ -23,6 +23,7 @@ from openai.lib.streaming.chat import (
 from pydantic import BaseModel
 
 from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -38,6 +39,8 @@ from camel.utils import (
     is_langfuse_available,
     update_langfuse_trace,
 )
+
+logger = get_logger(__name__)
 
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
@@ -273,17 +276,23 @@ class OpenAIModel(BaseModelBackend):
 
         # Update Langfuse trace with current agent session and metadata
         agent_session_id = get_current_agent_session_id()
+        model_type_str = str(self.model_type)
+        if not agent_session_id:
+            agent_session_id = "no-session-id"
+        metadata = {
+            "source": "camel",
+            "agent_id": agent_session_id,
+            "agent_type": "camel_chat_agent",
+            "model_type": model_type_str,
+        }
+        metadata = {k: str(v) for k, v in metadata.items()}
         if agent_session_id:
             update_langfuse_trace(
                 session_id=agent_session_id,
-                metadata={
-                    "source": "camel",
-                    "agent_id": agent_session_id,
-                    "agent_type": "camel_chat_agent",
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
+                metadata=metadata,
+                tags=["CAMEL-AI", model_type_str],
             )
+        logger.info(f"metadata: {metadata}")
 
         messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(
@@ -342,17 +351,22 @@ class OpenAIModel(BaseModelBackend):
 
         # Update Langfuse trace with current agent session and metadata
         agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
+        model_type_str = str(self.model_type)
+        if not agent_session_id:
+            agent_session_id = "no-session-id"
+            metadata = {
+                "source": "camel",
+                "agent_id": agent_session_id,
+                "agent_type": "camel_chat_agent",
+                "model_type": model_type_str,
+            }
+            metadata = {k: str(v) for k, v in metadata.items()}
             update_langfuse_trace(
                 session_id=agent_session_id,
-                metadata={
-                    "source": "camel",
-                    "agent_id": agent_session_id,
-                    "agent_type": "camel_chat_agent",
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
+                metadata=metadata,
+                tags=["CAMEL-AI", model_type_str],
             )
+        logger.info(f"metadata: {metadata}")
 
         messages = self._adapt_messages_for_o1_models(messages)
         response_format = response_format or self.model_config_dict.get(

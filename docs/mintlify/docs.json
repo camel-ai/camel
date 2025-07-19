@@ -443,6 +443,7 @@
               "reference/camel.storages.vectordb_storages.oceanbase",
               "reference/camel.storages.vectordb_storages.pgvector",
               "reference/camel.storages.vectordb_storages.qdrant",
+              "reference/camel.storages.vectordb_storages.surreal",
               "reference/camel.storages.vectordb_storages.tidb",
               "reference/camel.storages.vectordb_storages.weaviate"
             ]
@@ -506,6 +507,7 @@
               "reference/camel.toolkits.openai_agent_toolkit",
               "reference/camel.toolkits.openai_image_toolkit",
               "reference/camel.toolkits.openbb_toolkit",
+              "reference/camel.toolkits.origene_mcp_toolkit",
               "reference/camel.toolkits.playwright_mcp_toolkit",
               "reference/camel.toolkits.pptx_toolkit",
               "reference/camel.toolkits.pubmed_toolkit",
@@ -513,6 +515,7 @@
               "reference/camel.toolkits.pyautogui_toolkit",
               "reference/camel.toolkits.reddit_toolkit",
               "reference/camel.toolkits.retrieval_toolkit",
+              "reference/camel.toolkits.screenshot_toolkit",
               "reference/camel.toolkits.search_toolkit",
               "reference/camel.toolkits.searxng_toolkit",
               "reference/camel.toolkits.semantic_scholar_toolkit",
@@ -526,6 +529,7 @@
               "reference/camel.toolkits.video_analysis_toolkit",
               "reference/camel.toolkits.video_download_toolkit",
               "reference/camel.toolkits.weather_toolkit",
+              "reference/camel.toolkits.web_deploy_toolkit",
               "reference/camel.toolkits.whatsapp_toolkit",
               "reference/camel.toolkits.wolfram_alpha_toolkit",
               "reference/camel.toolkits.zapier_toolkit",

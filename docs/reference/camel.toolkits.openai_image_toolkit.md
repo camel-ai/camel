@@ -28,7 +28,7 @@ def __init__(
     n: Optional[int] = 1,
     background: Optional[Literal['transparent', 'opaque', 'auto']] = 'auto',
     style: Optional[Literal['vivid', 'natural']] = None,
-    image_save_path: Optional[str] = 'image_save'
+    working_directory: Optional[str] = 'image_save'
 ):
 ```
 
@@ -44,7 +44,7 @@ Initializes a new instance of the OpenAIImageToolkit class.
 - **n** (Optional[int]): The number of images to generate. (default: :obj:`1`)
 - **background** (`Optional[Literal["transparent", "opaque", "auto"]]`): The background of the image.(default: :obj:`"auto"`)
 - **style** (`Optional[Literal["vivid", "natural"]]`): The style of the image.(default: :obj:`None`)
-- **image_save_path** (Optional[str]): The path to save the generated image.(default: :obj:`"image_save"`)
+- **working_directory** (Optional[str]): The path to save the generated image.(default: :obj:`"image_save"`)
 
 <a id="camel.toolkits.openai_image_toolkit.OpenAIImageToolkit.base64_to_image"></a>
 

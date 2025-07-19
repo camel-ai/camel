@@ -240,6 +240,7 @@ Class for managing conversations of CAMEL Chat Agents.
 - **tool_execution_timeout** (Optional[float], optional): Timeout for individual tool execution. If None, wait indefinitely.
 - **mask_tool_output** (Optional[bool]): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
 - **pause_event** (Optional[asyncio.Event]): Event to signal pause of the agent's operation. When clear, the agent will pause its execution. (default: :obj:`None`)
+- **prune_tool_calls_from_memory** (bool): Whether to clean tool call messages from memory after response generation to save token usage. When enabled, removes FUNCTION/TOOL role messages and ASSISTANT messages with tool_calls after each step. (default: :obj:`False`)
 
 <a id="camel.agents.chat_agent.ChatAgent.__init__"></a>
 
@@ -263,7 +264,8 @@ def __init__(
     stop_event: Optional[threading.Event] = None,
     tool_execution_timeout: Optional[float] = None,
     mask_tool_output: bool = False,
-    pause_event: Optional[asyncio.Event] = None
+    pause_event: Optional[asyncio.Event] = None,
+    prune_tool_calls_from_memory: bool = False
 ):
 ```
 
@@ -837,19 +839,34 @@ def _get_model_response(
     self,
     openai_messages: List[OpenAIMessage],
     num_tokens: int,
+    current_iteration: int = 0,
     response_format: Optional[Type[BaseModel]] = None,
-    tool_schemas: Optional[List[Dict[str, Any]]] = None
+    tool_schemas: Optional[List[Dict[str, Any]]] = None,
+    prev_num_openai_messages: int = 0
 ):
 ```
 
 Internal function for agent step model response.
+
+**Parameters:**
+
+- **openai_messages** (List[OpenAIMessage]): The OpenAI messages to process.
+- **num_tokens** (int): The number of tokens in the context.
+- **current_iteration** (int): The current iteration of the step.
+- **response_format** (Optional[Type[BaseModel]]): The response format to use.
+- **tool_schemas** (Optional[List[Dict[str, Any]]]): The tool schemas to use.
+- **prev_num_openai_messages** (int): The number of openai messages logged in the previous iteration.
+
+**Returns:**
+
+  ModelResponse: The model response.
 
 <a id="camel.agents.chat_agent.ChatAgent._sanitize_messages_for_logging"></a>
 
 ### _sanitize_messages_for_logging
 
 ```python
-def _sanitize_messages_for_logging(self, messages):
+def _sanitize_messages_for_logging(self, messages, prev_num_openai_messages: int):
 ```
 
 Sanitize OpenAI messages for logging by replacing base64 image
@@ -858,6 +875,7 @@ data with a simple message and a link to view the image.
 **Parameters:**
 
 - **messages** (List[OpenAIMessage]): The OpenAI messages to sanitize.
+- **prev_num_openai_messages** (int): The number of openai messages logged in the previous iteration.
 
 **Returns:**
 
@@ -1108,8 +1126,6 @@ any tool call is complete.
 def _execute_tools_sync_with_status_accumulator(
     self,
     accumulated_tool_calls: Dict[str, Any],
-    content_accumulator: StreamContentAccumulator,
-    step_token_usage: Dict[str, int],
     tool_call_records: List[ToolCallingRecord]
 ):
 ```
@@ -1154,23 +1170,6 @@ Record the assistant message that contains tool calls.
 
 This method creates and records an assistant message that includes
 the tool calls information, which is required by OpenAI's API format.
-
-<a id="camel.agents.chat_agent.ChatAgent._create_tool_status_response_with_accumulator"></a>
-
-### _create_tool_status_response_with_accumulator
-
-```python
-def _create_tool_status_response_with_accumulator(
-    self,
-    accumulator: StreamContentAccumulator,
-    status_message: str,
-    status_type: str,
-    step_token_usage: Dict[str, int],
-    tool_calls: Optional[List[ToolCallingRecord]] = None
-):
-```
-
-Create a tool status response using content accumulator.
 
 <a id="camel.agents.chat_agent.ChatAgent._create_streaming_response_with_accumulator"></a>
 

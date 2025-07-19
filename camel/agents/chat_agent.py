@@ -375,6 +375,11 @@ class ChatAgent(BaseAgent):
         pause_event (Optional[asyncio.Event]): Event to signal pause of the
             agent's operation. When clear, the agent will pause its execution.
             (default: :obj:`None`)
+        prune_tool_calls_from_memory (bool): Whether to clean tool
+            call messages from memory after response generation to save token
+            usage. When enabled, removes FUNCTION/TOOL role messages and
+            ASSISTANT messages with tool_calls after each step.
+            (default: :obj:`False`)
     """
 
     def __init__(
@@ -411,6 +416,7 @@ class ChatAgent(BaseAgent):
         tool_execution_timeout: Optional[float] = None,
         mask_tool_output: bool = False,
         pause_event: Optional[asyncio.Event] = None,
+        prune_tool_calls_from_memory: bool = False,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -492,6 +498,7 @@ class ChatAgent(BaseAgent):
         self._image_retry_count: Dict[str, int] = {}
         # Store images to attach to next user message
         self.pause_event = pause_event
+        self.prune_tool_calls_from_memory = prune_tool_calls_from_memory
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -1236,7 +1243,7 @@ class ChatAgent(BaseAgent):
                     if not message.parsed:
                         logger.warning(
                             f"Failed to parse JSON from response: "
-                            f"{content[:100]}..."
+                            f"{content}"
                         )
 
                 except Exception as e:
@@ -1264,7 +1271,11 @@ class ChatAgent(BaseAgent):
             openai_message: OpenAIMessage = {"role": "user", "content": prompt}
             # Explicitly set the tools to empty list to avoid calling tools
             response = self._get_model_response(
-                [openai_message], 0, response_format, []
+                openai_messages=[openai_message],
+                num_tokens=0,
+                response_format=response_format,
+                tool_schemas=[],
+                prev_num_openai_messages=0,
             )
             message.content = response.output_messages[0].content
             if not self._try_format_message(message, response_format):
@@ -1292,7 +1303,11 @@ class ChatAgent(BaseAgent):
             prompt = SIMPLE_FORMAT_PROMPT.format(content=message.content)
             openai_message: OpenAIMessage = {"role": "user", "content": prompt}
             response = await self._aget_model_response(
-                [openai_message], 0, response_format, []
+                openai_messages=[openai_message],
+                num_tokens=0,
+                response_format=response_format,
+                tool_schemas=[],
+                prev_num_openai_messages=0,
             )
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
@@ -1374,7 +1389,8 @@ class ChatAgent(BaseAgent):
 
         # Initialize token usage tracker
         step_token_usage = self._create_token_usage_tracker()
-        iteration_count = 0
+        iteration_count: int = 0
+        prev_num_openai_messages: int = 0
 
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
@@ -1391,10 +1407,13 @@ class ChatAgent(BaseAgent):
             # Get response from model backend
             response = self._get_model_response(
                 openai_messages,
-                accumulated_context_tokens,  # Cumulative context tokens
-                response_format,
-                self._get_full_tool_schemas(),
+                num_tokens=num_tokens,
+                current_iteration=iteration_count,
+                response_format=response_format,
+                tool_schemas=self._get_full_tool_schemas(),
+                prev_num_openai_messages=prev_num_openai_messages,
             )
+            prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
 
             # Accumulate API token usage
@@ -1405,6 +1424,9 @@ class ChatAgent(BaseAgent):
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
+                logger.info(
+                    f"Termination triggered at iteration " f"{iteration_count}"
+                )
                 return self._step_terminate(
                     accumulated_context_tokens,
                     tool_call_records,
@@ -1439,6 +1461,7 @@ class ChatAgent(BaseAgent):
                     self.max_iteration is not None
                     and iteration_count >= self.max_iteration
                 ):
+                    logger.info(f"Max iteration reached: {iteration_count}")
                     break
 
                 # If we're still here, continue the loop
@@ -1455,6 +1478,10 @@ class ChatAgent(BaseAgent):
             )
 
         self._record_final_output(response.output_messages)
+
+        # Clean tool call messages from memory after response generation
+        if self.prune_tool_calls_from_memory and tool_call_records:
+            self.memory.clean_tool_calls()
 
         return self._convert_to_chatagent_response(
             response,
@@ -1564,7 +1591,8 @@ class ChatAgent(BaseAgent):
 
         # Initialize token usage tracker
         step_token_usage = self._create_token_usage_tracker()
-        iteration_count = 0
+        iteration_count: int = 0
+        prev_num_openai_messages: int = 0
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
                 await self.pause_event.wait()
@@ -1578,10 +1606,13 @@ class ChatAgent(BaseAgent):
 
             response = await self._aget_model_response(
                 openai_messages,
-                accumulated_context_tokens,
-                response_format,
-                self._get_full_tool_schemas(),
+                num_tokens=num_tokens,
+                current_iteration=iteration_count,
+                response_format=response_format,
+                tool_schemas=self._get_full_tool_schemas(),
+                prev_num_openai_messages=prev_num_openai_messages,
             )
+            prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
 
             # Accumulate API token usage
@@ -1592,6 +1623,9 @@ class ChatAgent(BaseAgent):
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
+                logger.info(
+                    f"Termination triggered at iteration " f"{iteration_count}"
+                )
                 return self._step_terminate(
                     accumulated_context_tokens,
                     tool_call_records,
@@ -1706,6 +1740,10 @@ class ChatAgent(BaseAgent):
             )
 
         self._record_final_output(response.output_messages)
+
+        # Clean tool call messages from memory after response generation
+        if self.prune_tool_calls_from_memory and tool_call_records:
+            self.memory.clean_tool_calls()
 
         return self._convert_to_chatagent_response(
             response,
@@ -1900,14 +1938,32 @@ class ChatAgent(BaseAgent):
                 stripped_messages.append(msg)
         return stripped_messages
 
+    @observe()
     def _get_model_response(
         self,
         openai_messages: List[OpenAIMessage],
         num_tokens: int,
+        current_iteration: int = 0,
         response_format: Optional[Type[BaseModel]] = None,
         tool_schemas: Optional[List[Dict[str, Any]]] = None,
+        prev_num_openai_messages: int = 0,
     ) -> ModelResponse:
-        r"""Internal function for agent step model response."""
+        r"""Internal function for agent step model response.
+        Args:
+            openai_messages (List[OpenAIMessage]): The OpenAI
+                messages to process.
+            num_tokens (int): The number of tokens in the context.
+            current_iteration (int): The current iteration of the step.
+            response_format (Optional[Type[BaseModel]]): The response
+                format to use.
+            tool_schemas (Optional[List[Dict[str, Any]]]): The tool
+                schemas to use.
+            prev_num_openai_messages (int): The number of openai messages
+                logged in the previous iteration.
+
+        Returns:
+            ModelResponse: The model response.
+        """
 
         response = None
         try:
@@ -1920,7 +1976,8 @@ class ChatAgent(BaseAgent):
                 openai_messages
             ):
                 logger.warning(
-                    "Model appears to not support vision. Retrying without images."  # noqa: E501
+                    "Model appears to not support vision."
+                    "Retrying without images."
                 )
                 try:
                     stripped_messages = self._strip_images_from_messages(
@@ -1937,6 +1994,7 @@ class ChatAgent(BaseAgent):
             if not response:
                 logger.error(
                     f"An error occurred while running model "
+                    f"iteration {current_iteration}, "
                     f"{self.model_backend.model_type}, "
                     f"index: {self.model_backend.current_model_index}",
                     exc_info=exc,
@@ -1955,11 +2013,12 @@ class ChatAgent(BaseAgent):
             )
 
         sanitized_messages = self._sanitize_messages_for_logging(
-            openai_messages
+            openai_messages, prev_num_openai_messages
         )
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
+            f"iteration {current_iteration}, "
             f"processed these messages: {sanitized_messages}"
         )
         if not isinstance(response, ChatCompletion):
@@ -1973,10 +2032,27 @@ class ChatAgent(BaseAgent):
         self,
         openai_messages: List[OpenAIMessage],
         num_tokens: int,
+        current_iteration: int = 0,
         response_format: Optional[Type[BaseModel]] = None,
         tool_schemas: Optional[List[Dict[str, Any]]] = None,
+        prev_num_openai_messages: int = 0,
     ) -> ModelResponse:
-        r"""Internal function for agent step model response."""
+        r"""Internal function for agent async step model response.
+        Args:
+            openai_messages (List[OpenAIMessage]): The OpenAI messages
+                to process.
+            num_tokens (int): The number of tokens in the context.
+            current_iteration (int): The current iteration of the step.
+            response_format (Optional[Type[BaseModel]]): The response
+                format to use.
+            tool_schemas (Optional[List[Dict[str, Any]]]): The tool schemas
+                to use.
+            prev_num_openai_messages (int): The number of openai messages
+                logged in the previous iteration.
+
+        Returns:
+            ModelResponse: The model response.
+        """
 
         response = None
         try:
@@ -2024,11 +2100,12 @@ class ChatAgent(BaseAgent):
             )
 
         sanitized_messages = self._sanitize_messages_for_logging(
-            openai_messages
+            openai_messages, prev_num_openai_messages
         )
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
+            f"iteration {current_iteration}, "
             f"processed these messages: {sanitized_messages}"
         )
         if not isinstance(response, ChatCompletion):
@@ -2038,12 +2115,16 @@ class ChatAgent(BaseAgent):
             )
         return self._handle_batch_response(response)
 
-    def _sanitize_messages_for_logging(self, messages):
+    def _sanitize_messages_for_logging(
+        self, messages, prev_num_openai_messages: int
+    ):
         r"""Sanitize OpenAI messages for logging by replacing base64 image
         data with a simple message and a link to view the image.
 
         Args:
             messages (List[OpenAIMessage]): The OpenAI messages to sanitize.
+            prev_num_openai_messages (int): The number of openai messages
+                logged in the previous iteration.
 
         Returns:
             List[OpenAIMessage]: The sanitized OpenAI messages.
@@ -2056,7 +2137,7 @@ class ChatAgent(BaseAgent):
         # Create a copy of messages for logging to avoid modifying the
         # original messages
         sanitized_messages = []
-        for msg in messages:
+        for msg in messages[prev_num_openai_messages:]:
             if isinstance(msg, dict):
                 sanitized_msg = msg.copy()
                 # Check if content is a list (multimodal content with images)
@@ -2339,6 +2420,7 @@ class ChatAgent(BaseAgent):
             info=info,
         )
 
+    @observe()
     def _execute_tool(
         self,
         tool_call_request: ToolCallRequest,
@@ -2373,7 +2455,7 @@ class ChatAgent(BaseAgent):
             error_msg = f"Error executing tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
             mask_flag = False
-            logging.warning(error_msg)
+            logger.warning(f"{error_msg} with result: {result}")
 
         # Check if result is a ToolResult with images
         images_to_attach = None
@@ -2384,6 +2466,7 @@ class ChatAgent(BaseAgent):
         tool_record = self._record_tool_calling(
             func_name, args, result, tool_call_id, mask_output=mask_flag
         )
+        logger.info(f"Tool calling record:\n{tool_record}")
 
         # Store images for later attachment to next user message
         if images_to_attach:
@@ -2594,6 +2677,9 @@ class ChatAgent(BaseAgent):
         while True:
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
+                logger.info(
+                    f"Termination triggered at iteration " f"{iteration_count}"
+                )
                 yield self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
                 )
@@ -2825,21 +2911,13 @@ class ChatAgent(BaseAgent):
                             status_response
                         ) in self._execute_tools_sync_with_status_accumulator(
                             accumulated_tool_calls,
-                            content_accumulator,
-                            step_token_usage,
                             tool_call_records,
                         ):
                             yield status_response
 
-                        # Yield "Sending back result to model" status
+                        # Log sending status instead of adding to content
                         if tool_call_records:
-                            sending_status = self._create_tool_status_response_with_accumulator(  # noqa: E501
-                                content_accumulator,
-                                "\n------\n\nSending back result to model\n\n",
-                                "tool_sending",
-                                step_token_usage,
-                            )
-                            yield sending_status
+                            logger.info("Sending back result to model")
 
                     # Record final message only if we have content AND no tool
                     # calls. If there are tool calls, _record_tool_calling
@@ -2937,15 +3015,13 @@ class ChatAgent(BaseAgent):
     def _execute_tools_sync_with_status_accumulator(
         self,
         accumulated_tool_calls: Dict[str, Any],
-        content_accumulator: StreamContentAccumulator,
-        step_token_usage: Dict[str, int],
         tool_call_records: List[ToolCallingRecord],
     ) -> Generator[ChatAgentResponse, None, None]:
         r"""Execute multiple tools synchronously with
         proper content accumulation, using threads+queue for
         non-blocking status streaming."""
 
-        def tool_worker(tool_func, args, result_queue, tool_call_data):
+        def tool_worker(result_queue, tool_call_data):
             try:
                 tool_call_record = self._execute_tool_from_stream_data(
                     tool_call_data
@@ -2981,36 +3057,22 @@ class ChatAgent(BaseAgent):
             )
             thread.start()
 
-            status_message = (
-                f"\nCalling function: {function_name} "
-                f"with arguments:\n{args}\n"
+            # Log debug info instead of adding to content
+            logger.info(
+                f"Calling function: {function_name} with arguments: {args}"
             )
-            status_status = self._create_tool_status_response_with_accumulator(
-                content_accumulator,
-                status_message,
-                "tool_calling",
-                step_token_usage,
-            )
-            yield status_status
+
             # wait for tool thread to finish with optional timeout
             thread.join(self.tool_execution_timeout)
 
             # If timeout occurred, mark as error and continue
             if thread.is_alive():
-                timeout_msg = (
-                    f"\nFunction '{function_name}' timed out after "
-                    f"{self.tool_execution_timeout} seconds.\n---------\n"
+                # Log timeout info instead of adding to content
+                logger.warning(
+                    f"Function '{function_name}' timed out after "
+                    f"{self.tool_execution_timeout} seconds"
                 )
-                timeout_status = (
-                    self._create_tool_status_response_with_accumulator(
-                        content_accumulator,
-                        timeout_msg,
-                        "tool_timeout",
-                        step_token_usage,
-                    )
-                )
-                yield timeout_status
-                logger.error(timeout_msg.strip())
+
                 # Detach thread (it may still finish later). Skip recording.
                 continue
 
@@ -3020,22 +3082,16 @@ class ChatAgent(BaseAgent):
                 tool_call_records.append(tool_call_record)
                 raw_result = tool_call_record.result
                 result_str = str(raw_result)
-                status_message = (
-                    f"\nFunction output: {result_str}\n---------\n"
-                )
-                output_status = (
-                    self._create_tool_status_response_with_accumulator(
-                        content_accumulator,
-                        status_message,
-                        "tool_output",
-                        step_token_usage,
-                        [tool_call_record],
-                    )
-                )
-                yield output_status
+
+                # Log debug info instead of adding to content
+                logger.info(f"Function output: {result_str}")
             else:
                 # Error already logged
                 continue
+
+        # Ensure this function remains a generator (required by type signature)
+        return
+        yield  # This line is never reached but makes this a generator function
 
     def _execute_tool_from_stream_data(
         self, tool_call_data: Dict[str, Any]
@@ -3229,10 +3285,19 @@ class ChatAgent(BaseAgent):
             return
 
         # Start async streaming response
+        last_response = None
         async for response in self._astream_response(
             openai_messages, num_tokens, response_format
         ):
+            last_response = response
             yield response
+
+        # Clean tool call messages from memory after response generation
+        if self.prune_tool_calls_from_memory and last_response:
+            # Extract tool_calls from the last response info
+            tool_calls = last_response.info.get("tool_calls", [])
+            if tool_calls:
+                self.memory.clean_tool_calls()
 
     async def _astream_response(
         self,
@@ -3252,6 +3317,9 @@ class ChatAgent(BaseAgent):
         while True:
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
+                logger.info(
+                    f"Termination triggered at iteration " f"{iteration_count}"
+                )
                 yield self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
                 )
@@ -3540,15 +3608,9 @@ class ChatAgent(BaseAgent):
                         ):
                             yield status_response
 
-                        # Yield "Sending back result to model" status
+                        # Log sending status instead of adding to content
                         if tool_call_records:
-                            sending_status = self._create_tool_status_response_with_accumulator(  # noqa: E501
-                                content_accumulator,
-                                "\n------\n\nSending back result to model\n\n",
-                                "tool_sending",
-                                step_token_usage,
-                            )
-                            yield sending_status
+                            logger.info("Sending back result to model")
 
                     # Record final message only if we have content AND no tool
                     # calls. If there are tool calls, _record_tool_calling
@@ -3595,21 +3657,10 @@ class ChatAgent(BaseAgent):
                 except json.JSONDecodeError:
                     args = tool_call_data['function']['arguments']
 
-                status_message = (
-                    f"\nCalling function: {function_name} "
-                    f"with arguments:\n{args}\n"
+                # Log debug info instead of adding to content
+                logger.info(
+                    f"Calling function: {function_name} with arguments: {args}"
                 )
-
-                # Immediately yield "Calling function" status
-                calling_status = (
-                    self._create_tool_status_response_with_accumulator(
-                        content_accumulator,
-                        status_message,
-                        "tool_calling",
-                        step_token_usage,
-                    )
-                )
-                yield calling_status
 
                 # Start tool execution asynchronously (non-blocking)
                 if self.tool_execution_timeout is not None:
@@ -3642,80 +3693,25 @@ class ChatAgent(BaseAgent):
                         # Create output status message
                         raw_result = tool_call_record.result
                         result_str = str(raw_result)
-                        status_message = (
-                            f"\nFunction output: {result_str}\n---------\n"
-                        )
 
-                        # Yield "Function output" status as soon as this
-                        # tool completes
-                        output_status = (
-                            self._create_tool_status_response_with_accumulator(
-                                content_accumulator,
-                                status_message,
-                                "tool_output",
-                                step_token_usage,
-                                [tool_call_record],
-                            )
-                        )
-                        yield output_status
+                        # Log debug info instead of adding to content
+                        logger.info(f"Function output: {result_str}")
 
                 except Exception as e:
                     if isinstance(e, asyncio.TimeoutError):
-                        timeout_msg = (
-                            f"\nFunction timed out after "
-                            f"{self.tool_execution_timeout} seconds.\n"
-                            f"---------\n"
+                        # Log timeout info instead of adding to content
+                        logger.warning(
+                            f"Function timed out after "
+                            f"{self.tool_execution_timeout} seconds"
                         )
-                        timeout_status = (
-                            self._create_tool_status_response_with_accumulator(
-                                content_accumulator,
-                                timeout_msg,
-                                "tool_timeout",
-                                step_token_usage,
-                            )
-                        )
-                        yield timeout_status
-                        logger.error("Async tool execution timeout")
                     else:
                         logger.error(f"Error in async tool execution: {e}")
                     continue
 
-    def _create_tool_status_response_with_accumulator(
-        self,
-        accumulator: StreamContentAccumulator,
-        status_message: str,
-        status_type: str,
-        step_token_usage: Dict[str, int],
-        tool_calls: Optional[List[ToolCallingRecord]] = None,
-    ) -> ChatAgentResponse:
-        r"""Create a tool status response using content accumulator."""
-
-        # Add this status message to accumulator and get full content
-        accumulator.add_tool_status(status_message)
-        full_content = accumulator.get_full_content()
-
-        message = BaseMessage(
-            role_name=self.role_name,
-            role_type=self.role_type,
-            meta_dict={},
-            content=full_content,
-        )
-
-        return ChatAgentResponse(
-            msgs=[message],
-            terminated=False,
-            info={
-                "id": "",
-                "usage": step_token_usage.copy(),
-                "finish_reasons": [status_type],
-                "num_tokens": self._get_token_count(full_content),
-                "tool_calls": tool_calls or [],
-                "external_tool_requests": None,
-                "streaming": True,
-                "tool_status": status_type,
-                "partial": True,
-            },
-        )
+        # Ensure this function remains an async generator
+        return
+        # This line is never reached but makes this an async generator function
+        yield
 
     def _create_streaming_response_with_accumulator(
         self,
@@ -3827,6 +3823,7 @@ class ChatAgent(BaseAgent):
             stop_event=self.stop_event,
             tool_execution_timeout=self.tool_execution_timeout,
             pause_event=self.pause_event,
+            prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
         )
 
         # Copy memory if requested
