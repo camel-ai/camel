@@ -31,7 +31,7 @@ from .meshy_toolkit import MeshyToolkit
 from .openbb_toolkit import OpenBBToolkit
 from .bohrium_toolkit import BohriumToolkit
 
-from .base import BaseToolkit
+from .base import BaseToolkit, RegisteredAgentToolkit
 from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
@@ -162,4 +162,5 @@ __all__ = [
     'AgentCommunicationToolkit',
     'WebDeployToolkit',
     'ScreenshotToolkit',
+    'RegisteredAgentToolkit',
 ]
