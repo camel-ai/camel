@@ -280,7 +280,7 @@ class ToolkitMessageIntegration:
                         else None,
                         annotation=param.annotation
                         if param.annotation != inspect.Parameter.empty
-                        else Optional[str],
+                        else inspect.Parameter.empty,
                     )
                     message_params.append(new_param)
         else:
@@ -324,7 +324,11 @@ class ToolkitMessageIntegration:
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Extract parameters using the callback
-            params = self.extract_params_callback(kwargs)
+            try:
+                params = self.extract_params_callback(kwargs)
+            except KeyError:
+                # If parameters are missing, just execute the original function
+                return func(*args, **kwargs)
 
             # Check if we should send a message
             should_send = False
@@ -428,7 +432,7 @@ class ToolkitMessageIntegration:
                 current_indent = line[: len(line) - len(line.lstrip())]
                 # Find where Args section ends by looking for the last
                 # parameter
-                last_param_idx = i
+                last_param_idx = None
                 for j in range(i + 1, len(lines)):
                     stripped = lines[j].strip()
                     # If it's an empty line, skip it
@@ -441,9 +445,17 @@ class ToolkitMessageIntegration:
                     else:
                         # Hit a line with different indentation or a new
                         # section
-                        return last_param_idx + 1
+                        if last_param_idx is not None:
+                            return last_param_idx + 1
+                        else:
+                            # No parameters found, insert right after Args:
+                            return i + 1
                 # Args is the last section, return after last parameter
-                return last_param_idx + 1
+                if last_param_idx is not None:
+                    return last_param_idx + 1
+                else:
+                    # No parameters found, insert right after Args:
+                    return i + 1
 
         # No Args section, need to create one
         # Try to insert before Returns/Yields/Raises/Examples sections
@@ -478,12 +490,13 @@ class ToolkitMessageIntegration:
             ):
                 base_indent = line[: len(line) - len(line.lstrip())]
                 # Look at the next line to see parameter indentation
-                if i + 1 < len(lines) and lines[i + 1].strip():
-                    next_indent = lines[i + 1][
-                        : len(lines[i + 1]) - len(lines[i + 1].lstrip())
-                    ]
-                    if len(next_indent) > len(base_indent):
-                        return next_indent
+                if i + 1 < len(lines):
+                    if lines[i + 1].strip():
+                        next_indent = lines[i + 1][
+                            : len(lines[i + 1]) - len(lines[i + 1].lstrip())
+                        ]
+                        if len(next_indent) > len(base_indent):
+                            return next_indent
                 return base_indent + '    '
 
         # No Args section, use base indent + 4 spaces
@@ -521,11 +534,24 @@ class ToolkitMessageIntegration:
             ):
                 in_args = True
                 continue
-            elif (
-                in_args and line.strip() and not line.lstrip().startswith(' ')
-            ):
-                # End of Args section
-                break
+            elif in_args and line.strip():
+                # Check if we've reached a new section
+                stripped_line = line.lstrip()
+                if any(
+                    section in stripped_line
+                    for section in [
+                        'Returns:',
+                        'Return:',
+                        'Yields:',
+                        'Raises:',
+                        'Examples:',
+                        'Example:',
+                        'Note:',
+                        'Notes:',
+                    ]
+                ):
+                    # End of Args section
+                    break
             elif in_args and ':' in line:
                 # Parse parameter documentation
                 parts = line.strip().split(':', 1)
