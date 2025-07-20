@@ -435,7 +435,10 @@ class SearchToolkit(BaseToolkit):
         ]
     )
     def search_google(
-        self, query: str, search_type: str = "web"
+        self,
+        query: str,
+        search_type: str = "web",
+        exclude_domains: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
         r"""Use Google search engine to search information for the given query.
 
@@ -443,6 +446,9 @@ class SearchToolkit(BaseToolkit):
             query (str): The query to be searched.
             search_type (str): The type of search to perform. Either "web" for
                 web pages or "image" for image search. (default: "web")
+            exclude_domains (Optional[List[str]]): A list of domains to exclude
+                from the search results. If provided, the query will be modified.
+                (default: :obj:`None`)
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
@@ -499,11 +505,21 @@ class SearchToolkit(BaseToolkit):
         start_page_idx = 1
         # Different language may get different result
         search_language = "en"
+
+        modified_query = query
+        if exclude_domains:
+            # Use Google's -site: operator to exclude domains
+            exclusion_terms = " ".join(
+                [f"-site:{domain}" for domain in exclude_domains]
+            )
+            modified_query = f"{query} {exclusion_terms}"
+            logger.debug(f"Excluded domains, modified query: {modified_query}")
+
         # Constructing the URL
         # Doc: https://developers.google.com/custom-search/v1/using_rest
         base_url = (
             f"https://www.googleapis.com/customsearch/v1?"
-            f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start="
+            f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={modified_query}&start="
             f"{start_page_idx}&lr={search_language}&num={self.number_of_result_pages}"
         )
 
