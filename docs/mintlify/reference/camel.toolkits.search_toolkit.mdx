@@ -166,7 +166,12 @@ for more details.
 ### search_google
 
 ```python
-def search_google(self, query: str, search_type: str = 'web'):
+def search_google(
+    self,
+    query: str,
+    search_type: str = 'web',
+    exclude_domains: Optional[List[str]] = None
+):
 ```
 
 Use Google search engine to search information for the given query.
@@ -175,6 +180,7 @@ Use Google search engine to search information for the given query.
 
 - **query** (str): The query to be searched.
 - **search_type** (str): The type of search to perform. Either "web" for web pages or "image" for image search. (default: "web")
+- **exclude_domains** (Optional[List[str]]): A list of domains to exclude from the search results. If provided, the query will be modified. (default: :obj:`None`)
 
 **Returns:**
 
