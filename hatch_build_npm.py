@@ -90,7 +90,11 @@ class NpmBuildHook(BuildHookInterface):
             print(f"Found Node.js version: {result.stdout.strip()}")
 
             print("Installing npm dependencies...")
-            subprocess.run(["npm", "ci"], cwd=ts_dir, check=True, text=True)
+            # Use npm install to ensure
+            # devDependencies like TypeScript are installed
+            subprocess.run(
+                ["npm", "install"], cwd=ts_dir, check=True, text=True
+            )
 
             print("Building TypeScript...")
             subprocess.run(
@@ -115,7 +119,7 @@ class NpmBuildHook(BuildHookInterface):
                 "run:"
             )
             print(f"  cd {ts_dir}")
-            print("  npm ci && npm run build")
+            print("  npm install && npm run build")
 
         except subprocess.CalledProcessError as e:
             print(f"Warning: TypeScript build failed with error: {e}")
@@ -161,7 +165,9 @@ def build_npm_dependencies_standalone():
         print(f"Found Node.js version: {result.stdout.strip()}")
 
         print("Installing npm dependencies...")
-        subprocess.run(["npm", "ci"], cwd=ts_dir, check=True, text=True)
+        # Use npm install to ensure
+        # devDependencies like TypeScript are installed
+        subprocess.run(["npm", "install"], cwd=ts_dir, check=True, text=True)
 
         print("Building TypeScript...")
         subprocess.run(
@@ -183,7 +189,7 @@ def build_npm_dependencies_standalone():
         print("Installing without TypeScript support")
         print("To use hybrid_browser_toolkit, please install Node.js and run:")
         print(f"  cd {ts_dir}")
-        print("  npm ci && npm run build")
+        print("  npm install && npm run build")
 
     except subprocess.CalledProcessError as e:
         print(f"Warning: TypeScript build failed with error: {e}")
