@@ -436,9 +436,8 @@ benchmark/gaia/results.jsonl
 .env
 
 ##### Node.js/TypeScript.gitignore #####
-# Hybrid Browser Toolkit TypeScript build artifacts
-camel/toolkits/hybrid_browser_toolkit/ts/dist/
-camel/toolkits/hybrid_browser_toolkit/ts/node_modules/
+# Hybrid Browser Toolkit TypeScript
+camel/toolkits/hybrid_browser_toolkit/ts/
 
 # npm/yarn logs
 npm-debug.log*
