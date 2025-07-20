@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.MOONSHOT,
-    model_type=ModelType.MOONSHOT_V1_8K,
+    model_type=ModelType.MOONSHOT_KIMI_K2,
     model_config_dict=MoonshotConfig(temperature=0.2).as_dict(),
 )
 
@@ -38,9 +38,11 @@ print(response.msgs[0].content)
 
 '''
 ===============================================================================
-Hi CAMEL AI! It's great to hear about your open-source community dedicated to 
-the study of autonomous and communicative agents. I'm here to help and support
-you in any way I can. If you have any questions or need assistance with your
-research, feel free to ask!
+Hi CAMEL AI! 🐪
+It's great to meet a community that's pushing the frontier of autonomous 
+and communicative agents.Your open-source spirit and focus on scalable, 
+multi-agent systems are exactly what the field needs.
+Keep up the amazing work! Looking forward to seeing
+what breakthroughs come next
 ===============================================================================
 '''

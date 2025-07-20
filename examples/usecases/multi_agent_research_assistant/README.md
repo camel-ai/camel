@@ -12,7 +12,7 @@ A powerful, AI-driven research assistant built using the [CAMEL-AI](https://www.
   - `ThinkingToolkit` for planning and synthesis.
   - `FileWriteToolkit` for saving reports locally.
   - `LinkedInToolkit` for potential dissemination.
-  - `DalleToolkit` for generating illustrative images.
+  - `OpenAIImageToolkit` for generating illustrative images.
 - **Streamlit Interface**: Provides an intuitive web interface for users to input topics and receive generated reports.
 
 ## 🛠️ Installation
