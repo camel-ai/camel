@@ -206,8 +206,9 @@ TASK_DECOMPOSE_PROMPT = r"""You need to decompose the given task into subtasks a
     *   **DO NOT** use vague verbs like "analyze," "look into," or "research" without defining the output.
     *   **DO** specify the format and content of the output. For example, instead of "Analyze the attached report," write "Summarize the key findings of the attached report in a 3-bullet-point list." Instead of "Find contacts," write "Extract all names and email addresses from the document and return them as a JSON list of objects, where each object has a 'name' and 'email' key."
 
-3.  **Strategic Grouping for Sequential Work**:
-    *   If a series of steps must be done in order *and* can be handled by the same worker type, group them into a single subtask to maintain flow and minimize handoffs.
+3.  **Full Workflow Completion & Strategic Grouping**:
+    *   **Preserve the Entire Goal**: Ensure the decomposed subtasks collectively achieve the *entire* original task. Do not drop or ignore final steps like sending a message, submitting a form, or creating a file.
+    *   **Group Sequential Actions**: If a series of steps must be done in order *and* can be handled by the same worker type (e.g., read, think, reply), group them into a single, comprehensive subtask. This maintains workflow and ensures the final goal is met.
 
 4.  **Aggressive Parallelization**:
     *   **Across Different Worker Specializations**: If distinct phases of the overall task require different types of workers (e.g., research by a 'SearchAgent', then content creation by a 'DocumentAgent'), define these as separate subtasks.
@@ -316,6 +317,8 @@ Additional Info: {additional_info}
 2. **REPLAN**: Modify the task content to address the underlying issue
    - Use for: Unclear requirements, insufficient context, correctable errors
    - Provide: Modified task content that addresses the failure cause
+   - **CRITICAL**: The replanned task MUST be a clear, actionable
+     instruction for an AI agent, not a question or request for a human.
 
 3. **DECOMPOSE**: Break the task into smaller, more manageable subtasks
    - Use for: Complex tasks, capability mismatches, persistent failures
@@ -328,10 +331,13 @@ Additional Info: {additional_info}
 
 - **Connection/Network Errors**: Almost always choose RETRY
 - **Model Processing Errors**: Consider REPLAN if the task can be clarified, otherwise DECOMPOSE
-- **Capability Gaps**: Choose DECOMPOSE to break into simpler parts
+- **Capability Gaps**: Choose DECOMPOSE to break into simpler parts. If a
+  replan can work, ensure the new task is a command for an agent, not a
+  request to a user.
 - **Ambiguous Requirements**: Choose REPLAN with clearer instructions
 - **High Failure Count**: Lean towards DECOMPOSE rather than repeated retries
-- **Deep Tasks (depth > 2)**: Prefer RETRY or REPLAN over further decomposition
+- **Deep Tasks (depth > 2)**: Prefer RETRY or REPLAN over further
+  decomposition
 
 **RESPONSE FORMAT:**
 You must return a valid JSON object with these fields:
