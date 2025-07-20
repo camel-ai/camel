@@ -87,6 +87,7 @@ from .note_taking_toolkit import NoteTakingToolkit
 from .message_agent_toolkit import AgentCommunicationToolkit
 from .web_deploy_toolkit import WebDeployToolkit
 from .screenshot_toolkit import ScreenshotToolkit
+from .message_integration import ToolkitMessageIntegration
 
 __all__ = [
     'BaseToolkit',
@@ -163,4 +164,5 @@ __all__ = [
     'WebDeployToolkit',
     'ScreenshotToolkit',
     'RegisteredAgentToolkit',
+    'ToolkitMessageIntegration',
 ]
