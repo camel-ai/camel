@@ -326,7 +326,7 @@ export class HybridBrowserSession {
       }
       
     } catch (error) {
-      console.error(`[performClick] Exception during click for ref: ${ref}`, error);
+      console.error('[performClick] Exception during click for ref: %s', ref, error);
       return { success: false, error: `Click failed with exception: ${error}` };
     }
   }
