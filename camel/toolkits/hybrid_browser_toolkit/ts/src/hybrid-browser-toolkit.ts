@@ -6,11 +6,13 @@ export class HybridBrowserToolkit {
   private session: HybridBrowserSession;
   private config: BrowserToolkitConfig;
   private configLoader: ConfigLoader;
+  private viewportLimit: boolean;
 
   constructor(config: BrowserToolkitConfig = {}) {
     this.configLoader = ConfigLoader.fromPythonConfig(config);
     this.config = config; // Store original config for backward compatibility
-    this.session = new HybridBrowserSession(config); // Pass original config directly
+    this.session = new HybridBrowserSession(this.configLoader.getBrowserConfig()); // Pass processed config
+    this.viewportLimit = this.configLoader.getWebSocketConfig().viewport_limit;
   }
 
   async openBrowser(startUrl?: string): Promise<ActionResult> {
@@ -23,7 +25,7 @@ export class HybridBrowserToolkit {
       const result = await this.session.visitPage(url);
       
       const snapshotStart = Date.now();
-      const snapshot = await this.getPageSnapshot();
+      const snapshot = await this.getPageSnapshot(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       
       const totalTime = Date.now() - startTime;
@@ -76,7 +78,7 @@ export class HybridBrowserToolkit {
     
     if (result.success) {
       const snapshotStart = Date.now();
-      response.snapshot = await this.getPageSnapshot();
+      response.snapshot = await this.getPageSnapshot(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       
       if (result.timing) {
@@ -323,8 +325,7 @@ export class HybridBrowserToolkit {
     );
   }
 
-  async click(ref: string): Promise<any> {
-    const action: BrowserAction = { type: 'click', ref };
+  private async executeActionWithSnapshot(action: BrowserAction): Promise<any> {
     const result = await this.session.executeAction(action);
     
     // Format response for Python layer compatibility
@@ -335,7 +336,7 @@ export class HybridBrowserToolkit {
     
     if (result.success) {
       const snapshotStart = Date.now();
-      response.snapshot = await this.getPageSnapshot();
+      response.snapshot = await this.getPageSnapshot(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       
       if (result.timing) {
@@ -356,116 +357,29 @@ export class HybridBrowserToolkit {
     return response;
   }
 
+  async click(ref: string): Promise<any> {
+    const action: BrowserAction = { type: 'click', ref };
+    return this.executeActionWithSnapshot(action);
+  }
+
   async type(ref: string, text: string): Promise<any> {
     const action: BrowserAction = { type: 'type', ref, text };
-    const result = await this.session.executeAction(action);
-    
-    // Format response for Python layer compatibility
-    const response: any = {
-      result: result.message,
-      snapshot: '',
-    };
-    
-    if (result.success) {
-      const snapshotStart = Date.now();
-      response.snapshot = await this.getPageSnapshot();
-      const snapshotTime = Date.now() - snapshotStart;
-      
-      if (result.timing) {
-        result.timing.snapshot_time_ms = snapshotTime;
-      }
-    }
-    
-    // Include timing if available
-    if (result.timing) {
-      response.timing = result.timing;
-    }
-    
-    return response;
+    return this.executeActionWithSnapshot(action);
   }
 
   async select(ref: string, value: string): Promise<any> {
     const action: BrowserAction = { type: 'select', ref, value };
-    const result = await this.session.executeAction(action);
-    
-    // Format response for Python layer compatibility
-    const response: any = {
-      result: result.message,
-      snapshot: '',
-    };
-    
-    if (result.success) {
-      const snapshotStart = Date.now();
-      response.snapshot = await this.getPageSnapshot();
-      const snapshotTime = Date.now() - snapshotStart;
-      
-      if (result.timing) {
-        result.timing.snapshot_time_ms = snapshotTime;
-      }
-    }
-    
-    // Include timing if available
-    if (result.timing) {
-      response.timing = result.timing;
-    }
-    
-    return response;
+    return this.executeActionWithSnapshot(action);
   }
 
   async scroll(direction: 'up' | 'down', amount: number): Promise<any> {
     const action: BrowserAction = { type: 'scroll', direction, amount };
-    const result = await this.session.executeAction(action);
-    
-    // Format response for Python layer compatibility
-    const response: any = {
-      result: result.message,
-      snapshot: '',
-    };
-    
-    if (result.success) {
-      const snapshotStart = Date.now();
-      response.snapshot = await this.getPageSnapshot();
-      const snapshotTime = Date.now() - snapshotStart;
-      
-      if (result.timing) {
-        result.timing.snapshot_time_ms = snapshotTime;
-      }
-    }
-    
-    // Include timing if available
-    if (result.timing) {
-      response.timing = result.timing;
-    }
-    
-    return response;
+    return this.executeActionWithSnapshot(action);
   }
 
   async enter(): Promise<any> {
     const action: BrowserAction = { type: 'enter' };
-    const result = await this.session.executeAction(action);
-    
-    // Format response for Python layer compatibility
-    const response: any = {
-      result: result.message,
-      snapshot: '',
-    };
-    
-    if (result.success) {
-      const snapshotStart = Date.now();
-      response.snapshot = await this.getPageSnapshot();
-      const snapshotTime = Date.now() - snapshotStart;
-      
-      if (result.timing) {
-        result.timing.snapshot_time_ms = snapshotTime;
-      }
-    }
-    
-    // Include timing if available
-    if (result.timing) {
-      response.timing = result.timing;
-    }
-    
-    return response;
+    return this.executeActionWithSnapshot(action);
   }
 
   async back(): Promise<ActionResult> {
@@ -479,7 +393,7 @@ export class HybridBrowserToolkit {
       const navigationTime = Date.now() - navigationStart;
       
       const snapshotStart = Date.now();
-      const snapshot = await this.getPageSnapshot();
+      const snapshot = await this.getPageSnapshot(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       
       const totalTime = Date.now() - startTime;
@@ -519,7 +433,7 @@ export class HybridBrowserToolkit {
       const navigationTime = Date.now() - navigationStart;
       
       const snapshotStart = Date.now();
-      const snapshot = await this.getPageSnapshot();
+      const snapshot = await this.getPageSnapshot(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       
       const totalTime = Date.now() - startTime;
@@ -557,7 +471,7 @@ export class HybridBrowserToolkit {
       
       if (success) {
         const snapshotStart = Date.now();
-        const snapshot = await this.getPageSnapshot();
+        const snapshot = await this.getPageSnapshot(this.viewportLimit);
         const snapshotTime = Date.now() - snapshotStart;
         
         const totalTime = Date.now() - startTime;
@@ -591,7 +505,7 @@ export class HybridBrowserToolkit {
       return {
         success: true,
         message: `Closed tab ${tabId}`,
-        snapshot: await this.getPageSnapshot(),
+        snapshot: await this.getPageSnapshot(this.viewportLimit),
       };
     } else {
       return {

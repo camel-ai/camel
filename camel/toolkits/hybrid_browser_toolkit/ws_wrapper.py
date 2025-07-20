@@ -203,7 +203,9 @@ class WebSocketBrowserWrapper:
             logger.info("Connected to WebSocket server")
         except Exception as e:
             self.process.kill()
-            raise RuntimeError(f"Failed to connect to WebSocket server: {e}")
+            raise RuntimeError(
+                f"Failed to connect to WebSocket server: {e}"
+            ) from e
 
         # Initialize the browser toolkit
         await self._send_command('init', self.config)

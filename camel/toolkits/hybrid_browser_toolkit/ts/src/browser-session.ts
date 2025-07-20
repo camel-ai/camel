@@ -401,7 +401,7 @@ export class HybridBrowserSession {
       let newTabId: string | undefined;
       
       switch (action.type) {
-        case 'click':
+        case 'click': {
           elementSearchTime = Date.now() - elementSearchStart;
           const clickStart = Date.now();
           
@@ -417,8 +417,9 @@ export class HybridBrowserSession {
           
           actionExecutionTime = Date.now() - clickStart;
           break;
+        }
           
-        case 'type':
+        case 'type': {
           elementSearchTime = Date.now() - elementSearchStart;
           const typeStart = Date.now();
 
@@ -430,8 +431,9 @@ export class HybridBrowserSession {
           
           actionExecutionTime = Date.now() - typeStart;
           break;
+        }
           
-        case 'select':
+        case 'select': {
           elementSearchTime = Date.now() - elementSearchStart;
           const selectStart = Date.now();
           
@@ -443,8 +445,9 @@ export class HybridBrowserSession {
           
           actionExecutionTime = Date.now() - selectStart;
           break;
+        }
           
-        case 'scroll':
+        case 'scroll': {
           elementSearchTime = Date.now() - elementSearchStart;
           const scrollStart = Date.now();
           const scrollAmount = action.direction === 'up' ? -action.amount : action.amount;
@@ -455,14 +458,16 @@ export class HybridBrowserSession {
           await this.getCurrentScrollPosition();
           actionExecutionTime = Date.now() - scrollStart;
           break;
+        }
           
-        case 'enter':
+        case 'enter': {
           elementSearchTime = Date.now() - elementSearchStart;
           const enterStart = Date.now();
           const browserConfig = this.configLoader.getBrowserConfig();
           await page.keyboard.press(browserConfig.enterKey);
           actionExecutionTime = Date.now() - enterStart;
           break;
+        }
           
         default:
           throw new Error(`Unknown action type: ${(action as any).type}`);

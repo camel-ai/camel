@@ -101,7 +101,7 @@ class WebSocketBrowserServer {
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.getSnapshotForAI();
 
-      case 'get_som_screenshot':
+      case 'get_som_screenshot': {
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         console.log('Starting screenshot...');
         const startTime = Date.now();
@@ -109,7 +109,7 @@ class WebSocketBrowserServer {
         const endTime = Date.now();
         console.log(`Screenshot completed in ${endTime - startTime}ms`);
         return result;
-
+      }
       case 'click':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.click(params.ref);

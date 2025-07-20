@@ -1025,7 +1025,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         logger.info(f"\n{prompt}\n")
 
         async def _await_enter():
-            await asyncio.to_thread(input, ">>> Press Enter to resume <<<\n")
+            try:
+                await asyncio.to_thread(
+                    input, ">>> Press Enter to resume <<<\n"
+                )
+            except (asyncio.CancelledError, Exception):
+                # Handle cancellation gracefully
+                pass
 
         try:
             if timeout_sec is not None:
@@ -1033,10 +1039,20 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     f"Waiting for user input with timeout: {timeout_sec}s"
                 )
                 start_time = time.time()
-                await asyncio.wait_for(_await_enter(), timeout=timeout_sec)
-                wait_time = time.time() - start_time
-                logger.info(f"User input received after {wait_time:.2f}s")
-                result_msg = "User resumed."
+                task = asyncio.create_task(_await_enter())
+                try:
+                    await asyncio.wait_for(task, timeout=timeout_sec)
+                    wait_time = time.time() - start_time
+                    logger.info(f"User input received after {wait_time:.2f}s")
+                    result_msg = "User resumed."
+                except asyncio.TimeoutError:
+                    task.cancel()
+                    # Wait for task to be cancelled properly
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        pass
+                    raise
             else:
                 logger.info("Waiting for user input (no timeout)")
                 start_time = time.time()

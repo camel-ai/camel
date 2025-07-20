@@ -67,7 +67,7 @@ custom_tools = [
     "browser_type",
     "browser_enter",
     "browser_switch_tab",
-    "browser_get_som_screenshot",
+    # "browser_get_som_screenshot", # remove it to achieve faster operation
 ]
 
 web_toolkit_custom = HybridBrowserToolkit(
@@ -92,7 +92,7 @@ tools_list = file_toolkit.get_tools()
 # Use the custom toolkit for the actual task
 agent = ChatAgent(
     model=model_backend,
-    tools=[*web_toolkit_custom.get_tools(), file_toolkit.get_tools()],
+    tools=[*web_toolkit_custom.get_tools(), *file_toolkit.get_tools()],
     toolkits_to_register_agent=[web_toolkit_custom],
     max_iteration=10,
 )

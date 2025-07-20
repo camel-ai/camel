@@ -19,7 +19,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
-from camel.utils.tool_result import ToolResult
 
 TEST_URL = "https://example.com"
 TEST_FILE_URL = "file:///test.html"
@@ -100,12 +99,7 @@ def create_mock_ws_wrapper():
         return_value="- Page snapshot\n```yaml\n<test content>\n```"
     )
     mock_ws_wrapper.get_som_screenshot = AsyncMock(
-        return_value=ToolResult(
-            text="Visual webpage screenshot captured",
-            images=[
-                "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-            ],
-        )
+        return_value="Visual webpage screenshot captured"
     )
     mock_ws_wrapper.get_tab_info = AsyncMock(
         return_value=[
