@@ -264,16 +264,16 @@ def search_agent_factory(
     agent_id = str(uuid.uuid4())[:8]
 
     custom_tools = [
-        "open_browser",
-        "close_browser",
-        "click",
-        "type",
-        "back",
-        "forward",
-        "switch_tab",
-        "enter",
-        "get_som_screenshot",
-        "visit_page",
+        "browser_open",
+        "browser_close",
+        "browser_back",
+        "browser_forward",
+        "browser_click",
+        "browser_type",
+        "browser_enter",
+        "browser_switch_tab",
+        "browser_visit_page",
+        "browser_get_som_screenshot",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
@@ -281,6 +281,7 @@ def search_agent_factory(
         browser_log_to_file=True,
         stealth=True,
         session_id=agent_id,
+        viewport_limit=True,
         cache_dir=WORKING_DIRECTORY,
         default_start_url="https://search.brave.com/",
     )
@@ -401,6 +402,7 @@ Your capabilities include:
             content=system_message,
         ),
         model=model,
+        toolkits_to_register_agent=[web_toolkit_custom],
         tools=tools,
         prune_tool_calls_from_memory=True,
     )
