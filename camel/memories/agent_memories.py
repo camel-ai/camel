@@ -101,30 +101,31 @@ class ChatHistoryMemory(AgentMemory):
         if not record_dicts:
             return
 
-        # Filter out tool-related messages
-        cleaned_records = []
-        for record in record_dicts:
+        # Track indices to remove (reverse order for efficient deletion)
+        indices_to_remove = []
+
+        # Identify indices of tool-related messages
+        for i, record in enumerate(record_dicts):
             role = record.get('role_at_backend')
 
-            # Skip FUNCTION messages
+            # Mark FUNCTION messages for removal
             if role == OpenAIBackendRole.FUNCTION.value:
-                continue
-
-            # Skip TOOL messages
-            if role == OpenAIBackendRole.TOOL.value:
-                continue
-
-            # Skip ASSISTANT messages with tool_calls
-            if role == OpenAIBackendRole.ASSISTANT.value:
+                indices_to_remove.append(i)
+            # Mark TOOL messages for removal
+            elif role == OpenAIBackendRole.TOOL.value:
+                indices_to_remove.append(i)
+            # Mark ASSISTANT messages with tool_calls for removal
+            elif role == OpenAIBackendRole.ASSISTANT.value:
                 meta_dict = record.get('meta_dict', {})
                 if meta_dict and 'tool_calls' in meta_dict:
-                    continue
+                    indices_to_remove.append(i)
 
-            # Keep all other messages
-            cleaned_records.append(record)
+        # Remove records in-place
+        for i in reversed(indices_to_remove):
+            del record_dicts[i]
 
-        # Save the cleaned records back to storage
-        self._chat_history_block.storage.save(cleaned_records)
+        # Save the modified records back to storage
+        self._chat_history_block.storage.save(record_dicts)
 
 
 class VectorDBMemory(AgentMemory):
