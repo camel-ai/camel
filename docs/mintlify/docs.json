@@ -499,6 +499,7 @@
               "reference/camel.toolkits.memory_toolkit",
               "reference/camel.toolkits.meshy_toolkit",
               "reference/camel.toolkits.message_agent_toolkit",
+              "reference/camel.toolkits.message_integration",
               "reference/camel.toolkits.mineru_toolkit",
               "reference/camel.toolkits.networkx_toolkit",
               "reference/camel.toolkits.note_taking_toolkit",
