@@ -36,6 +36,7 @@ class SearchToolkit(BaseToolkit):
         self,
         timeout: Optional[float] = None,
         number_of_result_pages: int = 10,
+        exclude_domains: Optional[List[str]] = None,
     ):
         r"""Initializes the RedditToolkit with the specified number of retries
         and delay.
@@ -45,9 +46,14 @@ class SearchToolkit(BaseToolkit):
                 (default: :obj:`None`)
             number_of_result_pages (int): The number of result pages to
                 retrieve. (default: :obj:`10`)
+            exclude_domains (Optional[List[str]]): List of domains to
+                exclude from search results. Currently only supported
+                by the `search_google` function.
+                (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
         self.number_of_result_pages = number_of_result_pages
+        self.exclude_domains = exclude_domains
 
     @dependencies_required("wikipedia")
     def search_wiki(self, entity: str) -> str:
@@ -438,7 +444,6 @@ class SearchToolkit(BaseToolkit):
         self,
         query: str,
         search_type: str = "web",
-        exclude_domains: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
         r"""Use Google search engine to search information for the given query.
 
@@ -446,9 +451,6 @@ class SearchToolkit(BaseToolkit):
             query (str): The query to be searched.
             search_type (str): The type of search to perform. Either "web" for
                 web pages or "image" for image search. (default: "web")
-            exclude_domains (Optional[List[str]]): A list of domains to exclude
-                from the search results. If provided, the query will be modified.
-                (default: :obj:`None`)
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
@@ -507,10 +509,10 @@ class SearchToolkit(BaseToolkit):
         search_language = "en"
 
         modified_query = query
-        if exclude_domains:
+        if self.exclude_domains:
             # Use Google's -site: operator to exclude domains
             exclusion_terms = " ".join(
-                [f"-site:{domain}" for domain in exclude_domains]
+                [f"-site:{domain}" for domain in self.exclude_domains]
             )
             modified_query = f"{query} {exclusion_terms}"
             logger.debug(f"Excluded domains, modified query: {modified_query}")
