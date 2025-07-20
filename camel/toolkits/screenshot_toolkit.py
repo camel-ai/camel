@@ -61,7 +61,7 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
             path = Path("camel_working_dir")
 
         self.ImageGrab = ImageGrab
-        self.screenshots_dir = path / "screenshots"
+        self.screenshots_dir = path
         self.screenshots_dir.mkdir(parents=True, exist_ok=True)
 
     def read_image(
@@ -98,6 +98,8 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
 
         try:
+            image_path = str(Path(image_path).absolute())
+
             # Check if file exists before trying to open
             if not os.path.exists(image_path):
                 error_msg = f"Screenshot file not found: {image_path}"
@@ -188,7 +190,9 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
             # Record in agent memory if requested
             if read_image and file_path is not None:
                 inst = instruction if instruction is not None else ""
-                response = self.read_image(file_path, inst)
+                response = self.read_image(
+                    str(Path(file_path).absolute()), inst
+                )
                 result_text += f". Agent response: {response}"
 
             return result_text
