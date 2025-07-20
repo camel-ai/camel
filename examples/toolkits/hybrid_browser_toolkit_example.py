@@ -72,7 +72,7 @@ custom_tools = [
 
 web_toolkit_custom = HybridBrowserToolkit(
     headless=False,
-    # user_data_dir=USER_DATA_DIR,
+    user_data_dir=USER_DATA_DIR,
     enabled_tools=custom_tools,
     browser_log_to_file=True,  # generate detailed log file in ./browser_log
     stealth=True,  # Using stealth mode during browser operation
