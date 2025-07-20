@@ -496,80 +496,77 @@ class DocumentToolkit(BaseToolkit):
                 logger.debug("Cache hit: %s", document_path)
                 return True, self._cache[cache_key]
 
-            # Get file extension first
+            # Get file extension and determine if it's a URL
             suffix = (
                 f".{document_path.lower().rsplit('.', 1)[-1]}"
                 if "." in document_path
                 else ""
             )
-            is_url = self._is_url(
-                document_path
-            )  # Helper to check if it's a URL
+            is_url = self._is_url(document_path)
 
             # For URLs with file extensions, download first then process
             if is_url and suffix and suffix not in _WEB_EXTS:
                 local_path = self._download_file(document_path)
                 document_path = str(local_path)
 
-            # Process different file types with specialized handlers
-            if suffix in _IMAGE_EXTS:
-                ok, txt = self._handle_image(document_path)
-                return self._cache_and_return(cache_key, ok, txt)
-
-            if suffix in _EXCEL_EXTS:
-                ok, txt = self._handle_excel(document_path)
-                return self._cache_and_return(cache_key, ok, txt)
-
-            if suffix in _ARCHIVE_EXTS:
-                ok, txt = self._handle_zip(document_path)
-                return self._cache_and_return(cache_key, ok, txt)
-
-            if suffix in _DATA_EXTS:
-                ok, txt = self._handle_data_file(document_path)
-                return self._cache_and_return(cache_key, ok, txt)
-
-            if suffix in _CODE_EXTS:
-                ok, txt = self._handle_code_file(document_path)
-                return self._cache_and_return(cache_key, ok, txt)
-
-            if suffix in _TEXT_EXTS:
-                ok, txt = self._handle_text_file(document_path)
-                return self._cache_and_return(cache_key, ok, txt)
-
-            if suffix in _WEB_EXTS:
-                ok, txt = self._handle_html_file(document_path)
-                return self._cache_and_return(cache_key, ok, txt)
-
-            # Handle Office/PDF documents with preferred loader
-            if suffix in _DOC_EXTS:
-                if self.mid_loader is not None:
-                    try:
-                        txt = self.mid_loader.convert_file(document_path)
-                        return self._cache_and_return(cache_key, True, txt)
-                    except Exception as e:
-                        logger.warning("MarkItDown loader failed: %s", e)
-                        # Fall through to generic loader
-                else:
-                    logger.warning(
-                        "No suitable loader for DOC/PDF - falling back to "
-                        "generic loader"
-                    )
-
-            if self._is_webpage(document_path):
-                ok, txt = self._handle_webpage(document_path)
-                return self._cache_and_return(cache_key, ok, txt)
-
-            # Fallback to generic loader
-            ok, txt = self._loader.convert_file(document_path)
+            # Process based on file type
+            ok, txt = self._process_by_file_type(document_path, suffix)
             return self._cache_and_return(cache_key, ok, txt)
 
-        except Exception as exc:  # pragma: no cover
+        except Exception as exc:
             logger.error("Failed to extract %s: %s", document_path, exc)
             logger.debug(traceback.format_exc())
             return False, f"Error extracting document {document_path}: {exc}"
 
+    def _process_by_file_type(self, document_path: str, suffix: str) -> Tuple[bool, str]:
+        r"""Process document based on its file type.
+
+        Args:
+            document_path (str): Path to the document
+            suffix (str): File extension
+
+        Returns:
+            Tuple[bool, str]: Success status and extracted content
+        """
+        # Define handler mapping for different file types
+        handlers = [
+            (_IMAGE_EXTS, self._handle_image),
+            (_EXCEL_EXTS, self._handle_excel),
+            (_ARCHIVE_EXTS, self._handle_zip),
+            (_DATA_EXTS, self._handle_data_file),
+            (_CODE_EXTS, self._handle_code_file),
+            (_TEXT_EXTS, self._handle_text_file),
+            (_WEB_EXTS, self._handle_html_file),
+        ]
+
+        # Try each handler based on file extension
+        for extensions, handler in handlers:
+            if suffix in extensions:
+                return handler(document_path)
+
+        # Handle Office/PDF documents with preferred loader
+        if suffix in _DOC_EXTS:
+            if self.mid_loader is not None:
+                try:
+                    txt = self.mid_loader.convert_file(document_path)
+                    return True, txt
+                except Exception as e:
+                    logger.warning("MarkItDown loader failed: %s", e)
+            # Fall through to generic loader
+            else:
+                logger.warning(
+                    "No suitable loader for DOC/PDF - falling back to generic loader"
+                )
+
+        # Check if it's a webpage (for URLs without web extensions)
+        if self._is_webpage(document_path):
+            return self._handle_webpage(document_path)
+
+        # Fallback to generic loader
+        return self._loader.convert_file(document_path)
+
     def _is_url(self, path: str) -> bool:
-        """Check if the path is a URL."""
+        r"""Check if the path is a URL."""
         parsed = urlparse(path)
         return bool(parsed.scheme and parsed.netloc)
 
@@ -1314,11 +1311,4 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             Tuple[bool, str]: Success status and extracted content.
         """
-        loop = (
-            asyncio.get_event_loop()
-            if asyncio.get_event_loop().is_running()
-            else asyncio.new_event_loop()
-        )
-        return loop.run_until_complete(
-            self.extract_document_content(document_path)
-        )
+        return self.extract_document_content(document_path)
