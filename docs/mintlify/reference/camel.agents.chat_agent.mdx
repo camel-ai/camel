@@ -1208,8 +1208,11 @@ configuration.
 def _clone_tools(self):
 ```
 
-Clone tools for new agent instance,
-handling stateful toolkits properly.
+**Returns:**
+
+  Tuple containing:
+- List of cloned tools/functions
+- List of RegisteredAgentToolkit instances need registration
 
 <a id="camel.agents.chat_agent.ChatAgent.__repr__"></a>
 

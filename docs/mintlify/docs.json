@@ -541,6 +541,7 @@
               "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit",
               "reference/camel.toolkits.hybrid_browser_toolkit.snapshot",
               "reference/camel.toolkits.hybrid_browser_toolkit.stealth_config",
+              "reference/camel.toolkits.hybrid_browser_toolkit.ws_wrapper",
               "reference/camel.toolkits.non_visual_browser_toolkit.actions",
               "reference/camel.toolkits.non_visual_browser_toolkit.agent",
               "reference/camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit",
