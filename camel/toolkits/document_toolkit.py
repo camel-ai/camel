@@ -14,7 +14,6 @@
 
 # from __future__ import annotations
 
-import asyncio
 import hashlib
 import mimetypes
 import traceback
@@ -518,7 +517,9 @@ class DocumentToolkit(BaseToolkit):
             logger.debug(traceback.format_exc())
             return False, f"Error extracting document {document_path}: {exc}"
 
-    def _process_by_file_type(self, document_path: str, suffix: str) -> Tuple[bool, str]:
+    def _process_by_file_type(
+        self, document_path: str, suffix: str
+    ) -> Tuple[bool, str]:
         r"""Process document based on its file type.
 
         Args:
@@ -555,7 +556,8 @@ class DocumentToolkit(BaseToolkit):
             # Fall through to generic loader
             else:
                 logger.warning(
-                    "No suitable loader for DOC/PDF - falling back to generic loader"
+                    "No suitable loader for DOC/PDF "
+                    "- falling back to generic loader"
                 )
 
         # Check if it's a webpage (for URLs without web extensions)
