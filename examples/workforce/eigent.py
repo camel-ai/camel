@@ -54,7 +54,9 @@ from camel.utils.commons import api_keys_required
 
 logger = get_logger(__name__)
 
-WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or os.path.abspath("working_dir/")
+WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or os.path.abspath(
+    "working_dir/"
+)
 
 
 def send_message_to_user(
@@ -589,7 +591,9 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     r"""Factory for creating a multi modal agent, based on user-provided code
     structure."""
     tools = [
-        *VideoDownloaderToolkit(working_directory=WORKING_DIRECTORY).get_tools(),
+        *VideoDownloaderToolkit(
+            working_directory=WORKING_DIRECTORY
+        ).get_tools(),
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
         *OpenAIImageToolkit(
@@ -791,7 +795,7 @@ operations.
 async def main():
     # Ensure working directory exists
     os.makedirs(WORKING_DIRECTORY, exist_ok=True)
-    
+
     # google_drive_mcp_toolkit = GoogleDriveMCPToolkit(
     #     credentials_path="path/to/credentials.json"
     # )
