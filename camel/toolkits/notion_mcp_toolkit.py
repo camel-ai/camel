@@ -92,16 +92,16 @@ class NotionMCPToolkit(BaseToolkit):
 
                     return wrapper
 
-                client._build_tool_schema = make_build_schema_wrapper(
+                setattr(client, '_build_tool_schema', make_build_schema_wrapper(
                     original_build_schema
-                )
+                ))
 
                 # Get tools directly from the client
                 client_tools = client.get_tools()
                 all_tools.extend(client_tools)
 
                 # Restore original method
-                client._build_tool_schema = original_build_schema
+                setattr(client, '_build_tool_schema', original_build_schema)
 
             except Exception as e:
                 from camel.logger import get_logger
