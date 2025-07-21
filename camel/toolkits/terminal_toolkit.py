@@ -319,7 +319,14 @@ class TerminalToolkit(BaseToolkit):
                 )
 
             # Install essential packages using uv
-            essential_packages = ["pip", "setuptools", "wheel"]
+            essential_packages = [
+                "pip",
+                "setuptools",
+                "wheel",
+                "pyautogui",
+                "plotly",
+                "ffmpeg",
+            ]
             subprocess.run(
                 [
                     "uv",
@@ -371,7 +378,14 @@ class TerminalToolkit(BaseToolkit):
                 pip_path = os.path.join(self.initial_env_path, "bin", "pip")
 
             # Upgrade pip and install essential packages
-            essential_packages = ["pip", "setuptools", "wheel"]
+            essential_packages = [
+                "pip",
+                "setuptools",
+                "wheel",
+                "pyautogui",
+                "plotly",
+                "ffmpeg",
+            ]
             subprocess.run(
                 [pip_path, "install", "--upgrade", *essential_packages],
                 check=True,

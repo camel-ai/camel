@@ -21,7 +21,8 @@ search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave.
 def __init__(
     self,
     timeout: Optional[float] = None,
-    number_of_result_pages: int = 10
+    number_of_result_pages: int = 10,
+    exclude_domains: Optional[List[str]] = None
 ):
 ```
 
@@ -32,6 +33,7 @@ and delay.
 
 - **timeout** (float): Timeout for API requests in seconds. (default: :obj:`None`)
 - **number_of_result_pages** (int): The number of result pages to retrieve. (default: :obj:`10`)
+- **exclude_domains** (Optional[List[str]]): List of domains to exclude from search results. Currently only supported by the `search_google` function. (default: :obj:`None`)
 
 <a id="camel.toolkits.search_toolkit.SearchToolkit.search_wiki"></a>
 
