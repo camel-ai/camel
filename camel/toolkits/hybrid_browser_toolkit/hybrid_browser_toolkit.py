@@ -91,6 +91,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         page_stability_timeout: Optional[int] = None,
         dom_content_loaded_timeout: Optional[int] = None,
         viewport_limit: bool = False,
+        connect_over_cdp: bool = False,
+        cdp_url: Optional[str] = None,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -131,6 +133,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 bounds will be included in snapshots.
                 When False (default), all elements on the page are
                 included. Defaults to False.
+            connect_over_cdp (bool): Whether to connect to an existing
+            browser via Chrome DevTools Protocol. Defaults to False.
+            cdp_url (Optional[str]): WebSocket endpoint URL for CDP
+            connection (e.g., 'ws://localhost:9222/devtools/browser/...').
+            Required when connect_over_cdp is True. Defaults to None.
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -153,6 +160,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             browser_log_to_file=browser_log_to_file,
             session_id=session_id,
             enabled_tools=enabled_tools,
+            connect_over_cdp=connect_over_cdp,
+            cdp_url=cdp_url,
         )
 
         # Legacy attribute access for backward compatibility

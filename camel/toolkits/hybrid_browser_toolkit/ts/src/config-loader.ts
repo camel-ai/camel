@@ -68,6 +68,10 @@ export interface BrowserConfig {
     width: number;
     height: number;
   };
+  
+  // CDP connection options
+  connectOverCdp: boolean;
+  cdpUrl?: string;
 }
 
 export interface WebSocketConfig {
@@ -130,7 +134,9 @@ function getDefaultBrowserConfig(): BrowserConfig {
     viewport: {
       width: 1280,
       height: 720
-    }
+    },
+    connectOverCdp: false,
+    cdpUrl: undefined
   };
 }
 
@@ -204,6 +210,10 @@ export class ConfigLoader {
     if (config.browser_log_to_file !== undefined) wsConfig.browser_log_to_file = config.browser_log_to_file;
     if (config.session_id !== undefined) wsConfig.session_id = config.session_id;
     if (config.viewport_limit !== undefined) wsConfig.viewport_limit = config.viewport_limit;
+    
+    // CDP connection options
+    if (config.connectOverCdp !== undefined) browserConfig.connectOverCdp = config.connectOverCdp;
+    if (config.cdpUrl !== undefined) browserConfig.cdpUrl = config.cdpUrl;
 
     return new ConfigLoader(browserConfig, wsConfig);
   }
