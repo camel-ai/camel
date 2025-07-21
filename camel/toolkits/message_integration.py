@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import asyncio
 import inspect
 from functools import wraps
 from typing import Callable, List, Optional, Union
@@ -328,12 +329,9 @@ class ToolkitMessageIntegration:
 
             @wraps(func)
             async def wrapper(*args, **kwargs):
-                # Extract parameters using the callback
                 try:
                     params = self.extract_params_callback(kwargs)
                 except KeyError:
-                    # If parameters are missing, just execute the original
-                    # function
                     return await func(*args, **kwargs)
 
                 # Check if we should send a message
@@ -343,28 +341,36 @@ class ToolkitMessageIntegration:
                         p is not None and p != '' for p in params
                     )
                 else:
-                    # For default handler, params = (title, description,
-                    # attachment)
+                    # For default handler, params
+                    # (title, description, attachment)
                     should_send = bool(params[0]) or bool(params[1])
 
-                # Send message if needed
+                # Send message if needed (handle async properly)
                 if should_send:
-                    if self.use_custom_handler:
-                        # Check if message handler is async
-                        if inspect.iscoroutinefunction(self.message_handler):
-                            await self.message_handler(*params)
+                    try:
+                        if self.use_custom_handler:
+                            # Check if message handler is async
+                            if inspect.iscoroutinefunction(
+                                self.message_handler
+                            ):
+                                await self.message_handler(*params)
+                            else:
+                                self.message_handler(*params)
                         else:
-                            self.message_handler(*params)
-                    else:
-                        # For built-in handler, provide defaults
-                        title, desc, attach = params
-                        self.message_handler(
-                            title or "Executing Tool",
-                            desc or f"Running {func.__name__}",
-                            attach or '',
-                        )
+                            # For built-in handler, provide defaults
+                            title, desc, attach = params
+                            self.message_handler(
+                                title or "Executing Tool",
+                                desc or f"Running {func.__name__}",
+                                attach or '',
+                            )
+                    except Exception as msg_error:
+                        # Don't let message handler
+                        # errors break the main function
+                        logger.warning(f"Message handler error: {msg_error}")
 
                 # Execute the original function
+                # (kwargs have been modified to remove message params)
                 result = await func(*args, **kwargs)
 
                 return result
@@ -373,11 +379,12 @@ class ToolkitMessageIntegration:
             @wraps(func)
             def wrapper(*args, **kwargs):
                 # Extract parameters using the callback
+                # (this will modify kwargs by removing message params)
                 try:
                     params = self.extract_params_callback(kwargs)
                 except KeyError:
-                    # If parameters are missing, just execute the original
-                    # function
+                    # If parameters are missing,
+                    # just execute the original function
                     return func(*args, **kwargs)
 
                 # Check if we should send a message
@@ -387,30 +394,39 @@ class ToolkitMessageIntegration:
                         p is not None and p != '' for p in params
                     )
                 else:
-                    # For default handler, params = (title, description,
-                    # attachment)
                     should_send = bool(params[0]) or bool(params[1])
 
                 # Send message if needed
                 if should_send:
-                    if self.use_custom_handler:
-                        self.message_handler(*params)
-                    else:
-                        # For built-in handler, provide defaults
-                        title, desc, attach = params
-                        self.message_handler(
-                            title or "Executing Tool",
-                            desc or f"Running {func.__name__}",
-                            attach or '',
-                        )
+                    try:
+                        if self.use_custom_handler:
+                            self.message_handler(*params)
+                        else:
+                            # For built-in handler, provide defaults
+                            title, desc, attach = params
+                            self.message_handler(
+                                title or "Executing Tool",
+                                desc or f"Running {func.__name__}",
+                                attach or '',
+                            )
+                    except Exception as msg_error:
+                        logger.warning(f"Message handler error: {msg_error}")
 
-                # Execute the original function
                 result = func(*args, **kwargs)
 
                 return result
 
         # Apply the new signature to the wrapper
         wrapper.__signature__ = new_sig  # type: ignore[attr-defined]
+
+        # Ensure the wrapper has the correct async attributes
+        if is_async:
+            # Mark wrapper as async function for proper async detection
+            try:
+                wrapper._is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined]
+            except AttributeError:
+                # Fallback for different Python/asyncio versions
+                pass
 
         # Enhance the docstring
         if func.__doc__:
