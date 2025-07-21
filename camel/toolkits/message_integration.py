@@ -257,6 +257,9 @@ class ToolkitMessageIntegration:
         # Get the original signature
         original_sig = inspect.signature(func)
 
+        # Check if the function is async
+        is_async = inspect.iscoroutinefunction(func)
+
         # Create new parameters for the enhanced function
         new_params = list(original_sig.parameters.values())
 
@@ -321,41 +324,90 @@ class ToolkitMessageIntegration:
         # Create the new signature
         new_sig = original_sig.replace(parameters=new_params)
 
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            # Extract parameters using the callback
-            try:
-                params = self.extract_params_callback(kwargs)
-            except KeyError:
-                # If parameters are missing, just execute the original function
-                return func(*args, **kwargs)
+        if is_async:
 
-            # Check if we should send a message
-            should_send = False
-            if self.use_custom_handler:
-                should_send = any(p is not None and p != '' for p in params)
-            else:
-                # For default handler, params = (title, description,
-                # attachment)
-                should_send = bool(params[0]) or bool(params[1])
+            @wraps(func)
+            async def wrapper(*args, **kwargs):
+                # Extract parameters using the callback
+                try:
+                    params = self.extract_params_callback(kwargs)
+                except KeyError:
+                    # If parameters are missing, just execute the original
+                    # function
+                    return await func(*args, **kwargs)
 
-            # Send message if needed
-            if should_send:
+                # Check if we should send a message
+                should_send = False
                 if self.use_custom_handler:
-                    self.message_handler(*params)
-                else:
-                    # For built-in handler, provide defaults
-                    title, desc, attach = params
-                    self.message_handler(
-                        title or "Executing Tool",
-                        desc or f"Running {func.__name__}",
-                        attach or '',
+                    should_send = any(
+                        p is not None and p != '' for p in params
                     )
+                else:
+                    # For default handler, params = (title, description,
+                    # attachment)
+                    should_send = bool(params[0]) or bool(params[1])
 
-            # Execute the original function
-            result = func(*args, **kwargs)
+                # Send message if needed
+                if should_send:
+                    if self.use_custom_handler:
+                        # Check if message handler is async
+                        if inspect.iscoroutinefunction(self.message_handler):
+                            await self.message_handler(*params)
+                        else:
+                            self.message_handler(*params)
+                    else:
+                        # For built-in handler, provide defaults
+                        title, desc, attach = params
+                        self.message_handler(
+                            title or "Executing Tool",
+                            desc or f"Running {func.__name__}",
+                            attach or '',
+                        )
 
-            return result
+                # Execute the original function
+                result = await func(*args, **kwargs)
+
+                return result
+        else:
+
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                # Extract parameters using the callback
+                try:
+                    params = self.extract_params_callback(kwargs)
+                except KeyError:
+                    # If parameters are missing, just execute the original
+                    # function
+                    return func(*args, **kwargs)
+
+                # Check if we should send a message
+                should_send = False
+                if self.use_custom_handler:
+                    should_send = any(
+                        p is not None and p != '' for p in params
+                    )
+                else:
+                    # For default handler, params = (title, description,
+                    # attachment)
+                    should_send = bool(params[0]) or bool(params[1])
+
+                # Send message if needed
+                if should_send:
+                    if self.use_custom_handler:
+                        self.message_handler(*params)
+                    else:
+                        # For built-in handler, provide defaults
+                        title, desc, attach = params
+                        self.message_handler(
+                            title or "Executing Tool",
+                            desc or f"Running {func.__name__}",
+                            attach or '',
+                        )
+
+                # Execute the original function
+                result = func(*args, **kwargs)
+
+                return result
 
         # Apply the new signature to the wrapper
         wrapper.__signature__ = new_sig  # type: ignore[attr-defined]

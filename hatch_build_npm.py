@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# !/usr/bin/env python3
 """
 Hatch build hook for building TypeScript dependencies in
 hybrid_browser_toolkit.
@@ -27,16 +26,16 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 
 class NpmBuildHook(BuildHookInterface):
-    """Hatch build hook for TypeScript compilation."""
+    r"""Hatch build hook for TypeScript compilation."""
 
     PLUGIN_NAME = "npm-build"
 
     def initialize(self, version, build_data):
-        """Initialize the build hook and run npm build."""
+        r"""Initialize the build hook and run npm build."""
         self.build_npm_dependencies()
 
     def finalize(self, version, build_data, artifact_path):
-        """Finalize the build - ensure TypeScript was built."""
+        r"""Finalize the build - ensure TypeScript was built."""
         base_dir = Path(self.root)
         ts_dir = (
             base_dir / "camel" / "toolkits" / "hybrid_browser_toolkit" / "ts"
@@ -49,7 +48,7 @@ class NpmBuildHook(BuildHookInterface):
             print("Warning: TypeScript build artifacts not found")
 
     def build_npm_dependencies(self):
-        """Build TypeScript dependencies during wheel/sdist creation."""
+        r"""Build TypeScript dependencies during wheel/sdist creation."""
         base_dir = Path(self.root)
         ts_dir = (
             base_dir / "camel" / "toolkits" / "hybrid_browser_toolkit" / "ts"
@@ -132,7 +131,7 @@ class NpmBuildHook(BuildHookInterface):
 
 
 def build_npm_dependencies_standalone():
-    """Standalone function for testing purposes."""
+    r"""Standalone function for testing purposes."""
     base_dir = Path(__file__).parent
     ts_dir = base_dir / "camel" / "toolkits" / "hybrid_browser_toolkit" / "ts"
 
