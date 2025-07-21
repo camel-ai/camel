@@ -140,18 +140,65 @@ class WebSocketBrowserWrapper:
 
     async def start(self):
         """Start the WebSocket server and connect to it."""
-        # Ensure the TypeScript code is built
-        build_result = subprocess.run(
-            ['npm', 'run', 'build'],
-            cwd=self.ts_dir,
-            capture_output=True,
-            text=True,
-        )
-        if build_result.returncode != 0:
-            logger.error(f"TypeScript build failed: {build_result.stderr}")
-            raise RuntimeError(
-                f"TypeScript build failed: {build_result.stderr}"
-            )
+        # Check if TypeScript code is already built
+        dist_dir = os.path.join(self.ts_dir, 'dist')
+        websocket_server_js = os.path.join(self.ts_dir, 'websocket-server.js')
+        
+        # Check if pre-built files exist
+        if not os.path.exists(dist_dir) or not os.path.exists(websocket_server_js):
+            logger.info("TypeScript build files not found. Attempting to build...")
+            
+            # Check if npm is available
+            try:
+                npm_check = subprocess.run(
+                    ['npm', '--version'],
+                    capture_output=True,
+                    text=True,
+                )
+                if npm_check.returncode != 0:
+                    raise FileNotFoundError("npm not found")
+                    
+                logger.info("Building TypeScript files... This may take a moment on first run.")
+                
+                # Run npm install if node_modules doesn't exist
+                node_modules = os.path.join(self.ts_dir, 'node_modules')
+                if not os.path.exists(node_modules):
+                    logger.info("Installing dependencies via npm... Please wait.")
+                    install_result = subprocess.run(
+                        ['npm', 'install'],
+                        cwd=self.ts_dir,
+                        capture_output=True,
+                        text=True,
+                    )
+                    if install_result.returncode != 0:
+                        logger.error(f"npm install failed: {install_result.stderr}")
+                        raise RuntimeError(
+                            f"Failed to install dependencies: {install_result.stderr}"
+                        )
+                
+                # Build TypeScript
+                logger.info("Compiling TypeScript code...")
+                build_result = subprocess.run(
+                    ['npm', 'run', 'build'],
+                    cwd=self.ts_dir,
+                    capture_output=True,
+                    text=True,
+                )
+                if build_result.returncode != 0:
+                    logger.error(f"TypeScript build failed: {build_result.stderr}")
+                    raise RuntimeError(
+                        f"TypeScript build failed: {build_result.stderr}"
+                    )
+                logger.info("TypeScript build completed successfully.")
+                
+            except FileNotFoundError:
+                error_msg = (
+                    "Node.js/npm is not installed or not in PATH. "
+                    "The hybrid browser toolkit requires Node.js to run. "
+                    "Please install Node.js from https://nodejs.org/ and try again."
+                )
+                logger.error(error_msg)
+                raise RuntimeError(error_msg)
 
         # Start the WebSocket server
         self.process = subprocess.Popen(

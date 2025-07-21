@@ -89,12 +89,14 @@ class NpmBuildHook(BuildHookInterface):
             )
             print(f"Found Node.js version: {result.stdout.strip()}")
 
-            print("Installing npm dependencies...")
+            print("Installing npm dependencies for hybrid browser toolkit...")
+            print("This may take a few minutes on first installation.")
             # Use npm install to ensure
             # devDependencies like TypeScript are installed
             subprocess.run(
                 ["npm", "install"], cwd=ts_dir, check=True, text=True
             )
+            print("Dependencies installed successfully!")
 
             print("Building TypeScript...")
             subprocess.run(
@@ -164,10 +166,12 @@ def build_npm_dependencies_standalone():
         )
         print(f"Found Node.js version: {result.stdout.strip()}")
 
-        print("Installing npm dependencies...")
+        print("Installing npm dependencies for hybrid browser toolkit...")
+        print("This may take a few minutes on first installation.")
         # Use npm install to ensure
         # devDependencies like TypeScript are installed
         subprocess.run(["npm", "install"], cwd=ts_dir, check=True, text=True)
+        print("Dependencies installed successfully!")
 
         print("Building TypeScript...")
         subprocess.run(

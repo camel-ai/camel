@@ -497,30 +497,28 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     @dependencies_required('PIL')
     async def browser_get_som_screenshot(
         self,
-        read_image: bool = False,
+        read_image: bool = True,
         instruction: Optional[str] = None,
     ) -> str:
         r"""Captures a screenshot with interactive elements highlighted.
 
         "SoM" stands for "Set of Marks". This tool takes a screenshot and
-        draws
-        boxes around clickable elements, overlaying a `ref` ID on each. Use
-        this for a visual understanding of the page, especially when the
+        draws boxes around clickable elements, overlaying a `ref` ID on each. 
+        Use this for a visual understanding of the page, especially when the
         textual snapshot is not enough.
 
         Args:
             read_image (bool, optional): If `True`, the agent will analyze
                 the screenshot. Requires agent to be registered.
-                (default: :obj:`False`)
+                (default: :obj:`True`)
             instruction (Optional[str], optional): A specific question or
                 command for the agent regarding the screenshot, used only if
                 `read_image` is `True`. For example: "Find the login button."
 
         Returns:
             str: A confirmation message indicating the screenshot was
-            captured,
-                 the file path where it was saved, and optionally the agent's
-                 analysis if `read_image` is `True`.
+                captured, the file path where it was saved, and optionally the
+                agent's analysis if `read_image` is `True`.
         """
         import base64
         import datetime
