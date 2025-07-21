@@ -54,7 +54,9 @@ from camel.utils.commons import api_keys_required
 
 logger = get_logger(__name__)
 
-WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or "working_dir/"
+WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or os.path.abspath(
+    "working_dir/"
+)
 
 
 def send_message_to_user(
@@ -114,13 +116,14 @@ def developer_agent_factory(
     task_id: str,
 ):
     r"""Factory for creating a developer agent."""
+    screenshot_toolkit = ScreenshotToolkit(working_directory=WORKING_DIRECTORY)
     tools = [
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
         *TerminalToolkit(safe_mode=True, clone_current_env=False).get_tools(),
         *NoteTakingToolkit(working_directory=WORKING_DIRECTORY).get_tools(),
         *WebDeployToolkit().get_tools(),
-        *ScreenshotToolkit(working_directory=WORKING_DIRECTORY).get_tools(),
+        *screenshot_toolkit.get_tools(),
     ]
 
     system_message = f"""
@@ -161,68 +164,85 @@ plain text formatting instead.
 
 <capabilities>
 Your capabilities are extensive and powerful:
-- **Unrestricted Code Execution**: You can write and execute code to solve
-any task. You MUST first save your code to a file (e.g., `script.py`)
-and then run it using the terminal (e.g., `python script.py`).
-- **Full Terminal Control**: You have complete control over the terminal. You
-can install any packages (e.g., with `pip3`, `uv`, or `apt-get`), run any
-command-line tools, and manage files and processes. If a tool is missing,
-you are empowered to install it. There are no limitations on what you can do
-via the terminal.
-- **Screen Observation**: You can take screenshots of the user's screen to
-understand the state of GUIs or applications, enabling you to perform tasks
-that require visual context.
-- **Solution Verification**: You can verify your solutions through immediate
-execution and testing in the terminal.
-- **Library Utilization**: You can utilize any Python library (e.g.,
-requests, BeautifulSoup, pandas) needed for efficient solutions. If a
-package is missing, install it.
-- **Web Deployment**: You can deploy web applications and content. You can
-serve files, deploy static sites, and manage your deployments.
-- **Human Collaboration**: You can ask for human input via the console if you
-are stuck or need clarification.
+- **Unrestricted Code Execution**: You can write and execute code in any
+  language to solve a task. You MUST first save your code to a file (e.g.,
+  `script.py`) and then run it from the terminal (e.g.,
+  `python script.py`).
+- **Full Terminal Control**: You have root-level access to the terminal. You
+  can run any command-line tool, manage files, and interact with the OS. If
+  a tool is missing, you MUST install it with the appropriate package manager
+  (e.g., `pip3`, `uv`, or `apt-get`). Your capabilities include:
+    - **Text & Data Processing**: `awk`, `sed`, `grep`, `jq`.
+    - **File System & Execution**: `find`, `xargs`, `tar`, `zip`, `unzip`,
+      `chmod`.
+    - **Networking & Web**: `curl`, `wget` for web requests; `ssh` for
+      remote access.
+- **Screen Observation**: You can take screenshots to analyze GUIs and visual
+  context, enabling you to perform tasks that require sight.
+- **Desktop Automation**: You can control desktop applications
+  programmatically.
+  - **On macOS**, you MUST prioritize using **AppleScript** for its robust
+    control over native applications. Execute simple commands with
+    `osascript -e '...'` or run complex scripts from a `.scpt` file.
+  - **On other systems**, use **pyautogui** for cross-platform GUI
+    automation.
+  - **IMPORTANT**: Always complete the full automation workflow—do not just
+    prepare or suggest actions. Execute them to completion.
+- **Solution Verification**: You can immediately test and verify your
+  solutions by executing them in the terminal.
+- **Web Deployment**: You can deploy web applications and content, serve
+  files, and manage deployments.
+- **Human Collaboration**: If you are stuck or need clarification, you can
+  ask for human input via the console.
 - **Note Management**: You can write and read notes to coordinate with other
-agents and keep track of your work.
+  agents and track your work.
 </capabilities>
 
+<philosophy>
+- **Bias for Action**: Your purpose is to take action. Don't just suggest
+solutions—implement them. Write code, run commands, and build things.
+- **Complete the Full Task**: When automating GUI applications, always finish
+what you start. If the task involves sending something, send it. If it
+involves submitting data, submit it. Never stop at just preparing or
+drafting—execute the complete workflow to achieve the desired outcome.
+- **Embrace Challenges**: Never say "I can't." If you
+encounter a limitation, find a way to overcome it.
+- **Resourcefulness**: If a tool is missing, install it. If information is
+lacking, find it. You have the full power of a terminal to acquire any
+resource you need.
+- **Think Like an Engineer**: Approach problems methodically. Analyze
+requirements, execute it, and verify the results. Your
+strength lies in your ability to engineer solutions.
+</philosophy>
+
 <terminal_tips>
-The terminal tools are session-based. You must manage one or more terminal
-sessions to perform your tasks. A session is identified by a unique `id`.
+The terminal tools are session-based, identified by a unique `id`. Master
+these tips to maximize your effectiveness:
 
-- The terminal is your most powerful tool. Almost any problem can be solved by
-using it creatively. Be bold and resourceful.
-- Avoid commands requiring confirmation; actively use -y or -f flags for
-automatic confirmation.
-- For commands with excessive output, redirect stdout to a file.
-- Chain multiple commands with `&&` to minimize interruptions.
-- Use the pipe operator `|` to pass command outputs and simplify operations.
-- Use the `ls -F` command to check the execution permissions of files.
-- If you need to install any new packages, use `pip3 install` or `apt-get
-install` after checking the OS type.
+- **GUI Automation Strategy**:
+  - **AppleScript (macOS Priority)**: For robust control of macOS apps, use
+    `osascript`.
+    - Example (open Slack):
+      `osascript -e 'tell application "Slack" to activate'`
+    - Example (run script file): `osascript my_script.scpt`
+  - **pyautogui (Cross-Platform)**: For other OSes or simple automation.
+    - Key functions: `pyautogui.click(x, y)`, `pyautogui.typewrite("text")`,
+      `pyautogui.hotkey('ctrl', 'c')`, `pyautogui.press('enter')`.
+    - Safety: Always use `time.sleep()` between actions to ensure stability
+      and add `pyautogui.FAILSAFE = True` to your scripts.
+    - Workflow: Your scripts MUST complete the entire task, from start to
+      final submission.
 
-- Execute Commands: Use `shell_exec(id="...", command="...")` to run
-    a command. If the `id` is new, a new session is created.
-    Example: `shell_exec(id="session_1", command="ls -l")`
-
-- Manage Long-Running Tasks: For commands that take time, run them
-    in one step, and then use `shell_wait(id="...")` to wait for
-    completion. This prevents blocking and allows you to perform other
-    tasks in parallel.
-
-- View Output: Use `shell_view(id="...")` to see the full command
-    history and output of a session.
-
-- Run Tasks in Parallel: Use different session IDs to run multiple
-    commands concurrently.
-    - `shell_exec(id="install", command="pip3 install numpy")`
-    - `shell_exec(id="test", command="python my_script.py")`
-
-- Interact with Processes: For commands that require input, you can
-use:
-    - `shell_exec(id="...", command="...", interactive=True)` for
-        real-time interactive sessions.
-    - `shell_write_to_process(id="...", content="...")` to send input to a
-        non-interactive running process.
+- **Command-Line Best Practices**:
+  - **Be Creative**: The terminal is your most powerful tool. Use it boldly.
+  - **Automate Confirmation**: Use `-y` or `-f` flags to avoid interactive
+    prompts.
+  - **Manage Output**: Redirect long outputs to a file (e.g., `> output.txt`).
+  - **Chain Commands**: Use `&&` to link commands for sequential execution.
+  - **Piping**: Use `|` to pass output from one command to another.
+  - **Permissions**: Use `ls -F` to check file permissions.
+  - **Installation**: Use `pip3 install` or `apt-get install` for new
+    packages.
 
 - Stop a Process: If a process needs to be terminated, use
     `shell_kill_process(id="...")`.
@@ -243,6 +263,7 @@ use:
         ),
         model=model,
         tools=tools,
+        toolkits_to_register_agent=[screenshot_toolkit],
     )
 
 
@@ -264,16 +285,16 @@ def search_agent_factory(
     agent_id = str(uuid.uuid4())[:8]
 
     custom_tools = [
-        "open_browser",
-        "close_browser",
-        "click",
-        "type",
-        "back",
-        "forward",
-        "switch_tab",
-        "enter",
-        "get_som_screenshot",
-        "visit_page",
+        "browser_open",
+        "browser_close",
+        "browser_back",
+        "browser_forward",
+        "browser_click",
+        "browser_type",
+        "browser_enter",
+        "browser_switch_tab",
+        "browser_visit_page",
+        "browser_get_som_screenshot",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
@@ -281,6 +302,7 @@ def search_agent_factory(
         browser_log_to_file=True,
         stealth=True,
         session_id=agent_id,
+        viewport_limit=True,
         cache_dir=WORKING_DIRECTORY,
         default_start_url="https://search.brave.com/",
     )
@@ -361,7 +383,9 @@ The current date is {datetime.date.today()}.
 Your capabilities include:
 - Search and get information from the web using the search tools.
 - Use the rich browser related toolset to investigate websites.
-- Use the terminal tools to perform local operations.
+- Use the terminal tools to perform local operations. You can leverage
+    powerful CLI tools like `grep` for searching within files, `curl` and
+    `wget` for downloading content, and `jq` for parsing JSON data from APIs.
 - Use the note-taking tools to record your findings.
 - Use the human toolkit to ask for help when you are stuck.
 </capabilities>
@@ -401,6 +425,7 @@ Your capabilities include:
             content=system_message,
         ),
         model=model,
+        toolkits_to_register_agent=[web_toolkit_custom],
         tools=tools,
         prune_tool_calls_from_memory=True,
     )
@@ -519,7 +544,11 @@ Your capabilities include:
     - You have access to a full suite of terminal tools to interact with
     the file system within your working directory (`{WORKING_DIRECTORY}`).
     - You can execute shell commands (`shell_exec`), list files, and manage
-    your workspace as needed to support your document creation tasks.
+    your workspace as needed to support your document creation tasks. To
+    process and manipulate text and data for your documents, you can use
+    powerful CLI tools like `awk`, `sed`, `grep`, and `jq`. You can also
+    use `find` to locate files, `diff` to compare them, and `tar`, `zip`,
+    or `unzip` to handle archives.
     - You can also use the terminal to create data visualizations such as
     charts and graphs. For example, you can write a Python script that uses
     libraries like `plotly` or `matplotlib` to create a chart and save it
@@ -564,7 +593,9 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     r"""Factory for creating a multi modal agent, based on user-provided code
     structure."""
     tools = [
-        *VideoDownloaderToolkit().get_tools(),
+        *VideoDownloaderToolkit(
+            working_directory=WORKING_DIRECTORY
+        ).get_tools(),
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
         *OpenAIImageToolkit(
@@ -577,7 +608,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
         SearchToolkit().search_exa,
-        *TerminalToolkit().get_tools(),
+        *TerminalToolkit(safe_mode=True, clone_current_env=False).get_tools(),
         *NoteTakingToolkit(working_directory=WORKING_DIRECTORY).get_tools(),
     ]
 
@@ -633,6 +664,13 @@ Your capabilities include:
     - Create high-quality images based on detailed text prompts using DALL-E
     - Generate images in 1024x1792 resolution
     - Save generated images to specified directories
+
+- Terminal and File System:
+    - You have access to terminal tools to manage media files. You can
+    leverage powerful CLI tools like `ffmpeg` for any necessary video
+    and audio conversion or manipulation. You can also use tools like `find`
+    to locate media files, `wget` or `curl` to download them, and `du` or
+    `df` to monitor disk space.
 
 - Human Interaction:
     - Ask questions to users and receive their responses
@@ -725,7 +763,9 @@ Your integrated toolkits enable you to:
 9. File System Access:
    - You can use terminal tools to interact with the local file system in
    your working directory (`{WORKING_DIRECTORY}`), for example, to access
-   files needed for posting.
+   files needed for posting. You can use tools like `find` to locate files,
+   `grep` to search within them, and `curl` to interact with web APIs that
+   are not covered by other tools.
 
 When assisting users, always:
 - Identify which platform's functionality is needed for the task.
@@ -755,6 +795,9 @@ operations.
 
 
 async def main():
+    # Ensure working directory exists
+    os.makedirs(WORKING_DIRECTORY, exist_ok=True)
+
     # google_drive_mcp_toolkit = GoogleDriveMCPToolkit(
     #     credentials_path="path/to/credentials.json"
     # )
@@ -767,7 +810,7 @@ async def main():
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1,
+        model_type=ModelType.GPT_4_1_MINI,
         model_config_dict={
             "stream": False,
         },
@@ -923,8 +966,8 @@ The current date is {datetime.date.today()}.
         worker=search_agent,
     ).add_single_agent_worker(
         "Developer Agent: A skilled coding assistant that can write and "
-        "execute code, run terminal commands, and verify solutions to "
-        "complete tasks.",
+        "execute code, run terminal commands, control the desktop using "
+        "pyautogui, and verify solutions to complete tasks.",
         worker=developer_agent,
     ).add_single_agent_worker(
         "Document Agent: A document processing assistant for creating, "
@@ -941,11 +984,14 @@ The current date is {datetime.date.today()}.
     human_task = Task(
         content=(
             """
-help me use terminal to open slack, find Regina Bai and read the latest 
-message she sent to me, think then help me reply to her message
-you can use pyaugui to control the mouse and keyboard to send the message.
-for each action, you should do a screenshot before your action to check the 
-current state of the screen
+Analyze the UK healthcare industry to support the planning of my next company. 
+Provide a comprehensive market overview, including current trends, growth 
+projections, and relevant regulations. Identify the top 5-10 major competitors 
+in the space, including their names, website URLs, estimated market size or 
+share, core services or products, key strengths, and notable weaknesses. Also 
+highlight any significant opportunities, gaps, or underserved segments within 
+the market. Present all findings in a well-structured, professional HTML 
+report.
             """
         ),
         id='0',
