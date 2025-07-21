@@ -140,6 +140,50 @@ class WebSocketBrowserWrapper:
 
     async def start(self):
         """Start the WebSocket server and connect to it."""
+        # Check if npm is installed
+        npm_check = subprocess.run(
+            ['npm', '--version'],
+            capture_output=True,
+            text=True,
+        )
+        if npm_check.returncode != 0:
+            raise RuntimeError(
+                "npm is not installed or not in PATH. "
+                "Please install Node.js and npm from https://nodejs.org/ "
+                "to use the hybrid browser toolkit."
+            )
+
+        # Check if node is installed
+        node_check = subprocess.run(
+            ['node', '--version'],
+            capture_output=True,
+            text=True,
+        )
+        if node_check.returncode != 0:
+            raise RuntimeError(
+                "node is not installed or not in PATH. "
+                "Please install Node.js from https://nodejs.org/ "
+                "to use the hybrid browser toolkit."
+            )
+
+        # Check if node_modules exists (dependencies installed)
+        node_modules_path = os.path.join(self.ts_dir, 'node_modules')
+        if not os.path.exists(node_modules_path):
+            logger.warning("Node modules not found. Running npm install...")
+            install_result = subprocess.run(
+                ['npm', 'install'],
+                cwd=self.ts_dir,
+                capture_output=True,
+                text=True,
+            )
+            if install_result.returncode != 0:
+                logger.error(f"npm install failed: {install_result.stderr}")
+                raise RuntimeError(
+                    f"Failed to install npm dependencies: {install_result.stderr}\n"  # noqa:E501
+                    f"Please run 'npm install' in {self.ts_dir} manually."
+                )
+            logger.info("npm dependencies installed successfully")
+
         # Ensure the TypeScript code is built
         build_result = subprocess.run(
             ['npm', 'run', 'build'],

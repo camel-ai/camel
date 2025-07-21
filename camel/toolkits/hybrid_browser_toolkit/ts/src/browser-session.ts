@@ -25,48 +25,91 @@ export class HybridBrowserSession {
     const browserConfig = this.configLoader.getBrowserConfig();
     const stealthConfig = this.configLoader.getStealthConfig();
     
-    const launchOptions: any = {
-      headless: browserConfig.headless,
-    };
-
-    if (stealthConfig.enabled) {
-      launchOptions.args = stealthConfig.args || [];
+    // Check if CDP connection is requested
+    if (browserConfig.connectOverCdp && browserConfig.cdpUrl) {
+      // Connect to existing browser via CDP
+      this.browser = await chromium.connectOverCDP(browserConfig.cdpUrl);
       
-      // Apply stealth user agent if configured
-      if (stealthConfig.userAgent) {
-        launchOptions.userAgent = stealthConfig.userAgent;
+      // Get existing contexts or create new one
+      const contexts = this.browser.contexts();
+      if (contexts.length > 0) {
+        this.context = contexts[0];
+      } else {
+        const contextOptions: any = {
+          viewport: browserConfig.viewport
+        };
+        
+        // Apply stealth headers if configured
+        if (stealthConfig.enabled && stealthConfig.extraHTTPHeaders) {
+          contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+        }
+        
+        this.context = await this.browser.newContext(contextOptions);
       }
-    }
-
-    if (browserConfig.userDataDir) {
-      this.context = await chromium.launchPersistentContext(
-        browserConfig.userDataDir,
-        launchOptions
-      );
       
+      // Handle existing pages
       const pages = this.context.pages();
       if (pages.length > 0) {
+        // Map existing pages
+        for (const page of pages) {
+          const tabId = this.generateTabId();
+          this.pages.set(tabId, page);
+          if (!this.currentTabId) {
+            this.currentTabId = tabId;
+          }
+        }
+      } else {
+        // Create initial page if none exist
+        const initialPage = await this.context.newPage();
         const initialTabId = this.generateTabId();
-        this.pages.set(initialTabId, pages[0]);
+        this.pages.set(initialTabId, initialPage);
         this.currentTabId = initialTabId;
       }
     } else {
-      this.browser = await chromium.launch(launchOptions);
-      const contextOptions: any = {
-        viewport: browserConfig.viewport
+      // Original launch logic
+      const launchOptions: any = {
+        headless: browserConfig.headless,
       };
-      
-      // Apply stealth headers if configured
-      if (stealthConfig.enabled && stealthConfig.extraHTTPHeaders) {
-        contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+
+      if (stealthConfig.enabled) {
+        launchOptions.args = stealthConfig.args || [];
+        
+        // Apply stealth user agent if configured
+        if (stealthConfig.userAgent) {
+          launchOptions.userAgent = stealthConfig.userAgent;
+        }
       }
-      
-      this.context = await this.browser.newContext(contextOptions);
-      
-      const initialPage = await this.context.newPage();
-      const initialTabId = this.generateTabId();
-      this.pages.set(initialTabId, initialPage);
-      this.currentTabId = initialTabId;
+
+      if (browserConfig.userDataDir) {
+        this.context = await chromium.launchPersistentContext(
+          browserConfig.userDataDir,
+          launchOptions
+        );
+        
+        const pages = this.context.pages();
+        if (pages.length > 0) {
+          const initialTabId = this.generateTabId();
+          this.pages.set(initialTabId, pages[0]);
+          this.currentTabId = initialTabId;
+        }
+      } else {
+        this.browser = await chromium.launch(launchOptions);
+        const contextOptions: any = {
+          viewport: browserConfig.viewport
+        };
+        
+        // Apply stealth headers if configured
+        if (stealthConfig.enabled && stealthConfig.extraHTTPHeaders) {
+          contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+        }
+        
+        this.context = await this.browser.newContext(contextOptions);
+        
+        const initialPage = await this.context.newPage();
+        const initialTabId = this.generateTabId();
+        this.pages.set(initialTabId, initialPage);
+        this.currentTabId = initialTabId;
+      }
     }
 
     // Set timeouts
@@ -773,6 +816,8 @@ export class HybridBrowserSession {
   }
 
   async close(): Promise<void> {
+    const browserConfig = this.configLoader.getBrowserConfig();
+    
     for (const page of this.pages.values()) {
       if (!page.isClosed()) {
         await page.close();
@@ -788,7 +833,13 @@ export class HybridBrowserSession {
     }
     
     if (this.browser) {
-      await this.browser.close();
+      if (browserConfig.connectOverCdp) {
+        // For CDP connections, just disconnect without closing the browser
+        await this.browser.close();
+      } else {
+        // For launched browsers, close completely
+        await this.browser.close();
+      }
       this.browser = null;
     }
   }
