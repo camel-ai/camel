@@ -410,11 +410,13 @@ class SingleAgentWorker(Worker):
             f"{getattr(worker_agent, 'agent_id', worker_agent.role_name)} "
             f"(from pool/clone of "
             f"{getattr(self.worker, 'agent_id', self.worker.role_name)}) "
-            f"to process task {task.content}",
-            "response_content": response_content,
-            "tool_calls": final_response.info.get("tool_calls")
-            if isinstance(response, AsyncStreamingChatAgentResponse)
-            else response.info.get("tool_calls"),
+            f"to process task: {task.content}",
+            "response_content": response_content[:50],
+            "tool_calls": str(
+                final_response.info.get("tool_calls")
+                if isinstance(response, AsyncStreamingChatAgentResponse)
+                else response.info.get("tool_calls")
+            )[:50],
             "total_tokens": total_tokens,
         }
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.72a10"
+version = "0.2.73a0"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -111,6 +111,7 @@ web_tools = [
     "beautifulsoup4>=4,<5",
     "exa-py>=1.10.0,<2",
     "scrapegraph-py>=1.12.0,<2",
+    "websockets>=13.0,<15.1",
 ]
 document_tools = [
     "numpy>=1.2,<=2.2",
@@ -126,11 +127,12 @@ document_tools = [
     "openpyxl>=3.1.5",
     "docx>=0.2.4",
     "crawl4ai>=0.3.745",
-    "markitdown==0.1.1",
+    "markitdown>=0.1.1",
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50",
     "python-pptx>=1.0.2",
     "reportlab>=4.4.2",
+    "onnxruntime<=1.20.1"
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -250,6 +252,7 @@ owl = [
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
     "requests_oauthlib>=1.3.1,<2",
+    "websockets>=13.0,<15.1",
     "e2b-code-interpreter>=1.0.3,<2",
     "typer>=0.15.2",
     "tree-sitter-python>=0.23.6,<0.24",
@@ -264,9 +267,10 @@ owl = [
     "chunkr-ai>=0.0.50",
     "python-pptx>=1.0.2",
     "pytesseract>=0.3.13",
-    "markitdown==0.1.1",
+    "markitdown>=0.1.1",
     "exa-py>=1.10.0,<2",
     "reportlab>=4.4.2",
+    "onnxruntime<=1.20.1"
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -333,7 +337,7 @@ all = [
     "faiss-cpu>=1.7.2,<2",
     "cohere>=5.11.0,<6",
     "neo4j>=5.18.0,<6",
-    "markitdown==0.1.1",
+    "markitdown>=0.1.1",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
     "litellm>=1.38.1,<2",
@@ -366,6 +370,7 @@ all = [
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
     "docx>=0.2.4",
+    "websockets>=13.0,<15.1",
     "mcp>=1.3.0",
     "typer>=0.15.2",
     "mem0ai>=0.1.67",
@@ -392,6 +397,7 @@ all = [
     "chromadb>=0.6.0,<1.0.0",
     "traceroot==0.0.4a4",
     "reportlab>=4.4.2",
+    "onnxruntime<=1.20.1"
 ]
 
 [project.urls]
@@ -400,10 +406,38 @@ Repository = "https://github.com/camel-ai/camel"
 Documentation = "https://docs.camel-ai.org"
 
 [tool.hatch.build.targets.sdist]
-include = ["camel"]
+include = [
+    "camel",
+    "camel/toolkits/hybrid_browser_toolkit/ts/package.json",
+    "camel/toolkits/hybrid_browser_toolkit/ts/package-lock.json", 
+    "camel/toolkits/hybrid_browser_toolkit/ts/tsconfig.json",
+    "camel/toolkits/hybrid_browser_toolkit/ts/src/**/*",
+    "camel/toolkits/hybrid_browser_toolkit/ts/websocket-server.js",
+    "hatch_build_npm.py"
+]
+exclude = [
+    "camel/toolkits/hybrid_browser_toolkit/ts/node_modules/**/*"
+]
 
 [tool.hatch.build.targets.wheel]
-include = ["camel"]
+include = [
+    "camel",
+    "camel/toolkits/hybrid_browser_toolkit/ts/package.json",
+    "camel/toolkits/hybrid_browser_toolkit/ts/package-lock.json",
+    "camel/toolkits/hybrid_browser_toolkit/ts/tsconfig.json", 
+    "camel/toolkits/hybrid_browser_toolkit/ts/src/**/*",
+    "camel/toolkits/hybrid_browser_toolkit/ts/dist/**/*",
+    "camel/toolkits/hybrid_browser_toolkit/ts/websocket-server.js"
+]
+exclude = [
+    "camel/toolkits/hybrid_browser_toolkit/ts/node_modules/**/*"
+]
+
+[tool.hatch.build.targets.wheel.hooks.custom]
+path = "hatch_build_npm.py"
+
+[tool.hatch.build.targets.sdist.hooks.custom]
+path = "hatch_build_npm.py"
 
 [tool.hatch.metadata]
 allow-direct-references = true
