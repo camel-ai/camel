@@ -447,7 +447,7 @@ class ChatAgent(BaseAgent):
             token_limit or self.model_backend.token_limit,
         )
 
-        self.memory: AgentMemory = memory or ChatHistoryMemory(
+        self._memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator,
             window_size=message_window_size,
             agent_id=self.agent_id,
@@ -455,7 +455,7 @@ class ChatAgent(BaseAgent):
 
         # So we don't have to pass agent_id when we define memory
         if memory is not None:
-            memory.agent_id = self.agent_id
+            self._memory.agent_id = self.agent_id
 
         # Set up system message and initialize messages
         self._original_system_message = (
@@ -678,6 +678,25 @@ class ChatAgent(BaseAgent):
         self._system_message = (
             self._generate_system_message_for_output_language()
         )
+        self.init_messages()
+
+    @property
+    def memory(self) -> AgentMemory:
+        r"""Returns the agent memory."""
+        return self._memory
+
+    @memory.setter
+    def memory(self, value: AgentMemory) -> None:
+        r"""Set the agent memory.
+
+        When setting a new memory, the system message is automatically
+        re-added to ensure it's not lost.
+
+        Args:
+            value (AgentMemory): The new agent memory to use.
+        """
+        self._memory = value
+        # Ensure the new memory has the system message
         self.init_messages()
 
     def _get_full_tool_schemas(self) -> List[Dict[str, Any]]:
