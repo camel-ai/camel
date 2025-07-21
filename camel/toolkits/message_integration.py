@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import asyncio
 import inspect
 from functools import wraps
 from typing import Callable, List, Optional, Union
@@ -169,23 +168,51 @@ class ToolkitMessageIntegration:
         Returns:
             The toolkit with messaging capabilities added
         """
-        original_get_tools = toolkit.get_tools
 
-        def enhanced_get_tools() -> List[FunctionTool]:
-            tools = original_get_tools()
-            enhanced_tools = []
+        # Create a factory function to ensure each toolkit gets its own closure
+        def create_enhanced_get_tools(original_method, tool_names_filter):
+            def enhanced_get_tools() -> List[FunctionTool]:
+                tools = original_method()
+                enhanced_tools = []
 
-            for tool in tools:
-                if tool_names is None or tool.func.__name__ in tool_names:
-                    enhanced_func = self._add_messaging_to_tool(tool.func)
-                    enhanced_tools.append(FunctionTool(enhanced_func))
-                else:
-                    enhanced_tools.append(tool)
+                for tool in tools:
+                    if (
+                        tool_names_filter is None
+                        or getattr(tool.func, '__name__', '')
+                        in tool_names_filter
+                    ):
+                        enhanced_func = self._add_messaging_to_tool(tool.func)
+                        enhanced_tools.append(FunctionTool(enhanced_func))
+                    else:
+                        enhanced_tools.append(tool)
 
-            return enhanced_tools
+                return enhanced_tools
 
-        # Replace the get_tools method
-        toolkit.get_tools = enhanced_get_tools  # type: ignore[method-assign]
+            return enhanced_get_tools
+
+        # Create a new enhanced method with
+        # isolated closure for this toolkit instance
+        enhanced_method = create_enhanced_get_tools(
+            toolkit.get_tools, tool_names
+        )
+
+        toolkit.get_tools = enhanced_method  # type: ignore[method-assign]
+
+        # Also handle clone_for_new_session
+        # if it exists to ensure cloned toolkits
+        # also have message integration
+        if hasattr(toolkit, 'clone_for_new_session'):
+            original_clone_method = toolkit.clone_for_new_session
+            message_integration_instance = self
+
+            def enhanced_clone_for_new_session(new_session_id=None):
+                cloned_toolkit = original_clone_method(new_session_id)
+                return message_integration_instance.add_messaging_to_toolkit(
+                    cloned_toolkit, tool_names
+                )
+
+            toolkit.clone_for_new_session = enhanced_clone_for_new_session
+
         return toolkit
 
     def add_messaging_to_functions(
@@ -419,14 +446,11 @@ class ToolkitMessageIntegration:
         # Apply the new signature to the wrapper
         wrapper.__signature__ = new_sig  # type: ignore[attr-defined]
 
-        # Ensure the wrapper has the correct async attributes
-        if is_async:
-            # Mark wrapper as async function for proper async detection
-            try:
-                wrapper._is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined]
-            except AttributeError:
-                # Fallback for different Python/asyncio versions
-                pass
+        # Preserve the original
+        # function's __self__ attribute if it exists
+        # for ChatAgent's _clone_tools to recognize toolkit instances
+        if hasattr(func, '__self__'):
+            wrapper.__self__ = func.__self__  # type: ignore[attr-defined]
 
         # Enhance the docstring
         if func.__doc__:
