@@ -518,7 +518,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         Returns:
             str: A confirmation message indicating the screenshot was
-                captured, the file path where it was saved, and optionally the 
+                captured, the file path where it was saved, and optionally the
                 agent's analysis if `read_image` is `True`.
         """
         import base64
