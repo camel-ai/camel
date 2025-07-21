@@ -1488,7 +1488,7 @@ class HybridBrowserToolkit(BaseToolkit):
 
         return ToolResult(text=text_result, images=[img_data_url])
 
-    async def click(self, *, ref: str) -> Dict[str, Any]:
+    async def hybrid_browser_click(self, *, ref: str) -> Dict[str, Any]:
         r"""Performs a click on an element on the page.
 
         Args:
@@ -1531,8 +1531,10 @@ class HybridBrowserToolkit(BaseToolkit):
         result.update(tab_info)
 
         return result
+    # Alias for backward compatibility
+    click = hybrid_browser_click
 
-    async def type(self, *, ref: str, text: str) -> Dict[str, Any]:
+    async def hybrid_browser_type(self, *, ref: str, text: str) -> Dict[str, Any]:
         r"""Types text into an input element on the page.
 
         Args:
@@ -1559,8 +1561,10 @@ class HybridBrowserToolkit(BaseToolkit):
         result.update(tab_info)
 
         return result
-
-    async def select(self, *, ref: str, value: str) -> Dict[str, Any]:
+        # Alias for backward compatibility
+        type = hybrid_browser_type
+        
+    async def hybrid_browser_select(self, *, ref: str, value: str) -> Dict[str, Any]:
         r"""Selects an option in a dropdown (`<select>`) element.
 
         Args:
@@ -1588,8 +1592,10 @@ class HybridBrowserToolkit(BaseToolkit):
         result.update(tab_info)
 
         return result
-
-    async def scroll(self, *, direction: str, amount: int) -> Dict[str, Any]:
+        # Alias for backward compatibility
+        select = hybrid_browser_select
+        
+    async def hybrid_browser_scroll(self, *, direction: str, amount: int) -> Dict[str, Any]:
         r"""Scrolls the current page window.
 
         Args:
@@ -1620,8 +1626,10 @@ class HybridBrowserToolkit(BaseToolkit):
         result.update(tab_info)
 
         return result
-
-    async def enter(self) -> Dict[str, Any]:
+        # Alias for backward compatibility
+        scroll = hybrid_browser_scroll
+        
+    async def hybrid_browser_enter(self) -> Dict[str, Any]:
         r"""Simulates pressing the Enter key on the currently focused element.
 
         This is useful for submitting forms or search queries after using the
@@ -1646,7 +1654,9 @@ class HybridBrowserToolkit(BaseToolkit):
         result.update(tab_info)
 
         return result
-
+        # Alias for backward compatibility
+        enter = hybrid_browser_enter
+        
     @action_logger
     async def wait_user(
         self, timeout_sec: Optional[float] = None
