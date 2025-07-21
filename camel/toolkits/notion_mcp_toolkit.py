@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List, Optional
+from typing import Any, ClassVar, Dict, List, Optional, Set
 
 from camel.toolkits import BaseToolkit, FunctionTool
 
@@ -30,6 +30,40 @@ class NotionMCPToolkit(BaseToolkit):
     Note:
         Currently only supports asynchronous operation mode.
     """
+
+    # TODO: Create unified method to validate and fix the schema
+    SCHEMA_KEYWORDS: ClassVar[Set[str]] = {
+        "type",
+        "properties",
+        "items",
+        "required",
+        "additionalProperties",
+        "description",
+        "title",
+        "default",
+        "enum",
+        "const",
+        "examples",
+        "$ref",
+        "$defs",
+        "definitions",
+        "allOf",
+        "oneOf",
+        "anyOf",
+        "not",
+        "if",
+        "then",
+        "else",
+        "format",
+        "pattern",
+        "minimum",
+        "maximum",
+        "minLength",
+        "maxLength",
+        "minItems",
+        "maxItems",
+        "uniqueItems",
+    }
 
     def __init__(
         self,
@@ -73,18 +107,12 @@ class NotionMCPToolkit(BaseToolkit):
         Returns:
             List[FunctionTool]: List of available tools.
         """
-        # Get tools directly from clients without going
-        # through MCPToolkit.get_tools()
-        # to avoid the _ensure_strict_tool_schema processing
-        # that conflicts with our fix
         all_tools = []
         for client in self._mcp_toolkit.clients:
             try:
-                # Temporarily override the client's _build_tool_schema method
                 original_build_schema = client._build_tool_schema
 
-                # Create a proper closure to avoid B023 lint warning
-                def make_build_schema_wrapper(orig_func):
+                def create_wrapper(orig_func):
                     def wrapper(mcp_tool):
                         return self._build_notion_tool_schema(
                             mcp_tool, orig_func
@@ -92,16 +120,14 @@ class NotionMCPToolkit(BaseToolkit):
 
                     return wrapper
 
-                setattr(client, '_build_tool_schema', make_build_schema_wrapper(
+                client._build_tool_schema = create_wrapper(  # type: ignore[method-assign]
                     original_build_schema
-                ))
+                )
 
-                # Get tools directly from the client
                 client_tools = client.get_tools()
                 all_tools.extend(client_tools)
 
-                # Restore original method
-                setattr(client, '_build_tool_schema', original_build_schema)
+                client._build_tool_schema = original_build_schema  # type: ignore[method-assign]
 
             except Exception as e:
                 from camel.logger import get_logger
@@ -113,188 +139,96 @@ class NotionMCPToolkit(BaseToolkit):
 
     def _build_notion_tool_schema(self, mcp_tool, original_build_schema):
         r"""Build tool schema with Notion-specific fixes."""
-        # Get the original schema
         schema = original_build_schema(mcp_tool)
-
-        # Apply our custom fixing to the schema
         self._fix_notion_schema_recursively(schema)
-
         return schema
 
-    def _fix_notion_schema_recursively(self, obj):
-        r"""Recursively fix Notion MCP schema issues,
-        including deep nested anyOf structures."""
+    def _fix_notion_schema_recursively(self, obj: Any) -> None:
+        r"""Recursively fix Notion MCP schema issues."""
         if isinstance(obj, dict):
-            # Handle special case: object with properties but missing
-            # type field
-            # This MUST be checked first before the type=="object" check
-            if "properties" in obj and "type" not in obj:
-                # This object has properties but no type,
-                # assume it should be "object"
-                properties = obj.get("properties", {})
-                if properties and isinstance(properties, dict):
-                    obj["type"] = "object"
-                    obj["additionalProperties"] = False
-
-                    # For objects that were missing type,
-                    # we should be more conservative
-                    # about adding required fields - only add ones
-                    # that seem truly required
-                    schema_keywords = {
-                        "type",
-                        "properties",
-                        "items",
-                        "required",
-                        "additionalProperties",
-                        "description",
-                        "title",
-                        "default",
-                        "enum",
-                        "const",
-                        "examples",
-                        "$ref",
-                        "$defs",
-                        "definitions",
-                        "allOf",
-                        "oneOf",
-                        "anyOf",
-                        "not",
-                        "if",
-                        "then",
-                        "else",
-                        "format",
-                        "pattern",
-                        "minimum",
-                        "maximum",
-                        "minLength",
-                        "maxLength",
-                        "minItems",
-                        "maxItems",
-                        "uniqueItems",
-                    }
-
-                    required_properties = []
-                    for prop_name, prop_schema in properties.items():
-                        if prop_name not in schema_keywords:
-                            # Only add if it seems required
-                            # (no null type, no default)
-                            if isinstance(prop_schema, dict):
-                                prop_type = prop_schema.get("type")
-                                if (
-                                    prop_type
-                                    and prop_type != "null"
-                                    and "default" not in prop_schema
-                                    and not (
-                                        isinstance(prop_type, list)
-                                        and "null" in prop_type
-                                    )
-                                ):
-                                    required_properties.append(prop_name)
-
-                    if required_properties:
-                        obj["required"] = required_properties
-
-            # Fix objects with properties but missing required fields
-            elif obj.get("type") == "object" and "properties" in obj:
-                properties = obj.get("properties", {})
-                if properties and isinstance(properties, dict):
-                    # Only add actual property names to required,
-                    # not schema keywords
-                    schema_keywords = {
-                        "type",
-                        "properties",
-                        "items",
-                        "required",
-                        "additionalProperties",
-                        "description",
-                        "title",
-                        "default",
-                        "enum",
-                        "const",
-                        "examples",
-                        "$ref",
-                        "$defs",
-                        "definitions",
-                        "allOf",
-                        "oneOf",
-                        "anyOf",
-                        "not",
-                        "if",
-                        "then",
-                        "else",
-                        "format",
-                        "pattern",
-                        "minimum",
-                        "maximum",
-                        "minLength",
-                        "maxLength",
-                        "minItems",
-                        "maxItems",
-                        "uniqueItems",
-                    }
-
-                    # Get existing required fields to preserve
-                    # original requirements
-                    existing_required = obj.get("required", [])
-
-                    # Only add properties that don't already
-                    # have required field
-                    # and are not schema keywords
-                    for prop_name in properties.keys():
-                        if (
-                            prop_name not in existing_required
-                            and prop_name not in schema_keywords
-                        ):
-                            # Check if this property is actually required
-                            # based on original schema
-                            # For now, only add if it doesn't have a
-                            # default or null type
-                            prop_schema = properties[prop_name]
-                            if isinstance(prop_schema, dict):
-                                # Skip optional properties
-                                prop_type = prop_schema.get("type")
-                                if (
-                                    prop_type != "null"
-                                    and "default" not in prop_schema
-                                    and not (
-                                        isinstance(prop_type, list)
-                                        and "null" in prop_type
-                                    )
-                                ):
-                                    existing_required.append(prop_name)
-
-                    if existing_required:
-                        obj["required"] = existing_required
-
-                    # Ensure additionalProperties is false for strict mode
-                    if "additionalProperties" not in obj:
-                        obj["additionalProperties"] = False
-
-            # Recursively process all nested values,
-            # including anyOf, oneOf, allOf
-            for key, value in obj.items():
-                if key in ["anyOf", "oneOf", "allOf"] and isinstance(
-                    value, list
-                ):
-                    # Handle schema combination structures
-                    for item in value:
-                        self._fix_notion_schema_recursively(item)
-                elif key == "items" and isinstance(value, dict):
-                    # Handle array items
-                    self._fix_notion_schema_recursively(value)
-                elif key == "properties" and isinstance(value, dict):
-                    # Handle object properties
-                    for prop_value in value.values():
-                        self._fix_notion_schema_recursively(prop_value)
-                elif key == "$defs" and isinstance(value, dict):
-                    # Handle schema definitions
-                    for def_value in value.values():
-                        self._fix_notion_schema_recursively(def_value)
-                elif isinstance(value, (dict, list)):
-                    # Handle other nested structures
-                    self._fix_notion_schema_recursively(value)
-
+            self._fix_dict_schema(obj)
+            self._process_nested_structures(obj)
         elif isinstance(obj, list):
-            # Process each item in the list
             for item in obj:
                 self._fix_notion_schema_recursively(item)
+
+    def _fix_dict_schema(self, obj: Dict[str, Any]) -> None:
+        r"""Fix dictionary schema issues."""
+        if "properties" in obj and "type" not in obj:
+            self._fix_missing_type_with_properties(obj)
+        elif obj.get("type") == "object" and "properties" in obj:
+            self._fix_object_with_properties(obj)
+
+    def _fix_missing_type_with_properties(self, obj: Dict[str, Any]) -> None:
+        r"""Fix objects with properties but missing type field."""
+        properties = obj.get("properties", {})
+        if properties and isinstance(properties, dict):
+            obj["type"] = "object"
+            obj["additionalProperties"] = False
+
+            required_properties = self._get_required_properties(
+                properties, conservative=True
+            )
+            if required_properties:
+                obj["required"] = required_properties
+
+    def _fix_object_with_properties(self, obj: Dict[str, Any]) -> None:
+        r"""Fix objects with type="object" and properties."""
+        properties = obj.get("properties", {})
+        if properties and isinstance(properties, dict):
+            existing_required = obj.get("required", [])
+
+            for prop_name, prop_schema in properties.items():
+                if (
+                    prop_name not in existing_required
+                    and prop_name not in self.SCHEMA_KEYWORDS
+                    and self._is_property_required(prop_schema)
+                ):
+                    existing_required.append(prop_name)
+
+            if existing_required:
+                obj["required"] = existing_required
+
+            if "additionalProperties" not in obj:
+                obj["additionalProperties"] = False
+
+    def _get_required_properties(
+        self, properties: Dict[str, Any], conservative: bool = False
+    ) -> List[str]:
+        r"""Get list of required properties from a properties dict."""
+        required = []
+        for prop_name, prop_schema in properties.items():
+            if (
+                prop_name not in self.SCHEMA_KEYWORDS
+                and isinstance(prop_schema, dict)
+                and self._is_property_required(prop_schema)
+            ):
+                required.append(prop_name)
+        return required
+
+    def _is_property_required(self, prop_schema: Dict[str, Any]) -> bool:
+        r"""Check if a property should be marked as required."""
+        prop_type = prop_schema.get("type")
+        return (
+            prop_type is not None
+            and prop_type != "null"
+            and "default" not in prop_schema
+            and not (isinstance(prop_type, list) and "null" in prop_type)
+        )
+
+    def _process_nested_structures(self, obj: Dict[str, Any]) -> None:
+        r"""Process all nested structures in a schema object."""
+        for key, value in obj.items():
+            if key in ["anyOf", "oneOf", "allOf"] and isinstance(value, list):
+                for item in value:
+                    self._fix_notion_schema_recursively(item)
+            elif key == "items" and isinstance(value, dict):
+                self._fix_notion_schema_recursively(value)
+            elif key == "properties" and isinstance(value, dict):
+                for prop_value in value.values():
+                    self._fix_notion_schema_recursively(prop_value)
+            elif key == "$defs" and isinstance(value, dict):
+                for def_value in value.values():
+                    self._fix_notion_schema_recursively(def_value)
+            elif isinstance(value, (dict, list)):
+                self._fix_notion_schema_recursively(value)
