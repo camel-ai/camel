@@ -447,7 +447,7 @@ class ChatAgent(BaseAgent):
             token_limit or self.model_backend.token_limit,
         )
 
-        self.memory: AgentMemory = memory or ChatHistoryMemory(
+        self._memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator,
             window_size=message_window_size,
             agent_id=self.agent_id,
@@ -455,7 +455,7 @@ class ChatAgent(BaseAgent):
 
         # So we don't have to pass agent_id when we define memory
         if memory is not None:
-            memory.agent_id = self.agent_id
+            self._memory.agent_id = self.agent_id
 
         # Set up system message and initialize messages
         self._original_system_message = (
@@ -678,6 +678,25 @@ class ChatAgent(BaseAgent):
         self._system_message = (
             self._generate_system_message_for_output_language()
         )
+        self.init_messages()
+
+    @property
+    def memory(self) -> AgentMemory:
+        r"""Returns the agent memory."""
+        return self._memory
+
+    @memory.setter
+    def memory(self, value: AgentMemory) -> None:
+        r"""Set the agent memory.
+
+        When setting a new memory, the system message is automatically
+        re-added to ensure it's not lost.
+
+        Args:
+            value (AgentMemory): The new agent memory to use.
+        """
+        self._memory = value
+        # Ensure the new memory has the system message
         self.init_messages()
 
     def _get_full_tool_schemas(self) -> List[Dict[str, Any]]:
@@ -3533,6 +3552,9 @@ class ChatAgent(BaseAgent):
         # To avoid duplicated system memory.
         system_message = None if with_memory else self._original_system_message
 
+        # Clone tools and collect toolkits that need registration
+        cloned_tools, toolkits_to_register = self._clone_tools()
+
         new_agent = ChatAgent(
             system_message=system_message,
             model=self.model_backend.models,  # Pass the existing model_backend
@@ -3542,7 +3564,8 @@ class ChatAgent(BaseAgent):
                 self.memory.get_context_creator(), "token_limit", None
             ),
             output_language=self._output_language,
-            tools=self._clone_tools(),
+            tools=cloned_tools,
+            toolkits_to_register_agent=toolkits_to_register,
             external_tools=[
                 schema for schema in self._external_tool_schemas.values()
             ],
@@ -3567,55 +3590,76 @@ class ChatAgent(BaseAgent):
 
         return new_agent
 
-    def _clone_tools(self) -> List[Union[FunctionTool, Callable]]:
-        r"""Clone tools for new agent instance,
-        handling stateful toolkits properly."""
+    def _clone_tools(
+        self,
+    ) -> Tuple[
+        List[Union[FunctionTool, Callable]], List[RegisteredAgentToolkit]
+    ]:
+        r"""Clone tools and return toolkits that need agent registration.
+
+        This method handles stateful toolkits by cloning them if they have
+        a clone_for_new_session method, and collecting RegisteredAgentToolkit
+        instances for later registration.
+
+        Returns:
+            Tuple containing:
+            - List of cloned tools/functions
+            - List of RegisteredAgentToolkit instances need registration
+        """
         cloned_tools = []
-        hybrid_browser_toolkits = {}  # Cache for created toolkits
+        toolkits_to_register = []
+        cloned_toolkits = {}
+        # Cache for cloned toolkits by original toolkit id
 
         for tool in self._internal_tools.values():
-            # Check if this is a HybridBrowserToolkit method
-            if (
-                hasattr(tool.func, '__self__')
-                and tool.func.__self__.__class__.__name__
-                == 'HybridBrowserToolkit'
-            ):
+            # Check if this tool is a method bound to a toolkit instance
+            if hasattr(tool.func, '__self__'):
                 toolkit_instance = tool.func.__self__
                 toolkit_id = id(toolkit_instance)
 
-                # Check if we already created a clone for this toolkit
-                if toolkit_id not in hybrid_browser_toolkits:
-                    try:
-                        import uuid
+                if toolkit_id not in cloned_toolkits:
+                    # Check if the toolkit has a clone method
+                    if hasattr(toolkit_instance, 'clone_for_new_session'):
+                        try:
+                            import uuid
 
-                        new_session_id = str(uuid.uuid4())[:8]
-                        new_toolkit = toolkit_instance.clone_for_new_session(
-                            new_session_id
-                        )
-                        hybrid_browser_toolkits[toolkit_id] = new_toolkit
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to clone HybridBrowserToolkit: {e}"
-                        )
-                        # Fallback to original function
-                        cloned_tools.append(tool.func)
-                        continue
+                            new_session_id = str(uuid.uuid4())[:8]
+                            new_toolkit = (
+                                toolkit_instance.clone_for_new_session(
+                                    new_session_id
+                                )
+                            )
 
-                # Get the corresponding method from the cloned toolkit
-                new_toolkit = hybrid_browser_toolkits[toolkit_id]
+                            # If this is a RegisteredAgentToolkit,
+                            # add it to registration list
+                            if isinstance(new_toolkit, RegisteredAgentToolkit):
+                                toolkits_to_register.append(new_toolkit)
+
+                            cloned_toolkits[toolkit_id] = new_toolkit
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to clone toolkit {toolkit_instance.__class__.__name__}: {e}"  # noqa:E501
+                            )
+                            # Use original toolkit if cloning fails
+                            cloned_toolkits[toolkit_id] = toolkit_instance
+                    else:
+                        # Toolkit doesn't support cloning, use original
+                        cloned_toolkits[toolkit_id] = toolkit_instance
+
+                # Get the method from the cloned (or original) toolkit
+                toolkit = cloned_toolkits[toolkit_id]
                 method_name = tool.func.__name__
-                if hasattr(new_toolkit, method_name):
-                    new_method = getattr(new_toolkit, method_name)
+                if hasattr(toolkit, method_name):
+                    new_method = getattr(toolkit, method_name)
                     cloned_tools.append(new_method)
                 else:
                     # Fallback to original function
                     cloned_tools.append(tool.func)
             else:
-                # Regular tool or other stateless toolkit
-                # just use the original function
+                # Not a toolkit method, just use the original function
                 cloned_tools.append(tool.func)
 
-        return cloned_tools
+        return cloned_tools, toolkits_to_register
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.

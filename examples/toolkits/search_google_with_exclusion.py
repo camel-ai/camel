@@ -26,14 +26,27 @@ search_result = toolkit.search_google(query="Python Wikipedia")
 print("Search results for 'Python Wikipedia':\n")
 for result in search_result:
     print(result['url'])
-search_result = toolkit.search_google(
-    query="Python Wikipedia",
+toolkit = SearchToolkit(
+    number_of_result_pages=3,
     exclude_domains=[
         "wikipedia.org",
-        "wikipedia-api.readthedocs.io",
-        "wikipedia.readthedocs.io",
     ],
 )
+search_result = toolkit.search_google(query="Python Wikipedia")
 print("\nExcluding specified domains related to wikipedia:\n")
 for result in search_result:
     print(result['url'])
+
+"""
+Search results for 'Python Wikipedia':
+https://en.wikipedia.org/wiki/Python_(programming_language)
+https://wiki.python.org/moin/FrontPage
+https://pypi.org/project/wikipedia/
+
+Excluding specified domains related to wikipedia:
+
+
+https://pypi.org/project/wikipedia/
+https://wiki.python.org/moin/FrontPage
+https://www.reddit.com/r/Python/comments/3tn216/scraping_wikipedia/
+"""

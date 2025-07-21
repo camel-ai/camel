@@ -54,7 +54,9 @@ from camel.utils.commons import api_keys_required
 
 logger = get_logger(__name__)
 
-WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or "working_dir/"
+WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or os.path.abspath(
+    "working_dir/"
+)
 
 
 def send_message_to_user(
@@ -283,16 +285,16 @@ def search_agent_factory(
     agent_id = str(uuid.uuid4())[:8]
 
     custom_tools = [
-        "open_browser",
-        "close_browser",
-        "click",
-        "type",
-        "back",
-        "forward",
-        "switch_tab",
-        "enter",
-        "get_som_screenshot",
-        "visit_page",
+        "browser_open",
+        "browser_close",
+        "browser_back",
+        "browser_forward",
+        "browser_click",
+        "browser_type",
+        "browser_enter",
+        "browser_switch_tab",
+        "browser_visit_page",
+        "browser_get_som_screenshot",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
@@ -300,6 +302,7 @@ def search_agent_factory(
         browser_log_to_file=True,
         stealth=True,
         session_id=agent_id,
+        viewport_limit=True,
         cache_dir=WORKING_DIRECTORY,
         default_start_url="https://search.brave.com/",
     )
@@ -422,6 +425,7 @@ Your capabilities include:
             content=system_message,
         ),
         model=model,
+        toolkits_to_register_agent=[web_toolkit_custom],
         tools=tools,
         prune_tool_calls_from_memory=True,
     )
@@ -589,7 +593,9 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     r"""Factory for creating a multi modal agent, based on user-provided code
     structure."""
     tools = [
-        *VideoDownloaderToolkit().get_tools(),
+        *VideoDownloaderToolkit(
+            working_directory=WORKING_DIRECTORY
+        ).get_tools(),
         *AudioAnalysisToolkit().get_tools(),
         *ImageAnalysisToolkit().get_tools(),
         *OpenAIImageToolkit(
@@ -602,7 +608,7 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         send_message_to_user,
         HumanToolkit().ask_human_via_console,
         SearchToolkit().search_exa,
-        *TerminalToolkit().get_tools(),
+        *TerminalToolkit(safe_mode=True, clone_current_env=False).get_tools(),
         *NoteTakingToolkit(working_directory=WORKING_DIRECTORY).get_tools(),
     ]
 
@@ -789,6 +795,9 @@ operations.
 
 
 async def main():
+    # Ensure working directory exists
+    os.makedirs(WORKING_DIRECTORY, exist_ok=True)
+
     # google_drive_mcp_toolkit = GoogleDriveMCPToolkit(
     #     credentials_path="path/to/credentials.json"
     # )
