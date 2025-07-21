@@ -36,8 +36,8 @@ async def main():
     )
 
     response = await chat_agent.astep(
-        "What's the content of url "
-        "https://www.notion.so/Feature-update-1e029df5473f80cdbd2cf59b87266fbc?pvs=12?",
+        """create a new page in my notion named 'CAMEL-AI Notion MCP Toolkit 
+        Test'""",
     )
     print(response.msg.content)
 
@@ -50,28 +50,9 @@ if __name__ == "__main__":
     asyncio.run(main())
 """"
 ===========================================================================
-The "Feature update" page contains multiple exciting updates about 
-CAMEL-AI's new features and integrations:
-
-1. CAMEL-AI's BrowserToolkit now supports asynchronous operations. This 
-improves efficiency, responsiveness, and performance in multi-task execution.
-
-2. CAMEL-AI fully integrates the Mistral Medium model, enhancing the 
-AI model options for various natural language tasks.
-
-3. CAMEL-AI integrates the Playwright MCP Toolkit for enhanced multi-agent 
-system capabilities and complex browser automation.
-
-4. CAMEL-AI integrates with MCP Search Agent functionality, adding powerful 
-search capabilities through the Model Context Protocol standard.
-
-5. CAMEL-AI supports Agent as MCP Server functionality, enabling CAMEL-AI 
-agents to serve as Model Context Protocol servers for other AI systems.
-
-6. CAMEL-AI adds support for Google's Gemini 2.5 Pro Preview model, 
-offering cutting-edge AI capabilities.
-
-7. CAMEL-AI integrates with MarkItDown Loader, providing document 
-conversion of various file formats into Markdown.
+I have created a new page in your Notion named 'CAMEL-AI Notion MCP Toolkit 
+Test'. You can access it here: https://www.notion.so/
+23720ddf035c8146812bf34c9b8d30c5 Is there anything else you would like to do 
+with this page?
 ============================================================================
 """
