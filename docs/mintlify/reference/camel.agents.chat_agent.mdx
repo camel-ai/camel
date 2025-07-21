@@ -367,6 +367,33 @@ Set the output language for the agent.
 
 Note that this will clear the message history.
 
+<a id="camel.agents.chat_agent.ChatAgent.memory"></a>
+
+### memory
+
+```python
+def memory(self):
+```
+
+Returns the agent memory.
+
+<a id="camel.agents.chat_agent.ChatAgent.memory"></a>
+
+### memory
+
+```python
+def memory(self, value: AgentMemory):
+```
+
+Set the agent memory.
+
+When setting a new memory, the system message is automatically
+re-added to ensure it's not lost.
+
+**Parameters:**
+
+- **value** (AgentMemory): The new agent memory to use.
+
 <a id="camel.agents.chat_agent.ChatAgent._get_full_tool_schemas"></a>
 
 ### _get_full_tool_schemas
