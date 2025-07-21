@@ -1335,3 +1335,42 @@ def test_chat_agent_creation_methods():
     # All agents should have the same system message
     for agent in [agent_1, agent_2, agent_3, agent_4, agent_5]:
         assert "You are a helpful assistant." in agent.system_message.content
+
+
+def test_memory_setter_preserves_system_message():
+    r"""Test that setting memory after initialization preserves the system
+    message.
+    """
+    from camel.memories import ChatHistoryMemory, ScoreBasedContextCreator
+    from camel.utils import OpenAITokenCounter
+
+    # Create an agent with a specific system message
+    system_content = "Your name is 'John'. When asked, introduce yourself."
+    sys_msg = BaseMessage.make_assistant_message(
+        role_name='Agent',
+        content=system_content,
+    )
+
+    agent = ChatAgent(system_message=sys_msg)
+
+    # Verify initial memory has system message
+    initial_context, _ = agent.memory.get_context()
+    assert len(initial_context) > 0
+    assert initial_context[0]['role'] == 'system'
+    assert initial_context[0]['content'] == system_content
+
+    # Create a new memory instance
+    context_creator = ScoreBasedContextCreator(
+        token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+        token_limit=1024,
+    )
+    new_memory = ChatHistoryMemory(context_creator=context_creator)
+
+    # Set the new memory (this is where the bug occurred)
+    agent.memory = new_memory
+
+    # Verify the system message is preserved in the new memory
+    new_context, _ = agent.memory.get_context()
+    assert len(new_context) > 0
+    assert new_context[0]['role'] == 'system'
+    assert new_context[0]['content'] == system_content
