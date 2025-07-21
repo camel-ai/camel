@@ -39,6 +39,10 @@ class BrowserConfig:
     # Viewport configuration
     viewport_limit: bool = False
 
+    # CDP connection configuration
+    connect_over_cdp: bool = False
+    cdp_url: Optional[str] = None
+
 
 @dataclass
 class ToolkitConfig:
@@ -97,6 +101,10 @@ class ConfigLoader:
                 browser_kwargs["dom_content_loaded_timeout"] = value
             elif key == "viewportLimit":
                 browser_kwargs["viewport_limit"] = value
+            elif key == "connectOverCdp":
+                browser_kwargs["connect_over_cdp"] = value
+            elif key == "cdpUrl":
+                browser_kwargs["cdp_url"] = value
             elif key == "cacheDir":
                 toolkit_kwargs["cache_dir"] = value
             elif key == "browserLogToFile":
@@ -133,6 +141,8 @@ class ConfigLoader:
             "browser_log_to_file": self.toolkit_config.browser_log_to_file,
             "session_id": self.toolkit_config.session_id,
             "viewport_limit": self.browser_config.viewport_limit,
+            "connectOverCdp": self.browser_config.connect_over_cdp,
+            "cdpUrl": self.browser_config.cdp_url,
         }
 
     def get_timeout_config(self) -> Dict[str, Optional[int]]:
