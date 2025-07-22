@@ -168,24 +168,70 @@ class ToolkitMessageIntegration:
         Returns:
             The toolkit with messaging capabilities added
         """
-        original_get_tools = toolkit.get_tools
+        original_tools = toolkit.get_tools()
+        enhanced_methods = {}
+        for tool in original_tools:
+            method_name = tool.func.__name__
+            if tool_names is None or method_name in tool_names:
+                enhanced_func = self._add_messaging_to_tool(tool.func)
+                enhanced_methods[method_name] = enhanced_func
+                setattr(toolkit, method_name, enhanced_func)
+        original_get_tools_method = toolkit.get_tools
 
         def enhanced_get_tools() -> List[FunctionTool]:
-            tools = original_get_tools()
-            enhanced_tools = []
+            tools = []
+            for _, enhanced_method in enhanced_methods.items():
+                tools.append(FunctionTool(enhanced_method))
+            original_tools_list = original_get_tools_method()
+            for tool in original_tools_list:
+                if tool.func.__name__ not in enhanced_methods:
+                    tools.append(tool)
 
-            for tool in tools:
-                if tool_names is None or tool.func.__name__ in tool_names:
-                    enhanced_func = self._add_messaging_to_tool(tool.func)
-                    enhanced_tools.append(FunctionTool(enhanced_func))
-                else:
-                    enhanced_tools.append(tool)
+            return tools
 
-            return enhanced_tools
-
-        # Replace the get_tools method
         toolkit.get_tools = enhanced_get_tools  # type: ignore[method-assign]
+
+        # Also handle clone_for_new_session
+        # if it exists to ensure cloned toolkits
+        # also have message integration
+        if hasattr(toolkit, 'clone_for_new_session'):
+            original_clone_method = toolkit.clone_for_new_session
+            message_integration_instance = self
+
+            def enhanced_clone_for_new_session(new_session_id=None):
+                cloned_toolkit = original_clone_method(new_session_id)
+                return message_integration_instance.add_messaging_to_toolkit(
+                    cloned_toolkit, tool_names
+                )
+
+            toolkit.clone_for_new_session = enhanced_clone_for_new_session
+
         return toolkit
+
+    def _create_bound_method_wrapper(
+        self, enhanced_func: Callable, toolkit_instance
+    ) -> Callable:
+        """Create a wrapper that mimics a bound method for _clone_tools.
+
+        This wrapper preserves the toolkit instance reference while maintaining
+        the enhanced messaging functionality.
+        """
+
+        # Create a wrapper that appears as a bound method to _clone_tools
+        @wraps(enhanced_func)
+        def bound_method_wrapper(*args, **kwargs):
+            return enhanced_func(*args, **kwargs)
+
+        # Make it appear as a bound method by setting __self__
+        bound_method_wrapper.__self__ = toolkit_instance  # type: ignore[attr-defined]
+
+        # Preserve other important attributes
+        if hasattr(enhanced_func, '__signature__'):
+            bound_method_wrapper.__signature__ = enhanced_func.__signature__  # type: ignore[attr-defined]
+        if hasattr(enhanced_func, '__doc__'):
+            bound_method_wrapper.__doc__ = enhanced_func.__doc__
+
+        return bound_method_wrapper
 
     def add_messaging_to_functions(
         self,
@@ -328,12 +374,9 @@ class ToolkitMessageIntegration:
 
             @wraps(func)
             async def wrapper(*args, **kwargs):
-                # Extract parameters using the callback
                 try:
                     params = self.extract_params_callback(kwargs)
                 except KeyError:
-                    # If parameters are missing, just execute the original
-                    # function
                     return await func(*args, **kwargs)
 
                 # Check if we should send a message
@@ -343,28 +386,36 @@ class ToolkitMessageIntegration:
                         p is not None and p != '' for p in params
                     )
                 else:
-                    # For default handler, params = (title, description,
-                    # attachment)
+                    # For default handler, params
+                    # (title, description, attachment)
                     should_send = bool(params[0]) or bool(params[1])
 
-                # Send message if needed
+                # Send message if needed (handle async properly)
                 if should_send:
-                    if self.use_custom_handler:
-                        # Check if message handler is async
-                        if inspect.iscoroutinefunction(self.message_handler):
-                            await self.message_handler(*params)
+                    try:
+                        if self.use_custom_handler:
+                            # Check if message handler is async
+                            if inspect.iscoroutinefunction(
+                                self.message_handler
+                            ):
+                                await self.message_handler(*params)
+                            else:
+                                self.message_handler(*params)
                         else:
-                            self.message_handler(*params)
-                    else:
-                        # For built-in handler, provide defaults
-                        title, desc, attach = params
-                        self.message_handler(
-                            title or "Executing Tool",
-                            desc or f"Running {func.__name__}",
-                            attach or '',
-                        )
+                            # For built-in handler, provide defaults
+                            title, desc, attach = params
+                            self.message_handler(
+                                title or "Executing Tool",
+                                desc or f"Running {func.__name__}",
+                                attach or '',
+                            )
+                    except Exception as msg_error:
+                        # Don't let message handler
+                        # errors break the main function
+                        logger.warning(f"Message handler error: {msg_error}")
 
                 # Execute the original function
+                # (kwargs have been modified to remove message params)
                 result = await func(*args, **kwargs)
 
                 return result
@@ -373,11 +424,12 @@ class ToolkitMessageIntegration:
             @wraps(func)
             def wrapper(*args, **kwargs):
                 # Extract parameters using the callback
+                # (this will modify kwargs by removing message params)
                 try:
                     params = self.extract_params_callback(kwargs)
                 except KeyError:
-                    # If parameters are missing, just execute the original
-                    # function
+                    # If parameters are missing,
+                    # just execute the original function
                     return func(*args, **kwargs)
 
                 # Check if we should send a message
@@ -387,30 +439,53 @@ class ToolkitMessageIntegration:
                         p is not None and p != '' for p in params
                     )
                 else:
-                    # For default handler, params = (title, description,
-                    # attachment)
                     should_send = bool(params[0]) or bool(params[1])
 
                 # Send message if needed
                 if should_send:
-                    if self.use_custom_handler:
-                        self.message_handler(*params)
-                    else:
-                        # For built-in handler, provide defaults
-                        title, desc, attach = params
-                        self.message_handler(
-                            title or "Executing Tool",
-                            desc or f"Running {func.__name__}",
-                            attach or '',
-                        )
+                    try:
+                        if self.use_custom_handler:
+                            self.message_handler(*params)
+                        else:
+                            # For built-in handler, provide defaults
+                            title, desc, attach = params
+                            self.message_handler(
+                                title or "Executing Tool",
+                                desc or f"Running {func.__name__}",
+                                attach or '',
+                            )
+                    except Exception as msg_error:
+                        logger.warning(f"Message handler error: {msg_error}")
 
-                # Execute the original function
                 result = func(*args, **kwargs)
 
                 return result
 
         # Apply the new signature to the wrapper
         wrapper.__signature__ = new_sig  # type: ignore[attr-defined]
+
+        # Create a hybrid approach:
+        # store toolkit instance info but preserve calling behavior
+        # We'll use a property-like
+        # approach to make __self__ available when needed
+        if hasattr(func, '__self__'):
+            toolkit_instance = func.__self__
+
+            # Store the toolkit instance as an attribute
+            # Use setattr to avoid MyPy type checking issues
+            wrapper.__toolkit_instance__ = toolkit_instance  # type: ignore[attr-defined]
+
+            # Create a dynamic __self__ property
+            # that only appears during introspection
+            # but doesn't interfere with normal function calls
+            def get_self():
+                return toolkit_instance
+
+            # Only set __self__
+            # if we're being called in an introspection context
+            # (like from _clone_tools)
+            # Use setattr to avoid MyPy type checking issues
+            wrapper.__self__ = toolkit_instance  # type: ignore[attr-defined]
 
         # Enhance the docstring
         if func.__doc__:
