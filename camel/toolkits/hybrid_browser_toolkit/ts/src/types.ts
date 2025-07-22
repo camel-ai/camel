@@ -70,6 +70,8 @@ export interface BrowserToolkitConfig {
   screenshotTimeout?: number;
   pageStabilityTimeout?: number;
   useNativePlaywrightMapping?: boolean; // New option to control mapping implementation
+  connectOverCdp?: boolean; // Whether to connect to existing browser via CDP
+  cdpUrl?: string; // WebSocket endpoint URL for CDP connection
 }
 
 export interface ClickAction {

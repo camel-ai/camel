@@ -25,48 +25,99 @@ export class HybridBrowserSession {
     const browserConfig = this.configLoader.getBrowserConfig();
     const stealthConfig = this.configLoader.getStealthConfig();
     
-    const launchOptions: any = {
-      headless: browserConfig.headless,
-    };
-
-    if (stealthConfig.enabled) {
-      launchOptions.args = stealthConfig.args || [];
+    // Check if CDP connection is requested
+    if (browserConfig.connectOverCdp && browserConfig.cdpUrl) {
+      // Connect to existing browser via CDP
+      this.browser = await chromium.connectOverCDP(browserConfig.cdpUrl);
       
-      // Apply stealth user agent if configured
-      if (stealthConfig.userAgent) {
-        launchOptions.userAgent = stealthConfig.userAgent;
+      // Get existing contexts or create new one
+      const contexts = this.browser.contexts();
+      if (contexts.length > 0) {
+        this.context = contexts[0];
+      } else {
+        const contextOptions: any = {
+          viewport: browserConfig.viewport
+        };
+        
+        // Apply stealth headers if configured
+        if (stealthConfig.enabled && stealthConfig.extraHTTPHeaders) {
+          contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+        }
+        
+        this.context = await this.browser.newContext(contextOptions);
       }
-    }
-
-    if (browserConfig.userDataDir) {
-      this.context = await chromium.launchPersistentContext(
-        browserConfig.userDataDir,
-        launchOptions
-      );
       
+      // Handle existing pages
       const pages = this.context.pages();
       if (pages.length > 0) {
-        const initialTabId = this.generateTabId();
-        this.pages.set(initialTabId, pages[0]);
-        this.currentTabId = initialTabId;
+        // Map existing pages - for CDP, only use pages with about:blank URL
+        let availablePageFound = false;
+        for (const page of pages) {
+          const pageUrl = page.url();
+          // In CDP mode, only consider pages with about:blank as available
+          if (pageUrl === 'about:blank') {
+            const tabId = this.generateTabId();
+            this.pages.set(tabId, page);
+            if (!this.currentTabId) {
+              this.currentTabId = tabId;
+              availablePageFound = true;
+            }
+          }
+        }
+        
+        // If no available blank pages found in CDP mode, we cannot create new ones
+        if (!availablePageFound) {
+          throw new Error('No available blank tabs found in CDP mode. The frontend should have pre-created blank tabs.');
+        }
+      } else {
+        // In CDP mode, newPage is not supported
+        throw new Error('No pages available in CDP mode and newPage() is not supported. Ensure the frontend has pre-created blank tabs.');
       }
     } else {
-      this.browser = await chromium.launch(launchOptions);
-      const contextOptions: any = {
-        viewport: browserConfig.viewport
+      // Original launch logic
+      const launchOptions: any = {
+        headless: browserConfig.headless,
       };
-      
-      // Apply stealth headers if configured
-      if (stealthConfig.enabled && stealthConfig.extraHTTPHeaders) {
-        contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+
+      if (stealthConfig.enabled) {
+        launchOptions.args = stealthConfig.args || [];
+        
+        // Apply stealth user agent if configured
+        if (stealthConfig.userAgent) {
+          launchOptions.userAgent = stealthConfig.userAgent;
+        }
       }
-      
-      this.context = await this.browser.newContext(contextOptions);
-      
-      const initialPage = await this.context.newPage();
-      const initialTabId = this.generateTabId();
-      this.pages.set(initialTabId, initialPage);
-      this.currentTabId = initialTabId;
+
+      if (browserConfig.userDataDir) {
+        this.context = await chromium.launchPersistentContext(
+          browserConfig.userDataDir,
+          launchOptions
+        );
+        
+        const pages = this.context.pages();
+        if (pages.length > 0) {
+          const initialTabId = this.generateTabId();
+          this.pages.set(initialTabId, pages[0]);
+          this.currentTabId = initialTabId;
+        }
+      } else {
+        this.browser = await chromium.launch(launchOptions);
+        const contextOptions: any = {
+          viewport: browserConfig.viewport
+        };
+        
+        // Apply stealth headers if configured
+        if (stealthConfig.enabled && stealthConfig.extraHTTPHeaders) {
+          contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+        }
+        
+        this.context = await this.browser.newContext(contextOptions);
+        
+        const initialPage = await this.context.newPage();
+        const initialTabId = this.generateTabId();
+        this.pages.set(initialTabId, initialPage);
+        this.currentTabId = initialTabId;
+      }
     }
 
     // Set timeouts
@@ -583,18 +634,39 @@ export class HybridBrowserSession {
           throw new Error('Browser context not initialized');
         }
         
-        
         const navigationStart = Date.now();
         
-        // Create a new page (tab)
-        const newPage = await this.context.newPage();
+        // In CDP mode, find an available blank tab instead of creating new page
+        let newPage: Page | null = null;
+        let newTabId: string | null = null;
         
-        // Generate tab ID for the new page
-        const newTabId = this.generateTabId();
-        this.pages.set(newTabId, newPage);
+        const browserConfig = this.configLoader.getBrowserConfig();
+        if (browserConfig.connectOverCdp) {
+          // CDP mode: find an available blank tab
+          const allPages = this.context.pages();
+          for (const page of allPages) {
+            const pageUrl = page.url();
+            // Check if this page is not already tracked and is blank
+            const isTracked = Array.from(this.pages.values()).includes(page);
+            if (!isTracked && pageUrl === 'about:blank') {
+              newPage = page;
+              newTabId = this.generateTabId();
+              this.pages.set(newTabId, newPage);
+              break;
+            }
+          }
+          
+          if (!newPage || !newTabId) {
+            throw new Error('No available blank tabs in CDP mode. Frontend should create more blank tabs when half are used.');
+          }
+        } else {
+          // Non-CDP mode: create new page as usual
+          newPage = await this.context.newPage();
+          newTabId = this.generateTabId();
+          this.pages.set(newTabId, newPage);
+        }
         
         // Set up page properties
-        const browserConfig = this.configLoader.getBrowserConfig();
         newPage.setDefaultNavigationTimeout(browserConfig.navigationTimeout);
         newPage.setDefaultTimeout(browserConfig.navigationTimeout);
         
@@ -773,6 +845,8 @@ export class HybridBrowserSession {
   }
 
   async close(): Promise<void> {
+    const browserConfig = this.configLoader.getBrowserConfig();
+    
     for (const page of this.pages.values()) {
       if (!page.isClosed()) {
         await page.close();
@@ -788,7 +862,13 @@ export class HybridBrowserSession {
     }
     
     if (this.browser) {
-      await this.browser.close();
+      if (browserConfig.connectOverCdp) {
+        // For CDP connections, just disconnect without closing the browser
+        await this.browser.close();
+      } else {
+        // For launched browsers, close completely
+        await this.browser.close();
+      }
       this.browser = null;
     }
   }

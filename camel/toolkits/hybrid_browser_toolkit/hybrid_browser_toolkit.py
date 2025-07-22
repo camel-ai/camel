@@ -91,6 +91,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         page_stability_timeout: Optional[int] = None,
         dom_content_loaded_timeout: Optional[int] = None,
         viewport_limit: bool = False,
+        connect_over_cdp: bool = False,
+        cdp_url: Optional[str] = None,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -131,6 +133,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 bounds will be included in snapshots.
                 When False (default), all elements on the page are
                 included. Defaults to False.
+            connect_over_cdp (bool): Whether to connect to an existing
+            browser via Chrome DevTools Protocol. Defaults to False.
+            cdp_url (Optional[str]): WebSocket endpoint URL for CDP
+            connection (e.g., 'ws://localhost:9222/devtools/browser/...').
+            Required when connect_over_cdp is True. Defaults to None.
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -153,6 +160,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             browser_log_to_file=browser_log_to_file,
             session_id=session_id,
             enabled_tools=enabled_tools,
+            connect_over_cdp=connect_over_cdp,
+            cdp_url=cdp_url,
         )
 
         # Legacy attribute access for backward compatibility
@@ -488,7 +497,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     @dependencies_required('PIL')
     async def browser_get_som_screenshot(
         self,
-        read_image: bool = False,
+        read_image: bool = True,
         instruction: Optional[str] = None,
     ) -> str:
         r"""Captures a screenshot with interactive elements highlighted.
@@ -502,16 +511,15 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         Args:
             read_image (bool, optional): If `True`, the agent will analyze
                 the screenshot. Requires agent to be registered.
-                (default: :obj:`False`)
+                (default: :obj:`True`)
             instruction (Optional[str], optional): A specific question or
                 command for the agent regarding the screenshot, used only if
                 `read_image` is `True`. For example: "Find the login button."
 
         Returns:
             str: A confirmation message indicating the screenshot was
-            captured,
-                 the file path where it was saved, and optionally the agent's
-                 analysis if `read_image` is `True`.
+                captured, the file path where it was saved, and optionally the
+                agent's analysis if `read_image` is `True`.
         """
         import base64
         import datetime
