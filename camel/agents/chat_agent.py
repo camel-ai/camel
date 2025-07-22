@@ -376,8 +376,6 @@ class ChatAgent(BaseAgent):
             terminate its execution. (default: :obj:`None`)
         tool_execution_timeout (Optional[float], optional): Timeout
             for individual tool execution. If None, wait indefinitely.
-        mask_tool_output (Optional[bool]): Whether to return a sanitized
-            placeholder instead of the raw tool output. (default: :obj:`False`)
         pause_event (Optional[asyncio.Event]): Event to signal pause of the
             agent's operation. When clear, the agent will pause its execution.
             (default: :obj:`None`)
@@ -423,7 +421,6 @@ class ChatAgent(BaseAgent):
         agent_id: Optional[str] = None,
         stop_event: Optional[threading.Event] = None,
         tool_execution_timeout: Optional[float] = None,
-        mask_tool_output: bool = False,
         pause_event: Optional[asyncio.Event] = None,
         prune_tool_calls_from_memory: bool = False,
     ) -> None:
@@ -507,7 +504,6 @@ class ChatAgent(BaseAgent):
         self.max_iteration = max_iteration
         self.stop_event = stop_event
         self.tool_execution_timeout = tool_execution_timeout
-        self.mask_tool_output = mask_tool_output
         self._secure_result_store: Dict[str, Any] = {}
         self.pause_event = pause_event
         self.prune_tool_calls_from_memory = prune_tool_calls_from_memory
@@ -786,7 +782,6 @@ class ChatAgent(BaseAgent):
             timestamp (Optional[float], optional): Custom timestamp for the
                 memory record. If `None`, the current time will be used.
                 (default: :obj:`None`)
-                    (default: obj:`None`)
         """
         import math
         import time
@@ -1018,9 +1013,14 @@ class ChatAgent(BaseAgent):
         Returns:
             None
         """
+        timestamp = time.time_ns() / 1_000_000_000  # Convert to seconds
         self.memory.clear()
         if self.system_message is not None:
-            self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
+            self.update_memory(
+                self.system_message,
+                OpenAIBackendRole.SYSTEM,
+                timestamp=timestamp,
+            )
 
     def _generate_system_message_for_output_language(
         self,
@@ -1077,7 +1077,10 @@ class ChatAgent(BaseAgent):
             message (BaseMessage): An external message to be recorded in the
                 memory.
         """
-        self.update_memory(message, OpenAIBackendRole.ASSISTANT)
+        timestamp = time.time_ns() / 1_000_000_000  # Convert to seconds
+        self.update_memory(
+            message, OpenAIBackendRole.ASSISTANT, timestamp=timestamp
+        )
 
     def _try_format_message(
         self, message: BaseMessage, response_format: Type[BaseModel]
@@ -1397,7 +1400,10 @@ class ChatAgent(BaseAgent):
             )
 
         # Add user input to memory
-        self.update_memory(input_message, OpenAIBackendRole.USER)
+        timestamp = time.time_ns() / 1_000_000_000  # Convert to seconds
+        self.update_memory(
+            input_message, OpenAIBackendRole.USER, timestamp=timestamp
+        )
 
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
@@ -1453,7 +1459,10 @@ class ChatAgent(BaseAgent):
                 )
 
             if tool_call_requests := response.tool_call_requests:
-                # Process all tool calls
+                # Separate internal and external tool calls
+                internal_tool_calls = []
+                internal_tool_requests = []
+
                 for tool_call_request in tool_call_requests:
                     if (
                         tool_call_request.tool_name
@@ -1463,13 +1472,43 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
+                        internal_tool_requests.append(tool_call_request)
+                        internal_tool_calls.append(
+                            {
+                                "id": tool_call_request.tool_call_id,
+                                "type": "function",
+                                "function": {
+                                    "name": tool_call_request.tool_name,
+                                    "arguments": json.dumps(
+                                        tool_call_request.args,
+                                        ensure_ascii=False,
+                                    ),
+                                },
+                            }
+                        )
+
+                # Only record assistant message with internal tool calls that
+                # will have responses
+                if internal_tool_calls:
+                    assist_msg = BaseMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict={"tool_calls": internal_tool_calls},
+                        content="",
+                    )
+                    self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
+
+                    # Execute internal tools
+                    for tool_call_request in internal_tool_requests:
                         if (
                             self.pause_event is not None
                             and not self.pause_event.is_set()
                         ):
                             while not self.pause_event.is_set():
                                 time.sleep(0.001)
-                        result = self._execute_tool(tool_call_request)
+                        result = self._execute_tool_without_recording_request(
+                            tool_call_request
+                        )
                         tool_call_records.append(result)
 
                 # If we found external tool calls, break the loop
@@ -1640,9 +1679,12 @@ class ChatAgent(BaseAgent):
                     tool_call_records,
                     "termination_triggered",
                 )
-
+            # TODO: Record tool call requests as list
             if tool_call_requests := response.tool_call_requests:
-                # Process all tool calls
+                # Separate internal and external tool calls
+                internal_tool_calls = []
+                internal_tool_requests = []
+
                 for tool_call_request in tool_call_requests:
                     if (
                         tool_call_request.tool_name
@@ -1652,12 +1694,40 @@ class ChatAgent(BaseAgent):
                             external_tool_call_requests = []
                         external_tool_call_requests.append(tool_call_request)
                     else:
+                        internal_tool_requests.append(tool_call_request)
+                        internal_tool_calls.append(
+                            {
+                                "id": tool_call_request.tool_call_id,
+                                "type": "function",
+                                "function": {
+                                    "name": tool_call_request.tool_name,
+                                    "arguments": json.dumps(
+                                        tool_call_request.args,
+                                        ensure_ascii=False,
+                                    ),
+                                },
+                            }
+                        )
+
+                # Only record assistant message with internal tool calls that
+                # will have responses
+                if internal_tool_calls:
+                    assist_msg = BaseMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict={"tool_calls": internal_tool_calls},
+                        content="",
+                    )
+                    self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
+
+                    # Execute internal tools
+                    for tool_call_request in internal_tool_requests:
                         if (
                             self.pause_event is not None
                             and not self.pause_event.is_set()
                         ):
                             await self.pause_event.wait()
-                        tool_call_record = await self._aexecute_tool(
+                        tool_call_record = await self._aexecute_tool_without_recording_request(
                             tool_call_request
                         )
                         tool_call_records.append(tool_call_record)
@@ -2224,27 +2294,131 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
+
+        # Record tool request after we have the args
+        self._record_tool_request(func_name, args, tool_call_id)
+
         try:
-            raw_result = tool(**args)
-            if self.mask_tool_output:
-                self._secure_result_store[tool_call_id] = raw_result
-                result = (
-                    "[The tool has been executed successfully, but the output"
-                    " from the tool is masked. You can move forward]"
-                )
-                mask_flag = True
-            else:
-                result = raw_result
-                mask_flag = False
+            result = tool(**args)
+
         except Exception as e:
             # Capture the error message to prevent framework crash
             error_msg = f"Error executing tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
-            mask_flag = False
             logger.warning(f"{error_msg} with result: {result}")
 
-        return self._record_tool_calling(
-            func_name, args, result, tool_call_id, mask_output=mask_flag
+        # Record tool response after execution
+        self._record_tool_response(func_name, result, tool_call_id)
+
+        # Return the tool calling record
+        return ToolCallingRecord(
+            tool_name=func_name,
+            args=args,
+            result=result,
+            tool_call_id=tool_call_id,
+        )
+
+    def _execute_tool_without_recording_request(
+        self,
+        tool_call_request: ToolCallRequest,
+    ) -> ToolCallingRecord:
+        r"""Execute the tool without recording the assistant message.
+        Used when we've already recorded all tool calls in one message.
+
+        Args:
+            tool_call_request (_ToolCallRequest): The tool call request.
+
+        Returns:
+            FunctionCallingRecord: A struct for logging information about this
+                function call.
+        """
+        func_name = tool_call_request.tool_name
+        args = tool_call_request.args
+        tool_call_id = tool_call_request.tool_call_id
+        tool = self._internal_tools[func_name]
+
+        try:
+            result = tool(**args)
+
+        except Exception as e:
+            # Capture the error message to prevent framework crash
+            error_msg = f"Error executing tool '{func_name}': {e!s}"
+            result = f"Tool execution failed: {error_msg}"
+            logger.warning(f"{error_msg} with result: {result}")
+
+        # Only record tool response (not the request)
+        self._record_tool_response(func_name, result, tool_call_id)
+
+        # Return the tool calling record
+        return ToolCallingRecord(
+            tool_name=func_name,
+            args=args,
+            result=result,
+            tool_call_id=tool_call_id,
+        )
+
+    async def _aexecute_tool_without_recording_request(
+        self,
+        tool_call_request: ToolCallRequest,
+    ) -> ToolCallingRecord:
+        r"""Execute the tool without recording the assistant message (async).
+        Used when we've already recorded all tool calls in one message.
+
+        Args:
+            tool_call_request (_ToolCallRequest): The tool call request.
+
+        Returns:
+            FunctionCallingRecord: A struct for logging information about this
+                function call.
+        """
+        func_name = tool_call_request.tool_name
+        args = tool_call_request.args
+        tool_call_id = tool_call_request.tool_call_id
+        tool = self._internal_tools[func_name]
+
+        import asyncio
+
+        try:
+            # Try different invocation paths in order of preference
+            if hasattr(tool, 'func') and hasattr(tool.func, 'async_call'):
+                # Case: FunctionTool wrapping an MCP tool
+                result = await tool.func.async_call(**args)
+
+            elif hasattr(tool, 'async_call') and callable(tool.async_call):
+                # Case: tool itself has async_call
+                result = await tool.async_call(**args)
+
+            elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
+                tool.func
+            ):
+                # Case: async function wrapped in FunctionTool
+                result = await tool.func(**args)
+
+            elif asyncio.iscoroutinefunction(tool):
+                # Case: direct async tool
+                result = await tool(**args)
+
+            else:
+                # Case: sync tool - run in thread pool
+                result = await asyncio.get_event_loop().run_in_executor(
+                    None, tool, **args
+                )
+
+        except Exception as e:
+            # Capture the error message to prevent framework crash
+            error_msg = f"Error executing async tool '{func_name}': {e!s}"
+            result = f"Tool execution failed: {error_msg}"
+            logging.warning(error_msg)
+
+        # Only record tool response (not the request)
+        self._record_tool_response(func_name, result, tool_call_id)
+
+        # Return the tool calling record
+        return ToolCallingRecord(
+            tool_name=func_name,
+            args=args,
+            result=result,
+            tool_call_id=tool_call_id,
         )
 
     async def _aexecute_tool(
@@ -2255,6 +2429,10 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
+
+        # Record tool request after we have the args
+        self._record_tool_request(func_name, args, tool_call_id)
+
         import asyncio
 
         try:
@@ -2286,31 +2464,31 @@ class ChatAgent(BaseAgent):
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
             logging.warning(error_msg)
-        return self._record_tool_calling(func_name, args, result, tool_call_id)
 
-    def _record_tool_calling(
+        # Record tool response after execution
+        self._record_tool_response(func_name, result, tool_call_id)
+
+        # Return the tool calling record
+        return ToolCallingRecord(
+            tool_name=func_name,
+            args=args,
+            result=result,
+            tool_call_id=tool_call_id,
+        )
+
+    def _record_tool_request(
         self,
         func_name: str,
         args: Dict[str, Any],
-        result: Any,
         tool_call_id: str,
-        mask_output: bool = False,
-    ):
-        r"""Record the tool calling information in the memory, and return the
-        tool calling record.
+    ) -> None:
+        r"""Record the tool request (assistant message with tool call) in
+        memory.
 
         Args:
-            func_name (str): The name of the tool function called.
-            args (Dict[str, Any]): The arguments passed to the tool.
-            result (Any): The result returned by the tool execution.
+            func_name (str): The name of the tool function to be called.
+            args (Dict[str, Any]): The arguments to pass to the tool.
             tool_call_id (str): A unique identifier for the tool call.
-            mask_output (bool, optional): Whether to return a sanitized
-                placeholder instead of the raw tool output.
-                (default: :obj:`False`)
-
-        Returns:
-            ToolCallingRecord: A struct containing information about
-            this tool call.
         """
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -2321,6 +2499,29 @@ class ChatAgent(BaseAgent):
             args=args,
             tool_call_id=tool_call_id,
         )
+
+        # Use precise timestamp for the tool request
+        import time
+
+        timestamp = time.time_ns() / 1_000_000_000  # Convert to seconds
+
+        self.update_memory(
+            assist_msg, OpenAIBackendRole.ASSISTANT, timestamp=timestamp
+        )
+
+    def _record_tool_response(
+        self,
+        func_name: str,
+        result: Any,
+        tool_call_id: str,
+    ) -> None:
+        r"""Record the tool response (function message) in memory.
+
+        Args:
+            func_name (str): The name of the tool function that was called.
+            result (Any): The result returned by the tool execution.
+            tool_call_id (str): A unique identifier for the tool call.
+        """
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
             role_type=self.role_type,
@@ -2329,38 +2530,19 @@ class ChatAgent(BaseAgent):
             func_name=func_name,
             result=result,
             tool_call_id=tool_call_id,
-            mask_output=mask_output,
         )
 
-        # Use precise timestamps to ensure correct ordering
-        # This ensures the assistant message (tool call) always appears before
-        # the function message (tool result) in the conversation context
-        # Use time.time_ns() for nanosecond precision to avoid collisions
+        # Use current timestamp for the tool response
+        # This naturally ensures it comes after the request
         import time
 
-        current_time_ns = time.time_ns()
-        base_timestamp = current_time_ns / 1_000_000_000  # Convert to seconds
+        timestamp = time.time_ns() / 1_000_000_000  # Convert to seconds
 
-        self.update_memory(
-            assist_msg, OpenAIBackendRole.ASSISTANT, timestamp=base_timestamp
-        )
-
-        # Add minimal increment to ensure function message comes after
         self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
-            timestamp=base_timestamp + 1e-6,
+            timestamp=timestamp,
         )
-
-        # Record information about this tool call
-        tool_record = ToolCallingRecord(
-            tool_name=func_name,
-            args=args,
-            result=result,
-            tool_call_id=tool_call_id,
-        )
-
-        return tool_record
 
     def _stream(
         self,
@@ -2649,44 +2831,67 @@ class ChatAgent(BaseAgent):
                     # If we have complete tool calls, execute them with
                     # sync status updates
                     if accumulated_tool_calls:
-                        # Record assistant message with tool calls first
-                        self._record_assistant_tool_calls_message(
-                            accumulated_tool_calls,
-                            content_accumulator.get_full_content(),
+                        # Check if we have any internal tools
+                        has_internal_tools = any(
+                            tool_call_data["function"]["name"] in self._internal_tools
+                            for tool_call_data in accumulated_tool_calls.values()
+                            if tool_call_data.get('complete', False)
                         )
-
-                        # Execute tools synchronously with
-                        # optimized status updates
-                        for (
-                            status_response
-                        ) in self._execute_tools_sync_with_status_accumulator(
-                            accumulated_tool_calls,
-                            tool_call_records,
-                        ):
-                            yield status_response
-
-                        # Log sending status instead of adding to content
-                        if tool_call_records:
-                            logger.info("Sending back result to model")
-
-                    # Record final message only if we have content AND no tool
-                    # calls. If there are tool calls, _record_tool_calling
-                    # will handle message recording.
-                    final_content = content_accumulator.get_full_content()
-                    if final_content.strip() and not accumulated_tool_calls:
-                        final_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=final_content,
-                        )
-
-                        if response_format:
-                            self._try_format_message(
-                                final_message, response_format
+                        
+                        if has_internal_tools:
+                            # Record assistant message with internal tool calls first
+                            self._record_assistant_tool_calls_message(
+                                accumulated_tool_calls,
+                                content_accumulator.get_full_content(),
                             )
 
-                        self.record_message(final_message)
+                            # Execute tools synchronously with
+                            # optimized status updates
+                            for (
+                                status_response
+                            ) in self._execute_tools_sync_with_status_accumulator(
+                                accumulated_tool_calls,
+                                tool_call_records,
+                            ):
+                                yield status_response
+
+                            # Log sending status instead of adding to content
+                            if tool_call_records:
+                                logger.info("Sending back result to model")
+                        else:
+                            # Only external tools, record content if any
+                            final_content = content_accumulator.get_full_content()
+                            if final_content.strip():
+                                final_message = BaseMessage(
+                                    role_name=self.role_name,
+                                    role_type=self.role_type,
+                                    meta_dict={},
+                                    content=final_content,
+                                )
+
+                                if response_format:
+                                    self._try_format_message(
+                                        final_message, response_format
+                                    )
+
+                                self.record_message(final_message)
+                    else:
+                        # No tool calls, record final message with content if any
+                        final_content = content_accumulator.get_full_content()
+                        if final_content.strip():
+                            final_message = BaseMessage(
+                                role_name=self.role_name,
+                                role_type=self.role_type,
+                                meta_dict={},
+                                content=final_content,
+                            )
+
+                            if response_format:
+                                self._try_format_message(
+                                    final_message, response_format
+                                )
+
+                            self.record_message(final_message)
                     break
 
         return stream_completed, tool_calls_complete
@@ -3261,29 +3466,34 @@ class ChatAgent(BaseAgent):
         """
         # Create a BaseMessage with tool_calls information in meta_dict
         # This will be converted to the proper OpenAI format when needed
+        # Only include internal tool calls that will have responses
         tool_calls_list = []
         for tool_call_data in accumulated_tool_calls.values():
             if tool_call_data.get('complete', False):
-                tool_call_dict = {
-                    "id": tool_call_data["id"],
-                    "type": "function",
-                    "function": {
-                        "name": tool_call_data["function"]["name"],
-                        "arguments": tool_call_data["function"]["arguments"],
-                    },
-                }
-                tool_calls_list.append(tool_call_dict)
+                function_name = tool_call_data["function"]["name"]
+                # Only include internal tools
+                if function_name in self._internal_tools:
+                    tool_call_dict = {
+                        "id": tool_call_data["id"],
+                        "type": "function",
+                        "function": {
+                            "name": function_name,
+                            "arguments": tool_call_data["function"]["arguments"],
+                        },
+                    }
+                    tool_calls_list.append(tool_call_dict)
 
-        # Create an assistant message with tool calls
-        assist_msg = BaseMessage(
-            role_name=self.role_name,
-            role_type=self.role_type,
-            meta_dict={"tool_calls": tool_calls_list},
-            content=content or "",
-        )
+        # Only record assistant message if there are internal tool calls
+        if tool_calls_list:
+            assist_msg = BaseMessage(
+                role_name=self.role_name,
+                role_type=self.role_type,
+                meta_dict={"tool_calls": tool_calls_list},
+                content=content or "",
+            )
 
-        # Record this assistant message
-        self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
+            # Record this assistant message
+            self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
 
     async def _aprocess_stream_chunks_with_accumulator(
         self,
@@ -3339,47 +3549,69 @@ class ChatAgent(BaseAgent):
                     # If we have complete tool calls, execute them with
                     # async status updates
                     if accumulated_tool_calls:
-                        # Record assistant message with
-                        # tool calls first
-                        self._record_assistant_tool_calls_message(
-                            accumulated_tool_calls,
-                            content_accumulator.get_full_content(),
+                        # Check if we have any internal tools
+                        has_internal_tools = any(
+                            tool_call_data["function"]["name"] in self._internal_tools
+                            for tool_call_data in accumulated_tool_calls.values()
+                            if tool_call_data.get('complete', False)
                         )
-
-                        # Execute tools asynchronously with real-time
-                        # status updates
-                        async for (
-                            status_response
-                        ) in self._execute_tools_async_with_status_accumulator(
-                            accumulated_tool_calls,
-                            content_accumulator,
-                            step_token_usage,
-                            tool_call_records,
-                        ):
-                            yield status_response
-
-                        # Log sending status instead of adding to content
-                        if tool_call_records:
-                            logger.info("Sending back result to model")
-
-                    # Record final message only if we have content AND no tool
-                    # calls. If there are tool calls, _record_tool_calling
-                    # will handle message recording.
-                    final_content = content_accumulator.get_full_content()
-                    if final_content.strip() and not accumulated_tool_calls:
-                        final_message = BaseMessage(
-                            role_name=self.role_name,
-                            role_type=self.role_type,
-                            meta_dict={},
-                            content=final_content,
-                        )
-
-                        if response_format:
-                            self._try_format_message(
-                                final_message, response_format
+                        
+                        if has_internal_tools:
+                            # Record assistant message with internal tool calls first
+                            self._record_assistant_tool_calls_message(
+                                accumulated_tool_calls,
+                                content_accumulator.get_full_content(),
                             )
 
-                        self.record_message(final_message)
+                            # Execute tools asynchronously with real-time
+                            # status updates
+                            async for (
+                                status_response
+                            ) in self._execute_tools_async_with_status_accumulator(
+                                accumulated_tool_calls,
+                                content_accumulator,
+                                step_token_usage,
+                                tool_call_records,
+                            ):
+                                yield status_response
+
+                            # Log sending status instead of adding to content
+                            if tool_call_records:
+                                logger.info("Sending back result to model")
+                        else:
+                            # Only external tools, record content if any
+                            final_content = content_accumulator.get_full_content()
+                            if final_content.strip():
+                                final_message = BaseMessage(
+                                    role_name=self.role_name,
+                                    role_type=self.role_type,
+                                    meta_dict={},
+                                    content=final_content,
+                                )
+
+                                if response_format:
+                                    self._try_format_message(
+                                        final_message, response_format
+                                    )
+
+                                self.record_message(final_message)
+                    else:
+                        # No tool calls, record final message with content if any
+                        final_content = content_accumulator.get_full_content()
+                        if final_content.strip():
+                            final_message = BaseMessage(
+                                role_name=self.role_name,
+                                role_type=self.role_type,
+                                meta_dict={},
+                                content=final_content,
+                            )
+
+                            if response_format:
+                                self._try_format_message(
+                                    final_message, response_format
+                                )
+
+                            self.record_message(final_message)
                     break
 
         # Yield the final status as a tuple
