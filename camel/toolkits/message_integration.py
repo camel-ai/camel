@@ -211,7 +211,7 @@ class ToolkitMessageIntegration:
     def _create_bound_method_wrapper(
         self, enhanced_func: Callable, toolkit_instance
     ) -> Callable:
-        """Create a wrapper that mimics a bound method for _clone_tools.
+        r"""Create a wrapper that mimics a bound method for _clone_tools.
 
         This wrapper preserves the toolkit instance reference while maintaining
         the enhanced messaging functionality.

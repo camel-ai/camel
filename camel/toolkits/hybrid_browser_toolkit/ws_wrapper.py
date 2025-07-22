@@ -344,7 +344,7 @@ class WebSocketBrowserWrapper:
             logger.error(f"Failed to write to log file: {e}")
 
     async def _receive_loop(self):
-        """Background task to receive messages from WebSocket."""
+        r"""Background task to receive messages from WebSocket."""
         try:
             while self.websocket:
                 try:
