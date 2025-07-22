@@ -15,10 +15,10 @@
 import asyncio
 import os
 import uuid
+
 import traceroot
 
 from camel.agents.chat_agent import ChatAgent
-from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.societies.workforce import Workforce
