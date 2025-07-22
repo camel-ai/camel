@@ -2929,7 +2929,32 @@ class ChatAgent(BaseAgent):
             if function_name in self._internal_tools:
                 tool = self._internal_tools[function_name]
                 try:
-                    result = await tool.async_call(**args)
+                    # Try different invocation paths in order of preference
+                    if hasattr(tool, 'func') and hasattr(
+                        tool.func, 'async_call'
+                    ):
+                        # Case: FunctionTool wrapping an MCP tool
+                        result = await tool.func.async_call(**args)
+
+                    elif hasattr(tool, 'async_call') and callable(
+                        tool.async_call
+                    ):
+                        # Case: tool itself has async_call
+                        result = await tool.async_call(**args)
+
+                    elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
+                        tool.func
+                    ):
+                        # Case: tool wraps a direct async function
+                        result = await tool.func(**args)
+
+                    elif asyncio.iscoroutinefunction(tool):
+                        # Case: tool is itself a coroutine function
+                        result = await tool(**args)
+
+                    else:
+                        # Fallback: synchronous call
+                        result = tool(**args)
 
                     # Only record the tool response message, not the assistant
                     # message assistant message with tool_calls was already
