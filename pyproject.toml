@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.72"
+version = "0.2.73a1"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -127,11 +127,12 @@ document_tools = [
     "openpyxl>=3.1.5",
     "docx>=0.2.4",
     "crawl4ai>=0.3.745",
-    "markitdown==0.1.1",
+    "markitdown>=0.1.1",
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50",
     "python-pptx>=1.0.2",
     "reportlab>=4.4.2",
+    "onnxruntime<=1.20.1"
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -181,7 +182,7 @@ dev_tools = [
     "daytona-sdk==0.20.0",
     "aci-sdk>=1.0.0b1",
     "langfuse>=2.60.5",
-    "traceroot==0.0.4a4",
+    "traceroot==0.0.4a5",
 ]
 model_platforms = [
     "litellm>=1.38.1,<2",
@@ -266,9 +267,10 @@ owl = [
     "chunkr-ai>=0.0.50",
     "python-pptx>=1.0.2",
     "pytesseract>=0.3.13",
-    "markitdown==0.1.1",
+    "markitdown>=0.1.1",
     "exa-py>=1.10.0,<2",
     "reportlab>=4.4.2",
+    "onnxruntime<=1.20.1"
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -335,7 +337,7 @@ all = [
     "faiss-cpu>=1.7.2,<2",
     "cohere>=5.11.0,<6",
     "neo4j>=5.18.0,<6",
-    "markitdown==0.1.1",
+    "markitdown>=0.1.1",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
     "litellm>=1.38.1,<2",
@@ -393,8 +395,9 @@ all = [
     "psycopg[binary]>=3.1.18,<4",
     "pgvector>=0.2.4,<0.3",
     "chromadb>=0.6.0,<1.0.0",
-    "traceroot==0.0.4a4",
+    "traceroot==0.0.4a5",
     "reportlab>=4.4.2",
+    "onnxruntime<=1.20.1"
 ]
 
 [project.urls]
