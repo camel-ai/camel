@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# !/usr/bin/env python3
 """
 Hatch build hook for building TypeScript dependencies in
 hybrid_browser_toolkit.
@@ -30,16 +29,16 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 
 class NpmBuildHook(BuildHookInterface):
-    """Hatch build hook for TypeScript compilation."""
+    r"""Hatch build hook for TypeScript compilation."""
 
     PLUGIN_NAME = "npm-build"
 
     def initialize(self, version, build_data):
-        """Initialize the build hook and run npm build."""
+        r"""Initialize the build hook and run npm build."""
         self.build_npm_dependencies()
 
     def finalize(self, version, build_data, artifact_path):
-        """Finalize the build - ensure TypeScript was built."""
+        r"""Finalize the build - ensure TypeScript was built."""
         base_dir = Path(self.root)
         ts_dir = self._get_ts_directory(base_dir)
         dist_dir = ts_dir / "dist"
@@ -50,13 +49,13 @@ class NpmBuildHook(BuildHookInterface):
             print("Warning: TypeScript build artifacts not found")
 
     def _get_ts_directory(self, base_dir: Path) -> Path:
-        """Get the TypeScript directory path."""
+        r"""Get the TypeScript directory path."""
         return (
             base_dir / "camel" / "toolkits" / "hybrid_browser_toolkit" / "ts"
         )
 
     def _parse_version(self, version_str: str) -> Tuple[int, int, int]:
-        """Parse version string into major, minor, patch numbers."""
+        r"""Parse version string into major, minor, patch numbers."""
         version_str = version_str.strip().lstrip('v')
         match = re.match(r'(\d+)\.(\d+)\.(\d+)', version_str)
         if match:
@@ -64,7 +63,7 @@ class NpmBuildHook(BuildHookInterface):
         return (0, 0, 0)
 
     def _check_version_requirement(self, current: str, required: str) -> bool:
-        """Check if current version meets requirement."""
+        r"""Check if current version meets requirement."""
         if required.startswith('>='):
             required_version = self._parse_version(required[2:])
             current_version = self._parse_version(current)
@@ -79,8 +78,9 @@ class NpmBuildHook(BuildHookInterface):
         return True
 
     def _get_package_requirements(self, ts_dir: Path) -> Optional[dict]:
-        """Get Node.js/npm version requirements
-        from package.json or package-lock.json."""
+        r"""Get Node.js/npm version requirements from package.json or
+        package-lock.json.
+        """
         package_json = ts_dir / "package.json"
         package_lock = ts_dir / "package-lock.json"
 
@@ -106,7 +106,7 @@ class NpmBuildHook(BuildHookInterface):
     def _check_node_npm_versions(
         self, ts_dir: Path
     ) -> Tuple[Optional[str], Optional[str], bool]:
-        """Check Node.js and npm versions against requirements."""
+        r"""Check Node.js and npm versions against requirements."""
         node_version = None
         npm_version = None
         versions_ok = True
@@ -117,6 +117,7 @@ class NpmBuildHook(BuildHookInterface):
                 check=True,
                 capture_output=True,
                 text=True,
+                timeout=30,
             )
             node_version = result.stdout.strip()
             print(f"Found Node.js version: {node_version}")
@@ -130,6 +131,7 @@ class NpmBuildHook(BuildHookInterface):
                 check=True,
                 capture_output=True,
                 text=True,
+                timeout=30,
             )
             npm_version = result.stdout.strip()
             print(f"Found npm version: {npm_version}")
@@ -143,39 +145,51 @@ class NpmBuildHook(BuildHookInterface):
                 node_req = requirements['node']
                 if not self._check_version_requirement(node_version, node_req):
                     print(
-                        f"Warning: Node.js version {node_version} does not meet requirement {node_req}"  # noqa:E501
+                        f"Warning: Node.js version {node_version} "
+                        f"does not meet requirement {node_req}"
                     )
                     versions_ok = False
                 else:
                     print(
-                        f"✓ Node.js version {node_version} meets requirement {node_req}"  # noqa:E501
+                        f"✓ Node.js version {node_version} meets "
+                        f"requirement {node_req}"
                     )
 
             if 'npm' in requirements:
                 npm_req = requirements['npm']
                 if not self._check_version_requirement(npm_version, npm_req):
                     print(
-                        f"Warning: npm version {npm_version} does not meet requirement {npm_req}"  # noqa:E501
+                        f"Warning: npm version {npm_version} does not "
+                        f"meet requirement {npm_req}"
                     )
                     versions_ok = False
                 else:
                     print(
-                        f"✓ npm version {npm_version} meets requirement {npm_req}"  # noqa:E501
+                        f"✓ npm version {npm_version} meets "
+                        f"requirement {npm_req}"
                     )
 
         return node_version, npm_version, versions_ok
 
     def _run_npm_build_process(self, ts_dir: Path, dist_dir: Path) -> bool:
-        """Run the npm build process."""
+        r"""Run the npm build process."""
         try:
             print("Installing npm dependencies...")
             subprocess.run(
-                ["npm", "install"], cwd=ts_dir, check=True, text=True
+                ["npm", "install"],
+                cwd=ts_dir,
+                check=True,
+                text=True,
+                timeout=300,
             )
 
             print("Building TypeScript...")
             subprocess.run(
-                ["npm", "run", "build"], cwd=ts_dir, check=True, text=True
+                ["npm", "run", "build"],
+                cwd=ts_dir,
+                check=True,
+                text=True,
+                timeout=300,
             )
 
             print("Installing Playwright browsers...")
@@ -185,6 +199,7 @@ class NpmBuildHook(BuildHookInterface):
                     cwd=ts_dir,
                     check=True,
                     text=True,
+                    timeout=600,
                 )
                 print("Playwright browsers installed successfully")
             except subprocess.CalledProcessError as e:
@@ -217,17 +232,15 @@ class NpmBuildHook(BuildHookInterface):
             return False
 
     def _print_manual_instructions(self, ts_dir: Path):
-        """Print manual installation instructions."""
+        r"""Print manual installation instructions."""
         print("Installing without TypeScript support")
-        print(
-            "To use hybrid_browser_toolkit, please install Node.js and " "run:"
-        )
+        print("To use hybrid_browser_toolkit, please install Node.js and run:")
         print(f"  cd {ts_dir}")
         print("  npm install && npm run build")
         print("  npx playwright install")
 
     def build_npm_dependencies(self):
-        """Build TypeScript dependencies during wheel/sdist creation."""
+        r"""Build TypeScript dependencies during wheel/sdist creation."""
         base_dir = Path(self.root)
         ts_dir = self._get_ts_directory(base_dir)
 
@@ -262,9 +275,9 @@ class NpmBuildHook(BuildHookInterface):
 
 
 def build_npm_dependencies_standalone():
-    """Standalone function for testing purposes."""
+    r"""Standalone function for testing purposes."""
     hook = NpmBuildHook(None, None)
-    hook.root = Path(__file__).parent
+    hook.root = Path(__file__).parent.absolute()
     hook.build_npm_dependencies()
 
 
