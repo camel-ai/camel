@@ -50,20 +50,28 @@ export class HybridBrowserSession {
       // Handle existing pages
       const pages = this.context.pages();
       if (pages.length > 0) {
-        // Map existing pages
+        // Map existing pages - for CDP, only use pages with about:blank URL
+        let availablePageFound = false;
         for (const page of pages) {
-          const tabId = this.generateTabId();
-          this.pages.set(tabId, page);
-          if (!this.currentTabId) {
-            this.currentTabId = tabId;
+          const pageUrl = page.url();
+          // In CDP mode, only consider pages with about:blank as available
+          if (pageUrl === 'about:blank') {
+            const tabId = this.generateTabId();
+            this.pages.set(tabId, page);
+            if (!this.currentTabId) {
+              this.currentTabId = tabId;
+              availablePageFound = true;
+            }
           }
         }
+        
+        // If no available blank pages found in CDP mode, we cannot create new ones
+        if (!availablePageFound) {
+          throw new Error('No available blank tabs found in CDP mode. The frontend should have pre-created blank tabs.');
+        }
       } else {
-        // Create initial page if none exist
-        const initialPage = await this.context.newPage();
-        const initialTabId = this.generateTabId();
-        this.pages.set(initialTabId, initialPage);
-        this.currentTabId = initialTabId;
+        // In CDP mode, newPage is not supported
+        throw new Error('No pages available in CDP mode and newPage() is not supported. Ensure the frontend has pre-created blank tabs.');
       }
     } else {
       // Original launch logic
@@ -626,18 +634,39 @@ export class HybridBrowserSession {
           throw new Error('Browser context not initialized');
         }
         
-        
         const navigationStart = Date.now();
         
-        // Create a new page (tab)
-        const newPage = await this.context.newPage();
+        // In CDP mode, find an available blank tab instead of creating new page
+        let newPage: Page | null = null;
+        let newTabId: string | null = null;
         
-        // Generate tab ID for the new page
-        const newTabId = this.generateTabId();
-        this.pages.set(newTabId, newPage);
+        const browserConfig = this.configLoader.getBrowserConfig();
+        if (browserConfig.connectOverCdp) {
+          // CDP mode: find an available blank tab
+          const allPages = this.context.pages();
+          for (const page of allPages) {
+            const pageUrl = page.url();
+            // Check if this page is not already tracked and is blank
+            const isTracked = Array.from(this.pages.values()).includes(page);
+            if (!isTracked && pageUrl === 'about:blank') {
+              newPage = page;
+              newTabId = this.generateTabId();
+              this.pages.set(newTabId, newPage);
+              break;
+            }
+          }
+          
+          if (!newPage || !newTabId) {
+            throw new Error('No available blank tabs in CDP mode. Frontend should create more blank tabs when half are used.');
+          }
+        } else {
+          // Non-CDP mode: create new page as usual
+          newPage = await this.context.newPage();
+          newTabId = this.generateTabId();
+          this.pages.set(newTabId, newPage);
+        }
         
         // Set up page properties
-        const browserConfig = this.configLoader.getBrowserConfig();
         newPage.setDefaultNavigationTimeout(browserConfig.navigationTimeout);
         newPage.setDefaultTimeout(browserConfig.navigationTimeout);
         
