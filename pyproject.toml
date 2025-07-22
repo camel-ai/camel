@@ -25,7 +25,7 @@ dependencies = [
     "tiktoken>=0.7.0,<0.8",
     "colorama>=0.4.6,<0.5",
     "jsonschema>=4,<5",
-    "docstring-parser>=0.17.0rc1",
+    "docstring-parser>=0.17.0,<0.18",
     "pydantic>=2.10.6",
     "httpx>=0.28.0,<1.0.0dev",
     "psutil>=5.9.8,<6",
@@ -135,7 +135,7 @@ document_tools = [
     "onnxruntime<=1.20.1"
 ]
 media_tools = [
-    "imageio[pyav]>=2.34.2,<3",
+    "imageio[pyav]>=2.34.2,<3",x
     "pydub>=0.25.1,<0.26",
     "yt-dlp>=2024.11.4,<2025",
     "ffmpeg-python>=0.2.0,<0.3",

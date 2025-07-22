@@ -1080,7 +1080,7 @@ requires-dist = [
     { name = "discord-py", marker = "extra == 'communication-tools'", specifier = ">=2.3.2,<3" },
     { name = "docker", marker = "extra == 'all'", specifier = ">=7.1.0,<8" },
     { name = "docker", marker = "extra == 'dev-tools'", specifier = ">=7.1.0,<8" },
-    { name = "docstring-parser", specifier = ">=0.17.0rc1" },
+    { name = "docstring-parser", specifier = ">=0.17.0,<0.18" },
     { name = "docutils", marker = "extra == 'docs'", specifier = "<0.20.0" },
     { name = "docx", marker = "extra == 'all'", specifier = ">=0.2.4" },
     { name = "docx", marker = "extra == 'document-tools'", specifier = ">=0.2.4" },
@@ -2104,11 +2104,11 @@ wheels = [
 
 [[package]]
 name = "docstring-parser"
-version = "0.17.0rc1"
+version = "0.17.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/d8/ca/4482855a8255be9dc726d70aa9cde52ff0d04bbe49618def47335ac45494/docstring_parser-0.17.0rc1.tar.gz", hash = "sha256:7e2d99f7c21549c1ed93000ce03921b226a746bc30d15fa4cbc1f1590d0eedcd", size = 27500, upload-time = "2025-07-11T07:14:37.464Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b2/9d/c3b43da9515bd270df0f80548d9944e389870713cc1fe2b8fb35fe2bcefd/docstring_parser-0.17.0.tar.gz", hash = "sha256:583de4a309722b3315439bb31d64ba3eebada841f2e2cee23b99df001434c912", size = 27442, upload-time = "2025-07-21T07:35:01.868Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/63/51/3985a891218b18bd0b7e4d68adbdee123c95738bcaf719809acca8f6a1b8/docstring_parser-0.17.0rc1-py3-none-any.whl", hash = "sha256:e367d444a8be97d43c80816e297c6706a7c48e56ed11225c0df186b2b0739eb2", size = 36929, upload-time = "2025-07-11T07:14:36.035Z" },
+    { url = "https://files.pythonhosted.org/packages/55/e2/2537ebcff11c1ee1ff17d8d0b6f4db75873e3b0fb32c2d4a2ee31ecb310a/docstring_parser-0.17.0-py3-none-any.whl", hash = "sha256:cf2569abd23dce8099b300f9b4fa8191e9582dda731fd533daf54c4551658708", size = 36896, upload-time = "2025-07-21T07:35:00.684Z" },
 ]
 
 [[package]]
