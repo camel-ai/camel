@@ -599,28 +599,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         # Load the image and create a message
                         from PIL import Image
 
-                        img = Image.open(file_path)
-                        inst = instruction if instruction is not None else ""
-                        message = BaseMessage.make_user_message(
-                            role_name="User",
-                            content=inst,
-                            image_list=[img],
-                        )
-
-                        # Get agent's analysis
-                        response = await self.agent.astep(message)
-                        agent_response = response.msgs[0].content
-                        result_text += f". Agent analysis: {agent_response}"
-                    except Exception as e:
-                        logger.error(f"Error analyzing screenshot: {e}")
-                        result_text += f". Error analyzing screenshot: {e}"
-
-            return result_text
-        except Exception as e:
-            logger.error(f"Failed to get screenshot: {e}")
-            return f"Error capturing screenshot: {e}"
-
-    async def browser_click(self, *, ref: str) -> Dict[str, Any]:
+    async def hybrid_browser_click(self, *, ref: str) -> Dict[str, Any]:
         r"""Performs a click on an element on the page.
 
         Args:
@@ -669,7 +648,21 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_type(self, *, ref: str, text: str) -> Dict[str, Any]:
+        element_details = elements.get(ref)
+        action = {"type": "click", "ref": ref}
+        result = await self._exec_with_snapshot(
+            action, element_details=element_details
+        )
+
+        # Add tab information to the result
+        tab_info = await self._get_tab_info_for_output()
+        result.update(tab_info)
+
+        return result
+    # Alias for backward compatibility
+    click = hybrid_browser_click
+
+    async def hybrid_browser_type(self, *, ref: str, text: str) -> Dict[str, Any]:
         r"""Types text into an input element on the page.
 
         Args:
@@ -717,7 +710,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_select(self, *, ref: str, value: str) -> Dict[str, Any]:
+        return result
+        # Alias for backward compatibility
+        type = hybrid_browser_type
+        
+    async def hybrid_browser_select(self, *, ref: str, value: str) -> Dict[str, Any]:
         r"""Selects an option in a dropdown (`<select>`) element.
 
         Args:
@@ -766,9 +763,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_scroll(
-        self, *, direction: str, amount: int = 500
-    ) -> Dict[str, Any]:
+        return result
+        # Alias for backward compatibility
+        select = hybrid_browser_select
+        
+    async def hybrid_browser_scroll(self, *, direction: str, amount: int) -> Dict[str, Any]:
         r"""Scrolls the current page window.
 
         Args:
@@ -815,9 +814,19 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_enter(self) -> Dict[str, Any]:
-        r"""Simulates pressing the Enter key on the currently focused
-        element.
+        action = {"type": "scroll", "direction": direction, "amount": amount}
+        result = await self._exec_with_snapshot(action)
+
+        # Add tab information to the result
+        tab_info = await self._get_tab_info_for_output()
+        result.update(tab_info)
+
+        return result
+        # Alias for backward compatibility
+        scroll = hybrid_browser_scroll
+        
+    async def hybrid_browser_enter(self) -> Dict[str, Any]:
+        r"""Simulates pressing the Enter key on the currently focused element.
 
         This is useful for submitting forms or search queries after using the
         `type` tool.
@@ -863,46 +872,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_switch_tab(self, *, tab_id: str) -> Dict[str, Any]:
-        r"""Switches to a different browser tab using its ID.
-
-        After switching, all actions will apply to the new tab. Use
-        `get_tab_info` to find the ID of the tab you want to switch to.
-
-        Args:
-            tab_id (str): The ID of the tab to activate.
-
-        Returns:
-            Dict[str, Any]: A dictionary with the result of the action:
-                - "result" (str): Confirmation of the action.
-                - "snapshot" (str): A snapshot of the newly active tab.
-                - "tabs" (List[Dict]): Information about all open tabs.
-                - "current_tab" (int): Index of the new active tab.
-                - "total_tabs" (int): Total number of open tabs.
-        """
-        try:
-            ws_wrapper = await self._get_ws_wrapper()
-            result = await ws_wrapper.switch_tab(tab_id)
-
-            # Add tab information
-            tab_info = await ws_wrapper.get_tab_info()
-            result.update(
-                {
-                    "tabs": tab_info,
-                    "current_tab": next(
-                        (
-                            i
-                            for i, tab in enumerate(tab_info)
-                            if tab.get("is_current")
-                        ),
-                        0,
-                    ),
-                    "total_tabs": len(tab_info),
-                }
-            )
-
-            return result
-        except Exception as e:
+        return result
+        # Alias for backward compatibility
+        enter = hybrid_browser_enter
+        
+    except Exception as e:
             logger.error(f"Failed to switch tab: {e}")
             return {
                 "result": f"Error switching tab: {e}",
