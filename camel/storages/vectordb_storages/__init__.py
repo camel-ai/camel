@@ -25,6 +25,7 @@ from .milvus import MilvusStorage
 from .oceanbase import OceanBaseStorage
 from .pgvector import PgVectorStorage
 from .qdrant import QdrantStorage
+from .surreal import SurrealStorage
 from .tidb import TiDBStorage
 from .weaviate import WeaviateStorage
 
