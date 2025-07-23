@@ -231,7 +231,7 @@ Class for managing conversations of CAMEL Chat Agents.
 - **message_window_size** (int, optional): The maximum number of previous messages to include in the context window. If `None`, no windowing is performed. (default: :obj:`None`)
 - **token_limit** (int, optional): The maximum number of tokens in a context. The context will be automatically pruned to fulfill the limitation. If `None`, it will be set according to the backend model. (default: :obj:`None`)
 - **output_language** (str, optional): The language to be output by the agent. (default: :obj:`None`)
-- **tools** (Optional[List[Union[FunctionTool, Callable]]], optional): List of available :obj:`FunctionTool` or :obj:`Callable`. (default: :obj:`None`) external_tools (Optional[List[Union[FunctionTool, Callable, Dict[str, Any]]]], optional): List of external tools (:obj:`FunctionTool` or :obj:`Callable` or :obj:`Dict[str, Any]`) bind to one chat agent. When these tools are called, the agent will directly return the request instead of processing it. (default: :obj:`None`)
+- **tools** (Optional[List[Union[FunctionTool, Callable]]], optional): List of available :obj:`FunctionTool` or :obj:`Callable`. (default: :obj:`None`) toolkits_to_register_agent (Optional[List[RegisteredAgentToolkit]], optional): List of toolkit instances that inherit from :obj:`RegisteredAgentToolkit`. The agent will register itself with these toolkits, allowing them to access the agent instance. Note: This does NOT add the toolkit's tools to the agent. To use tools from these toolkits, pass them explicitly via the `tools` parameter. (default: :obj:`None`) external_tools (Optional[List[Union[FunctionTool, Callable, Dict[str, Any]]]], optional): List of external tools (:obj:`FunctionTool` or :obj:`Callable` or :obj:`Dict[str, Any]`) bind to one chat agent. When these tools are called, the agent will directly return the request instead of processing it. (default: :obj:`None`)
 - **response_terminators** (List[ResponseTerminator], optional): List of :obj:`ResponseTerminator` bind to one chat agent. (default: :obj:`None`)
 - **scheduling_strategy** (str): name of function that defines how to select the next model in ModelManager. (default: :str:`round_robin`)
 - **max_iteration** (Optional[int], optional): Maximum number of model calling iterations allowed per step. If `None` (default), there's no explicit limit. If `1`, it performs a single model call. If `N > 1`, it allows up to N model calls. (default: :obj:`None`)
@@ -256,6 +256,7 @@ def __init__(
     token_limit: Optional[int] = None,
     output_language: Optional[str] = None,
     tools: Optional[List[Union[FunctionTool, Callable]]] = None,
+    toolkits_to_register_agent: Optional[List[RegisteredAgentToolkit]] = None,
     external_tools: Optional[List[Union[FunctionTool, Callable, Dict[str, Any]]]] = None,
     response_terminators: Optional[List[ResponseTerminator]] = None,
     scheduling_strategy: str = 'round_robin',
@@ -365,6 +366,33 @@ def output_language(self, value: str):
 Set the output language for the agent.
 
 Note that this will clear the message history.
+
+<a id="camel.agents.chat_agent.ChatAgent.memory"></a>
+
+### memory
+
+```python
+def memory(self):
+```
+
+Returns the agent memory.
+
+<a id="camel.agents.chat_agent.ChatAgent.memory"></a>
+
+### memory
+
+```python
+def memory(self, value: AgentMemory):
+```
+
+Set the agent memory.
+
+When setting a new memory, the system message is automatically
+re-added to ensure it's not lost.
+
+**Parameters:**
+
+- **value** (AgentMemory): The new agent memory to use.
 
 <a id="camel.agents.chat_agent.ChatAgent._get_full_tool_schemas"></a>
 
@@ -777,18 +805,6 @@ def _convert_to_chatagent_response(
 
 Parse the final model response into the chat agent response.
 
-<a id="camel.agents.chat_agent.ChatAgent._process_pending_images"></a>
-
-### _process_pending_images
-
-```python
-def _process_pending_images(self):
-```
-
-**Returns:**
-
-  List: List of successfully converted PIL Images.
-
 <a id="camel.agents.chat_agent.ChatAgent._record_final_output"></a>
 
 ### _record_final_output
@@ -798,37 +814,6 @@ def _record_final_output(self, output_messages: List[BaseMessage]):
 ```
 
 Log final messages or warnings about multiple responses.
-
-<a id="camel.agents.chat_agent.ChatAgent._is_vision_error"></a>
-
-### _is_vision_error
-
-```python
-def _is_vision_error(self, exc: Exception):
-```
-
-Check if the exception is likely related to vision/image is not
-supported by the model.
-
-<a id="camel.agents.chat_agent.ChatAgent._has_images"></a>
-
-### _has_images
-
-```python
-def _has_images(self, messages: List[OpenAIMessage]):
-```
-
-Check if any message contains images.
-
-<a id="camel.agents.chat_agent.ChatAgent._strip_images_from_messages"></a>
-
-### _strip_images_from_messages
-
-```python
-def _strip_images_from_messages(self, messages: List[OpenAIMessage]):
-```
-
-Remove images from messages, keeping only text content.
 
 <a id="camel.agents.chat_agent.ChatAgent._get_model_response"></a>
 
@@ -1250,8 +1235,11 @@ configuration.
 def _clone_tools(self):
 ```
 
-Clone tools for new agent instance,
-handling stateful toolkits properly.
+**Returns:**
+
+  Tuple containing:
+- List of cloned tools/functions
+- List of RegisteredAgentToolkit instances need registration
 
 <a id="camel.agents.chat_agent.ChatAgent.__repr__"></a>
 

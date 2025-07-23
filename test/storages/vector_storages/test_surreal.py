@@ -124,15 +124,18 @@ def test_delete_ids(storage):
     storage_instance, mock_db = storage
 
     # Mock RecordID class
-    with patch("surrealdb.data.types.record_id.RecordID") as mock_record_id:
-        mock_record_instance = MagicMock()
-        mock_record_id.return_value = mock_record_instance
+    mock_record_id = MagicMock()
+    mock_record_instance = MagicMock()
+    mock_record_id.return_value = mock_record_instance
 
-        storage_instance.delete(ids=["id1", "id2"])
+    # Set up the mock in sys.modules
+    sys.modules['surrealdb.data.types.record_id'].RecordID = mock_record_id
 
-        assert mock_record_id.call_count == 2
-        assert mock_db.delete.call_count == 2
+    storage_instance.delete(ids=["id1", "id2"])
 
-        # Verify RecordID was called with correct parameters
-        mock_record_id.assert_any_call(storage_instance.table, "id1")
-        mock_record_id.assert_any_call(storage_instance.table, "id2")
+    assert mock_record_id.call_count == 2
+    assert mock_db.delete.call_count == 2
+
+    # Verify RecordID was called with correct parameters
+    mock_record_id.assert_any_call(storage_instance.table, "id1")
+    mock_record_id.assert_any_call(storage_instance.table, "id2")
