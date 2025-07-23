@@ -33,7 +33,7 @@ logger = get_logger(__name__)
 
 
 class SurrealStorage(BaseVectorStorage):
-    """An implementation of the `BaseVectorStorage` using SurrealDB,
+    r"""An implementation of the `BaseVectorStorage` using SurrealDB,
     a scalable, distributed database with WebSocket support, for
     efficient vector storage and similarity search.
 
@@ -77,7 +77,7 @@ class SurrealStorage(BaseVectorStorage):
         user: str = "root",
         password: str = "root",
     ) -> None:
-        """
+        r"""
         Initialize SurrealStorage with connection settings and ensure
         the target table exists.
 
@@ -119,7 +119,7 @@ class SurrealStorage(BaseVectorStorage):
         self._check_and_create_table()
 
     def _table_exists(self) -> bool:
-        """
+        r"""
         Check whether the target table exists in the database.
 
         Returns:
@@ -131,7 +131,7 @@ class SurrealStorage(BaseVectorStorage):
         return self.table in tables
 
     def _get_table_info(self) -> dict[str, int | None]:
-        """
+        r"""
         Retrieve dimension and record count from the table metadata.
 
         Returns:
@@ -149,21 +149,14 @@ class SurrealStorage(BaseVectorStorage):
             m = re.search(r"DIMENSION\s+(\d+)", idx_def)
             if m:
                 dim = int(m.group(1))
-        cnt = self._surreal_client.query_raw(
-            f"SELECT COUNT() FROM {self.table};"
+        cnt = self._surreal_client.query(
+            f"SELECT COUNT() FROM ONLY {self.table} GROUP ALL LIMIT 1;"
         )
-        try:
-            count = len(cnt['result'][0]['result'])
-        except (KeyError, IndexError, TypeError):
-            logger.warning(
-                "Unexpected result format when counting records: %s", cnt
-            )
-            count = 0
-
+        count = cnt.get("count", 0)
         return {"dim": dim, "count": count}
 
     def _create_table(self):
-        """
+        r"""
         Define and create the vector storage table with HNSW index.
 
         Documentation: https://surrealdb.com/docs/surrealdb/reference-guide/vector-search#vector-search-cheat-sheet
@@ -191,14 +184,14 @@ class SurrealStorage(BaseVectorStorage):
         logger.info(f"Table '{self.table}' created successfully.")
 
     def _drop_table(self):
-        """
+        r"""
         Drop the vector storage table if it exists.
         """
         self._surreal_client.query_raw(f"REMOVE TABLE IF EXISTS {self.table};")
         logger.info(f"Table '{self.table}' deleted successfully.")
 
     def _check_and_create_table(self):
-        """
+        r"""
         Check if the table exists and matches the expected vector dimension.
         If not, create a new table.
         """
@@ -215,7 +208,7 @@ class SurrealStorage(BaseVectorStorage):
     def _validate_and_convert_records(
         self, records: List[VectorRecord]
     ) -> List[Dict]:
-        """
+        r"""
         Validate and convert VectorRecord instances into
         SurrealDB-compatible dictionaries.
 
@@ -245,7 +238,7 @@ class SurrealStorage(BaseVectorStorage):
         query: VectorDBQuery,
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
-        """
+        r"""
         Perform a top-k similarity search using the configured distance metric.
 
         Args:
@@ -286,7 +279,7 @@ class SurrealStorage(BaseVectorStorage):
         ]
 
     def add(self, records: List[VectorRecord], **kwargs) -> None:
-        """
+        r"""
         Insert validated vector records into the SurrealDB table.
 
         Args:
@@ -317,7 +310,7 @@ class SurrealStorage(BaseVectorStorage):
     def delete(
         self, ids: Optional[List[str]] = None, if_all: bool = False, **kwargs
     ) -> None:
-        """
+        r"""
         Delete specific records by ID or clear the entire table.
 
         Args:
@@ -347,7 +340,7 @@ class SurrealStorage(BaseVectorStorage):
             raise RuntimeError(f"Failed to delete records {ids!r}") from e
 
     def status(self) -> VectorDBStatus:
-        """
+        r"""
         Retrieve the status of the vector table including dimension and count.
 
         Returns:
@@ -367,18 +360,18 @@ class SurrealStorage(BaseVectorStorage):
         )
 
     def clear(self) -> None:
-        """
+        r"""
         Reset the vector table by dropping and recreating it.
         """
         self._drop_table()
         self._create_table()
 
     def load(self) -> None:
-        """Load the collection hosted on cloud service."""
+        r"""Load the collection hosted on cloud service."""
         # SurrealDB doesn't require explicit loading
         raise NotImplementedError("SurrealDB does not support loading")
 
     @property
     def client(self) -> "Surreal":
-        """Provides access to the underlying SurrealDB client."""
+        r"""Provides access to the underlying SurrealDB client."""
         return self._surreal_client
