@@ -12,31 +12,37 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import json
 import os
+from pathlib import Path
 from datetime import datetime
 from typing import List, Optional
-
-import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.note_taking_toolkit import NoteTakingToolkit
+from camel.agents import ChatAgent
+from camel.logger import get_logger
+from typing import TYPE_CHECKING
 
-TYPE_CHECKING = True
+
 if TYPE_CHECKING:
     from camel.memories.records import MemoryRecord
 
+logger = get_logger(__name__)
 
 class MarkdownMemoryToolkit(BaseToolkit):
     def __init__(
         self,
+        agent: Optional[ChatAgent] = None,
         working_directory: Optional[str] = None,
         timeout: Optional[float] = None,
     ):
         r"""Initialize the MarkdownMemoryToolkit.
 
         Args:
+            agent (ChatAgent, optional): The agent to use for the toolkit.
+                If not provided, the toolkit will not be able to access the
+                agent's memory.
             working_directory (str, optional): The directory path where notes
                 will be stored. If not provided, a new unique working
                 directory will be created.
@@ -44,16 +50,23 @@ class MarkdownMemoryToolkit(BaseToolkit):
         """
         super().__init__(timeout=timeout)
         
+        self.agent = agent
         self.session_id = self._generate_session_id()
         self.summary_filename = "summary"
         self.history_filename = "history"
 
-        if working_directory is None:
-            working_directory = "MarkdownMemory"
-
-        working_directory = os.path.join(working_directory, self.session_id)
-        self.working_directory = working_directory
+        if working_directory:
+            self.working_directory = Path(working_directory).resolve
+        else:
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                self.working_directory = Path(camel_workdir) / "markdown_memory"
+            else:
+                self.working_directory = Path("markdown_memory")
         
+        self.working_directory = self.working_directory / self.session_id
+        self.working_directory.mkdir(parents=True, exist_ok=True)
+
         # NoteTakingToolkit is used for file operations.
         self._note_taking_toolkit = NoteTakingToolkit(
             working_directory=working_directory,
@@ -68,14 +81,14 @@ class MarkdownMemoryToolkit(BaseToolkit):
     def _save_history(
         self,
         messages:List["MemoryRecord"],
-    ) -> bool:
+    ) -> str:
         r"""Save the full history of context to a markdown file. 
 
         Args:
             messages (List[BaseMessage]): The list of messages to save.
 
         Returns:
-            bool: True if the history was saved successfully, False otherwise.
+            str: Success message or error message.
         """
 
         # formatting history with metadata
@@ -105,28 +118,40 @@ class MarkdownMemoryToolkit(BaseToolkit):
     def _save_summary(
         self,
         content: dict
-    ) -> bool:
+    ) -> str:
         r""" Save a summary of the context in markdown file.
 
         Args:
             content (dict): The content of the summary.
 
         Returns:
-            bool: True if the summary was saved successfully, False otherwise.
+            str: Success message or error message.
         """
-        summary_content = f"#Conversation Summary: {self.session_id}\n\n"
-
-        # Work Completed
-        summary_content += f"## Work Completed \n"
-        summary_content += f"{content.get('work_completed', 'No description')}\n\n"
+        # validate summary structure with warnings (not rigid)
+        expected_keys = {'task_description', 'work_completed', 'user_preferences', 'next_steps'}
+        provided_keys = set(content.keys())
         
-        # User preferences and knowledge
-        summary_content += f"## User Preferences and Knowledge \n"
-        summary_content += f"{content.get('user_preferences', 'No description')}\n\n"
-
-        # Next Steps
-        summary_content += f"## Next Steps \n"
-        summary_content += f"{content.get('next_steps', 'No description')}\n\n"
+        missing_keys = expected_keys - provided_keys
+        if missing_keys:
+            logger.warning(f"Summary missing recommended keys: {missing_keys}")
+        
+        extra_keys = provided_keys - expected_keys
+        if extra_keys:
+            logger.info(f"Summary contains additional keys: {extra_keys}")
+        
+        summary_content = f"# Conversation Summary: {self.session_id}\n\n"
+        
+        # handle keys dynamically 
+        for key, value in content.items():
+            header = key.replace('_', ' ').title()
+            summary_content += f"## {header}\n"
+            
+            if isinstance(value, list):
+                for item in value:
+                    summary_content += f"- {item}\n"
+            else:
+                summary_content += f"{value}\n"
+            summary_content += "\n"
 
         return self._create_note(self.summary_filename, summary_content)
 
@@ -134,7 +159,7 @@ class MarkdownMemoryToolkit(BaseToolkit):
         self,
         filename: str,
         content: str,
-    ) -> bool:
+    ) -> str:
         r""" Create a note in the working directory using NoteTakingToolkit.
         
         Args:
@@ -142,14 +167,14 @@ class MarkdownMemoryToolkit(BaseToolkit):
             content (str): The content of the note.
 
         Returns:
-            bool: True if the note was created successfully, False otherwise.
+            str: Success message or error message.
         """
         try:
             self._note_taking_toolkit.create_note(filename, content)
-            return True
+            return f"Successfully created note: {filename}"
         except Exception as e:
-            print(f"Error creating note: {e}")
-            return False
+            logger.error(f"Error creating note: {e}")
+            return f"Error creating note: {e}"
     
     def _load_summary(
         self, 
@@ -162,7 +187,7 @@ class MarkdownMemoryToolkit(BaseToolkit):
         try:
             return self._note_taking_toolkit.read_note(self.summary_filename)
         except Exception as e:
-            print(f"Error loading summary: {e}")
+            logger.error(f"Error loading summary: {e}")
             return ""
         
     def _load_history(
@@ -176,32 +201,75 @@ class MarkdownMemoryToolkit(BaseToolkit):
         try:
             return self._note_taking_toolkit.read_note(self.history_filename)
         except Exception as e:
-            print(f"Error loading history: {e}")
+            logger.error(f"Error loading history: {e}")
             return ""
 
     def save_conversation_memory(
         self,
-        summary_notes: str,
-        reason: str,
-    ) -> bool:
-        r"""Saves the full history of the conversation and the summary of the
-        work done so far, the information about the user preference, and the 
-        plan for the next steps, in markdown files. The history can later be
+        summary_notes: dict,
+    ) -> str:
+        r"""Saves the full history of the conversation and the summary of 
+        important information in markdown files. The history can later be
         searched through and the summary can be read by the user. 
 
         This function must be used when the memory is cluttered with too many
         unrelated conversations or information that might be irrelevant to 
-        the core task and goal of the agent. 
+        the core task and goal of the agent.
+
+        The summary is provided by the agent, while the history is retrieved
+        from the memory programatically.
 
         Args:
+            summary_notes (dict): The summary of the conversation. The keys 
+                are "task_description", "work_completed", "user_preferences", and "next_steps".
+                This is a valuable information about the task which can be
+                used to guide the agent's future actions.
 
-
+        Returns:
+            str: Success message or error message.
         """
+        if self.agent is None:
+            raise ValueError("Agent is not provided. Please provide the agent to the toolkit.")
+        
+        # try to get memory records from the context
+        try:
+            context_records = self.agent.memory.retrieve()
+            memory_records = [cr.memory_record for cr in context_records]
+        except Exception as e:
+            logger.error(f"Failed to retrieve memory from agent: {e}")
+            return f"Error: Could not access agent memory - {e}"
+        
+        # save history and summary
+        summary_saved = self._save_summary(summary_notes)
+        history_saved = self._save_history(memory_records)
+
+        if "Error" not in summary_saved and "Error" not in history_saved:
+            logger.info(
+                f"Conversation memory saved successfully at {self.working_directory}"
+            )
+            return f"Conversation memory saved successfully at {self.working_directory}"
+        else:
+            logger.error("Failed to save conversation memory")
+            return f"Failed to save conversation memory. Summary: {summary_saved}, History: {history_saved}"
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Get the tools for the MarkdownMemoryToolkit.
+
+        Returns:
+            List[FunctionTool]: The list of tools.
+        """
+        return [FunctionTool(self.save_conversation_memory)]
     
 
 if __name__ == "__main__":
     from camel.memories.records import MemoryRecord
     from camel.messages.base import BaseMessage
+    from camel.types import ModelPlatformType, ModelType
+
+    agent = ChatAgent(
+        model = "gpt-4o"
+    )
+
 
     user_message = BaseMessage.make_user_message(
         role_name="User", content="Hello, how are you?"
@@ -218,5 +286,5 @@ if __name__ == "__main__":
         MemoryRecord(message=assistant_message, role_at_backend="assistant", agent_id="123"),
         MemoryRecord(message=user_message2, role_at_backend="user", agent_id="123"),
     ]
-    markdown_memory_toolkit = MarkdownMemoryToolkit()
+    markdown_memory_toolkit = MarkdownMemoryToolkit(agent)
     markdown_memory_toolkit._save_history(messages)
