@@ -110,6 +110,11 @@ class WebSocketBrowserWrapper:
         self.process: Optional[subprocess.Popen] = None
         self.websocket = None
         self.server_port = None
+        self._send_lock = asyncio.Lock()  # Lock for sending messages
+        self._receive_task = None  # Background task for receiving messages
+        self._pending_responses: Dict[
+            str, asyncio.Future[Dict[str, Any]]
+        ] = {}  # Message ID -> Future
 
         # Logging configuration
         self.browser_log_to_file = (config or {}).get(
@@ -251,11 +256,22 @@ class WebSocketBrowserWrapper:
                 f"Failed to connect to WebSocket server: {e}"
             ) from e
 
+        # Start the background receiver task
+        self._receive_task = asyncio.create_task(self._receive_loop())
+
         # Initialize the browser toolkit
         await self._send_command('init', self.config)
 
     async def stop(self):
         """Stop the WebSocket connection and server."""
+        # Cancel the receiver task
+        if self._receive_task and not self._receive_task.done():
+            self._receive_task.cancel()
+            try:
+                await self._receive_task
+            except asyncio.CancelledError:
+                pass
+
         if self.websocket:
             try:
                 await self._send_command('shutdown', {})
@@ -327,6 +343,39 @@ class WebSocketBrowserWrapper:
         except Exception as e:
             logger.error(f"Failed to write to log file: {e}")
 
+    async def _receive_loop(self):
+        r"""Background task to receive messages from WebSocket."""
+        try:
+            while self.websocket:
+                try:
+                    response_data = await self.websocket.recv()
+                    response = json.loads(response_data)
+
+                    message_id = response.get('id')
+                    if message_id and message_id in self._pending_responses:
+                        # Set the result for the waiting coroutine
+                        future = self._pending_responses.pop(message_id)
+                        if not future.done():
+                            future.set_result(response)
+                    else:
+                        # Log unexpected messages
+                        logger.warning(
+                            f"Received unexpected message: {response}"
+                        )
+
+                except asyncio.CancelledError:
+                    break
+                except Exception as e:
+                    logger.error(f"Error in receive loop: {e}")
+                    # Notify all pending futures of the error
+                    for future in self._pending_responses.values():
+                        if not future.done():
+                            future.set_exception(e)
+                    self._pending_responses.clear()
+                    break
+        finally:
+            logger.debug("Receive loop terminated")
+
     async def _ensure_connection(self) -> None:
         """Ensure WebSocket connection is alive."""
         if not self.websocket:
@@ -350,39 +399,39 @@ class WebSocketBrowserWrapper:
         message_id = str(uuid.uuid4())
         message = {'id': message_id, 'command': command, 'params': params}
 
+        # Create a future for this message
+        future: asyncio.Future[Dict[str, Any]] = asyncio.Future()
+        self._pending_responses[message_id] = future
+
         try:
-            # Send command
-            if self.websocket is None:
-                raise RuntimeError("WebSocket connection not established")
-            await self.websocket.send(json.dumps(message))
+            # Use lock only for sending to prevent interleaved messages
+            async with self._send_lock:
+                if self.websocket is None:
+                    raise RuntimeError("WebSocket connection not established")
+                await self.websocket.send(json.dumps(message))
 
-            # Wait for response with matching ID
-            while True:
-                try:
-                    if self.websocket is None:
-                        raise RuntimeError("WebSocket connection lost")
-                    response_data = await asyncio.wait_for(
-                        self.websocket.recv(), timeout=60.0
-                    )
-                    response = json.loads(response_data)
+            # Wait for response (no lock needed, handled by background
+            # receiver)
+            try:
+                response = await asyncio.wait_for(future, timeout=60.0)
 
-                    # Check if this is the response we're waiting for
-                    if response.get('id') == message_id:
-                        if not response.get('success'):
-                            raise RuntimeError(
-                                f"Command failed: {response.get('error')}"
-                            )
-                        return response['result']
-
-                except asyncio.TimeoutError:
+                if not response.get('success'):
                     raise RuntimeError(
-                        f"Timeout waiting for response to command: {command}"
+                        f"Command failed: {response.get('error')}"
                     )
-                except json.JSONDecodeError as e:
-                    logger.warning(f"Failed to decode WebSocket response: {e}")
-                    continue
+                return response['result']
+
+            except asyncio.TimeoutError:
+                # Remove from pending if timeout
+                self._pending_responses.pop(message_id, None)
+                raise RuntimeError(
+                    f"Timeout waiting for response to command: {command}"
+                )
 
         except Exception as e:
+            # Clean up the pending response
+            self._pending_responses.pop(message_id, None)
+
             # Check if it's a connection closed error
             if (
                 "close frame" in str(e)
