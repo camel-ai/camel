@@ -19,7 +19,7 @@ message_integration = ToolkitMessageIntegration()
 wiki_search = SearchToolkit().search_wiki
 
 # Add messaging capabilities to specific tools
-enhanced_search = message_integration.add_messaging_to_functions([wiki_search])
+enhanced_search = message_integration.register_functions([wiki_search])
 
 chat_agent = ChatAgent(
     system_message="You are a helpful assistant that can search the web.",

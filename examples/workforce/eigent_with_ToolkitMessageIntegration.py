@@ -129,16 +129,10 @@ def developer_agent_factory(
     web_deploy_toolkit = WebDeployToolkit()
 
     # Add messaging to toolkits
-    terminal_toolkit = message_integration.add_messaging_to_toolkit(
-        terminal_toolkit
-    )
-    note_toolkit = message_integration.add_messaging_to_toolkit(note_toolkit)
-    web_deploy_toolkit = message_integration.add_messaging_to_toolkit(
-        web_deploy_toolkit
-    )
-    screenshot_toolkit = message_integration.add_messaging_to_toolkit(
-        screenshot_toolkit
-    )
+    terminal_toolkit = message_integration.register(terminal_toolkit)
+    note_toolkit = message_integration.register(note_toolkit)
+    web_deploy_toolkit = message_integration.register(web_deploy_toolkit)
+    screenshot_toolkit = message_integration.register(screenshot_toolkit)
 
     # Get enhanced tools
     tools = [
@@ -343,19 +337,13 @@ def search_agent_factory(
     terminal_toolkit_basic = TerminalToolkit()
 
     # Add messaging to toolkits
-    web_toolkit_custom = message_integration.add_messaging_to_toolkit(
-        web_toolkit_custom
-    )
-    terminal_toolkit = message_integration.add_messaging_to_toolkit(
-        terminal_toolkit
-    )
-    note_toolkit = message_integration.add_messaging_to_toolkit(note_toolkit)
-    search_toolkit = message_integration.add_messaging_to_toolkit(
-        search_toolkit
-    )
+    web_toolkit_custom = message_integration.register(web_toolkit_custom)
+    terminal_toolkit = message_integration.register(terminal_toolkit)
+    note_toolkit = message_integration.register(note_toolkit)
+    search_toolkit = message_integration.register(search_toolkit)
 
     # Add messaging to individual functions
-    enhanced_shell_exec = message_integration.add_messaging_to_functions(
+    enhanced_shell_exec = message_integration.register_functions(
         [terminal_toolkit_basic.shell_exec]
     )
 
@@ -503,21 +491,13 @@ def document_agent_factory(
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
 
     # Add messaging to toolkits
-    file_write_toolkit = message_integration.add_messaging_to_toolkit(
-        file_write_toolkit
-    )
-    pptx_toolkit = message_integration.add_messaging_to_toolkit(pptx_toolkit)
-    mark_it_down_toolkit = message_integration.add_messaging_to_toolkit(
-        mark_it_down_toolkit
-    )
-    excel_toolkit = message_integration.add_messaging_to_toolkit(excel_toolkit)
-    note_toolkit = message_integration.add_messaging_to_toolkit(note_toolkit)
-    search_toolkit = message_integration.add_messaging_to_toolkit(
-        search_toolkit
-    )
-    terminal_toolkit = message_integration.add_messaging_to_toolkit(
-        terminal_toolkit
-    )
+    file_write_toolkit = message_integration.register(file_write_toolkit)
+    pptx_toolkit = message_integration.register(pptx_toolkit)
+    mark_it_down_toolkit = message_integration.register(mark_it_down_toolkit)
+    excel_toolkit = message_integration.register(excel_toolkit)
+    note_toolkit = message_integration.register(note_toolkit)
+    search_toolkit = message_integration.register(search_toolkit)
+    terminal_toolkit = message_integration.register(terminal_toolkit)
 
     tools = [
         *file_write_toolkit.get_tools(),
@@ -696,25 +676,19 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
 
     # Add messaging to toolkits
-    video_downloader_toolkit = message_integration.add_messaging_to_toolkit(
+    video_downloader_toolkit = message_integration.register(
         video_downloader_toolkit
     )
-    audio_analysis_toolkit = message_integration.add_messaging_to_toolkit(
+    audio_analysis_toolkit = message_integration.register(
         audio_analysis_toolkit
     )
-    image_analysis_toolkit = message_integration.add_messaging_to_toolkit(
+    image_analysis_toolkit = message_integration.register(
         image_analysis_toolkit
     )
-    openai_image_toolkit = message_integration.add_messaging_to_toolkit(
-        openai_image_toolkit
-    )
-    search_toolkit = message_integration.add_messaging_to_toolkit(
-        search_toolkit
-    )
-    terminal_toolkit = message_integration.add_messaging_to_toolkit(
-        terminal_toolkit
-    )
-    note_toolkit = message_integration.add_messaging_to_toolkit(note_toolkit)
+    openai_image_toolkit = message_integration.register(openai_image_toolkit)
+    search_toolkit = message_integration.register(search_toolkit)
+    terminal_toolkit = message_integration.register(terminal_toolkit)
+    note_toolkit = message_integration.register(note_toolkit)
 
     tools = [
         *video_downloader_toolkit.get_tools(),
@@ -836,29 +810,15 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
 
     # Add messaging to toolkits
-    whatsapp_toolkit = message_integration.add_messaging_to_toolkit(
-        whatsapp_toolkit
-    )
-    twitter_toolkit = message_integration.add_messaging_to_toolkit(
-        twitter_toolkit
-    )
-    linkedin_toolkit = message_integration.add_messaging_to_toolkit(
-        linkedin_toolkit
-    )
-    reddit_toolkit = message_integration.add_messaging_to_toolkit(
-        reddit_toolkit
-    )
-    notion_toolkit = message_integration.add_messaging_to_toolkit(
-        notion_toolkit
-    )
-    slack_toolkit = message_integration.add_messaging_to_toolkit(slack_toolkit)
-    search_toolkit = message_integration.add_messaging_to_toolkit(
-        search_toolkit
-    )
-    terminal_toolkit = message_integration.add_messaging_to_toolkit(
-        terminal_toolkit
-    )
-    note_toolkit = message_integration.add_messaging_to_toolkit(note_toolkit)
+    whatsapp_toolkit = message_integration.register(whatsapp_toolkit)
+    twitter_toolkit = message_integration.register(twitter_toolkit)
+    linkedin_toolkit = message_integration.register(linkedin_toolkit)
+    reddit_toolkit = message_integration.register(reddit_toolkit)
+    notion_toolkit = message_integration.register(notion_toolkit)
+    slack_toolkit = message_integration.register(slack_toolkit)
+    search_toolkit = message_integration.register(search_toolkit)
+    terminal_toolkit = message_integration.register(terminal_toolkit)
+    note_toolkit = message_integration.register(note_toolkit)
 
     return ChatAgent(
         BaseMessage.make_assistant_message(
@@ -1008,7 +968,7 @@ access and can resolve a wide range of issues.
         model=model_backend_reason,
         tools=[
             send_message_to_user,
-            *message_integration.add_messaging_to_toolkit(
+            *message_integration.register(
                 NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
             ).get_tools(),
         ],
@@ -1029,7 +989,7 @@ The current date is {datetime.date.today()}.
         model=model_backend_reason,
         tools=[
             send_message_to_user,
-            *message_integration.add_messaging_to_toolkit(
+            *message_integration.register(
                 NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
             ).get_tools(),
         ],
@@ -1060,7 +1020,7 @@ The current date is {datetime.date.today()}.
         tools=[
             send_message_to_user,
             HumanToolkit().ask_human_via_console,
-            *message_integration.add_messaging_to_toolkit(
+            *message_integration.register(
                 NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
             ).get_tools(),
         ],

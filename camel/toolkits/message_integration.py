@@ -36,7 +36,7 @@ class ToolkitMessageIntegration:
         >>> # Using default message handler with toolkit
         >>> message_integration = ToolkitMessageIntegration()
         >>> search_with_messaging = message_integration.
-        add_messaging_to_toolkit(
+        register_toolkits(
         ...     SearchToolkit()
         ... )
 
@@ -44,7 +44,7 @@ class ToolkitMessageIntegration:
         >>> def search_web(query: str) -> list:
         ...     return ["result1", "result2"]
         ...
-        >>> enhanced_tools = message_integration.add_messaging_to_functions
+        >>> enhanced_tools = message_integration.register_functions
         ([search_web])
 
         >>> # Using custom message handler with different parameters
@@ -148,7 +148,7 @@ class ToolkitMessageIntegration:
         """
         return FunctionTool(self.send_message_to_user)
 
-    def add_messaging_to_toolkit(
+    def register_toolkits(
         self, toolkit: BaseToolkit, tool_names: Optional[List[str]] = None
     ) -> BaseToolkit:
         r"""Add messaging capabilities to toolkit methods.
@@ -200,7 +200,7 @@ class ToolkitMessageIntegration:
 
             def enhanced_clone_for_new_session(new_session_id=None):
                 cloned_toolkit = original_clone_method(new_session_id)
-                return message_integration_instance.add_messaging_to_toolkit(
+                return message_integration_instance.register_toolkits(
                     cloned_toolkit, tool_names
                 )
 
@@ -233,7 +233,7 @@ class ToolkitMessageIntegration:
 
         return bound_method_wrapper
 
-    def add_messaging_to_functions(
+    def register_functions(
         self,
         functions: Union[List[FunctionTool], List[Callable]],
         function_names: Optional[List[str]] = None,
@@ -256,12 +256,12 @@ class ToolkitMessageIntegration:
         Example:
             >>> # With FunctionTools
             >>> tools = [FunctionTool(search_func), FunctionTool(analyze_func)]
-            >>> enhanced_tools = message_integration.add_messaging_to_functions
+            >>> enhanced_tools = message_integration.register_functions
             (tools)
 
             >>> # With callable functions
             >>> funcs = [search_web, analyze_data, generate_report]
-            >>> enhanced_tools = message_integration.add_messaging_to_functions
+            >>> enhanced_tools = message_integration.register_functions
             (
             ...     funcs,
             ...     function_names=['search_web', 'analyze_data']
