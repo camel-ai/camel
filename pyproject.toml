@@ -128,7 +128,7 @@ document_tools = [
     "chunkr-ai>=0.0.50",
     "python-pptx>=1.0.2",
     "reportlab>=4.4.2",
-    "onnxruntime<=1.20.1"
+    "onnxruntime<=1.20.1",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -213,7 +213,7 @@ storage = [
     "weaviate-client>=4.15.0",
     "psycopg[binary]>=3.1.18,<4",
     "pgvector>=0.2.4,<0.3",
-    "surrealdb @ https://github.com/surrealdb/surrealdb.py.git",
+    "surrealdb>=1.0.6",
     "chromadb>=0.6.0,<1.0.0",
 ]
 owl = [
@@ -267,7 +267,7 @@ owl = [
     "markitdown>=0.1.1",
     "exa-py>=1.10.0,<2",
     "reportlab>=4.4.2",
-    "onnxruntime<=1.20.1"
+    "onnxruntime<=1.20.1",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -391,10 +391,11 @@ all = [
     "pytesseract>=0.3.13",
     "psycopg[binary]>=3.1.18,<4",
     "pgvector>=0.2.4,<0.3",
+    "surrealdb>=1.0.6",
     "chromadb>=0.6.0,<1.0.0",
     "traceroot==0.0.4a5",
     "reportlab>=4.4.2",
-    "onnxruntime<=1.20.1"
+    "onnxruntime<=1.20.1",
 ]
 
 [project.urls]
@@ -406,29 +407,25 @@ Documentation = "https://docs.camel-ai.org"
 include = [
     "camel",
     "camel/toolkits/hybrid_browser_toolkit/ts/package.json",
-    "camel/toolkits/hybrid_browser_toolkit/ts/package-lock.json", 
+    "camel/toolkits/hybrid_browser_toolkit/ts/package-lock.json",
     "camel/toolkits/hybrid_browser_toolkit/ts/tsconfig.json",
     "camel/toolkits/hybrid_browser_toolkit/ts/src/**/*",
     "camel/toolkits/hybrid_browser_toolkit/ts/websocket-server.js",
-    "hatch_build_npm.py"
+    "hatch_build_npm.py",
 ]
-exclude = [
-    "camel/toolkits/hybrid_browser_toolkit/ts/node_modules/**/*"
-]
+exclude = ["camel/toolkits/hybrid_browser_toolkit/ts/node_modules/**/*"]
 
 [tool.hatch.build.targets.wheel]
 include = [
     "camel",
     "camel/toolkits/hybrid_browser_toolkit/ts/package.json",
     "camel/toolkits/hybrid_browser_toolkit/ts/package-lock.json",
-    "camel/toolkits/hybrid_browser_toolkit/ts/tsconfig.json", 
+    "camel/toolkits/hybrid_browser_toolkit/ts/tsconfig.json",
     "camel/toolkits/hybrid_browser_toolkit/ts/src/**/*",
     "camel/toolkits/hybrid_browser_toolkit/ts/dist/**/*",
-    "camel/toolkits/hybrid_browser_toolkit/ts/websocket-server.js"
+    "camel/toolkits/hybrid_browser_toolkit/ts/websocket-server.js",
 ]
-exclude = [
-    "camel/toolkits/hybrid_browser_toolkit/ts/node_modules/**/*"
-]
+exclude = ["camel/toolkits/hybrid_browser_toolkit/ts/node_modules/**/*"]
 
 [tool.hatch.build.targets.wheel.hooks.custom]
 path = "hatch_build_npm.py"

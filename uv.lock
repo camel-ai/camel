@@ -1302,8 +1302,8 @@ requires-dist = [
     { name = "sphinxext-rediraffe", marker = "extra == 'docs'", specifier = ">=0.2.7,<0.3" },
     { name = "stripe", marker = "extra == 'all'", specifier = ">=11.3.0,<12" },
     { name = "stripe", marker = "extra == 'data-tools'", specifier = ">=11.3.0,<12" },
-    { name = "surrealdb", marker = "extra == 'all'", git = "https://github.com/surrealdb/surrealdb.py.git" },
-    { name = "surrealdb", marker = "extra == 'storage'", git = "https://github.com/surrealdb/surrealdb.py.git" },
+    { name = "surrealdb", marker = "extra == 'all'", specifier = ">=1.0.6" },
+    { name = "surrealdb", marker = "extra == 'storage'", specifier = ">=1.0.6" },
     { name = "sympy", marker = "extra == 'all'", specifier = ">=1.13.3,<2" },
     { name = "sympy", marker = "extra == 'web-tools'", specifier = ">=1.13.3,<2" },
     { name = "tabulate", marker = "extra == 'all'", specifier = ">=0.9.0" },
@@ -7543,14 +7543,18 @@ wheels = [
 
 [[package]]
 name = "surrealdb"
-version = "1.0.4"
-source = { git = "https://github.com/surrealdb/surrealdb.py.git#d622e9a4566b9791a9ae0a40a54a43f6369bd043" }
+version = "1.0.6"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "cerberus" },
     { name = "requests" },
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
     { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ef/0a/98aa9b08476811459525e38cd36c43a748b9b87592d42c87a8fa3d024186/surrealdb-1.0.6.tar.gz", hash = "sha256:fb3536db53e839b557cb57ffac78a3e46ac2a853b27225d53f6d58f7bdeb751c", size = 66450, upload-time = "2025-07-21T13:10:46.993Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/50/29/a89324828c8b8f6cc43b275881a987205549f2c8216244f841ea5a42d2ac/surrealdb-1.0.6-py3-none-any.whl", hash = "sha256:b569e307d5835b6040325069ea768864092bd8c501da57fefc44f489ce985cae", size = 62606, upload-time = "2025-07-21T13:10:45.523Z" },
 ]
 
 [[package]]
