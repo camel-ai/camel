@@ -100,12 +100,12 @@ def test_status(storage):
         {
             'events': {},
             'fields': {
-                'embedding': 'DEFINE FIELD embedding ON documents TYPE array<float> PERMISSIONS FULL',
-                'embedding[*]': 'DEFINE FIELD embedding[*] ON documents TYPE float PERMISSIONS FULL',
-                'payload': 'DEFINE FIELD payload ON documents FLEXIBLE TYPE object PERMISSIONS FULL',
+                'embedding': 'DEFINE FIELD embedding ON documents TYPE array<float> PERMISSIONS FULL',  # noqa: E501
+                'embedding[*]': 'DEFINE FIELD embedding[*] ON documents TYPE float PERMISSIONS FULL',  # noqa: E501
+                'payload': 'DEFINE FIELD payload ON documents FLEXIBLE TYPE object PERMISSIONS FULL',  # noqa: E501
             },
             'indexes': {
-                'hnsw_idx': 'DEFINE INDEX hnsw_idx ON documents FIELDS embedding HNSW DIMENSION 4 DIST COSINE TYPE F64 EFC 150 M 12 M0 24 LM 0.40242960438184466f'
+                'hnsw_idx': 'DEFINE INDEX hnsw_idx ON documents FIELDS embedding HNSW DIMENSION 4 DIST COSINE TYPE F64 EFC 150 M 12 M0 24 LM 0.40242960438184466f'  # noqa: E501
             },
             'lives': {},
             'tables': {},
