@@ -18,6 +18,7 @@ from camel.interpreters import (
     E2BInterpreter,
     InternalPythonInterpreter,
     JupyterKernelInterpreter,
+    PPIOE2BInterpreter,
     SubprocessInterpreter,
 )
 from camel.logger import get_logger
@@ -48,7 +49,7 @@ class CodeExecutionToolkit(BaseToolkit):
     def __init__(
         self,
         sandbox: Literal[
-            "internal_python", "jupyter", "docker", "subprocess", "e2b"
+            "internal_python", "jupyter", "docker", "subprocess", "e2b", "ppio_e2b"
         ] = "subprocess",
         verbose: bool = False,
         unsafe_mode: bool = False,
@@ -68,6 +69,7 @@ class CodeExecutionToolkit(BaseToolkit):
             DockerInterpreter,
             SubprocessInterpreter,
             E2BInterpreter,
+            PPIOE2BInterpreter,
         ]
 
         if sandbox == "internal_python":
@@ -95,6 +97,8 @@ class CodeExecutionToolkit(BaseToolkit):
             )
         elif sandbox == "e2b":
             self.interpreter = E2BInterpreter(require_confirm=require_confirm)
+        elif sandbox == "ppio_e2b":
+            self.interpreter = PPIOE2BInterpreter(require_confirm=require_confirm)
         else:
             raise RuntimeError(
                 f"The sandbox type `{sandbox}` is not supported."

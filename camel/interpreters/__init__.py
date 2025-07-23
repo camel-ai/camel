@@ -18,6 +18,7 @@ from .e2b_interpreter import E2BInterpreter
 from .internal_python_interpreter import InternalPythonInterpreter
 from .interpreter_error import InterpreterError
 from .ipython_interpreter import JupyterKernelInterpreter
+from .ppio_e2b_interpreter import PPIOE2BInterpreter
 from .subprocess_interpreter import SubprocessInterpreter
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     'DockerInterpreter',
     'JupyterKernelInterpreter',
     'E2BInterpreter',
+    'PPIOE2BInterpreter',
 ]
