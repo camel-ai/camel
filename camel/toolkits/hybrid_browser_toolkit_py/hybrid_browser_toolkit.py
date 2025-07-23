@@ -582,8 +582,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 # Success - return result
                 if attempt > 0:
                     logger.debug(
-                        f"Unified analysis succeeded on attempt {attempt +
-                                                                 1}"
+                        f"Unified analysis succeeded on attempt "
+                        f"{attempt + 1}"
                     )
                 return result
 
