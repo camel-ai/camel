@@ -16,6 +16,7 @@ from .agent_memories import (
     ChatHistoryMemory,
     LongtermAgentMemory,
     VectorDBMemory,
+    MarkdownMemory,
 )
 from .base import AgentMemory, BaseContextCreator, MemoryBlock
 from .blocks.chat_history_block import ChatHistoryBlock
@@ -35,4 +36,5 @@ __all__ = [
     'ChatHistoryBlock',
     'VectorDBBlock',
     'LongtermAgentMemory',
+    'MarkdownMemory',
 ]
