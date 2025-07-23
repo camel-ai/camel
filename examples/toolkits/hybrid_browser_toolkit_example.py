@@ -59,14 +59,15 @@ model_backend = ModelFactory.create(
 
 # Example 3: Use custom tools selection
 custom_tools = [
-    "browser_open",
-    "browser_close",
-    "browser_back",
-    "browser_forward",
-    "browser_click",
-    "browser_type",
-    "browser_enter",
-    "browser_switch_tab",
+    "open_browser",
+    "close_browser",
+    "visit_page",
+    "back",
+    "forward",
+    "get_page_snapshot",
+    "get_som_screenshot",
+    "get_page_links",
+    "click",
     # "browser_get_som_screenshot", # remove it to achieve faster operation
 ]
 
@@ -76,7 +77,7 @@ web_toolkit_custom = HybridBrowserToolkit(
     enabled_tools=custom_tools,
     browser_log_to_file=True,  # generate detailed log file in ./browser_log
     stealth=True,  # Using stealth mode during browser operation
-    viewport_limit=True,
+    mode="python",
     # Limit snapshot to current viewport to reduce context
 )
 print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
