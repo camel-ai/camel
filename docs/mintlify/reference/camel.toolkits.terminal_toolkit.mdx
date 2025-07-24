@@ -16,7 +16,7 @@ managing terminal sessions.
 
 **Parameters:**
 
-- **timeout** (Optional[float]): The timeout for terminal operations. (default: :obj:`None`)
+- **timeout** (Optional[float]): The timeout for terminal operations. (default: :obj:`20.0`)
 - **shell_sessions** (Optional[Dict[str, Any]]): A dictionary to store shell session information. If :obj:`None`, an empty dictionary will be used. (default: :obj:`None`)
 - **working_directory** (Optional[str]): The working directory for operations. If not provided, it will be determined by the `CAMEL_WORKDIR` environment variable (if set). If the environment variable is not set, it defaults to `./workspace`. All execution and write operations will be restricted to this directory. Read operations can access paths outside this directory. (default: :obj:`None`)
 - **need_terminal** (bool): Whether to create a terminal interface. (default: :obj:`True`)
@@ -37,7 +37,7 @@ needed.
 ```python
 def __init__(
     self,
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = 20.0,
     shell_sessions: Optional[Dict[str, Any]] = None,
     working_directory: Optional[str] = None,
     need_terminal: bool = True,
