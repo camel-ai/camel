@@ -22,7 +22,7 @@ from camel.storages.vectordb_storages import (
 
 def main():
     url = os.getenv("SURREAL_URL", "ws://localhost:8000/rpc")
-    table = os.getenv("SURREAL_TABLE", "tb")
+    table = os.getenv("SURREAL_TABLE", "documents")
     vector_dim = int(os.getenv("SURREAL_VECTOR_DIM", 4))
     namespace = os.getenv("SURREAL_NAMESPACE", "ns")
     database = os.getenv("SURREAL_DATABASE", "db")
@@ -60,14 +60,10 @@ def main():
     storage.add([vec1, vec2, vec3, vec4])
     print("[Step 2] After add:", storage.status())
 
-    surreal_client = storage.client
-    with surreal_client as db:
-        db.signin({"username": user, "password": password})
-        db.use(namespace, database)
-        res = db.query_raw(
-            "SELECT * FROM lyz_tb WHERE payload.name = 'test_3';"
-        )["result"][0]["result"][0]["id"].id
-        print("[Step 3] Query Result ID for 'test_3':", res)
+    res = storage.client.query(
+        f"SELECT * FROM {table} WHERE payload.name = 'test_3'"
+    )[0]["id"].id
+    print("[Step 3] Query Result ID for 'test_3':", res)
 
     storage.delete(ids=[res])
     print("[Step 4] After delete 'test_3':", storage.status())
@@ -81,17 +77,27 @@ def main():
 if __name__ == "__main__":
     main()
 
-"""
-[Step 1] After clear: vector_dim=4 vector_count=0oceanbasech
-[Step 2] After add: vector_dim=4 vector_count=4
-[Step 3] Query Result ID for 'test_3': lov5h16x6uog7l2xtsqp
-[Step 4] After delete 'test_3': vector_dim=4 vector_count=3
-[Step 5] Vector Query Result: 
-[VectorDBQueryResult(record=VectorRecord(vector=[], 
-id='9803ae3a-18da-4152-a522-48e1939a3604', 
-payload={'name': 'test_2'}), similarity=0.027665393972965968), 
-VectorDBQueryResult(record=VectorRecord(vector=[], 
-id='de3d085c-ed1b-4d23-9d12-d9fc64ae1e00', 
-payload={'name': 'test_1'}), similarity=0.00010404203326297434)]
-
-"""
+# Example output:
+#
+# [Step 1] After clear: vector_dim=4 vector_count=0
+# [Step 2] After add: vector_dim=4 vector_count=4
+# [Step 3] Query Result ID for 'test_3': 1xujuq7atehbx140rm6l
+# [Step 4] After delete 'test_3': vector_dim=4 vector_count=3
+# [Step 5] Vector Query Result: [
+#       VectorDBQueryResult(
+#           record=VectorRecord(
+#               vector=[1.0, 2.0, 3.0, 4.0],
+#               id='v6ws0mh1vkus9e13c4wq',
+#               payload={'name': 'test_1'}
+#           ),
+#           similarity=0.999895957966737
+#       ),
+#       VectorDBQueryResult(
+#           record=VectorRecord(
+#               vector=[5.0, 6.0, 7.0, 8.0],
+#               id='ate88u7d19b8jbc3t7ux',
+#               payload={'name': 'test_2'}
+#           ),
+#           similarity=0.972334606027034
+#       )
+# ]
