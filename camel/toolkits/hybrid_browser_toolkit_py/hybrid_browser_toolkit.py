@@ -1105,7 +1105,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
     # Public API Methods
 
-    async def open_browser(self) -> Dict[str, Any]:
+    async def browser_open(self) -> Dict[str, Any]:
         r"""Starts a new browser session. This must be the first browser
         action.
 
@@ -1138,7 +1138,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             logger.info(f"Navigating to configured default page: {start_url}")
 
             # Use visit_page without creating a new tab
-            result = await self.visit_page(start_url)
+            result = await self.browser_visit_page(url=start_url)
 
             # Log success
             if self.enable_action_logging or self.enable_timing_logging:
@@ -1169,7 +1169,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             raise
 
     @action_logger
-    async def close_browser(self) -> str:
+    async def browser_close(self) -> str:
         r"""Closes the browser session, releasing all resources.
 
         This should be called at the end of a task for cleanup.
@@ -1188,7 +1188,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         return "Browser session closed."
 
     @action_logger
-    async def visit_page(self, url: str) -> Dict[str, Any]:
+    async def browser_visit_page(self, url: str) -> Dict[str, Any]:
         r"""Opens a URL in a new browser tab and switches to it.
 
         Args:
@@ -1267,7 +1267,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         return {"result": nav_result, "snapshot": snapshot, **tab_info}
 
     @action_logger
-    async def back(self) -> Dict[str, Any]:
+    async def browser_back(self) -> Dict[str, Any]:
         r"""Goes back to the previous page in the browser history.
 
         This action simulates using the browser's "back" button in the
@@ -1332,7 +1332,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             }
 
     @action_logger
-    async def forward(self) -> Dict[str, Any]:
+    async def browser_forward(self) -> Dict[str, Any]:
         r"""Goes forward to the next page in the browser history.
 
         This action simulates using the browser's "forward" button in the
@@ -1398,7 +1398,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             }
 
     @action_logger
-    async def get_page_snapshot(self) -> str:
+    async def browser_get_page_snapshot(self) -> str:
         r"""Gets a textual snapshot of the page's interactive elements.
 
         The snapshot lists elements like buttons, links, and inputs,
@@ -1431,7 +1431,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
     @dependencies_required('PIL')
     @action_logger
-    async def get_som_screenshot(
+    async def browser_get_som_screenshot(
         self,
         read_image: bool = True,
         instruction: Optional[str] = None,
@@ -1541,7 +1541,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         return text_result
 
-    async def click(self, *, ref: str) -> Dict[str, Any]:
+    async def browser_click(self, *, ref: str) -> Dict[str, Any]:
         r"""Performs a click on an element on the page.
 
         Args:
@@ -1585,7 +1585,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         return result
 
-    async def type(self, *, ref: str, text: str) -> Dict[str, Any]:
+    async def browser_type(self, *, ref: str, text: str) -> Dict[str, Any]:
         r"""Types text into an input element on the page.
 
         Args:
@@ -1613,7 +1613,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         return result
 
-    async def select(self, *, ref: str, value: str) -> Dict[str, Any]:
+    async def browser_select(self, *, ref: str, value: str) -> Dict[str, Any]:
         r"""Selects an option in a dropdown (`<select>`) element.
 
         Args:
@@ -1642,7 +1642,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         return result
 
-    async def scroll(self, *, direction: str, amount: int) -> Dict[str, Any]:
+    async def browser_scroll(
+        self, *, direction: str, amount: int
+    ) -> Dict[str, Any]:
         r"""Scrolls the current page window.
 
         Args:
@@ -1674,7 +1676,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         return result
 
-    async def enter(self) -> Dict[str, Any]:
+    async def browser_enter(self) -> Dict[str, Any]:
         r"""Simulates pressing the Enter key on the currently focused
         element.
 
@@ -1702,7 +1704,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         return result
 
     @action_logger
-    async def wait_user(
+    async def browser_wait_user(
         self, timeout_sec: Optional[float] = None
     ) -> Dict[str, Any]:
         r"""Pauses execution and waits for human input from the console.
@@ -1767,7 +1769,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         return {"result": result_msg, "snapshot": snapshot, **tab_info}
 
     @action_logger
-    async def get_page_links(self, *, ref: List[str]) -> Dict[str, Any]:
+    async def browser_get_page_links(
+        self, *, ref: List[str]
+    ) -> Dict[str, Any]:
         r"""Gets the destination URLs for a list of link elements.
 
         This is useful to know where a link goes before clicking it.
@@ -1797,7 +1801,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         return {"links": links}
 
     @action_logger
-    async def solve_task(
+    async def browser_solve_task(
         self, task_prompt: str, start_url: str, max_steps: int = 15
     ) -> str:
         r"""Delegates a complex, high-level task to a specialized web agent.
@@ -1868,55 +1872,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self.log_buffer.clear()
         logger.info("Log buffer cleared")
 
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Get available function tools
-        based on enabled_tools configuration."""
-        # Map tool names to their corresponding methods
-        tool_map = {
-            "browser_open": self.open_browser,
-            "browser_close": self.close_browser,
-            "browser_visit_page": self.visit_page,
-            "browser_back": self.back,
-            "browser_forward": self.forward,
-            "browser_get_page_snapshot": self.get_page_snapshot,
-            "browser_get_som_screenshot": self.get_som_screenshot,
-            "browser_get_page_links": self.get_page_links,
-            "browser_click": self.click,
-            "browser_type": self.type,
-            "browser_select": self.select,
-            "browser_scroll": self.scroll,
-            "browser_enter": self.enter,
-            "browser_wait_user": self.wait_user,
-            "browser_solve_task": self.solve_task,
-            "browser_switch_tab": self.switch_tab,
-            "browser_close_tab": self.close_tab,
-            "browser_get_tab_info": self.get_tab_info,
-        }
-
-        enabled_tools = []
-
-        for tool_name in self.enabled_tools:
-            if (
-                tool_name == "browser_solve_task"
-                and self._web_agent_model is None
-            ):
-                logger.warning(
-                    f"Tool '{tool_name}' is enabled but web_agent_model "
-                    f"is not provided. Skipping this tool."
-                )
-                continue
-
-            if tool_name in tool_map:
-                tool = FunctionTool(
-                    cast(Callable[..., Any], tool_map[tool_name])
-                )
-                enabled_tools.append(tool)
-            else:
-                logger.warning(f"Unknown tool name: {tool_name}")
-
-        logger.info(f"Returning {len(enabled_tools)} enabled tools")
-        return enabled_tools
-
     def clone_for_new_session(
         self, new_session_id: Optional[str] = None
     ) -> "HybridBrowserToolkit":
@@ -1957,7 +1912,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         )
 
     @action_logger
-    async def switch_tab(self, *, tab_id: str) -> Dict[str, Any]:
+    async def browser_switch_tab(self, *, tab_id: str) -> Dict[str, Any]:
         r"""Switches to a different browser tab using its ID.
 
         After switching, all actions will apply to the new tab. Use
@@ -2002,7 +1957,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         return result
 
     @action_logger
-    async def close_tab(self, *, tab_id: str) -> Dict[str, Any]:
+    async def browser_close_tab(self, *, tab_id: str) -> Dict[str, Any]:
         r"""Closes a browser tab using its ID.
 
         Use `get_tab_info` to find the ID of the tab to close. After
@@ -2053,7 +2008,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         return result
 
     @action_logger
-    async def get_tab_info(self) -> Dict[str, Any]:
+    async def browser_get_tab_info(self) -> Dict[str, Any]:
         r"""Gets a list of all open browser tabs and their information.
 
         This includes each tab's index, title, and URL, and indicates which
@@ -2071,3 +2026,52 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         """
         await self._ensure_browser()
         return await self._get_tab_info_for_output()
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Get available function tools
+        based on enabled_tools configuration."""
+        # Map tool names to their corresponding methods
+        tool_map = {
+            "browser_open": self.browser_open,
+            "browser_close": self.browser_close,
+            "browser_visit_page": self.browser_visit_page,
+            "browser_back": self.browser_back,
+            "browser_forward": self.browser_forward,
+            "browser_get_page_snapshot": self.browser_get_page_snapshot,
+            "browser_get_som_screenshot": self.browser_get_som_screenshot,
+            "browser_get_page_links": self.browser_get_page_links,
+            "browser_click": self.browser_click,
+            "browser_type": self.browser_type,
+            "browser_select": self.browser_select,
+            "browser_scroll": self.browser_scroll,
+            "browser_enter": self.browser_enter,
+            "browser_wait_user": self.browser_wait_user,
+            "browser_solve_task": self.browser_solve_task,
+            "browser_switch_tab": self.browser_switch_tab,
+            "browser_close_tab": self.browser_close_tab,
+            "browser_get_tab_info": self.browser_get_tab_info,
+        }
+
+        enabled_tools = []
+
+        for tool_name in self.enabled_tools:
+            if (
+                tool_name == "browser_solve_task"
+                and self._web_agent_model is None
+            ):
+                logger.warning(
+                    f"Tool '{tool_name}' is enabled but web_agent_model "
+                    f"is not provided. Skipping this tool."
+                )
+                continue
+
+            if tool_name in tool_map:
+                tool = FunctionTool(
+                    cast(Callable[..., Any], tool_map[tool_name])
+                )
+                enabled_tools.append(tool)
+            else:
+                logger.warning(f"Unknown tool name: {tool_name}")
+
+        logger.info(f"Returning {len(enabled_tools)} enabled tools")
+        return enabled_tools
