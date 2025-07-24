@@ -16,10 +16,12 @@
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.toolkits import HumanToolkit
+from camel.toolkits import MathToolkit, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 
-human_toolkit = HumanToolkit()
+search_toolkit = SearchToolkit().search_wiki
+
+math_toolkit = MathToolkit().get_tools()
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
@@ -34,11 +36,11 @@ print("\nExample 1: Using ask_human_via_console through an agent")
 agent = ChatAgent(
     system_message="You are a helpful assistant.",
     model=model,
-    tools=[*human_toolkit.get_tools()],
+    tools=[search_toolkit, *math_toolkit],
 )
 
 response = agent.step(
-    "Test me on the capital of some country, and comment on my answer."
+    "search what is the capital of France, what is the capital of Japan, what is the capital of China, calculate 1+1, 2+2, 3+3, 4+4, 5+5, 6+6, 7+7, 8+8, 9+9, 10+10"
 )
 
 print(response.msgs[0].content)
@@ -58,30 +60,5 @@ Your reply: Tokyo
 That's correct! Tokyo is the capital of Japan. Would you like to continue with
 another question?
 Your reply: no
-==========================================================================
-"""
-
-# Example 2: Agent using send_message_to_user through tools
-print("\nExample 2: Agent using send_message_to_user through tools")
-agent_with_message = ChatAgent(
-    system_message="You are an assistant that can send messages to the user.",
-    model=model,
-    tools=[*human_toolkit.get_tools()],
-)
-
-response = agent_with_message.step(
-    "Send me a notification about an upcoming meeting."
-)
-
-print(response.msgs[0].content)
-
-"""
-==========================================================================
-Agent Message:
-🔔 Reminder: You have an upcoming meeting scheduled. Please check your 
-calendar for details!
-
-I've sent you a notification about your upcoming meeting. Please check your 
-calendar for details!
 ==========================================================================
 """

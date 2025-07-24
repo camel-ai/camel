@@ -84,7 +84,7 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         Returns:
             str: The response after analyzing the image, which could be a
-                 description, an answer, or a confirmation of an action.
+                description, an answer, or a confirmation of an action.
         """
         if self.agent is None:
             logger.error(
@@ -108,6 +108,11 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
 
             # Load the image from the path
             img = Image.open(image_path)
+            from pprint import pprint
+
+            print("---before read image---")
+            pprint(self.agent.memory.get_context()[0])
+            print("---before read image---")
 
             # Create a message with the screenshot image
             message = BaseMessage.make_user_message(
@@ -118,6 +123,10 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
 
             # Record the message in agent's memory
             response = self.agent.step(message)
+            print("---after read image---")
+            pprint(self.agent.memory.get_context()[0])
+            print("---after read image---")
+
             return response.msgs[0].content
 
         except Exception as e:
@@ -154,8 +163,8 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         Returns:
             str: A confirmation message indicating success or failure,
-                 including the file path if saved, and the agent's response
-                 if `read_image` is `True`.
+                including the file path if saved, and the agent's response
+                if `read_image` is `True`.
         """
         try:
             # Take screenshot of entire screen
@@ -167,17 +176,14 @@ class ScreenshotToolkit(BaseToolkit, RegisteredAgentToolkit):
                 # Create directory if it doesn't exist
                 os.makedirs(self.screenshots_dir, exist_ok=True)
 
-                # Create unique filename if file already exists
-                base_path = os.path.join(self.screenshots_dir, filename)
-                file_path = base_path
-                counter = 1
-                while os.path.exists(file_path):
-                    name, ext = os.path.splitext(filename)
-                    unique_filename = f"{name}_{counter}{ext}"
-                    file_path = os.path.join(
-                        self.screenshots_dir, unique_filename
+                # Check if file already exists
+                file_path = os.path.join(self.screenshots_dir, filename)
+                if os.path.exists(file_path):
+                    error_msg = (
+                        f"File already exists: {file_path}, "
+                        "please use another filename."
                     )
-                    counter += 1
+                    return error_msg
 
                 screenshot.save(file_path)
                 logger.info(f"Screenshot saved to {file_path}")

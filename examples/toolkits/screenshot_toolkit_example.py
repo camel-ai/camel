@@ -31,7 +31,7 @@ working_dir.mkdir(exist_ok=True)
 # Create the ScreenshotToolkit
 screenshot_toolkit = ScreenshotToolkit(
     working_directory=str(working_dir),
-    timeout=30.0,
+    timeout=30000.0,
 )
 
 agent = ChatAgent(

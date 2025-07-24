@@ -238,7 +238,6 @@ Class for managing conversations of CAMEL Chat Agents.
 - **agent_id** (str, optional): The ID of the agent. If not provided, a random UUID will be generated. (default: :obj:`None`)
 - **stop_event** (Optional[threading.Event], optional): Event to signal termination of the agent's operation. When set, the agent will terminate its execution. (default: :obj:`None`)
 - **tool_execution_timeout** (Optional[float], optional): Timeout for individual tool execution. If None, wait indefinitely.
-- **mask_tool_output** (Optional[bool]): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
 - **pause_event** (Optional[asyncio.Event]): Event to signal pause of the agent's operation. When clear, the agent will pause its execution. (default: :obj:`None`)
 
 <a id="camel.agents.chat_agent.ChatAgent.__init__"></a>
@@ -262,7 +261,6 @@ def __init__(
     agent_id: Optional[str] = None,
     stop_event: Optional[threading.Event] = None,
     tool_execution_timeout: Optional[float] = None,
-    mask_tool_output: bool = False,
     pause_event: Optional[asyncio.Event] = None
 ):
 ```
@@ -991,7 +989,6 @@ def _record_tool_calling(
     args: Dict[str, Any],
     result: Any,
     tool_call_id: str,
-    mask_output: bool = False
 ):
 ```
 
@@ -1004,7 +1001,6 @@ tool calling record.
 - **args** (Dict[str, Any]): The arguments passed to the tool.
 - **result** (Any): The result returned by the tool execution.
 - **tool_call_id** (str): A unique identifier for the tool call.
-- **mask_output** (bool, optional): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
 
 **Returns:**
 
