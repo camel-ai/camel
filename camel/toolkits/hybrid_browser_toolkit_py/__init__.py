@@ -12,13 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.logger import disable_logging, enable_logging, set_log_level
+from .hybrid_browser_toolkit import HybridBrowserToolkit
 
-__version__ = '0.2.73a5'
-
-__all__ = [
-    '__version__',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+__all__ = ["HybridBrowserToolkit"]
