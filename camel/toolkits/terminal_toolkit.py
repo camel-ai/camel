@@ -43,7 +43,7 @@ class TerminalToolkit(BaseToolkit):
 
     Args:
         timeout (Optional[float]): The timeout for terminal operations.
-            (default: :obj:`None`)
+            (default: :obj:`20.0`)
         shell_sessions (Optional[Dict[str, Any]]): A dictionary to store
             shell session information. If :obj:`None`, an empty dictionary
             will be used. (default: :obj:`None`)
@@ -71,7 +71,7 @@ class TerminalToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = 20.0,
         shell_sessions: Optional[Dict[str, Any]] = None,
         working_directory: Optional[str] = None,
         need_terminal: bool = True,
