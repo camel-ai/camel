@@ -504,6 +504,12 @@ class WebSocketBrowserWrapper:
         return ToolResult(text=response['text'], images=response['images'])
 
     @action_logger
+    async def get_page_links(self, ref: List[str]) -> Dict[str, Any]:
+        """Get the destination URLs for a list of link elements."""
+        response = await self._send_command('get_page_links', {'ref': ref})
+        return response
+
+    @action_logger
     async def click(self, ref: str) -> Dict[str, Any]:
         """Click an element."""
         response = await self._send_command('click', {'ref': ref})

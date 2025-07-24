@@ -1,7 +1,7 @@
 import {HybridBrowserSession} from './browser-session';
-import {ActionResult, BrowserAction, BrowserToolkitConfig, SnapshotResult, TabInfo, VisualMarkResult} from './types';
+import {ActionResult, BrowserAction, BrowserToolkitConfig, SnapshotResult, TabInfo, VisualMarkResult, LinkData, LinkResult} from './types';
 import {ConfigLoader} from './config-loader';
-
+import { Page } from 'playwright';
 export class HybridBrowserToolkit {
   private session: HybridBrowserSession;
   private config: BrowserToolkitConfig;
@@ -517,6 +517,57 @@ export class HybridBrowserToolkit {
 
   async getTabInfo(): Promise<TabInfo[]> {
     return await this.session.getTabInfo();
+  }
+
+  async getPageLinks(ref: string[]): Promise<LinkResult> {
+    if (!Array.isArray(ref) || ref.some(r => typeof r !== 'string' || !r)) {
+    return { links: [] };
+  }
+
+  const page = await this.session.getCurrentPage();
+  const snapshot = await this.getPageSnapshot(this.viewportLimit)
+
+  const resultlinks = await this.extractLinksByRefs(snapshot, page, ref);
+  return { links : resultlinks };
+  }
+
+  private async extractLinksByRefs(snapshot: string, page: Page, refs: string[]): Promise<LinkData[]> {
+    const foundLinks: LinkData[] = [];
+    const refSet = new Set(refs);
+    const lines = snapshot.split('\n');
+
+    for (const line of lines) {
+    const match = line.match(/- link\s+"([^"]+)"\s+\[ref=([^\]]+)\]/);
+    if (match) {
+      const [_, text, foundRef] = match;
+      if (refSet.has(foundRef)) {
+        try {
+          const url = await this.getLinkUrlByRef(page, foundRef);
+          foundLinks.push({ text, ref: foundRef, url: url || '' });
+        } catch (e) {
+          foundLinks.push({ text, ref: foundRef, url: '' });
+        }
+      }
+    }
+  }
+
+  return foundLinks;
+  }
+  private async getLinkUrlByRef(page: Page, ref: string): Promise<string | null> {
+    try {
+      const selector = `aria-ref=${ref}`;
+      const element = await page.locator(selector).first();
+      if (element) {
+        const browserConfig = this.configLoader.getBrowserConfig();
+        const href = await element.getAttribute(browserConfig.hrefAttribute);
+        if (href) {
+        return new URL(href, page.url()).toString();
+      }
+      }
+      return '';
+    } catch (error) {
+      return '';
+    }
   }
 
 }

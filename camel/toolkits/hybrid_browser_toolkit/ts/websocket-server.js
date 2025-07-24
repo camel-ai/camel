@@ -154,6 +154,11 @@ class WebSocketBrowserServer {
         console.log(`Screenshot completed in ${endTime - startTime}ms`);
         return result;
       }
+
+      case 'get_page_links':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.getPageLinks(params.ref);
+
       case 'click':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.click(params.ref);

@@ -620,6 +620,32 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             logger.error(f"Failed to get screenshot: {e}")
             return f"Error capturing screenshot: {e}"
 
+    async def browser_get_page_links(
+        self, *, ref: List[str]
+    ) -> Dict[str, Any]:
+        r"""Gets the destination URLs for a list of link elements.
+
+        This is useful to know where a link goes before clicking it.
+
+        Args:
+            ref (List[str]): A list of `ref` IDs for link elements, obtained
+                from a page snapshot.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing:
+                - "links" (List[Dict]): A list of found links, where each
+                  link has "text", "ref", and "url" keys.
+        """
+        try:
+            ws_wrapper = await self._get_ws_wrapper()
+            result = await ws_wrapper.get_page_links(ref)
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Failed to get page links: {e}")
+            return {"links": []}
+
     async def browser_click(self, *, ref: str) -> Dict[str, Any]:
         r"""Performs a click on an element on the page.
 
@@ -1071,8 +1097,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         except asyncio.TimeoutError:
             wait_time = timeout_sec or 0.0
             logger.info(
-                f"User input timeout reached after {wait_time}s, "
-                f"auto-resuming"
+                f"User input timeout reached after {wait_time}s, auto-resuming"
             )
             result_msg = f"Timeout {timeout_sec}s reached, auto-resumed."
 
@@ -1114,8 +1139,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             user_data_dir=self._user_data_dir,
             stealth=self._stealth,
             web_agent_model=self._web_agent_model,
-            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_"
-            f"{new_session_id}/",
+            cache_dir=f"{self._cache_dir.rstrip('/')}_clone_{new_session_id}/",
             enabled_tools=self.enabled_tools.copy(),
             browser_log_to_file=self._browser_log_to_file,
             session_id=new_session_id,
