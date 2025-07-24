@@ -48,7 +48,9 @@ class BaseToolkit(metaclass=AgentOpsMeta):
         super().__init_subclass__(**kwargs)
         for attr_name, attr_value in cls.__dict__.items():
             if callable(attr_value) and not attr_name.startswith("__"):
-                setattr(cls, attr_name, with_timeout(attr_value))
+                # Skip methods that have manual timeout management
+                if not getattr(attr_value, '_manual_timeout', False):
+                    setattr(cls, attr_name, with_timeout(attr_value))
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the

@@ -167,7 +167,8 @@ You are working in a team with team members. Your team members are:
 You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}.
+The current date is {datetime.date.today()}. For any date-related tasks, you 
+MUST use this as the current date.
 </intro>
 
 <mandatory_instructions>
@@ -372,7 +373,8 @@ You are working in a team with team members. Your team members are:
 You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}.
+The current date is {datetime.date.today()}. For any date-related tasks, you 
+MUST use this as the current date.
 </intro>
 
 
@@ -387,8 +389,6 @@ The current date is {datetime.date.today()}.
         as completely as possible.
     2.  **Cite your source**: Include the exact URL where you found the
         information.
-    3.  **Explain relevance**: Briefly state why this information is
-        useful for the overall task.
     Your notes should be a detailed and complete record of the information
     you have discovered. High-quality, detailed notes are essential for the
     team's success.
@@ -524,7 +524,8 @@ You are working in a team with team members. Your team members are:
 You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}.
+The current date is {datetime.date.today()}. For any date-related tasks, you 
+MUST use this as the current date.
 </intro>
 
 <mandatory_instructions>
@@ -710,7 +711,8 @@ You are working in a team with team members. Your team members are:
 You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}.
+The current date is {datetime.date.today()}. For any date-related tasks, you 
+MUST use this as the current date.
 </intro>
 
 <mandatory_instructions>
@@ -941,7 +943,8 @@ You are a helpful coordinator.
 - You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}.
+The current date is {datetime.date.today()}. For any date-related tasks, you 
+MUST use this as the current date.
 
 - If a task assigned to another agent fails, you should re-assign it to the 
 `Developer_Agent`. The `Developer_Agent` is a powerful agent with terminal 
@@ -962,7 +965,8 @@ You are a helpful task planner.
 - You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}.
+The current date is {datetime.date.today()}. For any date-related tasks, you 
+MUST use this as the current date.
         """,
         model=model_backend_reason,
         tools=[

@@ -17,6 +17,7 @@ import os
 import platform
 import queue
 import shutil
+import signal
 import subprocess
 import sys
 import threading
@@ -42,7 +43,7 @@ class TerminalToolkit(BaseToolkit):
 
     Args:
         timeout (Optional[float]): The timeout for terminal operations.
-            (default: :obj:`None`)
+            (default: :obj:`20.0`)
         shell_sessions (Optional[Dict[str, Any]]): A dictionary to store
             shell session information. If :obj:`None`, an empty dictionary
             will be used. (default: :obj:`None`)
@@ -70,7 +71,7 @@ class TerminalToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = 20.0,
         shell_sessions: Optional[Dict[str, Any]] = None,
         working_directory: Optional[str] = None,
         need_terminal: bool = True,
@@ -78,6 +79,8 @@ class TerminalToolkit(BaseToolkit):
         clone_current_env: bool = False,
         safe_mode: bool = True,
     ):
+        # Store timeout before calling super().__init__
+        self._timeout = timeout
         super().__init__(timeout=timeout)
         self.shell_sessions = shell_sessions or {}
         self.os_type = platform.system()
@@ -944,6 +947,11 @@ class TerminalToolkit(BaseToolkit):
                     command = command.replace('pip', pip_path, 1)
 
             if not interactive:
+                # Use preexec_fn to create a new process group on Unix systems
+                preexec_fn = None
+                if self.os_type in ['Darwin', 'Linux']:
+                    preexec_fn = os.setsid
+
                 proc = subprocess.Popen(
                     command,
                     shell=True,
@@ -955,17 +963,55 @@ class TerminalToolkit(BaseToolkit):
                     bufsize=1,
                     universal_newlines=True,
                     env=os.environ.copy(),
+                    preexec_fn=preexec_fn,
                 )
 
                 self.shell_sessions[id]["process"] = proc
                 self.shell_sessions[id]["running"] = True
-                stdout, stderr = proc.communicate()
-                output = stdout or ""
-                if stderr:
-                    output += f"\nStderr Output:\n{stderr}"
-                self.shell_sessions[id]["output"] = output
-                self._update_terminal_output(output + "\n")
-                return output
+                try:
+                    # Use the instance timeout if available
+                    stdout, stderr = proc.communicate(timeout=self.timeout)
+                    output = stdout or ""
+                    if stderr:
+                        output += f"\nStderr Output:\n{stderr}"
+                    self.shell_sessions[id]["output"] = output
+                    self.shell_sessions[id]["running"] = False
+                    self._update_terminal_output(output + "\n")
+                    return output
+                except subprocess.TimeoutExpired:
+                    # Kill the entire process group on Unix systems
+                    if self.os_type in ['Darwin', 'Linux']:
+                        try:
+                            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                            # Give it a short time to terminate
+                            stdout, stderr = proc.communicate(timeout=1)
+                        except subprocess.TimeoutExpired:
+                            # Force kill the process group
+                            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                            stdout, stderr = proc.communicate()
+                        except ProcessLookupError:
+                            # Process already dead
+                            stdout, stderr = proc.communicate()
+                    else:
+                        # Windows fallback
+                        proc.terminate()
+                        try:
+                            stdout, stderr = proc.communicate(timeout=1)
+                        except subprocess.TimeoutExpired:
+                            proc.kill()
+                            stdout, stderr = proc.communicate()
+
+                    output = stdout or ""
+                    if stderr:
+                        output += f"\nStderr Output:\n{stderr}"
+                    error_msg = (
+                        f"\nCommand timed out after {self.timeout} seconds"
+                    )
+                    output += error_msg
+                    self.shell_sessions[id]["output"] = output
+                    self.shell_sessions[id]["running"] = False
+                    self._update_terminal_output(output + "\n")
+                    return output
 
             # Interactive mode with real-time streaming via PTY
             if self.os_type not in ['Darwin', 'Linux']:
@@ -1074,6 +1120,9 @@ class TerminalToolkit(BaseToolkit):
                 f"Error: {error_msg}\n\n"
                 f"Detailed information: {detailed_error}"
             )
+
+    # Mark shell_exec to skip automatic timeout wrapping
+    shell_exec._manual_timeout = True  # type: ignore[attr-defined]
 
     def shell_view(self, id: str) -> str:
         r"""View the full output history of a specified shell session.

@@ -15,6 +15,7 @@ import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
+from surrealdb import RecordID
 
 from camel.storages.vectordb_storages.surreal import (
     SurrealStorage,
@@ -35,8 +36,7 @@ sys.modules['surrealdb.data.types.record_id'] = MagicMock()
 def storage():
     with patch("surrealdb.Surreal") as mock_surreal:
         mock_db = MagicMock()
-        mock_surreal.return_value.__enter__ = MagicMock(return_value=mock_db)
-        mock_surreal.return_value.__exit__ = MagicMock(return_value=None)
+        mock_surreal.return_value = mock_db
 
         # Mock the methods that would be called during initialization
         mock_db.signin = MagicMock()
@@ -69,24 +69,20 @@ def test_add(storage):
 
 def test_query(storage):
     storage_instance, mock_db = storage
-    mock_db.query_raw.return_value = {
-        "result": [
-            {
-                "result": [
-                    {
-                        "payload": {"id": "1"},
-                        "embedding": [0.1, 0.2, 0.3],
-                        "score": 0.1,
-                    },
-                    {
-                        "payload": {"id": "2"},
-                        "embedding": [0.4, 0.5, 0.6],
-                        "score": 0.2,
-                    },
-                ]
-            }
-        ]
-    }
+    mock_db.query.return_value = [
+        {
+            "id": RecordID(table_name="documents", identifier="1"),
+            "payload": {"id": "1"},
+            "embedding": [0.1, 0.2, 0.3],
+            "dist": 0.9,
+        },
+        {
+            "id": RecordID(table_name="documents", identifier="2"),
+            "payload": {"id": "2"},
+            "embedding": [0.4, 0.5, 0.6],
+            "dist": 0.8,
+        },
+    ]
 
     query = VectorDBQuery(query_vector=[0.2, 0.3, 0.4], top_k=2)
     results = storage_instance.query(query)
@@ -99,16 +95,28 @@ def test_query(storage):
 def test_status(storage):
     storage_instance, mock_db = storage
 
-    mock_db.query_raw.side_effect = [
-        {"result": [{"result": {"tables": {storage_instance.table: {}}}}]},
-        {"result": [{"result": {"indexes": {"hnsw_idx": "DIMENSION 3"}}}]},
-        {"result": [{"result": [{"count": 5}]}]},
+    mock_db.query.side_effect = [
+        {"tables": {storage_instance.table: {}}},
+        {
+            'events': {},
+            'fields': {
+                'embedding': 'DEFINE FIELD embedding ON documents TYPE array<float> PERMISSIONS FULL',  # noqa: E501
+                'embedding[*]': 'DEFINE FIELD embedding[*] ON documents TYPE float PERMISSIONS FULL',  # noqa: E501
+                'payload': 'DEFINE FIELD payload ON documents FLEXIBLE TYPE object PERMISSIONS FULL',  # noqa: E501
+            },
+            'indexes': {
+                'hnsw_idx': 'DEFINE INDEX hnsw_idx ON documents FIELDS embedding HNSW DIMENSION 4 DIST COSINE TYPE F64 EFC 150 M 12 M0 24 LM 0.40242960438184466f'  # noqa: E501
+            },
+            'lives': {},
+            'tables': {},
+        },
+        {"count": 5},
     ]
 
     status = storage_instance.status()
 
     assert isinstance(status, VectorDBStatus)
-    assert status.vector_dim == 3
+    assert status.vector_dim == 4
     assert status.vector_count == 5
 
 

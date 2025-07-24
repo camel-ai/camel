@@ -59,15 +59,15 @@ model_backend = ModelFactory.create(
 
 # Example 3: Use custom tools selection
 custom_tools = [
-    "open_browser",
-    "close_browser",
-    "visit_page",
-    "back",
-    "forward",
-    "get_page_snapshot",
-    "get_som_screenshot",
-    "get_page_links",
-    "click",
+    "browser_open",
+    "browser_close",
+    "browser_visit_page",
+    "browser_back",
+    "browser_forward",
+    "browser_click",
+    "browser_type",
+    "browser_switch_tab",
+    "browser_enter",
     # "browser_get_som_screenshot", # remove it to achieve faster operation
 ]
 
