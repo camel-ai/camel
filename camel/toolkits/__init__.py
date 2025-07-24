@@ -89,6 +89,7 @@ from .message_agent_toolkit import AgentCommunicationToolkit
 from .web_deploy_toolkit import WebDeployToolkit
 from .screenshot_toolkit import ScreenshotToolkit
 from .message_integration import ToolkitMessageIntegration
+from .notion_mcp_toolkit import NotionMCPToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -167,4 +168,5 @@ __all__ = [
     'ScreenshotToolkit',
     'RegisteredAgentToolkit',
     'ToolkitMessageIntegration',
+    'NotionMCPToolkit',
 ]

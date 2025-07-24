@@ -129,17 +129,14 @@ def developer_agent_factory(
     web_deploy_toolkit = WebDeployToolkit()
 
     # Add messaging to toolkits
-    terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
-    note_toolkit = message_integration.register_toolkits(note_toolkit)
-    web_deploy_toolkit = message_integration.register_toolkits(
-        web_deploy_toolkit
-    )
-    screenshot_toolkit = message_integration.register_toolkits(
-        screenshot_toolkit
-    )
+    terminal_toolkit = message_integration.register(terminal_toolkit)
+    note_toolkit = message_integration.register(note_toolkit)
+    web_deploy_toolkit = message_integration.register(web_deploy_toolkit)
+    screenshot_toolkit = message_integration.register(screenshot_toolkit)
 
     # Get enhanced tools
     tools = [
+        send_message_to_user,
         HumanToolkit().ask_human_via_console,
         *terminal_toolkit.get_tools(),
         *note_toolkit.get_tools(),
@@ -167,11 +164,14 @@ You are working in a team with team members. Your team members are:
 You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}. For any date-related tasks, you 
-MUST use this as the current date.
+The current date is {datetime.date.today()}.
 </intro>
 
 <mandatory_instructions>
+- You MUST use the `send_message_to_user` tool to inform the user of every
+decision and action you take. Your message must include a short title and
+a one-sentence description. This is a mandatory part of your workflow.
+
 - You MUST use the `read_note` tool to read the notes from other agents.
 
 - When you complete your task, your final response must be a comprehensive
@@ -333,16 +333,16 @@ def search_agent_factory(
     # Initialize toolkits
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
-    search_toolkit = SearchToolkit().search_exa
+    search_toolkit = SearchToolkit()
     terminal_toolkit_basic = TerminalToolkit()
 
     # Add messaging to toolkits
-    web_toolkit_custom = message_integration.register_toolkits(
-        web_toolkit_custom
-    )
-    terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
-    note_toolkit = message_integration.register_toolkits(note_toolkit)
-    search_toolkit = message_integration.register_functions([search_toolkit])
+    web_toolkit_custom = message_integration.register(web_toolkit_custom)
+    terminal_toolkit = message_integration.register(terminal_toolkit)
+    note_toolkit = message_integration.register(note_toolkit)
+    search_toolkit = message_integration.register(search_toolkit)
+
+    # Add messaging to individual functions
     enhanced_shell_exec = message_integration.register_functions(
         [terminal_toolkit_basic.shell_exec]
     )
@@ -350,9 +350,10 @@ def search_agent_factory(
     tools = [
         *web_toolkit_custom.get_tools(),
         *enhanced_shell_exec,
+        send_message_to_user,
         HumanToolkit().ask_human_via_console,
         *note_toolkit.get_tools(),
-        *search_toolkit,
+        *search_toolkit.get_tools(),
         *terminal_toolkit.get_tools(),
     ]
 
@@ -373,12 +374,15 @@ You are working in a team with team members. Your team members are:
 You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}. For any date-related tasks, you 
-MUST use this as the current date.
+The current date is {datetime.date.today()}.
 </intro>
 
 
 <mandatory_instructions>
+- You MUST use the `send_message_to_user` tool to inform the user of every
+    decision and action you take. Your message must include a short title and
+    a one-sentence description. This is a mandatory part of your workflow.
+
 - You MUST use the note-taking tools to record your findings. This is a
     critical part of your role. Your notes are the primary source of
     information for your teammates. To avoid information loss, you must not
@@ -389,6 +393,8 @@ MUST use this as the current date.
         as completely as possible.
     2.  **Cite your source**: Include the exact URL where you found the
         information.
+    3.  **Explain relevance**: Briefly state why this information is
+        useful for the overall task.
     Your notes should be a detailed and complete record of the information
     you have discovered. High-quality, detailed notes are essential for the
     team's success.
@@ -479,32 +485,31 @@ def document_agent_factory(
     file_write_toolkit = FileWriteToolkit(working_directory=WORKING_DIRECTORY)
     pptx_toolkit = PPTXToolkit(working_directory=WORKING_DIRECTORY)
     mark_it_down_toolkit = MarkItDownToolkit()
-    excel_toolkit = ExcelToolkit(working_directory=WORKING_DIRECTORY)
+    excel_toolkit = ExcelToolkit()
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
-    search_toolkit = SearchToolkit().search_exa
+    search_toolkit = SearchToolkit()
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
 
     # Add messaging to toolkits
-    file_write_toolkit = message_integration.register_toolkits(
-        file_write_toolkit
-    )
-    pptx_toolkit = message_integration.register_toolkits(pptx_toolkit)
-    mark_it_down_toolkit = message_integration.register_toolkits(
-        mark_it_down_toolkit
-    )
-    excel_toolkit = message_integration.register_toolkits(excel_toolkit)
-    note_toolkit = message_integration.register_toolkits(note_toolkit)
-    search_toolkit = message_integration.register_functions([search_toolkit])
-    terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
+    file_write_toolkit = message_integration.register(file_write_toolkit)
+    pptx_toolkit = message_integration.register(pptx_toolkit)
+    mark_it_down_toolkit = message_integration.register(mark_it_down_toolkit)
+    excel_toolkit = message_integration.register(excel_toolkit)
+    note_toolkit = message_integration.register(note_toolkit)
+    search_toolkit = message_integration.register(search_toolkit)
+    terminal_toolkit = message_integration.register(terminal_toolkit)
 
     tools = [
         *file_write_toolkit.get_tools(),
         *pptx_toolkit.get_tools(),
+        # *google_drive_mcp_toolkit.get_tools(),
+        # *RetrievalToolkit().get_tools(),
+        send_message_to_user,
         HumanToolkit().ask_human_via_console,
         *mark_it_down_toolkit.get_tools(),
         *excel_toolkit.get_tools(),
         *note_toolkit.get_tools(),
-        *search_toolkit,
+        *search_toolkit.get_tools(),
         *terminal_toolkit.get_tools(),
     ]
 
@@ -524,11 +529,14 @@ You are working in a team with team members. Your team members are:
 You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}. For any date-related tasks, you 
-MUST use this as the current date.
+The current date is {datetime.date.today()}.
 </intro>
 
 <mandatory_instructions>
+- You MUST use the `send_message_to_user` tool to inform the user of every
+    decision and action you take. Your message must include a short title and
+    a one-sentence description. This is a mandatory part of your workflow.
+
 - Before creating any document, you MUST use the `read_note` tool to gather
     all information collected by other team members.
 
@@ -663,34 +671,33 @@ def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
         quality="standard",
         working_directory=WORKING_DIRECTORY,
     )
-    search_toolkit = SearchToolkit().search_exa
+    search_toolkit = SearchToolkit()
     terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
 
     # Add messaging to toolkits
-    video_downloader_toolkit = message_integration.register_toolkits(
+    video_downloader_toolkit = message_integration.register(
         video_downloader_toolkit
     )
-    audio_analysis_toolkit = message_integration.register_toolkits(
+    audio_analysis_toolkit = message_integration.register(
         audio_analysis_toolkit
     )
-    image_analysis_toolkit = message_integration.register_toolkits(
+    image_analysis_toolkit = message_integration.register(
         image_analysis_toolkit
     )
-    openai_image_toolkit = message_integration.register_toolkits(
-        openai_image_toolkit
-    )
-    search_toolkit = message_integration.register_functions([search_toolkit])
-    terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
-    note_toolkit = message_integration.register_toolkits(note_toolkit)
+    openai_image_toolkit = message_integration.register(openai_image_toolkit)
+    search_toolkit = message_integration.register(search_toolkit)
+    terminal_toolkit = message_integration.register(terminal_toolkit)
+    note_toolkit = message_integration.register(note_toolkit)
 
     tools = [
         *video_downloader_toolkit.get_tools(),
         *audio_analysis_toolkit.get_tools(),
         *image_analysis_toolkit.get_tools(),
         *openai_image_toolkit.get_tools(),
+        send_message_to_user,
         HumanToolkit().ask_human_via_console,
-        *search_toolkit,
+        *search_toolkit.get_tools(),
         *terminal_toolkit.get_tools(),
         *note_toolkit.get_tools(),
     ]
@@ -711,11 +718,14 @@ You are working in a team with team members. Your team members are:
 You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}. For any date-related tasks, you 
-MUST use this as the current date.
+The current date is {datetime.date.today()}.
 </intro>
 
 <mandatory_instructions>
+- You MUST use the `send_message_to_user` tool to inform the user of every
+    decision and action you take. Your message must include a short title and
+    a one-sentence description. This is a mandatory part of your workflow.
+
 - You MUST use the `read_note` tool to to gather all information collected
     by other team members and write down your findings in the notes.
 
@@ -795,20 +805,20 @@ def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
     reddit_toolkit = RedditToolkit()
     notion_toolkit = NotionToolkit()
     slack_toolkit = SlackToolkit()
-    search_toolkit = SearchToolkit().search_exa
+    search_toolkit = SearchToolkit()
     terminal_toolkit = TerminalToolkit()
     note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
 
     # Add messaging to toolkits
-    whatsapp_toolkit = message_integration.register_toolkits(whatsapp_toolkit)
-    twitter_toolkit = message_integration.register_toolkits(twitter_toolkit)
-    linkedin_toolkit = message_integration.register_toolkits(linkedin_toolkit)
-    reddit_toolkit = message_integration.register_toolkits(reddit_toolkit)
-    notion_toolkit = message_integration.register_toolkits(notion_toolkit)
-    slack_toolkit = message_integration.register_toolkits(slack_toolkit)
-    search_toolkit = message_integration.register_functions([search_toolkit])
-    terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
-    note_toolkit = message_integration.register_toolkits(note_toolkit)
+    whatsapp_toolkit = message_integration.register(whatsapp_toolkit)
+    twitter_toolkit = message_integration.register(twitter_toolkit)
+    linkedin_toolkit = message_integration.register(linkedin_toolkit)
+    reddit_toolkit = message_integration.register(reddit_toolkit)
+    notion_toolkit = message_integration.register(notion_toolkit)
+    slack_toolkit = message_integration.register(slack_toolkit)
+    search_toolkit = message_integration.register(search_toolkit)
+    terminal_toolkit = message_integration.register(terminal_toolkit)
+    note_toolkit = message_integration.register(note_toolkit)
 
     return ChatAgent(
         BaseMessage.make_assistant_message(
@@ -890,8 +900,9 @@ operations.
             *reddit_toolkit.get_tools(),
             *notion_toolkit.get_tools(),
             *slack_toolkit.get_tools(),
+            send_message_to_user,
             HumanToolkit().ask_human_via_console,
-            *search_toolkit,
+            *search_toolkit.get_tools(),
             *terminal_toolkit.get_tools(),
             *note_toolkit.get_tools(),
         ],
@@ -943,8 +954,11 @@ You are a helpful coordinator.
 - You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}. For any date-related tasks, you 
-MUST use this as the current date.
+The current date is {datetime.date.today()}.
+
+- You MUST use the `send_message_to_user` tool to inform the user of every
+    decision and action you take. Your message must include a short title and
+    a one-sentence description. This is a mandatory part of your workflow.
 
 - If a task assigned to another agent fails, you should re-assign it to the 
 `Developer_Agent`. The `Developer_Agent` is a powerful agent with terminal 
@@ -953,7 +967,8 @@ access and can resolve a wide range of issues.
         ),
         model=model_backend_reason,
         tools=[
-            *message_integration.register_toolkits(
+            send_message_to_user,
+            *message_integration.register(
                 NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
             ).get_tools(),
         ],
@@ -965,19 +980,26 @@ You are a helpful task planner.
 - You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}. For any date-related tasks, you 
-MUST use this as the current date.
+The current date is {datetime.date.today()}.
+
+- You MUST use the `send_message_to_user` tool to inform the user of every
+    decision and action you take. Your message must include a short title and
+    a one-sentence description. This is a mandatory part of your workflow.
         """,
         model=model_backend_reason,
         tools=[
-            *message_integration.register_toolkits(
+            send_message_to_user,
+            *message_integration.register(
                 NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
             ).get_tools(),
         ],
     )
     new_worker_agent = ChatAgent(
-        f"You are a helpful worker. When you complete your task, your "
-        "final response "
+        f"You are a helpful worker. You MUST use the "
+        f"`send_message_to_user` tool to inform the user of every "
+        f"decision and action you take. Your message must include a short "
+        f"title and a one-sentence description. This is a mandatory part "
+        f"of your workflow. When you complete your task, your final response "
         f"must be a comprehensive summary of your work, presented in a clear, "
         f"detailed, and easy-to-read format. Avoid using markdown tables for "
         f"presenting data; use plain text formatting instead. You are now "
@@ -996,8 +1018,9 @@ MUST use this as the current date.
         "points.",
         model=model_backend,
         tools=[
+            send_message_to_user,
             HumanToolkit().ask_human_via_console,
-            *message_integration.register_toolkits(
+            *message_integration.register(
                 NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
             ).get_tools(),
         ],

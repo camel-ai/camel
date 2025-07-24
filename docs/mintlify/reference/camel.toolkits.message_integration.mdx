@@ -77,12 +77,12 @@ def get_message_tool(self):
 
   FunctionTool: The message sending tool.
 
-<a id="camel.toolkits.message_integration.ToolkitMessageIntegration.add_messaging_to_toolkit"></a>
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration.register_toolkits"></a>
 
-### add_messaging_to_toolkit
+### register_toolkits
 
 ```python
-def add_messaging_to_toolkit(
+def register_toolkits(
     self,
     toolkit: BaseToolkit,
     tool_names: Optional[List[str]] = None
@@ -107,12 +107,25 @@ The tools will accept optional messaging parameters:
 
   The toolkit with messaging capabilities added
 
-<a id="camel.toolkits.message_integration.ToolkitMessageIntegration.add_messaging_to_functions"></a>
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration._create_bound_method_wrapper"></a>
 
-### add_messaging_to_functions
+### _create_bound_method_wrapper
 
 ```python
-def add_messaging_to_functions(
+def _create_bound_method_wrapper(self, enhanced_func: Callable, toolkit_instance):
+```
+
+Create a wrapper that mimics a bound method for _clone_tools.
+
+This wrapper preserves the toolkit instance reference while maintaining
+the enhanced messaging functionality.
+
+<a id="camel.toolkits.message_integration.ToolkitMessageIntegration.register_functions"></a>
+
+### register_functions
+
+```python
+def register_functions(
     self,
     functions: Union[List[FunctionTool], List[Callable]],
     function_names: Optional[List[str]] = None

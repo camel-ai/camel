@@ -78,7 +78,8 @@ channel created.
 def join_slack_channel(self, channel_id: str):
 ```
 
-Joins an existing Slack channel.
+Joins an existing Slack channel. To get the `channel_id` of a
+channel, you can use the `get_slack_channel_information` function.
 
 **Parameters:**
 
@@ -86,8 +87,7 @@ Joins an existing Slack channel.
 
 **Returns:**
 
-  str: A confirmation message indicating whether join successfully
-or an error message.
+  str: A string containing the API response from Slack.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.leave_slack_channel"></a>
 
@@ -97,7 +97,8 @@ or an error message.
 def leave_slack_channel(self, channel_id: str):
 ```
 
-Leaves an existing Slack channel.
+Leaves an existing Slack channel. To get the `channel_id` of a
+channel, you can use the `get_slack_channel_information` function.
 
 **Parameters:**
 
@@ -105,8 +106,7 @@ Leaves an existing Slack channel.
 
 **Returns:**
 
-  str: A confirmation message indicating whether leave successfully
-or an error message.
+  str: A string containing the API response from Slack.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.get_slack_channel_information"></a>
 
@@ -118,7 +118,9 @@ def get_slack_channel_information(self):
 
 **Returns:**
 
-  str: JSON string containing information about Slack channels.
+  str: A JSON string representing a list of channels. Each channel
+object in the list contains 'id', 'name', 'created', and
+'num_members'. Returns an error message string on failure.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.get_slack_channel_message"></a>
 
@@ -128,7 +130,9 @@ def get_slack_channel_information(self):
 def get_slack_channel_message(self, channel_id: str):
 ```
 
-Retrieve messages from a Slack channel.
+Retrieve messages from a Slack channel. To get the `channel_id`
+of a channel, you can use the `get_slack_channel_information`
+function.
 
 **Parameters:**
 
@@ -136,7 +140,8 @@ Retrieve messages from a Slack channel.
 
 **Returns:**
 
-  str: JSON string containing filtered message data.
+  str: A JSON string representing a list of messages. Each message
+object contains 'user', 'text', and 'ts' (timestamp).
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.send_slack_message"></a>
 
@@ -152,19 +157,20 @@ def send_slack_message(
 ):
 ```
 
-Send a message to a Slack channel.
+Send a message to a Slack channel. To get the `channel_id` of a
+channel, you can use the `get_slack_channel_information` function.
 
 **Parameters:**
 
 - **message** (str): The message to send.
-- **channel_id** (str): The ID of the Slack channel to send message.
-- **file_path** (Optional[str]): The path of the file to send. Defaults to `None`.
-- **user** (Optional[str]): The user ID of the recipient. Defaults to `None`.
+- **channel_id** (str): The ID of the channel to send the message to.
+- **file_path** (Optional[str]): The local path of a file to upload with the message.
+- **user** (Optional[str]): The ID of a user to send an ephemeral message to (visible only to that user).
 
 **Returns:**
 
-  str: A confirmation message indicating whether the message was sent
-successfully or an error message.
+  str: A confirmation message indicating success or an error
+message.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.delete_slack_message"></a>
 
@@ -174,17 +180,16 @@ successfully or an error message.
 def delete_slack_message(self, time_stamp: str, channel_id: str):
 ```
 
-Delete a message to a Slack channel.
+Delete a message from a Slack channel.
 
 **Parameters:**
 
-- **time_stamp** (str): Timestamp of the message to be deleted.
-- **channel_id** (str): The ID of the Slack channel to delete message.
+- **time_stamp** (str): The 'ts' value of the message to be deleted. You can get this from the `get_slack_channel_message` function.
+- **channel_id** (str): The ID of the channel where the message is. Use `get_slack_channel_information` to find the `channel_id`.
 
 **Returns:**
 
-  str: A confirmation message indicating whether the message
-was delete successfully or an error message.
+  str: A string containing the API response from Slack.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.get_tools"></a>
 
