@@ -23,6 +23,7 @@ from .blocks.chat_history_block import ChatHistoryBlock
 from .blocks.vectordb_block import VectorDBBlock
 from .context_creators.score_based import ScoreBasedContextCreator
 from .records import ContextRecord, MemoryRecord
+from .context_compressors import ContextSummarizer
 
 __all__ = [
     'MemoryRecord',
@@ -37,4 +38,5 @@ __all__ = [
     'VectorDBBlock',
     'LongtermAgentMemory',
     'MarkdownMemory',
+    'ContextSummarizer',
 ]

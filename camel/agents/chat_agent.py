@@ -59,6 +59,7 @@ from camel.memories import (
     ChatHistoryMemory,
     MemoryRecord,
     ScoreBasedContextCreator,
+    ContextSummarizer,
 )
 from camel.messages import (
     BaseMessage,
@@ -386,6 +387,18 @@ class ChatAgent(BaseAgent):
             usage. When enabled, removes FUNCTION/TOOL role messages and
             ASSISTANT messages with tool_calls after each step.
             (default: :obj:`False`)
+        auto_compress_context (bool): Whether to automatically compress the
+            context of the agent. If set to true, exceeding a number of messages
+            or tokens in the context triggers a summarization of the context
+            to be replaced with the full conversation history. (default: :obj:`False`)
+        compress_message_limit (int): The number of messages in history to trigger
+            a context compression. Works only if auto_compress_context is set to true.
+            (default: :obj:`40`)
+        compress_token_limit (Optional[int]): The number of tokens in history to trigger
+            a context compression. Works only if auto_compress_context is set to true.
+            (default: :obj:`None`)
+        memory_save_directory (Optional[str]): The directory to save the summary of conversation
+            and the full conversation history. If set, the memory will be saved to this directory.
     """
 
     def __init__(
@@ -426,6 +439,10 @@ class ChatAgent(BaseAgent):
         mask_tool_output: bool = False,
         pause_event: Optional[asyncio.Event] = None,
         prune_tool_calls_from_memory: bool = False,
+        auto_compress_context: bool = False,
+        compress_message_limit: int = 40,
+        compress_token_limit: Optional[int] = None,
+        memory_save_directory: Optional[str] = None,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -511,6 +528,20 @@ class ChatAgent(BaseAgent):
         self._secure_result_store: Dict[str, Any] = {}
         self.pause_event = pause_event
         self.prune_tool_calls_from_memory = prune_tool_calls_from_memory
+        self.auto_compress_context = auto_compress_context
+        self.compress_message_limit = compress_message_limit
+        self.compress_token_limit = compress_token_limit
+        self.memory_save_directory = memory_save_directory
+
+        if self.auto_compress_context:
+            from camel.toolkits.markdown_memory_toolkit import MarkdownMemoryToolkit
+            self._markdown_toolkit = MarkdownMemoryToolkit(
+                agent=self,
+                working_directory=self.memory_save_directory,
+            )
+            self._context_summarizer = ContextSummarizer(
+                summary_agent=self,
+            )
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -1398,6 +1429,10 @@ class ChatAgent(BaseAgent):
 
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
+
+        # compress context if needed 
+        if self.auto_compress_context and self._should_compress_context():
+            self._compress_context()
 
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
@@ -3809,3 +3844,57 @@ class ChatAgent(BaseAgent):
         mcp_server.tool()(get_available_tools)
 
         return mcp_server
+
+    def _should_compress_context(self) -> bool:
+        r"""Check if the context should be compressed based
+        on the compress_message_limit and compress_token_limit.
+
+        Returns:
+            bool: True if the context should be compressed, False otherwise.
+        """
+        try:
+            conversation_message_count = len(self.memory.retrieve())
+
+            # check message limit
+            if conversation_message_count > self.compress_message_limit:
+                return True
+            
+            # check token limit if specified
+            if self.compress_token_limit:
+                _, token_count = self.memory.get_context()
+                if token_count > self.compress_token_limit:
+                    return True 
+            
+            return False
+        except Exception as e:
+            logger.error(f"Error checking if context should be compressed: {e}")
+            return False
+
+    def _compress_context(self) -> None:
+        r"""Compress context by generating summary and saving history."""
+        try:
+            # get current memory records 
+            records = [cr.memory_record for cr in self.memory.retrieve()]
+
+            # use context summarizer
+            summary = self._context_summarizer.summarize_messages(records)
+
+            # save summary and history
+            self._markdown_toolkit._save_history(records)
+            self._markdown_toolkit._save_summary(summary)
+
+            # clear the memory
+            self.clear_memory()
+
+            # add summary as context 
+            if summary and summary.strip(): 
+                summary_message = BaseMessage.make_assistant_message(
+                    role_name="system",
+                    content=f"[Context Summary]\n\n{summary}"
+                )
+                self.update_memory(summary_message, OpenAIBackendRole.SYSTEM)
+            
+            logger.info(f"Context compressed - replaced {len(records)} messages with summary")
+            
+        except Exception as e:
+            logger.error(f"Failed to compress context: {e}")
