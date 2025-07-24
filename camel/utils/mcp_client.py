@@ -353,6 +353,14 @@ class MCPClient:
                 finally:
                     self._connection_context = None
 
+            # Add a small delay to allow subprocess cleanup on Windows
+            # This prevents "Event loop is closed" errors during shutdown
+            import asyncio
+            import sys
+
+            if sys.platform == "win32":
+                await asyncio.sleep(0.01)
+
         finally:
             # Ensure state is reset
             self._tools = []

@@ -16,12 +16,20 @@ class ModelType(UnifiedModelType, Enum):
 def __str__(self):
 ```
 
+<a id="camel.types.enums.ModelType.__repr__"></a>
+
+### __repr__
+
+```python
+def __repr__(self):
+```
+
 <a id="camel.types.enums.ModelType.__new__"></a>
 
 ### __new__
 
 ```python
-def __new__(cls, value):
+def __new__(cls, value: Union['ModelType', str]):
 ```
 
 <a id="camel.types.enums.ModelType.from_name"></a>
@@ -29,7 +37,7 @@ def __new__(cls, value):
 ### from_name
 
 ```python
-def from_name(cls, name):
+def from_name(cls, name: str):
 ```
 
 Returns the ModelType enum value from a string.

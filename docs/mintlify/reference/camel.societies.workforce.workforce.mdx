@@ -590,6 +590,36 @@ def _get_child_nodes_info(self):
 
 Get the information of all the child nodes under this node.
 
+<a id="camel.societies.workforce.workforce.Workforce._get_node_info"></a>
+
+### _get_node_info
+
+```python
+def _get_node_info(self, node):
+```
+
+Get descriptive information for a specific node type.
+
+<a id="camel.societies.workforce.workforce.Workforce._get_single_agent_info"></a>
+
+### _get_single_agent_info
+
+```python
+def _get_single_agent_info(self, worker: 'SingleAgentWorker'):
+```
+
+Get formatted information for a SingleAgentWorker node.
+
+<a id="camel.societies.workforce.workforce.Workforce._group_tools_by_toolkit"></a>
+
+### _group_tools_by_toolkit
+
+```python
+def _group_tools_by_toolkit(self, tool_dict: dict):
+```
+
+Group tools by their parent toolkit class names.
+
 <a id="camel.societies.workforce.workforce.Workforce._get_valid_worker_ids"></a>
 
 ### _get_valid_worker_ids
@@ -641,6 +671,22 @@ Validate task assignments against valid worker IDs.
 
   Tuple[List[TaskAssignment], List[TaskAssignment]]:
 (valid_assignments, invalid_assignments)
+
+<a id="camel.societies.workforce.workforce.Workforce._update_task_dependencies_from_assignments"></a>
+
+### _update_task_dependencies_from_assignments
+
+```python
+def _update_task_dependencies_from_assignments(self, assignments: List[TaskAssignment], tasks: List[Task]):
+```
+
+Update Task.dependencies with actual Task objects based on
+assignments.
+
+**Parameters:**
+
+- **assignments** (List[TaskAssignment]): The task assignments containing dependency IDs.
+- **tasks** (List[Task]): The tasks that were assigned.
 
 <a id="camel.societies.workforce.workforce.Workforce.get_workforce_log_tree"></a>
 

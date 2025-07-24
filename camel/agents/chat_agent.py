@@ -74,7 +74,7 @@ from camel.models import (
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
 from camel.storages import JsonStorage
-from camel.toolkits import FunctionTool
+from camel.toolkits import FunctionTool, RegisteredAgentToolkit
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -89,7 +89,6 @@ from camel.utils import (
     model_from_json_schema,
 )
 from camel.utils.commons import dependencies_required
-from camel.utils.tool_result import ToolResult
 
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
@@ -348,6 +347,13 @@ class ChatAgent(BaseAgent):
         tools (Optional[List[Union[FunctionTool, Callable]]], optional): List
             of available :obj:`FunctionTool` or :obj:`Callable`. (default:
             :obj:`None`)
+        toolkits_to_register_agent (Optional[List[RegisteredAgentToolkit]],
+            optional): List of toolkit instances that inherit from
+            :obj:`RegisteredAgentToolkit`. The agent will register itself with
+            these toolkits, allowing them to access the agent instance. Note:
+            This does NOT add the toolkit's tools to the agent. To use tools
+            from these toolkits, pass them explicitly via the `tools`
+            parameter. (default: :obj:`None`)
         external_tools (Optional[List[Union[FunctionTool, Callable,
             Dict[str, Any]]]], optional): List of external tools
             (:obj:`FunctionTool` or :obj:`Callable` or :obj:`Dict[str, Any]`)
@@ -375,6 +381,11 @@ class ChatAgent(BaseAgent):
         pause_event (Optional[asyncio.Event]): Event to signal pause of the
             agent's operation. When clear, the agent will pause its execution.
             (default: :obj:`None`)
+        prune_tool_calls_from_memory (bool): Whether to clean tool
+            call messages from memory after response generation to save token
+            usage. When enabled, removes FUNCTION/TOOL role messages and
+            ASSISTANT messages with tool_calls after each step.
+            (default: :obj:`False`)
     """
 
     def __init__(
@@ -400,6 +411,9 @@ class ChatAgent(BaseAgent):
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
+        toolkits_to_register_agent: Optional[
+            List[RegisteredAgentToolkit]
+        ] = None,
         external_tools: Optional[
             List[Union[FunctionTool, Callable, Dict[str, Any]]]
         ] = None,
@@ -411,6 +425,7 @@ class ChatAgent(BaseAgent):
         tool_execution_timeout: Optional[float] = None,
         mask_tool_output: bool = False,
         pause_event: Optional[asyncio.Event] = None,
+        prune_tool_calls_from_memory: bool = False,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -432,7 +447,7 @@ class ChatAgent(BaseAgent):
             token_limit or self.model_backend.token_limit,
         )
 
-        self.memory: AgentMemory = memory or ChatHistoryMemory(
+        self._memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator,
             window_size=message_window_size,
             agent_id=self.agent_id,
@@ -440,7 +455,7 @@ class ChatAgent(BaseAgent):
 
         # So we don't have to pass agent_id when we define memory
         if memory is not None:
-            memory.agent_id = self.agent_id
+            self._memory.agent_id = self.agent_id
 
         # Set up system message and initialize messages
         self._original_system_message = (
@@ -473,6 +488,12 @@ class ChatAgent(BaseAgent):
             ]
         }
 
+        # Register agent with toolkits that have RegisteredAgentToolkit mixin
+        if toolkits_to_register_agent:
+            for toolkit in toolkits_to_register_agent:
+                if isinstance(toolkit, RegisteredAgentToolkit):
+                    toolkit.register_agent(self)
+
         self._external_tool_schemas = {
             tool_schema["function"]["name"]: tool_schema
             for tool_schema in [
@@ -488,17 +509,13 @@ class ChatAgent(BaseAgent):
         self.tool_execution_timeout = tool_execution_timeout
         self.mask_tool_output = mask_tool_output
         self._secure_result_store: Dict[str, Any] = {}
-        self._pending_images: List[str] = []
-        self._image_retry_count: Dict[str, int] = {}
-        # Store images to attach to next user message
         self.pause_event = pause_event
+        self.prune_tool_calls_from_memory = prune_tool_calls_from_memory
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
-        self._pending_images = []
-        self._image_retry_count = {}
         for terminator in self.response_terminators:
             terminator.reset()
 
@@ -661,6 +678,25 @@ class ChatAgent(BaseAgent):
         self._system_message = (
             self._generate_system_message_for_output_language()
         )
+        self.init_messages()
+
+    @property
+    def memory(self) -> AgentMemory:
+        r"""Returns the agent memory."""
+        return self._memory
+
+    @memory.setter
+    def memory(self, value: AgentMemory) -> None:
+        r"""Set the agent memory.
+
+        When setting a new memory, the system message is automatically
+        re-added to ensure it's not lost.
+
+        Args:
+            value (AgentMemory): The new agent memory to use.
+        """
+        self._memory = value
+        # Ensure the new memory has the system message
         self.init_messages()
 
     def _get_full_tool_schemas(self) -> List[Dict[str, Any]]:
@@ -1236,7 +1272,7 @@ class ChatAgent(BaseAgent):
                     if not message.parsed:
                         logger.warning(
                             f"Failed to parse JSON from response: "
-                            f"{content[:100]}..."
+                            f"{content}"
                         )
 
                 except Exception as e:
@@ -1264,7 +1300,11 @@ class ChatAgent(BaseAgent):
             openai_message: OpenAIMessage = {"role": "user", "content": prompt}
             # Explicitly set the tools to empty list to avoid calling tools
             response = self._get_model_response(
-                [openai_message], 0, response_format, []
+                openai_messages=[openai_message],
+                num_tokens=0,
+                response_format=response_format,
+                tool_schemas=[],
+                prev_num_openai_messages=0,
             )
             message.content = response.output_messages[0].content
             if not self._try_format_message(message, response_format):
@@ -1292,7 +1332,11 @@ class ChatAgent(BaseAgent):
             prompt = SIMPLE_FORMAT_PROMPT.format(content=message.content)
             openai_message: OpenAIMessage = {"role": "user", "content": prompt}
             response = await self._aget_model_response(
-                [openai_message], 0, response_format, []
+                openai_messages=[openai_message],
+                num_tokens=0,
+                response_format=response_format,
+                tool_schemas=[],
+                prev_num_openai_messages=0,
             )
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
@@ -1352,16 +1396,6 @@ class ChatAgent(BaseAgent):
                 role_name="User", content=input_message
             )
 
-        # Attach any pending images from previous tool calls
-        image_list = self._process_pending_images()
-        if image_list:
-            # Create new message with images attached
-            input_message = BaseMessage.make_user_message(
-                role_name="User",
-                content=input_message.content,
-                image_list=image_list,
-            )
-
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
@@ -1374,7 +1408,8 @@ class ChatAgent(BaseAgent):
 
         # Initialize token usage tracker
         step_token_usage = self._create_token_usage_tracker()
-        iteration_count = 0
+        iteration_count: int = 0
+        prev_num_openai_messages: int = 0
 
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
@@ -1391,10 +1426,13 @@ class ChatAgent(BaseAgent):
             # Get response from model backend
             response = self._get_model_response(
                 openai_messages,
-                accumulated_context_tokens,  # Cumulative context tokens
-                response_format,
-                self._get_full_tool_schemas(),
+                num_tokens=num_tokens,
+                current_iteration=iteration_count,
+                response_format=response_format,
+                tool_schemas=self._get_full_tool_schemas(),
+                prev_num_openai_messages=prev_num_openai_messages,
             )
+            prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
 
             # Accumulate API token usage
@@ -1405,6 +1443,9 @@ class ChatAgent(BaseAgent):
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
+                logger.info(
+                    f"Termination triggered at iteration " f"{iteration_count}"
+                )
                 return self._step_terminate(
                     accumulated_context_tokens,
                     tool_call_records,
@@ -1439,6 +1480,7 @@ class ChatAgent(BaseAgent):
                     self.max_iteration is not None
                     and iteration_count >= self.max_iteration
                 ):
+                    logger.info(f"Max iteration reached: {iteration_count}")
                     break
 
                 # If we're still here, continue the loop
@@ -1455,6 +1497,10 @@ class ChatAgent(BaseAgent):
             )
 
         self._record_final_output(response.output_messages)
+
+        # Clean tool call messages from memory after response generation
+        if self.prune_tool_calls_from_memory and tool_call_records:
+            self.memory.clean_tool_calls()
 
         return self._convert_to_chatagent_response(
             response,
@@ -1544,16 +1590,6 @@ class ChatAgent(BaseAgent):
                 role_name="User", content=input_message
             )
 
-        # Attach any pending images from previous tool calls
-        image_list = self._process_pending_images()
-        if image_list:
-            # Create new message with images attached
-            input_message = BaseMessage.make_user_message(
-                role_name="User",
-                content=input_message.content,
-                image_list=image_list,
-            )
-
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         tool_call_records: List[ToolCallingRecord] = []
@@ -1564,7 +1600,8 @@ class ChatAgent(BaseAgent):
 
         # Initialize token usage tracker
         step_token_usage = self._create_token_usage_tracker()
-        iteration_count = 0
+        iteration_count: int = 0
+        prev_num_openai_messages: int = 0
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
                 await self.pause_event.wait()
@@ -1578,10 +1615,13 @@ class ChatAgent(BaseAgent):
 
             response = await self._aget_model_response(
                 openai_messages,
-                accumulated_context_tokens,
-                response_format,
-                self._get_full_tool_schemas(),
+                num_tokens=num_tokens,
+                current_iteration=iteration_count,
+                response_format=response_format,
+                tool_schemas=self._get_full_tool_schemas(),
+                prev_num_openai_messages=prev_num_openai_messages,
             )
+            prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
 
             # Accumulate API token usage
@@ -1592,6 +1632,9 @@ class ChatAgent(BaseAgent):
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
+                logger.info(
+                    f"Termination triggered at iteration " f"{iteration_count}"
+                )
                 return self._step_terminate(
                     accumulated_context_tokens,
                     tool_call_records,
@@ -1600,7 +1643,6 @@ class ChatAgent(BaseAgent):
 
             if tool_call_requests := response.tool_call_requests:
                 # Process all tool calls
-                new_images_from_tools = []
                 for tool_call_request in tool_call_requests:
                     if (
                         tool_call_request.tool_name
@@ -1620,71 +1662,9 @@ class ChatAgent(BaseAgent):
                         )
                         tool_call_records.append(tool_call_record)
 
-                        # Check if this tool call produced images
-                        if (
-                            hasattr(tool_call_record, 'images')
-                            and tool_call_record.images
-                        ):
-                            new_images_from_tools.extend(
-                                tool_call_record.images
-                            )
-
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
                     break
-
-                # If tools produced images
-                # send them to the model as a user message
-                if new_images_from_tools:
-                    # Convert base64 images to PIL Images
-                    image_list = []
-                    for img_data in new_images_from_tools:
-                        try:
-                            import base64
-                            import io
-
-                            from PIL import Image
-
-                            # Extract base64 data from data URL format
-                            if img_data.startswith("data:image"):
-                                # Format:
-                                # "data:image/png;base64,iVBORw0KGgo..."
-                                base64_data = img_data.split(',', 1)[1]
-                            else:
-                                # Raw base64 data
-                                base64_data = img_data
-
-                            # Decode and create PIL Image
-                            image_bytes = base64.b64decode(base64_data)
-                            pil_image = Image.open(io.BytesIO(image_bytes))
-                            # Convert to ensure proper
-                            # Image.Image type for compatibility
-                            pil_image_tool_result: Image.Image = (
-                                pil_image.convert('RGB')
-                            )
-                            image_list.append(pil_image_tool_result)
-
-                        except Exception as e:
-                            logger.warning(
-                                f"Failed to convert "
-                                f"base64 image to PIL for immediate use: {e}"
-                            )
-                            continue
-
-                    # If we have valid images
-                    # create a user message with images
-                    if image_list:
-                        # Create a user message with images
-                        # to provide visual context immediately
-                        image_message = BaseMessage.make_user_message(
-                            role_name="User",
-                            content="[Visual content from tool execution - please analyze and continue]",  # noqa: E501
-                            image_list=image_list,
-                        )
-
-                        self.update_memory(
-                            image_message, OpenAIBackendRole.USER
-                        )
 
                 if (
                     self.max_iteration is not None
@@ -1706,6 +1686,10 @@ class ChatAgent(BaseAgent):
             )
 
         self._record_final_output(response.output_messages)
+
+        # Clean tool call messages from memory after response generation
+        if self.prune_tool_calls_from_memory and tool_call_records:
+            self.memory.clean_tool_calls()
 
         return self._convert_to_chatagent_response(
             response,
@@ -1772,69 +1756,6 @@ class ChatAgent(BaseAgent):
             info=info,
         )
 
-    def _process_pending_images(self) -> List:
-        r"""Process pending images with retry logic and return PIL Image list.
-
-        Returns:
-            List: List of successfully converted PIL Images.
-        """
-        if not self._pending_images:
-            return []
-
-        image_list = []
-        successfully_processed = []
-        failed_images = []
-
-        for img_data in self._pending_images:
-            # Track retry count
-            retry_count = self._image_retry_count.get(img_data, 0)
-
-            # Remove images that have failed too many times (max 3 attempts)
-            if retry_count >= 3:
-                failed_images.append(img_data)
-                logger.warning(
-                    f"Removing image after {retry_count} failed attempts"
-                )
-                continue
-
-            try:
-                import base64
-                import io
-
-                from PIL import Image
-
-                # Extract base64 data from data URL format
-                if img_data.startswith("data:image"):
-                    # Format: "data:image/png;base64,iVBORw0KGgo..."
-                    base64_data = img_data.split(',', 1)[1]
-                else:
-                    # Raw base64 data
-                    base64_data = img_data
-
-                # Decode and create PIL Image
-                image_bytes = base64.b64decode(base64_data)
-                pil_image = Image.open(io.BytesIO(image_bytes))
-                pil_image_converted: Image.Image = pil_image.convert('RGB')
-                image_list.append(pil_image_converted)
-                successfully_processed.append(img_data)
-
-            except Exception as e:
-                # Increment retry count for failed conversion
-                self._image_retry_count[img_data] = retry_count + 1
-                logger.warning(
-                    f"Failed to convert base64 image to PIL "
-                    f"(attempt {retry_count + 1}/3): {e}"
-                )
-                continue
-
-        # Clean up processed and failed images
-        for img in successfully_processed + failed_images:
-            self._pending_images.remove(img)
-            # Clean up retry count for processed/removed images
-            self._image_retry_count.pop(img, None)
-
-        return image_list
-
     def _record_final_output(self, output_messages: List[BaseMessage]) -> None:
         r"""Log final messages or warnings about multiple responses."""
         if len(output_messages) == 1:
@@ -1845,69 +1766,32 @@ class ChatAgent(BaseAgent):
                 "selected message manually using `record_message()`."
             )
 
-    def _is_vision_error(self, exc: Exception) -> bool:
-        r"""Check if the exception is likely related to vision/image is not
-        supported by the model."""
-        # TODO: more robust vision error detection
-        error_msg = str(exc).lower()
-        vision_keywords = [
-            'vision',
-            'image',
-            'multimodal',
-            'unsupported',
-            'invalid content type',
-            'image_url',
-            'visual',
-        ]
-        return any(keyword in error_msg for keyword in vision_keywords)
-
-    def _has_images(self, messages: List[OpenAIMessage]) -> bool:
-        r"""Check if any message contains images."""
-        for msg in messages:
-            content = msg.get('content')
-            if isinstance(content, list):
-                for item in content:
-                    if (
-                        isinstance(item, dict)
-                        and item.get('type') == 'image_url'
-                    ):
-                        return True
-        return False
-
-    def _strip_images_from_messages(
-        self, messages: List[OpenAIMessage]
-    ) -> List[OpenAIMessage]:
-        r"""Remove images from messages, keeping only text content."""
-        stripped_messages = []
-        for msg in messages:
-            content = msg.get('content')
-            if isinstance(content, list):
-                # Extract only text content from multimodal messages
-                text_content = ""
-                for item in content:
-                    if isinstance(item, dict) and item.get('type') == 'text':
-                        text_content += item.get('text', '')
-
-                # Create new message with only text content
-                new_msg = msg.copy()
-                new_msg['content'] = (
-                    text_content
-                    or "[Image content removed - model doesn't support vision]"
-                )
-                stripped_messages.append(new_msg)
-            else:
-                # Regular text message, keep as is
-                stripped_messages.append(msg)
-        return stripped_messages
-
+    @observe()
     def _get_model_response(
         self,
         openai_messages: List[OpenAIMessage],
         num_tokens: int,
+        current_iteration: int = 0,
         response_format: Optional[Type[BaseModel]] = None,
         tool_schemas: Optional[List[Dict[str, Any]]] = None,
+        prev_num_openai_messages: int = 0,
     ) -> ModelResponse:
-        r"""Internal function for agent step model response."""
+        r"""Internal function for agent step model response.
+        Args:
+            openai_messages (List[OpenAIMessage]): The OpenAI
+                messages to process.
+            num_tokens (int): The number of tokens in the context.
+            current_iteration (int): The current iteration of the step.
+            response_format (Optional[Type[BaseModel]]): The response
+                format to use.
+            tool_schemas (Optional[List[Dict[str, Any]]]): The tool
+                schemas to use.
+            prev_num_openai_messages (int): The number of openai messages
+                logged in the previous iteration.
+
+        Returns:
+            ModelResponse: The model response.
+        """
 
         response = None
         try:
@@ -1915,33 +1799,13 @@ class ChatAgent(BaseAgent):
                 openai_messages, response_format, tool_schemas or None
             )
         except Exception as exc:
-            # Try again without images if the error might be vision-related
-            if self._is_vision_error(exc) and self._has_images(
-                openai_messages
-            ):
-                logger.warning(
-                    "Model appears to not support vision. Retrying without images."  # noqa: E501
-                )
-                try:
-                    stripped_messages = self._strip_images_from_messages(
-                        openai_messages
-                    )
-                    response = self.model_backend.run(
-                        stripped_messages,
-                        response_format,
-                        tool_schemas or None,
-                    )
-                except Exception:
-                    pass  # Fall through to original error handling
-
-            if not response:
-                logger.error(
-                    f"An error occurred while running model "
-                    f"{self.model_backend.model_type}, "
-                    f"index: {self.model_backend.current_model_index}",
-                    exc_info=exc,
-                )
-                error_info = str(exc)
+            logger.error(
+                f"An error occurred while running model "
+                f"{self.model_backend.model_type}, "
+                f"index: {self.model_backend.current_model_index}",
+                exc_info=exc,
+            )
+            error_info = str(exc)
 
         if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
@@ -1955,11 +1819,12 @@ class ChatAgent(BaseAgent):
             )
 
         sanitized_messages = self._sanitize_messages_for_logging(
-            openai_messages
+            openai_messages, prev_num_openai_messages
         )
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
+            f"iteration {current_iteration}, "
             f"processed these messages: {sanitized_messages}"
         )
         if not isinstance(response, ChatCompletion):
@@ -1973,10 +1838,27 @@ class ChatAgent(BaseAgent):
         self,
         openai_messages: List[OpenAIMessage],
         num_tokens: int,
+        current_iteration: int = 0,
         response_format: Optional[Type[BaseModel]] = None,
         tool_schemas: Optional[List[Dict[str, Any]]] = None,
+        prev_num_openai_messages: int = 0,
     ) -> ModelResponse:
-        r"""Internal function for agent step model response."""
+        r"""Internal function for agent async step model response.
+        Args:
+            openai_messages (List[OpenAIMessage]): The OpenAI messages
+                to process.
+            num_tokens (int): The number of tokens in the context.
+            current_iteration (int): The current iteration of the step.
+            response_format (Optional[Type[BaseModel]]): The response
+                format to use.
+            tool_schemas (Optional[List[Dict[str, Any]]]): The tool schemas
+                to use.
+            prev_num_openai_messages (int): The number of openai messages
+                logged in the previous iteration.
+
+        Returns:
+            ModelResponse: The model response.
+        """
 
         response = None
         try:
@@ -1984,33 +1866,13 @@ class ChatAgent(BaseAgent):
                 openai_messages, response_format, tool_schemas or None
             )
         except Exception as exc:
-            # Try again without images if the error might be vision-related
-            if self._is_vision_error(exc) and self._has_images(
-                openai_messages
-            ):
-                logger.warning(
-                    "Model appears to not support vision. Retrying without images."  # noqa: E501
-                )
-                try:
-                    stripped_messages = self._strip_images_from_messages(
-                        openai_messages
-                    )
-                    response = await self.model_backend.arun(
-                        stripped_messages,
-                        response_format,
-                        tool_schemas or None,
-                    )
-                except Exception:
-                    pass  # Fall through to original error handling
-
-            if not response:
-                logger.error(
-                    f"An error occurred while running model "
-                    f"{self.model_backend.model_type}, "
-                    f"index: {self.model_backend.current_model_index}",
-                    exc_info=exc,
-                )
-                error_info = str(exc)
+            logger.error(
+                f"An error occurred while running model "
+                f"{self.model_backend.model_type}, "
+                f"index: {self.model_backend.current_model_index}",
+                exc_info=exc,
+            )
+            error_info = str(exc)
 
         if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
@@ -2024,11 +1886,12 @@ class ChatAgent(BaseAgent):
             )
 
         sanitized_messages = self._sanitize_messages_for_logging(
-            openai_messages
+            openai_messages, prev_num_openai_messages
         )
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
+            f"iteration {current_iteration}, "
             f"processed these messages: {sanitized_messages}"
         )
         if not isinstance(response, ChatCompletion):
@@ -2038,12 +1901,16 @@ class ChatAgent(BaseAgent):
             )
         return self._handle_batch_response(response)
 
-    def _sanitize_messages_for_logging(self, messages):
+    def _sanitize_messages_for_logging(
+        self, messages, prev_num_openai_messages: int
+    ):
         r"""Sanitize OpenAI messages for logging by replacing base64 image
         data with a simple message and a link to view the image.
 
         Args:
             messages (List[OpenAIMessage]): The OpenAI messages to sanitize.
+            prev_num_openai_messages (int): The number of openai messages
+                logged in the previous iteration.
 
         Returns:
             List[OpenAIMessage]: The sanitized OpenAI messages.
@@ -2056,7 +1923,7 @@ class ChatAgent(BaseAgent):
         # Create a copy of messages for logging to avoid modifying the
         # original messages
         sanitized_messages = []
-        for msg in messages:
+        for msg in messages[prev_num_openai_messages:]:
             if isinstance(msg, dict):
                 sanitized_msg = msg.copy()
                 # Check if content is a list (multimodal content with images)
@@ -2339,6 +2206,7 @@ class ChatAgent(BaseAgent):
             info=info,
         )
 
+    @observe()
     def _execute_tool(
         self,
         tool_call_request: ToolCallRequest,
@@ -2373,27 +2241,11 @@ class ChatAgent(BaseAgent):
             error_msg = f"Error executing tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
             mask_flag = False
-            logging.warning(error_msg)
+            logger.warning(f"{error_msg} with result: {result}")
 
-        # Check if result is a ToolResult with images
-        images_to_attach = None
-        if isinstance(result, ToolResult):
-            images_to_attach = result.images
-            result = str(result)  # Use string representation for storage
-
-        tool_record = self._record_tool_calling(
+        return self._record_tool_calling(
             func_name, args, result, tool_call_id, mask_output=mask_flag
         )
-
-        # Store images for later attachment to next user message
-        if images_to_attach:
-            tool_record.images = images_to_attach
-            # Add images with duplicate prevention
-            for img in images_to_attach:
-                if img not in self._pending_images:
-                    self._pending_images.append(img)
-
-        return tool_record
 
     async def _aexecute_tool(
         self,
@@ -2434,26 +2286,7 @@ class ChatAgent(BaseAgent):
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
             logging.warning(error_msg)
-
-        # Check if result is a ToolResult with images
-        images_to_attach = None
-        if isinstance(result, ToolResult):
-            images_to_attach = result.images
-            result = str(result)  # Use string representation for storage
-
-        tool_record = self._record_tool_calling(
-            func_name, args, result, tool_call_id
-        )
-
-        # Store images for later attachment to next user message
-        if images_to_attach:
-            tool_record.images = images_to_attach
-            # Add images with duplicate prevention
-            for img in images_to_attach:
-                if img not in self._pending_images:
-                    self._pending_images.append(img)
-
-        return tool_record
+        return self._record_tool_calling(func_name, args, result, tool_call_id)
 
     def _record_tool_calling(
         self,
@@ -2594,6 +2427,9 @@ class ChatAgent(BaseAgent):
         while True:
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
+                logger.info(
+                    f"Termination triggered at iteration " f"{iteration_count}"
+                )
                 yield self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
                 )
@@ -2825,21 +2661,13 @@ class ChatAgent(BaseAgent):
                             status_response
                         ) in self._execute_tools_sync_with_status_accumulator(
                             accumulated_tool_calls,
-                            content_accumulator,
-                            step_token_usage,
                             tool_call_records,
                         ):
                             yield status_response
 
-                        # Yield "Sending back result to model" status
+                        # Log sending status instead of adding to content
                         if tool_call_records:
-                            sending_status = self._create_tool_status_response_with_accumulator(  # noqa: E501
-                                content_accumulator,
-                                "\n------\n\nSending back result to model\n\n",
-                                "tool_sending",
-                                step_token_usage,
-                            )
-                            yield sending_status
+                            logger.info("Sending back result to model")
 
                     # Record final message only if we have content AND no tool
                     # calls. If there are tool calls, _record_tool_calling
@@ -2937,15 +2765,13 @@ class ChatAgent(BaseAgent):
     def _execute_tools_sync_with_status_accumulator(
         self,
         accumulated_tool_calls: Dict[str, Any],
-        content_accumulator: StreamContentAccumulator,
-        step_token_usage: Dict[str, int],
         tool_call_records: List[ToolCallingRecord],
     ) -> Generator[ChatAgentResponse, None, None]:
         r"""Execute multiple tools synchronously with
         proper content accumulation, using threads+queue for
         non-blocking status streaming."""
 
-        def tool_worker(tool_func, args, result_queue, tool_call_data):
+        def tool_worker(result_queue, tool_call_data):
             try:
                 tool_call_record = self._execute_tool_from_stream_data(
                     tool_call_data
@@ -2981,36 +2807,22 @@ class ChatAgent(BaseAgent):
             )
             thread.start()
 
-            status_message = (
-                f"\nCalling function: {function_name} "
-                f"with arguments:\n{args}\n"
+            # Log debug info instead of adding to content
+            logger.info(
+                f"Calling function: {function_name} with arguments: {args}"
             )
-            status_status = self._create_tool_status_response_with_accumulator(
-                content_accumulator,
-                status_message,
-                "tool_calling",
-                step_token_usage,
-            )
-            yield status_status
+
             # wait for tool thread to finish with optional timeout
             thread.join(self.tool_execution_timeout)
 
             # If timeout occurred, mark as error and continue
             if thread.is_alive():
-                timeout_msg = (
-                    f"\nFunction '{function_name}' timed out after "
-                    f"{self.tool_execution_timeout} seconds.\n---------\n"
+                # Log timeout info instead of adding to content
+                logger.warning(
+                    f"Function '{function_name}' timed out after "
+                    f"{self.tool_execution_timeout} seconds"
                 )
-                timeout_status = (
-                    self._create_tool_status_response_with_accumulator(
-                        content_accumulator,
-                        timeout_msg,
-                        "tool_timeout",
-                        step_token_usage,
-                    )
-                )
-                yield timeout_status
-                logger.error(timeout_msg.strip())
+
                 # Detach thread (it may still finish later). Skip recording.
                 continue
 
@@ -3020,22 +2832,16 @@ class ChatAgent(BaseAgent):
                 tool_call_records.append(tool_call_record)
                 raw_result = tool_call_record.result
                 result_str = str(raw_result)
-                status_message = (
-                    f"\nFunction output: {result_str}\n---------\n"
-                )
-                output_status = (
-                    self._create_tool_status_response_with_accumulator(
-                        content_accumulator,
-                        status_message,
-                        "tool_output",
-                        step_token_usage,
-                        [tool_call_record],
-                    )
-                )
-                yield output_status
+
+                # Log debug info instead of adding to content
+                logger.info(f"Function output: {result_str}")
             else:
                 # Error already logged
                 continue
+
+        # Ensure this function remains a generator (required by type signature)
+        return
+        yield  # This line is never reached but makes this a generator function
 
     def _execute_tool_from_stream_data(
         self, tool_call_data: Dict[str, Any]
@@ -3123,7 +2929,32 @@ class ChatAgent(BaseAgent):
             if function_name in self._internal_tools:
                 tool = self._internal_tools[function_name]
                 try:
-                    result = await tool.async_call(**args)
+                    # Try different invocation paths in order of preference
+                    if hasattr(tool, 'func') and hasattr(
+                        tool.func, 'async_call'
+                    ):
+                        # Case: FunctionTool wrapping an MCP tool
+                        result = await tool.func.async_call(**args)
+
+                    elif hasattr(tool, 'async_call') and callable(
+                        tool.async_call
+                    ):
+                        # Case: tool itself has async_call
+                        result = await tool.async_call(**args)
+
+                    elif hasattr(tool, 'func') and asyncio.iscoroutinefunction(
+                        tool.func
+                    ):
+                        # Case: tool wraps a direct async function
+                        result = await tool.func(**args)
+
+                    elif asyncio.iscoroutinefunction(tool):
+                        # Case: tool is itself a coroutine function
+                        result = await tool(**args)
+
+                    else:
+                        # Fallback: synchronous call
+                        result = tool(**args)
 
                     # Only record the tool response message, not the assistant
                     # message assistant message with tool_calls was already
@@ -3229,10 +3060,19 @@ class ChatAgent(BaseAgent):
             return
 
         # Start async streaming response
+        last_response = None
         async for response in self._astream_response(
             openai_messages, num_tokens, response_format
         ):
+            last_response = response
             yield response
+
+        # Clean tool call messages from memory after response generation
+        if self.prune_tool_calls_from_memory and last_response:
+            # Extract tool_calls from the last response info
+            tool_calls = last_response.info.get("tool_calls", [])
+            if tool_calls:
+                self.memory.clean_tool_calls()
 
     async def _astream_response(
         self,
@@ -3252,6 +3092,9 @@ class ChatAgent(BaseAgent):
         while True:
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
+                logger.info(
+                    f"Termination triggered at iteration " f"{iteration_count}"
+                )
                 yield self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
                 )
@@ -3540,15 +3383,9 @@ class ChatAgent(BaseAgent):
                         ):
                             yield status_response
 
-                        # Yield "Sending back result to model" status
+                        # Log sending status instead of adding to content
                         if tool_call_records:
-                            sending_status = self._create_tool_status_response_with_accumulator(  # noqa: E501
-                                content_accumulator,
-                                "\n------\n\nSending back result to model\n\n",
-                                "tool_sending",
-                                step_token_usage,
-                            )
-                            yield sending_status
+                            logger.info("Sending back result to model")
 
                     # Record final message only if we have content AND no tool
                     # calls. If there are tool calls, _record_tool_calling
@@ -3595,21 +3432,10 @@ class ChatAgent(BaseAgent):
                 except json.JSONDecodeError:
                     args = tool_call_data['function']['arguments']
 
-                status_message = (
-                    f"\nCalling function: {function_name} "
-                    f"with arguments:\n{args}\n"
+                # Log debug info instead of adding to content
+                logger.info(
+                    f"Calling function: {function_name} with arguments: {args}"
                 )
-
-                # Immediately yield "Calling function" status
-                calling_status = (
-                    self._create_tool_status_response_with_accumulator(
-                        content_accumulator,
-                        status_message,
-                        "tool_calling",
-                        step_token_usage,
-                    )
-                )
-                yield calling_status
 
                 # Start tool execution asynchronously (non-blocking)
                 if self.tool_execution_timeout is not None:
@@ -3642,80 +3468,25 @@ class ChatAgent(BaseAgent):
                         # Create output status message
                         raw_result = tool_call_record.result
                         result_str = str(raw_result)
-                        status_message = (
-                            f"\nFunction output: {result_str}\n---------\n"
-                        )
 
-                        # Yield "Function output" status as soon as this
-                        # tool completes
-                        output_status = (
-                            self._create_tool_status_response_with_accumulator(
-                                content_accumulator,
-                                status_message,
-                                "tool_output",
-                                step_token_usage,
-                                [tool_call_record],
-                            )
-                        )
-                        yield output_status
+                        # Log debug info instead of adding to content
+                        logger.info(f"Function output: {result_str}")
 
                 except Exception as e:
                     if isinstance(e, asyncio.TimeoutError):
-                        timeout_msg = (
-                            f"\nFunction timed out after "
-                            f"{self.tool_execution_timeout} seconds.\n"
-                            f"---------\n"
+                        # Log timeout info instead of adding to content
+                        logger.warning(
+                            f"Function timed out after "
+                            f"{self.tool_execution_timeout} seconds"
                         )
-                        timeout_status = (
-                            self._create_tool_status_response_with_accumulator(
-                                content_accumulator,
-                                timeout_msg,
-                                "tool_timeout",
-                                step_token_usage,
-                            )
-                        )
-                        yield timeout_status
-                        logger.error("Async tool execution timeout")
                     else:
                         logger.error(f"Error in async tool execution: {e}")
                     continue
 
-    def _create_tool_status_response_with_accumulator(
-        self,
-        accumulator: StreamContentAccumulator,
-        status_message: str,
-        status_type: str,
-        step_token_usage: Dict[str, int],
-        tool_calls: Optional[List[ToolCallingRecord]] = None,
-    ) -> ChatAgentResponse:
-        r"""Create a tool status response using content accumulator."""
-
-        # Add this status message to accumulator and get full content
-        accumulator.add_tool_status(status_message)
-        full_content = accumulator.get_full_content()
-
-        message = BaseMessage(
-            role_name=self.role_name,
-            role_type=self.role_type,
-            meta_dict={},
-            content=full_content,
-        )
-
-        return ChatAgentResponse(
-            msgs=[message],
-            terminated=False,
-            info={
-                "id": "",
-                "usage": step_token_usage.copy(),
-                "finish_reasons": [status_type],
-                "num_tokens": self._get_token_count(full_content),
-                "tool_calls": tool_calls or [],
-                "external_tool_requests": None,
-                "streaming": True,
-                "tool_status": status_type,
-                "partial": True,
-            },
-        )
+        # Ensure this function remains an async generator
+        return
+        # This line is never reached but makes this an async generator function
+        yield
 
     def _create_streaming_response_with_accumulator(
         self,
@@ -3806,6 +3577,9 @@ class ChatAgent(BaseAgent):
         # To avoid duplicated system memory.
         system_message = None if with_memory else self._original_system_message
 
+        # Clone tools and collect toolkits that need registration
+        cloned_tools, toolkits_to_register = self._clone_tools()
+
         new_agent = ChatAgent(
             system_message=system_message,
             model=self.model_backend.models,  # Pass the existing model_backend
@@ -3815,7 +3589,8 @@ class ChatAgent(BaseAgent):
                 self.memory.get_context_creator(), "token_limit", None
             ),
             output_language=self._output_language,
-            tools=self._clone_tools(),
+            tools=cloned_tools,
+            toolkits_to_register_agent=toolkits_to_register,
             external_tools=[
                 schema for schema in self._external_tool_schemas.values()
             ],
@@ -3827,6 +3602,7 @@ class ChatAgent(BaseAgent):
             stop_event=self.stop_event,
             tool_execution_timeout=self.tool_execution_timeout,
             pause_event=self.pause_event,
+            prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
         )
 
         # Copy memory if requested
@@ -3839,55 +3615,76 @@ class ChatAgent(BaseAgent):
 
         return new_agent
 
-    def _clone_tools(self) -> List[Union[FunctionTool, Callable]]:
-        r"""Clone tools for new agent instance,
-        handling stateful toolkits properly."""
+    def _clone_tools(
+        self,
+    ) -> Tuple[
+        List[Union[FunctionTool, Callable]], List[RegisteredAgentToolkit]
+    ]:
+        r"""Clone tools and return toolkits that need agent registration.
+
+        This method handles stateful toolkits by cloning them if they have
+        a clone_for_new_session method, and collecting RegisteredAgentToolkit
+        instances for later registration.
+
+        Returns:
+            Tuple containing:
+            - List of cloned tools/functions
+            - List of RegisteredAgentToolkit instances need registration
+        """
         cloned_tools = []
-        hybrid_browser_toolkits = {}  # Cache for created toolkits
+        toolkits_to_register = []
+        cloned_toolkits = {}
+        # Cache for cloned toolkits by original toolkit id
 
         for tool in self._internal_tools.values():
-            # Check if this is a HybridBrowserToolkit method
-            if (
-                hasattr(tool.func, '__self__')
-                and tool.func.__self__.__class__.__name__
-                == 'HybridBrowserToolkit'
-            ):
+            # Check if this tool is a method bound to a toolkit instance
+            if hasattr(tool.func, '__self__'):
                 toolkit_instance = tool.func.__self__
                 toolkit_id = id(toolkit_instance)
 
-                # Check if we already created a clone for this toolkit
-                if toolkit_id not in hybrid_browser_toolkits:
-                    try:
-                        import uuid
+                if toolkit_id not in cloned_toolkits:
+                    # Check if the toolkit has a clone method
+                    if hasattr(toolkit_instance, 'clone_for_new_session'):
+                        try:
+                            import uuid
 
-                        new_session_id = str(uuid.uuid4())[:8]
-                        new_toolkit = toolkit_instance.clone_for_new_session(
-                            new_session_id
-                        )
-                        hybrid_browser_toolkits[toolkit_id] = new_toolkit
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to clone HybridBrowserToolkit: {e}"
-                        )
-                        # Fallback to original function
-                        cloned_tools.append(tool.func)
-                        continue
+                            new_session_id = str(uuid.uuid4())[:8]
+                            new_toolkit = (
+                                toolkit_instance.clone_for_new_session(
+                                    new_session_id
+                                )
+                            )
 
-                # Get the corresponding method from the cloned toolkit
-                new_toolkit = hybrid_browser_toolkits[toolkit_id]
+                            # If this is a RegisteredAgentToolkit,
+                            # add it to registration list
+                            if isinstance(new_toolkit, RegisteredAgentToolkit):
+                                toolkits_to_register.append(new_toolkit)
+
+                            cloned_toolkits[toolkit_id] = new_toolkit
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to clone toolkit {toolkit_instance.__class__.__name__}: {e}"  # noqa:E501
+                            )
+                            # Use original toolkit if cloning fails
+                            cloned_toolkits[toolkit_id] = toolkit_instance
+                    else:
+                        # Toolkit doesn't support cloning, use original
+                        cloned_toolkits[toolkit_id] = toolkit_instance
+
+                # Get the method from the cloned (or original) toolkit
+                toolkit = cloned_toolkits[toolkit_id]
                 method_name = tool.func.__name__
-                if hasattr(new_toolkit, method_name):
-                    new_method = getattr(new_toolkit, method_name)
+                if hasattr(toolkit, method_name):
+                    new_method = getattr(toolkit, method_name)
                     cloned_tools.append(new_method)
                 else:
                     # Fallback to original function
                     cloned_tools.append(tool.func)
             else:
-                # Regular tool or other stateless toolkit
-                # just use the original function
+                # Not a toolkit method, just use the original function
                 cloned_tools.append(tool.func)
 
-        return cloned_tools
+        return cloned_tools, toolkits_to_register
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.
