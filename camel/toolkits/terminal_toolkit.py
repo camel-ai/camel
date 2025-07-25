@@ -31,6 +31,9 @@ from camel.utils import MCPServer
 logger = get_logger(__name__)
 
 
+from .session_manager import PowerShellSession, SessionManager, TmuxSession
+
+
 @MCPServer()
 class TerminalToolkit(BaseToolkit):
     r"""A toolkit for terminal operations across multiple operating systems.
@@ -72,6 +75,7 @@ class TerminalToolkit(BaseToolkit):
         use_shell_mode: bool = True,
         clone_current_env: bool = False,
         safe_mode: bool = True,
+        use_persistent_sessions: bool = True,
     ):
         super().__init__(timeout=timeout)
         self.shell_sessions = shell_sessions or {}
@@ -85,10 +89,12 @@ class TerminalToolkit(BaseToolkit):
         self.cloned_env_path = None
         self.use_shell_mode = use_shell_mode
         self._human_takeover_active = False
-
+        self.use_persistent_sessions = use_persistent_sessions
+        self.persistent_sessions: Dict[str, SessionManager] = {}
         self.python_executable = sys.executable
         self.is_macos = platform.system() == 'Darwin'
-
+        self.is_windows = platform.system() == 'Windows'
+        self.is_unix = platform.system() in ['Darwin', 'Linux']
         atexit.register(self.__del__)
 
         if not os.path.exists(working_dir):
@@ -97,6 +103,17 @@ class TerminalToolkit(BaseToolkit):
         self._update_terminal_output(
             f"Working directory set to: {self.working_dir}\n"
         )
+        if self.use_persistent_sessions:
+            session_type = (
+                "tmux"
+                if self.is_unix
+                else "PowerShell"
+                if self.is_windows
+                else "basic"
+            )
+            self._update_terminal_output(
+                f"Using persistent sessions with {session_type}\n"
+            )
         if self.safe_mode:
             self._update_terminal_output(
                 "Safe mode enabled: Write operations can only "
@@ -122,6 +139,39 @@ class TerminalToolkit(BaseToolkit):
                 )
                 self.gui_thread.start()
                 self.terminal_ready.wait(timeout=5)
+
+    def _create_session(self, session_id: str) -> SessionManager:
+        if not self.use_persistent_sessions:
+            return None
+        if self.is_unix:
+            session = TmuxSession(session_id, self.working_dir)
+        elif self.is_windows:
+            session = PowerShellSession(session_id, self.working_dir)
+        else:
+            return None
+        if session.start_session():
+            self.persistent_sessions[session_id] = session
+            self._update_terminal_output(
+                f"Created persistent session: {session_id}\n"
+            )
+            return session
+        else:
+            self._update_terminal_output(
+                f"Failed to create persistent session: {session_id}\n"
+            )
+            return None
+
+    def _get_or_create_session(
+        self, session_id: str
+    ) -> Optional[SessionManager]:
+        if session_id in self.persistent_sessions:
+            session = self.persistent_sessions[session_id]
+            if session.is_session_active():
+                return session
+            else:
+                session.cleanup()
+                del self.persistent_sessions[session_id]
+        return self._create_session(session_id)
 
     def _setup_file_output(self):
         r"""Set up file output to replace GUI, using a fixed file to simulate
@@ -701,15 +751,15 @@ class TerminalToolkit(BaseToolkit):
         error_msg = self._enforce_working_dir_for_execution(self.working_dir)
         if error_msg:
             return error_msg
-
-        if self.safe_mode:
-            is_safe, sanitized_command = self._sanitize_command(
-                command, self.working_dir
-            )
-            if not is_safe:
-                return f"Command rejected: {sanitized_command}"
-            command = sanitized_command
-
+        # Try to use persistent session first
+        if self.use_persistent_sessions:
+            session = self._get_or_create_session(id)
+            if session:
+                self._update_terminal_output(f"\n[{id}]$ {command}\n")
+                result = session.send_command(command, block=True)
+                self._update_terminal_output(result + "\n")
+                return result
+        # Fallback to traditional shell execution
         if id not in self.shell_sessions:
             self.shell_sessions[id] = {
                 "process": None,
@@ -735,132 +785,31 @@ class TerminalToolkit(BaseToolkit):
                 else:
                     python_path = self.python_executable
                     pip_path = f'"{python_path}" -m pip'
-
                 if command.startswith('python'):
                     command = command.replace('python', f'"{python_path}"', 1)
                 elif command.startswith('pip'):
                     command = command.replace('pip', pip_path, 1)
-
-            if not interactive:
-                proc = subprocess.Popen(
-                    command,
-                    shell=True,
-                    cwd=self.working_dir,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    stdin=subprocess.PIPE,
-                    text=True,
-                    bufsize=1,
-                    universal_newlines=True,
-                    env=os.environ.copy(),
-                )
-
-                self.shell_sessions[id]["process"] = proc
-                self.shell_sessions[id]["running"] = True
-                stdout, stderr = proc.communicate()
-                output = stdout or ""
-                if stderr:
-                    output += f"\nStderr Output:\n{stderr}"
-                self.shell_sessions[id]["output"] = output
-                self._update_terminal_output(output + "\n")
-                return output
-
-            # Interactive mode with real-time streaming via PTY
-            if self.os_type not in ['Darwin', 'Linux']:
-                return (
-                    "Interactive mode is not supported on "
-                    f"{self.os_type} due to PTY limitations."
-                )
-
-            import pty
-            import select
-            import sys
-            import termios
-            import tty
-
-            # Fork a new process with a PTY
-            pid, master_fd = pty.fork()
-
-            if pid == 0:  # Child process
-                # Execute the command in the child process
-                try:
-                    import shlex
-
-                    parts = shlex.split(command)
-                    if not parts:
-                        logger.error("Error: Empty command")
-                        os._exit(1)
-
-                    os.chdir(self.working_dir)
-                    os.execvp(parts[0], parts)
-                except (ValueError, IndexError, OSError) as e:
-                    logger.error(f"Command execution error: {e}")
-                    os._exit(127)
-                except Exception as e:
-                    logger.error(f"Unexpected error: {e}")
-                    os._exit(1)
-
-            # Parent process
-            self.shell_sessions[id]["process_id"] = pid
+            proc = subprocess.Popen(
+                command,
+                shell=True,
+                cwd=self.working_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                universal_newlines=True,
+                env=os.environ.copy(),
+            )
+            self.shell_sessions[id]["process"] = proc
             self.shell_sessions[id]["running"] = True
-            output_lines: List[str] = []
-            original_settings = termios.tcgetattr(sys.stdin)
-
-            try:
-                tty.setraw(sys.stdin.fileno())
-
-                while True:
-                    # Check if the child process has exited
-                    try:
-                        wait_pid, status = os.waitpid(pid, os.WNOHANG)
-                        if wait_pid == pid:
-                            self.shell_sessions[id]["running"] = False
-                            break
-                    except OSError:
-                        # Process already reaped
-                        self.shell_sessions[id]["running"] = False
-                        break
-
-                    # Use select to wait for I/O on stdin or master PTY
-                    r, _, _ = select.select(
-                        [sys.stdin, master_fd], [], [], 0.1
-                    )
-
-                    if master_fd in r:
-                        try:
-                            data = os.read(master_fd, 1024)
-                            if not data:
-                                break
-                            decoded_data = data.decode(
-                                'utf-8', errors='replace'
-                            )
-                            # Echo to user's terminal and log
-                            self._update_terminal_output(decoded_data)
-                            output_lines.append(decoded_data)
-                        except OSError:
-                            break  # PTY has been closed
-
-                    if sys.stdin in r:
-                        try:
-                            user_input = os.read(sys.stdin.fileno(), 1024)
-                            if not user_input:
-                                break
-                            os.write(master_fd, user_input)
-                        except OSError:
-                            break
-
-            finally:
-                if original_settings is not None:
-                    termios.tcsetattr(
-                        sys.stdin, termios.TCSADRAIN, original_settings
-                    )
-                if master_fd:
-                    os.close(master_fd)
-
-            final_output = "".join(output_lines)
-            self.shell_sessions[id]["output"] = final_output
-            return final_output
-
+            stdout, stderr = proc.communicate()
+            output = stdout or ""
+            if stderr:
+                output += f"\nStderr Output:\n{stderr}"
+            self.shell_sessions[id]["output"] = output
+            self._update_terminal_output(output + "\n")
+            return output
         except Exception as e:
             error_msg = f"Command execution error: {e!s}"
             logger.error(error_msg)
@@ -873,7 +822,7 @@ class TerminalToolkit(BaseToolkit):
                 f"Detailed information: {detailed_error}"
             )
 
-    def shell_view(self, id: str) -> str:
+    def shell_view(self, id: str, capture_entire: bool = True) -> str:
         r"""View the full output history of a specified shell session.
 
         Retrieves the accumulated output (both stdout and stderr) generated by
@@ -888,6 +837,30 @@ class TerminalToolkit(BaseToolkit):
             str: The complete output history of the shell session. Returns an
                 error message if the session is not found.
         """
+
+        if (
+            getattr(self, 'use_persistent_sessions', False)
+            and hasattr(self, 'persistent_sessions')
+            and id in self.persistent_sessions
+        ):
+            session = self.persistent_sessions[id]
+            if isinstance(session, TmuxSession):
+                import subprocess
+
+                try:
+                    result = subprocess.run(
+                        session._tmux_capture_pane(
+                            capture_entire=capture_entire
+                        ),
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    )
+                    output = result.stdout
+                    return output
+                except Exception as e:
+                    return f"tmux error (view): {e}"
+
         if id not in self.shell_sessions:
             return f"Shell session not found: {id}"
 
@@ -1313,6 +1286,10 @@ class TerminalToolkit(BaseToolkit):
                 self.root.destroy()
             except Exception as e:
                 logger.error(f"Error closing terminal GUI: {e}")
+
+        # Clean up persistent sessions
+        for session_id, session in self.persistent_sessions.items():
+            session.cleanup()
 
         logger.info("TerminalToolkit cleanup completed")
 
