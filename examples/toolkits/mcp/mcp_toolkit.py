@@ -173,9 +173,9 @@ Here are 5 files in the project using relative paths:
 '''
 
 if __name__ == "__main__":
-    # asyncio.run(mcp_client_example())
+    asyncio.run(mcp_client_example())
     asyncio.run(mcp_toolkit_example())
-    # mcp_toolkit_example_sync()
+    mcp_toolkit_example_sync()
 
 '''
 ===============================================================================
