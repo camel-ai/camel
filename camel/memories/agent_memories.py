@@ -15,21 +15,12 @@
 import warnings
 from typing import List, Optional
 
-from openai.resources.chat.chat import Chat
-
 from camel.memories.base import AgentMemory, BaseContextCreator
 from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.key_value_storages.base import BaseKeyValueStorage
 from camel.storages.vectordb_storages.base import BaseVectorStorage
 from camel.types import OpenAIBackendRole
-from camel.agents import ChatAgent
-
-from camel.messages import BaseMessage
-from camel.logger import get_logger 
-import json
-
-logger = get_logger(__name__)
 
 
 class ChatHistoryMemory(AgentMemory):
