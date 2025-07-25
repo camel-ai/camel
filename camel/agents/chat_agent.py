@@ -59,8 +59,8 @@ from camel.memories import (
     ChatHistoryMemory,
     MemoryRecord,
     ScoreBasedContextCreator,
-    ContextSummarizer,
 )
+from camel.memories.context_compressors import ContextCompressionService
 from camel.messages import (
     BaseMessage,
     FunctionCallingMessage,
@@ -534,13 +534,9 @@ class ChatAgent(BaseAgent):
         self.memory_save_directory = memory_save_directory
 
         if self.auto_compress_context:
-            from camel.toolkits.markdown_memory_toolkit import MarkdownMemoryToolkit
-            self._markdown_toolkit = MarkdownMemoryToolkit(
-                agent=self,
-                working_directory=self.memory_save_directory,
-            )
-            self._context_summarizer = ContextSummarizer(
+            self._context_compression_service = ContextCompressionService(
                 summary_agent=self,
+                working_directory=self.memory_save_directory,
             )
 
     def reset(self):
@@ -3876,12 +3872,8 @@ class ChatAgent(BaseAgent):
             # get current memory records 
             records = [cr.memory_record for cr in self.memory.retrieve()]
 
-            # use context summarizer
-            summary = self._context_summarizer.summarize_messages(records)
-
-            # save summary and history
-            self._markdown_toolkit._save_history(records)
-            self._markdown_toolkit._save_summary(summary)
+            # use context compression service for complete pipeline
+            summary = self._context_compression_service.compress_and_save(records)
 
             # clear the memory
             self.clear_memory()

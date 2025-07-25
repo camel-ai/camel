@@ -12,246 +12,151 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import os
-from pathlib import Path
-from datetime import datetime
 from typing import List, Optional
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.note_taking_toolkit import NoteTakingToolkit
-from camel.agents import ChatAgent
+from camel.memories.context_compressors.context_summarizer import ContextCompressionService
 from camel.logger import get_logger
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
-    from camel.memories.records import MemoryRecord
+    from camel.agents import ChatAgent
 
 logger = get_logger(__name__)
 
 class MarkdownMemoryToolkit(BaseToolkit):
+    r"""A toolkit that provides memory storage in Markdown files for agents.
+    With this toolkit, agents can save and manage their conversation 
+    memory using markdown files.
+    """
+
     def __init__(
         self,
-        agent: Optional[ChatAgent] = None,
+        agent: "ChatAgent",
         working_directory: Optional[str] = None,
         timeout: Optional[float] = None,
     ):
         r"""Initialize the MarkdownMemoryToolkit.
 
         Args:
-            agent (ChatAgent, optional): The agent to use for the toolkit.
-                If not provided, the toolkit will not be able to access the
-                agent's memory.
+            agent (ChatAgent): The agent to use for the toolkit.
+                This is required to access the agent's memory.
             working_directory (str, optional): The directory path where notes
-                will be stored. If not provided, a new unique working
-                directory will be created.
+                will be stored. If not provided, a default directory will be used.
             timeout (Optional[float]): The timeout for the toolkit.
         """
         super().__init__(timeout=timeout)
         
         self.agent = agent
-        self.session_id = self._generate_session_id()
-        self.summary_filename = "summary"
-        self.history_filename = "history"
-
-        if working_directory:
-            self.working_directory = Path(working_directory).resolve
-        else:
-            camel_workdir = os.environ.get("CAMEL_WORKDIR")
-            if camel_workdir:
-                self.working_directory = Path(camel_workdir) / "markdown_memory"
-            else:
-                self.working_directory = Path("markdown_memory")
+        self.working_directory = working_directory
         
-        self.working_directory = self.working_directory / self.session_id
-        self.working_directory.mkdir(parents=True, exist_ok=True)
-
-        # NoteTakingToolkit is used for file operations.
-        self._note_taking_toolkit = NoteTakingToolkit(
-            working_directory=working_directory,
-            timeout=timeout,
+        # Initialize the context compression service
+        self.compression_service = ContextCompressionService(
+            summary_agent=self.agent,
+            working_directory=self.working_directory,
         )
 
-    
-    def _generate_session_id(self) -> str:
-        """Generate a unique session ID for the current session."""
-        return datetime.now().strftime("session_%m_%d_%H%M")
-
-    def _save_history(
-        self,
-        messages:List["MemoryRecord"],
-    ) -> str:
-        r"""Save the full history of context to a markdown file. 
-
-        Args:
-            messages (List[BaseMessage]): The list of messages to save.
-
-        Returns:
-            str: Success message or error message.
-        """
-
-        # formatting history with metadata
-        history_content = f"# Conversation History: {self.session_id}\n\n"
-        history_content += f"## Metadata\n\n"
-        history_content += f"- Save Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-        history_content += f"- Total Messages: {len(messages)}\n"
-        history_content += f"## Full Transcript\n\n"
-
-        for i, record in enumerate(messages):
-            message = record.message
-            role = getattr(message, "role_name", "unknown")
-            content = getattr(message, "content", str(message))
-            agent_id = record.agent_id or "unknown"
-            role_at_backend = record.role_at_backend.value if \
-                hasattr(record.role_at_backend, 'value') else \
-                    str(record.role_at_backend)
-
-            history_content += f"Message {i+1} - {role} \n"
-            history_content += f"Agent ID: {agent_id}  \n"
-            history_content += f"Backend Role: {role_at_backend}  \n"
-            history_content += f"Content: \n{content}\n\n"
-            history_content += f"-----------------------------------\n\n"
-
-        return self._create_note(self.history_filename, history_content)
-    
-    def _save_summary(
-        self,
-        content: dict
-    ) -> str:
-        # TODO: update this to accept a string instead of a dict
-        r""" Save a summary of the context in markdown file.
-
-        Args:
-            content (str): The content of the summary.
-
-        Returns:
-            str: Success message or error message.
-        """
-        # validate summary structure with warnings (not rigid)
-        expected_keys = {'task_description', 'work_completed', 'user_preferences', 'next_steps'}
-        provided_keys = set(content.keys())
+    def save_conversation_memory(self) -> str:
+        r"""Save the conversation history and generate an intelligent summary.
         
-        missing_keys = expected_keys - provided_keys
-        if missing_keys:
-            logger.warning(f"Summary missing recommended keys: {missing_keys}")
-        
-        extra_keys = provided_keys - expected_keys
-        if extra_keys:
-            logger.info(f"Summary contains additional keys: {extra_keys}")
-        
-        summary_content = f"# Conversation Summary: {self.session_id}\n\n"
-        
-        # handle keys dynamically 
-        for key, value in content.items():
-            header = key.replace('_', ' ').title()
-            summary_content += f"## {header}\n"
-            
-            if isinstance(value, list):
-                for item in value:
-                    summary_content += f"- {item}\n"
-            else:
-                summary_content += f"{value}\n"
-            summary_content += "\n"
-
-        return self._create_note(self.summary_filename, summary_content)
-
-    def _create_note(
-        self,
-        filename: str,
-        content: str,
-    ) -> str:
-        r""" Create a note in the working directory using NoteTakingToolkit.
-        
-        Args:
-            filename (str): The name of the note.
-            content (str): The content of the note.
-
-        Returns:
-            str: Success message or error message.
-        """
-        try:
-            self._note_taking_toolkit.create_note(filename, content)
-            return f"Successfully created note: {filename}"
-        except Exception as e:
-            logger.error(f"Error creating note: {e}")
-            return f"Error creating note: {e}"
-    
-    def _load_summary(
-        self, 
-    ) -> str:
-        r""" Load the summary of the context from the markdown file.
-
-        Returns:
-            str: The summary in text format.
-        """
-        try:
-            return self._note_taking_toolkit.read_note(self.summary_filename)
-        except Exception as e:
-            logger.error(f"Error loading summary: {e}")
-            return ""
-        
-    def _load_history(
-        self,
-    ) -> str:
-        r""" Load the history of the context from the markdown file.
-
-        Returns:
-            str: The history in text format.
-        """
-        try:
-            return self._note_taking_toolkit.read_note(self.history_filename)
-        except Exception as e:
-            logger.error(f"Error loading history: {e}")
-            return ""
-
-    def save_conversation_memory(
-        self,
-        summary_notes: dict,
-    ) -> str:
-        r"""Saves the full history of the conversation and the summary of 
-        important information in markdown files. The history can later be
-        searched through and the summary can be read by the user. 
-
-        This function must be used when the memory is cluttered with too many
+        This function should be used when the memory becomes cluttered with too many
         unrelated conversations or information that might be irrelevant to 
-        the core task and goal of the agent.
-
-        The summary is provided by the agent, while the history is retrieved
-        from the memory programatically.
-
-        Args:
-            summary_notes (dict): The summary of the conversation. The keys 
-                are "task_description", "work_completed", "user_preferences", and "next_steps".
-                This is a valuable information about the task which can be
-                used to guide the agent's future actions.
+        the core task. It will generate a summary and save both the summary 
+        and full conversation history to markdown files. Finally, it replaces
+        the memory with the new summary for a context refresh.
 
         Returns:
-            str: Success message or error message.
+            str: Success message with brief summary, or error message.
         """
-        if self.agent is None:
-            raise ValueError("Agent is not provided. Please provide the agent to the toolkit.")
-        
-        # try to get memory records from the context
         try:
+            # Get memory records from the agent
             context_records = self.agent.memory.retrieve()
             memory_records = [cr.memory_record for cr in context_records]
-        except Exception as e:
-            logger.error(f"Failed to retrieve memory from agent: {e}")
-            return f"Error: Could not access agent memory - {e}"
-        
-        # save history and summary
-        summary_saved = self._save_summary(summary_notes)
-        history_saved = self._save_history(memory_records)
-
-        if "Error" not in summary_saved and "Error" not in history_saved:
-            logger.info(
-                f"Conversation memory saved successfully at {self.working_directory}"
+            
+            if not memory_records:
+                return "No conversation history found to save."
+            
+            # Use the compression service to handle the full pipeline
+            summary = self.compression_service.compress_and_save(memory_records)
+            
+            # Create concise success message
+            summary_preview = summary[:100] + "..." if len(summary) > 100 else summary
+            
+            success_msg = (
+                f"Memory saved successfully to {self.compression_service.working_directory.name}\n"
+                f"Messages saved: {len(memory_records)}\n"
+                f"Summary: {summary_preview}"
             )
-            return f"Conversation memory saved successfully at {self.working_directory}"
-        else:
-            logger.error("Failed to save conversation memory")
-            return f"Failed to save conversation memory. Summary: {summary_saved}, History: {history_saved}"
+            
+            logger.info("Conversation memory saved successfully")
+            return success_msg
+            
+        except Exception as e:
+            error_msg = f"Failed to save conversation memory: {e}"
+            logger.error(error_msg)
+            return error_msg
+
+    def load_memory_context(self) -> str:
+        r"""Load the saved summary to restore previous context.
+        
+        This function loads the previously saved summary file to help the agent
+        understand the prior conversation context without loading the full history.
+
+        Returns:
+            str: The loaded summary content, or message if no summary found.
+        """
+        try:
+            summary_content = self.compression_service.load_summary()
+            
+            if summary_content.strip():
+                return f"Previous context loaded:\n\n{summary_content}"
+            else:
+                return "No previous summary found to load."
+                
+        except Exception as e:
+            error_msg = f"Failed to load memory context: {e}"
+            logger.error(error_msg)
+            return error_msg
+
+    def get_memory_info(self) -> str:
+        r"""Get information about the current memory state and saved files.
+        
+        Returns:
+            str: Information about current memory and saved files.
+        """
+        try:
+            # Current memory info
+            current_records = self.agent.memory.retrieve()
+            current_count = len(current_records)
+            
+            info_msg = f"Current messages in memory: {current_count}\n"
+            info_msg += f"Save directory: {self.compression_service.working_directory}\n"
+            
+            # Check if saved files exist
+            try:
+                summary_content = self.compression_service.load_summary()
+                history_content = self.compression_service.load_history()
+                
+                if summary_content.strip():
+                    info_msg += f"Summary file: Available ({len(summary_content)} chars)\n"
+                else:
+                    info_msg += f"Summary file: Not found\n"
+                    
+                if history_content.strip():
+                    info_msg += f"History file: Available ({len(history_content)} chars)\n"
+                else:
+                    info_msg += f"History file: Not found\n"
+                    
+            except Exception:
+                info_msg += f"Saved files: Unable to check\n"
+            
+            return info_msg
+            
+        except Exception as e:
+            error_msg = f"Failed to get memory info: {e}"
+            logger.error(error_msg)
+            return error_msg
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Get the tools for the MarkdownMemoryToolkit.
@@ -259,33 +164,8 @@ class MarkdownMemoryToolkit(BaseToolkit):
         Returns:
             List[FunctionTool]: The list of tools.
         """
-        return [FunctionTool(self.save_conversation_memory)]
-    
-
-if __name__ == "__main__":
-    from camel.memories.records import MemoryRecord
-    from camel.messages.base import BaseMessage
-    from camel.types import ModelPlatformType, ModelType
-
-    agent = ChatAgent(
-        model = "gpt-4o"
-    )
-
-
-    user_message = BaseMessage.make_user_message(
-        role_name="User", content="Hello, how are you?"
-    )
-    assistant_message = BaseMessage.make_assistant_message(
-        role_name="Assistant", content="I'm doing well, thank you!"
-    )
-    user_message2 = BaseMessage.make_user_message(
-        role_name="User", content="Provide me a list of resources"
-    )
-
-    messages = [
-        MemoryRecord(message=user_message, role_at_backend="user", agent_id="123"),
-        MemoryRecord(message=assistant_message, role_at_backend="assistant", agent_id="123"),
-        MemoryRecord(message=user_message2, role_at_backend="user", agent_id="123"),
-    ]
-    markdown_memory_toolkit = MarkdownMemoryToolkit(agent)
-    markdown_memory_toolkit._save_history(messages)
+        return [
+            FunctionTool(self.save_conversation_memory),
+            FunctionTool(self.load_memory_context),
+            FunctionTool(self.get_memory_info),
+        ]

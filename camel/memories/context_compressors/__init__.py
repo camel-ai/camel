@@ -12,6 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .context_summarizer import ContextSummarizer
+from .context_summarizer import ContextCompressionService
 
-__all__ = ["ContextSummarizer"]
+__all__ = ["ContextCompressionService"]
