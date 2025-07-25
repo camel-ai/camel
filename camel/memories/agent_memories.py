@@ -85,8 +85,8 @@ class ChatHistoryMemory(AgentMemory):
     def get_context_creator(self) -> BaseContextCreator:
         return self._context_creator
 
-    def clear(self) -> None:
-        self._chat_history_block.clear()
+    def clear(self, reason: str = "manual") -> None:
+        self._chat_history_block.clear(reason)
 
     def clean_tool_calls(self) -> None:
         r"""Removes tool call messages from memory.
