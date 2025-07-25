@@ -868,11 +868,12 @@ class BrowserToolkit(BaseToolkit):
         self.output_language = output_language
 
         self.history: List[Dict[str, Any]] = []  # Typed history list
-        self.web_agent: ChatAgent
-        self.planning_agent: ChatAgent
         self.web_agent, self.planning_agent = self._initialize_agent(
             web_agent_model, planning_agent_model
         )
+
+        # Track whether the underlying browser has been initialized.
+        self._initialized: bool = False
 
     def _reset(self):
         self.web_agent.reset()
@@ -1240,5 +1241,128 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         # reached
         return simulation_result
 
+    def _ensure_initialized(self) -> None:
+        """Ensure that the underlying ``BaseBrowser`` is initialized.
+
+        The browser is only launched once per ``BrowserToolkit`` instance to
+        avoid spawning multiple playwright processes. Any primitive action
+        (e.g., ``scroll_down``) should call this helper beforehand.
+        """
+        if not self._initialized:
+            # Lazily initialize the browser the first time it is required.
+            self.browser.init()
+            self._initialized = True
+
+    def open_browser(self, start_url: Optional[str] = None) -> str:
+        r"""Launch a browser session.
+
+        Args:
+            start_url (Optional[str]): If provided, the browser will
+                immediately navigate to this URL after launch.
+
+        Returns:
+            str: Confirmation message indicating that the browser session
+                has started.
+        """
+        self._ensure_initialized()
+        if start_url:
+            self.browser.visit_page(start_url)
+        return "Browser session started."
+
+    def close_browser(self) -> str:
+        r"""Close the currently running browser session.
+
+        Returns:
+            str: Confirmation message about the close operation.
+        """
+        if self._initialized:
+            self.browser.close()
+            self._initialized = False
+            return "Browser session closed."
+        return "Browser was not running."
+
+    def visit_page_tool(self, url: str) -> str:
+        r"""Navigate the browser to the specified URL.
+
+        Args:
+            url (str): The URL to visit.
+
+        Returns:
+            str: Confirmation message.
+        """
+        self._ensure_initialized()
+        self.browser.visit_page(url)
+        return f"Visited page: {url}"
+
+    def scroll_down(self, times: int = 1) -> str:
+        r"""Scroll down the current page.
+
+        Args:
+            times (int): Number of PageDown key presses to issue.
+                (default: :obj:`1`).
+
+        Returns:
+            str: Confirmation message.
+        """
+        self._ensure_initialized()
+        for _ in range(max(1, times)):
+            self.browser.scroll_down()
+        return f"Scrolled down {times} time(s)."
+
+    def scroll_up(self, times: int = 1) -> str:
+        r"""Scroll up the current page.
+
+        Args:
+            times (int): Number of PageUp key presses to issue.
+                (default: :obj:`1`).
+
+        Returns:
+            str: Confirmation message.
+        """
+        self._ensure_initialized()
+        for _ in range(max(1, times)):
+            self.browser.scroll_up()
+        return f"Scrolled up {times} time(s)."
+
+    def get_page_markdown(self) -> str:
+        r"""Return the current page content converted to Markdown.
+
+        Returns:
+            str: The markdown representation of the current page.
+        """
+        self._ensure_initialized()
+        return self.browser.get_webpage_content()
+
+    def click_element(self, identifier: Union[str, int]) -> str:
+        r"""Click the element specified by the identifier.
+
+        Args:
+            identifier (Union[str, int]): The ``__elementId`` assigned by
+                the page instrumentation.
+
+        Returns:
+            str: Confirmation message or error message.
+        """
+        self._ensure_initialized()
+        try:
+            self.browser.click_id(identifier)
+            return f"Clicked element with identifier '{identifier}'."
+        except Exception as e:
+            return f"Failed to click element '{identifier}': {e}"
+
     def get_tools(self) -> List[FunctionTool]:
-        return [FunctionTool(self.browse_url)]
+        # Primitive actions first
+        primitive_tools = [
+            FunctionTool(self.open_browser),
+            FunctionTool(self.close_browser),
+            FunctionTool(self.visit_page_tool),
+            FunctionTool(self.scroll_down),
+            FunctionTool(self.scroll_up),
+            FunctionTool(self.get_page_markdown),
+            FunctionTool(self.click_element),
+        ]
+
+        # Keep the original closed-loop browse tool for backward compatibility
+        compound_tools = [FunctionTool(self.browse_url)]
+
+        return primitive_tools + compound_tools
