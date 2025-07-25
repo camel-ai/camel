@@ -22,19 +22,18 @@ Note: This is a standalone demonstration of the ArtifactToolkit functionality.
 For full integration with CAMEL agents, ensure all dependencies are installed.
 """
 
-import json
 from datetime import datetime
 
 
 class SimplifiedArtifactDemo:
     """Simplified demonstration of ArtifactToolkit capabilities."""
-    
+
     def demonstrate_artifacts(self):
         """Show examples of all 5 artifact types."""
-        
+
         print("ArtifactToolkit Example - Creating Different Artifact Types\n")
         print("=" * 60)
-        
+
         # 1. HTML Artifact Example
         print("\n1. HTML Artifact Structure:")
         html_artifact = {
@@ -74,12 +73,12 @@ class SimplifiedArtifactDemo:
                 "created_at": datetime.now().isoformat(),
                 "artifact_id": f"html_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
                 "size": 875,
-                "has_css": True
-            }
+                "has_css": True,
+            },
         }
-        
+
         self._print_artifact_info(html_artifact)
-        
+
         # 2. SVG Artifact Example
         print("\n2. SVG Artifact Structure:")
         svg_artifact = {
@@ -101,13 +100,13 @@ class SimplifiedArtifactDemo:
                 "created_at": datetime.now().isoformat(),
                 "artifact_id": f"svg_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
                 "width": 300,
-                "height": 300
-            }
+                "height": 300,
+            },
         }
-        
+
         self._print_artifact_info(svg_artifact)
-        
-        # 3. Code Artifact Example  
+
+        # 3. Code Artifact Example
         print("\n3. Code Artifact Structure:")
         code_artifact = {
             "type": "code",
@@ -136,16 +135,16 @@ if __name__ == "__main__":
                 "created_at": datetime.now().isoformat(),
                 "artifact_id": f"code_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
                 "line_count": 17,
-                "language": "python"
-            }
+                "language": "python",
+            },
         }
-        
+
         self._print_artifact_info(code_artifact)
-        
+
         # 4. Markdown Artifact Example
         print("\n4. Markdown Artifact Structure:")
         markdown_artifact = {
-            "type": "markdown", 
+            "type": "markdown",
             "title": "ArtifactToolkit Documentation",
             "content": """# CAMEL ArtifactToolkit Guide
 
@@ -171,12 +170,12 @@ artifact = toolkit.create_html_artifact("<h1>Hello!</h1>")
             "metadata": {
                 "created_at": datetime.now().isoformat(),
                 "artifact_id": f"markdown_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                "word_count": 89
-            }
+                "word_count": 89,
+            },
         }
-        
+
         self._print_artifact_info(markdown_artifact)
-        
+
         # 5. Mermaid Flowchart Example
         print("\n5. Mermaid Flowchart Structure:")
         mermaid_artifact = {
@@ -202,49 +201,54 @@ artifact = toolkit.create_html_artifact("<h1>Hello!</h1>")
             "metadata": {
                 "created_at": datetime.now().isoformat(),
                 "artifact_id": f"mermaid_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                "node_count": 10
-            }
+                "node_count": 10,
+            },
         }
-        
+
         self._print_artifact_info(mermaid_artifact)
-        
+
         # Summary
         print("\n" + "=" * 60)
         print("Successfully demonstrated 5 different artifact types!")
-        
+
         artifacts = [
-            html_artifact, svg_artifact, code_artifact,
-            markdown_artifact, mermaid_artifact
+            html_artifact,
+            svg_artifact,
+            code_artifact,
+            markdown_artifact,
+            mermaid_artifact,
         ]
-        
-        print(f"\nArtifact Summary:")
+
+        print("\nArtifact Summary:")
         for i, artifact in enumerate(artifacts, 1):
             print(f"{i}. {artifact['type'].upper()}: {artifact['title']}")
-            
-        print(f"\nKey Features:")
-        print(f"- Dynamic content generation from user input")
-        print(f"- 5 different artifact types supported")
-        print(f"- Metadata with timestamps and unique IDs")
-        print(f"- Web interface rendering capabilities")
-        print(f"- Claude-like interactive experience")
-        
-        print(f"\nImplementation Benefits:")
-        print(f"- Addresses GitHub issue #2546 requirements")
-        print(f"- Integrates with CAMEL MCP framework")
-        print(f"- Provides extensive artifact generation toolkit")
-        print(f"- Enables rich interactive AI experiences")
+
+        print("\nKey Features:")
+        print("- Dynamic content generation from user input")
+        print("- 5 different artifact types supported")
+        print("- Metadata with timestamps and unique IDs")
+        print("- Web interface rendering capabilities")
+        print("- Claude-like interactive experience")
+
+        print("\nImplementation Benefits:")
+        print("- Addresses GitHub issue #2546 requirements")
+        print("- Integrates with CAMEL MCP framework")
+        print("- Provides extensive artifact generation toolkit")
+        print("- Enables rich interactive AI experiences")
 
     def _print_artifact_info(self, artifact):
         """Print formatted artifact information."""
         print(f"Created: {artifact['title']}")
         print(f"   Type: {artifact['type']}")
-        
+
         # Print type-specific metadata
         if artifact['type'] == 'html':
             print(f"   Size: {artifact['metadata']['size']} characters")
             print(f"   Has CSS: {artifact['metadata']['has_css']}")
         elif artifact['type'] == 'svg':
-            print(f"   Dimensions: {artifact['metadata']['width']}x{artifact['metadata']['height']}")
+            print(
+                f"   Dimensions: {artifact['metadata']['width']}x{artifact['metadata']['height']}"
+            )
         elif artifact['type'] == 'code':
             print(f"   Language: {artifact['language']}")
             print(f"   Lines: {artifact['metadata']['line_count']}")
@@ -252,7 +256,7 @@ artifact = toolkit.create_html_artifact("<h1>Hello!</h1>")
             print(f"   Word count: {artifact['metadata']['word_count']}")
         elif artifact['type'] == 'mermaid':
             print(f"   Nodes: {artifact['metadata']['node_count']}")
-            
+
         print(f"   ID: {artifact['metadata']['artifact_id']}")
 
 

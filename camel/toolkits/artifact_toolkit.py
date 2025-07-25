@@ -12,10 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Dict, Any, Optional, List
-import json
-import base64
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -25,20 +23,23 @@ from camel.utils import MCPServer
 @MCPServer()
 class ArtifactToolkit(BaseToolkit):
     r"""A toolkit for creating and managing artifacts like HTML, SVG, charts, and diagrams.
-    
+
     This toolkit enables agents to generate visual content that can be previewed
     in the CAMEL web application, similar to Claude's artifact system.
-    
+
     Supported artifact types:
     - HTML documents
     - SVG graphics
     - Mermaid flowcharts and diagrams
     - Code snippets (with syntax highlighting)
     - Markdown documents
-    - LaTeX mathematical expressions
-    - Plotly interactive charts
-    - Sequence diagrams
+    - LaTeX math expressions
     """
+
+    def _generate_artifact_id(self, artifact_type: str) -> str:
+        """Generate a unique artifact ID with microsecond precision."""
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-3]  # Include milliseconds
+        return f"{artifact_type}_{timestamp}"
 
     def create_html_artifact(
         self,
@@ -48,13 +49,13 @@ class ArtifactToolkit(BaseToolkit):
         css_styles: Optional[str] = None,
     ) -> Dict[str, Any]:
         r"""Create an HTML artifact that can be rendered in the web interface.
-        
+
         Args:
             content (str): The HTML content to be displayed.
             title (str, optional): Title for the artifact. Defaults to "HTML Artifact".
             include_css (bool, optional): Whether to include basic CSS styling. Defaults to True.
             css_styles (str, optional): Additional CSS styles to include.
-            
+
         Returns:
             Dict[str, Any]: A dictionary containing the artifact data with metadata.
         """
@@ -63,26 +64,28 @@ class ArtifactToolkit(BaseToolkit):
             html_content = content
         else:
             # Wrap partial content in full HTML document
-            html_content = self._wrap_html_content(content, title, include_css, css_styles)
-            
+            html_content = self._wrap_html_content(
+                content, title, include_css, css_styles
+            )
+
         return {
             "type": "html",
             "title": title,
             "content": html_content,
             "metadata": {
                 "created_at": datetime.now().isoformat(),
-                "artifact_id": f"html_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                "artifact_id": self._generate_artifact_id("html"),
                 "size": len(html_content),
                 "has_css": include_css or bool(css_styles),
-            }
+            },
         }
 
     def _wrap_html_content(
-        self, 
-        content: str, 
-        title: str, 
-        include_css: bool, 
-        css_styles: Optional[str]
+        self,
+        content: str,
+        title: str,
+        include_css: bool,
+        css_styles: Optional[str],
     ) -> str:
         """Wrap content in a complete HTML document with optional styling."""
         head_content = ""
@@ -90,8 +93,12 @@ class ArtifactToolkit(BaseToolkit):
             head_content += self._get_base_styles()
         if css_styles:
             head_content += css_styles
-            
-        body_content = f"<div class='container'>{content}</div>" if include_css else content
+
+        body_content = (
+            f"<div class='container'>{content}</div>"
+            if include_css
+            else content
+        )
         return self._create_html_document(title, body_content, head_content)
 
     def _create_html_document(
@@ -147,13 +154,13 @@ class ArtifactToolkit(BaseToolkit):
         height: Optional[int] = None,
     ) -> Dict[str, Any]:
         r"""Create an SVG artifact for vector graphics.
-        
+
         Args:
             svg_content (str): The SVG content (can be just the inner elements or complete SVG).
             title (str, optional): Title for the artifact. Defaults to "SVG Graphic".
             width (int, optional): Width of the SVG. If not provided, uses SVG's viewBox or defaults.
             height (int, optional): Height of the SVG. If not provided, uses SVG's viewBox or defaults.
-            
+
         Returns:
             Dict[str, Any]: A dictionary containing the SVG artifact data.
         """
@@ -167,18 +174,18 @@ class ArtifactToolkit(BaseToolkit):
 </svg>"""
         else:
             svg_full = svg_content
-            
+
         return {
             "type": "svg",
             "title": title,
             "content": svg_full,
             "metadata": {
                 "created_at": datetime.now().isoformat(),
-                "artifact_id": f"svg_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                "artifact_id": self._generate_artifact_id("svg"),
                 "width": width,
                 "height": height,
                 "size": len(svg_full),
-            }
+            },
         }
 
     def create_mermaid_flowchart(
@@ -188,21 +195,23 @@ class ArtifactToolkit(BaseToolkit):
         direction: str = "TD",
     ) -> Dict[str, Any]:
         r"""Create a Mermaid flowchart artifact.
-        
+
         Args:
             flowchart_definition (str): The Mermaid flowchart definition.
             title (str, optional): Title for the flowchart. Defaults to "Flowchart".
             direction (str, optional): Flow direction (TD, LR, BT, RL). Defaults to "TD".
-            
+
         Returns:
             Dict[str, Any]: A dictionary containing the Mermaid flowchart data.
         """
         # Ensure the flowchart starts with proper Mermaid syntax
         if not flowchart_definition.strip().startswith(('flowchart', 'graph')):
-            mermaid_content = f"flowchart {direction}\n    {flowchart_definition}"
+            mermaid_content = (
+                f"flowchart {direction}\n    {flowchart_definition}"
+            )
         else:
             mermaid_content = flowchart_definition
-            
+
         # Create compact HTML using shared template
         head_content = f"""
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
@@ -212,7 +221,7 @@ class ArtifactToolkit(BaseToolkit):
             text-align: center;
         }}
     </style>"""
-        
+
         body_content = f"""
     <div class="container">
         <h1>{title}</h1>
@@ -221,9 +230,11 @@ class ArtifactToolkit(BaseToolkit):
         </div>
     </div>
     <script>mermaid.initialize({{ startOnLoad: true }});</script>"""
-        
-        html_content = self._create_html_document(title, body_content, head_content)
-        
+
+        html_content = self._create_html_document(
+            title, body_content, head_content
+        )
+
         return {
             "type": "mermaid",
             "subtype": "flowchart",
@@ -232,10 +243,10 @@ class ArtifactToolkit(BaseToolkit):
             "mermaid_definition": mermaid_content,
             "metadata": {
                 "created_at": datetime.now().isoformat(),
-                "artifact_id": f"mermaid_flowchart_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                "artifact_id": self._generate_artifact_id("mermaid_flowchart"),
                 "direction": direction,
                 "size": len(html_content),
-            }
+            },
         }
 
     def create_code_artifact(
@@ -247,14 +258,14 @@ class ArtifactToolkit(BaseToolkit):
         theme: str = "github",
     ) -> Dict[str, Any]:
         r"""Create a code artifact with syntax highlighting.
-        
+
         Args:
             code (str): The source code content.
             language (str, optional): Programming language for syntax highlighting. Defaults to "python".
             title (str, optional): Title for the code artifact. Defaults to "Code Snippet".
             show_line_numbers (bool, optional): Whether to show line numbers. Defaults to True.
             theme (str, optional): Syntax highlighting theme. Defaults to "github".
-            
+
         Returns:
             Dict[str, Any]: A dictionary containing the code artifact data.
         """
@@ -314,21 +325,22 @@ class ArtifactToolkit(BaseToolkit):
     {"<script src='https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js'></script>" if show_line_numbers else ""}
 </body>
 </html>"""
-        
+
         return {
             "type": "code",
             "title": title,
+            "language": language,
             "content": html_content,
             "code": code,
             "metadata": {
                 "created_at": datetime.now().isoformat(),
-                "artifact_id": f"code_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                "artifact_id": self._generate_artifact_id("code"),
                 "language": language,
                 "line_count": len(code.split('\n')),
                 "size": len(code),
                 "has_line_numbers": show_line_numbers,
                 "theme": theme,
-            }
+            },
         }
 
     def create_markdown_artifact(
@@ -339,18 +351,19 @@ class ArtifactToolkit(BaseToolkit):
         theme: str = "github",
     ) -> Dict[str, Any]:
         r"""Create a Markdown document artifact with rendering.
-        
+
         Args:
             markdown_content (str): The Markdown content.
             title (str, optional): Title for the document. Defaults to "Document".
             include_toc (bool, optional): Whether to include a table of contents. Defaults to False.
             theme (str, optional): Styling theme for the document. Defaults to "github".
-            
+
         Returns:
             Dict[str, Any]: A dictionary containing the Markdown artifact data.
         """
         # Create HTML wrapper with Marked.js for Markdown rendering
-        toc_script = """
+        toc_script = (
+            """
         <script>
             // Simple TOC generator
             function generateTOC() {
@@ -383,14 +396,21 @@ class ArtifactToolkit(BaseToolkit):
                 toc.appendChild(tocList);
             }
         </script>
-        """ if include_toc else ""
-        
-        toc_html = """
+        """
+            if include_toc
+            else ""
+        )
+
+        toc_html = (
+            """
         <div id="table-of-contents">
             <h2>📑 Table of Contents</h2>
         </div>
-        """ if include_toc else ""
-        
+        """
+            if include_toc
+            else ""
+        )
+
         html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -533,7 +553,7 @@ class ArtifactToolkit(BaseToolkit):
     </script>
 </body>
 </html>"""
-        
+
         return {
             "type": "markdown",
             "title": title,
@@ -541,13 +561,13 @@ class ArtifactToolkit(BaseToolkit):
             "markdown": markdown_content,
             "metadata": {
                 "created_at": datetime.now().isoformat(),
-                "artifact_id": f"markdown_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                "artifact_id": self._generate_artifact_id("markdown"),
                 "word_count": len(markdown_content.split()),
                 "line_count": len(markdown_content.split('\n')),
                 "size": len(markdown_content),
                 "has_toc": include_toc,
                 "theme": theme,
-            }
+            },
         }
 
     def create_latex_math(
@@ -558,13 +578,13 @@ class ArtifactToolkit(BaseToolkit):
         show_source: bool = False,
     ) -> Dict[str, Any]:
         r"""Create a LaTeX mathematical expression artifact.
-        
+
         Args:
             latex_expression (str): The LaTeX mathematical expression.
             title (str, optional): Title for the math artifact. Defaults to "Mathematical Expression".
             display_mode (str, optional): Display mode - "block" for centered equations, "inline" for text-style. Defaults to "block".
             show_source (bool, optional): Whether to show the LaTeX source code. Defaults to False.
-            
+
         Returns:
             Dict[str, Any]: A dictionary containing the LaTeX math artifact data.
         """
@@ -574,15 +594,16 @@ class ArtifactToolkit(BaseToolkit):
             clean_latex = clean_latex[2:-2].strip()
         elif clean_latex.startswith('$') and clean_latex.endswith('$'):
             clean_latex = clean_latex[1:-1].strip()
-            
+
         # Determine math delimiters based on display mode
         if display_mode == "block":
             math_content = f"$$\\displaystyle {clean_latex}$$"
         else:
-            math_content = f"$\{clean_latex}$"
-            
+            math_content = f"$\\{clean_latex}$"
+
         # Optional source code display
-        source_section = f"""
+        source_section = (
+            f"""
         <div class="latex-source">
             <h3>📝 LaTeX Source</h3>
             <div class="source-code">
@@ -590,9 +611,13 @@ class ArtifactToolkit(BaseToolkit):
                 <button onclick="copyToClipboard()" class="copy-btn">📋 Copy</button>
             </div>
         </div>
-        """ if show_source else ""
-        
-        copy_script = """
+        """
+            if show_source
+            else ""
+        )
+
+        copy_script = (
+            """
         <script>
             function copyToClipboard() {
                 const sourceCode = document.querySelector('.source-code code').textContent;
@@ -606,8 +631,11 @@ class ArtifactToolkit(BaseToolkit):
                 });
             }
         </script>
-        """ if show_source else ""
-        
+        """
+            if show_source
+            else ""
+        )
+
         html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -720,7 +748,7 @@ class ArtifactToolkit(BaseToolkit):
     {copy_script}
 </body>
 </html>"""
-        
+
         return {
             "type": "latex",
             "subtype": "math",
@@ -730,20 +758,20 @@ class ArtifactToolkit(BaseToolkit):
             "cleaned_latex": clean_latex,
             "metadata": {
                 "created_at": datetime.now().isoformat(),
-                "artifact_id": f"latex_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                "artifact_id": self._generate_artifact_id("latex"),
                 "display_mode": display_mode,
                 "show_source": show_source,
                 "expression_length": len(clean_latex),
                 "size": len(html_content),
-            }
+            },
         }
 
     def get_artifact_info(self, artifact: Dict[str, Any]) -> str:
         r"""Get formatted information about an artifact.
-        
+
         Args:
             artifact (Dict[str, Any]): The artifact dictionary.
-            
+
         Returns:
             str: Formatted information about the artifact.
         """
@@ -752,13 +780,13 @@ class ArtifactToolkit(BaseToolkit):
         metadata = artifact.get("metadata", {})
         created_at = metadata.get("created_at", "Unknown")
         size = metadata.get("size", 0)
-        
+
         info = f"""Artifact Information:
 - Type: {artifact_type.upper()}
 - Title: {title}
 - Created: {created_at}
 - Size: {size} characters"""
-        
+
         if artifact_type == "mermaid":
             subtype = artifact.get("subtype", "diagram")
             direction = metadata.get("direction", "N/A")
@@ -795,7 +823,7 @@ class ArtifactToolkit(BaseToolkit):
 - Display Mode: {display_mode}
 - Expression Length: {expression_length} characters
 - Show Source: {'Yes' if show_source else 'No'}"""
-        
+
         return info
 
     def get_tools(self) -> List[FunctionTool]:
