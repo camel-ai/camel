@@ -78,8 +78,52 @@ class WebSocketBrowserServer {
     switch (command) {
       case 'init':
         console.log('Initializing toolkit with params:', JSON.stringify(params, null, 2));
-        this.toolkit = new HybridBrowserToolkit(params);
-        return { message: 'Toolkit initialized' };
+        
+        // Check if CDP is available first
+        let useCdp = false;
+        let cdpUrl = params.cdpUrl || 'http://localhost:9222';
+        
+        // Extract base URL and port for validation
+        const baseUrl = cdpUrl.includes('/devtools/') ? cdpUrl.split('/devtools/')[0] : cdpUrl;
+        
+        try {
+          // Test if Chrome debug port is accessible and get page URL
+          const response = await fetch(`${baseUrl}/json`);
+          if (response.ok) {
+            const pages = await response.json();
+            if (pages && pages.length > 0) {
+              // If user provided a specific page URL, use it; otherwise use first available
+              if (cdpUrl.includes('/devtools/page/') || cdpUrl.includes('/devtools/browser/')) {
+                useCdp = true;
+                console.log(`Using provided CDP URL: ${cdpUrl}`);
+              } else {
+                // Use the first available page
+                const firstPage = pages[0];
+                const pageUrl = firstPage.devtoolsFrontendUrl;
+                const pageId = pageUrl.match(/ws=localhost:\d+(.*)$/)?.[1];
+                
+                if (pageId) {
+                  useCdp = true;
+                  cdpUrl = `${baseUrl}${pageId}`;
+                  console.log(`Chrome debug port detected, using CDP connection to: ${pageId}`);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.log('Chrome debug port not accessible, will start new browser instance');
+        }
+        
+        const config = {
+          connectOverCdp: useCdp,
+          cdpUrl: useCdp ? cdpUrl : undefined,
+          headless: false,
+          ...params
+        };
+        
+        console.log('Final config:', JSON.stringify(config, null, 2));
+        this.toolkit = new HybridBrowserToolkit(config);
+        return { message: 'Toolkit initialized with CDP connection' };
 
       case 'open_browser':
         if (!this.toolkit) throw new Error('Toolkit not initialized');

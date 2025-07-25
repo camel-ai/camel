@@ -89,6 +89,7 @@ from .web_deploy_toolkit import WebDeployToolkit
 from .screenshot_toolkit import ScreenshotToolkit
 from .message_integration import ToolkitMessageIntegration
 from .markdown_memory_toolkit import MarkdownMemoryToolkit
+from .notion_mcp_toolkit import NotionMCPToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -167,4 +168,5 @@ __all__ = [
     'RegisteredAgentToolkit',
     'ToolkitMessageIntegration',
     'MarkdownMemoryToolkit',
+    'NotionMCPToolkit',
 ]
