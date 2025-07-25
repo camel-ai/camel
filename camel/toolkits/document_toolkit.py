@@ -596,10 +596,7 @@ class DocumentToolkit(BaseToolkit):
             response = requests.head(url, allow_redirects=True, timeout=10)
             content_type = response.headers.get("Content-Type", "").lower()
 
-            if "text/html" in content_type:
-                return True
-            else:
-                return False
+            return True if "text/html" in content_type else False
 
         except requests.exceptions.RequestException as e:
             logger.warning(f"Error while checking the URL: {e}")
@@ -862,115 +859,209 @@ class DocumentToolkit(BaseToolkit):
             Tuple[bool, str]: Success status and parsed data content.
         """
         try:
-            import json
-
-            import xmltodict  # type: ignore[import-untyped]
-            import yaml
-
-            suffix = Path(path).suffix.lower()
-
-            # First, read the file with line-based filtering if needed
-            if start_line > 0 or end_line is not None:
-                with open(path, "r", encoding="utf-8") as f:
-                    lines = f.readlines()
-
-                total_lines = len(lines)
-
-                # Validate line numbers
-                if start_line >= total_lines:
-                    return (
-                        False,
-                        f"Start line {start_line} exceeds file length "
-                        f"({total_lines} lines)",
-                    )
-
-                # Determine end line
-                if end_line is None:
-                    end_line = total_lines - 1
-                elif end_line >= total_lines:
-                    end_line = total_lines - 1
-
-                # Extract the specified lines
-                selected_lines = lines[start_line : end_line + 1]
-                content_to_process = ''.join(selected_lines)
-            else:
-                # Read entire file
-                with open(path, "r", encoding="utf-8") as f:
-                    content_to_process = f.read()
+            # Read the file content (with optional line filtering)
+            ok, content = self._read_file_content_with_lines(
+                path, start_line, end_line
+            )
+            if not ok:
+                return False, content
 
             # Process based on file type
-            if suffix in [".json", ".jsonl", ".jsonld"]:
-                if suffix == ".jsonl":
-                    # Handle JSON Lines format
-                    json_objects = []
-                    for line in content_to_process.strip().split('\n'):
-                        if line.strip():  # Skip empty lines
-                            try:
-                                json_objects.append(json.loads(line.strip()))
-                            except json.JSONDecodeError as e:
-                                return False, f"Error parsing JSON line: {e}"
-                    content = json_objects
-                else:
-                    # Handle regular JSON
-                    try:
-                        content = json.loads(content_to_process)
-                    except json.JSONDecodeError as e:
-                        return False, f"Error parsing JSON: {e}"
+            suffix = Path(path).suffix.lower()
+            return self._process_data_content(content, suffix, path)
 
-                # Format output nicely
-                if isinstance(content, (list, dict)):
-                    formatted_content = json.dumps(
-                        content, indent=2, ensure_ascii=False
-                    )
-                else:
-                    formatted_content = str(content)
-
-                return True, formatted_content
-
-            elif suffix in [".yaml", ".yml"]:
-                try:
-                    # Handle multiple YAML documents in one file
-                    documents = list(yaml.safe_load_all(content_to_process))
-                    if len(documents) == 1:
-                        content = documents[0]
-                    else:
-                        content = documents
-
-                    # Format output nicely
-                    if isinstance(content, (list, dict)):
-                        formatted_content = yaml.dump(
-                            content,
-                            default_flow_style=False,
-                            allow_unicode=True,
-                        )
-                    else:
-                        formatted_content = str(content)
-
-                    return True, formatted_content
-                except yaml.YAMLError as e:
-                    return False, f"Error parsing YAML file {path}: {e}"
-
-            elif suffix == ".xml":
-                try:
-                    # Try to parse as structured XML first
-                    data = xmltodict.parse(content_to_process)
-                    logger.debug(f"The extracted xml data is: {data}")
-
-                    # Format output nicely
-                    formatted_content = json.dumps(
-                        data, indent=2, ensure_ascii=False
-                    )
-                    return True, formatted_content
-                except Exception as e:
-                    # If parsing fails, return raw content
-                    logger.debug(
-                        f"XML parsing failed, returning raw content: {e}"
-                    )
-                    return True, content_to_process
-
-            return False, f"Unsupported data file format: {suffix}"
         except Exception as e:
             return False, f"Error processing data file {path}: {e}"
+
+    def _read_file_content_with_lines(
+        self, path: str, start_line: int = 0, end_line: Optional[int] = None
+    ) -> Tuple[bool, str]:
+        r"""Read file content with optional line-based filtering.
+
+        Args:
+            path (str): Path to the file.
+            start_line (int): Starting line number.
+            end_line (Optional[int]): Ending line number.
+
+        Returns:
+            Tuple[bool, str]: Success status and file content.
+        """
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+
+            total_lines = len(lines)
+
+            # If reading entire file
+            if start_line == 0 and end_line is None:
+                return True, ''.join(lines)
+
+            # Validate start line
+            if start_line >= total_lines:
+                return (
+                    False,
+                    "Start line {} exceeds file length ({} lines)".format(
+                        start_line, total_lines
+                    ),
+                )
+
+            # Determine end line
+            if end_line is None:
+                end_line = total_lines - 1
+            elif end_line >= total_lines:
+                end_line = total_lines - 1
+
+            # Extract the specified lines
+            selected_lines = lines[start_line : end_line + 1]
+            return True, ''.join(selected_lines)
+
+        except Exception as e:
+            return False, f"Error reading file {path}: {e}"
+
+    def _process_data_content(
+        self, content: str, suffix: str, path: str
+    ) -> Tuple[bool, str]:
+        r"""Process data content based on file type.
+
+        Args:
+            content (str): File content to process.
+            suffix (str): File extension.
+            path (str): Original file path (for error messages).
+
+        Returns:
+            Tuple[bool, str]: Success status and processed content.
+        """
+        if suffix in [".json", ".jsonl", ".jsonld"]:
+            return self._process_json_content(content, suffix)
+        elif suffix in [".yaml", ".yml"]:
+            return self._process_yaml_content(content)
+        elif suffix == ".xml":
+            return self._process_xml_content(content)
+        else:
+            return False, f"Unsupported data file format: {suffix}"
+
+    def _process_json_content(
+        self, content: str, suffix: str
+    ) -> Tuple[bool, str]:
+        r"""Process JSON content based on JSON variant.
+
+        Args:
+            content (str): JSON content to parse.
+            suffix (str): File extension to determine JSON variant.
+
+        Returns:
+            Tuple[bool, str]: Success status and formatted JSON content.
+        """
+        import json
+
+        try:
+            if suffix == ".jsonl":
+                return self._process_jsonl_content(content)
+            else:
+                return self._process_regular_json_content(content)
+        except json.JSONDecodeError as e:
+            return False, f"Error parsing JSON: {e}"
+
+    def _process_jsonl_content(self, content: str) -> Tuple[bool, str]:
+        r"""Process JSON Lines format content.
+
+        Args:
+            content (str): JSONL content to parse.
+
+        Returns:
+            Tuple[bool, str]: Success status and formatted content.
+        """
+        import json
+
+        json_objects = []
+        for line in content.strip().split('\n'):
+            if line.strip():  # Skip empty lines
+                try:
+                    json_objects.append(json.loads(line.strip()))
+                except json.JSONDecodeError as e:
+                    return False, f"Error parsing JSON line: {e}"
+
+        formatted_content = json.dumps(
+            json_objects, indent=2, ensure_ascii=False
+        )
+        return True, formatted_content
+
+    def _process_regular_json_content(self, content: str) -> Tuple[bool, str]:
+        r"""Process regular JSON format content.
+
+        Args:
+            content (str): JSON content to parse.
+
+        Returns:
+            Tuple[bool, str]: Success status and formatted content.
+        """
+        import json
+
+        parsed_content = json.loads(content)
+
+        if isinstance(parsed_content, (list, dict)):
+            formatted_content = json.dumps(
+                parsed_content, indent=2, ensure_ascii=False
+            )
+        else:
+            formatted_content = str(parsed_content)
+
+        return True, formatted_content
+
+    def _process_yaml_content(self, content: str) -> Tuple[bool, str]:
+        r"""Process YAML format content.
+
+        Args:
+            content (str): YAML content to parse.
+
+        Returns:
+            Tuple[bool, str]: Success status and formatted content.
+        """
+        import yaml
+
+        try:
+            # Handle multiple YAML documents in one file
+            documents = list(yaml.safe_load_all(content))
+            parsed_content = documents[0] if len(documents) == 1 else documents
+
+            if isinstance(parsed_content, (list, dict)):
+                formatted_content = yaml.dump(
+                    parsed_content,
+                    default_flow_style=False,
+                    allow_unicode=True,
+                )
+            else:
+                formatted_content = str(parsed_content)
+
+            return True, formatted_content
+        except yaml.YAMLError as e:
+            return False, f"Error parsing YAML: {e}"
+
+    def _process_xml_content(self, content: str) -> Tuple[bool, str]:
+        r"""Process XML format content.
+
+        Args:
+            content (str): XML content to parse.
+
+        Returns:
+            Tuple[bool, str]: Success status and formatted content.
+        """
+        import json
+
+        import xmltodict  # type: ignore[import-untyped]
+
+        try:
+            # Try to parse as structured XML first
+            data = xmltodict.parse(content)
+            logger.debug(f"The extracted xml data is: {data}")
+
+            # Format output nicely
+            formatted_content = json.dumps(data, indent=2, ensure_ascii=False)
+            return True, formatted_content
+        except Exception as e:
+            # If parsing fails, return raw content
+            logger.debug(f"XML parsing failed, returning raw content: {e}")
+            return True, content
 
     def _handle_code_file(
         self, path: str, start_line: int = 0, end_line: Optional[int] = None
