@@ -531,6 +531,7 @@ class ChatAgent(BaseAgent):
         self.auto_compress_context = auto_compress_context
         self.compress_message_limit = compress_message_limit
         self.compress_token_limit = compress_token_limit
+        self.is_compressing_context = False
         self.memory_save_directory = memory_save_directory
 
         if self.auto_compress_context:
@@ -1039,13 +1040,16 @@ class ChatAgent(BaseAgent):
         json_store.save(to_save)
         logger.info(f"Memory saved to {path}")
 
-    def clear_memory(self) -> None:
+    def clear_memory(self, reason: str = "manual") -> None:
         r"""Clear the agent's memory and reset to initial state.
+
+        Args:
+            reason (str): Reason for clearing memory. "compression" will suppress warnings.
 
         Returns:
             None
         """
-        self.memory.clear()
+        self.memory.clear(reason)
         if self.system_message is not None:
             self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
 
@@ -1426,10 +1430,6 @@ class ChatAgent(BaseAgent):
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
-        # compress context if needed 
-        if self.auto_compress_context and self._should_compress_context():
-            self._compress_context()
-
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_requests: Optional[List[ToolCallRequest]] = None
 
@@ -1528,6 +1528,10 @@ class ChatAgent(BaseAgent):
             )
 
         self._record_final_output(response.output_messages)
+
+        # Compress context if needed (after assistant response is recorded)
+        if self.auto_compress_context and self._should_compress_context():
+            self._compress_context()
 
         # Clean tool call messages from memory after response generation
         if self.prune_tool_calls_from_memory and tool_call_records:
@@ -3848,6 +3852,11 @@ class ChatAgent(BaseAgent):
         Returns:
             bool: True if the context should be compressed, False otherwise.
         """
+        # if we already detected that we must compress context,
+        # we must return False to avoid infinite recursion
+        if self.is_compressing_context:
+            return False
+        
         try:
             conversation_message_count = len(self.memory.retrieve())
 
@@ -3875,16 +3884,16 @@ class ChatAgent(BaseAgent):
             # use context compression service for complete pipeline
             summary = self._context_compression_service.compress_and_save(records)
 
-            # clear the memory
-            self.clear_memory()
+            # clear the memory with compression reason (suppresses warning)
+            self.clear_memory(reason="compression")
 
             # add summary as context 
             if summary and summary.strip(): 
                 summary_message = BaseMessage.make_assistant_message(
-                    role_name="system",
+                    role_name="Assistant", 
                     content=f"[Context Summary]\n\n{summary}"
                 )
-                self.update_memory(summary_message, OpenAIBackendRole.SYSTEM)
+                self.update_memory(summary_message, OpenAIBackendRole.ASSISTANT)
             
             logger.info(f"Context compressed - replaced {len(records)} messages with summary")
             

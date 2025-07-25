@@ -95,6 +95,9 @@ class ContextCompressionService:
             return self.existing_summary or ""
 
         try:
+            # 0. set the is_compressing_context flag to True
+            self.summary_agent.is_compressing_context = True
+
             # 1. format the conversation 
             conversation_text = self._format_conversation(memory_records)
 
@@ -114,6 +117,10 @@ class ContextCompressionService:
         except Exception as e:
             logger.error(f"Error generating summary: {e}")
             return self.existing_summary or ""
+        
+        finally:
+            # 5. set the is_compressing_context flag to False as we're finished
+            self.summary_agent.is_compressing_context = False
 
     def save_summary(self, summary: str) -> str:
         r"""Save a summary to a markdown file.
@@ -272,11 +279,12 @@ class ContextCompressionService:
 Analyze it and extract the key information from it. The information will be
 passed on to a new agent that will use it to understand the problem and continue
 working on it without having to start from scratch. Focus on:
-- Tasks that were accomplished
-- Tools and methods that were used  
-- Key decisions that were made
-- Important discoveries or solutions found
-- Technical approaches that worked"""
+- User's main goal (e.g. "The user wants my help with data analysis of customer sales data.")
+- Key information about the user and their preferences (e.g. "The user is a student who prefers concise bullet-point responses.")
+- Tasks that were accomplished (e.g. "I found the top 10 customers by total sales amounts, wrote a Python script to...")
+- Tools and methods that were used **if tool/function calls have been made** (e.g. "I used CodeExecutionToolkit to execute a Python script to analyze the data.")
+- Important discoveries or solutions found (e.g. "I found there are duplicate entries in the customer name column, which must be taken care of before proceeding with the analysis.")
+- Technical approaches that worked **if the task is technical** (e.g. "Using Pandas + matplotlib seem to yield the best responses for the user's queries.)"""
 
         # if we want to extend an existing summary
         if self.existing_summary:
