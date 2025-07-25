@@ -12,13 +12,18 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List, Optional
+import glob
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional, Union
 
+from camel.logger import get_logger
+from camel.memories.context_compressors.context_summarizer import ContextCompressionService
+from camel.retrievers import AutoRetriever
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.memories.context_compressors.context_summarizer import ContextCompressionService
-from camel.logger import get_logger
-from typing import TYPE_CHECKING
+from camel.toolkits.retrieval_toolkit import RetrievalToolkit
+from camel.types import StorageType
+from camel.utils import Constants
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
@@ -28,7 +33,8 @@ logger = get_logger(__name__)
 class MarkdownMemoryToolkit(BaseToolkit):
     r"""A toolkit that provides memory storage in Markdown files for agents.
     With this toolkit, agents can save and manage their conversation 
-    memory using markdown files.
+    memory using markdown files, and search through conversation history
+    using semantic search.
     """
 
     def __init__(
@@ -37,7 +43,7 @@ class MarkdownMemoryToolkit(BaseToolkit):
         working_directory: Optional[str] = None,
         timeout: Optional[float] = None,
     ):
-        r"""Initialize the MarkdownMemoryToolkit.
+        r"""Initialize the MarkdownMemoryToolkit. Turn on auto-compression on the agent if not already enabled.
 
         Args:
             agent (ChatAgent): The agent to use for the toolkit.
@@ -51,11 +57,38 @@ class MarkdownMemoryToolkit(BaseToolkit):
         self.agent = agent
         self.working_directory = working_directory
         
-        # Initialize the context compression service
+        # automatically enable auto-compression on the agent if not already enabled
+        if not getattr(self.agent, 'auto_compress_context', False):
+            self.agent.auto_compress_context = True
+            self.agent.memory_save_directory = working_directory
+            
+            # initialize the agent's compression service if it doesn't exist
+            if not hasattr(self.agent, '_context_compression_service'):
+                self.agent._context_compression_service = ContextCompressionService(
+                    summary_agent=self.agent,
+                    working_directory=self.agent.memory_save_directory,
+                )
+        
+        # initialize the context compression service for this toolkit
         self.compression_service = ContextCompressionService(
             summary_agent=self.agent,
             working_directory=self.working_directory,
         )
+
+        # initialize the retrieval
+        try:
+            vector_storage_path = str(Path(self.compression_service.working_directory).parent / "conversation_vectors")
+
+            self.retrieval_toolkit = RetrievalToolkit(
+                auto_retriever=AutoRetriever(
+                    vector_storage_local_path=vector_storage_path,
+                    storage_type=StorageType.QDRANT,
+                ),
+            )
+            logger.info("Semantic search enabled for conversation history")
+        except Exception as e:
+            logger.warning(f"Failed to initialize semantic search: {e}. Semantic search disabled.")
+            self.retrieval_toolkit = None
 
     def save_conversation_memory(self) -> str:
         r"""Save the conversation history and generate an intelligent summary.
@@ -63,33 +96,38 @@ class MarkdownMemoryToolkit(BaseToolkit):
         This function should be used when the memory becomes cluttered with too many
         unrelated conversations or information that might be irrelevant to 
         the core task. It will generate a summary and save both the summary 
-        and full conversation history to markdown files. Finally, it replaces
-        the memory with the new summary for a context refresh.
+        and full conversation history to markdown files. Then it clears the memory
+        and replaces it with the summary for a context refresh.
 
         Returns:
             str: Success message with brief summary, or error message.
         """
         try:
-            # Get memory records from the agent
+            # Get current memory count before compression
             context_records = self.agent.memory.retrieve()
-            memory_records = [cr.memory_record for cr in context_records]
+            message_count = len(context_records)
             
-            if not memory_records:
+            if message_count == 0:
                 return "No conversation history found to save."
             
-            # Use the compression service to handle the full pipeline
-            summary = self.compression_service.compress_and_save(memory_records)
-            
-            # Create concise success message
-            summary_preview = summary[:100] + "..." if len(summary) > 100 else summary
+            # Use the agent's built-in compression method (auto-compression is guaranteed to be enabled)
+            self.agent._compress_context()
+            logger.info(f"Used agent's auto-compression - {message_count} messages processed")
+
+            # get the summary that was just created for the success message
+            try:
+                summary = self.compression_service.load_summary()
+                summary_preview = summary[:100] + "..." if len(summary) > 100 else summary
+            except Exception:
+                summary_preview = "Summary generated successfully"
             
             success_msg = (
-                f"Memory saved successfully to {self.compression_service.working_directory.name}\n"
-                f"Messages saved: {len(memory_records)}\n"
+                f"Memory saved and refreshed successfully!\n"
+                f"Session directory: {self.compression_service.working_directory.name}\n"
+                f"Messages processed: {message_count}\n"
                 f"Summary: {summary_preview}"
             )
             
-            logger.info("Conversation memory saved successfully")
             return success_msg
             
         except Exception as e:
@@ -151,10 +189,97 @@ class MarkdownMemoryToolkit(BaseToolkit):
             except Exception:
                 info_msg += f"Saved files: Unable to check\n"
             
+            # Add semantic search status
+            if self.retrieval_toolkit:
+                info_msg += f"Semantic search: Enabled\n"
+                
+                # Count available session histories
+                base_dir = Path(self.compression_service.working_directory).parent
+                session_pattern = str(base_dir / "session_*" / "history.md")
+                session_count = len(glob.glob(session_pattern))
+                info_msg += f"Searchable sessions: {session_count}\n"
+            else:
+                info_msg += f"Semantic search: Disabled\n"
+            
             return info_msg
             
         except Exception as e:
             error_msg = f"Failed to get memory info: {e}"
+            logger.error(error_msg)
+            return error_msg
+
+    def search_conversation_history(
+        self, 
+        query: str,
+        top_k: int = 5,
+        similarity_threshold: float = 0.7,
+        search_current_session: bool = True,
+        search_all_sessions: bool = False,
+    ) -> str:
+        r"""Search the conversation history using semantic search.
+
+        Searches through the history.md files to find relevant past
+        conversations based on the query.
+
+        Args:
+            query (str): The query to search for.
+            top_k (int): The number of results to return.
+            similarity_threshold (float): The similarity threshold for the results.
+            search_current_session (bool): Whether to search the current session.
+            search_all_sessions (bool): Whether to search all sessions.
+
+        Returns:
+            str: The search results or error message.
+        """
+        if not self.retrieval_toolkit:
+            return "Semantic search is not available. Retrieval toolkit failed to initialize."
+
+        try:
+            history_files = []
+            base_dir = Path(self.compression_service.working_directory).parent
+
+            if search_current_session:
+                # Add current session history
+                current_history = self.compression_service.working_directory / "history.md"
+                if current_history.exists():
+                    history_files.append(str(current_history))
+            
+            if search_all_sessions:
+                # Add all session histories
+                session_pattern = str(base_dir / "session_*" / "history.md")
+                session_histories = glob.glob(session_pattern)
+                history_files.extend(session_histories)
+            
+            if not history_files:
+                return "No history files found to search."
+
+            # remove duplicates and preserving order
+            history_files = list(dict.fromkeys(history_files))
+
+            logger.info(f"Searching through {len(history_files)} history file(s)")
+
+            # Perform semantic retrieval
+            search_results = self.retrieval_toolkit.information_retrieval(
+                query=query,
+                contents=history_files,
+                top_k=top_k,
+                similarity_threshold=similarity_threshold,
+            )
+
+            if search_results and search_results.strip():
+                formatted_results = (
+                    f"Found relevant conversation excerpts for query: '{query}'\n\n"
+                    f"--- Search Results ---\n"
+                    f"{search_results}\n"
+                    f"--- End Results ---\n\n"
+                    f"Note: Results are ordered by semantic similarity to your query."
+                )
+                return formatted_results
+            else:
+                return f"No relevant conversations found for query: '{query}'. Try different keywords or lower the similarity threshold."
+            
+        except Exception as e:
+            error_msg = f"Failed to search conversation history: {e}"
             logger.error(error_msg)
             return error_msg
 
@@ -168,4 +293,5 @@ class MarkdownMemoryToolkit(BaseToolkit):
             FunctionTool(self.save_conversation_memory),
             FunctionTool(self.load_memory_context),
             FunctionTool(self.get_memory_info),
+            FunctionTool(self.search_conversation_history),
         ]
