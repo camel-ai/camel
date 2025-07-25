@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.73a5"
+version = "0.2.73a6"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -128,7 +128,7 @@ document_tools = [
     "chunkr-ai>=0.0.50",
     "python-pptx>=1.0.2",
     "reportlab>=4.4.2",
-    "onnxruntime<=1.20.1",
+    "onnxruntime<=1.19.2",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -267,7 +267,7 @@ owl = [
     "markitdown>=0.1.1",
     "exa-py>=1.10.0,<2",
     "reportlab>=4.4.2",
-    "onnxruntime<=1.20.1",
+    "onnxruntime<=1.19.2",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -395,7 +395,7 @@ all = [
     "chromadb>=0.6.0,<1.0.0",
     "traceroot==0.0.4a5",
     "reportlab>=4.4.2",
-    "onnxruntime<=1.20.1",
+    "onnxruntime<=1.19.2",
 ]
 
 [project.urls]
