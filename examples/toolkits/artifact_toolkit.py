@@ -16,7 +16,7 @@ Example usage of the ArtifactToolkit.
 
 This example demonstrates how to create various types of artifacts using the
 ArtifactToolkit, which enables Claude-like artifact generation for HTML, SVG,
-code, Markdown, LaTeX math, and Mermaid diagrams.
+code, Markdown, and Mermaid diagrams.
 
 Note: This is a standalone demonstration of the ArtifactToolkit functionality.
 For full integration with CAMEL agents, ensure all dependencies are installed.
@@ -30,7 +30,7 @@ class SimplifiedArtifactDemo:
     """Simplified demonstration of ArtifactToolkit capabilities."""
     
     def demonstrate_artifacts(self):
-        """Show examples of all 6 artifact types."""
+        """Show examples of all 5 artifact types."""
         
         print("ArtifactToolkit Example - Creating Different Artifact Types\n")
         print("=" * 60)
@@ -157,8 +157,7 @@ The **ArtifactToolkit** enables dynamic generation of visual content similar to 
 2. **SVG** - Scalable vector graphics  
 3. **Code** - Syntax-highlighted code blocks
 4. **Markdown** - Rich text documents
-5. **LaTeX** - Mathematical expressions
-6. **Mermaid** - Flowcharts and diagrams
+5. **Mermaid** - Flowcharts and diagrams
 
 ## Quick Start
 ```python
@@ -178,29 +177,8 @@ artifact = toolkit.create_html_artifact("<h1>Hello!</h1>")
         
         self._print_artifact_info(markdown_artifact)
         
-        # 5. LaTeX Math Artifact Example
-        print("\n5. LaTeX Math Artifact Structure:")
-        math_artifact = {
-            "type": "latex",
-            "title": "Fundamental Physics Equations", 
-            "content": r"""E = mc^2
-
-F = ma
-
-\nabla \cdot \mathbf{E} = \frac{\rho}{\epsilon_0}
-
-\oint \mathbf{B} \cdot d\mathbf{l} = \mu_0 I_{enc}""",
-            "metadata": {
-                "created_at": datetime.now().isoformat(),
-                "artifact_id": f"latex_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                "expression_count": 4
-            }
-        }
-        
-        self._print_artifact_info(math_artifact)
-        
-        # 6. Mermaid Flowchart Example
-        print("\n6. Mermaid Flowchart Structure:")
+        # 5. Mermaid Flowchart Example
+        print("\n5. Mermaid Flowchart Structure:")
         mermaid_artifact = {
             "type": "mermaid",
             "title": "ArtifactToolkit Workflow",
@@ -232,11 +210,11 @@ F = ma
         
         # Summary
         print("\n" + "=" * 60)
-        print("Successfully demonstrated 6 different artifact types!")
+        print("Successfully demonstrated 5 different artifact types!")
         
         artifacts = [
             html_artifact, svg_artifact, code_artifact,
-            markdown_artifact, math_artifact, mermaid_artifact
+            markdown_artifact, mermaid_artifact
         ]
         
         print(f"\nArtifact Summary:")
@@ -245,7 +223,7 @@ F = ma
             
         print(f"\nKey Features:")
         print(f"- Dynamic content generation from user input")
-        print(f"- 6 different artifact types supported")
+        print(f"- 5 different artifact types supported")
         print(f"- Metadata with timestamps and unique IDs")
         print(f"- Web interface rendering capabilities")
         print(f"- Claude-like interactive experience")
@@ -272,8 +250,6 @@ F = ma
             print(f"   Lines: {artifact['metadata']['line_count']}")
         elif artifact['type'] == 'markdown':
             print(f"   Word count: {artifact['metadata']['word_count']}")
-        elif artifact['type'] == 'latex':
-            print(f"   Expressions: {artifact['metadata']['expression_count']}")
         elif artifact['type'] == 'mermaid':
             print(f"   Nodes: {artifact['metadata']['node_count']}")
             
