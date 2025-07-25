@@ -518,23 +518,21 @@ class MCPToolkit(BaseToolkit):
         if self._fix_required_fields(working_schema):
             fixes_applied.append("made all fields required with null types for optionals")
         
-        # Fix 6: Clarify ambiguous types and union handling
-        if self._fix_ambiguous_types(working_schema):
-            fixes_applied.append("clarified ambiguous parameter types")
+        # Fix 6: Improve parameter descriptions for better LLM understanding
+        if self._improve_parameter_descriptions(working_schema):
+            fixes_applied.append("improved parameter descriptions for clarity")
         
         # Fix 7: Handle schema size limitations
         if self._fix_schema_limitations(working_schema):
             fixes_applied.append("applied schema size/complexity limits")
         
-        # Fix 8: Apply sanitization if other fixes were successful
-        if not self._has_critical_issues_preventing_sanitization(working_schema):
-            try:
-                from camel.toolkits.function_tool import sanitize_and_enforce_required
-                working_schema = sanitize_and_enforce_required(working_schema)
-                if fixes_applied:  # Only add if other fixes were applied
-                    fixes_applied.append("applied schema sanitization")
-            except Exception as e:
-                logger.warning(f"Failed to apply sanitization to tool '{tool_name}': {e}")
+        # Fix 7: Apply sanitization if other fixes were successful
+        # Note: We skip sanitization to preserve original required field semantics
+        # sanitize_and_enforce_required forces all fields to be required, which breaks optional parameters
+        
+        # Fix 8: Final pass to ensure original required fields are preserved
+        if self._fix_required_fields(working_schema):
+            fixes_applied.append("preserved original required field semantics")
         
         return working_schema, fixes_applied
 
@@ -638,8 +636,57 @@ class MCPToolkit(BaseToolkit):
         _remove_unsupported(schema)
         return fixes_made
 
+    def _improve_parameter_descriptions(self, schema: dict) -> bool:
+        """Improve parameter descriptions without changing types to help LLM understanding."""
+        fixes_made = False
+        
+        def _add_type_hints_to_descriptions(obj, parent_key=""):
+            nonlocal fixes_made
+            if isinstance(obj, dict):
+                # For properties with unclear types, add type hints to description
+                if obj.get("type") == "array" and "description" in obj:
+                    current_desc = obj["description"]
+                    if not any(hint in current_desc.lower() for hint in ["array", "list", "[]"]):
+                        obj["description"] = f"{current_desc} (must be an array/list)"
+                        fixes_made = True
+                
+                elif obj.get("type") == "object" and "description" in obj:
+                    current_desc = obj["description"]
+                    if not any(hint in current_desc.lower() for hint in ["object", "dict", "{}"]):
+                        obj["description"] = f"{current_desc} (must be an object/dictionary)"
+                        fixes_made = True
+                
+                # For anyOf properties, add clear type options in description
+                elif "anyOf" in obj and "description" in obj:
+                    anyof_list = obj["anyOf"]
+                    if isinstance(anyof_list, list):
+                        types = []
+                        for option in anyof_list:
+                            if isinstance(option, dict) and "type" in option:
+                                types.append(option["type"])
+                        if types:
+                            current_desc = obj["description"]
+                            if not "can be" in current_desc.lower():
+                                type_list = ", ".join(types)
+                                obj["description"] = f"{current_desc} (can be: {type_list})"
+                                fixes_made = True
+                
+                # Recursively process nested structures
+                for key, value in obj.items():
+                    if key == "properties" and isinstance(value, dict):
+                        for prop_name, prop_value in value.items():
+                            _add_type_hints_to_descriptions(prop_value, prop_name)
+                    elif isinstance(value, (dict, list)):
+                        _add_type_hints_to_descriptions(value, key)
+            elif isinstance(obj, list):
+                for item in obj:
+                    _add_type_hints_to_descriptions(item, parent_key)
+        
+        _add_type_hints_to_descriptions(schema)
+        return fixes_made
+
     def _fix_required_fields(self, schema: dict) -> bool:
-        r"""Ensure all fields are marked as required."""
+        """Ensure required fields are properly set while preserving original optional fields."""
         fixes_made = False
         
         if "function" in schema and "parameters" in schema["function"]:
@@ -647,12 +694,23 @@ class MCPToolkit(BaseToolkit):
             properties = params.get("properties", {})
             
             if properties:
-                current_required = set(params.get("required", []))
-                all_properties = set(properties.keys())
+                # IMPORTANT: Preserve original required fields, don't force all to be required
+                original_required = set(params.get("required", []))
                 
-                if current_required != all_properties:
-                    params["required"] = list(all_properties)
-                    fixes_made = True
+                # Only ensure that originally required fields are still in the required array
+                # This preserves the original schema's intent for optional vs required parameters
+                if original_required:
+                    # Make sure the required array exists and contains the original required fields
+                    params["required"] = list(original_required)
+                    # Only mark as fixed if we actually changed something
+                    if "required" not in params or set(params["required"]) != original_required:
+                        fixes_made = True
+                else:
+                    # If there were no originally required fields, don't force any to be required
+                    if "required" in params and params["required"]:
+                        # Remove any incorrectly added required fields
+                        params["required"] = []
+                        fixes_made = True
         
         return fixes_made
 
