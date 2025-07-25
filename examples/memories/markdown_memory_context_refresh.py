@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.memories import MarkdownMemory
+from camel.toolkits.markdown_memory_toolkit import MarkdownMemoryToolkit
 from camel.models.model_factory import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import OpenAITokenCounter
@@ -25,29 +25,18 @@ model = ModelFactory.create(
     model_type=ModelType.GPT_4O,
 )
 
-# create a summary agent to generate intelligent summaries of the conversation
-summary_agent = ChatAgent(
-    model=model,
-    agent_id="summary_agent_001",
-)
+# set up directory for saving markdown memory files
+memory_dir = "./agent_memory"
 
-# create MarkdownMemory with arbitrary threshold
-markdown_memory = MarkdownMemory(
-    summary_agent=summary_agent,
-    context_creator=ScoreBasedContextCreator(
-        token_counter=OpenAITokenCounter(ModelType.GPT_4O),
-        token_limit=1024,
-    ),
-    agent_id="markdown_memory_001",
-    context_cleanup_threshold=5,
-)
-
-# make the main agent with MarkdownMemory
+# make the agent with automatic context compression enabled
 agent = ChatAgent(
     system_message="You are a helpful AI assistant working on data analysis tasks.",
     model=model,
-    memory=markdown_memory,
     agent_id="markdown_agent_001",
+    auto_compress_context=True,
+    memory_save_directory=memory_dir,
+    # setting threshold to 5 to trigger faster for demonstration
+    compress_message_limit=5,
 )
 
 # 1. start a conversation about data analysis
@@ -80,9 +69,9 @@ response_5 = agent.step(user_input_5)
 print(f"User: {user_input_5}")
 print(f"Assistant: {response_5.msgs[0].content}\n")
 
-print("=== Context Refresh Triggered! ===")
-print("The agent's memory has been automatically cleaned up and saved to markdown files.")
-print(f"Summary and history saved in: {agent.memory._markdown_memory_toolkit.working_directory}\n")
+# Context compression is now triggered automatically
+print(f"Summary and history saved in: \
+    {agent.memory_save_directory}\n")
 
 # 6. continue conversation after context refresh
 user_input_6 = "What visualization libraries do you recommend for this project?"
