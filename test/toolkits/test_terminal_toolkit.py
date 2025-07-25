@@ -41,7 +41,7 @@ def test_file(temp_dir):
 
 def test_init():
     toolkit = TerminalToolkit()
-    assert toolkit.timeout is None
+    assert toolkit.timeout == 20.0
     assert isinstance(toolkit.shell_sessions, dict)
     assert toolkit.os_type == platform.system()
 

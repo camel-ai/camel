@@ -2798,12 +2798,7 @@ class ChatAgent(BaseAgent):
             )
             thread = threading.Thread(
                 target=tool_worker,
-                args=(
-                    self._internal_tools[function_name],
-                    args,
-                    result_queue,
-                    tool_call_data,
-                ),
+                args=(result_queue, tool_call_data),
             )
             thread.start()
 
