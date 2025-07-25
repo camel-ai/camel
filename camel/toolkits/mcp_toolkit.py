@@ -448,635 +448,446 @@ class MCPToolkit(BaseToolkit):
 
     def _ensure_strict_tool_schema(self, tool: FunctionTool) -> FunctionTool:
         r"""Ensure a tool has a strict schema compatible with OpenAI's
-        requirements.
+        requirements with enhanced fixing capabilities and fallback mechanisms.
+
+        This method attempts to automatically fix schemas that don't comply
+        with OpenAI's strict mode requirements. It provides multiple fallback
+        strategies when automatic fixing fails.
 
         Args:
             tool (FunctionTool): The tool to check and update if necessary.
 
         Returns:
-            FunctionTool: The tool with a strict schema, or fallback to non-strict
-                mode if strict mode cannot be applied.
+            FunctionTool: The tool with a strict schema or appropriate fallback.
         """
-        tool_name = "unknown"
-
+        original_schema = tool.get_openai_tool_schema().copy()
+        tool_name = tool.get_function_name()
+        
         try:
-            # Get tool name early for better error reporting
-            try:
-                tool_name = tool.get_function_name()
-            except Exception:
-                tool_name = getattr(tool.func, '__name__', 'unknown')
-
-            # Force OpenAI compatible mode - skip complex validation and go straight to reconstruction
-            if self.force_openai_compatible:
-                logger.debug(
-                    f"Force OpenAI compatible mode enabled for tool '{tool_name}'"
-                )
-                return self._force_openai_compatible_schema(tool, tool_name)
-
-            # Original logic for non-force mode
-            # Try to get the schema, but handle cases where it might be malformed
-            try:
-                schema = tool.get_openai_tool_schema()
-            except Exception as schema_error:
-                logger.warning(
-                    f"Tool '{tool_name}' has malformed schema: {schema_error}"
-                )
-                return self._reconstruct_and_fallback(
-                    tool, tool_name, f"Malformed schema: {schema_error}"
-                )
-
-            # Validate basic schema structure
-            if not self._validate_basic_schema_structure(schema, tool_name):
-                return self._apply_fallback_schema(
-                    tool, tool_name, "Invalid basic schema structure"
-                )
-
-            # Check for strict mode incompatibilities
-            strict_incompatible_reason = self._check_strict_mode_compatibility(
-                schema
-            )
-            if strict_incompatible_reason:
-                return self._apply_fallback_schema(
-                    tool, tool_name, strict_incompatible_reason
-                )
-
-            # Check if the tool already has strict mode enabled and is valid
-            if schema.get("function", {}).get("strict") is True:
-                if self._validate_strict_schema_requirements(
-                    schema, tool_name
-                ):
-                    logger.debug(
-                        f"Tool '{tool_name}' already has valid strict schema"
+            schema = tool.get_openai_tool_schema()
+            
+            # Step 1: Try to fix schema issues automatically
+            fixed_schema, fixes_applied = self._attempt_schema_fixes(schema, tool_name)
+            
+            # Step 2: Validate if the fixed schema is strict-mode compatible
+            is_compatible, issues = self._validate_strict_compatibility(fixed_schema)
+            
+            if is_compatible:
+                # Success: Apply the fixed schema
+                tool.set_openai_tool_schema(fixed_schema)
+                if fixes_applied:
+                    logger.info(
+                        f"Successfully fixed tool '{tool_name}' schema for strict mode. "
+                        f"Applied fixes: {', '.join(fixes_applied)}"
                     )
-                    return tool
                 else:
-                    logger.warning(
-                        f"Tool '{tool_name}' has strict=True but invalid schema, attempting to fix"
-                    )
+                    logger.debug(f"Tool '{tool_name}' already compatible with strict mode")
+                return tool
+            
+            # Step 3: Apply fallback mechanisms
+            return self._apply_fallback_mechanisms(
+                tool, original_schema, issues, tool_name
+            )
+            
+        except Exception as e:
+            logger.error(f"Error processing tool '{tool_name}': {e}")
+            return self._emergency_fallback(tool, original_schema, tool_name)
 
-            # Attempt to convert to strict mode
-            strict_schema = self._convert_to_strict_schema(schema, tool_name)
-            if strict_schema:
-                logger.debug(
-                    f"Setting strict schema for tool '{tool_name}': {strict_schema}"
-                )
-                tool.set_openai_tool_schema(strict_schema)
-                logger.debug(
-                    f"Successfully converted tool '{tool_name}' to strict mode"
+    def _attempt_schema_fixes(self, schema: dict, tool_name: str) -> tuple:
+        r"""Attempt to automatically fix common schema issues."""
+        fixes_applied = []
+        working_schema = schema.copy()
+        
+        # Fix 1: Convert additionalProperties: true to false
+        if self._fix_additional_properties_true(working_schema):
+            fixes_applied.append("converted additionalProperties:true to false")
+        
+        # Fix 2: Ensure all objects have additionalProperties: false
+        if self._ensure_additional_properties_false(working_schema):
+            fixes_applied.append("added missing additionalProperties:false")
+        
+        # Fix 3: Fix root-level anyOf (not allowed in strict mode)
+        if self._fix_root_anyof(working_schema):
+            fixes_applied.append("converted root-level anyOf to object wrapper")
+        
+        # Fix 4: Handle unsupported schema features
+        if self._fix_unsupported_features(working_schema):
+            fixes_applied.append("removed/converted unsupported schema features")
+        
+        # Fix 5: Ensure all properties are required with null type for optionals
+        if self._fix_required_fields(working_schema):
+            fixes_applied.append("made all fields required with null types for optionals")
+        
+        # Fix 6: Clarify ambiguous types and union handling
+        if self._fix_ambiguous_types(working_schema):
+            fixes_applied.append("clarified ambiguous parameter types")
+        
+        # Fix 7: Handle schema size limitations
+        if self._fix_schema_limitations(working_schema):
+            fixes_applied.append("applied schema size/complexity limits")
+        
+        # Fix 8: Apply sanitization if other fixes were successful
+        if not self._has_critical_issues_preventing_sanitization(working_schema):
+            try:
+                from camel.toolkits.function_tool import sanitize_and_enforce_required
+                working_schema = sanitize_and_enforce_required(working_schema)
+                if fixes_applied:  # Only add if other fixes were applied
+                    fixes_applied.append("applied schema sanitization")
+            except Exception as e:
+                logger.warning(f"Failed to apply sanitization to tool '{tool_name}': {e}")
+        
+        return working_schema, fixes_applied
+
+    def _fix_additional_properties_true(self, schema: dict) -> bool:
+        r"""Convert additionalProperties: true to false recursively."""
+        fixes_made = False
+        
+        def _fix_recursive(obj):
+            nonlocal fixes_made
+            if isinstance(obj, dict):
+                if obj.get("additionalProperties") is True:
+                    obj["additionalProperties"] = False
+                    fixes_made = True
+                for value in obj.values():
+                    _fix_recursive(value)
+            elif isinstance(obj, list):
+                for item in obj:
+                    _fix_recursive(item)
+        
+        _fix_recursive(schema)
+        return fixes_made
+
+    def _ensure_additional_properties_false(self, schema: dict) -> bool:
+        r"""Ensure all object types have additionalProperties: false."""
+        fixes_made = False
+        
+        def _ensure_recursive(obj):
+            nonlocal fixes_made
+            if isinstance(obj, dict):
+                if (obj.get("type") == "object" and 
+                    "additionalProperties" not in obj):
+                    obj["additionalProperties"] = False
+                    fixes_made = True
+                for value in obj.values():
+                    _ensure_recursive(value)
+            elif isinstance(obj, list):
+                for item in obj:
+                    _ensure_recursive(item)
+        
+        _ensure_recursive(schema)
+        return fixes_made
+
+    def _fix_root_anyof(self, schema: dict) -> bool:
+        r"""Fix root-level anyOf which is not allowed in strict mode."""
+        if (schema.get("function", {}).get("parameters", {}).get("anyOf")):
+            # Wrap anyOf in an object structure
+            params = schema["function"]["parameters"]
+            anyof_content = params.pop("anyOf")
+            
+            # Create a wrapper object
+            params.update({
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "anyOf": anyof_content
+                    }
+                },
+                "required": ["data"],
+                "additionalProperties": False
+            })
+            return True
+        return False
+
+    def _fix_unsupported_features(self, schema: dict) -> bool:
+        r"""Remove or convert unsupported schema features."""
+        fixes_made = False
+        unsupported_keywords = ["allOf", "not", "dependentRequired", 
+                               "dependentSchemas", "if", "then", "else"]
+        
+        def _remove_unsupported(obj):
+            nonlocal fixes_made
+            if isinstance(obj, dict):
+                for keyword in list(obj.keys()):
+                    if keyword in unsupported_keywords:
+                        # Try to handle specific cases
+                        if keyword == "allOf" and isinstance(obj[keyword], list):
+                            # Merge allOf into single object (simple case)
+                            all_of = obj.pop(keyword)
+                            if len(all_of) == 1 and isinstance(all_of[0], dict):
+                                obj.update(all_of[0])
+                                fixes_made = True
+                            elif len(all_of) > 1:
+                                # Merge multiple objects (basic merge)
+                                merged = {}
+                                for item in all_of:
+                                    if isinstance(item, dict):
+                                        merged.update(item)
+                                obj.update(merged)
+                                fixes_made = True
+                        else:
+                            # Remove unsupported keyword
+                            obj.pop(keyword)
+                            fixes_made = True
+                
+                for value in obj.values():
+                    _remove_unsupported(value)
+            elif isinstance(obj, list):
+                for item in obj:
+                    _remove_unsupported(item)
+        
+        _remove_unsupported(schema)
+        return fixes_made
+
+    def _fix_required_fields(self, schema: dict) -> bool:
+        r"""Ensure all fields are marked as required."""
+        fixes_made = False
+        
+        if "function" in schema and "parameters" in schema["function"]:
+            params = schema["function"]["parameters"]
+            properties = params.get("properties", {})
+            
+            if properties:
+                current_required = set(params.get("required", []))
+                all_properties = set(properties.keys())
+                
+                if current_required != all_properties:
+                    params["required"] = list(all_properties)
+                    fixes_made = True
+        
+        return fixes_made
+
+    def _fix_schema_limitations(self, schema: dict) -> bool:
+        r"""Apply OpenAI schema size and complexity limitations."""
+        fixes_made = False
+        
+        # Count object properties (max 5000)
+        property_count = self._count_object_properties(schema)
+        if property_count > 5000:
+            # Simplify schema by removing less important properties
+            fixes_made = True
+            logger.warning(f"Schema has {property_count} properties, exceeding limit of 5000")
+        
+        # Check nesting depth (max 5 levels)
+        max_depth = self._get_max_nesting_depth(schema)
+        if max_depth > 5:
+            fixes_made = True
+            logger.warning(f"Schema nesting depth {max_depth} exceeds limit of 5")
+        
+        return fixes_made
+
+    def _count_object_properties(self, obj, count=0):
+        r"""Count total object properties in schema."""
+        if isinstance(obj, dict):
+            if "properties" in obj:
+                count += len(obj["properties"])
+            for value in obj.values():
+                count = self._count_object_properties(value, count)
+        elif isinstance(obj, list):
+            for item in obj:
+                count = self._count_object_properties(item, count)
+        return count
+
+    def _get_max_nesting_depth(self, obj, current_depth=0):
+        r"""Get maximum nesting depth of schema."""
+        max_depth = current_depth
+        if isinstance(obj, dict):
+            for value in obj.values():
+                depth = self._get_max_nesting_depth(value, current_depth + 1)
+                max_depth = max(max_depth, depth)
+        elif isinstance(obj, list):
+            for item in obj:
+                depth = self._get_max_nesting_depth(item, current_depth)
+                max_depth = max(max_depth, depth)
+        return max_depth
+
+    def _has_critical_issues_preventing_sanitization(self, schema: dict) -> bool:
+        r"""Check if schema has critical issues that prevent sanitization."""
+        # Check for structural issues that would break sanitization
+        if not isinstance(schema, dict):
+            return True
+        
+        function_schema = schema.get("function", {})
+        if not isinstance(function_schema, dict):
+            return True
+            
+        parameters = function_schema.get("parameters", {})
+        if parameters and not isinstance(parameters, dict):
+            return True
+            
+        return False
+
+    def _validate_strict_compatibility(self, schema: dict) -> tuple:
+        r"""Validate if schema is compatible with OpenAI strict mode."""
+        issues = []
+        
+        # Check for unsupported features
+        if self._has_unsupported_features(schema):
+            issues.append("contains unsupported schema features")
+        
+        # Check additionalProperties
+        if self._has_additional_properties_true(schema):
+            issues.append("contains additionalProperties: true")
+        
+        # Check root anyOf
+        if self._has_root_anyof(schema):
+            issues.append("has root-level anyOf")
+        
+        # Check required fields
+        if not self._all_fields_required(schema):
+            issues.append("not all fields are marked as required")
+        
+        # Check schema size limits
+        if self._count_object_properties(schema) > 5000:
+            issues.append("exceeds 5000 property limit")
+            
+        if self._get_max_nesting_depth(schema) > 5:
+            issues.append("exceeds 5-level nesting limit")
+        
+        return len(issues) == 0, issues
+
+    def _has_unsupported_features(self, schema: dict) -> bool:
+        r"""Check for unsupported schema features."""
+        unsupported = ["allOf", "not", "dependentRequired", "dependentSchemas", 
+                      "if", "then", "else"]
+        
+        def _check_recursive(obj):
+            if isinstance(obj, dict):
+                if any(keyword in obj for keyword in unsupported):
+                    return True
+                return any(_check_recursive(v) for v in obj.values())
+            elif isinstance(obj, list):
+                return any(_check_recursive(item) for item in obj)
+            return False
+        
+        return _check_recursive(schema)
+
+    def _has_additional_properties_true(self, schema: dict) -> bool:
+        r"""Check if schema has additionalProperties: true."""
+        def _check_recursive(obj):
+            if isinstance(obj, dict):
+                if obj.get("additionalProperties") is True:
+                    return True
+                return any(_check_recursive(v) for v in obj.values())
+            elif isinstance(obj, list):
+                return any(_check_recursive(item) for item in obj)
+            return False
+        
+        return _check_recursive(schema)
+
+    def _has_root_anyof(self, schema: dict) -> bool:
+        r"""Check for root-level anyOf."""
+        return bool(schema.get("function", {}).get("parameters", {}).get("anyOf"))
+
+    def _all_fields_required(self, schema: dict) -> bool:
+        r"""Check if all fields are marked as required."""
+        if "function" in schema and "parameters" in schema["function"]:
+            params = schema["function"]["parameters"]
+            properties = params.get("properties", {})
+            required = params.get("required", [])
+            return set(required) == set(properties.keys())
+        return True
+
+    def _apply_fallback_mechanisms(self, tool: FunctionTool, original_schema: dict, 
+                                  issues: list, tool_name: str) -> FunctionTool:
+        r"""Apply fallback mechanisms when automatic fixing fails."""
+        
+        # Fallback Strategy 1: Try aggressive fixing with schema simplification
+        try:
+            simplified_schema = self._create_simplified_schema(original_schema)
+            is_compatible, _ = self._validate_strict_compatibility(simplified_schema)
+            
+            if is_compatible:
+                tool.set_openai_tool_schema(simplified_schema)
+                logger.info(
+                    f"Applied simplified strict schema for tool '{tool_name}' "
+                    f"after initial fixes failed"
                 )
                 return tool
-            else:
-                return self._apply_fallback_schema(
-                    tool, tool_name, "Failed to convert to strict mode"
-                )
-
         except Exception as e:
-            logger.error(
-                f"Unexpected error processing tool '{tool_name}': {e}"
-            )
-            return self._reconstruct_and_fallback(
-                tool, tool_name, f"Unexpected error: {e}"
-            )
+            logger.warning(f"Schema simplification failed for tool '{tool_name}': {e}")
+        
+        # Fallback Strategy 2: Force non-strict mode with original schema
+        fallback_schema = original_schema.copy()
+        if "function" in fallback_schema:
+            fallback_schema["function"]["strict"] = False
+        
+        tool.set_openai_tool_schema(fallback_schema)
+        logger.warning(
+            f"Tool '{tool_name}' could not be made strict-mode compatible. "
+            f"Issues: {', '.join(issues)}. "
+            f"Falling back to non-strict mode."
+        )
+        
+        return tool
 
-    def _force_openai_compatible_schema(
-        self, tool: FunctionTool, tool_name: str
-    ) -> FunctionTool:
-        """Force creation of OpenAI-compatible schema by rebuilding from function signature."""
+    def _create_simplified_schema(self, original_schema: dict) -> dict:
+        r"""Create a maximally simplified version of the schema for strict mode."""
+        schema = original_schema.copy()
+        
+        if "function" not in schema or "parameters" not in schema["function"]:
+            return schema
+            
+        # Force basic strict mode structure
+        schema["function"]["strict"] = True
+        params = schema["function"]["parameters"]
+        
+        # Simplify parameters to basic object structure
+        if isinstance(params, dict):
+            params["type"] = "object"
+            params["additionalProperties"] = False
+            
+            # Keep only string/number/boolean properties, simplify complex ones
+            properties = params.get("properties", {})
+            simplified_properties = {}
+            
+            for prop_name, prop_schema in properties.items():
+                if isinstance(prop_schema, dict):
+                    prop_type = prop_schema.get("type", "string")
+                    if prop_type in ["string", "number", "boolean", "integer"]:
+                        simplified_properties[prop_name] = {
+                            "type": prop_type,
+                            "description": prop_schema.get("description", "")
+                        }
+                    else:
+                        # Convert complex types to string
+                        simplified_properties[prop_name] = {
+                            "type": "string",
+                            "description": prop_schema.get("description", "")
+                        }
+            
+            params["properties"] = simplified_properties
+            params["required"] = list(simplified_properties.keys())
+        
+        return schema
+
+    def _emergency_fallback(self, tool: FunctionTool, original_schema: dict, 
+                           tool_name: str) -> FunctionTool:
+        r"""Emergency fallback when all else fails."""
         try:
-            # Always rebuild the schema from scratch for maximum compatibility
-            from camel.toolkits.function_tool import get_openai_tool_schema
-
-            # Get the basic schema from function signature
-            basic_schema = get_openai_tool_schema(tool.func)
-
-            # Ensure strict mode is enabled for maximum reliability
-            basic_schema["function"]["strict"] = True
-
-            # Apply additional OpenAI strict mode requirements
-            parameters = basic_schema["function"].get("parameters", {})
-            if parameters:
-                # Ensure additionalProperties is False at root level
-                parameters["additionalProperties"] = False
-
-                # Recursively ensure all nested objects have additionalProperties: False
-                self._ensure_additional_properties_false_recursive(parameters)
-
-                # Ensure all properties are in required array
-                properties = parameters.get("properties", {})
-                if properties:
-                    parameters["required"] = list(properties.keys())
-
-            # Set the OpenAI-compatible schema
-            tool.set_openai_tool_schema(basic_schema)
-
-            logger.info(
-                f"Tool '{tool_name}' schema force-converted to OpenAI-compatible format"
-            )
-            return tool
-
-        except Exception as e:
-            logger.error(
-                f"Failed to force OpenAI-compatible schema for tool '{tool_name}': {e}"
-            )
-            # Last resort: create minimal schema
-            return self._create_minimal_schema(tool, tool_name)
-
-    def _ensure_additional_properties_false_recursive(self, obj):
-        """Recursively ensure all objects have additionalProperties: False."""
-        if isinstance(obj, dict):
-            # If this is an object type, ensure additionalProperties is False
-            if obj.get("type") == "object":
-                obj["additionalProperties"] = False
-
-            # Handle empty items objects - give them a default type
-            if "items" in obj and isinstance(obj["items"], dict):
-                items = obj["items"]
-                if not items or (isinstance(items, dict) and not items):
-                    # Empty items object - default to string type for maximum compatibility
-                    obj["items"] = {"type": "string"}
-                    logger.debug(
-                        "Fixed empty items object by setting default type: string"
-                    )
-                elif (
-                    isinstance(items, dict)
-                    and "type" not in items
-                    and not any(
-                        key in items
-                        for key in [
-                            "properties",
-                            "anyOf",
-                            "allOf",
-                            "oneOf",
-                            "$ref",
-                        ]
-                    )
-                ):
-                    # Items object exists but has no type or schema structure - default to string
-                    items["type"] = "string"
-                    logger.debug("Added missing type to items object: string")
-
-            # Recursively process nested structures
-            for key, value in obj.items():
-                if key == "properties" and isinstance(value, dict):
-                    for prop_value in value.values():
-                        self._ensure_additional_properties_false_recursive(
-                            prop_value
-                        )
-                elif key in [
-                    "items",
-                    "allOf",
-                    "oneOf",
-                    "anyOf",
-                ] and isinstance(value, (dict, list)):
-                    if isinstance(value, dict):
-                        self._ensure_additional_properties_false_recursive(
-                            value
-                        )
-                    elif isinstance(value, list):
-                        for item in value:
-                            self._ensure_additional_properties_false_recursive(
-                                item
-                            )
-                elif key == "$defs" and isinstance(value, dict):
-                    for def_value in value.values():
-                        self._ensure_additional_properties_false_recursive(
-                            def_value
-                        )
-
-    def _create_minimal_schema(
-        self, tool: FunctionTool, tool_name: str
-    ) -> FunctionTool:
-        """Create a minimal OpenAI-compatible schema as last resort."""
-        try:
-            # Create the most basic schema possible
+            # Create minimal working schema
             minimal_schema = {
                 "type": "function",
                 "function": {
-                    "name": tool_name.replace(
-                        '-', '_'
-                    ),  # Ensure valid function name
-                    "description": f"Execute {tool_name} function",
-                    "strict": False,  # Use non-strict mode for minimal schema
+                    "name": original_schema.get("function", {}).get("name", tool_name),
+                    "description": original_schema.get("function", {}).get("description", "Tool function"),
+                    "strict": False,
                     "parameters": {
                         "type": "object",
                         "properties": {},
                         "required": [],
-                        "additionalProperties": False,
-                    },
-                },
+                        "additionalProperties": True
+                    }
+                }
             }
-
+            
             tool.set_openai_tool_schema(minimal_schema)
-            logger.warning(
-                f"Tool '{tool_name}' using minimal schema as last resort"
-            )
-            return tool
-
-        except Exception as e:
             logger.error(
-                f"Failed to create minimal schema for tool '{tool_name}': {e}"
+                f"Applied emergency fallback for tool '{tool_name}': "
+                f"using minimal schema with no parameters"
             )
-            return tool
-
-    def _reconstruct_and_fallback(
-        self, tool: FunctionTool, tool_name: str, reason: str
-    ) -> FunctionTool:
-        """Reconstruct a basic schema from the function and set to non-strict mode."""
-        try:
-            from camel.toolkits.function_tool import get_openai_tool_schema
-
-            basic_schema = get_openai_tool_schema(tool.func)
-            basic_schema["function"]["strict"] = False
-            tool.set_openai_tool_schema(basic_schema)
-            logger.warning(
-                f"Tool '{tool_name}' reconstructed with basic schema due to: {reason}. "
-                f"Using non-strict mode."
-            )
-        except Exception as reconstruct_error:
-            logger.error(
-                f"Failed to reconstruct schema for tool '{tool_name}': {reconstruct_error}. "
-                f"Tool may not function correctly."
-            )
-        return tool
-
-    def _validate_basic_schema_structure(
-        self, schema: dict, tool_name: str
-    ) -> bool:
-        """Validate that the schema has the basic required structure."""
-        try:
-            # Check top-level structure
-            if not isinstance(schema, dict):
-                logger.warning(
-                    f"Tool '{tool_name}' schema is not a dictionary"
-                )
-                return False
-
-            if "type" not in schema or schema["type"] != "function":
-                logger.warning(
-                    f"Tool '{tool_name}' missing or invalid 'type' field"
-                )
-                return False
-
-            if "function" not in schema or not isinstance(
-                schema["function"], dict
-            ):
-                logger.warning(
-                    f"Tool '{tool_name}' missing or invalid 'function' field"
-                )
-                return False
-
-            function_def = schema["function"]
-
-            # Check required function fields
-            if "name" not in function_def or not isinstance(
-                function_def["name"], str
-            ):
-                logger.warning(
-                    f"Tool '{tool_name}' missing or invalid function name"
-                )
-                return False
-
-            # Description is recommended but not required
-            if "description" not in function_def:
-                logger.info(
-                    f"Tool '{tool_name}' missing description (recommended)"
-                )
-
-            # Parameters field validation
-            if "parameters" in function_def:
-                parameters = function_def["parameters"]
-                if not isinstance(parameters, dict):
-                    logger.warning(
-                        f"Tool '{tool_name}' parameters field is not a dictionary"
-                    )
-                    return False
-
-                # If parameters exist, they should have type: object
-                if parameters.get("type") != "object":
-                    logger.warning(
-                        f"Tool '{tool_name}' parameters type should be 'object'"
-                    )
-                    return False
-
-            return True
         except Exception as e:
-            logger.warning(
-                f"Error validating basic schema structure for '{tool_name}': {e}"
-            )
-            return False
-
-    def _check_strict_mode_compatibility(self, schema: dict) -> str:
-        """Check if schema has features incompatible with strict mode.
-
-        Returns:
-            str: Reason for incompatibility, or empty string if compatible.
-        """
-        try:
-            # Check for additionalProperties: true (most common incompatibility)
-            def _has_additional_properties_true(obj, path=""):
-                if isinstance(obj, dict):
-                    if obj.get("additionalProperties") is True:
-                        return f"additionalProperties: true found at {path}"
-                    for key, value in obj.items():
-                        result = _has_additional_properties_true(
-                            value, f"{path}.{key}" if path else key
-                        )
-                        if result:
-                            return result
-                elif isinstance(obj, list):
-                    for i, item in enumerate(obj):
-                        result = _has_additional_properties_true(
-                            item, f"{path}[{i}]"
-                        )
-                        if result:
-                            return result
-                return ""
-
-            additional_props_issue = _has_additional_properties_true(schema)
-            if additional_props_issue:
-                return additional_props_issue
-
-            # Check for other strict mode incompatibilities
-            parameters = schema.get("function", {}).get("parameters", {})
-            if parameters:
-                # Check for unsupported JSON Schema features
-                unsupported_features = (
-                    self._check_unsupported_json_schema_features(parameters)
-                )
-                if unsupported_features:
-                    return f"Unsupported JSON Schema features: {unsupported_features}"
-
-            return ""
-
-        except Exception as e:
-            return f"Error checking strict mode compatibility: {e}"
-
-    def _check_unsupported_json_schema_features(self, obj, path="") -> str:
-        """Check for JSON Schema features not supported in strict mode."""
-        try:
-            if not isinstance(obj, dict):
-                return ""
-
-            # Features not supported in strict mode
-            unsupported_keywords = {
-                "patternProperties": "pattern properties",
-                "dependencies": "dependencies",
-                "additionalItems": "additional items",
-                "minProperties": "min properties",
-                "maxProperties": "max properties",
-                "not": "not keyword",
-                "if": "conditional schemas",
-                "allOf": "allOf composition",
-                "dependentRequired": "dependent required",
-                "dependentSchemas": "dependent schemas",
-                "then": "then keyword",
-                "else": "else keyword",
-            }
-
-            for keyword, description in unsupported_keywords.items():
-                if keyword in obj:
-                    return f"{description} at {path}"
-
-            # Recursively check nested objects
-            for key, value in obj.items():
-                if isinstance(value, dict):
-                    result = self._check_unsupported_json_schema_features(
-                        value, f"{path}.{key}" if path else key
-                    )
-                    if result:
-                        return result
-                elif isinstance(value, list):
-                    for i, item in enumerate(value):
-                        if isinstance(item, dict):
-                            result = (
-                                self._check_unsupported_json_schema_features(
-                                    item,
-                                    f"{path}.{key}[{i}]"
-                                    if path
-                                    else f"{key}[{i}]",
-                                )
-                            )
-                            if result:
-                                return result
-
-            return ""
-
-        except Exception as e:
-            return f"Error checking unsupported features: {e}"
-
-    def _validate_strict_schema_requirements(
-        self, schema: dict, tool_name: str
-    ) -> bool:
-        """Validate that a schema meets all strict mode requirements."""
-        try:
-            parameters = schema.get("function", {}).get("parameters")
-            if not parameters:
-                return True  # No parameters is valid
-
-            # All objects must have additionalProperties: false
-            def _validate_additional_properties(obj, path=""):
-                if isinstance(obj, dict):
-                    if obj.get("type") == "object":
-                        if "additionalProperties" not in obj:
-                            logger.warning(
-                                f"Missing additionalProperties at {path}"
-                            )
-                            return False
-                        if obj.get("additionalProperties") is not False:
-                            logger.warning(
-                                f"additionalProperties must be false at {path}"
-                            )
-                            return False
-
-                    # Check nested objects
-                    for key, value in obj.items():
-                        if not _validate_additional_properties(
-                            value, f"{path}.{key}" if path else key
-                        ):
-                            return False
-                elif isinstance(obj, list):
-                    for i, item in enumerate(obj):
-                        if not _validate_additional_properties(
-                            item, f"{path}[{i}]"
-                        ):
-                            return False
-                return True
-
-            if not _validate_additional_properties(parameters, "parameters"):
-                return False
-
-            # All properties should be required in strict mode
-            properties = parameters.get("properties", {})
-            required = parameters.get("required", [])
-
-            if properties and set(properties.keys()) != set(required):
-                logger.debug(
-                    f"Tool '{tool_name}' has optional properties, should use null types"
-                )
-                # This is not necessarily invalid - optional fields should have null type
-
-            return True
-
-        except Exception as e:
-            logger.warning(
-                f"Error validating strict schema requirements for '{tool_name}': {e}"
-            )
-            return False
-
-    def _convert_to_strict_schema(self, schema: dict, tool_name: str) -> dict:
-        """Convert a schema to strict mode, returning None if conversion fails."""
-        try:
-            # Create a deep copy to avoid modifying the original
-            import copy
-
-            strict_schema = copy.deepcopy(schema)
-
-            # Set strict mode
-            strict_schema["function"]["strict"] = True
-
-            # Process parameters
-            parameters = strict_schema["function"].get("parameters")
-            if parameters:
-                # Ensure additionalProperties is false
-                parameters["additionalProperties"] = False
-
-                # Use the existing sanitization function from function_tool
-                from camel.toolkits.function_tool import (
-                    sanitize_and_enforce_required,
-                )
-
-                strict_schema = sanitize_and_enforce_required(strict_schema)
-
-            # Validate the resulting schema
-            if self._validate_strict_schema_requirements(
-                strict_schema, tool_name
-            ):
-                return strict_schema
-            else:
-                logger.warning(
-                    f"Converted schema for '{tool_name}' failed validation"
-                )
-                return None
-
-        except Exception as e:
-            logger.warning(
-                f"Error converting schema to strict mode for '{tool_name}': {e}"
-            )
-            return None
-
-    def _apply_fallback_schema(
-        self, tool: FunctionTool, tool_name: str, reason: str
-    ) -> FunctionTool:
-        """Apply fallback non-strict schema when strict mode cannot be used."""
-        try:
-            schema = tool.get_openai_tool_schema()
-
-            # For severely malformed schemas, try to reconstruct a basic one
-            if "function" not in schema or not isinstance(
-                schema.get("function"), dict
-            ):
-                # Reconstruct basic schema from the function itself
-                try:
-                    from camel.toolkits.function_tool import (
-                        get_openai_tool_schema,
-                    )
-
-                    basic_schema = get_openai_tool_schema(tool.func)
-                    basic_schema["function"]["strict"] = False
-                    tool.set_openai_tool_schema(basic_schema)
-                    logger.warning(
-                        f"Tool '{tool_name}' had malformed schema, reconstructed basic schema. "
-                        f"Reason: {reason}. This may result in less reliable function calling."
-                    )
-                except Exception as reconstruct_error:
-                    logger.error(
-                        f"Failed to reconstruct schema for tool '{tool_name}': {reconstruct_error}. "
-                        f"Tool may not function correctly."
-                    )
-            else:
-                # Schema has function field, set to non-strict and apply basic fixes
-                schema["function"]["strict"] = False
-
-                # Even in non-strict mode, apply basic fixes for better reliability
-                try:
-                    from camel.toolkits.function_tool import (
-                        sanitize_and_enforce_required,
-                    )
-
-                    # Apply sanitization but without strict mode constraints
-                    fixed_schema = sanitize_and_enforce_required(schema)
-                    # Ensure it's still set to non-strict after sanitization
-                    fixed_schema["function"]["strict"] = False
-
-                    # Perform a final validation to see if the schema would be acceptable to OpenAI
-                    try:
-                        from jsonschema.validators import (
-                            Draft202012Validator as JSONValidator,
-                        )
-
-                        parameters = fixed_schema.get("function", {}).get(
-                            "parameters", {}
-                        )
-                        JSONValidator.check_schema(parameters)
-                        # If validation passes, use the fixed schema
-                        tool.set_openai_tool_schema(fixed_schema)
-                        logger.warning(
-                            f"Tool '{tool_name}' using non-strict mode with basic fixes applied. "
-                            f"Reason: {reason}. This may result in less reliable function calling."
-                        )
-                    except Exception as validation_error:
-                        # If the fixed schema still fails validation, rebuild from scratch
-                        logger.warning(
-                            f"Fixed schema for tool '{tool_name}' still fails validation: {validation_error}. "
-                            f"Rebuilding schema from function signature."
-                        )
-                        try:
-                            from camel.toolkits.function_tool import (
-                                get_openai_tool_schema,
-                            )
-
-                            basic_schema = get_openai_tool_schema(tool.func)
-                            basic_schema["function"]["strict"] = False
-                            tool.set_openai_tool_schema(basic_schema)
-                            logger.warning(
-                                f"Tool '{tool_name}' schema rebuilt from function signature. "
-                                f"Original reason: {reason}. This may result in less reliable function calling."
-                            )
-                        except Exception as rebuild_error:
-                            logger.error(
-                                f"Failed to rebuild schema for tool '{tool_name}': {rebuild_error}. "
-                                f"Tool may not function correctly."
-                            )
-
-                except Exception as fix_error:
-                    # If fixing fails, rebuild from scratch instead of using broken schema
-                    logger.warning(
-                        f"Tool '{tool_name}' schema fixing failed: {fix_error}. "
-                        f"Rebuilding schema from function signature."
-                    )
-                    try:
-                        from camel.toolkits.function_tool import (
-                            get_openai_tool_schema,
-                        )
-
-                        basic_schema = get_openai_tool_schema(tool.func)
-                        basic_schema["function"]["strict"] = False
-                        tool.set_openai_tool_schema(basic_schema)
-                        logger.warning(
-                            f"Tool '{tool_name}' schema rebuilt from function signature. "
-                            f"Original reason: {reason}. This may result in less reliable function calling."
-                        )
-                    except Exception as rebuild_error:
-                        logger.error(
-                            f"Failed to rebuild schema for tool '{tool_name}': {rebuild_error}. "
-                            f"Tool may not function correctly."
-                        )
-
-        except Exception as e:
-            logger.error(
-                f"Failed to apply fallback schema for tool '{tool_name}': {e}"
-            )
-
+            logger.error(f"Emergency fallback failed for tool '{tool_name}': {e}")
+        
         return tool
 
     def get_tools(self) -> List[FunctionTool]:
