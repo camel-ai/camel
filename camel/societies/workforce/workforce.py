@@ -3483,3 +3483,46 @@ class Workforce(BaseNode):
         mcp_server.tool()(get_children_info)
 
         return mcp_server
+
+    async def add_a2a_agent_worker(
+        self,
+        base_url: str,
+        http_kwargs: dict,
+    ) -> "Workforce":
+        """Add an A2AAgent worker node to the workforce.
+        Can be called when workforce is paused to dynamically add workers.
+
+        Args:
+            description (str): Description of the worker node.
+            base_url (str): The base URL of the A2A compliant agent service.
+            http_kwargs (dict): HTTP client keyword arguments.
+            agent_card (Any): The pre-fetched agent card for the A2A agent.
+
+        Returns:
+            Workforce: The workforce node itself.
+
+        Raises:
+            RuntimeError: If called while workforce is running (not paused).
+        """
+        from camel.societies.workforce.a2a_worker import A2AAgent
+
+        if self._state == WorkforceState.RUNNING:
+            raise RuntimeError(
+                "Cannot add workers while workforce is running. "
+                "Pause the workforce first."
+            )
+        worker_node = await A2AAgent.create(
+            base_url=base_url,
+            http_kwargs=http_kwargs,
+        )
+        self._children.append(worker_node)
+        if hasattr(self, '_channel') and self._channel is not None:
+            worker_node.set_channel(self._channel)
+        self._start_child_node_when_paused(worker_node.start())
+        if self.metrics_logger:
+            self.metrics_logger.log_worker_created(
+                worker_id=worker_node.node_id,
+                worker_type='A2AAgent',
+                role=worker_node.description,
+            )
+        return self
