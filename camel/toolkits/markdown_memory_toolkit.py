@@ -119,10 +119,11 @@ class MarkdownMemoryToolkit(BaseToolkit):
         self,
         content: dict
     ) -> str:
+        # TODO: update this to accept a string instead of a dict
         r""" Save a summary of the context in markdown file.
 
         Args:
-            content (dict): The content of the summary.
+            content (str): The content of the summary.
 
         Returns:
             str: Success message or error message.
