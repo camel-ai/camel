@@ -20,7 +20,7 @@ import traceback
 import zipfile
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Set, Tuple
 from urllib.parse import urlparse
 
 import requests
@@ -471,6 +471,16 @@ class DocumentToolkit(BaseToolkit):
             logger.error(f"Error finding files: {e}")
             return None
 
+    def _resolve_local_path(self, path: str) -> str:
+        r"""If path is a URL (not a web page), download it and return the
+        local path. Otherwise, return the original path."""
+        suffix = f".{path.lower().rsplit('.', 1)[-1]}" if "." in path else ""
+        is_url = self._is_url(path)
+        if is_url and suffix and suffix not in _WEB_EXTS:
+            local_path = self._download_file(path)
+            return str(local_path)
+        return path
+
     # Public API methods
     @retry_on_error()
     def extract_document_content(self, document_path: str) -> Tuple[bool, str]:
@@ -495,21 +505,16 @@ class DocumentToolkit(BaseToolkit):
                 logger.debug("Cache hit: %s", document_path)
                 return True, self._cache[cache_key]
 
-            # Get file extension and determine if it's a URL
+            # Use the new helper to resolve local path if needed
+            resolved_path = self._resolve_local_path(document_path)
             suffix = (
-                f".{document_path.lower().rsplit('.', 1)[-1]}"
-                if "." in document_path
+                f".{resolved_path.lower().rsplit('.', 1)[-1]}"
+                if "." in resolved_path
                 else ""
             )
-            is_url = self._is_url(document_path)
-
-            # For URLs with file extensions, download first then process
-            if is_url and suffix and suffix not in _WEB_EXTS:
-                local_path = self._download_file(document_path)
-                document_path = str(local_path)
 
             # Process based on file type
-            ok, txt = self._process_by_file_type(document_path, suffix)
+            ok, txt = self._process_by_file_type(resolved_path, suffix)
             return self._cache_and_return(cache_key, ok, txt)
 
         except Exception as exc:
@@ -530,7 +535,7 @@ class DocumentToolkit(BaseToolkit):
             Tuple[bool, str]: Success status and extracted content
         """
         # Define handler mapping for different file types
-        handlers = [
+        handlers: List[Tuple[set, Callable[[str], Tuple[bool, str]]]] = [
             (_IMAGE_EXTS, self._handle_image),
             (_EXCEL_EXTS, self._handle_excel),
             (_ARCHIVE_EXTS, self._handle_zip),
@@ -595,7 +600,6 @@ class DocumentToolkit(BaseToolkit):
 
             response = requests.head(url, allow_redirects=True, timeout=10)
             content_type = response.headers.get("Content-Type", "").lower()
-
             return True if "text/html" in content_type else False
 
         except requests.exceptions.RequestException as e:
@@ -664,14 +668,14 @@ class DocumentToolkit(BaseToolkit):
 
             logger.debug(f"Extracted data from {url}: {scrape_result}")
 
-            # Extract markdown content from the result
-            if scrape_result and 'markdown' in scrape_result:
+            # Refactored: Use try/except for extracting markdown content
+            try:
                 markdown_content = scrape_result['markdown']
                 if markdown_content:
                     return str(markdown_content)
                 else:
                     return "No content found on the webpage."
-            else:
+            except (KeyError, TypeError):
                 return "Error while crawling the webpage."
 
         except Exception as e:
@@ -710,6 +714,38 @@ class DocumentToolkit(BaseToolkit):
         """
         md_table = tabulate(df, headers='keys', tablefmt='pipe')
         return str(md_table)
+
+    def _extract_sheet_cell_info(self, ws):
+        """Extract cell info from a worksheet."""
+        cell_info_list = []
+        for row in ws.iter_rows():
+            for cell in row:
+                row_num = cell.row
+                col_letter = cell.column_letter
+                cell_value = cell.value
+                font_color = None
+                if (
+                    cell.font
+                    and cell.font.color
+                    and "rgb=None" not in str(cell.font.color)
+                ):
+                    font_color = cell.font.color.rgb
+                fill_color = None
+                if (
+                    cell.fill
+                    and cell.fill.fgColor
+                    and "rgb=None" not in str(cell.fill.fgColor)
+                ):
+                    fill_color = cell.fill.fgColor.rgb
+                cell_info_list.append(
+                    {
+                        "index": f"{row_num}{col_letter}",
+                        "value": cell_value,
+                        "font_color": font_color,
+                        "fill_color": fill_color,
+                    }
+                )
+        return cell_info_list
 
     @dependencies_required('pandas', 'openpyxl', 'xls2xlsx')
     def _extract_excel_content(self, document_path: str) -> str:
@@ -764,46 +800,12 @@ class DocumentToolkit(BaseToolkit):
         # Iterate through all sheets
         for sheet in wb.sheetnames:
             ws = wb[sheet]
-            cell_info_list = []
-
-            for row in ws.iter_rows():
-                for cell in row:
-                    row_num = cell.row
-                    col_letter = cell.column_letter
-
-                    cell_value = cell.value
-
-                    font_color = None
-                    if (
-                        cell.font
-                        and cell.font.color
-                        and "rgb=None" not in str(cell.font.color)
-                    ):  # Handle font color
-                        font_color = cell.font.color.rgb
-
-                    fill_color = None
-                    if (
-                        cell.fill
-                        and cell.fill.fgColor
-                        and "rgb=None" not in str(cell.fill.fgColor)
-                    ):  # Handle fill color
-                        fill_color = cell.fill.fgColor.rgb
-
-                    cell_info_list.append(
-                        {
-                            "index": f"{row_num}{col_letter}",
-                            "value": cell_value,
-                            "font_color": font_color,
-                            "fill_color": fill_color,
-                        }
-                    )
-
+            cell_info_list = self._extract_sheet_cell_info(ws)
             # Convert the sheet to a DataFrame and then to markdown
             sheet_df = pd.read_excel(
                 document_path, sheet_name=sheet, engine='openpyxl'
             )
             markdown_content = self._convert_to_markdown(sheet_df)
-
             # Collect all information for the sheet
             sheet_info = {
                 "sheet_name": sheet,
@@ -814,16 +816,14 @@ class DocumentToolkit(BaseToolkit):
 
         result_str = ""
         for sheet_info in sheet_info_list:
-            result_str += f"""
-            Sheet Name: {sheet_info['sheet_name']}
-            Cell information list:
-            {sheet_info['cell_info_list']}
-
-            Markdown View of the content:
-            {sheet_info['markdown_content']}
-
-            {'-' * 40}
-            """
+            result_str += (
+                f"\n            Sheet Name: {sheet_info['sheet_name']}\n"
+                f"            Cell information list:\n"
+                f"            {sheet_info['cell_info_list']}\n\n"
+                f"            Markdown View of the content:\n"
+                f"            {sheet_info['markdown_content']}\n\n"
+                f"            {'-' * 40}\n"
+            )
 
         return result_str
 
@@ -1101,9 +1101,13 @@ class DocumentToolkit(BaseToolkit):
 
             total_lines = len(lines)
 
+            # Select lines based on start_line and end_line arguments
             if start_line == 0 and end_line is None:
+                # Case 1: No line range specified, return all lines
                 selected_lines = lines
             elif end_line is None:
+                # Case 2: Only start_line specified,
+                # return from start_line to end
                 if start_line >= total_lines:
                     return (
                         False,
@@ -1112,10 +1116,15 @@ class DocumentToolkit(BaseToolkit):
                     )
                 selected_lines = lines[start_line:]
             elif start_line == 0:
+                # Case 3: Only end_line specified,
+                # return from start to end_line (inclusive)
                 if end_line >= total_lines:
                     end_line = total_lines - 1
                 selected_lines = lines[: end_line + 1]
             else:
+                # Case 4: Both start_line and
+                # end_line specified,
+                # return the range
                 if start_line >= total_lines:
                     return (
                         False,
@@ -1214,10 +1223,9 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             Path: Local path to the ZIP file.
         """
-        parsed = urlparse(path_or_url)
-        if parsed.scheme in {"http", "https"}:
-            return self._download_file(path_or_url)
-        return Path(path_or_url).expanduser().resolve()
+        # Use the new helper to resolve local path if needed
+        resolved_path = self._resolve_local_path(path_or_url)
+        return Path(resolved_path).expanduser().resolve()
 
     def _download_file(self, url: str) -> Path:
         r"""Download a file from URL to the local cache directory.
