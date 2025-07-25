@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.QWEN,
-    model_type=ModelType.QWEN3_CODER_PLUS,
+    model_type=ModelType.QWEN_3_CODER_PLUS,
     model_config_dict=QwenConfig(temperature=0.2).as_dict(),
 )
 

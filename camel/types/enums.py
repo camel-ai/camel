@@ -245,7 +245,7 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_QWQ_32B = "qwq-32b-preview"
     QWEN_QVQ_72B = "qvq-72b-preview"
     QWEN_QWQ_PLUS = "qwq-plus"
-    QWEN3_CODER_PLUS = "qwen3-coder-plus"
+    QWEN_3_CODER_PLUS = "qwen3-coder-plus"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -764,7 +764,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_PLUS_2025_04_28,
             ModelType.QWEN_TURBO_LATEST,
             ModelType.QWEN_TURBO_2025_04_28,
-            ModelType.QWEN3_CODER_PLUS,
+            ModelType.QWEN_3_CODER_PLUS,
         }
 
     @property
@@ -1309,7 +1309,7 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 1_048_576
         elif self in {
-            ModelType.QWEN3_CODER_PLUS,
+            ModelType.QWEN_3_CODER_PLUS,
         }:
             return 1_000_000
         elif self in {
