@@ -1,4 +1,4 @@
-import { Page, Browser, BrowserContext, chromium } from 'playwright';
+import { Page, Browser, BrowserContext, chromium, ConsoleMessage } from 'playwright';
 import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
 
@@ -6,18 +6,40 @@ export class HybridBrowserSession {
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
   private pages: Map<string, Page> = new Map();
+  private consoleLogs: Map<string, ConsoleMessage[]> = new Map();
   private currentTabId: string | null = null;
   private tabCounter = 0;
   private configLoader: ConfigLoader;
   private scrollPosition: { x: number; y: number } = {x: 0, y: 0};
   private hasNavigatedBefore = false; //  Track if we've navigated before
+  private logLimit = 1000; 
 
   constructor(config: BrowserToolkitConfig = {}) {
     // Use ConfigLoader's fromPythonConfig to handle conversion properly
     this.configLoader = ConfigLoader.fromPythonConfig(config);
   }
 
-  async ensureBrowser(): Promise<void> {
+  private registerNewPage(tabId: string, page: Page): void {
+    this.pages.set(tabId, page)
+    this.consoleLogs.set(tabId, [])
+
+    page.on('console', (msg: ConsoleMessage) => {
+      const logs = this.consoleLogs.get(tabId);
+      if (logs) {
+        logs.push(msg);
+        if (logs.length >  this.logLimit) {
+          logs.shift();
+        }
+      }
+    });
+
+    // Clean logs on page close
+    page.on('close', () => {
+      this.consoleLogs.delete(tabId);
+    });
+  }
+
+  async ensureBrowser(): Promise<void> {  
     if (this.browser) {
       return;
     }
@@ -57,7 +79,7 @@ export class HybridBrowserSession {
           // In CDP mode, only consider pages with about:blank as available
           if (pageUrl === 'about:blank') {
             const tabId = this.generateTabId();
-            this.pages.set(tabId, page);
+            this.registerNewPage(tabId, page);
             if (!this.currentTabId) {
               this.currentTabId = tabId;
               availablePageFound = true;
@@ -97,7 +119,7 @@ export class HybridBrowserSession {
         const pages = this.context.pages();
         if (pages.length > 0) {
           const initialTabId = this.generateTabId();
-          this.pages.set(initialTabId, pages[0]);
+          this.registerNewPage(initialTabId, pages[0]);
           this.currentTabId = initialTabId;
         }
       } else {
@@ -115,7 +137,7 @@ export class HybridBrowserSession {
         
         const initialPage = await this.context.newPage();
         const initialTabId = this.generateTabId();
-        this.pages.set(initialTabId, initialPage);
+        this.registerNewPage(initialTabId, initialPage);
         this.currentTabId = initialTabId;
       }
     }
@@ -137,6 +159,13 @@ export class HybridBrowserSession {
       throw new Error('No active page available');
     }
     return this.pages.get(this.currentTabId)!;
+  }
+
+  async getCurrentLogs(): Promise<ConsoleMessage[]> {
+    if (!this.currentTabId || !this.consoleLogs.has(this.currentTabId)) {
+      throw new Error('No active log available');
+    }
+    return this.consoleLogs.get(this.currentTabId)!;
   }
 
   /**
@@ -343,7 +372,7 @@ export class HybridBrowserSession {
           
           // Generate tab ID for the new page
           const newTabId = this.generateTabId();
-          this.pages.set(newTabId, newPage);
+          this.registerNewPage(newTabId, newPage);
           
           // Set up page properties
           const browserConfig = this.configLoader.getBrowserConfig();
@@ -434,7 +463,27 @@ export class HybridBrowserSession {
     }
   }
 
-
+  private async performMouseControl(page: Page, control: string, x: number, y: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      
+      switch (control) {
+        case 'move': {
+          await page.mouse.move(x, y);
+          break;
+        }
+        case 'click': {
+          await page.mouse.click(x, y);
+          break;
+        }
+        default:
+          return { success: false, error: `Unknown mouse control: ${control}` };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: `Mouse Action failed: ${error}` };
+    }
+  }
 
   async executeAction(action: BrowserAction): Promise<ActionResult> {
     const startTime = Date.now();
@@ -517,6 +566,27 @@ export class HybridBrowserSession {
           const browserConfig = this.configLoader.getBrowserConfig();
           await page.keyboard.press(browserConfig.enterKey);
           actionExecutionTime = Date.now() - enterStart;
+          break;
+        }
+
+        case 'mouse_control': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const mouseControlStart = Date.now();
+          const mouseControlResult = await this.performMouseControl(page, action.control, action.x, action.y);
+
+          if (!mouseControlResult.success) {
+            throw new Error(`Mouse Action failed: ${mouseControlResult.error}`);
+          }
+          actionExecutionTime = Date.now() - mouseControlStart;
+          break;
+        }
+
+        case 'press_key': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const keyPressStart = Date.now();
+          const keys = action.keys.join('+');
+          await page.keyboard.press(keys);
+          actionExecutionTime = Date.now() - keyPressStart;
           break;
         }
           
@@ -651,7 +721,7 @@ export class HybridBrowserSession {
             if (!isTracked && pageUrl === 'about:blank') {
               newPage = page;
               newTabId = this.generateTabId();
-              this.pages.set(newTabId, newPage);
+              this.registerNewPage(newTabId, newPage);
               break;
             }
           }
@@ -663,7 +733,7 @@ export class HybridBrowserSession {
           // Non-CDP mode: create new page as usual
           newPage = await this.context.newPage();
           newTabId = this.generateTabId();
-          this.pages.set(newTabId, newPage);
+          this.registerNewPage(newTabId, newPage);
         }
         
         // Set up page properties

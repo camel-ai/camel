@@ -101,7 +101,19 @@ export interface EnterAction {
   type: 'enter';
 }
 
-export type BrowserAction = ClickAction | TypeAction | SelectAction | ScrollAction | EnterAction;
+export interface MouseAction {
+  type: 'mouse_control';
+  control: 'move' | 'click';
+  x: number; 
+  y: number; 
+}
+
+export interface PressKeyAction {
+  type: 'press_key';
+  keys: string[];
+}
+
+export type BrowserAction = ClickAction | TypeAction | SelectAction | ScrollAction | EnterAction | MouseAction | PressKeyAction;
 
 export interface VisualMarkResult {
   text: string;

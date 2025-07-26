@@ -1,6 +1,7 @@
 import {HybridBrowserSession} from './browser-session';
 import {ActionResult, BrowserAction, BrowserToolkitConfig, SnapshotResult, TabInfo, VisualMarkResult} from './types';
 import {ConfigLoader} from './config-loader';
+import {ConsoleMessage} from 'playwright';
 
 export class HybridBrowserToolkit {
   private session: HybridBrowserSession;
@@ -382,6 +383,16 @@ export class HybridBrowserToolkit {
     return this.executeActionWithSnapshot(action);
   }
 
+  async mouseControl(control: 'move' | 'click', x: number, y: number): Promise<any> {
+    const action: BrowserAction = { type: 'mouse_control', control, x, y };
+    return this.executeActionWithSnapshot(action);
+  }
+
+  async pressKeys(keys: string[]): Promise<any> {
+    const action: BrowserAction = { type: 'press_key', keys};
+    return this.executeActionWithSnapshot(action);
+  }
+
   async back(): Promise<ActionResult> {
     const startTime = Date.now();
     
@@ -518,5 +529,45 @@ export class HybridBrowserToolkit {
   async getTabInfo(): Promise<TabInfo[]> {
     return await this.session.getTabInfo();
   }
+
+  async getConsoleView(): Promise<ConsoleMessage[]> {
+    return await this.session.getCurrentLogs();
+  }
+
+  async consoleExecute(code : string): Promise<any> {
+    const startTime = Date.now();
+    try {
+      const page = await this.session.getCurrentPage();
+      const result = await page.evaluate(script => {
+        try {
+          return new Function(script)();
+        } catch (error: any) {
+          throw { message: error.message, name: error.name, stack: error.stack };
+        }
+      }, code);
+      const snapshotStart = Date.now();
+      const snapshot = await this.getPageSnapshot(this.viewportLimit);
+      const snapshotTime = Date.now() - snapshotStart;
+      
+      const totalTime = Date.now() - startTime;
+      return {
+        success: true,
+        result : `Console execution successful: ${result}`,
+        snapshot: snapshot,
+          timing: {
+            total_time_ms: totalTime,
+            snapshot_time_ms: snapshotTime,
+          },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        result: `Console execution failed: ${error}`,
+        snapshot: '',
+      };
+    }
+  }
+
+ 
 
 }

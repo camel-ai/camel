@@ -863,6 +863,106 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
+    async def browser_mouse_control(
+        self, *, control: str, x: int, y: int
+    ) -> Dict[str, Any]:
+        r"""Control the mouse to interact with browser with x, y coordinates
+
+        Args:
+            control ([str]): The action to perform: 'move' or 'click'.
+            x (int): x-coordinate for the control action.
+            y (int): y-coordinate for the control action.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A snapshot of the page after mouse
+                control action.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
+        """
+        try:
+            ws_wrapper = await self._get_ws_wrapper()
+            result = await ws_wrapper.mouse_control(control, x, y)
+
+            # Add tab information
+            tab_info = await ws_wrapper.get_tab_info()
+            result.update(
+                {
+                    "tabs": tab_info,
+                    "current_tab": next(
+                        (
+                            i
+                            for i, tab in enumerate(tab_info)
+                            if tab.get("is_current")
+                        ),
+                        0,
+                    ),
+                    "total_tabs": len(tab_info),
+                }
+            )
+
+            return result
+        except Exception as e:
+            logger.error(f"Failed to control mouse: {e}")
+            return {
+                "result": f"Error with mouse control: {e}",
+                "snapshot": "",
+                "tabs": [],
+                "current_tab": 0,
+                "total_tabs": 0,
+            }
+
+    async def browser_press_key(self, *, keys: List[str]) -> Dict[str, Any]:
+        r"""Press key and key combinations.
+        Supports single key press or combination of keys by concatenating
+        them with '+' separator.
+
+        Args:
+            keys (List[str]): key or list of keys.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A snapshot of the page after
+                press key action.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
+        """
+        try:
+            ws_wrapper = await self._get_ws_wrapper()
+            result = await ws_wrapper.press_key(keys)
+
+            # Add tab information
+            tab_info = await ws_wrapper.get_tab_info()
+            result.update(
+                {
+                    "tabs": tab_info,
+                    "current_tab": next(
+                        (
+                            i
+                            for i, tab in enumerate(tab_info)
+                            if tab.get("is_current")
+                        ),
+                        0,
+                    ),
+                    "total_tabs": len(tab_info),
+                }
+            )
+
+            return result
+        except Exception as e:
+            logger.error(f"Failed to press key: {e}")
+            return {
+                "result": f"Error with press key: {e}",
+                "snapshot": "",
+                "tabs": [],
+                "current_tab": 0,
+                "total_tabs": 0,
+            }
+
     async def browser_switch_tab(self, *, tab_id: str) -> Dict[str, Any]:
         r"""Switches to a different browser tab using its ID.
 
@@ -997,6 +1097,68 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         except Exception as e:
             logger.error(f"Failed to get tab info: {e}")
             return {
+                "tabs": [],
+                "current_tab": 0,
+                "total_tabs": 0,
+            }
+
+    async def browser_console_view(self) -> Dict[str, Any]:
+        r"""View current page console logs.
+
+        Returns:
+            Dict[str, Any]: A dictionary with tab information:
+                - "result" (List[Dict]) : List of ConsoleMessage object from
+                playwright for the current page
+
+        """
+        try:
+            ws_wrapper = await self._get_ws_wrapper()
+            console_logs = await ws_wrapper.console_view()
+
+            return {"result": console_logs}
+        except Exception as e:
+            logger.error(f"Failed to get console view: {e}")
+            return {"result": f"Failed to get console view: {e}"}
+
+    async def browser_console_exec(self, code: str) -> Dict[str, Any]:
+        r"""Execute javascript code in the console of the current page and get
+        results.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A snapshot of the active tab after
+                console execute action.
+                - "tabs" (List[Dict]): Information about remaining tabs.
+                - "current_tab" (int): Index of the new active tab.
+                - "total_tabs" (int): Total number of remaining tabs.
+        """
+        try:
+            ws_wrapper = await self._get_ws_wrapper()
+            result = await ws_wrapper.console_exec(code)
+
+            tab_info = await ws_wrapper.get_tab_info()
+            result.update(
+                {
+                    "tabs": tab_info,
+                    "current_tab": next(
+                        (
+                            i
+                            for i, tab in enumerate(tab_info)
+                            if tab.get("is_current")
+                        ),
+                        0,
+                    ),
+                    "total_tabs": len(tab_info),
+                }
+            )
+
+            return result
+        except Exception as e:
+            logger.error(f"Failed to execute javascript in console: {e}")
+            return {
+                "result": f"Error in code execution: {e}",
+                "snapshot": "",
                 "tabs": [],
                 "current_tab": 0,
                 "total_tabs": 0,
