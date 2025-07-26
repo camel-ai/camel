@@ -406,6 +406,11 @@
         if (tagName === 'header') return 'banner';
         if (tagName === 'footer') return 'contentinfo';
         if (tagName === 'fieldset') return 'group';
+        
+        // Enhanced role mappings for table elements
+        if (tagName === 'table') return 'table';
+        if (tagName === 'tr') return 'row';
+        if (tagName === 'td' || tagName === 'th') return 'cell';
 
         return 'generic';
     }
@@ -484,6 +489,12 @@
 
         // Add a heuristic to ignore code-like text that might be in the DOM
         if ((text.match(/[;:{}]/g)?.length || 0) > 2) return '';
+        
+        // Truncate long names
+        if (text.length > 100) {
+            return text.substring(0, 100) + '...';
+        }
+        
         return text;
         }
 
@@ -577,6 +588,34 @@
             // Add level support following Playwright's implementation
             const level = getAriaLevel(element);
             if (level > 0) node.level = level;
+
+            // Skip occluded empty nodes
+            if (node.occluded && node.children.length === 0) {
+                return null;
+            }
+            
+            // Skip low-value content
+            if (node.role === 'generic' && !receivesPointerEvents(element) && node.name) {
+                const lowValuePatterns = [
+                    /^\d+$/,  // Numbers only
+                    /^\d+[.,]?\d*\s*(?:[A-Z]{3}|USD|EUR|GBP|JPY|CAD|AUD|CHF|CNY|SEK|NZD)$/i,  // Pricing
+                    /^\[?\d*\]?\s*[\*★]\s*\d*\.?\d*\s*\(?\d*\)?$/,  // Ratings
+                    /^\d+\s*(?:reviews?|ratings?|comments?|views?|likes?|shares?)$/i,  // Social counts
+                    /^\d+\s*(?:followers?|following|posts?)$/i,  // Social metrics
+                    /^\d+\s*(?:items?|results?)$/i,  // Counters
+                    /^\d+\s*(?:min|minutes?|hours?|days?|weeks?|months?|years?)$/i,  // Time durations
+                    /^\d+\s*(?:km|mi|miles?|ft|m|cm|mm|in|yd)$/i,  // Distances
+                    /^Footnote\s*\d+$/i,  // Footnotes
+                    /^\d+\s*(?:off|discount)$/i,  // Discounts
+                    /^\d+\s*(?:stars?|points?|levels?)$/i,  // Game scores
+                    /^\d+\s*(?:degrees?|°)$/i  // Temperatures
+                ];
+                
+                const name = node.name.trim();
+                if (lowValuePatterns.some(pattern => pattern.test(name))) {
+                    return null;
+                }
+            }
 
             return node;
         }
@@ -725,6 +764,21 @@
         if (isRedundantWrapper) {
             return node.children;
         }
+        
+        // Flatten redundant nesting
+        if (node.role === 'generic' && node.children.length === 1 && typeof node.children[0] !== 'string') {
+            const child = node.children[0];
+            if (child.name && node.name && child.name.includes(node.name.substring(0, 50))) {
+                node.children = child.children;
+                if (child.inheritedCursor) node.inheritedCursor = true;
+            }
+        }
+        
+        // Remove empty generics with short names and no children/content
+        if (node.role === 'generic' && node.children.length === 0 && node.name && node.name.length < 10) {
+            return [];
+        }
+        
         return [node];
     }
 
