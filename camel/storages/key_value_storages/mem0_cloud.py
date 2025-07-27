@@ -137,6 +137,7 @@ class Mem0Storage(BaseKeyValueStorage):
                 agent_id=self.agent_id,
                 user_id=self.user_id,
                 metadata=self.metadata,
+                version="v2",
             )
             self.client.add(messages, **options)
         except Exception as e:
@@ -150,18 +151,17 @@ class Mem0Storage(BaseKeyValueStorage):
                 represents a stored record.
         """
         try:
-            # Build kwargs for get_all
-            kwargs = {}
+            # Build filters for get_all using proper Mem0 filter format
+
+            filters = {}
             if self.agent_id:
-                kwargs['agent_id'] = self.agent_id
+                filters['agent_id'] = self.agent_id
             if self.user_id:
-                kwargs['user_id'] = self.user_id
+                filters['user_id'] = self.user_id
             
-            # If no filters available, return empty list
-            if not kwargs:
-                return []
-                
-            results = self.client.get_all(**kwargs)
+            results = self.client.get_all(version="v2", filters=filters)
+
+            print(results)
 
             # Transform results into MemoryRecord objects
             transformed_results = []
