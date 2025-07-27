@@ -153,27 +153,30 @@ class Mem0Storage(BaseKeyValueStorage):
         try:
             # Build filters for get_all using proper Mem0 filter format
 
-            filters = {}
+            # filters = {}
             if self.agent_id:
-                filters['agent_id'] = self.agent_id
+                filters = {"AND": [{"user_id": self.agent_id}]}
             if self.user_id:
-                filters['user_id'] = self.user_id
+                filters = {"AND": [{"user_id": self.user_id}]}
             
             results = self.client.get_all(version="v2", filters=filters)
 
             # Transform results into MemoryRecord objects
             transformed_results = []
             for result in results:
+                # Ensure metadata is a dictionary, not None
+                metadata = result.get("metadata") or {}
+                
                 memory_record = MemoryRecord(
                     uuid=UUID(result["id"]),
                     message=BaseMessage(
                         role_name="memory",
                         role_type=RoleType.USER,
-                        meta_dict=result.get("metadata", {}),
+                        meta_dict=metadata,
                         content=result["memory"],
                     ),
                     role_at_backend=OpenAIBackendRole.USER,
-                    extra_info=result.get("metadata", {}),
+                    extra_info=metadata,
                     timestamp=datetime.fromisoformat(
                         result["created_at"].replace('Z', '+00:00')
                     ).timestamp(),
