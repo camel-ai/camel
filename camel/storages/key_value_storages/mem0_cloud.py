@@ -98,11 +98,10 @@ class Mem0Storage(BaseKeyValueStorage):
             "agent_id": agent_id or self.agent_id,
             "user_id": user_id or self.user_id,
             "metadata": {**self.metadata, **(metadata or {})},
-            "output_format": "v1.1",  # Explicitly set to avoid deprecation warning
+            "output_format": "v1.1",
             **kwargs,
         }
         return {k: v for k, v in options.items() if v is not None}
-
 
     def _prepare_messages(
         self,
@@ -152,14 +151,14 @@ class Mem0Storage(BaseKeyValueStorage):
         """
         try:
             # Build filters for get_all using proper Mem0 filter format
-
-            # filters = {}
+            filters = {}
             if self.agent_id:
                 filters = {"AND": [{"user_id": self.agent_id}]}
             if self.user_id:
                 filters = {"AND": [{"user_id": self.user_id}]}
             
             results = self.client.get_all(version="v2", filters=filters)
+
 
             # Transform results into MemoryRecord objects
             transformed_results = []

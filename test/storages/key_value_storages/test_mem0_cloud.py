@@ -98,7 +98,9 @@ class TestMem0Storage(unittest.TestCase):
         self.assertEqual(kwargs.get("agent_id"), self.agent_id)
         self.assertEqual(kwargs.get("user_id"), self.user_id)
         self.assertEqual(kwargs.get("metadata"), self.metadata)
-        self.assertEqual(kwargs.get("output_format"), "v1.1")  # Check explicit v1.1
+        self.assertEqual(
+            kwargs.get("output_format"), "v1.1"
+        )  # Check explicit v1.1
 
     def test_load(self):
         r"""Test loading records from Mem0 storage."""
@@ -353,11 +355,13 @@ class TestMem0Storage(unittest.TestCase):
         This test is skipped unless MEM0_API_KEY environment variable is set.
         """
         import time
-        
+
         api_key = os.getenv("MEM0_API_KEY")
         agent_id = "integration_test_agent"
         user_id = "integration_test_user"  # Add user_id for v2 API
-        storage = Mem0Storage(api_key=api_key, agent_id=agent_id, user_id=user_id)
+        storage = Mem0Storage(
+            api_key=api_key, agent_id=agent_id, user_id=user_id
+        )
 
         # Test full workflow
         records = [
