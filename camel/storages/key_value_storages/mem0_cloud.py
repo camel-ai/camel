@@ -161,8 +161,6 @@ class Mem0Storage(BaseKeyValueStorage):
             
             results = self.client.get_all(version="v2", filters=filters)
 
-            print(results)
-
             # Transform results into MemoryRecord objects
             transformed_results = []
             for result in results:
