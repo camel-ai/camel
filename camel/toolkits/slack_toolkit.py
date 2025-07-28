@@ -128,8 +128,9 @@ class SlackToolkit(BaseToolkit):
             return f"Error creating conversation: {e.response['error']}"
 
     def join_slack_channel(self, channel_id: str) -> str:
-        r"""Joins an existing Slack channel. To get the `channel_id` of a
-        channel, you can use the `get_slack_channel_information` function.
+        r"""Joins an existing Slack channel. When use this function you must
+        call `get_slack_channel_information` function first to get the
+        `channel id`.
 
         Args:
             channel_id (str): The ID of the Slack channel to join.
@@ -147,8 +148,9 @@ class SlackToolkit(BaseToolkit):
             return f"Error joining channel: {e.response['error']}"
 
     def leave_slack_channel(self, channel_id: str) -> str:
-        r"""Leaves an existing Slack channel. To get the `channel_id` of a
-        channel, you can use the `get_slack_channel_information` function.
+        r"""Leaves an existing Slack channel. When use this function you must
+        call `get_slack_channel_information` function first to get the
+        `channel id`.
 
         Args:
             channel_id (str): The ID of the Slack channel to leave.
@@ -199,9 +201,9 @@ class SlackToolkit(BaseToolkit):
             return f"Error retrieving channel list: {e.response['error']}"
 
     def get_slack_channel_message(self, channel_id: str) -> str:
-        r"""Retrieve messages from a Slack channel. To get the `channel_id`
-        of a channel, you can use the `get_slack_channel_information`
-        function.
+        r"""Retrieve messages from a Slack channel. When use this function you
+        must call `get_slack_channel_information` function first to get the
+        `channel id`.
 
         Args:
             channel_id (str): The ID of the Slack channel to retrieve messages
@@ -233,8 +235,9 @@ class SlackToolkit(BaseToolkit):
         file_path: Optional[str] = None,
         user: Optional[str] = None,
     ) -> str:
-        r"""Send a message to a Slack channel. To get the `channel_id` of a
-        channel, you can use the `get_slack_channel_information` function.
+        r"""Send a message to a Slack channel. When use this function you must
+        call `get_slack_channel_information` function first to get the
+        `channel id`.
 
         Args:
             message (str): The message to send.
@@ -279,7 +282,9 @@ class SlackToolkit(BaseToolkit):
         time_stamp: str,
         channel_id: str,
     ) -> str:
-        r"""Delete a message from a Slack channel.
+        r"""Delete a message from a Slack channel. When use this function you
+        must call `get_slack_channel_information` function first to get the
+        `channel id`.
 
         Args:
             time_stamp (str): The 'ts' value of the message to be deleted.

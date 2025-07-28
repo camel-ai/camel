@@ -1731,25 +1731,27 @@ class Workforce(BaseNode):
         if isinstance(node, Workforce):
             return "A Workforce node"
         elif isinstance(node, SingleAgentWorker):
-            return self._get_single_agent_info(node)
+            return self._get_single_agent_toolkit_info(node)
         elif isinstance(node, RolePlayingWorker):
             return "A Role playing node"
         else:
             return "Unknown node"
 
-    def _get_single_agent_info(self, worker: 'SingleAgentWorker') -> str:
+    def _get_single_agent_toolkit_info(
+        self, worker: 'SingleAgentWorker'
+    ) -> str:
         r"""Get formatted information for a SingleAgentWorker node."""
         toolkit_tools = self._group_tools_by_toolkit(worker.worker.tool_dict)
 
         if not toolkit_tools:
-            return "no tools available"
+            return ""
 
         toolkit_info = []
         for toolkit_name, tools in sorted(toolkit_tools.items()):
             tools_str = ', '.join(sorted(tools))
             toolkit_info.append(f"{toolkit_name}({tools_str})")
 
-        return " | ".join(toolkit_info)
+        return ", ".join(toolkit_info)
 
     def _group_tools_by_toolkit(self, tool_dict: dict) -> dict[str, list[str]]:
         r"""Group tools by their parent toolkit class names."""
