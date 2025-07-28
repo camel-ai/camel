@@ -20,9 +20,10 @@ export class HybridBrowserSession {
   }
 
   private registerNewPage(tabId: string, page: Page): void {
-    this.pages.set(tabId, page)
-    this.consoleLogs.set(tabId, [])
-
+    // Register page and logs with tabId
+    this.pages.set(tabId, page);
+    this.consoleLogs.set(tabId, []);
+    // Set up console log listener for the page
     page.on('console', (msg: ConsoleMessage) => {
       const logs = this.consoleLogs.get(tabId);
       if (logs) {
@@ -463,16 +464,18 @@ export class HybridBrowserSession {
     }
   }
 
+  /**
+   *  Simplified mouse control implementation
+   */
   private async performMouseControl(page: Page, control: string, x: number, y: number): Promise<{ success: boolean; error?: string }> {
     try {
-      
       switch (control) {
-        case 'move': {
-          await page.mouse.move(x, y);
-          break;
-        }
         case 'click': {
           await page.mouse.click(x, y);
+          break;
+        }
+        case 'dblclick': {
+          await page.mouse.dblclick(x, y);
           break;
         }
         default:
@@ -584,6 +587,7 @@ export class HybridBrowserSession {
         case 'press_key': {
           elementSearchTime = Date.now() - elementSearchStart;
           const keyPressStart = Date.now();
+          // concatenate keys with '+' for key combinations
           const keys = action.keys.join('+');
           await page.keyboard.press(keys);
           actionExecutionTime = Date.now() - keyPressStart;

@@ -103,7 +103,7 @@ export interface EnterAction {
 
 export interface MouseAction {
   type: 'mouse_control';
-  control: 'move' | 'click';
+  control: 'click' | 'dblclick';
   x: number; 
   y: number; 
 }

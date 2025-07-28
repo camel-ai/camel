@@ -589,7 +589,7 @@ class WebSocketBrowserWrapper:
 
     @action_logger
     async def console_view(self) -> List[Dict[str, Any]]:
-        """Get tab information."""
+        """Get current page console view"""
         response = await self._send_command('console_view', {})
 
         if isinstance(response, list):

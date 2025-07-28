@@ -530,39 +530,73 @@ export class HybridBrowserToolkit {
     return await this.session.getTabInfo();
   }
 
-  async getConsoleView(): Promise<ConsoleMessage[]> {
-    return await this.session.getCurrentLogs();
+  async getConsoleView(): Promise<any> {
+    const currentLogs = await this.session.getCurrentLogs();
+    // Format logs
+    return currentLogs.map(item => ({
+      type: item.type(),
+      text: item.text(),
+    }));
   }
 
   async consoleExecute(code : string): Promise<any> {
     const startTime = Date.now();
+    // Wrap the code in a function to handle errors
+    const functionBody = "return (" + code + ")()";
     try {
       const page = await this.session.getCurrentPage();
       const result = await page.evaluate(script => {
         try {
-          return new Function(script)();
+          return { success: true, data: new Function(script)() };
         } catch (error: any) {
-          throw { message: error.message, name: error.name, stack: error.stack };
+          return { success: false, error: { message: error.message, name: error.name, stack: error.stack }};
         }
-      }, code);
+      }, functionBody);
+
       const snapshotStart = Date.now();
       const snapshot = await this.getPageSnapshot(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
-      
       const totalTime = Date.now() - startTime;
-      return {
+
+      if (result.success) {
+        return {
         success: true,
-        result : `Console execution successful: ${result}`,
+        result : `Console execution result: ${result.data}`,
         snapshot: snapshot,
           timing: {
             total_time_ms: totalTime,
             snapshot_time_ms: snapshotTime,
           },
-      };
+        };
+      }
+      else {
+        if (result.error) {
+        const error = result.error
+        return {
+          success: false,
+          result : `Console execution failed: ${error.message} : ${error.stack}`,
+          snapshot: snapshot,
+          timing: {
+            total_time_ms: totalTime,
+            snapshot_time_ms: snapshotTime,
+          },};
+        } else {
+          // page.evaluate failed without error object
+          return {
+            success: false,
+            result : `Console execution failed with unknown error`,
+            snapshot: snapshot,
+            timing: {
+              total_time_ms: totalTime,
+              snapshot_time_ms: snapshotTime,
+            },
+          };
+        }
+      }
     } catch (error) {
       return {
         success: false,
-        result: `Console execution failed: ${error}`,
+        result: `Console execution failed at toolkit: ${error}`,
         snapshot: '',
       };
     }

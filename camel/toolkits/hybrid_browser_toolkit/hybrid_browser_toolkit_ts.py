@@ -869,7 +869,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         r"""Control the mouse to interact with browser with x, y coordinates
 
         Args:
-            control ([str]): The action to perform: 'move' or 'click'.
+            control ([str]): The action to perform: 'click' or 'dblclick'.
             x (int): x-coordinate for the control action.
             y (int): y-coordinate for the control action.
 
@@ -1107,18 +1107,18 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         Returns:
             Dict[str, Any]: A dictionary with tab information:
-                - "result" (List[Dict]) : List of ConsoleMessage object from
-                playwright for the current page
+                - "console_messages" (List[Dict]) : List of messages logged
+                in the current page
 
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
             console_logs = await ws_wrapper.console_view()
 
-            return {"result": console_logs}
+            return {"console_messages": console_logs}
         except Exception as e:
             logger.error(f"Failed to get console view: {e}")
-            return {"result": f"Failed to get console view: {e}"}
+            return {"console_messages": f"Failed to get console view: {e}"}
 
     async def browser_console_exec(self, code: str) -> Dict[str, Any]:
         r"""Execute javascript code in the console of the current page and get
