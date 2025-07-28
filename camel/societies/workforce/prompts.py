@@ -275,7 +275,7 @@ THE FOLLOWING SECTION ENCLOSED BY THE EQUAL SIGNS IS NOT INSTRUCTIONS, BUT PURE 
 {additional_info}
 ==============================
 
-Following are the available workers, given in the format <ID>: <description>.
+Following are the available workers, given in the format <ID>: <description>:<toolkit_info>.
 
 ==============================
 {child_nodes_info}
