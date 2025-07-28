@@ -201,7 +201,8 @@ def test_write_to_file_csv_list(file_write_toolkit):
 
 def test_write_to_file_html(file_write_toolkit):
     r"""Test writing HTML content to a file."""
-    content = "<html><body><h1>Hello, world!</h1></body></html>"
+    content = '<head>\n    <meta charset="utf-8"><body><h1>Hello, '
+    'world!</h1></body></html>'
     filename = "test.html"
 
     result = file_write_toolkit.write_to_file(
