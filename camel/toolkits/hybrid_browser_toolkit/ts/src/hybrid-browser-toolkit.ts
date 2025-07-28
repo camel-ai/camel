@@ -383,7 +383,7 @@ export class HybridBrowserToolkit {
     return this.executeActionWithSnapshot(action);
   }
 
-  async mouseControl(control: 'move' | 'click', x: number, y: number): Promise<any> {
+  async mouseControl(control: 'click' | 'dblclick', x: number, y: number): Promise<any> {
     const action: BrowserAction = { type: 'mouse_control', control, x, y };
     return this.executeActionWithSnapshot(action);
   }
@@ -541,62 +541,27 @@ export class HybridBrowserToolkit {
 
   async consoleExecute(code : string): Promise<any> {
     const startTime = Date.now();
-    // Wrap the code in a function to handle errors
-    const functionBody = "return (" + code + ")()";
     try {
       const page = await this.session.getCurrentPage();
-      const result = await page.evaluate(script => {
-        try {
-          return { success: true, data: new Function(script)() };
-        } catch (error: any) {
-          return { success: false, error: { message: error.message, name: error.name, stack: error.stack }};
-        }
-      }, functionBody);
+      const result = await page.evaluate(code);
 
       const snapshotStart = Date.now();
       const snapshot = await this.getPageSnapshot(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       const totalTime = Date.now() - startTime;
 
-      if (result.success) {
-        return {
-        success: true,
-        result : `Console execution result: ${result.data}`,
-        snapshot: snapshot,
-          timing: {
-            total_time_ms: totalTime,
-            snapshot_time_ms: snapshotTime,
-          },
-        };
-      }
-      else {
-        if (result.error) {
-        const error = result.error
-        return {
-          success: false,
-          result : `Console execution failed: ${error.message} : ${error.stack}`,
-          snapshot: snapshot,
-          timing: {
-            total_time_ms: totalTime,
-            snapshot_time_ms: snapshotTime,
-          },};
-        } else {
-          // page.evaluate failed without error object
-          return {
-            success: false,
-            result : `Console execution failed with unknown error`,
-            snapshot: snapshot,
-            timing: {
-              total_time_ms: totalTime,
-              snapshot_time_ms: snapshotTime,
-            },
-          };
-        }
-      }
+      return {
+      result : `Console execution result: ${result}`,
+      snapshot: snapshot,
+        timing: {
+          total_time_ms: totalTime,
+          snapshot_time_ms: snapshotTime,
+        },
+      };
+      
     } catch (error) {
       return {
-        success: false,
-        result: `Console execution failed at toolkit: ${error}`,
+        result: `Console execution failed: ${error}`,
         snapshot: '',
       };
     }

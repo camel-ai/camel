@@ -69,6 +69,10 @@ custom_tools = [
     "browser_switch_tab",
     "browser_enter",
     # "browser_get_som_screenshot", # remove it to achieve faster operation
+    "browser_mouse_control",
+    "browser_press_key",
+    "browser_console_view",
+    "browser_console_exec",
 ]
 
 web_toolkit_custom = HybridBrowserToolkit(

@@ -64,11 +64,15 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_select",
         "browser_scroll",
         "browser_enter",
+        "browser_mouse_control",
+        "browser_press_key",
         "browser_wait_user",
         "browser_solve_task",
         "browser_switch_tab",
         "browser_close_tab",
         "browser_get_tab_info",
+        "browser_console_view",
+        "browser_console_exec",
     ]
 
     def __init__(
