@@ -257,7 +257,7 @@ class TestMem0Storage(unittest.TestCase):
         ]
         self.mock_mem0_client.get_all.return_value = mock_results
 
-        results = storage.load()
+        storage.load()
 
         # Verify client.get_all was called with agent_id filter
         self.mock_mem0_client.get_all.assert_called_once()
@@ -271,12 +271,18 @@ class TestMem0Storage(unittest.TestCase):
         # Create storage with no agent_id or user_id
         storage = Mem0Storage(api_key=self.api_key, agent_id=None)
 
+        # Mock empty results from the API
+        self.mock_mem0_client.get_all.return_value = []
+
         results = storage.load()
 
         # Should return empty list when no filters are available
         self.assertEqual(results, [])
-        # Client should not be called
-        self.mock_mem0_client.get_all.assert_not_called()
+        # Client should be called with empty filters
+        self.mock_mem0_client.get_all.assert_called_once()
+        args, kwargs = self.mock_mem0_client.get_all.call_args
+        self.assertEqual(kwargs.get("filters"), {})
+        self.assertEqual(kwargs.get("version"), "v2")
 
     def test_load_with_both_agent_and_user_id(self):
         r"""Test loading records when both agent_id and user_id are set."""
@@ -296,7 +302,7 @@ class TestMem0Storage(unittest.TestCase):
         ]
         self.mock_mem0_client.get_all.return_value = mock_results
 
-        results = storage.load()
+        storage.load()
 
         # Verify client.get_all was called with both filters
         self.mock_mem0_client.get_all.assert_called_once()
