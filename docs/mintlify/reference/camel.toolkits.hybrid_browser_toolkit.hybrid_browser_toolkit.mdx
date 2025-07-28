@@ -5,27 +5,29 @@
 ## HybridBrowserToolkit
 
 ```python
-class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
+class HybridBrowserToolkit(BaseToolkit):
 ```
 
-A hybrid browser toolkit that combines non-visual, DOM-based browser
-automation with visual, screenshot-based capabilities.
+A hybrid browser toolkit that can switch between TypeScript and Python
+implementations.
 
-This toolkit now uses TypeScript implementation with Playwright's
-_snapshotForAI functionality for enhanced AI integration.
+This wrapper allows users to choose between:
+- 'typescript': WebSocket-based implementation using TypeScript/Node.js
+- 'python': Pure Python implementation using Playwright directly
 
-<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.__init__"></a>
+<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.__new__"></a>
 
-### __init__
+### __new__
 
 ```python
-def __init__(self):
+def __new__(cls, **kwargs: Any):
 ```
 
-Initialize the HybridBrowserToolkit.
+Create a HybridBrowserToolkit instance with the specified mode.
 
 **Parameters:**
 
+- **mode** (`Literal["typescript", "python"]`): Implementation mode. - 'typescript': Uses WebSocket-based TypeScript implementation - 'python': Uses pure Python Playwright implementation Defaults to "typescript".
 - **headless** (bool): Whether to run browser in headless mode. Defaults to True.
 - **user_data_dir** (Optional[str]): Directory for user data persistence. Defaults to None.
 - **stealth** (bool): Whether to enable stealth mode. Defaults to False.
@@ -42,77 +44,10 @@ Initialize the HybridBrowserToolkit.
 - **screenshot_timeout** (Optional[int]): Screenshot timeout in milliseconds. Defaults to None.
 - **page_stability_timeout** (Optional[int]): Page stability timeout in milliseconds. Defaults to None.
 - **dom_content_loaded_timeout** (Optional[int]): DOM content loaded timeout in milliseconds. Defaults to None.
-- **viewport_limit** (bool): Whether to filter page snapshot elements to only those visible in the current viewport. When True, only elements within the current viewport bounds will be included in snapshots. When False (default), all elements on the page are included. Defaults to False.
-- **connect_over_cdp** (bool): Whether to connect to an existing browser via Chrome DevTools Protocol. Defaults to False.
-- **cdp_url** (Optional[str]): WebSocket endpoint URL for CDP connection (e.g., 'ws://localhost:9222/devtools/browser/...'). Required when connect_over_cdp is True. Defaults to None.
-
-<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.__del__"></a>
-
-### __del__
-
-```python
-def __del__(self):
-```
-
-Cleanup browser resources on garbage collection.
-
-<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.web_agent_model"></a>
-
-### web_agent_model
-
-```python
-def web_agent_model(self):
-```
-
-Get the web agent model.
-
-<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.web_agent_model"></a>
-
-### web_agent_model
-
-```python
-def web_agent_model(self, value: Optional[BaseModelBackend]):
-```
-
-Set the web agent model.
-
-<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.cache_dir"></a>
-
-### cache_dir
-
-```python
-def cache_dir(self):
-```
-
-Get the cache directory.
-
-<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.clone_for_new_session"></a>
-
-### clone_for_new_session
-
-```python
-def clone_for_new_session(self, new_session_id: Optional[str] = None):
-```
-
-Create a new instance of HybridBrowserToolkit with a unique
-session.
-
-**Parameters:**
-
-- **new_session_id**: Optional new session ID. If None, a UUID will be generated.
+- **viewport_limit** (bool): Whether to filter page snapshot elements to only those visible in the current viewport. Defaults to False.
+- **connect_over_cdp** (bool): Whether to connect to an existing browser via Chrome DevTools Protocol. Defaults to False. (Only supported in TypeScript mode)
+- **cdp_url** (Optional[str]): WebSocket endpoint URL for CDP connection. Required when connect_over_cdp is True. Defaults to None. (Only supported in TypeScript mode) **kwargs: Additional keyword arguments passed to the implementation.
 
 **Returns:**
 
-  A new HybridBrowserToolkit instance with the same configuration
-but a different session.
-
-<a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.HybridBrowserToolkit.get_tools"></a>
-
-### get_tools
-
-```python
-def get_tools(self):
-```
-
-Get available function tools based
-on enabled_tools configuration.
+  HybridBrowserToolkit instance of the specified implementation.

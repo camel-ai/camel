@@ -17,6 +17,7 @@ import os
 import platform
 import queue
 import shutil
+import signal
 import subprocess
 import sys
 import threading
@@ -42,7 +43,7 @@ class TerminalToolkit(BaseToolkit):
 
     Args:
         timeout (Optional[float]): The timeout for terminal operations.
-            (default: :obj:`None`)
+            (default: :obj:`20.0`)
         shell_sessions (Optional[Dict[str, Any]]): A dictionary to store
             shell session information. If :obj:`None`, an empty dictionary
             will be used. (default: :obj:`None`)
@@ -70,7 +71,7 @@ class TerminalToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = 20.0,
         shell_sessions: Optional[Dict[str, Any]] = None,
         working_directory: Optional[str] = None,
         need_terminal: bool = True,
@@ -78,6 +79,8 @@ class TerminalToolkit(BaseToolkit):
         clone_current_env: bool = False,
         safe_mode: bool = True,
     ):
+        # Store timeout before calling super().__init__
+        self._timeout = timeout
         super().__init__(timeout=timeout)
         self.shell_sessions = shell_sessions or {}
         self.os_type = platform.system()
@@ -95,6 +98,7 @@ class TerminalToolkit(BaseToolkit):
         self.is_macos = platform.system() == 'Darwin'
         self.initial_env_path: Optional[str] = None
         self.initial_env_prepared = False
+        self.uv_path: Optional[str] = None
 
         atexit.register(self.__del__)
 
@@ -197,36 +201,110 @@ class TerminalToolkit(BaseToolkit):
                 f"Creating new Python environment at: {self.cloned_env_path}\n"
             )
 
-            # Create virtual environment with pip
-            venv.create(self.cloned_env_path, with_pip=True)
+            # Try to use uv if available
+            if self._ensure_uv_available():
+                # Use uv to create environment with current Python version
+                uv_command = self.uv_path if self.uv_path else "uv"
 
-            # Ensure pip is properly available by upgrading it
-            if self.os_type == 'Windows':
-                python_path = os.path.join(
-                    self.cloned_env_path, "Scripts", "python.exe"
-                )
-            else:
-                python_path = os.path.join(
-                    self.cloned_env_path, "bin", "python"
+                # Get current Python version
+                current_version = (
+                    f"{sys.version_info.major}.{sys.version_info.minor}"
                 )
 
-            # Verify python executable exists
-            if os.path.exists(python_path):
-                # Use python -m pip to ensure pip is available
                 subprocess.run(
-                    [python_path, "-m", "pip", "install", "--upgrade", "pip"],
+                    [
+                        uv_command,
+                        "venv",
+                        "--python",
+                        current_version,
+                        self.cloned_env_path,
+                    ],
                     check=True,
                     capture_output=True,
                     cwd=self.working_dir,
-                    timeout=60,
+                    timeout=300,
                 )
+
+                # Get the python path from the new environment
+                if self.os_type == 'Windows':
+                    python_path = os.path.join(
+                        self.cloned_env_path, "Scripts", "python.exe"
+                    )
+                else:
+                    python_path = os.path.join(
+                        self.cloned_env_path, "bin", "python"
+                    )
+
+                # Install pip and setuptools using uv
+                subprocess.run(
+                    [
+                        uv_command,
+                        "pip",
+                        "install",
+                        "--python",
+                        python_path,
+                        "pip",
+                        "setuptools",
+                        "wheel",
+                    ],
+                    check=True,
+                    capture_output=True,
+                    cwd=self.working_dir,
+                    timeout=300,
+                )
+
                 self._update_terminal_output(
-                    "New Python environment created successfully with pip!\n"
+                    "[UV] Cloned Python environment created successfully!\n"
                 )
+
             else:
+                # Fallback to standard venv
                 self._update_terminal_output(
-                    f"Warning: Python executable not found at {python_path}\n"
+                    "Falling back to standard venv for cloning environment\n"
                 )
+
+                # Create virtual environment with pip. On macOS, use
+                # symlinks=False to avoid dyld library loading issues
+                venv.create(
+                    self.cloned_env_path, with_pip=True, symlinks=False
+                )
+
+                # Ensure pip is properly available by upgrading it
+                if self.os_type == 'Windows':
+                    python_path = os.path.join(
+                        self.cloned_env_path, "Scripts", "python.exe"
+                    )
+                else:
+                    python_path = os.path.join(
+                        self.cloned_env_path, "bin", "python"
+                    )
+
+                # Verify python executable exists
+                if os.path.exists(python_path):
+                    # Use python -m pip to ensure pip is available
+                    subprocess.run(
+                        [
+                            python_path,
+                            "-m",
+                            "pip",
+                            "install",
+                            "--upgrade",
+                            "pip",
+                        ],
+                        check=True,
+                        capture_output=True,
+                        cwd=self.working_dir,
+                        timeout=60,
+                    )
+                    self._update_terminal_output(
+                        "New Python environment created successfully "
+                        "with pip!\n"
+                    )
+                else:
+                    self._update_terminal_output(
+                        f"Warning: Python executable not found "
+                        f"at {python_path}\n"
+                    )
 
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr.decode() if e.stderr else str(e)
@@ -252,6 +330,97 @@ class TerminalToolkit(BaseToolkit):
             or shutil.which("uv") is not None
         )
 
+    def _ensure_uv_available(self) -> bool:
+        r"""Ensure uv is available, installing it if necessary.
+
+        Returns:
+            bool: True if uv is available (either already installed or
+                successfully installed), False otherwise.
+        """
+        # Check if uv is already available
+        existing_uv = shutil.which("uv")
+        if existing_uv is not None:
+            self.uv_path = existing_uv
+            self._update_terminal_output(
+                f"uv is already available at: {self.uv_path}\n"
+            )
+            return True
+
+        try:
+            self._update_terminal_output("uv not found, installing...\n")
+
+            # Install uv using the official installer script
+            if self.os_type in ['Darwin', 'Linux']:
+                # Use curl to download and execute the installer
+                install_cmd = "curl -LsSf https://astral.sh/uv/install.sh | sh"
+                result = subprocess.run(
+                    install_cmd,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+
+                if result.returncode != 0:
+                    self._update_terminal_output(
+                        f"Failed to install uv: {result.stderr}\n"
+                    )
+                    return False
+
+                # Check if uv was installed in the expected location
+                home = os.path.expanduser("~")
+                uv_bin_path = os.path.join(home, ".cargo", "bin")
+                uv_executable = os.path.join(uv_bin_path, "uv")
+
+                if os.path.exists(uv_executable):
+                    # Store the full path to uv instead of modifying PATH
+                    self.uv_path = uv_executable
+                    self._update_terminal_output(
+                        f"uv installed successfully at: {self.uv_path}\n"
+                    )
+                    return True
+
+            elif self.os_type == 'Windows':
+                # Use PowerShell to install uv on Windows
+                install_cmd = (
+                    "powershell -ExecutionPolicy Bypass -c "
+                    "\"irm https://astral.sh/uv/install.ps1 | iex\""
+                )
+                result = subprocess.run(
+                    install_cmd,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+
+                if result.returncode != 0:
+                    self._update_terminal_output(
+                        f"Failed to install uv: {result.stderr}\n"
+                    )
+                    return False
+
+                # Check if uv was installed in the expected location on Windows
+                home = os.path.expanduser("~")
+                uv_bin_path = os.path.join(home, ".cargo", "bin")
+                uv_executable = os.path.join(uv_bin_path, "uv.exe")
+
+                if os.path.exists(uv_executable):
+                    # Store the full path to uv instead of modifying PATH
+                    self.uv_path = uv_executable
+                    self._update_terminal_output(
+                        f"uv installed successfully at: {self.uv_path}\n"
+                    )
+                    return True
+
+            self._update_terminal_output("Failed to verify uv installation\n")
+            return False
+
+        except Exception as e:
+            self._update_terminal_output(f"Error installing uv: {e!s}\n")
+            logger.error(f"Failed to install uv: {e}")
+            return False
+
     def _prepare_initial_environment(self):
         r"""Prepare initial environment with Python 3.10, pip, and other
         essential tools.
@@ -276,10 +445,14 @@ class TerminalToolkit(BaseToolkit):
             # Create the initial environment directory
             os.makedirs(self.initial_env_path, exist_ok=True)
 
-            # Check if we should use uv
-            if self._is_uv_environment():
+            # Try to ensure uv is available and use it preferentially
+            if self._ensure_uv_available():
                 self._setup_initial_env_with_uv()
             else:
+                # Fallback to venv if uv installation failed
+                self._update_terminal_output(
+                    "Falling back to standard venv for environment setup\n"
+                )
                 self._setup_initial_env_with_venv()
 
             self.initial_env_prepared = True
@@ -299,9 +472,18 @@ class TerminalToolkit(BaseToolkit):
             raise Exception("Initial environment path not set")
 
         try:
+            # Use the stored uv path if available, otherwise fall back to "uv"
+            uv_command = self.uv_path if self.uv_path else "uv"
+
             # Create virtual environment with Python 3.10 using uv
             subprocess.run(
-                ["uv", "venv", "--python", "3.10", self.initial_env_path],
+                [
+                    uv_command,
+                    "venv",
+                    "--python",
+                    "3.10",
+                    self.initial_env_path,
+                ],
                 check=True,
                 capture_output=True,
                 cwd=self.working_dir,
@@ -329,7 +511,7 @@ class TerminalToolkit(BaseToolkit):
             ]
             subprocess.run(
                 [
-                    "uv",
+                    uv_command,
                     "pip",
                     "install",
                     "--python",
@@ -363,10 +545,12 @@ class TerminalToolkit(BaseToolkit):
 
         try:
             # Create virtual environment with system Python
+            # On macOS, use symlinks=False to avoid dyld library loading issues
             venv.create(
                 self.initial_env_path,
                 with_pip=True,
                 system_site_packages=False,
+                symlinks=False,
             )
 
             # Get pip path
@@ -944,6 +1128,11 @@ class TerminalToolkit(BaseToolkit):
                     command = command.replace('pip', pip_path, 1)
 
             if not interactive:
+                # Use preexec_fn to create a new process group on Unix systems
+                preexec_fn = None
+                if self.os_type in ['Darwin', 'Linux']:
+                    preexec_fn = os.setsid
+
                 proc = subprocess.Popen(
                     command,
                     shell=True,
@@ -955,17 +1144,55 @@ class TerminalToolkit(BaseToolkit):
                     bufsize=1,
                     universal_newlines=True,
                     env=os.environ.copy(),
+                    preexec_fn=preexec_fn,
                 )
 
                 self.shell_sessions[id]["process"] = proc
                 self.shell_sessions[id]["running"] = True
-                stdout, stderr = proc.communicate()
-                output = stdout or ""
-                if stderr:
-                    output += f"\nStderr Output:\n{stderr}"
-                self.shell_sessions[id]["output"] = output
-                self._update_terminal_output(output + "\n")
-                return output
+                try:
+                    # Use the instance timeout if available
+                    stdout, stderr = proc.communicate(timeout=self.timeout)
+                    output = stdout or ""
+                    if stderr:
+                        output += f"\nStderr Output:\n{stderr}"
+                    self.shell_sessions[id]["output"] = output
+                    self.shell_sessions[id]["running"] = False
+                    self._update_terminal_output(output + "\n")
+                    return output
+                except subprocess.TimeoutExpired:
+                    # Kill the entire process group on Unix systems
+                    if self.os_type in ['Darwin', 'Linux']:
+                        try:
+                            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                            # Give it a short time to terminate
+                            stdout, stderr = proc.communicate(timeout=1)
+                        except subprocess.TimeoutExpired:
+                            # Force kill the process group
+                            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                            stdout, stderr = proc.communicate()
+                        except ProcessLookupError:
+                            # Process already dead
+                            stdout, stderr = proc.communicate()
+                    else:
+                        # Windows fallback
+                        proc.terminate()
+                        try:
+                            stdout, stderr = proc.communicate(timeout=1)
+                        except subprocess.TimeoutExpired:
+                            proc.kill()
+                            stdout, stderr = proc.communicate()
+
+                    output = stdout or ""
+                    if stderr:
+                        output += f"\nStderr Output:\n{stderr}"
+                    error_msg = (
+                        f"\nCommand timed out after {self.timeout} seconds"
+                    )
+                    output += error_msg
+                    self.shell_sessions[id]["output"] = output
+                    self.shell_sessions[id]["running"] = False
+                    self._update_terminal_output(output + "\n")
+                    return output
 
             # Interactive mode with real-time streaming via PTY
             if self.os_type not in ['Darwin', 'Linux']:
@@ -1074,6 +1301,9 @@ class TerminalToolkit(BaseToolkit):
                 f"Error: {error_msg}\n\n"
                 f"Detailed information: {detailed_error}"
             )
+
+    # Mark shell_exec to skip automatic timeout wrapping
+    shell_exec._manual_timeout = True  # type: ignore[attr-defined]
 
     def shell_view(self, id: str) -> str:
         r"""View the full output history of a specified shell session.
