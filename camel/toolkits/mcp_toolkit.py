@@ -14,6 +14,7 @@
 
 import json
 import os
+import warnings
 from contextlib import AsyncExitStack
 from typing import Any, Dict, List, Optional
 
@@ -23,6 +24,11 @@ from camel.utils.commons import run_async
 from camel.utils.mcp_client import MCPClient, create_mcp_client
 
 logger = get_logger(__name__)
+
+# Suppress parameter description warnings for MCP tools
+warnings.filterwarnings(
+    "ignore", message="Parameter description is missing", category=UserWarning
+)
 
 
 class MCPConnectionError(Exception):
@@ -446,7 +452,7 @@ class MCPToolkit(BaseToolkit):
 
     def _ensure_strict_tool_schema(self, tool: FunctionTool) -> FunctionTool:
         r"""Ensure a tool has a strict schema compatible with OpenAI's
-        requirements.
+        requirements according to the structured outputs specification.
 
         Args:
             tool (FunctionTool): The tool to check and update if necessary.
@@ -457,60 +463,333 @@ class MCPToolkit(BaseToolkit):
         try:
             schema = tool.get_openai_tool_schema()
 
-            # Check if any object in the schema has additionalProperties: true
-            def _has_additional_properties_true(obj):
-                r"""Recursively check if any object has additionalProperties: true"""  # noqa: E501
+            # Helper functions for validation and transformation
+            def _validate_and_fix_schema(obj, path="", in_root=True):
+                r"""Recursively validate and fix schema to meet strict
+                requirements.
+                """
                 if isinstance(obj, dict):
-                    if obj.get("additionalProperties") is True:
-                        return True
-                    for value in obj.values():
-                        if _has_additional_properties_true(value):
-                            return True
+                    # Check if this is the root object
+                    if in_root and path == "":
+                        # Root must be an object, not anyOf
+                        if "anyOf" in obj and "type" not in obj:
+                            raise ValueError(
+                                "Root object must not be anyOf and must "
+                                "be an object"
+                            )
+                        if obj.get("type") and obj["type"] != "object":
+                            raise ValueError(
+                                "Root object must have type 'object'"
+                            )
+
+                    # Handle object types
+                    if obj.get("type") == "object":
+                        # Ensure additionalProperties is false
+                        obj["additionalProperties"] = False
+
+                        # Process properties
+                        if "properties" in obj:
+                            props = obj["properties"]
+                            # Only set required if it doesn't exist or needs
+                            # updating
+                            if "required" not in obj:
+                                # If no required field exists, make all fields
+                                # required
+                                obj["required"] = list(props.keys())
+                            else:
+                                # Ensure required field only contains valid
+                                # property names
+                                existing_required = obj.get("required", [])
+                                valid_required = [
+                                    req
+                                    for req in existing_required
+                                    if req in props
+                                ]
+                                # Add any missing properties to required
+                                for prop_name in props:
+                                    if prop_name not in valid_required:
+                                        valid_required.append(prop_name)
+                                obj["required"] = valid_required
+
+                            # Recursively process each property
+                            for prop_name, prop_schema in props.items():
+                                _validate_and_fix_schema(
+                                    prop_schema, f"{path}.{prop_name}", False
+                                )
+
+                    # Handle arrays
+                    elif obj.get("type") == "array":
+                        if "items" in obj:
+                            _validate_and_fix_schema(
+                                obj["items"], f"{path}.items", False
+                            )
+
+                    # Handle anyOf
+                    elif "anyOf" in obj:
+                        # Validate anyOf schemas
+                        for i, schema in enumerate(obj["anyOf"]):
+                            _validate_and_fix_schema(
+                                schema, f"{path}.anyOf[{i}]", False
+                            )
+
+                    # Handle string format validation
+                    elif obj.get("type") == "string":
+                        if "format" in obj:
+                            allowed_formats = [
+                                "date-time",
+                                "time",
+                                "date",
+                                "duration",
+                                "email",
+                                "hostname",
+                                "ipv4",
+                                "ipv6",
+                                "uuid",
+                            ]
+                            if obj["format"] not in allowed_formats:
+                                del obj["format"]  # Remove unsupported format
+
+                    # Handle number/integer validation
+                    elif obj.get("type") in ["number", "integer"]:
+                        # These properties are supported
+                        supported_props = [
+                            "multipleOf",
+                            "maximum",
+                            "exclusiveMaximum",
+                            "minimum",
+                            "exclusiveMinimum",
+                        ]
+                        # Remove any unsupported properties
+                        for key in list(obj.keys()):
+                            if key not in [
+                                *supported_props,
+                                "type",
+                                "description",
+                                "default",
+                            ]:
+                                del obj[key]
+
+                    # Process nested structures
+                    for key in ["allOf", "oneOf", "$defs", "definitions"]:
+                        if key in obj:
+                            if isinstance(obj[key], list):
+                                for i, item in enumerate(obj[key]):
+                                    _validate_and_fix_schema(
+                                        item, f"{path}.{key}[{i}]", False
+                                    )
+                            elif isinstance(obj[key], dict):
+                                for def_name, def_schema in obj[key].items():
+                                    _validate_and_fix_schema(
+                                        def_schema,
+                                        f"{path}.{key}.{def_name}",
+                                        False,
+                                    )
+
                 elif isinstance(obj, list):
-                    for item in obj:
-                        if _has_additional_properties_true(item):
-                            return True
-                return False
+                    for i, item in enumerate(obj):
+                        _validate_and_fix_schema(item, f"{path}[{i}]", False)
 
-            # FIRST: Check if the schema contains additionalProperties: true
-            # This must be checked before strict mode validation
-            if _has_additional_properties_true(schema):
-                # Force strict mode to False and log warning
-                if "function" in schema:
-                    schema["function"]["strict"] = False
-                tool.set_openai_tool_schema(schema)
-                logger.warning(
-                    f"Tool '{tool.get_function_name()}' contains "
-                    f"additionalProperties: true which is incompatible with "
-                    f"OpenAI strict mode. Setting strict=False for this tool."
-                )
-                return tool
+            def _check_schema_limits(obj, counts=None):
+                r"""Check if schema exceeds OpenAI limits."""
+                if counts is None:
+                    counts = {
+                        "properties": 0,
+                        "depth": 0,
+                        "enums": 0,
+                        "string_length": 0,
+                    }
 
-            # SECOND: Check if the tool already has strict mode enabled
-            # Only do this if there are no additionalProperties conflicts
-            if schema.get("function", {}).get("strict") is True:
-                return tool
+                def _count_properties(o, depth=0):
+                    if isinstance(o, dict):
+                        if depth > 5:
+                            raise ValueError(
+                                "Schema exceeds maximum nesting depth of 5"
+                            )
 
-            # Update the schema to be strict
-            if "function" in schema:
-                schema["function"]["strict"] = True
+                        if o.get("type") == "object" and "properties" in o:
+                            counts["properties"] += len(o["properties"])
+                            for prop in o["properties"].values():
+                                _count_properties(prop, depth + 1)
 
-                # Ensure parameters have proper strict mode configuration
-                parameters = schema["function"].get("parameters", {})
-                if parameters:
-                    # Ensure additionalProperties is false
-                    parameters["additionalProperties"] = False
+                        if "enum" in o:
+                            counts["enums"] += len(o["enum"])
+                            if isinstance(o["enum"], list):
+                                for val in o["enum"]:
+                                    if isinstance(val, str):
+                                        counts["string_length"] += len(val)
 
-                    # Process properties to handle optional fields
-                    properties = parameters.get("properties", {})
-                    parameters["required"] = list(properties.keys())
+                        # Count property names
+                        if "properties" in o:
+                            for name in o["properties"].keys():
+                                counts["string_length"] += len(name)
 
-                    # Apply the sanitization function from function_tool
-                    from camel.toolkits.function_tool import (
-                        sanitize_and_enforce_required,
+                        # Process nested structures
+                        for key in ["items", "allOf", "oneOf", "anyOf"]:
+                            if key in o:
+                                if isinstance(o[key], dict):
+                                    _count_properties(o[key], depth)
+                                elif isinstance(o[key], list):
+                                    for item in o[key]:
+                                        _count_properties(item, depth)
+
+                _count_properties(obj)
+
+                # Check limits, reference: https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses#objects-have-limitations-on-nesting-depth-and-size # noqa: E501
+                if counts["properties"] > 5000:
+                    raise ValueError(
+                        "Schema exceeds maximum of 5000 properties"
+                    )
+                if counts["enums"] > 1000:
+                    raise ValueError(
+                        "Schema exceeds maximum of 1000 enum values"
+                    )
+                if counts["string_length"] > 120000:
+                    raise ValueError(
+                        "Schema exceeds maximum total string length of 120000"
                     )
 
-                    schema = sanitize_and_enforce_required(schema)
+                return True
+
+            # Check if schema has any issues that prevent strict mode
+            def _has_strict_mode_issues(obj):
+                r"""Check for any issues that would prevent strict mode."""
+                issues = []
+
+                def _check_issues(o, path=""):
+                    if isinstance(o, dict):
+                        # Check for additionalProperties: true
+                        if o.get("additionalProperties") is True:
+                            issues.append(
+                                f"additionalProperties: true at {path}"
+                            )
+
+                        # Check for unsupported keywords
+                        unsupported = [
+                            "not",
+                            "dependentRequired",
+                            "dependentSchemas",
+                            "if",
+                            "then",
+                            "else",
+                            "patternProperties",
+                        ]
+                        for keyword in unsupported:
+                            if keyword in o:
+                                issues.append(
+                                    f"Unsupported keyword '{keyword}' "
+                                    f"at {path}"
+                                )
+
+                        # Recursively check
+                        for key, value in o.items():
+                            if isinstance(value, (dict, list)):
+                                _check_issues(value, f"{path}.{key}")
+
+                    elif isinstance(o, list):
+                        for i, item in enumerate(o):
+                            _check_issues(item, f"{path}[{i}]")
+
+                _check_issues(obj)
+                return issues
+
+            # Check if already strict and compliant
+            if schema.get("function", {}).get("strict") is True:
+                # Validate it's actually compliant
+                try:
+                    params = schema["function"].get("parameters", {})
+                    if params:
+                        _validate_and_fix_schema(params)
+                        _check_schema_limits(params)
+                    return tool
+                except Exception:
+                    # Not actually compliant, continue to fix it
+                    pass
+
+            # Apply sanitization first to handle optional fields properly
+            if "function" in schema:
+                # Apply the sanitization function first
+                from camel.toolkits.function_tool import (
+                    sanitize_and_enforce_required,
+                )
+
+                schema = sanitize_and_enforce_required(schema)
+
+                # Special handling for schemas with additionalProperties that
+                # aren't false These can't use strict mode
+                def _has_open_props(obj, path=""):
+                    """Check if any object has additionalProperties that
+                    isn't false."""
+                    if isinstance(obj, dict):
+                        if (
+                            obj.get("type") == "object"
+                            and "additionalProperties" in obj
+                        ):
+                            if obj["additionalProperties"] is not False:
+                                return True
+
+                        # Recurse through the schema
+                        for key, value in obj.items():
+                            if key in [
+                                "properties",
+                                "items",
+                                "allOf",
+                                "oneOf",
+                                "anyOf",
+                            ]:
+                                if isinstance(value, dict):
+                                    if _has_open_props(value, f"{path}.{key}"):
+                                        return True
+                                elif isinstance(value, list):
+                                    for i, item in enumerate(value):
+                                        if _has_open_props(
+                                            item,
+                                            f"{path}.{key}[{i}]",
+                                        ):
+                                            return True
+                            elif isinstance(value, dict) and key not in [
+                                "description",
+                                "type",
+                                "enum",
+                            ]:
+                                if _has_open_props(value, f"{path}.{key}"):
+                                    return True
+                    return False
+
+                # Check if schema has dynamic additionalProperties
+                if _has_open_props(schema["function"].get("parameters", {})):
+                    # Can't use strict mode with dynamic additionalProperties
+                    schema["function"]["strict"] = False
+                    tool.set_openai_tool_schema(schema)
+                    logger.warning(
+                        f"Tool '{tool.get_function_name()}' has "
+                        f"dynamic additionalProperties and cannot use "
+                        f"strict mode"
+                    )
+                    return tool
+
+                # Now check for blocking issues after sanitization
+                issues = _has_strict_mode_issues(schema)
+                if issues:
+                    # Can't use strict mode
+                    schema["function"]["strict"] = False
+                    tool.set_openai_tool_schema(schema)
+                    logger.warning(
+                        f"Tool '{tool.get_function_name()}' has "
+                        f"issues preventing strict mode: "
+                        f"{'; '.join(issues[:3])}{'...' if len(issues) > 3 else ''}"  # noqa: E501
+                    )
+                    return tool
+
+                # Enable strict mode
+                schema["function"]["strict"] = True
+
+                parameters = schema["function"].get("parameters", {})
+                if parameters:
+                    # Validate and fix the parameters schema
+                    _validate_and_fix_schema(parameters)
+
+                    # Check schema limits
+                    _check_schema_limits(parameters)
 
             tool.set_openai_tool_schema(schema)
             logger.debug(
@@ -518,7 +797,23 @@ class MCPToolkit(BaseToolkit):
             )
 
         except Exception as e:
-            logger.warning(f"Failed to ensure strict schema for tool: {e}")
+            # If we can't make it strict, disable strict mode
+            try:
+                if "function" in schema:
+                    schema["function"]["strict"] = False
+                tool.set_openai_tool_schema(schema)
+                logger.warning(
+                    f"Failed to ensure strict schema for "
+                    f"tool '{tool.get_function_name()}': {str(e)[:100]}. "
+                    f"Setting strict=False."
+                )
+            except Exception as inner_e:
+                # If even setting strict=False fails, log the error
+                logger.error(
+                    f"Critical error processing "
+                    f"tool '{tool.get_function_name()}': {inner_e}. "
+                    f"Tool may not function correctly."
+                )
 
         return tool
 
