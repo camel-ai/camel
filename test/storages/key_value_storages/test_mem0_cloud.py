@@ -110,14 +110,14 @@ class TestMem0Storage(unittest.TestCase):
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "memory": "test memory 1",
                 "metadata": {"key1": "value1"},
-                "created_at": "2023-01-01T00:00:00",
+                "created_at": "2023-01-01T00:00:00Z",
                 "agent_id": self.agent_id,
             },
             {
                 "id": "123e4567-e89b-12d3-a456-426614174001",
                 "memory": "test memory 2",
-                "metadata": {"key2": "value2"},
-                "created_at": "2023-01-02T00:00:00",
+                "metadata": None,  # Test None metadata handling
+                "created_at": "2023-01-02T00:00:00Z",
                 "agent_id": self.agent_id,
             },
         ]
@@ -126,8 +126,14 @@ class TestMem0Storage(unittest.TestCase):
         # Call load method
         results = self.storage.load()
 
-        # Verify client.get_all was called
+        # Verify client.get_all was called with proper filter format
         self.mock_mem0_client.get_all.assert_called_once()
+        args, kwargs = self.mock_mem0_client.get_all.call_args
+
+        # Check that filters are in proper Mem0 format
+        expected_filters = {"AND": [{"user_id": self.user_id}]}
+        self.assertEqual(kwargs.get("filters"), expected_filters)
+        self.assertEqual(kwargs.get("version"), "v2")
 
         # Check that results were transformed correctly
         self.assertEqual(len(results), 2)
@@ -144,6 +150,15 @@ class TestMem0Storage(unittest.TestCase):
             self.assertEqual(
                 result["message"]["content"], mock_results[idx]["memory"]
             )
+
+            # Verify metadata handling (should be dict, not None)
+            self.assertIsInstance(result["extra_info"], dict)
+            if idx == 0:
+                self.assertEqual(result["extra_info"], {"key1": "value1"})
+            else:
+                self.assertEqual(
+                    result["extra_info"], {}
+                )  # None should become empty dict
 
     def test_clear(self):
         r"""Test clearing all records from Mem0 storage."""
@@ -225,6 +240,123 @@ class TestMem0Storage(unittest.TestCase):
         ]
 
         self.assertEqual(messages, expected_messages)
+
+    def test_load_with_only_agent_id(self):
+        r"""Test loading records when only agent_id is set (no user_id)."""
+        # Create storage with only agent_id
+        storage = Mem0Storage(api_key=self.api_key, agent_id=self.agent_id)
+
+        mock_results = [
+            {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "memory": "test memory",
+                "metadata": {"key1": "value1"},
+                "created_at": "2023-01-01T00:00:00Z",
+                "agent_id": self.agent_id,
+            }
+        ]
+        self.mock_mem0_client.get_all.return_value = mock_results
+
+        storage.load()
+
+        # Verify client.get_all was called with agent_id filter
+        self.mock_mem0_client.get_all.assert_called_once()
+        args, kwargs = self.mock_mem0_client.get_all.call_args
+
+        expected_filters = {"AND": [{"user_id": self.agent_id}]}
+        self.assertEqual(kwargs.get("filters"), expected_filters)
+
+    def test_load_with_no_filters(self):
+        r"""Test loading records when neither agent_id nor user_id is set."""
+        # Create storage with no agent_id or user_id
+        storage = Mem0Storage(api_key=self.api_key, agent_id=None)
+
+        # Mock empty results from the API
+        self.mock_mem0_client.get_all.return_value = []
+
+        results = storage.load()
+
+        # Should return empty list when no filters are available
+        self.assertEqual(results, [])
+        # Client should be called with empty filters
+        self.mock_mem0_client.get_all.assert_called_once()
+        args, kwargs = self.mock_mem0_client.get_all.call_args
+        self.assertEqual(kwargs.get("filters"), {})
+        self.assertEqual(kwargs.get("version"), "v2")
+
+    def test_load_with_both_agent_and_user_id(self):
+        r"""Test loading records when both agent_id and user_id are set."""
+        # Create storage with both agent_id and user_id
+        storage = Mem0Storage(
+            api_key=self.api_key, agent_id=self.agent_id, user_id=self.user_id
+        )
+
+        mock_results = [
+            {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "memory": "test memory",
+                "metadata": {"key1": "value1"},
+                "created_at": "2023-01-01T00:00:00Z",
+                "agent_id": self.agent_id,
+            }
+        ]
+        self.mock_mem0_client.get_all.return_value = mock_results
+
+        storage.load()
+
+        # Verify client.get_all was called with both filters
+        self.mock_mem0_client.get_all.assert_called_once()
+        args, kwargs = self.mock_mem0_client.get_all.call_args
+
+        # Should use user_id filter (as per current implementation)
+        expected_filters = {"AND": [{"user_id": self.user_id}]}
+        self.assertEqual(kwargs.get("filters"), expected_filters)
+
+    def test_load_with_none_metadata(self):
+        r"""Test loading records with None metadata values."""
+        mock_results = [
+            {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "memory": "test memory",
+                "metadata": None,  # Explicitly None
+                "created_at": "2023-01-01T00:00:00Z",
+                "agent_id": self.agent_id,
+            }
+        ]
+        self.mock_mem0_client.get_all.return_value = mock_results
+
+        results = self.storage.load()
+
+        # Should handle None metadata gracefully
+        self.assertEqual(len(results), 1)
+        result = results[0]
+        self.assertIsInstance(result["extra_info"], dict)
+        self.assertEqual(
+            result["extra_info"], {}
+        )  # None should become empty dict
+
+    def test_load_with_missing_metadata_key(self):
+        r"""Test loading records with missing metadata key."""
+        mock_results = [
+            {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "memory": "test memory",
+                # No metadata key at all
+                "created_at": "2023-01-01T00:00:00Z",
+                "agent_id": self.agent_id,
+            }
+        ]
+        self.mock_mem0_client.get_all.return_value = mock_results
+
+        results = self.storage.load()
+
+        # Should handle missing metadata gracefully
+        self.assertEqual(len(results), 1)
+        result = results[0]
+        self.assertIsInstance(result["extra_info"], dict)
+        self.assertEqual(
+            result["extra_info"], {}
+        )  # Missing key should become empty dict
 
     @pytest.mark.skip(
         reason="Integration test is flaky due to API timing/behavior"
