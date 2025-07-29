@@ -73,6 +73,8 @@ class ActionExecutor:
                 "extract": self._extract,
                 "scroll": self._scroll,
                 "enter": self._enter,
+                "mouse_control": self._mouse_control,
+                "press_key": self._press_key,
             }.get(action_type)
 
             if handler is None:
@@ -381,6 +383,57 @@ class ActionExecutor:
             "message": "Pressed Enter on focused element",
             "details": details,
         }
+
+    async def _mouse_control(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        r"""Handle mouse_control action based on the coordinates"""
+        control = action.get("control", "click")
+        x_coord = action.get("x", 0)
+        y_coord = action.get("y", 0)
+
+        details = {
+            "action_type": "mouse_control",
+            "target": f"coordinates : ({x_coord}, {y_coord})",
+        }
+        try:
+            viewport = self.page.viewport_size
+            if viewport and (
+                x_coord < 0
+                or y_coord < 0
+                or x_coord > viewport["width"]
+                or y_coord > viewport["height"]
+            ):
+                raise ValueError(
+                    "Invalid coordinates, outside viewport bound :"
+                    f"({x_coord}, {y_coord})"
+                )
+            match control:
+                case "click":
+                    await self.page.mouse.click(x_coord, y_coord)
+                    message = "Action 'click' performed on the target"
+
+                case "dblclick":
+                    await self.page.mouse.dblclick(x_coord, y_coord)
+                    message = "Action 'dblclick' performed on the target"
+                case _:
+                    message = f"Invalid control action {control}"
+
+            return {"message": message, "details": details}
+        except Exception as e:
+            return {"message": f"Action failed: {e}", "details": details}
+
+    async def _press_key(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        r"""Handle press_key action by combining the keys in a list."""
+        keys = action.get("keys", [])
+        combined_keys = "+".join(keys)
+        details = {"action_type": "press_key", "keys": combined_keys}
+        try:
+            await self.page.keyboard.press(combined_keys)
+            return {
+                "message": "Pressed keys in the browser",
+                "details": details,
+            }
+        except Exception as e:
+            return {"message": f"Action failed: {e}", "details": details}
 
     # utilities
     async def _wait_dom_stable(self) -> None:

@@ -551,8 +551,8 @@ export class HybridBrowserToolkit {
       const totalTime = Date.now() - startTime;
 
       return {
-      result : `Console execution result: ${result}`,
-      snapshot: snapshot,
+        result : `Console execution result: ${result}`,
+        snapshot: snapshot,
         timing: {
           total_time_ms: totalTime,
           snapshot_time_ms: snapshotTime,

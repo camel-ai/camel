@@ -1312,10 +1312,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_select": self.browser_select,
             "browser_scroll": self.browser_scroll,
             "browser_enter": self.browser_enter,
+            "browser_mouse_click": self.browser_mouse_control,
+            "browser_press_key": self.browser_press_key,
             "browser_wait_user": self.browser_wait_user,
             "browser_switch_tab": self.browser_switch_tab,
             "browser_close_tab": self.browser_close_tab,
             "browser_get_tab_info": self.browser_get_tab_info,
+            "browser_console_view": self.browser_console_view,
+            "broser_console_exec": self.browser_console_exec,
         }
 
         enabled_tools = []

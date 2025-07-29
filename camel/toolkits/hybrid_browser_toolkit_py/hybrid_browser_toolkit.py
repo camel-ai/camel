@@ -73,11 +73,15 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_select",
         "browser_scroll",
         "browser_enter",
+        "browser_mouse_control",
+        "browser_press_key",
         "browser_wait_user",
         "browser_solve_task",
         "browser_switch_tab",
         "browser_close_tab",
         "browser_get_tab_info",
+        "browser_console_view",
+        "browser_console_exec",
     ]
 
     def __init__(
@@ -309,7 +313,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     # Try to close browser with a timeout to prevent hanging
                     try:
                         loop.run_until_complete(
-                            asyncio.wait_for(self.close_browser(), timeout=2.0)
+                            asyncio.wait_for(self.browser_close(), timeout=2.0)
                         )
                     except asyncio.TimeoutError:
                         pass  # Skip cleanup if it takes too long
@@ -1703,6 +1707,75 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         return result
 
+    async def browser_mouse_control(
+        self, *, control: str, x: int, y: int
+    ) -> Dict[str, Any]:
+        r"""Control the mouse to interact with browser with x, y coordinates
+
+        Args:
+            control ([str]): The action to perform: 'click' or 'dblclick'.
+            x (int): x-coordinate for the control action.
+            y (int): y-coordinate for the control action.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A new page snapshot, as this action often
+                  triggers navigation.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
+        """
+        if control not in ("click", "dblclick"):
+            return {
+                "result": "Error: supported control actions are "
+                "'click' or 'dblclick'",
+                "snapshot": "",
+            }
+
+        action = {"type": "mouse_control", "control": control, "x": x, "y": y}
+
+        result = await self._exec_with_snapshot(action)
+
+        # Add tab information to the result
+        tab_info = await self._get_tab_info_for_output()
+        result.update(tab_info)
+
+        return result
+
+    async def browser_press_key(self, *, keys: List[str]) -> Dict[str, Any]:
+        r"""Press key and key combinations.
+        Supports single key press or combination of keys by concatenating
+        them with '+' separator.
+
+        Args:
+            keys (List[str]): key or list of keys.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A new page snapshot.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
+        """
+        if not isinstance(keys, list) and all(
+            isinstance(item, str) for item in keys
+        ):
+            return {
+                "result": "Error: Expected keys as a list of strings.",
+                "snapshot": "",
+            }
+        action = {"type": "press_key", "keys": keys}
+
+        result = await self._exec_with_snapshot(action)
+
+        # Add tab information to the result
+        tab_info = await self._get_tab_info_for_output()
+        result.update(tab_info)
+
+        return result
+
     @action_logger
     async def browser_wait_user(
         self, timeout_sec: Optional[float] = None
@@ -1829,6 +1902,77 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         await agent.navigate(start_url)
         await agent.process_command(task_prompt, max_steps=max_steps)
         return "Task processing finished - see stdout for detailed trace."
+
+    async def browser_console_view(self) -> Dict[str, Any]:
+        r"""View current page console logs.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the result of the action:
+                - result (List[Dict]) : collection of logs from the
+                browser console
+        """
+        try:
+            logs = await self._session.get_console_logs()
+            # make output JSON serializable
+            return {"result": list(logs)}
+        except Exception as e:
+            logger.warning(f"Failed to retrieve logs: {e}")
+            return {"result": f"Failed to retrieve logs: {e}"}
+
+    async def browser_console_exec(self, code: str) -> Dict[str, Any]:
+        r"""Execute javascript code in the console of the current page and get
+        results.
+
+        Args:
+            code (str): JavaScript code for execution.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Result of the action.
+                - "snapshot" (str): A new page snapshot.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
+        """
+        page = await self._require_page()
+
+        try:
+            logger.info("Executing JavaScript code in browser console.")
+            exec_start = time.time()
+            result = await page.evaluate(code)
+            exec_time = time.time() - exec_start
+            logger.info(f"Code execution completed in {exec_time:.2f}s.")
+
+            import asyncio
+
+            await asyncio.sleep(0.2)
+
+            # Get snapshot
+            logger.info("Capturing page snapshot after code execution.")
+            snapshot_start = time.time()
+            snapshot = await self._session.get_snapshot(
+                force_refresh=True, diff_only=False
+            )
+            snapshot_time = time.time() - snapshot_start
+            logger.info(
+                f"Code execution snapshot captured in " f"{snapshot_time:.2f}s"
+            )
+
+            # Get tab information
+            tab_info = await self._get_tab_info_for_output()
+
+            return {
+                "result": f"Code execution result : {result}",
+                "snapshot": snapshot,
+                **tab_info,
+            }
+
+        except Exception as e:
+            logger.warning(f"Code execution failed: {e}")
+            return {
+                "result": f"Code execution failed: {e}",
+                "snapshot": "",
+            }
 
     def get_log_summary(self) -> Dict[str, Any]:
         r"""Get a summary of logged actions."""
@@ -2045,11 +2189,15 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_select": self.browser_select,
             "browser_scroll": self.browser_scroll,
             "browser_enter": self.browser_enter,
+            "browser_mouse_control": self.browser_mouse_control,
+            "browser_press_key": self.browser_press_key,
             "browser_wait_user": self.browser_wait_user,
             "browser_solve_task": self.browser_solve_task,
             "browser_switch_tab": self.browser_switch_tab,
             "browser_close_tab": self.browser_close_tab,
             "browser_get_tab_info": self.browser_get_tab_info,
+            "browser_console_view": self.browser_console_view,
+            "browser_console_exec": self.browser_console_exec,
         }
 
         enabled_tools = []

@@ -12,11 +12,13 @@ export class HybridBrowserSession {
   private configLoader: ConfigLoader;
   private scrollPosition: { x: number; y: number } = {x: 0, y: 0};
   private hasNavigatedBefore = false; //  Track if we've navigated before
-  private logLimit = 1000; 
+  private logLimit: number; 
 
   constructor(config: BrowserToolkitConfig = {}) {
     // Use ConfigLoader's fromPythonConfig to handle conversion properly
     this.configLoader = ConfigLoader.fromPythonConfig(config);
+    // Load browser configuration for console log limit, default to 1000
+    this.logLimit = this.configLoader.getBrowserConfig().consoleLogLimit || 1000;
   }
 
   private registerNewPage(tabId: string, page: Page): void {
@@ -469,6 +471,10 @@ export class HybridBrowserSession {
    */
   private async performMouseControl(page: Page, control: string, x: number, y: number): Promise<{ success: boolean; error?: string }> {
     try {
+      const viewport = page.viewportSize();
+      if (viewport && (x < 0 || y < 0 || x > viewport.width || y > viewport.height)) {
+        return { success: false, error: `Invalid coordinates, outside viewport bounds: (${x}, ${y})` };
+      }
       switch (control) {
         case 'click': {
           await page.mouse.click(x, y);
@@ -479,7 +485,7 @@ export class HybridBrowserSession {
           break;
         }
         default:
-          return { success: false, error: `Unknown mouse control: ${control}` };
+          return { success: false, error: `Invalid control action: ${control}` };
       }
       
       return { success: true };
