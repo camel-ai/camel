@@ -1,4 +1,4 @@
-(() => {
+((viewport_limit = false) => {
     // Unified analyzer that combines visual and structural analysis
     // Preserves complete snapshot.js logic while adding visual coordinate information
 
@@ -490,10 +490,7 @@
         // Add a heuristic to ignore code-like text that might be in the DOM
         if ((text.match(/[;:{}]/g)?.length || 0) > 2) return '';
         
-        // Truncate long names
-        if (text.length > 100) {
-            return text.substring(0, 100) + '...';
-        }
+
         
         return text;
         }
@@ -589,34 +586,8 @@
             const level = getAriaLevel(element);
             if (level > 0) node.level = level;
 
-            // Skip occluded empty nodes
-            if (node.occluded && node.children.length === 0) {
-                return null;
-            }
-            
-            // Skip low-value content
-            if (node.role === 'generic' && !receivesPointerEvents(element) && node.name) {
-                const lowValuePatterns = [
-                    /^\d+$/,  // Numbers only
-                    /^\d+[.,]?\d*\s*(?:[A-Z]{3}|USD|EUR|GBP|JPY|CAD|AUD|CHF|CNY|SEK|NZD)$/i,  // Pricing
-                    /^\[?\d*\]?\s*[\*★]\s*\d*\.?\d*\s*\(?\d*\)?$/,  // Ratings
-                    /^\d+\s*(?:reviews?|ratings?|comments?|views?|likes?|shares?)$/i,  // Social counts
-                    /^\d+\s*(?:followers?|following|posts?)$/i,  // Social metrics
-                    /^\d+\s*(?:items?|results?)$/i,  // Counters
-                    /^\d+\s*(?:min|minutes?|hours?|days?|weeks?|months?|years?)$/i,  // Time durations
-                    /^\d+\s*(?:km|mi|miles?|ft|m|cm|mm|in|yd)$/i,  // Distances
-                    /^Footnote\s*\d+$/i,  // Footnotes
-                    /^\d+\s*(?:off|discount)$/i,  // Discounts
-                    /^\d+\s*(?:stars?|points?|levels?)$/i,  // Game scores
-                    /^\d+\s*(?:degrees?|°)$/i  // Temperatures
-                ];
-                
-                const name = node.name.trim();
-                if (lowValuePatterns.some(pattern => pattern.test(name))) {
-                    return null;
-                }
-            }
 
+            
             return node;
         }
 
@@ -765,19 +736,7 @@
             return node.children;
         }
         
-        // Flatten redundant nesting
-        if (node.role === 'generic' && node.children.length === 1 && typeof node.children[0] !== 'string') {
-            const child = node.children[0];
-            if (child.name && node.name && child.name.includes(node.name.substring(0, 50))) {
-                node.children = child.children;
-                if (child.inheritedCursor) node.inheritedCursor = true;
-            }
-        }
-        
-        // Remove empty generics with short names and no children/content
-        if (node.role === 'generic' && node.children.length === 0 && node.name && node.name.length < 10) {
-            return [];
-        }
+
         
         return [node];
     }
@@ -869,6 +828,23 @@
 
     // === Visual analysis functions from page_script.js ===
 
+    // Check if element is within the current viewport
+    function isInViewport(element) {
+        if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
+        
+        try {
+            const rect = element.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
+        } catch (e) {
+            return false;
+        }
+    }
+
     // From page_script.js - check if element is topmost at coordinates
     function isTopmost(element, x, y) {
         let hit = document.elementFromPoint(x, y);
@@ -909,10 +885,21 @@
 
     // === Unified analysis function ===
 
-    function collectElementsFromTree(node, elementsMap) {
+    function collectElementsFromTree(node, elementsMap, viewportLimitEnabled = false) {
         if (typeof node === 'string') return;
 
         if (node.element && node.ref) {
+            // If viewport_limit is enabled, only include elements that are in the viewport
+            if (viewportLimitEnabled && !isInViewport(node.element)) {
+                // Skip this element but still process its children
+                if (node.children) {
+                    for (const child of node.children) {
+                        collectElementsFromTree(child, elementsMap, viewportLimitEnabled);
+                    }
+                }
+                return;
+            }
+
             // Get visual coordinates for this element
             const coordinates = getElementCoordinates(node.element);
 
@@ -945,7 +932,7 @@
         // Recursively process children
         if (node.children) {
             for (const child of node.children) {
-                collectElementsFromTree(child, elementsMap);
+                collectElementsFromTree(child, elementsMap, viewportLimitEnabled);
             }
         }
     }
@@ -985,7 +972,7 @@
         [tree] = normalizeTree(tree);
 
         const elementsMap = {};
-        collectElementsFromTree(tree, elementsMap);
+        collectElementsFromTree(tree, elementsMap, viewport_limit);
 
         // Verify uniqueness of aria-ref attributes (debugging aid)
         const ariaRefCounts = {};
