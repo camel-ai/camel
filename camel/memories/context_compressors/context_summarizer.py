@@ -77,7 +77,8 @@ class ContextCompressionService:
 
     def _generate_session_id(self) -> str:
         r"""Generate a unique session ID for the current session."""
-        return datetime.now().strftime("session_%m_%d_%H%M")
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        return f"session_{timestamp}"
 
     def summarize_messages(self, 
         memory_records: List["MemoryRecord"],

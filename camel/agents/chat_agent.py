@@ -43,6 +43,7 @@ from openai import (
     Stream,
 )
 from pydantic import BaseModel, ValidationError
+from regex import R
 
 from camel.agents._types import ModelResponse, ToolCallRequest
 from camel.agents._utils import (
@@ -1531,7 +1532,7 @@ class ChatAgent(BaseAgent):
 
         # Compress context if needed (after assistant response is recorded)
         if self.auto_compress_context and self._should_compress_context():
-            self._compress_context()
+            self.compress_context()
 
         # Clean tool call messages from memory after response generation
         if self.prune_tool_calls_from_memory and tool_call_records:
@@ -3894,16 +3895,18 @@ class ChatAgent(BaseAgent):
         except Exception as e:
             logger.error(f"Error checking if context should be compressed: {e}")
             return False
+    
+    def refresh_context_with_summary(self, summary:str) -> bool:
+        r"""Empty the agent's memory and replace it with a summary
+        of the conversation history.
 
-    def _compress_context(self) -> None:
-        r"""Compress context by generating summary and saving history."""
+        Args:
+            summary (str): The summary of the conversation history.
+
+        Returns:
+            bool: True if the context was refreshed successfully, False otherwise.
+        """
         try:
-            # get current memory records 
-            records = [cr.memory_record for cr in self.memory.retrieve()]
-
-            # use context compression service for complete pipeline
-            summary = self._context_compression_service.compress_and_save(records)
-
             # clear the memory with compression reason (suppresses warning)
             self.clear_memory(reason="compression")
 
@@ -3914,6 +3917,24 @@ class ChatAgent(BaseAgent):
                     content=f"[Context Summary]\n\n{summary}"
                 )
                 self.update_memory(summary_message, OpenAIBackendRole.ASSISTANT)
+                return True
+            return False
+            
+        except Exception as e:
+            logger.error(f"Failed to empty memory and replace it with summary: {e}")
+            return False
+
+    def compress_context(self) -> None:
+        r"""Compress context by generating summary and saving history."""
+        try:
+            # get current memory records 
+            records = [cr.memory_record for cr in self.memory.retrieve()]
+
+            # use context compression service for complete pipeline
+            summary = self._context_compression_service.compress_and_save(records)
+
+            # empty memory and replace it with the summary
+            self.refresh_context_with_summary(summary)
             
             logger.info(f"Context compressed - replaced {len(records)} messages with summary")
             
