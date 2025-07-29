@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "terminal_toolkit": {
+      "command": "python",
+      "args": [
+        "examples/toolkits/mcp/mcp_terminal_toolkit/terminal_toolkit_server.py",
+        "--mode",
+        "stdio"
+      ]
+    }
+  }
+} 
