@@ -28,7 +28,7 @@ A tool in CAMEL is just a <b>FunctionTool</b>—an interface any agent can call 
 <Card title="Define a Custom Tool" icon="toolbox">
 You can easily create your own tools for any use case. Just write a Python function and wrap it using <b>FunctionTool</b>:
 
-<CodeBlock language="python" title="add_tool.py">
+```python add_tool.py lines icon="python"
 from camel.toolkits import FunctionTool
 
 def add(a: int, b: int) -> int:
@@ -36,7 +36,8 @@ def add(a: int, b: int) -> int:
     return a + b
 
 add_tool = FunctionTool(add)
-</CodeBlock>
+```
+
 
 Inspect your tool’s properties—such as its name, description, and OpenAI-compatible schema—using built-in methods:
 <CodeGroup>
@@ -58,35 +59,33 @@ Adds two numbers.
 </Card>
 
 <Card title="Using Toolkits" icon="screwdriver-wrench">
-Toolkits group related tools for specialized tasks—search, math, or automation. Use built-in toolkits or build your own.
+Toolkits group related tools for specialized tasks—search, math, or automation. Use built‑in toolkits or build your own:
 
-<CodeBlock language="python" title="toolkit_usage.py">
+```python toolkit_usage.py lines icon="python"
 from camel.toolkits import SearchToolkit
 toolkit = SearchToolkit()
-tools = toolkit.get_tools()
-</CodeBlock>
+tools   = toolkit.get_tools()
+```
 
 You can also wrap toolkit methods as individual FunctionTools:
-<CodeBlock language="python" title="custom_tools.py">
-from camel.toolkits import FunctionTool, SearchToolkit
 
+```python custom_tools.py lines icon="python"
+from camel.toolkits import FunctionTool, SearchToolkit
 google_tool = FunctionTool(SearchToolkit().search_google)
-wiki_tool = FunctionTool(SearchToolkit().search_wiki)
-</CodeBlock>
+wiki_tool   = FunctionTool(SearchToolkit().search_wiki)
+```
 </Card>
 
 <Card title="Passing Tools to ChatAgent" icon="user-cog">
 You can enhance any <b>ChatAgent</b> with custom or toolkit-powered tools. Just pass the tools during initialization:
 
-<CodeBlock language="python" title="chatagent_tools.py">
+```python chatagent_tools.py lines icon="python"
 from camel.agents import ChatAgent
-
 tool_agent = ChatAgent(
     tools=tools,  # List of FunctionTools
 )
-
 response = tool_agent.step("A query related to the tool you added")
-</CodeBlock>
+```
 </Card>
 
 ## Built-in Toolkits
@@ -152,42 +151,35 @@ MCP (Model Context Protocol) is a unified protocol for connecting LLMs with exte
 </Card>
 
 <Card title="Expose a Toolkit as an MCP Server" icon="rocket">
-Any CAMEL toolkit can run as an MCP server. Here’s how you can start an ArXiv toolkit server from a script:
+Any CAMEL toolkit can run as an MCP server. Example for ArxivToolkit:
 
-<CodeGroup>
-```python
+```python arxiv_mcp_server.py lines icon="python"
 import argparse
 import sys
-
 from camel.toolkits import ArxivToolkit
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Run Arxiv Toolkit with MCP server mode.",
-        usage=f"python {sys.argv[0]} [--mode MODE] [--timeout TIMEOUT]",
+        description="Run Arxiv Toolkit in MCP server mode.",
+        usage="python arxiv_mcp_server.py [--mode MODE] [--timeout TIMEOUT]"
     )
     parser.add_argument(
         "--mode",
         choices=["stdio", "sse", "streamable-http"],
         default="stdio",
-        help="MCP server mode (default: 'stdio')",
+        help="MCP server mode (default: 'stdio')"
     )
     parser.add_argument(
         "--timeout",
         type=float,
         default=None,
-        help="Timeout for the MCP server (default: None)",
+        help="Timeout in seconds (default: None)"
     )
-
     args = parser.parse_args()
+
     toolkit = ArxivToolkit(timeout=args.timeout)
     toolkit.run_mcp_server(mode=args.mode)
-    ```
-</CodeGroup>
-Supported modes:  
-- <b>stdio</b>: Standard input/output (default)  
-- <b>sse</b>: Server-Sent Events  
-- <b>streamable-http</b>: Streamable HTTP
+```
 </Card>
 
 <Card title="MCP Server Configuration" icon="settings">

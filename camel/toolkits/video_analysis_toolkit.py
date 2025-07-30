@@ -97,7 +97,7 @@ class VideoAnalysisToolkit(BaseToolkit):
     r"""A class for analysing videos with vision-language model.
 
     Args:
-        download_directory (Optional[str], optional): The directory where the
+        working_directory (Optional[str], optional): The directory where the
             video will be downloaded to. If not provided, video will be stored
             in a temporary directory and will be cleaned up after use.
             (default: :obj:`None`)
@@ -123,7 +123,7 @@ class VideoAnalysisToolkit(BaseToolkit):
     @dependencies_required("ffmpeg", "scenedetect")
     def __init__(
         self,
-        download_directory: Optional[str] = None,
+        working_directory: Optional[str] = None,
         model: Optional[BaseModelBackend] = None,
         use_audio_transcription: bool = False,
         use_ocr: bool = False,
@@ -133,30 +133,30 @@ class VideoAnalysisToolkit(BaseToolkit):
         timeout: Optional[float] = None,
     ) -> None:
         super().__init__(timeout=timeout)
-        self._cleanup = download_directory is None
+        self._cleanup = working_directory is None
         self._temp_files: list[str] = []  # Track temporary files for cleanup
         self._use_audio_transcription = use_audio_transcription
         self._use_ocr = use_ocr
         self.output_language = output_language
         self.frame_interval = frame_interval
 
-        self._download_directory = Path(
-            download_directory or tempfile.mkdtemp()
+        self._working_directory = Path(
+            working_directory or tempfile.mkdtemp()
         ).resolve()
 
         self.video_downloader_toolkit = VideoDownloaderToolkit(
-            download_directory=str(self._download_directory),
+            working_directory=str(self._working_directory),
             cookies_path=cookies_path,
         )
 
         try:
-            self._download_directory.mkdir(parents=True, exist_ok=True)
+            self._working_directory.mkdir(parents=True, exist_ok=True)
         except OSError as e:
             raise ValueError(
-                f"Error creating directory {self._download_directory}: {e}"
+                f"Error creating directory {self._working_directory}: {e}"
             )
 
-        logger.info(f"Video will be downloaded to {self._download_directory}")
+        logger.info(f"Video will be downloaded to {self._working_directory}")
 
         self.vl_model = model
         # Ensure ChatAgent is initialized with a model if provided
@@ -206,16 +206,16 @@ class VideoAnalysisToolkit(BaseToolkit):
                     )
 
         # Clean up temporary directory if needed
-        if self._cleanup and os.path.exists(self._download_directory):
+        if self._cleanup and os.path.exists(self._working_directory):
             try:
                 import sys
 
                 if getattr(sys, 'modules', None) is not None:
                     import shutil
 
-                    shutil.rmtree(self._download_directory)
+                    shutil.rmtree(self._working_directory)
                     logger.debug(
-                        f"Removed temp directory: {self._download_directory}"
+                        f"Removed temp directory: {self._working_directory}"
                     )
             except (ImportError, AttributeError):
                 # Skip cleanup if interpreter is shutting down
@@ -223,7 +223,7 @@ class VideoAnalysisToolkit(BaseToolkit):
             except OSError as e:
                 logger.warning(
                     f"Failed to remove temporary directory "
-                    f"{self._download_directory}: {e}"
+                    f"{self._working_directory}: {e}"
                 )
 
     @dependencies_required("pytesseract", "cv2", "numpy")

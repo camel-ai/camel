@@ -69,7 +69,7 @@ class OpenAIImageToolkit(BaseToolkit):
             Literal["transparent", "opaque", "auto"]
         ] = "auto",
         style: Optional[Literal["vivid", "natural"]] = None,
-        image_save_path: Optional[str] = "image_save",
+        working_directory: Optional[str] = "image_save",
     ):
         r"""Initializes a new instance of the OpenAIImageToolkit class.
 
@@ -100,7 +100,7 @@ class OpenAIImageToolkit(BaseToolkit):
                 The background of the image.(default: :obj:`"auto"`)
             style (Optional[Literal["vivid", "natural"]]): The style of the
                 image.(default: :obj:`None`)
-            image_save_path (Optional[str]): The path to save the generated
+            working_directory (Optional[str]): The path to save the generated
                 image.(default: :obj:`"image_save"`)
         """
         super().__init__(timeout=timeout)
@@ -114,7 +114,7 @@ class OpenAIImageToolkit(BaseToolkit):
         self.n = n
         self.background = background
         self.style = style
-        self.image_save_path: str = image_save_path or "image_save"
+        self.working_directory: str = working_directory or "image_save"
 
     def base64_to_image(self, base64_string: str) -> Optional[Image.Image]:
         r"""Converts a base64 encoded string into a PIL Image object.
@@ -213,7 +213,7 @@ class OpenAIImageToolkit(BaseToolkit):
 
                 # Save the image from base64
                 image_bytes = base64.b64decode(image_b64)
-                os.makedirs(self.image_save_path, exist_ok=True)
+                os.makedirs(self.working_directory, exist_ok=True)
 
                 # Add index to filename when multiple images
                 if len(response.data) > 1:
@@ -221,7 +221,7 @@ class OpenAIImageToolkit(BaseToolkit):
                 else:
                     filename = f"{image_name}_{uuid.uuid4().hex}.png"
 
-                image_path = os.path.join(self.image_save_path, filename)
+                image_path = os.path.join(self.working_directory, filename)
 
                 with open(image_path, "wb") as f:
                     f.write(image_bytes)

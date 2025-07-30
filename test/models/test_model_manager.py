@@ -12,16 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, cast
 
 import pytest
 from mock import Mock
-from openai.types.chat.chat_completion_system_message_param import (
-    ChatCompletionSystemMessageParam,
-)
 
 from camel.models import BaseModelBackend
 from camel.models.model_manager import ModelManager
+from camel.types import ChatCompletionMessageParam
 
 
 @pytest.mark.model_backend
@@ -42,21 +40,22 @@ def test_model_manager(
     calls_count: int,
     times_each_model_called: int,
 ):
-    models = (
-        [Mock(run=Mock()) for _ in range(models_number)]
-        if models_number > 1
-        else Mock()
-    )
+    models = [Mock(run=Mock()) for _ in range(models_number)]
 
     if TYPE_CHECKING:
         assert type(models) is List[BaseModelBackend]
-    messages: List = []
+    messages: List[ChatCompletionMessageParam] = []
     for _ in range(calls_count):
-        msg = "message"
+        msg = cast(
+            ChatCompletionMessageParam,
+            {"role": "system", "content": "message"},
+        )
         if TYPE_CHECKING:
-            assert type(msg) is ChatCompletionSystemMessageParam
+            assert type(msg) is ChatCompletionMessageParam
         messages.append(msg)
-    model_manager = ModelManager(models, scheduling_strategy=strategy)
+    model_manager = ModelManager(
+        cast(List[BaseModelBackend], models), scheduling_strategy=strategy
+    )
 
     assert isinstance(model_manager.models, list)
     assert len(model_manager.models) == models_number
@@ -86,12 +85,29 @@ def test_model_manager(
 
 def test_model_manager_always_first_turns_into_round_robin():
     models = [Mock(run=Mock(side_effect=Exception())) for _ in range(3)]
-    model_manager = ModelManager(models, scheduling_strategy="always_first")
+    model_manager = ModelManager(
+        cast(List[BaseModelBackend], models),
+        scheduling_strategy="always_first",
+    )
     assert model_manager.scheduling_strategy.__name__ == "always_first"
     assert model_manager.current_model_index == 0
     with pytest.raises(Exception):  # noqa: B017
-        model_manager.run(["message"])
+        model_manager.run(
+            [
+                cast(
+                    ChatCompletionMessageParam,
+                    {"role": "system", "content": "message"},
+                )
+            ]
+        )
     assert model_manager.scheduling_strategy.__name__ == "round_robin"
     with pytest.raises(Exception):  # noqa: B017
-        model_manager.run(["message"])
+        model_manager.run(
+            [
+                cast(
+                    ChatCompletionMessageParam,
+                    {"role": "system", "content": "message"},
+                )
+            ]
+        )
     assert model_manager.current_model_index == 1

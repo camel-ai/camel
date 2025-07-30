@@ -243,7 +243,7 @@ class GeminiModel(OpenAICompatibleModel):
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
 
-                # Process parameters to remove anyOf
+                # Process parameters to remove anyOf and handle enum/format
                 if 'parameters' in function_dict:
                     params = function_dict['parameters']
                     if 'properties' in params:
@@ -259,6 +259,20 @@ class GeminiModel(OpenAICompatibleModel):
                                     params['properties'][prop_name][
                                         'description'
                                     ] = prop_value['description']
+
+                            # Handle enum and format restrictions for Gemini
+                            # API enum: only allowed for string type
+                            if prop_value.get('type') != 'string':
+                                prop_value.pop('enum', None)
+
+                            # format: only allowed for string, integer, and
+                            # number types
+                            if prop_value.get('type') not in [
+                                'string',
+                                'integer',
+                                'number',
+                            ]:
+                                prop_value.pop('format', None)
 
             request_config["tools"] = tools
 
@@ -283,7 +297,7 @@ class GeminiModel(OpenAICompatibleModel):
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
 
-                # Process parameters to remove anyOf
+                # Process parameters to remove anyOf and handle enum/format
                 if 'parameters' in function_dict:
                     params = function_dict['parameters']
                     if 'properties' in params:
@@ -299,6 +313,20 @@ class GeminiModel(OpenAICompatibleModel):
                                     params['properties'][prop_name][
                                         'description'
                                     ] = prop_value['description']
+
+                            # Handle enum and format restrictions for Gemini
+                            # API enum: only allowed for string type
+                            if prop_value.get('type') != 'string':
+                                prop_value.pop('enum', None)
+
+                            # format: only allowed for string, integer, and
+                            # number types
+                            if prop_value.get('type') not in [
+                                'string',
+                                'integer',
+                                'number',
+                            ]:
+                                prop_value.pop('format', None)
 
             request_config["tools"] = tools
 

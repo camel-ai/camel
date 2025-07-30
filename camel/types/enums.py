@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from enum import Enum, EnumMeta
-from typing import cast
+from typing import Union, cast
 
 from camel.logger import get_logger
 from camel.types.unified_model_type import UnifiedModelType
@@ -245,6 +245,7 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_QWQ_32B = "qwq-32b-preview"
     QWEN_QVQ_72B = "qvq-72b-preview"
     QWEN_QWQ_PLUS = "qwq-plus"
+    QWEN_3_CODER_PLUS = "qwen3-coder-plus"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -420,11 +421,14 @@ class ModelType(UnifiedModelType, Enum):
     def __str__(self):
         return self.value
 
-    def __new__(cls, value) -> "ModelType":
+    def __repr__(self):
+        return self.value
+
+    def __new__(cls, value: Union["ModelType", str]) -> "ModelType":
         return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
     @classmethod
-    def from_name(cls, name):
+    def from_name(cls, name: str) -> "ModelType":
         r"""Returns the ModelType enum value from a string."""
         for model_type in cls:
             if model_type.value == name:
@@ -760,6 +764,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_PLUS_2025_04_28,
             ModelType.QWEN_TURBO_LATEST,
             ModelType.QWEN_TURBO_2025_04_28,
+            ModelType.QWEN_3_CODER_PLUS,
         }
 
     @property
@@ -1303,6 +1308,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
         }:
             return 1_048_576
+        elif self in {
+            ModelType.QWEN_3_CODER_PLUS,
+        }:
+            return 1_000_000
         elif self in {
             ModelType.QWEN_LONG,
             ModelType.TOGETHER_LLAMA_4_SCOUT,
