@@ -46,11 +46,13 @@ class ChatHistoryBlock(MemoryBlock):
         self,
         storage: Optional[BaseKeyValueStorage] = None,
         keep_rate: float = 0.9,
+        warn_on_empty: bool = True,
     ) -> None:
         if keep_rate > 1 or keep_rate < 0:
             raise ValueError("`keep_rate` should be in [0,1]")
         self.storage = storage or InMemoryKeyValueStorage()
         self.keep_rate = keep_rate
+        self.warn_on_empty = warn_on_empty
 
     def retrieve(
         self,
@@ -70,7 +72,9 @@ class ChatHistoryBlock(MemoryBlock):
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
-            warnings.warn("The `ChatHistoryMemory` is empty.")
+            # Only warn if required
+            if self.warn_on_empty:
+                warnings.warn("The `ChatHistoryMemory` is empty.")
             return list()
 
         if window_size is not None and window_size >= 0:
