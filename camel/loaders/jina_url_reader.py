@@ -14,7 +14,7 @@
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from warnings import warn
 
 from camel.types.enums import JinaReturnFormat
@@ -83,7 +83,7 @@ class JinaURLLoader(BaseLoader):
     def _load_single(
         self,
         source: Union[str, Path],
-    ) -> Dict[str, Any]:
+    ) -> Tuple[str, Any]:
         r"""Load content from a single URL.
 
         Args:
@@ -91,36 +91,36 @@ class JinaURLLoader(BaseLoader):
             (default: :obj:`None`)
 
         Returns:
-            Dict[str, Any]: A dictionary containing the loaded data with
-                at least a "content" key.
+            Tuple[str, Any]: A tuple containing the source key and the loaded
+                data with at least a "content" key.
 
         Raises:
             ValueError: If the URL is invalid or the request fails.
         """
         import requests
 
-        source_str = str(source)
-        if not source_str.startswith(('http://', 'https://')):
-            source_str = f"https://{source_str}"
+        source_key = self.get_source_key(source)
+        if not source.startswith(('http://', 'https://')):
+            source = f"https://{source}"
 
         try:
             response = requests.get(
                 JINA_ENDPOINT,
-                params={"url": source_str},
+                params={"url": str(source)},
                 headers=self._headers,
                 timeout=self.timeout,
             )
             response.raise_for_status()
-            return {"content": response.text, "source": source_str}
+            return source_key, response.text
         except Exception as e:
             raise ValueError(
-                f"Failed to read content from {source_str}: {e}"
+                f"Failed to read content from {source}: {e}"
             ) from e
 
     def load(
         self,
         source: Union[str, Path, List[Union[str, Path]]],
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         r"""Load content from one or more URLs.
 
         Args:
@@ -128,16 +128,21 @@ class JinaURLLoader(BaseLoader):
             (default: :obj:`None`)
 
         Returns:
-            List[Dict[str, Any]]: A list of loaded data. If a single source
-                is provided, the list will contain a single item.
+            Dict[str, Any]: A dictionary containing the loaded data with
+                at least a "content" key.
 
         Raises:
             ValueError: If any URL is invalid or the request fails.
         """
         if isinstance(source, (str, Path)):
-            return [self._load_single(source)]
+            source_key, content = self._load_single(source)
+            return {source_key: content}
         elif isinstance(source, list):
-            return [self._load_single(url) for url in source]
+            result = {}
+            for url in source:
+                source_key, content = self._load_single(url)
+                result[source_key] = content
+            return result
         else:
             raise TypeError(f"Expected str, Path, or list, got {type(source)}")
 

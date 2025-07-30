@@ -48,7 +48,8 @@ with tempfile.TemporaryDirectory() as temp_dir:
         file_paths["presentation.pptx"],
         file_paths["data.xlsx"],
     ]
-    converted = converter.load(files, parallel=True, skip_failed=True)[0]
+
+    converted = converter.load(files, parallel=True, skip_failed=True)
     for path, md in converted.items():
         print(f"Markdown for {path}:\n{md}\n")
 

@@ -54,7 +54,8 @@ sales_by_country = pd.DataFrame(
 print("Example 1: PandasLoader without LLM")
 reader_no_llm = PandasLoader()
 # Without an LLM, load() returns a regular pandas DataFrame
-df_no_llm = reader_no_llm.load(sales_by_country)["contents"][0]
+source_key = reader_no_llm.get_source_key(sales_by_country)
+df_no_llm = reader_no_llm.load(sales_by_country)[source_key]
 print(f"Loaded DataFrame shape: {df_no_llm.shape}")
 print("Top 5 countries by sales:")
 print(df_no_llm.sort_values(by="sales", ascending=False).head(5))
@@ -71,7 +72,8 @@ if os.getenv("OPENAI_API_KEY"):
     }
     reader_with_llm = PandasLoader(config=llm_config)
     # With an LLM, load() returns a SmartDataframe
-    df_with_llm = reader_with_llm.load(sales_by_country)["contents"][0]
+    source_key = reader_with_llm.get_source_key(sales_by_country)
+    df_with_llm = reader_with_llm.load(sales_by_country)[source_key]
     print("Querying data with LLM:")
     print(df_with_llm.chat("Which are the top 5 countries by sales?"))
 else:

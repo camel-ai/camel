@@ -20,6 +20,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Tuple,
     Union,
 )
 
@@ -87,7 +88,7 @@ class PandasLoader(BaseLoader):
 
     def _load_single(
         self, source: Union[str, Path, "DataFrame"], **kwargs: Any
-    ) -> Any:
+    ) -> Tuple[str, Any]:
         r"""Load data from a single source.
 
         Args:
@@ -105,8 +106,10 @@ class PandasLoader(BaseLoader):
         """
         from pandas import DataFrame
 
+        key = self.get_source_key(source)
+
         if isinstance(source, DataFrame):
-            return source
+            return key, source
 
         file_path = str(source)
         path = Path(file_path)
@@ -122,13 +125,13 @@ class PandasLoader(BaseLoader):
         if not loader_method:
             raise ValueError(f"No loader method found for {path.suffix} files")
 
-        return loader_method(file_path, **kwargs)
+        return key, loader_method(file_path, **kwargs)
 
     def load(
         self,
         source: Union["DataFrame", str, List[Union[str, "DataFrame"]]],
         **kwargs: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         r"""Load data from one or multiple sources.
 
         Args:
@@ -149,26 +152,21 @@ class PandasLoader(BaseLoader):
 
         # Handle single source
         if not isinstance(source, (list, set, tuple)):
-            df = self._load_single(source, **kwargs)
+            key, df = self._load_single(source, **kwargs)
             if hasattr(self, 'config') and 'llm' in self.config:
                 from pandasai import SmartDataframe
 
-                return [SmartDataframe(df, config=self.config)]
-            return [df]
+                return {key: SmartDataframe(df, config=self.config)}
+            return {key: df}
 
-        # Handle multiple sources
-        results = []
+        results = {}
         for item in source:
-            df = self._load_single(item, **kwargs)
-            results.append(df)
+            key, df = self._load_single(item, **kwargs)
+            if hasattr(self, 'config') and 'llm' in self.config:
+                from pandasai import SmartDataframe
 
-        # Convert to SmartDataframe if LLM is configured
-        if hasattr(self, 'config') and 'llm' in self.config:
-            from pandasai import SmartDataframe
-
-            results = [
-                SmartDataframe(df, config=self.config) for df in results
-            ]
+                df = SmartDataframe(df, config=self.config)
+            results[key] = df
 
         return results
 
