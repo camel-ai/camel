@@ -20,9 +20,9 @@ from .agent_memories import (
 from .base import AgentMemory, BaseContextCreator, MemoryBlock
 from .blocks.chat_history_block import ChatHistoryBlock
 from .blocks.vectordb_block import VectorDBBlock
+from .context_compressors import ContextCompressionService
 from .context_creators.score_based import ScoreBasedContextCreator
 from .records import ContextRecord, MemoryRecord
-from .context_compressors import ContextCompressionService
 
 __all__ = [
     'MemoryRecord',

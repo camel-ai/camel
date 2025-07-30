@@ -43,6 +43,7 @@ class ChatHistoryMemory(AgentMemory):
         context_creator: BaseContextCreator,
         storage: Optional[BaseKeyValueStorage] = None,
         window_size: Optional[int] = None,
+        warn_on_empty: bool = True,
         agent_id: Optional[str] = None,
     ) -> None:
         if window_size is not None and not isinstance(window_size, int):
@@ -51,7 +52,10 @@ class ChatHistoryMemory(AgentMemory):
             raise ValueError("`window_size` must be non-negative.")
         self._context_creator = context_creator
         self._window_size = window_size
-        self._chat_history_block = ChatHistoryBlock(storage=storage)
+        self._chat_history_block = ChatHistoryBlock(
+            storage=storage,
+            warn_on_empty=warn_on_empty,
+        )
         self._agent_id = agent_id
 
     @property
@@ -85,8 +89,8 @@ class ChatHistoryMemory(AgentMemory):
     def get_context_creator(self) -> BaseContextCreator:
         return self._context_creator
 
-    def clear(self, reason: str = "manual") -> None:
-        self._chat_history_block.clear(reason)
+    def clear(self) -> None:
+        self._chat_history_block.clear()
 
     def clean_tool_calls(self) -> None:
         r"""Removes tool call messages from memory.

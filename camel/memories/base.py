@@ -46,12 +46,8 @@ class MemoryBlock(ABC):
         self.write_records([record])
 
     @abstractmethod
-    def clear(self, reason: str = "manual") -> None:
-        r"""Clears all messages from the memory.
-
-        Args:
-            reason (str): Reason for clearing memory.
-        """
+    def clear(self) -> None:
+        r"""Clears all messages from the memory."""
         pass
 
 

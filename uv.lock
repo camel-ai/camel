@@ -784,7 +784,7 @@ all = [
     { name = "types-requests" },
     { name = "types-setuptools" },
     { name = "types-tqdm" },
-    { name = "unstructured" },
+    { name = "unstructured", extra = ["md"] },
     { name = "weaviate-client" },
     { name = "websockets" },
     { name = "wikipedia" },
@@ -874,7 +874,7 @@ document-tools = [
     { name = "python-pptx" },
     { name = "reportlab" },
     { name = "tabulate" },
-    { name = "unstructured" },
+    { name = "unstructured", extra = ["md"] },
     { name = "xls2xlsx" },
 ]
 huggingface = [
@@ -948,7 +948,7 @@ owl = [
     { name = "tree-sitter" },
     { name = "tree-sitter-python" },
     { name = "typer" },
-    { name = "unstructured" },
+    { name = "unstructured", extra = ["md"] },
     { name = "websockets" },
     { name = "wikipedia" },
     { name = "xls2xlsx" },
@@ -970,7 +970,7 @@ rag = [
     { name = "pytidb-experimental" },
     { name = "qdrant-client" },
     { name = "rank-bm25" },
-    { name = "unstructured" },
+    { name = "unstructured", extra = ["md"] },
     { name = "weaviate-client" },
 ]
 research-tools = [
@@ -1341,10 +1341,10 @@ requires-dist = [
     { name = "types-setuptools", marker = "extra == 'dev'", specifier = ">=69.2.0,<70" },
     { name = "types-tqdm", marker = "extra == 'all'", specifier = ">=4.66.0,<5" },
     { name = "types-tqdm", marker = "extra == 'dev'", specifier = ">=4.66.0,<5" },
-    { name = "unstructured", marker = "extra == 'all'", specifier = "==0.16.20" },
-    { name = "unstructured", marker = "extra == 'document-tools'", specifier = "==0.16.20" },
-    { name = "unstructured", marker = "extra == 'owl'", specifier = "==0.16.20" },
-    { name = "unstructured", marker = "extra == 'rag'", specifier = "==0.16.20" },
+    { name = "unstructured", extras = ["md"], marker = "extra == 'all'", specifier = "==0.16.20" },
+    { name = "unstructured", extras = ["md"], marker = "extra == 'document-tools'", specifier = "==0.16.20" },
+    { name = "unstructured", extras = ["md"], marker = "extra == 'owl'", specifier = "==0.16.20" },
+    { name = "unstructured", extras = ["md"], marker = "extra == 'rag'", specifier = "==0.16.20" },
     { name = "uv", marker = "extra == 'dev'", specifier = ">=0.7.0,<0.8" },
     { name = "weaviate-client", marker = "extra == 'all'", specifier = ">=4.15.0" },
     { name = "weaviate-client", marker = "extra == 'rag'", specifier = ">=4.15.0" },
@@ -3890,6 +3890,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/64/6d/0783af677e601d8a42258f0fbc47663abf435f927e58a8d2928296743099/magika-0.6.2-py3-none-macosx_11_0_arm64.whl", hash = "sha256:9109309328a1553886c8ff36c2ee9a5e9cfd36893ad81b65bf61a57debdd9d0e", size = 12404787, upload-time = "2025-05-02T14:54:16.963Z" },
     { url = "https://files.pythonhosted.org/packages/8a/ad/42e39748ddc4bbe55c2dc1093ce29079c04d096ac0d844f8ae66178bc3ed/magika-0.6.2-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:57cd1d64897634d15de552bd6b3ae9c6ff6ead9c60d384dc46497c08288e4559", size = 15091089, upload-time = "2025-05-02T14:54:11.59Z" },
     { url = "https://files.pythonhosted.org/packages/b0/1f/28e412d0ccedc068fbccdae6a6233faaa97ec3e5e2ffd242e49655b10064/magika-0.6.2-py3-none-win_amd64.whl", hash = "sha256:711f427a633e0182737dcc2074748004842f870643585813503ff2553b973b9f", size = 12385740, upload-time = "2025-05-02T14:54:14.096Z" },
+]
+
+[[package]]
+name = "markdown"
+version = "3.8.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d7/c2/4ab49206c17f75cb08d6311171f2d65798988db4360c4d1485bd0eedd67c/markdown-3.8.2.tar.gz", hash = "sha256:247b9a70dd12e27f67431ce62523e675b866d254f900c4fe75ce3dda62237c45", size = 362071, upload-time = "2025-06-19T17:12:44.483Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/96/2b/34cc11786bc00d0f04d0f5fdc3a2b1ae0b6239eef72d3d345805f9ad92a1/markdown-3.8.2-py3-none-any.whl", hash = "sha256:5c83764dbd4e00bdd94d85a19b8d55ccca20fe35b2e678a1422b380324dd5f24", size = 106827, upload-time = "2025-06-19T17:12:42.994Z" },
 ]
 
 [[package]]
@@ -8163,6 +8172,11 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/43/b5/c7f723ceb1f601dd3f12faef241fd7bc69f2e981142bd79cbc641605850a/unstructured-0.16.20.tar.gz", hash = "sha256:95e8b604fae908cfd53b5bf05c4683e0041aa6c914627bb0226edb4530bbfa44", size = 1671404, upload-time = "2025-02-06T06:13:48.381Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2f/1b/9922646ca86a9811d83d9e227625087822eae31c11cb80791b3b7b33368c/unstructured-0.16.20-py3-none-any.whl", hash = "sha256:9749f4310dde0973f4732ee68f9e98d4a673bb06e455e98bc9522027a99c77cd", size = 1756881, upload-time = "2025-02-06T06:13:42.578Z" },
+]
+
+[package.optional-dependencies]
+md = [
+    { name = "markdown" },
 ]
 
 [[package]]

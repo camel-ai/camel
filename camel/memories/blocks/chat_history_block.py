@@ -46,12 +46,13 @@ class ChatHistoryBlock(MemoryBlock):
         self,
         storage: Optional[BaseKeyValueStorage] = None,
         keep_rate: float = 0.9,
+        warn_on_empty: bool = True,
     ) -> None:
         if keep_rate > 1 or keep_rate < 0:
             raise ValueError("`keep_rate` should be in [0,1]")
         self.storage = storage or InMemoryKeyValueStorage()
         self.keep_rate = keep_rate
-        self._last_clear_reason = "manual" 
+        self.warn_on_empty = warn_on_empty
 
     def retrieve(
         self,
@@ -71,8 +72,8 @@ class ChatHistoryBlock(MemoryBlock):
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
-            # Only warn if not cleared for compression
-            if self._last_clear_reason != "compression":
+            # Only warn if required
+            if self.warn_on_empty:
                 warnings.warn("The `ChatHistoryMemory` is empty.")
             return list()
 
@@ -164,7 +165,6 @@ class ChatHistoryBlock(MemoryBlock):
             stored_records.append(record.to_dict())
         self.storage.save(stored_records)
 
-    def clear(self, reason: str = "manual") -> None:
+    def clear(self) -> None:
         r"""Clears all chat messages from the memory."""
-        self._last_clear_reason = reason  
         self.storage.clear()
