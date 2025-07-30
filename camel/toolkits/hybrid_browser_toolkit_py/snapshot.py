@@ -43,7 +43,11 @@ class PageSnapshot:
     # Public API
     # ---------------------------------------------------------------------
     async def capture(
-        self, *, force_refresh: bool = False, diff_only: bool = False, viewport_limit: bool = False
+        self,
+        *,
+        force_refresh: bool = False,
+        diff_only: bool = False,
+        viewport_limit: bool = False,
     ) -> str:
         """Return current snapshot or just the diff to previous one."""
         try:
@@ -65,7 +69,9 @@ class PageSnapshot:
             )
 
             logger.debug("Capturing page snapshot …")
-            snapshot_result = await self._get_snapshot_direct(viewport_limit=viewport_limit)
+            snapshot_result = await self._get_snapshot_direct(
+                viewport_limit=viewport_limit
+            )
 
             # Extract snapshot text from the unified analyzer result
             if (
