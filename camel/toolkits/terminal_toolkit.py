@@ -710,6 +710,7 @@ class TerminalToolkit(BaseToolkit):
                 return f"Command rejected: {sanitized_command}"
             command = sanitized_command
 
+
         if id not in self.shell_sessions:
             self.shell_sessions[id] = {
                 "process": None,
@@ -1334,3 +1335,4 @@ class TerminalToolkit(BaseToolkit):
             FunctionTool(self.shell_kill_process),
             FunctionTool(self.ask_user_for_help),
         ]
+        

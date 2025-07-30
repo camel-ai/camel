@@ -130,6 +130,33 @@ class UbuntuDockerRuntime(DockerRuntime):
         """
         pass
 
+    def _setup_interactive_environment(self):
+        """Set up environment for interactive terminal programs."""
+        setup_commands = [
+            # Create appuser if not exists
+            "id appuser || useradd -m -s /bin/bash appuser",
+            "echo 'appuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers 2>/dev/null || true",
+            
+            # Install required tools if not present
+            "which expect || (apt-get update && apt-get install -y expect util-linux sudo)",
+            
+            # Create simpler helper scripts that don't use script command
+            "test -f /usr/local/bin/with-tty || (echo '#!/bin/bash\nscript -qec \"\\$@\" /dev/null' > /usr/local/bin/with-tty && chmod +x /usr/local/bin/with-tty)",
+            "test -f /usr/local/bin/as-user || (echo '#!/bin/bash\nsudo -u appuser \"\\$@\"' > /usr/local/bin/as-user && chmod +x /usr/local/bin/as-user)",
+            "test -f /usr/local/bin/interactive || (echo '#!/bin/bash\nexec \"\\$@\"' > /usr/local/bin/interactive && chmod +x /usr/local/bin/interactive)",
+            
+            # Fix permissions
+            "chown -R appuser:appuser /app 2>/dev/null || true",
+            
+            # Set terminal environment
+            "export TERM=xterm-256color",
+        ]
+        for cmd in setup_commands:
+            try:
+                self.container.exec_run(f"bash -c '{cmd}'", tty=True, stdin=True)
+            except Exception as e:
+                logger.warning(f"Failed to run setup command '{cmd}': {e}")
+
     def build(self, time_out: int = 15) -> "UbuntuDockerRuntime":
         r"""Build and initialize the Ubuntu container with proper setup.
 
@@ -142,7 +169,8 @@ class UbuntuDockerRuntime(DockerRuntime):
         logger.info("Starting container build...")
 
         super().build(time_out=time_out)
-
+        self._setup_interactive_environment()
+        
         if self.container:
             logger.info("Container built successfully, verifying setup...")
 
@@ -293,6 +321,8 @@ class UbuntuDockerRuntime(DockerRuntime):
             environment=execution_env,
             stream=True,
             demux=True,  # Separate stdout and stderr
+            tty=True,    # Add this
+            stdin=True,  # Add this
         )
 
         # Handle output streams
@@ -338,3 +368,4 @@ class UbuntuDockerRuntime(DockerRuntime):
 
         tar_stream.seek(0)
         return tar_stream.read()
+        

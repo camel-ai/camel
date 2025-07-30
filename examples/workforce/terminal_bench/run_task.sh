@@ -5,7 +5,7 @@
 #     exit 1
 # fi
 # mamba activate cameldev
-TASK_NAME=fix-git
+TASK_NAME=play-zork
 
 rm -rf logs/${TASK_NAME}
 mkdir -p logs/${TASK_NAME}
