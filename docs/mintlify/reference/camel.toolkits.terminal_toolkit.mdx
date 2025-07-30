@@ -23,6 +23,7 @@ managing terminal sessions.
 - **use_shell_mode** (bool): Whether to use shell mode for command execution. (default: :obj:`True`)
 - **clone_current_env** (bool): Whether to clone the current Python environment. (default: :obj:`False`)
 - **safe_mode** (bool): Whether to enable safe mode to restrict operations. (default: :obj:`True`)
+- **interactive** (bool): Whether to use interactive mode for shell commands, connecting them to the terminal's standard input. This is useful for commands that require user input, like `ssh`. Interactive mode is only supported on macOS and Linux. (default: :obj:`False`)
 
 **Note:**
 
@@ -43,7 +44,8 @@ def __init__(
     need_terminal: bool = True,
     use_shell_mode: bool = True,
     clone_current_env: bool = False,
-    safe_mode: bool = True
+    safe_mode: bool = True,
+    interactive: bool = False
 ):
 ```
 
@@ -77,6 +79,19 @@ def _is_uv_environment(self):
 ```
 
 Detect whether the current Python runtime is managed by uv.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit._ensure_uv_available"></a>
+
+### _ensure_uv_available
+
+```python
+def _ensure_uv_available(self):
+```
+
+**Returns:**
+
+  bool: True if uv is available (either already installed or
+successfully installed), False otherwise.
 
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit._prepare_initial_environment"></a>
 
@@ -226,27 +241,20 @@ Check and modify command to ensure safety.
 ### shell_exec
 
 ```python
-def shell_exec(
-    self,
-    id: str,
-    command: str,
-    interactive: bool = False
-):
+def shell_exec(self, id: str, command: str):
 ```
 
 Executes a shell command in a specified session.
 
 This function creates and manages shell sessions to execute commands,
-simulating a real terminal. It can run commands in both non-interactive
-(capturing output) and interactive modes. Each session is identified by
-a unique ID. If a session with the given ID does not exist, it will be
-created.
+simulating a real terminal. The behavior depends on the toolkit's
+interactive mode setting. Each session is identified by a unique ID.
+If a session with the given ID does not exist, it will be created.
 
 **Parameters:**
 
 - **id** (str): A unique identifier for the shell session. This is used to manage multiple concurrent shell processes.
 - **command** (str): The shell command to be executed.
-- **interactive** (bool, optional): If `True`, the command runs in interactive mode, connecting it to the terminal's standard input. This is useful for commands that require user input, like `ssh`. Defaults to `False`. Interactive mode is only supported on macOS and Linux. (default: :obj:`False`)
 
 **Returns:**
 
@@ -256,8 +264,8 @@ returned.
 
 **Note:**
 
-When `interactive` is set to `True`, this function may block if the
-command requires input. In safe mode, some commands that are
+When the toolkit is initialized with interactive mode, commands may
+block if they require input. In safe mode, some commands that are
 considered dangerous are restricted.
 
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit.shell_view"></a>
