@@ -581,7 +581,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
                 # Use instance viewport_limit if parameter not provided
                 use_viewport_limit = (
-                    viewport_limit if viewport_limit is not None
+                    viewport_limit
+                    if viewport_limit is not None
                     else self._viewport_limit
                 )
                 result = await page.evaluate(
