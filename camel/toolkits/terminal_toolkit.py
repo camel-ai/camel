@@ -62,6 +62,10 @@ class TerminalToolkit(BaseToolkit):
             environment. (default: :obj:`False`)
         safe_mode (bool): Whether to enable safe mode to restrict
             operations. (default: :obj:`True`)
+        interactive (bool): Whether to use interactive mode for shell commands,
+            connecting them to the terminal's standard input. This is useful
+            for commands that require user input, like `ssh`. Interactive mode
+            is only supported on macOS and Linux. (default: :obj:`False`)
 
     Note:
         Most functions are compatible with Unix-based systems (macOS, Linux).
@@ -78,6 +82,7 @@ class TerminalToolkit(BaseToolkit):
         use_shell_mode: bool = True,
         clone_current_env: bool = False,
         safe_mode: bool = True,
+        interactive: bool = False,
     ):
         # Store timeout before calling super().__init__
         self._timeout = timeout
@@ -93,6 +98,7 @@ class TerminalToolkit(BaseToolkit):
         self.cloned_env_path = None
         self.use_shell_mode = use_shell_mode
         self._human_takeover_active = False
+        self.interactive = interactive
 
         self.python_executable = sys.executable
         self.is_macos = platform.system() == 'Darwin'
@@ -1002,26 +1008,18 @@ class TerminalToolkit(BaseToolkit):
 
         return True, command
 
-    def shell_exec(
-        self, id: str, command: str, interactive: bool = False
-    ) -> str:
+    def shell_exec(self, id: str, command: str) -> str:
         r"""Executes a shell command in a specified session.
 
         This function creates and manages shell sessions to execute commands,
-        simulating a real terminal. It can run commands in both non-interactive
-        (capturing output) and interactive modes. Each session is identified by
-        a unique ID. If a session with the given ID does not exist, it will be
-        created.
+        simulating a real terminal. The behavior depends on the toolkit's
+        interactive mode setting. Each session is identified by a unique ID.
+        If a session with the given ID does not exist, it will be created.
 
         Args:
             id (str): A unique identifier for the shell session. This is used
                 to manage multiple concurrent shell processes.
             command (str): The shell command to be executed.
-            interactive (bool, optional): If `True`, the command runs in
-                interactive mode, connecting it to the terminal's standard
-                input. This is useful for commands that require user input,
-                like `ssh`. Defaults to `False`. Interactive mode is only
-                supported on macOS and Linux. (default: :obj:`False`)
 
         Returns:
             str: The standard output and standard error from the command. If an
@@ -1029,8 +1027,8 @@ class TerminalToolkit(BaseToolkit):
                 returned.
 
         Note:
-            When `interactive` is set to `True`, this function may block if the
-            command requires input. In safe mode, some commands that are
+            When the toolkit is initialized with interactive mode, commands may
+            block if they require input. In safe mode, some commands that are
             considered dangerous are restricted.
         """
         error_msg = self._enforce_working_dir_for_execution(self.working_dir)
@@ -1127,7 +1125,7 @@ class TerminalToolkit(BaseToolkit):
                 elif pip_path and command.startswith('pip'):
                     command = command.replace('pip', pip_path, 1)
 
-            if not interactive:
+            if not self.interactive:
                 # Use preexec_fn to create a new process group on Unix systems
                 preexec_fn = None
                 if self.os_type in ['Darwin', 'Linux']:
