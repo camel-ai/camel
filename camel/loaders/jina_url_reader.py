@@ -100,8 +100,9 @@ class JinaURLLoader(BaseLoader):
         import requests
 
         source_key = self.get_source_key(source)
-        if not source.startswith(('http://', 'https://')):
-            source = f"https://{source}"
+        source_str = str(source)
+        if not source_str.startswith(('http://', 'https://')):
+            source_str = f"https://{source_str}"
 
         try:
             response = requests.get(
