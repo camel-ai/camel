@@ -1057,23 +1057,26 @@ MUST use this as the current date.
     )
 
     workforce.add_single_agent_worker(
-        "Search Agent: Can search the web, extract webpage content, "
-        "simulate browser actions, and provide relevant information to "
-        "solve the given task.",
+        "Search Agent: An expert web researcher that can browse websites, "
+        "perform searches, and extract information to support other agents.",
         worker=search_agent,
     ).add_single_agent_worker(
-        "Developer Agent: A skilled coding assistant that can write and "
-        "execute code, run terminal commands, control the desktop using "
-        "pyautogui, and verify solutions to complete tasks.",
+        "Developer Agent: A master-level coding assistant with a powerful "
+        "terminal. It can write and execute code, manage files, automate "
+        "desktop tasks, and deploy web applications to solve complex "
+        "technical challenges.",
         worker=developer_agent,
     ).add_single_agent_worker(
-        "Document Agent: A document processing assistant for creating, "
-        "modifying, and managing various document formats, including "
-        "presentations.",
+        "Document Agent: A document processing assistant skilled in creating "
+        "and modifying a wide range of file formats. It can generate "
+        "text-based files (Markdown, JSON, YAML, HTML), office documents "
+        "(Word, PDF), presentations (PowerPoint), and data files "
+        "(Excel, CSV).",
         worker=document_agent,
     ).add_single_agent_worker(
-        "Multi-Modal Agent: A multi-modal processing assistant for "
-        "analyzing, and generating media content like audio and images.",
+        "Multi-Modal Agent: A specialist in media processing. It can "
+        "analyze images and audio, transcribe speech, download videos, and "
+        "generate new images from text prompts.",
         worker=multi_modal_agent,
     )
 
@@ -1081,14 +1084,7 @@ MUST use this as the current date.
     human_task = Task(
         content=(
             """
-Analyze the UK healthcare industry to support the planning of my next company. 
-Provide a comprehensive market overview, including current trends, growth 
-projections, and relevant regulations. Identify the top 5-10 major competitors 
-in the space, including their names, website URLs, estimated market size or 
-share, core services or products, key strengths, and notable weaknesses. Also 
-highlight any significant opportunities, gaps, or underserved segments within 
-the market. Present all findings in a well-structured, professional HTML 
-report.
+help me generated a html report about camel ai
             """
         ),
         id='0',

@@ -152,12 +152,11 @@ def developer_agent_factory(
         - `shell_exec(id="install", command="pip install numpy")`
         - `shell_exec(id="test", command="python my_script.py")`
 
-    5.  **Interact with Processes**: For commands that require input, you can 
-    use:
-        - `shell_exec(id="...", command="...", interactive=True)` for 
-            real-time interactive sessions.
-        - `shell_write_to_process(id="...", content="...")` to send input to a 
-          non-interactive running process.
+    5.  **Interact with Processes**: For commands that require input:
+        - Initialize TerminalToolkit with `interactive=True` for real-time 
+          interactive sessions.
+        - Use `shell_write_to_process(id="...", content="...")` to send input 
+          to a non-interactive running process.
 
     6.  **Stop a Process**: If a process needs to be terminated, use 
         `shell_kill_process(id="...")`.
