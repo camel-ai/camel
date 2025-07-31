@@ -221,6 +221,11 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
    <Tab title="OpenRouter">
   Access a wide variety of models through [OpenRouter](https://openrouter.ai/)'s unified API:
 
+  **Setup:** Set your OpenRouter API key as an environment variable:
+  ```bash
+  export OPENROUTER_API_KEY="your-api-key-here"
+  ```
+
   ```python
   from camel.models import ModelFactory
   from camel.types import ModelPlatformType, ModelType
@@ -277,11 +282,6 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
 
   response = agent.step("Explain quantum computing in simple terms.")
   print(response.msgs[0].content)
-  ```
-
-  **Setup:** Set your OpenRouter API key as an environment variable:
-  ```bash
-  export OPENROUTER_API_KEY="your-api-key-here"
   ```
 
   **Available Models:** View the full list of models available through OpenRouter at [openrouter.ai/models](https://openrouter.ai/models).
