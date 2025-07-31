@@ -1908,16 +1908,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
-                - result (List[Dict]) : collection of logs from the
+                - console_messages (List[Dict]) : collection of logs from the
                 browser console
         """
         try:
             logs = await self._session.get_console_logs()
             # make output JSON serializable
-            return {"result": list(logs)}
+            return {"console_messages": list(logs)}
         except Exception as e:
             logger.warning(f"Failed to retrieve logs: {e}")
-            return {"result": f"Failed to retrieve logs: {e}"}
+            return {"console_messages": f"Failed to retrieve logs: {e}"}
 
     async def browser_console_exec(self, code: str) -> Dict[str, Any]:
         r"""Execute javascript code in the console of the current page and get

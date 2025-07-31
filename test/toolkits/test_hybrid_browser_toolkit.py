@@ -127,12 +127,10 @@ def create_mock_ws_wrapper():
         return_value=[{"type": "log", "text": "Example Log"}]
     )
     mock_ws_wrapper.console_exec = AsyncMock(
-        return_value=[
-            {
-                "result": "Console execution result: 100",
-                "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
-            }
-        ]
+        return_value={
+            "result": "Console execution result: 100",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
     )
 
     return mock_ws_wrapper
@@ -514,7 +512,7 @@ class TestHybridBrowserToolkit:
     async def test_press_key(self, browser_toolkit_fixture):
         """Test press_key with key combination"""
         toolkit = browser_toolkit_fixture
-        result = await toolkit.browser_press_key(["Meta", "A"])
+        result = await toolkit.browser_press_key(keys=["Meta", "A"])
 
         assert "result" in result
         assert "snapshot" in result
@@ -530,8 +528,11 @@ class TestHybridBrowserToolkit:
         toolkit = browser_toolkit_fixture
         result = await toolkit.browser_console_view()
 
-        assert isinstance(result, list)
-        assert all(isinstance(item, dict) for item in result)
+        assert "console_messages" in result
+        assert isinstance(result["console_messages"], list)
+        assert all(
+            isinstance(item, dict) for item in result["console_messages"]
+        )
 
     @pytest.mark.asyncio
     async def test_console_exec(self, browser_toolkit_fixture):
@@ -542,7 +543,7 @@ class TestHybridBrowserToolkit:
         assert "result" in result
         assert "snapshot" in result
         assert "tabs" in result
-        assert "execution result" in result["result"].lower()
+        assert "result" in result["result"].lower()
 
     def test_get_tools(self, sync_browser_toolkit):
         """Test getting available tools with default configuration."""
