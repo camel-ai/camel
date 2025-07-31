@@ -163,7 +163,7 @@ print(response.msgs[0].content)
 # '{"joke": "Why don't scientists trust atoms? Because they make up everything!", "funny_level": 8}'
 
 # Access the parsed Pydantic object
-parsed_response = response.msgs[0].extra["pydantic_object"]
+parsed_response = response.msgs[0].parsed
 print(parsed_response.joke)
 # "Why don't scientists trust atoms? Because they make up everything!"
 print(parsed_response.funny_level)
@@ -180,7 +180,7 @@ from typing import List
 
 class Student(BaseModel):
     name: str
-    age: int
+    age: str
     email: str
 
 class StudentList(BaseModel):
@@ -189,12 +189,12 @@ class StudentList(BaseModel):
 # Create agent with structured output
 agent = ChatAgent(model="gpt-4o-mini")
 response = agent.step(
-    "Give me a list of two students.",
+    "Create a list of two students with their names, ages, and email addresses.",
     response_format=StudentList,
 )
 
 # Access the parsed Pydantic object
-parsed_response = response.msgs[0].extra["pydantic_object"]
+parsed_response = response.msgs[0].parsed
 for student in parsed_response.students:
     print(f"Name: {student.name}, Age: {student.age}, Email: {student.email}")
 # Name: Alex, Age: 22, Email: alex@example.com
