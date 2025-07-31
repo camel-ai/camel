@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.73"
+version = "0.2.74a0"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -298,7 +298,7 @@ eigent = [
     "chunkr-ai>=0.0.50",
     "python-pptx>=1.0.2",
     "pytesseract>=0.3.13",
-    "markitdown>=0.1.1",
+    "markitdown[all]>=0.1.1",
     "exa-py>=1.10.0,<2",
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
