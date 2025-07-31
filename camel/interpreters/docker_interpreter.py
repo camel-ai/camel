@@ -137,6 +137,7 @@ class DockerInterpreter(BaseInterpreter):
             detach=True,
             name=f"camel-interpreter-{uuid.uuid4()}",
             command="tail -f /dev/null",
+            tty=True,  # Add this to allocate a TTY
         )
 
     def _create_file_in_container(self, content: str) -> Path:

@@ -1,0 +1,6 @@
+CAMEL Terminal Session
+==================================================
+Working Directory: /media/aznaur/311BBF169A1AA3E4/mnt/git/camel
+==================================================
+
+🎮 DEBUG: Creating session 'test_session' with command: 'echo 'Hello from interactive process'' (interactive=True)

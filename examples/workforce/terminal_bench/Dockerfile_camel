@@ -3,7 +3,7 @@
 # ########################################
 
 # Start from a specific, versioned base image for reproducibility
-FROM ghcr.io/laude-institute/t-bench/ubuntu-24-04:20250624
+FROM ubuntu:22.04
 
 # Set non-interactive environment
 ENV DEBIAN_FRONTEND=noninteractive
@@ -16,6 +16,30 @@ RUN apt-get update && apt-get install -y \
     python3-full \
     git \
     && rm -rf /var/lib/apt/lists/*
+
+# Install tools required for interactive terminal programs
+RUN apt-get update && apt-get install -y \
+    expect \
+    util-linux \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user for interactive programs that refuse to run as root
+RUN useradd -m -s /bin/bash appuser && \
+    echo 'appuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# Create helper scripts for interactive terminal support
+RUN echo '#!/bin/bash\nexec "$@"' > /usr/local/bin/with-tty && \
+    chmod +x /usr/local/bin/with-tty
+
+RUN echo '#!/bin/bash\nsudo -u appuser exec "$@"' > /usr/local/bin/as-user && \
+    chmod +x /usr/local/bin/as-user
+
+RUN echo '#!/bin/bash\nexec "$@"' > /usr/local/bin/interactive && \
+    chmod +x /usr/local/bin/interactive
+
+# Ensure TERM is set for rich terminal capabilities
+ENV TERM=xterm-256color
 
 # Set working directory
 WORKDIR /app
