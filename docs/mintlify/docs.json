@@ -57,8 +57,6 @@
               "key_modules/agents",
               "key_modules/models",
               "key_modules/tools",
-              "key_modules/browsertoolkit",
-              "key_modules/terminaltoolkit",
               "key_modules/societies",
               "key_modules/workforce",
               "key_modules/datagen",
@@ -72,6 +70,13 @@
               "key_modules/storages",
               "key_modules/embeddings",
               "key_modules/retrievers"
+            ]
+          },
+          {
+            "group": "Awesome Toolkits",
+            "pages": [
+              "key_modules/browsertoolkit",
+              "key_modules/terminaltoolkit"
             ]
           },
           {
