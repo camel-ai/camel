@@ -473,7 +473,18 @@ class DocumentToolkit(BaseToolkit):
 
     def _resolve_local_path(self, path: str) -> str:
         r"""If path is a URL (not a web page), download it and return the
-        local path. Otherwise, return the original path."""
+        local path. Otherwise, return the original path.
+
+        Args:
+            path (str): File path or URL to resolve. Can be a local file path,
+                web page URL, or downloadable file URL.
+
+        Returns:
+            str: Local file path. If the input was a downloadable file URL,
+                returns the path to the downloaded file. If the input was a
+                local path or web page URL, returns the original path
+                unchanged.
+        """
         suffix = f".{path.lower().rsplit('.', 1)[-1]}" if "." in path else ""
         is_url = self._is_url(path)
         if is_url and suffix and suffix not in _WEB_EXTS:
@@ -573,7 +584,17 @@ class DocumentToolkit(BaseToolkit):
         return self._loader.convert_file(document_path)
 
     def _is_url(self, path: str) -> bool:
-        r"""Check if the path is a URL."""
+        r"""Check if the path is a URL.
+
+        Args:
+            path (str): String to check for URL format. Can be a file path,
+                URL, or any other string.
+
+        Returns:
+            bool: True if the path is a valid URL with both scheme (e.g.,
+                'http', 'https') and network location (e.g., 'example.com').
+                False otherwise.
+        """
         parsed = urlparse(path)
         return bool(parsed.scheme and parsed.netloc)
 
@@ -716,7 +737,24 @@ class DocumentToolkit(BaseToolkit):
         return str(md_table)
 
     def _extract_sheet_cell_info(self, ws):
-        """Extract cell info from a worksheet."""
+        r"""Extract cell info from a worksheet.
+
+        Args:
+            ws: Worksheet object from openpyxl library containing cells to
+                extract information from.
+
+        Returns:
+            list: A list of dictionaries, where each dictionary contains
+                information about a single cell:
+                - index (str): Cell position in format
+                  "{row_number}{column_letter}" (e.g., "1A", "2B")
+                - value: The cell's value (can be str, int, float, datetime,
+                  or None)
+                - font_color (str or None): RGB hex color code of the font
+                  (e.g., "FF0000") or None if no color
+                - fill_color (str or None): RGB hex color code of the cell
+                  background or None if no fill color
+        """
         cell_info_list = []
         for row in ws.iter_rows():
             for cell in row:
