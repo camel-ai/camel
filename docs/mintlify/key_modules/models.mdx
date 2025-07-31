@@ -43,7 +43,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **Anthropic**    | claude-2.1, claude-2.0, claude-instant-1.2<br/>claude-3-opus-latest, claude-3-sonnet-20240229, claude-3-haiku-20240307<br/>claude-3-5-sonnet-latest, claude-3-5-haiku-latest |
 | **Gemini**       | gemini-2.5-pro, gemini-2.5-flash<br/>gemini-2.0-flash, gemini-2.0-flash-thinking<br/> gemini-2.0-flash-lite|
 | **Lingyiwanwu**  | yi-lightning, yi-large, yi-medium<br/>yi-large-turbo, yi-vision, yi-medium-200k<br/>yi-spark, yi-large-rag, yi-large-fc |
-| **Qwen**         | qwq-32b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long<br/>qwen-vl-max, qwen-vl-plus, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo<br/>qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
+| **Qwen**         | qwen3-coder-plus,qwq-32b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long<br/>qwen-vl-max, qwen-vl-plus, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo<br/>qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
 | **DeepSeek**     | deepseek-chat<br/>deepseek-reasoner |
 | **ZhipuAI**      | glm-4, glm-4v, glm-4v-flash<br/>glm-4v-plus-0111, glm-4-plus, glm-4-air<br/>glm-4-air-0111, glm-4-airx, glm-4-long<br/>glm-4-flashx, glm-zero-preview, glm-4-flash, glm-3-turbo |
 | **InternLM**     | internlm3-latest, internlm3-8b-instruct<br/>internlm2.5-latest, internlm2-pro-chat |
