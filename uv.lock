@@ -283,11 +283,11 @@ wheels = [
 
 [[package]]
 name = "apify-shared"
-version = "1.4.1"
+version = "1.4.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b2/a6/c8e2fa0b3bdc479d3ecde778e2381af199f910cf7c8baa3c207bcfe26e47/apify_shared-1.4.1.tar.gz", hash = "sha256:16e617c840fd27bf38d980f079c0b867c7378f68c7006b3d5a7d530d43930507", size = 13871, upload-time = "2025-04-28T12:20:01.113Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/50/90/8c124864a372693a86c26efc38de27440a03bc69a18055399041dd18fa24/apify_shared-1.4.2.tar.gz", hash = "sha256:7190f2b7557b50b40acb32a1fcc783ea8a0fa58bf3cf33fc03e23de49f318b45", size = 13889, upload-time = "2025-08-01T07:38:54.625Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1d/f3/3446c8a7986fdc087024d4e174e4b3f587097a9b28f6f8e8c788199225b2/apify_shared-1.4.1-py3-none-any.whl", hash = "sha256:abac5712b6e8eb96693204cbb2702905e1971d9084b1716e7337852b5005290e", size = 12706, upload-time = "2025-04-28T12:19:59.792Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/d6/e3864ffe8886713aa5306d38b0e90237085d4951699a4be39adbcc4194e5/apify_shared-1.4.2-py3-none-any.whl", hash = "sha256:1958b843c4e16af0804b3f6ba886264091b54c15bf524606fafb55d20ed08fff", size = 12725, upload-time = "2025-08-01T07:38:53.556Z" },
 ]
 
 [[package]]
@@ -677,7 +677,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.74a1"
+version = "0.2.74a4"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -935,6 +935,7 @@ eigent = [
     { name = "reportlab" },
     { name = "requests-oauthlib" },
     { name = "scenedetect" },
+    { name = "slack-sdk" },
     { name = "tabulate" },
     { name = "websockets" },
     { name = "wikipedia" },
@@ -1382,6 +1383,7 @@ requires-dist = [
     { name = "slack-bolt", marker = "extra == 'communication-tools'", specifier = ">=1.20.1,<2" },
     { name = "slack-sdk", marker = "extra == 'all'", specifier = ">=3.27.2,<4" },
     { name = "slack-sdk", marker = "extra == 'communication-tools'", specifier = ">=3.27.2,<4" },
+    { name = "slack-sdk", marker = "extra == 'eigent'", specifier = ">=3.27.2,<4" },
     { name = "soundfile", marker = "extra == 'all'", specifier = ">=0.13,<0.14" },
     { name = "soundfile", marker = "extra == 'huggingface'", specifier = ">=0.13,<0.14" },
     { name = "soundfile", marker = "extra == 'owl'", specifier = ">=0.13,<0.14" },
@@ -3319,18 +3321,18 @@ wheels = [
 
 [[package]]
 name = "ibm-cos-sdk"
-version = "2.14.2"
+version = "2.14.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ibm-cos-sdk-core" },
     { name = "ibm-cos-sdk-s3transfer" },
     { name = "jmespath" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/08/0f/976e187ba09f5efee94a371f0d65edca82714975de7e71bf6ad8d30f20a7/ibm_cos_sdk-2.14.2.tar.gz", hash = "sha256:d859422c1dfd03e52cd66acbb2b45b4c944a390725c3a91d4a8e003f0cfc4e4b", size = 58847, upload-time = "2025-06-18T05:04:01.193Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/b8/b99f17ece72d4bccd7e75539b9a294d0f73ace5c6c475d8f2631afd6f65b/ibm_cos_sdk-2.14.3.tar.gz", hash = "sha256:643b6f2aa1683adad7f432df23407d11ae5adb9d9ad01214115bee77dc64364a", size = 58831, upload-time = "2025-08-01T06:35:51.722Z" }
 
 [[package]]
 name = "ibm-cos-sdk-core"
-version = "2.14.2"
+version = "2.14.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
@@ -3338,16 +3340,16 @@ dependencies = [
     { name = "requests" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a5/db/e913f210d66c2ad09521925f29754fb9b7240da11238a29a0186ebad4ffa/ibm_cos_sdk_core-2.14.2.tar.gz", hash = "sha256:d594b2af58f70e892aa3b0f6ae4b0fa5d412422c05beeba083d4561b5fad91b4", size = 1103504, upload-time = "2025-06-18T05:03:42.969Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7e/45/80c23aa1e13175a9deefe43cbf8e853a3d3bfc8dfa8b6d6fe83e5785fe21/ibm_cos_sdk_core-2.14.3.tar.gz", hash = "sha256:85dee7790c92e8db69bf39dae4c02cac211e3c1d81bb86e64fa2d1e929674623", size = 1103637, upload-time = "2025-08-01T06:35:41.645Z" }
 
 [[package]]
 name = "ibm-cos-sdk-s3transfer"
-version = "2.14.2"
+version = "2.14.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ibm-cos-sdk-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8e/ca/3c4c48c2a180e3410d08b400435b72648e6630c2d556beb126b7a21a78d7/ibm_cos_sdk_s3transfer-2.14.2.tar.gz", hash = "sha256:01d1cb14c0decaeef273979da7a13f7a874f1d4c542ff3ae0a186c7b090569bc", size = 139579, upload-time = "2025-06-18T05:03:48.841Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/ff/c9baf0997266d398ae08347951a2970e5e96ed6232ed0252f649f2b9a7eb/ibm_cos_sdk_s3transfer-2.14.3.tar.gz", hash = "sha256:2251ebfc4a46144401e431f4a5d9f04c262a0d6f95c88a8e71071da056e55f72", size = 139594, upload-time = "2025-08-01T06:35:46.403Z" }
 
 [[package]]
 name = "ibm-watsonx-ai"
@@ -8101,11 +8103,11 @@ wheels = [
 
 [[package]]
 name = "types-colorama"
-version = "0.4.15.20240311"
+version = "0.4.15.20250801"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/59/73/0fb0b9fe4964b45b2a06ed41b60c352752626db46aa0fb70a49a9e283a75/types-colorama-0.4.15.20240311.tar.gz", hash = "sha256:a28e7f98d17d2b14fb9565d32388e419f4108f557a7d939a66319969b2b99c7a", size = 5608, upload-time = "2024-03-11T02:15:51.557Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/99/37/af713e7d73ca44738c68814cbacf7a655aa40ddd2e8513d431ba78ace7b3/types_colorama-0.4.15.20250801.tar.gz", hash = "sha256:02565d13d68963d12237d3f330f5ecd622a3179f7b5b14ee7f16146270c357f5", size = 10437, upload-time = "2025-08-01T03:48:22.605Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b7/83/6944b4fa01efb2e63ac62b791a8ddf0fee358f93be9f64b8f152648ad9d3/types_colorama-0.4.15.20240311-py3-none-any.whl", hash = "sha256:6391de60ddc0db3f147e31ecb230006a6823e81e380862ffca1e4695c13a0b8e", size = 5840, upload-time = "2024-03-11T02:15:50.43Z" },
+    { url = "https://files.pythonhosted.org/packages/95/3a/44ccbbfef6235aeea84c74041dc6dfee6c17ff3ddba782a0250e41687ec7/types_colorama-0.4.15.20250801-py3-none-any.whl", hash = "sha256:b6e89bd3b250fdad13a8b6a465c933f4a5afe485ea2e2f104d739be50b13eea9", size = 10743, upload-time = "2025-08-01T03:48:21.774Z" },
 ]
 
 [[package]]
@@ -8529,7 +8531,7 @@ wheels = [
 
 [[package]]
 name = "weaviate-client"
-version = "4.16.4"
+version = "4.16.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "authlib" },
@@ -8540,9 +8542,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "validators" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b1/6a/be2257fbd890674204c393782e75b794cf0939a8dab8a4f1c0ab38d1663a/weaviate_client-4.16.4.tar.gz", hash = "sha256:50efc819274640564bbeca91405aef1674170e3d93f0bd7a9496b5b37d0fe746", size = 779617, upload-time = "2025-07-24T13:27:20.659Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ad/d1/9f51e3bfea67ec8afaaed175b4d8d22a8bbba0622f9bcd8b064d53a57f91/weaviate_client-4.16.5.tar.gz", hash = "sha256:3359d7bc77aa4a27e6ecfed82017fc32ddfdda6299a6ffd4cf1f09c33023b147", size = 779506, upload-time = "2025-08-01T09:29:06.183Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c1/a5/414c1452b786a27be1d1314c3051abf82af921ca20ada16df55c0d19997d/weaviate_client-4.16.4-py3-none-any.whl", hash = "sha256:299bab2ae822271ddc40005a7cd95f332e8243c7cff38df3bb9f4aca23221dcc", size = 597160, upload-time = "2025-07-24T13:27:18.97Z" },
+    { url = "https://files.pythonhosted.org/packages/37/4c/e5b3c67fa2b735a572d06095f524f6e2e0f9b47bb99f3c91b9fe3e291a88/weaviate_client-4.16.5-py3-none-any.whl", hash = "sha256:1c5002ea72ba285c3c000a01d498267f8c3da51acf19d0f321f3f8ecbb58411a", size = 597199, upload-time = "2025-08-01T09:29:04.385Z" },
 ]
 
 [[package]]
