@@ -352,12 +352,7 @@ class Workforce(BaseNode):
         # Set up task agent with default system message and required tools
         task_sys_msg = BaseMessage.make_assistant_message(
             role_name="Task Planner",
-            content="You are going to compose and decompose tasks. Keep "
-            "tasks that are sequential and require the same type of "
-            "agent together in one agent process. Only decompose tasks "
-            "that can be handled in parallel and require different types "
-            "of agents. This ensures efficient execution by minimizing "
-            "context switching between agents.",
+            content="You are going to handle tasks.",
         )
         task_planning_tools = TaskPlanningToolkit().get_tools()
 

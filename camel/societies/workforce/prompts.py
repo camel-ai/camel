@@ -198,9 +198,9 @@ Now you should summarize the scenario and return the result of the task.
 
 TASK_DECOMPOSE_PROMPT = r"""You need to either decompose a complex task or enhance a simple one, following these important principles to maximize efficiency and clarity for the executing agents:
 
-0.  **Enhance Simple Tasks, Don't Decompose**: First, evaluate if the task is a simple single, straightforward action.
-    *   **If the task is very simple, DO NOT decompose it.** Instead, **rewrite and enhance** it. The goal is to produce a high-quality task with a clear, specific deliverable.
-    *   **Decompose if a task is complex and the decompose is meaningful**: A task is complex if it involves multiple distinct steps, requires different worker skills, or can be significantly sped up by running parts in parallel.
+0.  **Analyze Task Complexity**: First, evaluate if the task is a single, straightforward action or a complex one.
+    *   **If the task is complex or could be decomposed into multiple subtasks run in parallel, decompose it.** A task is considered complex if it involves multiple distinct steps, requires different skills, or can be significantly sped up by running parts in parallel.
+    *   **If the task is simple, do not decompose it.** Instead, **rewrite and enhance** it to produce a high-quality task with a clear, specific deliverable.
 
 1.  **Self-Contained Subtasks** (if decomposing): This is critical principle. Each subtask's description **must be fully self-sufficient and independently understandable**. The agent executing the subtask has **no knowledge** of the parent task, other subtasks, or the overall workflow.
     *   **DO NOT** use relative references like "the first task," "the paper mentioned above," or "the result from the previous step."
