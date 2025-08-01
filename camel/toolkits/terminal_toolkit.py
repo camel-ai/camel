@@ -1143,6 +1143,7 @@ class TerminalToolkit(BaseToolkit):
                     universal_newlines=True,
                     env=os.environ.copy(),
                     preexec_fn=preexec_fn,
+                    errors='replace',  # Handle non-UTF-8 characters
                 )
 
                 self.shell_sessions[id]["process"] = proc
@@ -1459,8 +1460,17 @@ class TerminalToolkit(BaseToolkit):
             if press_enter:
                 input = input + "\n"
 
-            # Write bytes to stdin
-            process.stdin.write(input.encode('utf-8'))
+            # Write to stdin - handle encoding
+            if hasattr(process.stdin, 'write'):
+                if isinstance(input, str):
+                    process.stdin.write(input)
+                else:
+                    process.stdin.write(
+                        input.decode('utf-8', errors='replace')
+                    )
+            else:
+                # Fallback for byte mode
+                process.stdin.write(input.encode('utf-8', errors='replace'))
             process.stdin.flush()
 
             return f"Input sent to process in session '{id}'"
