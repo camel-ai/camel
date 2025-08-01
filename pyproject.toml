@@ -302,6 +302,7 @@ eigent = [
     "exa-py>=1.10.0,<2",
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
+    "slack-sdk>=3.27.2,<4",
 ]
 all = [
     "numpy>=1.2,<=2.2",
