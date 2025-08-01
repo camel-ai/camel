@@ -74,6 +74,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_scroll",
         "browser_enter",
         "browser_mouse_control",
+        "browser_mouse_drag",
         "browser_press_key",
         "browser_wait_user",
         "browser_solve_task",
@@ -1707,30 +1708,33 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         return result
 
+    @action_logger
     async def browser_mouse_control(
-        self, *, control: str, x: int, y: int
+        self, *, control: str, x: float, y: float
     ) -> Dict[str, Any]:
         r"""Control the mouse to interact with browser with x, y coordinates
 
         Args:
-            control ([str]): The action to perform: 'click' or 'dblclick'.
-            x (int): x-coordinate for the control action.
-            y (int): y-coordinate for the control action.
+            control (str): The action to perform: 'click', 'right_click'
+            or 'dblclick'.
+            x (float): x-coordinate for the control action.
+            y (float): y-coordinate for the control action.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
                 - "result" (str): Confirmation of the action.
-                - "snapshot" (str): A new page snapshot, as this action often
-                  triggers navigation.
+                - "snapshot" (str): A new page snapshot.
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if control not in ("click", "dblclick"):
+        if control not in ("click", "right_click", "dblclick"):
+            tab_info = await self._get_tab_info_for_output()
             return {
                 "result": "Error: supported control actions are "
                 "'click' or 'dblclick'",
                 "snapshot": "",
+                **tab_info,
             }
 
         action = {"type": "mouse_control", "control": control, "x": x, "y": y}
@@ -1743,6 +1747,43 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         return result
 
+    @action_logger
+    async def browser_mouse_drag(
+        self, *, from_x: float, from_y: float, to_x: float, to_y: float
+    ) -> Dict[str, Any]:
+        r"""Control the mouse to drag and drop in the browser.
+
+        Args:
+            from_x (float): Starting x-coordinate
+            from_y (float): Starting y-coordinate.
+            to_x (float): Destination x-coordinate.
+            to_y (float): Destination y-coordinate.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the result of the action:
+                - "result" (str): Confirmation of the action.
+                - "snapshot" (str): A new page snapshot.
+                - "tabs" (List[Dict]): Information about all open tabs.
+                - "current_tab" (int): Index of the active tab.
+                - "total_tabs" (int): Total number of open tabs.
+        """
+        action = {
+            "type": "mouse_drag",
+            "from_x": from_x,
+            "from_y": from_y,
+            "to_x": to_x,
+            "to_y": to_y,
+        }
+
+        result = await self._exec_with_snapshot(action)
+
+        # Add tab information to the result
+        tab_info = await self._get_tab_info_for_output()
+        result.update(tab_info)
+
+        return result
+
+    @action_logger
     async def browser_press_key(self, *, keys: List[str]) -> Dict[str, Any]:
         r"""Press key and key combinations.
         Supports single key press or combination of keys by concatenating
@@ -1759,12 +1800,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not isinstance(keys, list) and all(
+        if not isinstance(keys, list) or not all(
             isinstance(item, str) for item in keys
         ):
+            tab_info = await self._get_tab_info_for_output()
             return {
                 "result": "Error: Expected keys as a list of strings.",
                 "snapshot": "",
+                **tab_info,
             }
         action = {"type": "press_key", "keys": keys}
 
@@ -1903,6 +1946,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         await agent.process_command(task_prompt, max_steps=max_steps)
         return "Task processing finished - see stdout for detailed trace."
 
+    @action_logger
     async def browser_console_view(self) -> Dict[str, Any]:
         r"""View current page console logs.
 
@@ -1917,7 +1961,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             return {"console_messages": list(logs)}
         except Exception as e:
             logger.warning(f"Failed to retrieve logs: {e}")
-            return {"console_messages": f"Failed to retrieve logs: {e}"}
+            return {"console_messages": []}
 
     async def browser_console_exec(self, code: str) -> Dict[str, Any]:
         r"""Execute javascript code in the console of the current page and get
@@ -2190,6 +2234,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_scroll": self.browser_scroll,
             "browser_enter": self.browser_enter,
             "browser_mouse_control": self.browser_mouse_control,
+            "browser_mouse_drag": self.browser_mouse_drag,
             "browser_press_key": self.browser_press_key,
             "browser_wait_user": self.browser_wait_user,
             "browser_solve_task": self.browser_solve_task,

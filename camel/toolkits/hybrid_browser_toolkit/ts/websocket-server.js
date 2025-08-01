@@ -177,7 +177,11 @@ class WebSocketBrowserServer {
       case 'mouse_control':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.mouseControl(params.control, params.x, params.y);
-      
+
+      case 'mouse_drag':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.mouseDrag(params.from_x, params.from_y, params.to_x, params.to_y);
+
       case 'press_key':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.pressKeys(params.keys);

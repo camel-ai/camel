@@ -89,6 +89,12 @@ def create_mock_ws_wrapper():
             "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
         }
     )
+    mock_ws_wrapper.mouse_drag = AsyncMock(
+        return_value={
+            "result": "Action mouse_drag executed successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
     mock_ws_wrapper.press_key = AsyncMock(
         return_value={
             "result": "Action press_key executed successfully",
@@ -507,6 +513,22 @@ class TestHybridBrowserToolkit:
         # WebSocket wrapper should handle validation gracefully
         assert "result" in result
         assert isinstance(result["result"], str)
+
+    @pytest.mark.asyncio
+    async def test_mouse_drag(self, browser_toolkit_fixture):
+        """Test mouse_drag with source and destination coordinates"""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_mouse_drag(
+            from_x=100, from_y=100, to_x=500, to_y=500
+        )
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert (
+            "mouse_drag" in result["result"].lower()
+            or "successfully" in result["result"].lower()
+        )
 
     @pytest.mark.asyncio
     async def test_press_key(self, browser_toolkit_fixture):

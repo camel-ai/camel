@@ -539,11 +539,22 @@ class WebSocketBrowserWrapper:
 
     @action_logger
     async def mouse_control(
-        self, control: str, x: int, y: int
+        self, control: str, x: float, y: float
     ) -> Dict[str, Any]:
         """Control the mouse to interact with browser with x, y coordinates."""
         response = await self._send_command(
             'mouse_control', {'control': control, 'x': x, 'y': y}
+        )
+        return response
+
+    @action_logger
+    async def mouse_drag(
+        self, from_x: float, from_y: float, to_x: float, to_y: float
+    ) -> Dict[str, Any]:
+        """Control the mouse to drag and drop in the browser."""
+        response = await self._send_command(
+            'mouse_drag',
+            {'from_x': from_x, 'from_y': from_y, 'to_x': to_x, 'to_y': to_y},
         )
         return response
 

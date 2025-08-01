@@ -383,8 +383,13 @@ export class HybridBrowserToolkit {
     return this.executeActionWithSnapshot(action);
   }
 
-  async mouseControl(control: 'click' | 'dblclick', x: number, y: number): Promise<any> {
+  async mouseControl(control: 'click' | 'right_click'| 'dblclick', x: number, y: number): Promise<any> {
     const action: BrowserAction = { type: 'mouse_control', control, x, y };
+    return this.executeActionWithSnapshot(action);
+  }
+
+  async mouseDrag(from_x: number, from_y: number, to_x: number, to_y: number): Promise<any> {
+    const action: BrowserAction = { type: 'mouse_drag', from_x, from_y, to_x, to_y };
     return this.executeActionWithSnapshot(action);
   }
 

@@ -472,12 +472,19 @@ export class HybridBrowserSession {
   private async performMouseControl(page: Page, control: string, x: number, y: number): Promise<{ success: boolean; error?: string }> {
     try {
       const viewport = page.viewportSize();
-      if (viewport && (x < 0 || y < 0 || x > viewport.width || y > viewport.height)) {
+      if (!viewport) {
+        return { success: false, error: 'Viewport size not available from page.' };
+      }
+      if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
         return { success: false, error: `Invalid coordinates, outside viewport bounds: (${x}, ${y})` };
       }
       switch (control) {
         case 'click': {
           await page.mouse.click(x, y);
+          break;
+        }
+        case 'right_click': {
+          await page.mouse.click(x, y, { button: 'right' });
           break;
         }
         case 'dblclick': {
@@ -490,7 +497,41 @@ export class HybridBrowserSession {
       
       return { success: true };
     } catch (error) {
-      return { success: false, error: `Mouse Action failed: ${error}` };
+      return { success: false, error: `Mouse action failed: ${error}` };
+    }
+  }
+
+  /**
+   *  Simplified mouse drag and drop implementation
+   */
+  private async performMouseDrag(page: Page, from_x: number, from_y: number, to_x: number, to_y: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      const viewport = page.viewportSize();
+      if (!viewport) {
+        return { success: false, error: 'Viewport size not available from page.' };
+      }
+      const isValidCoordinates =({x, y} : {x: number, y:number}) => {
+        return 0 <= x && x <= viewport.width && 0 <= y && y <= viewport.height;
+      }
+
+      if (!isValidCoordinates({x: from_x, y: from_y})) {
+        return { success: false, error: `Invalid From coordinates, outside viewport bounds: (${from_x}, ${from_y})` };
+      }
+
+      if (!isValidCoordinates({x: to_x, y: to_y})) {
+        return { success: false, error: `Invalid To coordinates, outside viewport bounds: (${to_x}, ${to_y})`};
+      }
+
+      // Source coordinates
+      await page.mouse.move(from_x, from_y);
+      await page.mouse.down();
+      // Destination coordinates
+      await page.mouse.move(to_x, to_y);
+      await page.mouse.up();
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: `Mouse drag action failed: ${error}` };
     }
   }
 
@@ -584,9 +625,21 @@ export class HybridBrowserSession {
           const mouseControlResult = await this.performMouseControl(page, action.control, action.x, action.y);
 
           if (!mouseControlResult.success) {
-            throw new Error(`Mouse Action failed: ${mouseControlResult.error}`);
+            throw new Error(`Action failed: ${mouseControlResult.error}`);
           }
           actionExecutionTime = Date.now() - mouseControlStart;
+          break;
+        }
+
+        case 'mouse_drag': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const mouseDragStart = Date.now();
+          const mouseDragResult = await this.performMouseDrag(page, action.from_x, action.from_y, action.to_x, action.to_y);
+
+          if (!mouseDragResult.success) {
+            throw new Error(`Action failed: ${mouseDragResult.error}`);
+          }
+          actionExecutionTime = Date.now() - mouseDragStart;
           break;
         }
 
