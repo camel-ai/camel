@@ -322,12 +322,13 @@ def search_agent_factory(
         "browser_get_som_screenshot",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
+        mode="python",
         headless=False,
         enabled_tools=custom_tools,
         browser_log_to_file=True,
         stealth=True,
         session_id=agent_id,
-        viewport_limit=True,
+        viewport_limit=False,
         cache_dir=WORKING_DIRECTORY,
         default_start_url="https://search.brave.com/",
     )
@@ -951,8 +952,8 @@ access and can resolve a wide range of issues.
         ),
         model=model_backend_reason,
         tools=[
-            *message_integration.register_toolkits(
-                NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
+            *NoteTakingToolkit(
+                working_directory=WORKING_DIRECTORY
             ).get_tools(),
         ],
     )
@@ -968,8 +969,8 @@ MUST use this as the current date.
         """,
         model=model_backend_reason,
         tools=[
-            *message_integration.register_toolkits(
-                NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
+            *NoteTakingToolkit(
+                working_directory=WORKING_DIRECTORY
             ).get_tools(),
         ],
     )
@@ -1083,7 +1084,7 @@ MUST use this as the current date.
     human_task = Task(
         content=(
             """
-search 10 different papers related to llm agent and write a html report about 
+search 50 different papers related to llm agent and write a html report about 
 them.
             """
         ),
