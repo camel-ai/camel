@@ -91,6 +91,7 @@ class ModelType(UnifiedModelType, Enum):
     OPENROUTER_LLAMA_4_SCOUT = "meta-llama/llama-4-scout"
     OPENROUTER_LLAMA_4_SCOUT_FREE = "meta-llama/llama-4-scout:free"
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
+    OPENROUTER_HORIZON_ALPHA = "openrouter/horizon-alpha"
 
     # LMStudio models
     LMSTUDIO_GEMMA_3_1B = "gemma-3-1b"
@@ -603,6 +604,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.OPENROUTER_OLYMPICODER_7B,
+            ModelType.OPENROUTER_HORIZON_ALPHA,
         }
 
     @property
@@ -1276,6 +1278,7 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.MISTRAL_CODESTRAL_MAMBA,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
+            ModelType.OPENROUTER_HORIZON_ALPHA,
         }:
             return 256_000
 

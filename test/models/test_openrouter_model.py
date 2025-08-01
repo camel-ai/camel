@@ -28,6 +28,7 @@ from camel.utils import OpenAITokenCounter
         ModelType.OPENROUTER_LLAMA_3_1_405B,
         ModelType.OPENROUTER_LLAMA_3_1_70B,
         ModelType.OPENROUTER_OLYMPICODER_7B,
+        ModelType.OPENROUTER_HORIZON_ALPHA,
     ],
 )
 def test_openrouter_model(model_type: ModelType):
