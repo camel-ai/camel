@@ -73,6 +73,9 @@ class ActionExecutor:
                 "extract": self._extract,
                 "scroll": self._scroll,
                 "enter": self._enter,
+                "mouse_control": self._mouse_control,
+                "mouse_drag": self._mouse_drag,
+                "press_key": self._press_key,
             }.get(action_type)
 
             if handler is None:
@@ -382,6 +385,100 @@ class ActionExecutor:
             "details": details,
         }
 
+    async def _mouse_control(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        r"""Handle mouse_control action based on the coordinates"""
+        control = action.get("control", "click")
+        x_coord = action.get("x", 0)
+        y_coord = action.get("y", 0)
+
+        details = {
+            "action_type": "mouse_control",
+            "target": f"coordinates : ({x_coord}, {y_coord})",
+        }
+        try:
+            if not self._valid_coordinates(x_coord, y_coord):
+                raise ValueError(
+                    "Invalid coordinates, outside viewport bounds :"
+                    f"({x_coord}, {y_coord})"
+                )
+            match control:
+                case "click":
+                    await self.page.mouse.click(x_coord, y_coord)
+                    message = "Action 'click' performed on the target"
+
+                case "right_click":
+                    await self.page.mouse.click(
+                        x_coord, y_coord, button="right"
+                    )
+                    message = "Action 'right_click' performed on the target"
+
+                case "dblclick":
+                    await self.page.mouse.dblclick(x_coord, y_coord)
+                    message = "Action 'dblclick' performed on the target"
+
+                case _:
+                    return {
+                        "message": f"Invalid control action {control}",
+                        "details": details,
+                    }
+
+            return {"message": message, "details": details}
+        except Exception as e:
+            return {"message": f"Action failed: {e}", "details": details}
+
+    async def _mouse_drag(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        r"""Handle mouse_drag action based on the coordinates"""
+        from_x = action.get("from_x", 0)
+        from_y = action.get("from_y", 0)
+        to_x = action.get("to_x", 0)
+        to_y = action.get("to_y", 0)
+
+        details = {
+            "action_type": "mouse_drag",
+            "target": f"From coordinates : ({from_x}, {from_y}),"
+            f"To coordinates : ({to_x}, {to_y})",
+        }
+        try:
+            if not self._valid_coordinates(from_x, from_y):
+                raise ValueError(
+                    "Invalid From coordinates, outside viewport bounds :"
+                    f"({from_x}, {from_y})"
+                )
+
+            if not self._valid_coordinates(to_x, to_y):
+                raise ValueError(
+                    "Invalid To coordinates, outside viewport bounds :"
+                    f"({to_x}, {to_y})"
+                )
+
+            # Source coordinates
+            await self.page.mouse.move(from_x, from_y)
+            await self.page.mouse.down()
+            # Destination coordinates
+            await self.page.mouse.move(to_x, to_y)
+            await self.page.mouse.up()
+
+            return {
+                "message": "Action Drag and Drop performed.",
+                "details": details,
+            }
+        except Exception as e:
+            return {"message": f"Action failed: {e}", "details": details}
+
+    async def _press_key(self, action: Dict[str, Any]) -> Dict[str, Any]:
+        r"""Handle press_key action by combining the keys in a list."""
+        keys = action.get("keys", [])
+        combined_keys = "+".join(keys)
+        details = {"action_type": "press_key", "keys": combined_keys}
+        try:
+            await self.page.keyboard.press(combined_keys)
+            return {
+                "message": "Pressed keys in the browser",
+                "details": details,
+            }
+        except Exception as e:
+            return {"message": f"Action failed: {e}", "details": details}
+
     # utilities
     async def _wait_dom_stable(self) -> None:
         r"""Wait for DOM to become stable before executing actions."""
@@ -401,6 +498,17 @@ class ActionExecutor:
 
         except Exception:
             pass  # Don't fail if wait times out
+
+    def _valid_coordinates(self, x_coord: float, y_coord: float) -> bool:
+        r"""Validate given coordinates against viewport bounds."""
+        viewport = self.page.viewport_size
+        if not viewport:
+            raise ValueError("Viewport size not available from current page.")
+
+        return (
+            0 <= x_coord <= viewport['width']
+            and 0 <= y_coord <= viewport['height']
+        )
 
     # static helpers
     @staticmethod

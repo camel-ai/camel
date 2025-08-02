@@ -538,6 +538,33 @@ class WebSocketBrowserWrapper:
         return response
 
     @action_logger
+    async def mouse_control(
+        self, control: str, x: float, y: float
+    ) -> Dict[str, Any]:
+        """Control the mouse to interact with browser with x, y coordinates."""
+        response = await self._send_command(
+            'mouse_control', {'control': control, 'x': x, 'y': y}
+        )
+        return response
+
+    @action_logger
+    async def mouse_drag(
+        self, from_x: float, from_y: float, to_x: float, to_y: float
+    ) -> Dict[str, Any]:
+        """Control the mouse to drag and drop in the browser."""
+        response = await self._send_command(
+            'mouse_drag',
+            {'from_x': from_x, 'from_y': from_y, 'to_x': to_x, 'to_y': to_y},
+        )
+        return response
+
+    @action_logger
+    async def press_key(self, keys: List[str]) -> Dict[str, Any]:
+        """Press key and key combinations."""
+        response = await self._send_command('press_key', {'keys': keys})
+        return response
+
+    @action_logger
     async def back(self) -> Dict[str, Any]:
         """Navigate back."""
         response = await self._send_command('back', {})
@@ -570,6 +597,22 @@ class WebSocketBrowserWrapper:
             return response
         # Fallback if wrapped in an object
         return response.get('tabs', [])
+
+    @action_logger
+    async def console_view(self) -> List[Dict[str, Any]]:
+        """Get current page console view"""
+        response = await self._send_command('console_view', {})
+
+        if isinstance(response, list):
+            return response
+
+        return response.get('logs', [])
+
+    @action_logger
+    async def console_exec(self, code: str) -> Dict[str, Any]:
+        """Execute javascript code and get result."""
+        response = await self._send_command('console_exec', {'code': code})
+        return response
 
     @action_logger
     async def wait_user(

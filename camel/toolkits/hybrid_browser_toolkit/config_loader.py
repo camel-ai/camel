@@ -23,6 +23,7 @@ class BrowserConfig:
     headless: bool = True
     user_data_dir: Optional[str] = None
     stealth: bool = False
+    console_log_limit: int = 1000
 
     # Default settings
     default_start_url: str = "https://google.com/"
@@ -105,6 +106,8 @@ class ConfigLoader:
                 browser_kwargs["connect_over_cdp"] = value
             elif key == "cdpUrl":
                 browser_kwargs["cdp_url"] = value
+            elif key == "consoleLogLimit":
+                browser_kwargs["console_log_limit"] = value
             elif key == "cacheDir":
                 toolkit_kwargs["cache_dir"] = value
             elif key == "browserLogToFile":
