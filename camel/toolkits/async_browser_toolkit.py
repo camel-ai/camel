@@ -37,6 +37,7 @@ from typing import (
 )
 
 from PIL import Image
+from playwright.async_api import Page
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
@@ -87,6 +88,9 @@ ASYNC_ACTIONS = [
     "find_text_on_page",
     "visit_page",
     "click_blank_area",
+    "open_tab",
+    "switch_tab",
+    "close_tab",
 ]
 
 
@@ -164,6 +168,9 @@ class AsyncBaseBrowser:
         self.page: Any = None
         self.page_url: str = ""
         self.web_agent_model: Optional[BaseModelBackend] = None
+        self.tabs: Dict[int, Page] = {}
+        self.current_tab_id: Optional[int] = 0
+        self._tab_id_lock = asyncio.Lock()
 
         # Set the cache directory
         self.cache_dir = "tmp/" if cache_dir is None else cache_dir
@@ -220,8 +227,12 @@ class AsyncBaseBrowser:
             if len(self.context.pages) > 0:  # Persistent context might
                 # reopen pages
                 self.page = self.context.pages[0]
+                self.tabs[0] = self.page
+                self.current_tab_id = 0
             else:
                 self.page = await self.context.new_page()
+                self.tabs[0] = self.page
+                self.current_tab_id = 0
         else:
             # Launch a fresh browser instance
             self.browser = await self.playwright_server.chromium.launch(
@@ -240,6 +251,8 @@ class AsyncBaseBrowser:
 
             self.context = await self.browser.new_context(**new_context_kwargs)
             self.page = await self.context.new_page()
+            self.tabs[0] = self.page
+            self.current_tab_id = 0
 
         assert self.context is not None
         assert self.page is not None
@@ -974,6 +987,75 @@ class AsyncBaseBrowser:
         r"""Ensure the browser is installed."""
         return self.async_ensure_browser_installed()
 
+    async def async_open_tab(self, url: str) -> int:
+        """Open a new tab and navigate to URL; return tab_id.
+
+        Args:
+            url (str): The target URL to navigate to in the new tab.
+
+        Returns:
+            int: The ID of the newly opened tab.
+        """
+        if not hasattr(self, 'context') or self.context is None:
+            raise RuntimeError(
+                "Browser context not initialized. Call async_init() first."
+            )
+
+        page = await self.context.new_page()
+        try:
+            await page.goto(url)
+            await page.wait_for_load_state("load", timeout=20000)
+        except Exception as e:
+            await page.close()
+            raise ValueError(f"Failed to navigate to {url}: {e}")
+
+        async with self._tab_id_lock:
+            new_id = max(self.tabs.keys()) + 1 if self.tabs else 0
+            self.tabs[new_id] = page
+
+        return new_id
+
+    async def async_switch_tab(self, tab_id: int) -> None:
+        """Switch active page to the designated tab.
+
+        Args:
+            tab_id (int): The ID of the tab to activate.
+
+        Raises:
+            ValueError: If the tab ID does not exist or refers to a closed tab.
+        """
+        if tab_id not in self.tabs:
+            raise ValueError(f"Tab {tab_id} does not exist")
+
+        page = self.tabs[tab_id]
+        if page.is_closed():
+            del self.tabs[tab_id]
+            raise ValueError(f"Tab {tab_id} has been closed")
+
+        self.page = page
+        self.current_tab_id = tab_id
+
+    async def async_close_tab(self, tab_id: int) -> None:
+        """Close the specified tab and adjust active tab.
+
+        Args:
+            tab_id (int): The ID of the tab to close.
+
+        Raises:
+            ValueError: If the specified tab does not exist.
+        """
+        if tab_id not in self.tabs:
+            raise ValueError("This tab does not exist")
+        await self.tabs[tab_id].close()
+        del self.tabs[tab_id]
+        if self.current_tab_id is not None and tab_id == self.current_tab_id:
+            remaining = sorted(self.tabs.keys())
+            if remaining:
+                await self.async_switch_tab(remaining[0])
+            else:
+                self.page = None
+                self.current_tab_id = None
+
 
 class AsyncBrowserToolkit(BaseToolkit):
     r"""An asynchronous class for browsing the web and interacting
@@ -1038,11 +1120,26 @@ class AsyncBrowserToolkit(BaseToolkit):
         self.history: list[Any] = []
         self.web_agent, self.planning_agent = self._initialize_agent()
 
-    def _reset(self):
+    async def _reset(self):
+        r"""Reset the internal state of the browser toolkit."""
+
+        # Reset agents
         self.web_agent.reset()
         self.planning_agent.reset()
         self.history = []
         os.makedirs(self.browser.cache_dir, exist_ok=True)
+
+        if hasattr(self.browser, 'tabs'):
+            for tab_id, page in list(self.browser.tabs.items()):
+                if page is not None and not page.is_closed():
+                    logger.debug(f"Closing tab {tab_id}")
+                    await page.close()
+            self.browser.tabs.clear()
+            self.browser.current_tab_id = None
+
+        self.browser.page = None
+        self.browser.page_url = None
+        self.browser.page_history = []
 
     def _initialize_agent(self) -> Tuple["ChatAgent", "ChatAgent"]:
         r"""Initialize the planning and web agents."""
@@ -1097,12 +1194,15 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 <detailed_plan>{detailed_plan}</detailed_plan>
         """
 
+        current_tab_info = f"Current tab ID: {self.browser.current_tab_id}, URL: {self.browser.get_url()}"
+
         observe_prompt = OBSERVE_PROMPT_TEMPLATE.format(
             task_prompt=task_prompt,
             detailed_plan_prompt=detailed_plan_prompt_str,
             AVAILABLE_ACTIONS_PROMPT=AVAILABLE_ACTIONS_PROMPT,
             history_window=self.history_window,
             history=self.history[-self.history_window :],
+            current_tab_info=current_tab_info,
         )
         # get current state
         som_screenshot, _ = await self.browser.async_get_som_screenshot(
@@ -1252,13 +1352,26 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
     async def _async_get_final_answer(self, task_prompt: str) -> str:
         r"""Generate the final answer based on the task prompt."""
-        final_answer_prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
-            task_prompt=task_prompt, history=self.history
+        tab_info = []
+        for tab_id, page in self.browser.tabs.items():
+            tab_info.append(f"Tab {tab_id}: {page.url}")
+
+        tab_summary = "\n".join(tab_info) if tab_info else "No tabs open"
+
+        prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
+            history=self.history,
+            task_prompt=task_prompt,
+            tab_summary=tab_summary,
+            current_tab_id=self.browser.current_tab_id,
         )
-        response = await self.planning_agent.astep(final_answer_prompt)
-        if response.msgs is None or len(response.msgs) == 0:
-            raise RuntimeError("Got empty final answer from planning agent.")
-        return response.msgs[0].content
+
+        message = BaseMessage.make_user_message(
+            role_name='user',
+            content=prompt,
+        )
+        self.web_agent.reset()
+        resp = await self.web_agent.astep(message)
+        return resp.msgs[0].content
 
     async def _async_task_planning(
         self, task_prompt: str, start_url: str
@@ -1324,13 +1437,22 @@ Here is a plan about how to solve the task step-by-step which you must follow:
             str: The simulation result to the task.
         """
 
-        self._reset()
+        await self._reset()
         task_completed = False
         detailed_plan = await self._async_task_planning(task_prompt, start_url)
         logger.debug(f"Detailed plan: {detailed_plan}")
 
         await self.browser.async_init()
         await self.browser.visit_page(start_url)
+
+        if self.browser.page is None:
+            raise RuntimeError(
+                "Browser page initialization failed - page is None"
+            )
+
+        self.browser.tabs[0] = self.browser.page
+        self.browser.current_tab_id = 0
+
         for i in range(round_limit):
             observation, reasoning, action_code = await self.async_observe(
                 task_prompt, detailed_plan
@@ -1349,6 +1471,8 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                     "action_if_success": True,
                     "info": None,
                     "current_url": self.browser.get_url(),
+                    "current_tab_id": self.browser.current_tab_id,
+                    "open_tabs": list(self.browser.tabs.keys()),
                 }
                 self.history.append(trajectory_info)
                 break
@@ -1366,6 +1490,8 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                     "action_if_success": success,
                     "info": info,
                     "current_url": self.browser.get_url(),
+                    "current_tab_id": self.browser.current_tab_id,
+                    "open_tabs": list(self.browser.tabs.keys()),
                 }
                 self.history.append(trajectory_info)
 
@@ -1395,5 +1521,43 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         await self.browser.close()
         return simulation_result
 
+    async def open_tab(self, url: str) -> int:
+        r"""Open a new tab and navigate to URL; return tab_id.
+
+        Args:
+            url (str): The target URL to navigate to in the new tab.
+
+        Returns:
+            int: The ID of the newly opened tab.
+        """
+        return await self.browser.async_open_tab(url)
+
+    async def switch_tab(self, tab_id: int) -> None:
+        r"""Switch active page to the designated tab.
+
+        Args:
+            tab_id (int): The ID of the tab to activate.
+
+        Raises:
+            ValueError: If the tab ID does not exist or refers to a closed tab.
+        """
+        await self.browser.async_switch_tab(tab_id)
+
+    async def close_tab(self, tab_id: int) -> None:
+        r"""Close the specified tab and adjust active tab.
+
+        Args:
+            tab_id (int): The ID of the tab to close.
+
+        Raises:
+            ValueError: If the specified tab does not exist.
+        """
+        await self.browser.async_close_tab(tab_id)
+
     def get_tools(self) -> List[FunctionTool]:
-        return [FunctionTool(self.browse_url)]
+        return [
+            FunctionTool(self.browse_url),
+            FunctionTool(self.browser.async_open_tab),
+            FunctionTool(self.browser.async_switch_tab),
+            FunctionTool(self.browser.async_close_tab),
+        ]
