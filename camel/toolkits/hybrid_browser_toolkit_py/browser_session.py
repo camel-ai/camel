@@ -713,13 +713,19 @@ class HybridBrowserSession:
         return f"Navigated to {url}"
 
     async def get_snapshot(
-        self, *, force_refresh: bool = False, diff_only: bool = False
+        self,
+        *,
+        force_refresh: bool = False,
+        diff_only: bool = False,
+        viewport_limit: bool = False,
     ) -> str:
         r"""Get snapshot for current tab."""
         if not self.snapshot:
             return "<empty>"
         return await self.snapshot.capture(
-            force_refresh=force_refresh, diff_only=diff_only
+            force_refresh=force_refresh,
+            diff_only=diff_only,
+            viewport_limit=viewport_limit,
         )
 
     async def exec_action(self, action: Dict[str, Any]) -> Dict[str, Any]:

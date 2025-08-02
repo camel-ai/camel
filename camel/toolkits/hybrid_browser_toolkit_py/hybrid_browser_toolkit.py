@@ -99,6 +99,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         screenshot_timeout: Optional[int] = None,
         page_stability_timeout: Optional[int] = None,
         dom_content_loaded_timeout: Optional[int] = None,
+        viewport_limit: bool = False,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -182,6 +183,10 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 HYBRID_BROWSER_DOM_CONTENT_LOADED_TIMEOUT or defaults to
                 5000ms.
                 Defaults to `None`.
+            viewport_limit (bool): When True, only return snapshot results
+                visible in the current viewport. When False, return all
+                elements on the page regardless of visibility.
+                Defaults to `False`.
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -193,6 +198,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._browser_log_to_file = browser_log_to_file
         self._default_start_url = default_start_url
         self._session_id = session_id or "default"
+        self._viewport_limit = viewport_limit
 
         # Store timeout configuration
         self._default_timeout = default_timeout
@@ -550,7 +556,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             )
 
     async def _get_unified_analysis(
-        self, max_retries: int = 3
+        self, max_retries: int = 3, viewport_limit: Optional[bool] = None
     ) -> Dict[str, Any]:
         r"""Get unified analysis data from the page with retry mechanism for
         navigation issues."""
@@ -573,7 +579,15 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     # Don't fail if DOM wait times out
                     pass
 
-                result = await page.evaluate(self._unified_script)
+                # Use instance viewport_limit if parameter not provided
+                use_viewport_limit = (
+                    viewport_limit
+                    if viewport_limit is not None
+                    else self._viewport_limit
+                )
+                result = await page.evaluate(
+                    self._unified_script, use_viewport_limit
+                )
 
                 if not isinstance(result, dict):
                     logger.warning(f"Invalid result type: {type(result)}")
