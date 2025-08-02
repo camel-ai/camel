@@ -198,10 +198,9 @@ Now you should summarize the scenario and return the result of the task.
 
 TASK_DECOMPOSE_PROMPT = r"""You need to either decompose a complex task or enhance a simple one, following these important principles to maximize efficiency and clarity for the executing agents:
 
-0.  **Enhance Simple Tasks, Don't Decompose**: First, evaluate if the task is a single, straightforward action.
-    *   **If the task is simple, DO NOT decompose it.** Instead, **rewrite and enhance** it by consolidating the main goal with any specific details from the additional information into a single, self-contained instruction. The goal is to produce a high-quality task with a clear, specific deliverable.
-    *   For example, a vague task like "Generate a report about camel-ai" should be enhanced to "Generate a comprehensive, well-structured report about camel-ai as one HTML file".
-    *   **Only decompose if a task is truly complex**: A task is complex if it involves multiple distinct steps, requires different worker skills, or can be significantly sped up by running parts in parallel.
+0.  **Analyze Task Complexity**: First, evaluate if the task is a single, straightforward action or a complex one.
+    *   **If the task is complex or could be decomposed into multiple subtasks run in parallel, decompose it.** A task is considered complex if it involves multiple distinct steps, requires different skills, or can be significantly sped up by running parts in parallel.
+    *   **If the task is simple, do not decompose it.** Instead, **rewrite and enhance** it to produce a high-quality task with a clear, specific deliverable.
 
 1.  **Self-Contained Subtasks** (if decomposing): This is critical principle. Each subtask's description **must be fully self-sufficient and independently understandable**. The agent executing the subtask has **no knowledge** of the parent task, other subtasks, or the overall workflow.
     *   **DO NOT** use relative references like "the first task," "the paper mentioned above," or "the result from the previous step."
@@ -229,21 +228,6 @@ TASK_DECOMPOSE_PROMPT = r"""You need to either decompose a complex task or enhan
 These principles aim to reduce overall completion time by maximizing concurrent work and effectively utilizing all available worker capabilities.
 
 **EXAMPLE FORMAT ONLY** (DO NOT use this example content for actual task decomposition):
-
-***
-**Example 0: Simple Task (Enhance, Don't Decompose)**
-
-*   **Overall Task**: "Generate a report about camel-ai"
-*   **Available Workers**:
-    *   `DocumentAgent`: A worker that can read documents and write summaries.
-*   **Correct Output**:
-    ```xml
-    <tasks>
-    <task>Generate a comprehensive, well-structured report about camel-ai as one HTML file</task>
-    </tasks>
-    ```
-*   **Reasoning**: The original task is simple but its details are vague. It is **enhanced** by consolidating all given details (output format, content focus) into a single, precise, and self-contained instruction. This follows the "Enhance Simple Tasks" principle and does not invent new information.
-***
 
 ***
 **Example 1: Sequential Task for a Single Worker**
