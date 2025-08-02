@@ -574,6 +574,107 @@ class MCPClient:
 
         return run_async(self.list_mcp_tools)()
 
+    def _handle_json_schema_type(self, schema_type: Any) -> Any:
+        r"""Handle JSON Schema type field properly, including Union types.
+
+        Converts JSON Schema type specifications to proper Python type
+        annotations. Handles both single types and Union types (arrays of
+        types).
+
+        Args:
+            schema_type: The type value from JSON schema, can be:
+                - Single string: "string"
+                - List of types: ["string", "null"], ["string", "array"]
+
+        Returns:
+            Python type annotation that properly represents the schema type.
+
+        Examples:
+            "string" -> str
+            ["string", "null"] -> Union[str, None]
+            ["string", "array"] -> Union[str, List[Any]]
+        """
+        from typing import Union
+
+        type_map = {
+            "string": str,
+            "integer": int,
+            "number": float,
+            "boolean": bool,
+            "array": list,
+            "object": dict,
+        }
+
+        if isinstance(schema_type, str):
+            # Single type (e.g., "string")
+            return type_map.get(schema_type, Any)
+
+        elif isinstance(schema_type, list):
+            # Array of types (e.g., ["string", "null"] or ["string", "array"])
+            if not schema_type:
+                return Any
+
+            # Filter out "null" and convert others
+            non_null_types = [t for t in schema_type if t != "null"]
+            has_null = "null" in schema_type
+
+            if not non_null_types:
+                # Only null type
+                return type(None)
+            elif len(non_null_types) == 1:
+                # Single non-null type
+                base_type = type_map.get(non_null_types[0], Any)
+                if has_null:
+                    # Use Union for Optional type
+                    return Union[base_type, type(None)]
+                else:
+                    return base_type
+            else:
+                # Multiple non-null types - create Union of all types
+                mapped_types = [type_map.get(t, Any) for t in non_null_types]
+                if has_null:
+                    mapped_types.append(type(None))
+                # Create Union type from tuple of types
+                return Union[tuple(mapped_types)]
+        else:
+            # Fallback for unexpected type format
+            return Any
+
+    def _sanitize_schema_for_gemini(
+        self, schema: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        r"""Sanitize schema for Gemini compatibility.
+
+        Removes redundant enum declarations from boolean types since Gemini
+        rejects them. This fixes Notion MCP tools that have
+        {"type": "boolean", "enum": [true, false]}.
+
+        Args:
+            schema: Property schema dictionary to sanitize.
+
+        Returns:
+            Dict[str, Any]: Sanitized schema dictionary.
+        """
+        clean_schema = dict(schema)
+
+        # Remove redundant enum from boolean types
+        if clean_schema.get("type") == "boolean" and "enum" in clean_schema:
+            clean_schema.pop("enum")
+
+        # Recursively process nested object properties
+        if (
+            clean_schema.get("type") == "object"
+            and "properties" in clean_schema
+        ):
+            clean_schema["properties"] = {
+                prop_name: self._sanitize_schema_for_gemini(prop_schema)
+                for prop_name, prop_schema in clean_schema[
+                    "properties"
+                ].items()
+            }
+
+        return clean_schema
+
     def generate_function_from_mcp_tool(
         self, mcp_tool: types.Tool
     ) -> Callable:
@@ -593,21 +694,13 @@ class MCPClient:
         parameters_schema = mcp_tool.inputSchema.get("properties", {})
         required_params = mcp_tool.inputSchema.get("required", [])
 
-        type_map = {
-            "string": str,
-            "integer": int,
-            "number": float,
-            "boolean": bool,
-            "array": list,
-            "object": dict,
-        }
         annotations = {}  # used to type hints
         defaults: Dict[str, Any] = {}  # store default values
 
         func_params = []
         for param_name, param_schema in parameters_schema.items():
-            param_type = param_schema.get("type", "Any")
-            param_type = type_map.get(param_type, Any)
+            schema_type = param_schema.get("type", "string")
+            param_type = self._handle_json_schema_type(schema_type)
 
             annotations[param_name] = param_type
             if param_name not in required_params:
@@ -779,9 +872,15 @@ class MCPClient:
         properties = input_schema.get("properties", {})
         required = input_schema.get("required", [])
 
+        # Sanitize properties for Gemini compatibility
+        sanitized_properties = {
+            prop_name: self._sanitize_schema_for_gemini(prop_schema)
+            for prop_name, prop_schema in properties.items()
+        }
+
         parameters = {
             "type": "object",
-            "properties": properties,
+            "properties": sanitized_properties,
             "required": required,
             "additionalProperties": False,
         }
