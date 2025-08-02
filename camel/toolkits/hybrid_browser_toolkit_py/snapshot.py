@@ -43,7 +43,11 @@ class PageSnapshot:
     # Public API
     # ---------------------------------------------------------------------
     async def capture(
-        self, *, force_refresh: bool = False, diff_only: bool = False
+        self,
+        *,
+        force_refresh: bool = False,
+        diff_only: bool = False,
+        viewport_limit: bool = False,
     ) -> str:
         """Return current snapshot or just the diff to previous one."""
         try:
@@ -65,7 +69,9 @@ class PageSnapshot:
             )
 
             logger.debug("Capturing page snapshot …")
-            snapshot_result = await self._get_snapshot_direct()
+            snapshot_result = await self._get_snapshot_direct(
+                viewport_limit=viewport_limit
+            )
 
             # Extract snapshot text from the unified analyzer result
             if (
@@ -111,7 +117,7 @@ class PageSnapshot:
     _snapshot_js_cache: Optional[str] = None  # class-level cache
 
     async def _get_snapshot_direct(
-        self,
+        self, viewport_limit: bool = False
     ) -> Optional[Union[str, Dict[str, Any]]]:
         r"""Evaluate the snapshot-extraction JS with simple retry logic.
 
@@ -133,7 +139,7 @@ class PageSnapshot:
         retries: int = 3
         while retries > 0:
             try:
-                return await self.page.evaluate(js_code)
+                return await self.page.evaluate(js_code, viewport_limit)
             except Exception as e:
                 msg = str(e)
 
