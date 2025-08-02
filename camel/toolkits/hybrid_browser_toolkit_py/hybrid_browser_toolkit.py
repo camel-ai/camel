@@ -1749,15 +1749,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
     @action_logger
     async def browser_mouse_drag(
-        self, *, from_x: float, from_y: float, to_x: float, to_y: float
+        self, *, from_ref: str, to_ref: str
     ) -> Dict[str, Any]:
-        r"""Control the mouse to drag and drop in the browser.
+        r"""Control the mouse to drag and drop in the browser using ref IDs.
 
         Args:
-            from_x (float): Starting x-coordinate
-            from_y (float): Starting y-coordinate.
-            to_x (float): Destination x-coordinate.
-            to_y (float): Destination y-coordinate.
+            from_ref (str): The `ref` ID of the source element to drag from.
+            to_ref (str): The `ref` ID of the target element to drag to.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1767,12 +1765,46 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
+        # Validate refs
+        self._validate_ref(from_ref, "drag source")
+        self._validate_ref(to_ref, "drag target")
+
+        # Get element analysis to find coordinates
+        analysis = await self._get_unified_analysis()
+        elements = analysis.get("elements", {})
+
+        if from_ref not in elements:
+            logger.error(
+                f"Error: Source element reference '{from_ref}' not found."
+            )
+            snapshot = self._format_snapshot_from_analysis(analysis)
+            tab_info = await self._get_tab_info_for_output()
+            return {
+                "result": (
+                    f"Error: Source element reference '{from_ref}' not found."
+                ),
+                "snapshot": snapshot,
+                **tab_info,
+            }
+
+        if to_ref not in elements:
+            logger.error(
+                f"Error: Target element reference '{to_ref}' not found."
+            )
+            snapshot = self._format_snapshot_from_analysis(analysis)
+            tab_info = await self._get_tab_info_for_output()
+            return {
+                "result": (
+                    f"Error: Target element reference '{to_ref}' not found."
+                ),
+                "snapshot": snapshot,
+                **tab_info,
+            }
+
         action = {
             "type": "mouse_drag",
-            "from_x": from_x,
-            "from_y": from_y,
-            "to_x": to_x,
-            "to_y": to_y,
+            "from_ref": from_ref,
+            "to_ref": to_ref,
         }
 
         result = await self._exec_with_snapshot(action)

@@ -921,15 +921,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             }
 
     async def browser_mouse_drag(
-        self, *, from_x: float, from_y: float, to_x: float, to_y: float
+        self, *, from_ref: str, to_ref: str
     ) -> Dict[str, Any]:
-        r"""Control the mouse to drag and drop in the browser.
+        r"""Control the mouse to drag and drop in the browser using ref IDs.
 
         Args:
-            from_x (float): Starting x-coordinate
-            from_y (float): Starting y-coordinate.
-            to_x (float): Destination x-coordinate.
-            to_y (float): Destination y-coordinate.
+            from_ref (str): The `ref` ID of the source element to drag from.
+            to_ref (str): The `ref` ID of the target element to drag to.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -941,7 +939,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            result = await ws_wrapper.mouse_drag(from_x, from_y, to_x, to_y)
+            result = await ws_wrapper.mouse_drag(from_ref, to_ref)
 
             # Add tab information
             tab_info = await ws_wrapper.get_tab_info()

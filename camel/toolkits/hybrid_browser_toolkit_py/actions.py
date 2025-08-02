@@ -427,31 +427,73 @@ class ActionExecutor:
             return {"message": f"Action failed: {e}", "details": details}
 
     async def _mouse_drag(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Handle mouse_drag action based on the coordinates"""
-        from_x = action.get("from_x", 0)
-        from_y = action.get("from_y", 0)
-        to_x = action.get("to_x", 0)
-        to_y = action.get("to_y", 0)
+        r"""Handle mouse_drag action using ref IDs"""
+        from_ref = action.get("from_ref")
+        to_ref = action.get("to_ref")
+
+        if not from_ref or not to_ref:
+            return {
+                "message": "Error: mouse_drag requires from_ref and to_ref",
+                "details": {"error": "missing_refs"},
+            }
+
+        from_selector = f"[aria-ref='{from_ref}']"
+        to_selector = f"[aria-ref='{to_ref}']"
 
         details = {
             "action_type": "mouse_drag",
-            "target": f"From coordinates : ({from_x}, {from_y}),"
-            f"To coordinates : ({to_x}, {to_y})",
+            "from_ref": from_ref,
+            "to_ref": to_ref,
+            "from_selector": from_selector,
+            "to_selector": to_selector,
         }
+
         try:
-            if not self._valid_coordinates(from_x, from_y):
+            # Get the source element
+            from_element = self.page.locator(from_selector)
+            from_count = await from_element.count()
+            if from_count == 0:
                 raise ValueError(
-                    "Invalid From coordinates, outside viewport bounds :"
-                    f"({from_x}, {from_y})"
+                    f"Source element with ref '{from_ref}' not found"
                 )
 
-            if not self._valid_coordinates(to_x, to_y):
+            # Get the target element
+            to_element = self.page.locator(to_selector)
+            to_count = await to_element.count()
+            if to_count == 0:
                 raise ValueError(
-                    "Invalid To coordinates, outside viewport bounds :"
-                    f"({to_x}, {to_y})"
+                    f"Target element with ref '{to_ref}' not found"
                 )
 
-            # Source coordinates
+            # Get bounding boxes
+            from_box = await from_element.first.bounding_box()
+            to_box = await to_element.first.bounding_box()
+
+            if not from_box:
+                raise ValueError(
+                    f"Could not get bounding box for source element "
+                    f"with ref '{from_ref}'"
+                )
+            if not to_box:
+                raise ValueError(
+                    f"Could not get bounding box for target element "
+                    f"with ref '{to_ref}'"
+                )
+
+            # Calculate center coordinates
+            from_x = from_box['x'] + from_box['width'] / 2
+            from_y = from_box['y'] + from_box['height'] / 2
+            to_x = to_box['x'] + to_box['width'] / 2
+            to_y = to_box['y'] + to_box['height'] / 2
+
+            details.update(
+                {
+                    "from_coordinates": {"x": from_x, "y": from_y},
+                    "to_coordinates": {"x": to_x, "y": to_y},
+                }
+            )
+
+            # Perform the drag operation
             await self.page.mouse.move(from_x, from_y)
             await self.page.mouse.down()
             # Destination coordinates
@@ -459,7 +501,10 @@ class ActionExecutor:
             await self.page.mouse.up()
 
             return {
-                "message": "Action Drag and Drop performed.",
+                "message": (
+                    f"Dragged from element [ref={from_ref}] to element "
+                    f"[ref={to_ref}]"
+                ),
                 "details": details,
             }
         except Exception as e:
@@ -468,6 +513,11 @@ class ActionExecutor:
     async def _press_key(self, action: Dict[str, Any]) -> Dict[str, Any]:
         r"""Handle press_key action by combining the keys in a list."""
         keys = action.get("keys", [])
+        if not keys:
+            return {
+                "message": "Error: No keys specified",
+                "details": {"action_type": "press_key", "keys": ""},
+            }
         combined_keys = "+".join(keys)
         details = {"action_type": "press_key", "keys": combined_keys}
         try:
