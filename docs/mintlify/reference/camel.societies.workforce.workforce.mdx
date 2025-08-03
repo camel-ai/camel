@@ -64,6 +64,7 @@ capabilities
 - **task_agent** (Optional[ChatAgent], optional): A custom task planning agent instance for task decomposition and composition. If provided, the workforce will create a new agent using this agent's model configuration but with the required system message and tools (TaskPlanningToolkit). If None, a default agent will be created using DEFAULT model settings. (default: :obj:`None`)
 - **new_worker_agent** (Optional[ChatAgent], optional): A template agent for workers created dynamically at runtime when existing workers cannot handle failed tasks. If None, workers will be created with default settings including SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. (default: :obj:`None`)
 - **graceful_shutdown_timeout** (float, optional): The timeout in seconds for graceful shutdown when a task fails 3 times. During this period, the workforce remains active for debugging. Set to 0 for immediate shutdown. (default: :obj:`15.0`)
+- **task_timeout_seconds** (Optional[float], optional): The timeout in seconds for waiting for tasks to be returned by workers. If None, uses the global TASK_TIMEOUT_SECONDS value (600.0 seconds). Increase this value for tasks that require more processing time. (default: :obj:`None`)
 - **share_memory** (bool, optional): Whether to enable shared memory across SingleAgentWorker instances in the workforce. When enabled, all SingleAgentWorker instances, coordinator agent, and task planning agent will share their complete conversation history and function-calling trajectory, providing better context for task handoffs and continuity. Note: Currently only supports SingleAgentWorker instances; RolePlayingWorker and nested Workforce instances do not participate in memory sharing. (default: :obj:`False`)
 - **use_structured_output_handler** (bool, optional): Whether to use the structured output handler instead of native structured output. When enabled, the workforce will use prompts with structured output instructions and regex extraction to parse responses. This ensures compatibility with agents that don't reliably support native structured output. When disabled, the workforce uses the native response_format parameter. (default: :obj:`True`)
 
@@ -90,7 +91,8 @@ def __init__(
     new_worker_agent: Optional[ChatAgent] = None,
     graceful_shutdown_timeout: float = 15.0,
     share_memory: bool = False,
-    use_structured_output_handler: bool = True
+    use_structured_output_handler: bool = True,
+    task_timeout_seconds: Optional[float] = None
 ):
 ```
 
@@ -600,12 +602,12 @@ def _get_node_info(self, node):
 
 Get descriptive information for a specific node type.
 
-<a id="camel.societies.workforce.workforce.Workforce._get_single_agent_info"></a>
+<a id="camel.societies.workforce.workforce.Workforce._get_single_agent_toolkit_info"></a>
 
-### _get_single_agent_info
+### _get_single_agent_toolkit_info
 
 ```python
-def _get_single_agent_info(self, worker: 'SingleAgentWorker'):
+def _get_single_agent_toolkit_info(self, worker: 'SingleAgentWorker'):
 ```
 
 Get formatted information for a SingleAgentWorker node.

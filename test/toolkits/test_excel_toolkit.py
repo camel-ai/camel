@@ -24,7 +24,9 @@ from camel.toolkits import ExcelToolkit
 
 @pytest.fixture
 def excel_toolkit():
-    return ExcelToolkit()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        toolkit = ExcelToolkit(working_directory=temp_dir)
+        yield toolkit
 
 
 @pytest.fixture
@@ -211,12 +213,13 @@ def test_get_tools(excel_toolkit):
     r"""Test the get_tools method returns the correct tools."""
     tools = excel_toolkit.get_tools()
 
-    assert len(tools) == 18
+    assert len(tools) == 19
 
     # Check that all expected function names are present
     expected_function_names = [
         "extract_excel_content",
         "create_workbook",
+        "save_workbook",
         "delete_workbook",
         "export_sheet_to_csv",
         "create_sheet",
@@ -241,88 +244,57 @@ def test_get_tools(excel_toolkit):
 
 def test_create_workbook(excel_toolkit):
     r"""Test creating a new workbook."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30]]
+    result = excel_toolkit.create_workbook('test.xlsx', 'TestSheet', data)
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30]]
-        result = excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    assert "Workbook created successfully" in result
+    assert excel_toolkit.wb is not None
+    assert 'TestSheet' in excel_toolkit.wb.sheetnames
 
-        assert "Workbook created successfully" in result
-        assert excel_toolkit.wb is not None
-        assert excel_toolkit.file_path == temp_path
-        assert 'TestSheet' in excel_toolkit.wb.sheetnames
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Verify file was created
+    file_path = os.path.join(excel_toolkit.working_directory, 'test.xlsx')
+    assert os.path.exists(file_path)
 
 
 def test_create_workbook_without_data(excel_toolkit):
     r"""Test creating a workbook without data."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    result = excel_toolkit.create_workbook('test_no_data.xlsx')
 
-    try:
-        result = excel_toolkit.create_workbook(temp_path)
-
-        assert "Workbook created successfully" in result
-        assert excel_toolkit.wb is not None
-        assert excel_toolkit.file_path == temp_path
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    assert "Workbook created successfully" in result
+    assert excel_toolkit.wb is not None
 
 
 def test_delete_workbook(excel_toolkit):
     r"""Test deleting a workbook."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    # Create a file first
+    excel_toolkit.create_workbook('test_delete.xlsx')
+    file_path = os.path.join(
+        excel_toolkit.working_directory, 'test_delete.xlsx'
+    )
+    assert os.path.exists(file_path)
 
-    try:
-        # Create a file first
-        excel_toolkit.create_workbook(temp_path)
-        assert os.path.exists(temp_path)
-
-        # Delete the workbook
-        result = excel_toolkit.delete_workbook(temp_path)
-        assert "deleted successfully" in result
-        assert not os.path.exists(temp_path)
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Delete the workbook
+    result = excel_toolkit.delete_workbook('test_delete.xlsx')
+    assert "deleted successfully" in result
+    assert not os.path.exists(file_path)
 
 
 def test_delete_workbook_nonexistent(excel_toolkit):
     r"""Test deleting a non-existent workbook."""
     result = excel_toolkit.delete_workbook("nonexistent.xlsx")
-    assert "does not exist" in result
+    assert "Error: File nonexistent.xlsx does not exist" in result
 
 
 def test_create_sheet(excel_toolkit):
     r"""Test creating a new sheet."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    # Create workbook first
+    excel_toolkit.create_workbook('test_sheets.xlsx')
 
-    try:
-        # Create workbook first
-        excel_toolkit.create_workbook(temp_path)
+    data = [['Name', 'Age'], ['Alice', 25]]
+    result = excel_toolkit.create_sheet('NewSheet', data)
 
-        data = [['Name', 'Age'], ['Alice', 25]]
-        result = excel_toolkit.create_sheet('NewSheet', data)
-
-        assert "created successfully" in result
-        assert 'NewSheet' in excel_toolkit.wb.sheetnames
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    assert "created successfully" in result
+    assert 'NewSheet' in excel_toolkit.wb.sheetnames
 
 
 def test_create_sheet_no_workbook(excel_toolkit):
@@ -333,115 +305,70 @@ def test_create_sheet_no_workbook(excel_toolkit):
 
 def test_delete_sheet(excel_toolkit):
     r"""Test deleting a sheet."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    # Create workbook with multiple sheets
+    excel_toolkit.create_workbook('test_delete_sheet.xlsx')
+    excel_toolkit.create_sheet('SheetToDelete')
 
-    try:
-        # Create workbook with multiple sheets
-        excel_toolkit.create_workbook(temp_path)
-        excel_toolkit.create_sheet('SheetToDelete')
+    assert 'SheetToDelete' in excel_toolkit.wb.sheetnames
 
-        assert 'SheetToDelete' in excel_toolkit.wb.sheetnames
-
-        result = excel_toolkit.delete_sheet('SheetToDelete')
-        assert "deleted successfully" in result
-        assert 'SheetToDelete' not in excel_toolkit.wb.sheetnames
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    result = excel_toolkit.delete_sheet('SheetToDelete')
+    assert "deleted successfully" in result
+    assert 'SheetToDelete' not in excel_toolkit.wb.sheetnames
 
 
 def test_delete_sheet_nonexistent(excel_toolkit):
     r"""Test deleting a non-existent sheet."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
-
-    try:
-        excel_toolkit.create_workbook(temp_path)
-        result = excel_toolkit.delete_sheet('NonexistentSheet')
-        assert "does not exist" in result
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    excel_toolkit.create_workbook('test_delete_nonexist.xlsx')
+    result = excel_toolkit.delete_sheet('NonexistentSheet')
+    assert "does not exist" in result
 
 
 def test_clear_sheet(excel_toolkit):
     r"""Test clearing a sheet."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    # Create workbook with data
+    data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30]]
+    excel_toolkit.create_workbook('test_clear.xlsx', 'TestSheet', data)
 
-    try:
-        # Create workbook with data
-        data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    # Clear the sheet
+    result = excel_toolkit.clear_sheet('TestSheet')
+    assert "cleared successfully" in result
 
-        # Clear the sheet
-        result = excel_toolkit.clear_sheet('TestSheet')
-        assert "cleared successfully" in result
-
-        # Verify sheet is empty
-        rows = excel_toolkit.get_rows('TestSheet')
-        assert len(rows) == 0
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Verify sheet is empty
+    rows = excel_toolkit.get_rows('TestSheet')
+    assert len(rows) == 0
 
 
 def test_add_data_to_sheet(excel_toolkit):
     r"""Test adding data to a sheet using append_row."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    excel_toolkit.create_workbook('test_add_data.xlsx', 'TestSheet')
 
-    try:
-        excel_toolkit.create_workbook(temp_path, 'TestSheet')
+    # Add data using append_row
+    result1 = excel_toolkit.append_row('TestSheet', ['Alice', 25])
+    result2 = excel_toolkit.append_row('TestSheet', ['Bob', 30])
+    assert "appended to sheet" in result1
+    assert "appended to sheet" in result2
 
-        # Add data using append_row
-        result1 = excel_toolkit.append_row('TestSheet', ['Alice', 25])
-        result2 = excel_toolkit.append_row('TestSheet', ['Bob', 30])
-        assert "appended to sheet" in result1
-        assert "appended to sheet" in result2
-
-        # Verify data was added
-        rows = excel_toolkit.get_rows('TestSheet')
-        assert len(rows) == 2
-        assert rows[0] == ['Alice', 25]
-        assert rows[1] == ['Bob', 30]
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Verify data was added
+    rows = excel_toolkit.get_rows('TestSheet')
+    assert len(rows) == 2
+    assert rows[0] == ['Alice', 25]
+    assert rows[1] == ['Bob', 30]
 
 
 def test_get_rows(excel_toolkit):
     r"""Test getting rows from a sheet."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30], ['Charlie', 35]]
+    excel_toolkit.create_workbook('test_get_rows.xlsx', 'TestSheet', data)
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30], ['Charlie', 35]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    # Get all rows
+    all_rows = excel_toolkit.get_rows('TestSheet')
+    assert len(all_rows) == 4
 
-        # Get all rows
-        all_rows = excel_toolkit.get_rows('TestSheet')
-        assert len(all_rows) == 4
-
-        # Get specific range
-        range_rows = excel_toolkit.get_rows('TestSheet', 2, 3)
-        assert len(range_rows) == 2
-        assert range_rows[0] == ['Alice', 25]
-        assert range_rows[1] == ['Bob', 30]
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Get specific range
+    range_rows = excel_toolkit.get_rows('TestSheet', 2, 3)
+    assert len(range_rows) == 2
+    assert range_rows[0] == ['Alice', 25]
+    assert range_rows[1] == ['Bob', 30]
 
 
 def test_get_rows_no_workbook(excel_toolkit):
@@ -452,368 +379,267 @@ def test_get_rows_no_workbook(excel_toolkit):
 
 def test_update_row(excel_toolkit):
     r"""Test updating a row."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30]]
+    excel_toolkit.create_workbook('test_update_row.xlsx', 'TestSheet', data)
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    new_data = ['Alice Updated', 26]
+    result = excel_toolkit.update_row('TestSheet', 2, new_data)
+    assert "Row 2 updated in sheet TestSheet successfully" in result
 
-        new_data = ['Alice Updated', 26]
-        result = excel_toolkit.update_row('TestSheet', 2, new_data)
-        assert "Row 2 updated in sheet TestSheet successfully" in result
-
-        # Verify row was updated
-        rows = excel_toolkit.get_rows('TestSheet')
-        assert rows[1] == ['Alice Updated', 26]
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Verify row was updated
+    rows = excel_toolkit.get_rows('TestSheet')
+    assert rows[1] == ['Alice Updated', 26]
 
 
 def test_append_or_update_row_new(excel_toolkit):
     r"""Test appending a new row using append_row."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25]]
+    excel_toolkit.create_workbook('test_append_new.xlsx', 'TestSheet', data)
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    new_data = ['Bob', 30]
+    result = excel_toolkit.append_row('TestSheet', new_data)
+    assert "appended to sheet" in result
 
-        new_data = ['Bob', 30]
-        result = excel_toolkit.append_row('TestSheet', new_data)
-        assert "appended to sheet" in result
-
-        # Verify new row was added
-        rows = excel_toolkit.get_rows('TestSheet')
-        assert len(rows) == 3
-        assert rows[2] == ['Bob', 30]
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Verify new row was added
+    rows = excel_toolkit.get_rows('TestSheet')
+    assert len(rows) == 3
+    assert rows[2] == ['Bob', 30]
 
 
 def test_append_or_update_row_existing(excel_toolkit):
     r"""Test updating an existing row using update_row."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30]]
+    excel_toolkit.create_workbook(
+        'test_update_existing.xlsx', 'TestSheet', data
+    )
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    updated_data = ['Alice', 26]  # Same name, different age
+    result = excel_toolkit.update_row('TestSheet', 2, updated_data)
+    assert "updated in sheet TestSheet successfully" in result
 
-        updated_data = ['Alice', 26]  # Same name, different age
-        result = excel_toolkit.update_row('TestSheet', 2, updated_data)
-        assert "updated in sheet TestSheet successfully" in result
-
-        # Verify row was updated
-        rows = excel_toolkit.get_rows('TestSheet')
-        assert rows[1] == ['Alice', 26]
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Verify row was updated
+    rows = excel_toolkit.get_rows('TestSheet')
+    assert rows[1] == ['Alice', 26]
 
 
 def test_delete_rows(excel_toolkit):
     r"""Test deleting rows."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30], ['Charlie', 35]]
+    excel_toolkit.create_workbook('test_delete_rows.xlsx', 'TestSheet', data)
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30], ['Charlie', 35]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    # Delete single row
+    result = excel_toolkit.delete_rows('TestSheet', 2)
+    assert "Deleted rows 2 to 2 from sheet TestSheet successfully" in result
 
-        # Delete single row
-        result = excel_toolkit.delete_rows('TestSheet', 2)
-        assert (
-            "Deleted rows 2 to 2 from sheet TestSheet successfully" in result
-        )
-
-        # Verify row was deleted
-        rows = excel_toolkit.get_rows('TestSheet')
-        assert len(rows) == 3
-        assert rows[0] == ['Name', 'Age']
-        assert rows[1] == ['Bob', 30]
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Verify row was deleted
+    rows = excel_toolkit.get_rows('TestSheet')
+    assert len(rows) == 3
+    assert rows[0] == ['Name', 'Age']
+    assert rows[1] == ['Bob', 30]
 
 
 def test_delete_columns(excel_toolkit):
     r"""Test deleting columns."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [
+        ['Name', 'Age', 'City'],
+        ['Alice', 25, 'NY'],
+        ['Bob', 30, 'SF'],
+    ]
+    excel_toolkit.create_workbook('test_delete_cols.xlsx', 'TestSheet', data)
 
-    try:
-        data = [
-            ['Name', 'Age', 'City'],
-            ['Alice', 25, 'NY'],
-            ['Bob', 30, 'SF'],
-        ]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    # Delete second column (Age)
+    result = excel_toolkit.delete_columns('TestSheet', 2)
+    assert "Deleted columns 2 to 2 from sheet TestSheet successfully" in result
 
-        # Delete second column (Age)
-        result = excel_toolkit.delete_columns('TestSheet', 2)
-        assert (
-            "Deleted columns 2 to 2 from sheet TestSheet successfully"
-            in result
-        )
-
-        # Verify column was deleted
-        rows = excel_toolkit.get_rows('TestSheet')
-        assert len(rows) == 3
-        assert rows[0] == ['Name', 'City']
-        assert rows[1] == ['Alice', 'NY']
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Verify column was deleted
+    rows = excel_toolkit.get_rows('TestSheet')
+    assert len(rows) == 3
+    assert rows[0] == ['Name', 'City']
+    assert rows[1] == ['Alice', 'NY']
 
 
 def test_get_cell_value(excel_toolkit):
     r"""Test getting cell value."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25]]
+    excel_toolkit.create_workbook('test_get_cell.xlsx', 'TestSheet', data)
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    value = excel_toolkit.get_cell_value('TestSheet', 'A1')
+    assert value == 'Name'
 
-        value = excel_toolkit.get_cell_value('TestSheet', 'A1')
-        assert value == 'Name'
-
-        value = excel_toolkit.get_cell_value('TestSheet', 'B2')
-        assert value == 25
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    value = excel_toolkit.get_cell_value('TestSheet', 'B2')
+    assert value == 25
 
 
 def test_set_cell_value(excel_toolkit):
     r"""Test setting cell value."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25]]
+    excel_toolkit.create_workbook('test_set_cell.xlsx', 'TestSheet', data)
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    result = excel_toolkit.set_cell_value('TestSheet', 'A1', 'Updated Name')
+    assert "updated successfully" in result
 
-        result = excel_toolkit.set_cell_value(
-            'TestSheet', 'A1', 'Updated Name'
-        )
-        assert "updated successfully" in result
-
-        # Verify cell was updated
-        value = excel_toolkit.get_cell_value('TestSheet', 'A1')
-        assert value == 'Updated Name'
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Verify cell was updated
+    value = excel_toolkit.get_cell_value('TestSheet', 'A1')
+    assert value == 'Updated Name'
 
 
 def test_get_column_data(excel_toolkit):
     r"""Test getting column data."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30]]
+    excel_toolkit.create_workbook('test_get_col.xlsx', 'TestSheet', data)
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    # Get column by number
+    col_data = excel_toolkit.get_column_data('TestSheet', 1)
+    assert col_data == ['Name', 'Alice', 'Bob']
 
-        # Get column by number
-        col_data = excel_toolkit.get_column_data('TestSheet', 1)
-        assert col_data == ['Name', 'Alice', 'Bob']
-
-        # Get column by letter
-        col_data = excel_toolkit.get_column_data('TestSheet', 'B')
-        assert col_data == ['Age', 25, 30]
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Get column by letter
+    col_data = excel_toolkit.get_column_data('TestSheet', 'B')
+    assert col_data == ['Age', 25, 30]
 
 
 def test_find_cells(excel_toolkit):
     r"""Test finding cells with specific value."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30], ['Alice', 35]]
+    excel_toolkit.create_workbook('test_find_cells.xlsx', 'TestSheet', data)
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30], ['Alice', 35]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    # Find all cells with 'Alice'
+    cells = excel_toolkit.find_cells('TestSheet', 'Alice')
+    assert len(cells) == 2
+    assert 'A2' in cells
+    assert 'A4' in cells
 
-        # Find all cells with 'Alice'
-        cells = excel_toolkit.find_cells('TestSheet', 'Alice')
-        assert len(cells) == 2
-        assert 'A2' in cells
-        assert 'A4' in cells
-
-        # Find in specific column
-        cells = excel_toolkit.find_cells('TestSheet', 25, 2)
-        assert len(cells) == 1
-        assert 'B2' in cells
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Find in specific column
+    cells = excel_toolkit.find_cells('TestSheet', 25, 2)
+    assert len(cells) == 1
+    assert 'B2' in cells
 
 
 def test_get_range_values(excel_toolkit):
     r"""Test getting range values."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [
+        ['Name', 'Age', 'City'],
+        ['Alice', 25, 'NY'],
+        ['Bob', 30, 'SF'],
+    ]
+    excel_toolkit.create_workbook('test_get_range.xlsx', 'TestSheet', data)
 
-    try:
-        data = [
-            ['Name', 'Age', 'City'],
-            ['Alice', 25, 'NY'],
-            ['Bob', 30, 'SF'],
-        ]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
-
-        range_values = excel_toolkit.get_range_values('TestSheet', 'A1:C2')
-        assert len(range_values) == 2
-        assert range_values[0] == ['Name', 'Age', 'City']
-        assert range_values[1] == ['Alice', 25, 'NY']
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    range_values = excel_toolkit.get_range_values('TestSheet', 'A1:C2')
+    assert len(range_values) == 2
+    assert range_values[0] == ['Name', 'Age', 'City']
+    assert range_values[1] == ['Alice', 25, 'NY']
 
 
 def test_set_range_values(excel_toolkit):
     r"""Test setting range values."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25]]
+    excel_toolkit.create_workbook('test_set_range.xlsx', 'TestSheet', data)
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    new_values = [['Bob', 30], ['Charlie', 35]]
+    result = excel_toolkit.set_range_values('TestSheet', 'A2:B3', new_values)
+    assert "Values set for range" in result
 
-        new_values = [['Bob', 30], ['Charlie', 35]]
-        result = excel_toolkit.set_range_values(
-            'TestSheet', 'A2:B3', new_values
-        )
-        assert "Values set for range" in result
-
-        # Verify values were set
-        range_values = excel_toolkit.get_range_values('TestSheet', 'A2:B3')
-        assert range_values == new_values
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Verify values were set
+    range_values = excel_toolkit.get_range_values('TestSheet', 'A2:B3')
+    assert range_values == new_values
 
 
 def test_export_sheet_to_csv(excel_toolkit):
     r"""Test exporting sheet to CSV."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30]]
+    excel_toolkit.create_workbook('test_export.xlsx', 'TestSheet', data)
 
-    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as csv_file:
-        csv_path = csv_file.name
+    result = excel_toolkit.export_sheet_to_csv('TestSheet', 'exported.csv')
+    assert "exported to exported.csv" in result
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25], ['Bob', 30]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    csv_path = os.path.join(excel_toolkit.working_directory, 'exported.csv')
+    assert os.path.exists(csv_path)
 
-        result = excel_toolkit.export_sheet_to_csv('TestSheet', csv_path)
-        assert "exported to CSV" in result
-        assert os.path.exists(csv_path)
-
-        # Verify CSV content
-        df = pd.read_csv(csv_path)
-        assert len(df) == 2
-        assert list(df.columns) == ['Name', 'Age']
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-        if os.path.exists(csv_path):
-            os.remove(csv_path)
+    # Verify CSV content
+    df = pd.read_csv(csv_path)
+    assert len(df) == 2
+    assert list(df.columns) == ['Name', 'Age']
 
 
 def test_append_row(excel_toolkit):
     r"""Test appending a row."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    data = [['Name', 'Age'], ['Alice', 25]]
+    excel_toolkit.create_workbook('test_append.xlsx', 'TestSheet', data)
 
-    try:
-        data = [['Name', 'Age'], ['Alice', 25]]
-        excel_toolkit.create_workbook(temp_path, 'TestSheet', data)
+    new_row = ['Bob', 30]
+    result = excel_toolkit.append_row('TestSheet', new_row)
+    assert "appended to sheet" in result
 
-        new_row = ['Bob', 30]
-        result = excel_toolkit.append_row('TestSheet', new_row)
-        assert "appended to sheet" in result
-
-        # Verify row was appended
-        rows = excel_toolkit.get_rows('TestSheet')
-        assert len(rows) == 3
-        assert rows[2] == ['Bob', 30]
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Verify row was appended
+    rows = excel_toolkit.get_rows('TestSheet')
+    assert len(rows) == 3
+    assert rows[2] == ['Bob', 30]
 
 
 def test_save_workbook(excel_toolkit):
     r"""Test saving workbook."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".xlsx", delete=False
-    ) as temp_file:
-        temp_path = temp_file.name
+    excel_toolkit.create_workbook('test_save.xlsx')
 
-    try:
-        excel_toolkit.create_workbook(temp_path)
+    # Modify workbook
+    excel_toolkit.set_cell_value('Sheet1', 'A1', 'Test Value')
 
-        # Modify workbook
-        excel_toolkit.set_cell_value('Sheet1', 'A1', 'Test Value')
+    # Save workbook to a different file
+    result = excel_toolkit.save_workbook('test_saved.xlsx')
+    assert "Workbook saved successfully" in result
 
-        # Save workbook
-        result = excel_toolkit._save_workbook()
-        assert "saved successfully" in result
-
-        # Verify file exists and has content
-        assert os.path.exists(temp_path)
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    # Verify file exists
+    file_path = os.path.join(
+        excel_toolkit.working_directory, 'test_saved.xlsx'
+    )
+    assert os.path.exists(file_path)
 
 
 def test_save_workbook_no_workbook(excel_toolkit):
     r"""Test saving when no workbook is loaded."""
-    result = excel_toolkit._save_workbook()
-    assert "No workbook loaded" in result
+    result = excel_toolkit.save_workbook('test.xlsx')
+    assert "No workbook is currently loaded" in result
 
 
-def test_initialization_with_file_path(excel_toolkit, sample_xlsx_file):
-    r"""Test initialization with existing file path."""
-    toolkit = ExcelToolkit(file_path=sample_xlsx_file)
-    assert toolkit.file_path == sample_xlsx_file
-    assert toolkit.wb is not None
+def test_create_workbook_no_filename(excel_toolkit):
+    r"""Test creating workbook without filename."""
+    result = excel_toolkit.create_workbook()
+    assert "Error: Filename is required" in result
 
 
-def test_initialization_with_nonexistent_file():
-    r"""Test initialization with non-existent file path."""
-    toolkit = ExcelToolkit(file_path="nonexistent.xlsx")
-    assert toolkit.file_path == "nonexistent.xlsx"
-    assert toolkit.wb is None
+def test_create_workbook_invalid_extension(excel_toolkit):
+    r"""Test creating workbook with invalid extension."""
+    result = excel_toolkit.create_workbook('test.txt')
+    assert "Error: Filename must end with .xlsx extension" in result
+
+
+def test_create_workbook_existing_file(excel_toolkit):
+    r"""Test creating workbook when file already exists."""
+    # Create first file
+    excel_toolkit.create_workbook('duplicate.xlsx')
+
+    # Try to create same file again
+    result = excel_toolkit.create_workbook('duplicate.xlsx')
+    assert "Error: File duplicate.xlsx already exists" in result
+
+
+def test_export_sheet_to_csv_invalid_filename(excel_toolkit):
+    r"""Test exporting to CSV with invalid filename."""
+    excel_toolkit.create_workbook('test.xlsx', 'TestSheet')
+
+    # Test with no filename
+    result = excel_toolkit.export_sheet_to_csv('TestSheet', '')
+    assert "Error: CSV filename is required" in result
+
+    # Test with wrong extension
+    result = excel_toolkit.export_sheet_to_csv('TestSheet', 'test.txt')
+    assert "Error: CSV filename must end with .csv extension" in result
+
+
+def test_delete_workbook_invalid_filename(excel_toolkit):
+    r"""Test deleting workbook with invalid filename."""
+    # Test with no filename
+    result = excel_toolkit.delete_workbook('')
+    assert "Error: Filename is required" in result
+
+    # Test with wrong extension
+    result = excel_toolkit.delete_workbook('test.txt')
+    assert "Error: Filename must end with .xlsx extension" in result

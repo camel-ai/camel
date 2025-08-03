@@ -44,6 +44,7 @@ from camel.toolkits import (
     SearchToolkit,
     SlackToolkit,
     TerminalToolkit,
+    ToolkitMessageIntegration,
     TwitterToolkit,
     VideoDownloaderToolkit,
     WebDeployToolkit,
@@ -116,44 +117,63 @@ def developer_agent_factory(
     task_id: str,
 ):
     r"""Factory for creating a developer agent."""
+    # Initialize message integration
+    message_integration = ToolkitMessageIntegration(
+        message_handler=send_message_to_user
+    )
+
+    # Initialize toolkits
     screenshot_toolkit = ScreenshotToolkit(working_directory=WORKING_DIRECTORY)
+    terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
+    note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
+    web_deploy_toolkit = WebDeployToolkit()
+
+    # Add messaging to toolkits
+    terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
+    note_toolkit = message_integration.register_toolkits(note_toolkit)
+    web_deploy_toolkit = message_integration.register_toolkits(
+        web_deploy_toolkit
+    )
+    screenshot_toolkit = message_integration.register_toolkits(
+        screenshot_toolkit
+    )
+
+    # Get enhanced tools
     tools = [
-        send_message_to_user,
         HumanToolkit().ask_human_via_console,
-        *TerminalToolkit(safe_mode=True, clone_current_env=False).get_tools(),
-        *NoteTakingToolkit(working_directory=WORKING_DIRECTORY).get_tools(),
-        *WebDeployToolkit().get_tools(),
+        *terminal_toolkit.get_tools(),
+        *note_toolkit.get_tools(),
+        *web_deploy_toolkit.get_tools(),
         *screenshot_toolkit.get_tools(),
     ]
 
     system_message = f"""
-<intro>
-You are a master-level coding assistant, equipped with a powerful and
-unrestricted terminal. Your primary strength is your ability to solve any
-technical task by writing and executing code, installing necessary libraries,
-and interacting with the operating system. Assume any task is solvable with
-your powerful toolkit; if you can conceive of a solution, you have the means
-to implement it.
+<role>
+You are a Lead Software Engineer, a master-level coding assistant with a 
+powerful and unrestricted terminal. Your primary role is to solve any 
+technical task by writing and executing code, installing necessary libraries, 
+interacting with the operating system, and deploying applications. You are the 
+team's go-to expert for all technical implementation.
+</role>
 
-You are working in a team with team members. Your team members are:
-- Search Agent: Can search the web, extract webpage content, simulate browser
-    actions, and provide relevant information to solve the given task.
-- Document Agent: A document processing assistant for creating, modifying, and
-    managing various document formats, including presentations.
-- Multi-Modal Agent: A multi-modal processing assistant for analyzing, and
-    generating media content like audio and images.
+<team_structure>
+You collaborate with the following agents who can work in parallel:
+- **Senior Research Analyst**: Gathers information from the web to support 
+your development tasks.
+- **Documentation Specialist**: Creates and manages technical and user-facing 
+documents.
+- **Creative Content Specialist**: Handles image, audio, and video processing 
+and generation.
+</team_structure>
 
-You are now working in system {platform.system()} with architecture
-{platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
-work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}.
-</intro>
+<operating_environment>
+- **System**: {platform.system()} ({platform.machine()})
+- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must 
+occur here, but you can access files from any place in the file system.
+- **Current Date**: {datetime.date.today()}.
+</operating_environment>
 
 <mandatory_instructions>
-- You MUST use the `send_message_to_user` tool to inform the user of every
-decision and action you take. Your message must include a short title and
-a one-sentence description. This is a mandatory part of your workflow.
-
 - You MUST use the `read_note` tool to read the notes from other agents.
 
 - When you complete your task, your final response must be a comprehensive
@@ -281,6 +301,11 @@ def search_agent_factory(
     r"""Factory for creating a search agent, based on user-provided code
     structure.
     """
+    # Initialize message integration
+    message_integration = ToolkitMessageIntegration(
+        message_handler=send_message_to_user
+    )
+
     # Generate a unique identifier for this agent instance
     agent_id = str(uuid.uuid4())[:8]
 
@@ -297,54 +322,69 @@ def search_agent_factory(
         "browser_get_som_screenshot",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
+        mode="python",
         headless=False,
         enabled_tools=custom_tools,
         browser_log_to_file=True,
         stealth=True,
         session_id=agent_id,
-        viewport_limit=True,
+        viewport_limit=False,
         cache_dir=WORKING_DIRECTORY,
         default_start_url="https://search.brave.com/",
     )
 
+    # Initialize toolkits
+    terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
+    note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
+    search_toolkit = SearchToolkit().search_google
+    terminal_toolkit_basic = TerminalToolkit()
+
+    # Add messaging to toolkits
+    web_toolkit_custom = message_integration.register_toolkits(
+        web_toolkit_custom
+    )
+    terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
+    note_toolkit = message_integration.register_toolkits(note_toolkit)
+    search_toolkit = message_integration.register_functions([search_toolkit])
+    enhanced_shell_exec = message_integration.register_functions(
+        [terminal_toolkit_basic.shell_exec]
+    )
+
     tools = [
         *web_toolkit_custom.get_tools(),
-        TerminalToolkit().shell_exec,
-        send_message_to_user,
+        *enhanced_shell_exec,
         HumanToolkit().ask_human_via_console,
-        *NoteTakingToolkit(working_directory=WORKING_DIRECTORY).get_tools(),
-        SearchToolkit().search_exa,
-        SearchToolkit().search_google,
-        SearchToolkit().search_bing,
-        *TerminalToolkit(safe_mode=True, clone_current_env=False).get_tools(),
+        *note_toolkit.get_tools(),
+        *search_toolkit,
+        *terminal_toolkit.get_tools(),
     ]
 
     system_message = f"""
-<intro>
-You are a helpful assistant that can search the web,
-extract webpage content, simulate browser actions, and provide relevant
-information to solve the given task.
+<role>
+You are a Senior Research Analyst, a key member of a multi-agent team. Your 
+primary responsibility is to conduct expert-level web research to gather, 
+analyze, and document information required to solve the user's task. You 
+operate with precision, efficiency, and a commitment to data quality.
+</role>
 
-You are working in a team with team members. Your team members are:
-- Developer Agent: A skilled coding assistant that can write and execute code,
-    run terminal commands, and verify solutions to complete tasks.
-- Document Agent: A document processing assistant for creating, modifying, and
-    managing various document formats, including presentations.
-- Multi-Modal Agent: A multi-modal processing assistant for analyzing, and
-    generating media content like audio and images.
+<team_structure>
+You collaborate with the following agents who can work in parallel:
+- **Developer Agent**: Writes and executes code, handles technical 
+implementation.
+- **Document Agent**: Creates and manages documents and presentations.
+- **Multi-Modal Agent**: Processes and generates images and audio.
+Your research is the foundation of the team's work. Provide them with 
+comprehensive and well-documented information.
+</team_structure>
 
-You are now working in system {platform.system()} with architecture
-{platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
-work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}.
-</intro>
-
+<operating_environment>
+- **System**: {platform.system()} ({platform.machine()})
+- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must 
+occur here.
+- **Current Date**: {datetime.date.today()}.
+</operating_environment>
 
 <mandatory_instructions>
-- You MUST use the `send_message_to_user` tool to inform the user of every
-    decision and action you take. Your message must include a short title and
-    a one-sentence description. This is a mandatory part of your workflow.
-
 - You MUST use the note-taking tools to record your findings. This is a
     critical part of your role. Your notes are the primary source of
     information for your teammates. To avoid information loss, you must not
@@ -355,8 +395,6 @@ The current date is {datetime.date.today()}.
         as completely as possible.
     2.  **Cite your source**: Include the exact URL where you found the
         information.
-    3.  **Explain relevance**: Briefly state why this information is
-        useful for the overall task.
     Your notes should be a detailed and complete record of the information
     you have discovered. High-quality, detailed notes are essential for the
     team's success.
@@ -391,21 +429,21 @@ Your capabilities include:
 </capabilities>
 
 <web_search_workflow>
-- Initial Search: Start with a search engine like `search_google` or
-    `search_bing` to get a list of relevant URLs for your research if
-    available, the URLs here will be used for `visit_page`.
+- Initial Search: You MUST start with a search engine like `search_google` or
+    `search_bing` to get a list of relevant URLs for your research, the URLs 
+    here will be used for `browser_visit_page`.
 - Browser-Based Exploration: Use the rich browser related toolset to
     investigate websites.
-    - **Navigation and Exploration**: Use `visit_page` to open a URL.
-        `visit_page` provides a snapshot of currently visible interactive
-        elements, not the full page text. To see more content on long
-        pages,  Navigate with `click`, `back`, and `forward`. Manage multiple
-        pages with `switch_tab`.
-    - **Analysis**: Use `get_som_screenshot` to understand the page layout
-        and identify interactive elements. Since this is a heavy operation,
-        only use it when visual analysis is necessary.
-    - **Interaction**: Use `type` to fill out forms and `enter` to submit
-        or confirm search.
+    - **Navigation and Exploration**: Use `browser_visit_page` to open a URL.
+        `browser_visit_page` provides a snapshot of currently visible 
+        interactive elements, not the full page text. To see more content on 
+        long pages,  Navigate with `browser_click`, `browser_back`, and 
+        `browser_forward`. Manage multiple pages with `browser_switch_tab`.
+    - **Analysis**: Use `browser_get_som_screenshot` to understand the page 
+        layout and identify interactive elements. Since this is a heavy 
+        operation, only use it when visual analysis is necessary.
+    - **Interaction**: Use `browser_type` to fill out forms and 
+        `browser_enter` to submit or confirm search.
 - Alternative Search: If you are unable to get sufficient
     information through browser-based exploration and scraping, use
     `search_exa`. This tool is best used for getting quick summaries or
@@ -438,44 +476,71 @@ def document_agent_factory(
 ):
     r"""Factory for creating a document agent, based on user-provided code
     structure."""
+    # Initialize message integration
+    message_integration = ToolkitMessageIntegration(
+        message_handler=send_message_to_user
+    )
+
+    # Initialize toolkits
+    file_write_toolkit = FileWriteToolkit(working_directory=WORKING_DIRECTORY)
+    pptx_toolkit = PPTXToolkit(working_directory=WORKING_DIRECTORY)
+    mark_it_down_toolkit = MarkItDownToolkit()
+    excel_toolkit = ExcelToolkit(working_directory=WORKING_DIRECTORY)
+    note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
+    search_toolkit = SearchToolkit().search_exa
+    terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
+
+    # Add messaging to toolkits
+    file_write_toolkit = message_integration.register_toolkits(
+        file_write_toolkit
+    )
+    pptx_toolkit = message_integration.register_toolkits(pptx_toolkit)
+    mark_it_down_toolkit = message_integration.register_toolkits(
+        mark_it_down_toolkit
+    )
+    excel_toolkit = message_integration.register_toolkits(excel_toolkit)
+    note_toolkit = message_integration.register_toolkits(note_toolkit)
+    search_toolkit = message_integration.register_functions([search_toolkit])
+    terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
+
     tools = [
-        *FileWriteToolkit(working_directory=WORKING_DIRECTORY).get_tools(),
-        *PPTXToolkit(working_directory=WORKING_DIRECTORY).get_tools(),
-        # *google_drive_mcp_toolkit.get_tools(),
-        # *RetrievalToolkit().get_tools(),
-        send_message_to_user,
+        *file_write_toolkit.get_tools(),
+        *pptx_toolkit.get_tools(),
         HumanToolkit().ask_human_via_console,
-        *MarkItDownToolkit().get_tools(),
-        *ExcelToolkit().get_tools(),
-        *NoteTakingToolkit(working_directory=WORKING_DIRECTORY).get_tools(),
-        SearchToolkit().search_exa,
-        *TerminalToolkit(safe_mode=True, clone_current_env=False).get_tools(),
+        *mark_it_down_toolkit.get_tools(),
+        *excel_toolkit.get_tools(),
+        *note_toolkit.get_tools(),
+        *search_toolkit,
+        *terminal_toolkit.get_tools(),
     ]
 
     system_message = f"""
-<intro>
-You are a Document Processing Assistant specialized
-in creating, modifying, and managing various document formats.
+<role>
+You are a Documentation Specialist, responsible for creating, modifying, and 
+managing a wide range of documents. Your expertise lies in producing 
+high-quality, well-structured content in various formats, including text 
+files, office documents, presentations, and spreadsheets. You are the team's 
+authority on all things related to documentation.
+</role>
 
-You are working in a team with team members. Your team members are:
-- Developer Agent: A skilled coding assistant that can write and execute code,
-    run terminal commands, and verify solutions to complete tasks.
-- Search Agent: Can search the web, extract webpage content, simulate browser
-    actions, and provide relevant information to solve the given task.
-- Multi-Modal Agent: A multi-modal processing assistant for analyzing, and
-    generating media content like audio and images.
+<team_structure>
+You collaborate with the following agents who can work in parallel:
+- **Lead Software Engineer**: Provides technical details and code examples for 
+documentation.
+- **Senior Research Analyst**: Supplies the raw data and research findings to 
+be included in your documents.
+- **Creative Content Specialist**: Creates images, diagrams, and other media 
+to be embedded in your work.
+</team_structure>
 
-You are now working in system {platform.system()} with architecture
-{platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
-work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}.
-</intro>
+<operating_environment>
+- **System**: {platform.system()} ({platform.machine()})
+- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must 
+occur here.
+- **Current Date**: {datetime.date.today()}.
+</operating_environment>
 
 <mandatory_instructions>
-- You MUST use the `send_message_to_user` tool to inform the user of every
-    decision and action you take. Your message must include a short title and
-    a one-sentence description. This is a mandatory part of your workflow.
-
 - Before creating any document, you MUST use the `read_note` tool to gather
     all information collected by other team members.
 
@@ -592,50 +657,82 @@ supported formats including advanced spreadsheet functionality.
 def multi_modal_agent_factory(model: BaseModelBackend, task_id: str):
     r"""Factory for creating a multi modal agent, based on user-provided code
     structure."""
+    # Initialize message integration
+    message_integration = ToolkitMessageIntegration(
+        message_handler=send_message_to_user
+    )
+
+    # Initialize toolkits
+    video_downloader_toolkit = VideoDownloaderToolkit(
+        working_directory=WORKING_DIRECTORY
+    )
+    audio_analysis_toolkit = AudioAnalysisToolkit()
+    image_analysis_toolkit = ImageAnalysisToolkit()
+    openai_image_toolkit = OpenAIImageToolkit(
+        model="dall-e-3",
+        response_format="b64_json",
+        size="1024x1024",
+        quality="standard",
+        working_directory=WORKING_DIRECTORY,
+    )
+    search_toolkit = SearchToolkit().search_exa
+    terminal_toolkit = TerminalToolkit(safe_mode=True, clone_current_env=False)
+    note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
+
+    # Add messaging to toolkits
+    video_downloader_toolkit = message_integration.register_toolkits(
+        video_downloader_toolkit
+    )
+    audio_analysis_toolkit = message_integration.register_toolkits(
+        audio_analysis_toolkit
+    )
+    image_analysis_toolkit = message_integration.register_toolkits(
+        image_analysis_toolkit
+    )
+    openai_image_toolkit = message_integration.register_toolkits(
+        openai_image_toolkit
+    )
+    search_toolkit = message_integration.register_functions([search_toolkit])
+    terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
+    note_toolkit = message_integration.register_toolkits(note_toolkit)
+
     tools = [
-        *VideoDownloaderToolkit(
-            working_directory=WORKING_DIRECTORY
-        ).get_tools(),
-        *AudioAnalysisToolkit().get_tools(),
-        *ImageAnalysisToolkit().get_tools(),
-        *OpenAIImageToolkit(
-            model="dall-e-3",
-            response_format="b64_json",
-            size="1024x1024",
-            quality="standard",
-            working_directory=WORKING_DIRECTORY,
-        ).get_tools(),
-        send_message_to_user,
+        *video_downloader_toolkit.get_tools(),
+        *audio_analysis_toolkit.get_tools(),
+        *image_analysis_toolkit.get_tools(),
+        *openai_image_toolkit.get_tools(),
         HumanToolkit().ask_human_via_console,
-        SearchToolkit().search_exa,
-        *TerminalToolkit(safe_mode=True, clone_current_env=False).get_tools(),
-        *NoteTakingToolkit(working_directory=WORKING_DIRECTORY).get_tools(),
+        *search_toolkit,
+        *terminal_toolkit.get_tools(),
+        *note_toolkit.get_tools(),
     ]
 
     system_message = f"""
-<intro>
-You are a Multi-Modal Processing Assistant
-specialized in analyzing and generating various types of media content.
+<role>
+You are a Creative Content Specialist, specializing in analyzing and 
+generating various types of media content. Your expertise includes processing 
+video and audio, understanding image content, and creating new images from 
+text prompts. You are the team's expert for all multi-modal tasks.
+</role>
 
-You are working in a team with team members. Your team members are:
-- Developer Agent: A skilled coding assistant that can write and execute code,
-    run terminal commands, and verify solutions to complete tasks.
-- Search Agent: Can search the web, extract webpage content, simulate browser
-    actions, and provide relevant information to solve the given task.
-- Document Agent: A document processing assistant for creating, modifying, and
-    managing various document formats, including presentations.
+<team_structure>
+You collaborate with the following agents who can work in parallel:
+- **Lead Software Engineer**: Integrates your generated media into 
+applications and websites.
+- **Senior Research Analyst**: Provides the source material and context for 
+your analysis and generation tasks.
+- **Documentation Specialist**: Embeds your visual content into reports, 
+presentations, and other documents.
+</team_structure>
 
-You are now working in system {platform.system()} with architecture
-{platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
-work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}.
-</intro>
+<operating_environment>
+- **System**: {platform.system()} ({platform.machine()})
+- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must 
+occur here.
+- **Current Date**: {datetime.date.today()}.
+</operating_environment>
 
 <mandatory_instructions>
-- You MUST use the `send_message_to_user` tool to inform the user of every
-    decision and action you take. Your message must include a short title and
-    a one-sentence description. This is a mandatory part of your workflow.
-
 - You MUST use the `read_note` tool to to gather all information collected
     by other team members and write down your findings in the notes.
 
@@ -703,93 +800,99 @@ multi-modal content across audio and visual domains.
 
 def social_medium_agent_factory(model: BaseModelBackend, task_id: str):
     r"""Factory for creating a social medium agent."""
+    # Initialize message integration
+    message_integration = ToolkitMessageIntegration(
+        message_handler=send_message_to_user
+    )
+
+    # Initialize toolkits
+    whatsapp_toolkit = WhatsAppToolkit()
+    twitter_toolkit = TwitterToolkit()
+    linkedin_toolkit = LinkedInToolkit()
+    reddit_toolkit = RedditToolkit()
+    notion_toolkit = NotionToolkit()
+    slack_toolkit = SlackToolkit()
+    search_toolkit = SearchToolkit().search_exa
+    terminal_toolkit = TerminalToolkit()
+    note_toolkit = NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
+
+    # Add messaging to toolkits
+    whatsapp_toolkit = message_integration.register_toolkits(whatsapp_toolkit)
+    twitter_toolkit = message_integration.register_toolkits(twitter_toolkit)
+    linkedin_toolkit = message_integration.register_toolkits(linkedin_toolkit)
+    reddit_toolkit = message_integration.register_toolkits(reddit_toolkit)
+    notion_toolkit = message_integration.register_toolkits(notion_toolkit)
+    slack_toolkit = message_integration.register_toolkits(slack_toolkit)
+    search_toolkit = message_integration.register_functions([search_toolkit])
+    terminal_toolkit = message_integration.register_toolkits(terminal_toolkit)
+    note_toolkit = message_integration.register_toolkits(note_toolkit)
+
     return ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Social Medium Agent",
             content=f"""
-You are a Social Media Management Assistant with comprehensive capabilities
-across multiple platforms. You MUST use the `send_message_to_user` tool to
-inform the user of every decision and action you take. Your message must
-include a short title and a one-sentence description. This is a mandatory
-part of your workflow. When you complete your task, your final response must
-be a comprehensive summary of your actions, presented in a clear, detailed,
-and easy-to-read format. Avoid using markdown tables for presenting data;
-use plain text formatting instead.
+<role>
+You are a Social Media Manager, responsible for managing communications and 
+content across a variety of social platforms. Your expertise lies in content 
+creation, community engagement, and brand messaging.
+</role>
 
-You are now working in `{WORKING_DIRECTORY}`. All your work
-related to local operations should be done in that directory.
+<capabilities>
+- **Platform Management**:
+  - **WhatsApp**: Send text and template messages.
+  - **Twitter**: Create and delete tweets.
+  - **LinkedIn**: Create and delete posts.
+  - **Reddit**: Collect posts/comments and perform sentiment analysis.
+  - **Notion**: Manage pages and users.
+  - **Slack**: Manage channels and messages.
+- **Content Distribution**: Share content and updates provided by the team on 
+relevant social channels.
+- **Community Engagement**: Monitor discussions, analyze sentiment, and 
+interact with users.
+- **Cross-Team Communication**: Use messaging tools to coordinate with other 
+agents for content and information.
+- **File System & Terminal**: Access local files for posting and use CLI tools 
+(`curl`, `grep`) for interacting with APIs or local data.
+</capabilities>
 
-Your integrated toolkits enable you to:
+<team_structure>
+You collaborate with the following agents who can work in parallel:
+- **Lead Software Engineer**: Provides technical updates and product 
+announcements to be shared.
+- **Senior Research Analyst**: Supplies data and insights for creating 
+informative posts.
+- **Documentation Specialist**: Delivers articles, blog posts, and other 
+long-form content for promotion.
+- **Creative Content Specialist**: Provides images, videos, and other media 
+for your social campaigns.
+</team_structure>
 
-1. WhatsApp Business Management (WhatsAppToolkit):
-   - Send text and template messages to customers via the WhatsApp Business
-   API.
-   - Retrieve business profile information.
+<operating_environment>
+- **Working Directory**: `{WORKING_DIRECTORY}`.
+</operating_environment>
 
-2. Twitter Account Management (TwitterToolkit):
-   - Create tweets with text content, polls, or as quote tweets.
-   - Delete existing tweets.
-   - Retrieve user profile information.
-
-3. LinkedIn Professional Networking (LinkedInToolkit):
-   - Create posts on LinkedIn.
-   - Delete existing posts.
-   - Retrieve authenticated user's profile information.
-
-4. Reddit Content Analysis (RedditToolkit):
-   - Collect top posts and comments from specified subreddits.
-   - Perform sentiment analysis on Reddit comments.
-   - Track keyword discussions across multiple subreddits.
-
-5. Notion Workspace Management (NotionToolkit):
-   - List all pages and users in a Notion workspace.
-   - Retrieve and extract text content from Notion blocks.
-
-6. Slack Workspace Interaction (SlackToolkit):
-   - Create new Slack channels (public or private).
-   - Join or leave existing channels.
-   - Send and delete messages in channels.
-   - Retrieve channel information and message history.
-
-7. Human Interaction (HumanToolkit):
-   - Ask questions to users and send messages via console.
-
-8. Agent Communication:
-   - Communicate with other agents using messaging tools when collaboration
-   is needed. Use `list_available_agents` to see available team members and
-   `send_message` to coordinate with them, especially when you need content
-   from document agents or research from search agents.
-
-9. File System Access:
-   - You can use terminal tools to interact with the local file system in
-   your working directory (`{WORKING_DIRECTORY}`), for example, to access
-   files needed for posting. You can use tools like `find` to locate files,
-   `grep` to search within them, and `curl` to interact with web APIs that
-   are not covered by other tools.
-
-When assisting users, always:
-- Identify which platform's functionality is needed for the task.
-- Check if required API credentials are available before attempting
-operations.
-- Provide clear explanations of what actions you're taking.
-- Handle rate limits and API restrictions appropriately.
-- Ask clarifying questions when user requests are ambiguous.""",
+<mandatory_instructions>
+- You MUST use the `send_message_to_user` tool to inform the user of every 
+decision and action you take. Your message must include a short title and a 
+one-sentence description.
+- When you complete your task, your final response must be a comprehensive 
+summary of your actions.
+- Before acting, check for necessary API credentials.
+- Handle rate limits and API restrictions carefully.
+</mandatory_instructions>""",
         ),
         model=model,
         tools=[
-            *WhatsAppToolkit().get_tools(),
-            *TwitterToolkit().get_tools(),
-            *LinkedInToolkit().get_tools(),
-            *RedditToolkit().get_tools(),
-            *NotionToolkit().get_tools(),
-            *SlackToolkit().get_tools(),
-            send_message_to_user,
+            *whatsapp_toolkit.get_tools(),
+            *twitter_toolkit.get_tools(),
+            *linkedin_toolkit.get_tools(),
+            *reddit_toolkit.get_tools(),
+            *notion_toolkit.get_tools(),
+            *slack_toolkit.get_tools(),
             HumanToolkit().ask_human_via_console,
-            SearchToolkit().search_exa,
-            *TerminalToolkit().get_tools(),
-            *NoteTakingToolkit(
-                working_directory=WORKING_DIRECTORY
-            ).get_tools(),
+            *search_toolkit,
+            *terminal_toolkit.get_tools(),
+            *note_toolkit.get_tools(),
         ],
     )
 
@@ -805,12 +908,17 @@ async def main():
     # Initialize the AgentCommunicationToolkit
     msg_toolkit = AgentCommunicationToolkit(max_message_history=100)
 
+    # Initialize message integration for use in coordinator and task agents
+    message_integration = ToolkitMessageIntegration(
+        message_handler=send_message_to_user
+    )
+
     # await google_drive_mcp_toolkit.connect()
 
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_1_MINI,
+        model_type=ModelType.GPT_4_1,
         model_config_dict={
             "stream": False,
         },
@@ -834,11 +942,8 @@ You are a helpful coordinator.
 - You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}.
-
-- You MUST use the `send_message_to_user` tool to inform the user of every
-    decision and action you take. Your message must include a short title and
-    a one-sentence description. This is a mandatory part of your workflow.
+The current date is {datetime.date.today()}. For any date-related tasks, you 
+MUST use this as the current date.
 
 - If a task assigned to another agent fails, you should re-assign it to the 
 `Developer_Agent`. The `Developer_Agent` is a powerful agent with terminal 
@@ -847,7 +952,6 @@ access and can resolve a wide range of issues.
         ),
         model=model_backend_reason,
         tools=[
-            send_message_to_user,
             *NoteTakingToolkit(
                 working_directory=WORKING_DIRECTORY
             ).get_tools(),
@@ -860,26 +964,19 @@ You are a helpful task planner.
 - You are now working in system {platform.system()} with architecture
 {platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
 work related to local operations should be done in that directory.
-The current date is {datetime.date.today()}.
-
-- You MUST use the `send_message_to_user` tool to inform the user of every
-    decision and action you take. Your message must include a short title and
-    a one-sentence description. This is a mandatory part of your workflow.
+The current date is {datetime.date.today()}. For any date-related tasks, you 
+MUST use this as the current date.
         """,
         model=model_backend_reason,
         tools=[
-            send_message_to_user,
             *NoteTakingToolkit(
                 working_directory=WORKING_DIRECTORY
             ).get_tools(),
         ],
     )
     new_worker_agent = ChatAgent(
-        f"You are a helpful worker. You MUST use the "
-        f"`send_message_to_user` tool to inform the user of every "
-        f"decision and action you take. Your message must include a short "
-        f"title and a one-sentence description. This is a mandatory part "
-        f"of your workflow. When you complete your task, your final response "
+        f"You are a helpful worker. When you complete your task, your "
+        "final response "
         f"must be a comprehensive summary of your work, presented in a clear, "
         f"detailed, and easy-to-read format. Avoid using markdown tables for "
         f"presenting data; use plain text formatting instead. You are now "
@@ -898,10 +995,9 @@ The current date is {datetime.date.today()}.
         "points.",
         model=model_backend,
         tools=[
-            send_message_to_user,
             HumanToolkit().ask_human_via_console,
-            *NoteTakingToolkit(
-                working_directory=WORKING_DIRECTORY
+            *message_integration.register_toolkits(
+                NoteTakingToolkit(working_directory=WORKING_DIRECTORY)
             ).get_tools(),
         ],
     )
@@ -957,26 +1053,30 @@ The current date is {datetime.date.today()}.
         task_agent=task_agent,
         new_worker_agent=new_worker_agent,
         use_structured_output_handler=False,
+        task_timeout_seconds=900.0,
     )
 
     workforce.add_single_agent_worker(
-        "Search Agent: Can search the web, extract webpage content, "
-        "simulate browser actions, and provide relevant information to "
-        "solve the given task.",
+        "Search Agent: An expert web researcher that can browse websites, "
+        "perform searches, and extract information to support other agents.",
         worker=search_agent,
     ).add_single_agent_worker(
-        "Developer Agent: A skilled coding assistant that can write and "
-        "execute code, run terminal commands, control the desktop using "
-        "pyautogui, and verify solutions to complete tasks.",
+        "Developer Agent: A master-level coding assistant with a powerful "
+        "terminal. It can write and execute code, manage files, automate "
+        "desktop tasks, and deploy web applications to solve complex "
+        "technical challenges.",
         worker=developer_agent,
     ).add_single_agent_worker(
-        "Document Agent: A document processing assistant for creating, "
-        "modifying, and managing various document formats, including "
-        "presentations.",
+        "Document Agent: A document processing assistant skilled in creating "
+        "and modifying a wide range of file formats. It can generate "
+        "text-based files (Markdown, JSON, YAML, HTML), office documents "
+        "(Word, PDF), presentations (PowerPoint), and data files "
+        "(Excel, CSV).",
         worker=document_agent,
     ).add_single_agent_worker(
-        "Multi-Modal Agent: A multi-modal processing assistant for "
-        "analyzing, and generating media content like audio and images.",
+        "Multi-Modal Agent: A specialist in media processing. It can "
+        "analyze images and audio, transcribe speech, download videos, and "
+        "generate new images from text prompts.",
         worker=multi_modal_agent,
     )
 
@@ -984,14 +1084,8 @@ The current date is {datetime.date.today()}.
     human_task = Task(
         content=(
             """
-Analyze the UK healthcare industry to support the planning of my next company. 
-Provide a comprehensive market overview, including current trends, growth 
-projections, and relevant regulations. Identify the top 5-10 major competitors 
-in the space, including their names, website URLs, estimated market size or 
-share, core services or products, key strengths, and notable weaknesses. Also 
-highlight any significant opportunities, gaps, or underserved segments within 
-the market. Present all findings in a well-structured, professional HTML 
-report.
+search 50 different papers related to llm agent and write a html report about 
+them.
             """
         ),
         id='0',
