@@ -2005,6 +2005,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
                 - "result" (str): Result of the action.
+                - "console_output" (List[str]): Console log outputs during
+                  execution.
                 - "snapshot" (str): A new page snapshot.
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
@@ -2015,11 +2017,60 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         try:
             logger.info("Executing JavaScript code in browser console.")
             exec_start = time.time()
-            result = await page.evaluate(code)
+
+            # Wrap the code to capture console.log output and handle
+            # expressions
+            wrapped_code = (
+                """
+                (function() {
+                    const _logs = [];
+                    const originalLog = console.log;
+                    console.log = function(...args) {
+                        _logs.push(args.map(arg => {
+                            try {
+                                return typeof arg === 'object' ?
+                                    JSON.stringify(arg) : String(arg);
+                            } catch (e) {
+                                return String(arg);
+                            }
+                        }).join(' '));
+                        originalLog.apply(console, args);
+                    };
+                    
+                    let result;
+                    try {
+                        // First try to evaluate as an expression
+                        // (like browser console)
+                        result = eval("""
+                + repr(code)
+                + """);
+                    } catch (e) {
+                        // If that fails, execute as statements
+                        try {
+                            result = (function() { """
+                + code
+                + """ })();
+                        } catch (error) {
+                            console.log = originalLog;
+                            throw error;
+                        }
+                    }
+                    
+                    console.log = originalLog;
+                    return { result, logs: _logs };
+                })()
+            """
+            )
+
+            eval_result = await page.evaluate(wrapped_code)
+            result = eval_result.get('result')
+            console_logs = eval_result.get('logs', [])
+
             exec_time = time.time() - exec_start
             logger.info(f"Code execution completed in {exec_time:.2f}s.")
 
             import asyncio
+            import json
 
             await asyncio.sleep(0.2)
 
@@ -2037,17 +2088,36 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             # Get tab information
             tab_info = await self._get_tab_info_for_output()
 
+            # Properly serialize the result
+            try:
+                result_str = json.dumps(result, indent=2)
+            except (TypeError, ValueError):
+                result_str = str(result)
+
             return {
-                "result": f"Code execution result : {result}",
+                "result": f"Code execution result: {result_str}",
+                "console_output": console_logs,
                 "snapshot": snapshot,
                 **tab_info,
             }
 
         except Exception as e:
             logger.warning(f"Code execution failed: {e}")
+            # Get tab information for error case
+            try:
+                tab_info = await self._get_tab_info_for_output()
+            except Exception:
+                tab_info = {
+                    "tabs": [],
+                    "current_tab": 0,
+                    "total_tabs": 0,
+                }
+
             return {
                 "result": f"Code execution failed: {e}",
+                "console_output": [],
                 "snapshot": "",
+                **tab_info,
             }
 
     def get_log_summary(self) -> Dict[str, Any]:
