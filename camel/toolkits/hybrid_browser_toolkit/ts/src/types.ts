@@ -110,10 +110,8 @@ export interface MouseAction {
 
 export interface MouseDragAction {
   type: 'mouse_drag';
-  from_x: number;
-  from_y: number;
-  to_x: number;
-  to_y: number;
+  from_ref: string;
+  to_ref: string;
 }
 
 export interface PressKeyAction {

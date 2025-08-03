@@ -516,15 +516,17 @@ class TestHybridBrowserToolkit:
 
     @pytest.mark.asyncio
     async def test_mouse_drag(self, browser_toolkit_fixture):
-        """Test mouse_drag with source and destination coordinates"""
+        """Test mouse_drag with element references"""
         toolkit = browser_toolkit_fixture
+        # Mock elements with ref IDs
         result = await toolkit.browser_mouse_drag(
-            from_x=100, from_y=100, to_x=500, to_y=500
+            from_ref="ref1", to_ref="ref2"
         )
 
         assert "result" in result
         assert "snapshot" in result
         assert "tabs" in result
+        # Mock returns success message
         assert (
             "mouse_drag" in result["result"].lower()
             or "successfully" in result["result"].lower()

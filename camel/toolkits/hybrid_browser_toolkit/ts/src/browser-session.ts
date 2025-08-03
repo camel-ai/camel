@@ -166,9 +166,9 @@ export class HybridBrowserSession {
 
   async getCurrentLogs(): Promise<ConsoleMessage[]> {
     if (!this.currentTabId || !this.consoleLogs.has(this.currentTabId)) {
-      throw new Error('No active log available');
+      return [];
     }
-    return this.consoleLogs.get(this.currentTabId)!;
+    return this.consoleLogs.get(this.currentTabId) || [];
   }
 
   /**
@@ -502,31 +502,54 @@ export class HybridBrowserSession {
   }
 
   /**
-   *  Simplified mouse drag and drop implementation
+   *  Enhanced mouse drag and drop implementation using ref IDs
    */
-  private async performMouseDrag(page: Page, from_x: number, from_y: number, to_x: number, to_y: number): Promise<{ success: boolean; error?: string }> {
+  private async performMouseDrag(page: Page, fromRef: string, toRef: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const viewport = page.viewportSize();
-      if (!viewport) {
-        return { success: false, error: 'Viewport size not available from page.' };
+      // Ensure we have the latest snapshot
+      await (page as any)._snapshotForAI();
+      
+      // Get elements using Playwright's aria-ref selector
+      const fromSelector = `aria-ref=${fromRef}`;
+      const toSelector = `aria-ref=${toRef}`;
+      
+      const fromElement = await page.locator(fromSelector).first();
+      const toElement = await page.locator(toSelector).first();
+      
+      // Check if elements exist
+      const fromExists = await fromElement.count() > 0;
+      const toExists = await toElement.count() > 0;
+      
+      if (!fromExists) {
+        return { success: false, error: `Source element with ref ${fromRef} not found` };
       }
-      const isValidCoordinates =({x, y} : {x: number, y:number}) => {
-        return 0 <= x && x <= viewport.width && 0 <= y && y <= viewport.height;
+      
+      if (!toExists) {
+        return { success: false, error: `Target element with ref ${toRef} not found` };
       }
+      
+      // Get the center coordinates of both elements
+      const fromBox = await fromElement.boundingBox();
+      const toBox = await toElement.boundingBox();
+      
+      if (!fromBox) {
+        return { success: false, error: `Could not get bounding box for source element with ref ${fromRef}` };
+      }
+      
+      if (!toBox) {
+        return { success: false, error: `Could not get bounding box for target element with ref ${toRef}` };
+      }
+      
+      const fromX = fromBox.x + fromBox.width / 2;
+      const fromY = fromBox.y + fromBox.height / 2;
+      const toX = toBox.x + toBox.width / 2;
+      const toY = toBox.y + toBox.height / 2;
 
-      if (!isValidCoordinates({x: from_x, y: from_y})) {
-        return { success: false, error: `Invalid From coordinates, outside viewport bounds: (${from_x}, ${from_y})` };
-      }
-
-      if (!isValidCoordinates({x: to_x, y: to_y})) {
-        return { success: false, error: `Invalid To coordinates, outside viewport bounds: (${to_x}, ${to_y})`};
-      }
-
-      // Source coordinates
-      await page.mouse.move(from_x, from_y);
+      // Perform the drag operation
+      await page.mouse.move(fromX, fromY);
       await page.mouse.down();
       // Destination coordinates
-      await page.mouse.move(to_x, to_y);
+      await page.mouse.move(toX, toY);
       await page.mouse.up();
 
       return { success: true };
@@ -634,7 +657,7 @@ export class HybridBrowserSession {
         case 'mouse_drag': {
           elementSearchTime = Date.now() - elementSearchStart;
           const mouseDragStart = Date.now();
-          const mouseDragResult = await this.performMouseDrag(page, action.from_x, action.from_y, action.to_x, action.to_y);
+          const mouseDragResult = await this.performMouseDrag(page, action.from_ref, action.to_ref);
 
           if (!mouseDragResult.success) {
             throw new Error(`Action failed: ${mouseDragResult.error}`);
