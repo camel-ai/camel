@@ -565,14 +565,20 @@ export class HybridBrowserToolkit {
             originalLog.apply(console, args);
           };
           
+          let result;
           try {
-            const result = (function() { ${code} })();
-            console.log = originalLog;
-            return { result, logs: _logs };
-          } catch (error) {
-            console.log = originalLog;
-            throw error;
+            result = eval(${JSON.stringify(code)});
+          } catch (e) {
+            try {
+              result = (function() { ${code} })();
+            } catch (error) {
+              console.log = originalLog;
+              throw error;
+            }
           }
+          
+          console.log = originalLog;
+          return { result, logs: _logs };
         })()
       `;
       
@@ -618,3 +624,4 @@ export class HybridBrowserToolkit {
   }
 
 }
+
