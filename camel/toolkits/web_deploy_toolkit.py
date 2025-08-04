@@ -79,7 +79,9 @@ class WebDeployToolkit(BaseToolkit):
         self.tag_text = self._sanitize_text(tag_text)
         self.tag_url = self._validate_url(tag_url)
         self.remote_server_ip = (
-            self._validate_ip(remote_server_ip) if remote_server_ip else None
+            self._validate_ip_or_domain(remote_server_ip)
+            if remote_server_ip
+            else None
         )
         self.remote_server_port = self._validate_port(remote_server_port)
         self.server_registry_file = os.path.join(
@@ -87,24 +89,36 @@ class WebDeployToolkit(BaseToolkit):
         )
         self._load_server_registry()
 
-    def _validate_ip(self, ip: str) -> str:
-        """Validate IP address format."""
+    def _validate_ip_or_domain(self, address: str) -> str:
+        r"""Validate IP address or domain name format."""
         import ipaddress
+        import re
 
         try:
-            ipaddress.ip_address(ip)
-            return ip
+            # Try to validate as IP address first
+            ipaddress.ip_address(address)
+            return address
         except ValueError:
-            raise ValueError(f"Invalid IP address: {ip}")
+            # If not a valid IP, check if it's a valid domain name
+            domain_pattern = re.compile(
+                r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?'
+                r'(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$'
+            )
+            if domain_pattern.match(address) and len(address) <= 253:
+                return address
+            else:
+                raise ValueError(
+                    f"Invalid IP address or domain name: {address}"
+                )
 
     def _validate_port(self, port: int) -> int:
-        """Validate port number."""
+        r"""Validate port number."""
         if not isinstance(port, int) or port < 1 or port > 65535:
             raise ValueError(f"Invalid port number: {port}")
         return port
 
     def _sanitize_text(self, text: str) -> str:
-        """Sanitize text to prevent XSS."""
+        r"""Sanitize text to prevent XSS."""
         if not isinstance(text, str):
             return ""
         # Remove any HTML/script tags
@@ -119,7 +133,7 @@ class WebDeployToolkit(BaseToolkit):
         return text[:100]  # Limit length
 
     def _validate_url(self, url: str) -> str:
-        """Validate URL format."""
+        r"""Validate URL format."""
         if not isinstance(url, str):
             raise ValueError("URL must be a string")
         # Basic URL validation
@@ -139,7 +153,7 @@ class WebDeployToolkit(BaseToolkit):
     def _validate_subdirectory(
         self, subdirectory: Optional[str]
     ) -> Optional[str]:
-        """Validate subdirectory to prevent path traversal."""
+        r"""Validate subdirectory to prevent path traversal."""
         if subdirectory is None:
             return None
 
@@ -157,7 +171,7 @@ class WebDeployToolkit(BaseToolkit):
         return subdirectory
 
     def _is_port_available(self, port: int) -> bool:
-        """Check if a port is available for binding."""
+        r"""Check if a port is available for binding."""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             try:
                 sock.bind(('127.0.0.1', port))
@@ -604,7 +618,7 @@ class WebDeployToolkit(BaseToolkit):
                 return {
                     'success': False,
                     'error': (
-                        f'Port {port} is already in use by ' f'another process'
+                        f'Port {port} is already in use by another process'
                     ),
                 }
 
@@ -702,6 +716,44 @@ class WebDeployToolkit(BaseToolkit):
             # Validate subdirectory
             subdirectory = self._validate_subdirectory(subdirectory)
 
+            # Check if remote deployment is configured
+            if self.remote_server_ip:
+                return self._deploy_folder_to_remote_server(
+                    folder_path,
+                    subdirectory,
+                    domain,
+                )
+            else:
+                return self._deploy_folder_to_local_server(
+                    folder_path,
+                    port,
+                    domain,
+                    subdirectory,
+                )
+
+        except Exception as e:
+            logger.error(f"Error deploying folder: {e}")
+            return {'success': False, 'error': str(e)}
+
+    def _deploy_folder_to_local_server(
+        self,
+        folder_path: str,
+        port: int,
+        domain: Optional[str],
+        subdirectory: Optional[str],
+    ) -> Dict[str, Any]:
+        r"""Deploy folder to local server (original functionality).
+
+        Args:
+            folder_path (str): Path to the folder to deploy
+            port (int): Port to serve on
+            domain (Optional[str]): Custom domain
+            subdirectory (Optional[str]): Subdirectory path
+
+        Returns:
+            Dict[str, Any]: Deployment result
+        """
+        try:
             temp_dir = None
             if self.add_branding_tag:
                 # Create temporary directory and copy all files
@@ -876,6 +928,149 @@ class WebDeployToolkit(BaseToolkit):
                     pass
             logger.error(f"Error deploying folder: {e}")
             return {'success': False, 'error': str(e)}
+
+    def _deploy_folder_to_remote_server(
+        self,
+        folder_path: str,
+        subdirectory: Optional[str] = None,
+        domain: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        r"""Deploy folder to remote server via API.
+
+        Args:
+            folder_path (str): Path to the folder to deploy
+            subdirectory (Optional[str]): Subdirectory path for deployment
+            domain (Optional[str]): Custom domain
+
+        Returns:
+            Dict[str, Any]: Deployment result
+        """
+        try:
+            import tempfile
+            import zipfile
+
+            import requests
+
+            # Validate subdirectory
+            subdirectory = self._validate_subdirectory(subdirectory)
+
+            # Create a temporary zip file of the folder
+            with tempfile.NamedTemporaryFile(
+                suffix='.zip', delete=False
+            ) as temp_zip:
+                zip_path = temp_zip.name
+
+            try:
+                # Create zip archive
+                with zipfile.ZipFile(
+                    zip_path, 'w', zipfile.ZIP_DEFLATED
+                ) as zipf:
+                    for root, _, files in os.walk(folder_path):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            # Calculate relative path within the archive
+                            arcname = os.path.relpath(file_path, folder_path)
+                            zipf.write(file_path, arcname)
+
+                # Read zip file as base64
+                with open(zip_path, 'rb') as f:
+                    zip_data = base64.b64encode(f.read()).decode('utf-8')
+
+                # Prepare deployment data
+                deploy_data = {
+                    "deployment_type": "folder",
+                    "folder_data": zip_data,
+                    "subdirectory": subdirectory,
+                    "domain": domain,
+                    "timestamp": time.time(),
+                }
+
+                # Add logo data if custom logo is specified
+                if self.logo_path and os.path.exists(self.logo_path):
+                    try:
+                        logo_ext = os.path.splitext(self.logo_path)[1]
+                        logo_filename = f"custom_logo{logo_ext}"
+
+                        with open(self.logo_path, 'rb') as logo_file:
+                            logo_data = base64.b64encode(
+                                logo_file.read()
+                            ).decode('utf-8')
+
+                        deploy_data.update(
+                            {
+                                "logo_data": logo_data,
+                                "logo_ext": logo_ext,
+                                "logo_filename": logo_filename,
+                            }
+                        )
+                    except Exception as logo_error:
+                        logger.warning(
+                            f"Failed to process custom logo: {logo_error}"
+                        )
+
+                # Send to remote server API
+                api_url = f"http://{self.remote_server_ip}:{self.remote_server_port}/api/deploy"
+
+                response = requests.post(
+                    api_url,
+                    json=deploy_data,
+                    timeout=self.timeout
+                    or 60,  # Extended timeout for folder uploads
+                    allow_redirects=False,
+                    headers={'Content-Type': 'application/json'},
+                )
+
+                if response.status_code == 200:
+                    result = response.json()
+
+                    # Build URLs
+                    base_url = f"http://{self.remote_server_ip}:{self.remote_server_port}"
+                    deployed_url = (
+                        f"{base_url}/{subdirectory}/"
+                        if subdirectory
+                        else base_url
+                    )
+
+                    return {
+                        'success': True,
+                        'remote_url': deployed_url,
+                        'server_ip': self.remote_server_ip,
+                        'subdirectory': subdirectory,
+                        'domain': domain,
+                        'message': (
+                            f'Successfully deployed folder to remote server!\n'
+                            f'  • Access URL: {deployed_url}\n'
+                            f'  • Server: '
+                            f'{self.remote_server_ip}:{self.remote_server_port}'
+                        ),
+                        'branding_tag_added': self.add_branding_tag,
+                        'logo_processed': result.get('logo_processed', False),
+                    }
+                else:
+                    return {
+                        'success': False,
+                        'error': (
+                            f'Remote folder deployment failed: '
+                            f'HTTP {response.status_code}'
+                        ),
+                    }
+
+            finally:
+                # Clean up temporary zip file
+                if os.path.exists(zip_path):
+                    os.unlink(zip_path)
+
+        except ImportError:
+            return {
+                'success': False,
+                'error': 'Remote deployment requires requests library. '
+                'Install with: pip install requests',
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Remote folder deployment error: {e!s}',
+            }
 
     def stop_server(self, port: int) -> Dict[str, Any]:
         r"""Stop a running server on the specified port.

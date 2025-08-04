@@ -72,9 +72,9 @@ class TestToolkitMessageIntegration(unittest.TestCase):
             self.assertIn("Message successfully sent", result)
             self.assertIn("Test Title", result)
 
-    def test_add_messaging_to_toolkit_all_tools(self):
+    def test_register_all_tools(self):
         r"""Test adding messaging to all tools in a toolkit."""
-        enhanced_toolkit = self.message_integration.add_messaging_to_toolkit(
+        enhanced_toolkit = self.message_integration.register_toolkits(
             self.toolkit
         )
 
@@ -89,9 +89,9 @@ class TestToolkitMessageIntegration(unittest.TestCase):
             self.assertIn('message_description', params)
             self.assertIn('message_attachment', params)
 
-    def test_add_messaging_to_toolkit_specific_tools(self):
+    def test_register_specific_tools(self):
         r"""Test adding messaging to specific tools only."""
-        enhanced_toolkit = self.message_integration.add_messaging_to_toolkit(
+        enhanced_toolkit = self.message_integration.register_toolkits(
             self.toolkit, tool_names=['search_web']
         )
 
@@ -122,7 +122,7 @@ class TestToolkitMessageIntegration(unittest.TestCase):
         mock_send = Mock(return_value="Message sent")
         self.message_integration.message_handler = mock_send
 
-        enhanced_toolkit = self.message_integration.add_messaging_to_toolkit(
+        enhanced_toolkit = self.message_integration.register_toolkits(
             self.toolkit
         )
 
@@ -151,7 +151,7 @@ class TestToolkitMessageIntegration(unittest.TestCase):
         mock_send = Mock(return_value="Message sent")
         self.message_integration.message_handler = mock_send
 
-        enhanced_toolkit = self.message_integration.add_messaging_to_toolkit(
+        enhanced_toolkit = self.message_integration.register_toolkits(
             self.toolkit
         )
 
@@ -167,7 +167,7 @@ class TestToolkitMessageIntegration(unittest.TestCase):
         # Check original function still works
         self.assertEqual(len(result), 2)
 
-    def test_add_messaging_to_functions_with_callables(self):
+    def test_register_functions_with_callables(self):
         r"""Test adding messaging to a list of callable functions."""
 
         def process_text(text: str) -> str:
@@ -193,7 +193,7 @@ class TestToolkitMessageIntegration(unittest.TestCase):
             """
             return a + b
 
-        enhanced_tools = self.message_integration.add_messaging_to_functions(
+        enhanced_tools = self.message_integration.register_functions(
             [process_text, calculate_sum], function_names=['process_text']
         )
 
@@ -236,9 +236,7 @@ class TestToolkitMessageIntegration(unittest.TestCase):
             ),
         )
 
-        enhanced_toolkit = custom_integration.add_messaging_to_toolkit(
-            self.toolkit
-        )
+        enhanced_toolkit = custom_integration.register_toolkits(self.toolkit)
 
         tools = enhanced_toolkit.get_tools()
         search_tool = next(t for t in tools if t.func.__name__ == 'search_web')
@@ -275,7 +273,7 @@ class TestToolkitMessageIntegration(unittest.TestCase):
             """
             return x + y
 
-        enhanced_tools = self.message_integration.add_messaging_to_functions(
+        enhanced_tools = self.message_integration.register_functions(
             [simple_func, func_with_args]
         )
 
