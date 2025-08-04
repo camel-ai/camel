@@ -832,6 +832,9 @@ class TerminalToolkit(BaseToolkit):
 
         Args:
             id (str): The unique identifier of the shell session to view.
+            
+            capture_entire (bool): Whether to capture the entire history or just
+                the visible screen. (default: :obj:`True`)
 
         Returns:
             str: The complete output history of the shell session. Returns an
@@ -845,18 +848,11 @@ class TerminalToolkit(BaseToolkit):
         ):
             session = self.persistent_sessions[id]
             if isinstance(session, TmuxSession):
-                import subprocess
-
                 try:
-                    result = subprocess.run(
-                        session._tmux_capture_pane(
-                            capture_entire=capture_entire
-                        ),
-                        capture_output=True,
-                        text=True,
-                        check=True,
-                    )
-                    output = result.stdout
+                    if capture_entire:
+                        output = session.capture_output()
+                    else:
+                        output = session._get_visible_screen()
                     return output
                 except Exception as e:
                     return f"tmux error (view): {e}"
@@ -888,6 +884,222 @@ class TerminalToolkit(BaseToolkit):
             self._update_terminal_output(f"\nError: {error_msg}\n")
             logger.error(error_msg)
             return f"Error: {e!s}"
+
+    def shell_view_incremental(self, id: str) -> str:
+        r"""View incremental output from a specified shell session.
+
+        This method tracks the previous buffer state and attempts to find new content
+        by comparing against the current full buffer. This provides better handling for
+        commands with large output that would overflow the visible screen.
+
+        Args:
+            id (str): The unique identifier of the shell session to view.
+
+        Returns:
+            str: Formatted output with either "New Terminal Output:" or
+                 "Current Terminal Screen:" prefix, or an error message if the
+                 session is not found.
+        """
+
+        if (
+            getattr(self, 'use_persistent_sessions', False)
+            and hasattr(self, 'persistent_sessions')
+            and id in self.persistent_sessions
+        ):
+            session = self.persistent_sessions[id]
+            if isinstance(session, TmuxSession):
+                try:
+                    return session.get_incremental_output()
+                except Exception as e:
+                    return f"tmux error (incremental view): {e}"
+
+        if id not in self.shell_sessions:
+            return f"Shell session not found: {id}"
+
+        # For non-persistent sessions, fall back to regular view
+        return self.shell_view(id, capture_entire=True)
+
+    def shell_clear_history(self, id: str) -> str:
+        r"""Clear the history/buffer of a specified shell session.
+
+        This method clears the terminal history for the specified session,
+        which can be useful for managing memory usage and keeping output clean.
+
+        Args:
+            id (str): The unique identifier of the shell session to clear.
+
+        Returns:
+            str: A status message indicating whether the history was cleared
+                successfully, or an error message if the session is not found.
+        """
+
+        if (
+            getattr(self, 'use_persistent_sessions', False)
+            and hasattr(self, 'persistent_sessions')
+            and id in self.persistent_sessions
+        ):
+            session = self.persistent_sessions[id]
+            if isinstance(session, TmuxSession):
+                try:
+                    session.clear_history()
+                    return f"History cleared for session '{id}'"
+                except Exception as e:
+                    return f"Error clearing history for session '{id}': {e}"
+
+        if id not in self.shell_sessions:
+            return f"Shell session not found: {id}"
+
+        # For non-persistent sessions, we can't clear history
+        return f"History clearing not supported for non-persistent session '{id}'"
+
+    def shell_create_pane(self, id: str, direction: str = "h", pane: Optional[str] = None) -> str:
+        r"""Create a new pane in a specified shell session.
+
+        This method creates a new pane in the tmux session, allowing for
+        multi-pane terminal operations. This is only available for persistent
+        tmux sessions.
+
+        Args:
+            id (str): The unique identifier of the shell session.
+            direction (str): Split direction - 'h' for horizontal, 'v' for vertical.
+                (default: :obj:`"h"`)
+            pane (Optional[str]): Target pane to split from. If None, uses current pane.
+                (default: :obj:`None`)
+
+        Returns:
+            str: The new pane index or an error message if the operation fails.
+        """
+
+        if (
+            getattr(self, 'use_persistent_sessions', False)
+            and hasattr(self, 'persistent_sessions')
+            and id in self.persistent_sessions
+        ):
+            session = self.persistent_sessions[id]
+            try:
+                return session.create_pane(direction=direction, pane=pane)
+            except Exception as e:
+                return f"Error creating pane in session '{id}': {e}"
+
+        return f"Pane creation not supported for session '{id}' (not a persistent tmux session)"
+
+    def shell_select_pane(self, id: str, pane: str) -> str:
+        r"""Select a specific pane in a specified shell session.
+
+        This method selects a specific pane in the tmux session, making it the
+        active pane for subsequent operations.
+
+        Args:
+            id (str): The unique identifier of the shell session.
+            pane (str): The pane index to select.
+
+        Returns:
+            str: Success message or an error message if the operation fails.
+        """
+
+        if (
+            getattr(self, 'use_persistent_sessions', False)
+            and hasattr(self, 'persistent_sessions')
+            and id in self.persistent_sessions
+        ):
+            session = self.persistent_sessions[id]
+            try:
+                return session.select_pane(pane=pane)
+            except Exception as e:
+                return f"Error selecting pane in session '{id}': {e}"
+
+        return f"Pane selection not supported for session '{id}' (not a persistent tmux session)"
+
+    def shell_list_panes(self, id: str) -> str:
+        r"""List all panes in a specified shell session.
+
+        This method lists all available panes in the tmux session.
+
+        Args:
+            id (str): The unique identifier of the shell session.
+
+        Returns:
+            str: List of pane indices or an error message if the operation fails.
+        """
+
+        if (
+            getattr(self, 'use_persistent_sessions', False)
+            and hasattr(self, 'persistent_sessions')
+            and id in self.persistent_sessions
+        ):
+            session = self.persistent_sessions[id]
+            try:
+                return session.list_panes()
+            except Exception as e:
+                return f"Error listing panes in session '{id}': {e}"
+
+        return f"Pane listing not supported for session '{id}' (not a persistent tmux session)"
+
+    def shell_exec_in_pane(self, id: str, command: str, pane: Optional[str] = None, block: bool = True, timeout: float = 180.0) -> str:
+        r"""Execute a command in a specific pane of a shell session.
+
+        This method executes a command in a specific pane of the tmux session,
+        allowing for multi-pane terminal operations.
+
+        Args:
+            id (str): The unique identifier of the shell session.
+            command (str): The command to execute.
+            pane (Optional[str]): The pane index to execute the command in.
+                If None, uses the current pane. (default: :obj:`None`)
+            block (bool): Whether to wait for the command to complete.
+                (default: :obj:`True`)
+            timeout (float): Maximum time to wait for blocking commands.
+                (default: :obj:`180.0`)
+
+        Returns:
+            str: Command output or an error message if the operation fails.
+        """
+
+        if (
+            getattr(self, 'use_persistent_sessions', False)
+            and hasattr(self, 'persistent_sessions')
+            and id in self.persistent_sessions
+        ):
+            session = self.persistent_sessions[id]
+            try:
+                self._update_terminal_output(f"\n[{id}:{pane or 'current'}]$ {command}\n")
+                result = session.send_command_to_pane(command=command, pane=pane, block=block, timeout=timeout)
+                self._update_terminal_output(result + "\n")
+                return result
+            except Exception as e:
+                return f"Error executing command in pane for session '{id}': {e}"
+
+        return f"Pane command execution not supported for session '{id}' (not a persistent tmux session)"
+
+    def shell_view_pane(self, id: str, pane: Optional[str] = None, capture_entire: bool = True) -> str:
+        r"""View output from a specific pane in a shell session.
+
+        This method captures and returns the output from a specific pane in the
+        tmux session.
+
+        Args:
+            id (str): The unique identifier of the shell session.
+            pane (Optional[str]): The pane index to view. If None, uses the current pane.
+                (default: :obj:`None`)
+            capture_entire (bool): Whether to capture entire history or just visible screen.
+                (default: :obj:`True`)
+
+        Returns:
+            str: Captured output or an error message if the operation fails.
+        """
+
+        if (
+            getattr(self, 'use_persistent_sessions', False)
+            and hasattr(self, 'persistent_sessions')
+            and id in self.persistent_sessions
+        ):
+            session = self.persistent_sessions[id]
+            try:
+                return session.capture_pane_from_pane(capture_entire=capture_entire, pane=pane)
+            except Exception as e:
+                return f"Error viewing pane in session '{id}': {e}"
+
+        return f"Pane viewing not supported for session '{id}' (not a persistent tmux session)"
 
     def shell_wait(self, id: str, seconds: Optional[int] = None) -> str:
         r"""Wait for a command to finish in a specified shell session.
@@ -1306,6 +1518,13 @@ class TerminalToolkit(BaseToolkit):
             FunctionTool(self.file_find_by_name),
             FunctionTool(self.shell_exec),
             FunctionTool(self.shell_view),
+            FunctionTool(self.shell_view_incremental),
+            FunctionTool(self.shell_clear_history),
+            FunctionTool(self.shell_create_pane),
+            FunctionTool(self.shell_select_pane),
+            FunctionTool(self.shell_list_panes),
+            FunctionTool(self.shell_exec_in_pane),
+            FunctionTool(self.shell_view_pane),
             FunctionTool(self.shell_wait),
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),

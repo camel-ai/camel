@@ -1,5 +1,7 @@
 import subprocess
 import time
+import re
+from typing import Optional
 
 from camel.logger import get_logger
 
@@ -44,12 +46,30 @@ class TmuxSession(SessionManager):
     _TMUX_COMPLETION_COMMAND = "; tmux wait -S done"
 
     def __init__(self, session_name: str, working_dir: str):
+        r"""
+        Initialize the TmuxSession.
+        
+        Args:
+            session_name (str): The name of the tmux session
+            working_dir (str): The working directory for the tmux session
+        """
         super().__init__(session_name, working_dir)
         self.session_active = False
+        self._previous_buffer: Optional[str] = None
+        self._current_pane: Optional[str] = None
 
     def start_session(self) -> bool:
+        r"""
+        Start a new tmux session.
+        
+        Returns:
+            bool: True if session started successfully, False otherwise
+        """
         try:
+            # Check if tmux is available
             subprocess.run(["tmux", "-V"], check=True, capture_output=True)
+            
+            # Check if session already exists
             check_cmd = ["tmux", "has-session", "-t", self.session_name]
             result = subprocess.run(check_cmd, capture_output=True)
             if result.returncode == 0:
@@ -58,10 +78,17 @@ class TmuxSession(SessionManager):
                 )
                 self.session_active = True
                 return True
+            
+            # Create new session with logging
             start_cmd = [
                 "bash",
                 "-c",
-                f"tmux new-session -x 160 -y 40 -d -s {self.session_name} -c '{self.working_dir}'",
+                (
+                    f"tmux new-session -x 160 -y 40 -d -s {self.session_name} "
+                    f"-c '{self.working_dir}' \\; "
+                    f"pipe-pane -t {self.session_name} "
+                    f'"cat > {self.working_dir}/tmux_{self.session_name}.log"'
+                ),
             ]
             subprocess.run(start_cmd, check=True)
             self.session_active = True
@@ -72,6 +99,15 @@ class TmuxSession(SessionManager):
             return False
 
     def _tmux_send_keys(self, keys: list[str]) -> list[str]:
+        r"""
+        Send keys to the tmux session.
+        
+        Args:
+            keys (list[str]): The keys to send
+            
+        Returns:
+            list[str]: The command to send keys to the tmux session
+        """
         return [
             "tmux",
             "send-keys",
@@ -80,15 +116,68 @@ class TmuxSession(SessionManager):
             *keys,
         ]
 
-    def _tmux_capture_pane(self, capture_entire: bool = False) -> list[str]:
+    def _tmux_capture_pane(self, capture_entire: bool = False, pane: Optional[str] = None) -> list[str]:
+        r"""
+        Capture the output from the tmux session.
+        
+        Args:
+            capture_entire (bool): Whether to capture the entire history or just the visible screen
+            pane (Optional[str]): The pane to capture from. If None, uses current pane
+            
+        Returns:    
+            list[str]: The command to capture the output from the tmux session
+        """
         extra_args = ["-S", "-"] if capture_entire else []
+        target = f"{self.session_name}:{pane}" if pane else self.session_name
         return [
             "tmux",
             "capture-pane",
             "-p",
             *extra_args,
             "-t",
+            target,
+        ]
+
+    def _tmux_send_keys_to_pane(self, keys: list[str], pane: Optional[str] = None) -> list[str]:
+        target = f"{self.session_name}:{pane}" if pane else self.session_name
+        return [
+            "tmux",
+            "send-keys",
+            "-t",
+            target,
+            *keys,
+        ]
+
+    def _tmux_split_pane(self, direction: str = "h", pane: Optional[str] = None) -> list[str]:
+        r"""Split pane horizontally (h) or vertically (v)"""
+        target = f"{self.session_name}:{pane}" if pane else self.session_name
+        split_flag = "-h" if direction == "h" else "-v"
+        return [
+            "tmux",
+            "split-window",
+            split_flag,
+            "-t",
+            target,
+        ]
+
+    def _tmux_select_pane(self, pane: str) -> list[str]:
+        r"""Select a specific pane"""
+        return [
+            "tmux",
+            "select-pane",
+            "-t",
+            f"{self.session_name}:{pane}",
+        ]
+
+    def _tmux_list_panes(self) -> list[str]:
+        """List all panes in the session"""
+        return [
+            "tmux",
+            "list-panes",
+            "-t",
             self.session_name,
+            "-F",
+            "#P",
         ]
 
     def _is_executing_command(self, key: str) -> bool:
@@ -98,8 +187,6 @@ class TmuxSession(SessionManager):
         return key in self._ENTER_KEYS
 
     def _ends_with_newline(self, key: str) -> bool:
-        import re
-
         return bool(re.search(self._ENDS_WITH_NEWLINE_PATTERN, key))
 
     def _prevent_execution(self, keys: list[str]) -> list[str]:
@@ -152,6 +239,16 @@ class TmuxSession(SessionManager):
     def send_command(
         self, command: str, block: bool = True, timeout: float = 180.0
     ) -> str:
+        r"""
+        Send a command to the tmux session.
+        
+        Args:
+            command (str): The command to execute
+            block (bool): Whether to wait for the command to complete
+
+        Returns:
+            str: Command output or status message
+        """
         if not self.session_active:
             return "Error: Tmux session is not active"
         try:
@@ -187,6 +284,232 @@ class TmuxSession(SessionManager):
         except subprocess.CalledProcessError as e:
             return f"Error capturing tmux output: {e}"
 
+    def get_incremental_output(self) -> str:
+        r"""
+        Get either new terminal output since last call, or current screen if
+        unable to determine.
+        
+        This method tracks the previous buffer state and attempts to find new content
+        by comparing against the current full buffer. This provides better handling for
+        commands with large output that would overflow the visible screen.
+        
+        Returns:
+            str: Formatted output with either "New Terminal Output:" or
+                 "Current Terminal Screen:"
+        """
+        current_buffer = self.capture_pane(capture_entire=True)
+        
+        # First capture - no previous state
+        if self._previous_buffer is None:
+            self._previous_buffer = current_buffer
+            return f"Current Terminal Screen:\n{self._get_visible_screen()}"
+        
+        # Try to find new content
+        new_content = self._find_new_content(current_buffer)
+        
+        # Update state
+        self._previous_buffer = current_buffer
+        
+        if new_content is not None:
+            if new_content.strip():
+                return f"New Terminal Output:\n{new_content}"
+            else:
+                # No new content, show current screen
+                return f"Current Terminal Screen:\n{self._get_visible_screen()}"
+        else:
+            # Couldn't reliably determine new content, fall back to current screen
+            return f"Current Terminal Screen:\n{self._get_visible_screen()}"
+    
+    def _find_new_content(self, current_buffer: str) -> Optional[str]:
+        r"""
+        Find new content by comparing current buffer with previous buffer.
+        
+        Args:
+            current_buffer: Current buffer content
+            
+        Returns:
+            str: New content, or None if can't reliably determine
+        """
+        pb = self._previous_buffer.strip()
+        if pb in current_buffer:
+            idx = current_buffer.index(pb)
+            # Find the end of the previous buffer content
+            if '\n' in pb:
+                idx = pb.rfind("\n")
+            return current_buffer[idx:]
+        return None
+    
+    def _get_visible_screen(self) -> str:
+        """Get the currently visible screen content."""
+        return self.capture_pane(capture_entire=False)
+
+    def create_pane(self, direction: str = "h", pane: Optional[str] = None) -> str:
+        r"""
+        Create a new pane in the tmux session.
+        
+        Args:
+            direction (str): Split direction - 'h' for horizontal, 'v' for vertical
+            pane (Optional[str]): Target pane to split from. If None, uses current pane.
+            
+        Returns:
+            str: The new pane index or error message
+        """
+        if not self.session_active:
+            return "Error: Tmux session is not active"
+            
+        try:
+            # Split the pane
+            split_cmd = self._tmux_split_pane(direction=direction, pane=pane)
+            subprocess.run(split_cmd, check=True)
+            
+            # Get the list of panes to find the new pane index
+            list_cmd = self._tmux_list_panes()
+            result = subprocess.run(list_cmd, capture_output=True, text=True, check=True)
+            pane_list = result.stdout.strip().split('\n')
+            
+            # The new pane will be the last one in the list
+            new_pane = pane_list[-1] if pane_list else "0"
+            
+            self._logger.info(f"Created new pane {new_pane} in session '{self.session_name}'")
+            return f"Created pane {new_pane}"
+            
+        except subprocess.CalledProcessError as e:
+            error_msg = f"Failed to create pane: {e}"
+            self._logger.error(error_msg)
+            return error_msg
+        except Exception as e:
+            error_msg = f"Error creating pane: {e}"
+            self._logger.error(error_msg)
+            return error_msg
+
+    def select_pane(self, pane: str) -> str:
+        r"""
+        Select a specific pane in the tmux session.
+        
+        Args:
+            pane (str): The pane index to select
+            
+        Returns:
+            str: Success message or error message
+        """
+        if not self.session_active:
+            return "Error: Tmux session is not active"
+            
+        try:
+            select_cmd = self._tmux_select_pane(pane)
+            subprocess.run(select_cmd, check=True)
+            self._current_pane = pane
+            self._logger.info(f"Selected pane {pane} in session '{self.session_name}'")
+            return f"Selected pane {pane}"
+            
+        except subprocess.CalledProcessError as e:
+            error_msg = f"Failed to select pane {pane}: {e}"
+            self._logger.error(error_msg)
+            return error_msg
+        except Exception as e:
+            error_msg = f"Error selecting pane {pane}: {e}"
+            self._logger.error(error_msg)
+            return error_msg
+
+    def list_panes(self) -> str:
+        r"""
+        List all panes in the tmux session.
+        
+        Returns:
+            str: List of pane indices or error message
+        """
+        if not self.session_active:
+            return "Error: Tmux session is not active"
+            
+        try:
+            list_cmd = self._tmux_list_panes()
+            result = subprocess.run(list_cmd, capture_output=True, text=True, check=True)
+            pane_list = result.stdout.strip().split('\n')
+            
+            if pane_list and pane_list[0]:
+                return f"Panes: {', '.join(pane_list)}"
+            else:
+                return "No panes found"
+                
+        except subprocess.CalledProcessError as e:
+            error_msg = f"Failed to list panes: {e}"
+            self._logger.error(error_msg)
+            return error_msg
+        except Exception as e:
+            error_msg = f"Error listing panes: {e}"
+            self._logger.error(error_msg)
+            return error_msg
+
+    def send_command_to_pane(self, command: str, pane: Optional[str] = None, block: bool = True, timeout: float = 180.0) -> str:
+        r"""
+        Send a command to a specific pane in the tmux session.
+        
+        Args:
+            command (str): The command to execute
+            pane (Optional[str]): The pane index to send the command to. If None, uses current pane.
+            block (bool): Whether to wait for the command to complete
+            timeout (float): Maximum time to wait for blocking commands
+            
+        Returns:
+            str: Command output or status message
+        """
+        if not self.session_active:
+            return "Error: Tmux session is not active"
+            
+        try:
+            keys = [command, "Enter"]
+            prepared_keys, is_blocking = self._prepare_keys(keys=keys, block=block)
+            
+            self._logger.debug(f"Sending keys to pane {pane}: {prepared_keys}")
+            
+            if is_blocking:
+                # Use the pane-specific send keys method
+                send_cmd = self._tmux_send_keys_to_pane(prepared_keys, pane=pane)
+                subprocess.run(send_cmd, check=True)
+                
+                # Wait for completion
+                result = subprocess.run(
+                    ["timeout", f"{timeout}s", "tmux", "wait", "done"],
+                    capture_output=True,
+                )
+                if result.returncode != 0:
+                    raise TimeoutError(f"Command timed out after {timeout} seconds")
+                
+                # Capture output from the specific pane
+                return self.capture_pane_from_pane(pane=pane)
+            else:
+                send_cmd = self._tmux_send_keys_to_pane(prepared_keys, pane=pane)
+                subprocess.run(send_cmd, check=True)
+                return f"Command sent to pane {pane or 'current'}. Use capture_pane_from_pane to see results."
+                
+        except Exception as e:
+            return f"Tmux error (pane command): {e}"
+
+    def capture_pane_from_pane(self, capture_entire: bool = True, pane: Optional[str] = None) -> str:
+        r"""
+        Capture output from a specific pane in the tmux session.
+        
+        Args:
+            capture_entire (bool): Whether to capture entire history or just visible screen
+            pane (Optional[str]): The pane index to capture from. If None, uses current pane.
+            
+        Returns:
+            str: Captured output or error message
+        """
+        if not self.session_active:
+            return "Error: Tmux session is not active"
+            
+        try:
+            result = subprocess.run(
+                self._tmux_capture_pane(capture_entire=capture_entire, pane=pane),
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            return result.stdout
+        except subprocess.CalledProcessError as e:
+            return f"Error capturing tmux output from pane {pane}: {e}"
+
     def is_session_active(self) -> bool:
         try:
             result = subprocess.run(
@@ -198,6 +521,28 @@ class TmuxSession(SessionManager):
         except Exception:
             self.session_active = False
             return False
+
+    def clear_history(self) -> None:
+        r"""Clear the session's history/buffer."""
+        if not self.session_active:
+            return
+            
+        try:
+            result = subprocess.run(
+                ["tmux", "clear-history", "-t", self.session_name],
+                capture_output=True,
+            )
+            if result.returncode == 0:
+                self._logger.debug(
+                    f"Cleared history for tmux session: {self.session_name}"
+                )
+            else:
+                self._logger.warning(
+                    f"Failed to clear tmux history for session {self.session_name}. "
+                    f"Exit code: {result.returncode}"
+                )
+        except Exception as e:
+            self._logger.error(f"Error clearing tmux history: {e}")
 
     def cleanup(self):
         if self.session_active:
