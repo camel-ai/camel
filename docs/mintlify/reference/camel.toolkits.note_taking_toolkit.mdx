@@ -92,7 +92,7 @@ Register a new note in the registry with thread-safe operations.
 ### create_note
 
 ```python
-def create_note(self, note_name: str, content: str = ''):
+def create_note(self, note_name: str, content: str):
 ```
 
 Creates a new note with a unique name.
@@ -105,7 +105,7 @@ instead.
 **Parameters:**
 
 - **note_name** (str): The name for your new note (without the .md extension). This name must be unique.
-- **content** (str, optional): The initial content to write in the note. If not provided, an empty note will be created. Defaults to "".
+- **content** (str): The initial content to write in the note.
 
 **Returns:**
 
