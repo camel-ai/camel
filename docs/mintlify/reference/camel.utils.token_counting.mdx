@@ -199,7 +199,12 @@ class AnthropicTokenCounter(BaseTokenCounter):
 ### __init__
 
 ```python
-def __init__(self, model: str):
+def __init__(
+    self,
+    model: str,
+    api_key: Optional[str] = None,
+    base_url: Optional[str] = None
+):
 ```
 
 Constructor for the token counter for Anthropic models.
@@ -207,6 +212,8 @@ Constructor for the token counter for Anthropic models.
 **Parameters:**
 
 - **model** (str): The name of the Anthropic model being used.
+- **api_key** (Optional[str], optional): The API key for authenticating with the Anthropic service. If not provided, it will use the ANTHROPIC_API_KEY environment variable. (default: :obj:`None`)
+- **base_url** (Optional[str], optional): The URL of the Anthropic service. If not provided, it will use the default Anthropic URL. (default: :obj:`None`)
 
 <a id="camel.utils.token_counting.AnthropicTokenCounter.count_tokens_from_messages"></a>
 
