@@ -145,7 +145,9 @@ class AnthropicModel(OpenAICompatibleModel):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = AnthropicTokenCounter(self.model_type)
+            self._token_counter = AnthropicTokenCounter(
+                str(self.model_type), api_key=self._api_key, base_url=self._url
+            )
         return self._token_counter
 
     def check_model_config(self):
