@@ -1,4 +1,4 @@
-(() => {
+((viewport_limit = false) => {
     // Unified analyzer that combines visual and structural analysis
     // Preserves complete snapshot.js logic while adding visual coordinate information
 
@@ -406,6 +406,11 @@
         if (tagName === 'header') return 'banner';
         if (tagName === 'footer') return 'contentinfo';
         if (tagName === 'fieldset') return 'group';
+        
+        // Enhanced role mappings for table elements
+        if (tagName === 'table') return 'table';
+        if (tagName === 'tr') return 'row';
+        if (tagName === 'td' || tagName === 'th') return 'cell';
 
         return 'generic';
     }
@@ -484,6 +489,9 @@
 
         // Add a heuristic to ignore code-like text that might be in the DOM
         if ((text.match(/[;:{}]/g)?.length || 0) > 2) return '';
+        
+
+        
         return text;
         }
 
@@ -578,6 +586,8 @@
             const level = getAriaLevel(element);
             if (level > 0) node.level = level;
 
+
+            
             return node;
         }
 
@@ -725,6 +735,9 @@
         if (isRedundantWrapper) {
             return node.children;
         }
+        
+
+        
         return [node];
     }
 
@@ -815,6 +828,23 @@
 
     // === Visual analysis functions from page_script.js ===
 
+    // Check if element is within the current viewport
+    function isInViewport(element) {
+        if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
+        
+        try {
+            const rect = element.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
+        } catch (e) {
+            return false;
+        }
+    }
+
     // From page_script.js - check if element is topmost at coordinates
     function isTopmost(element, x, y) {
         let hit = document.elementFromPoint(x, y);
@@ -855,10 +885,21 @@
 
     // === Unified analysis function ===
 
-    function collectElementsFromTree(node, elementsMap) {
+    function collectElementsFromTree(node, elementsMap, viewportLimitEnabled = false) {
         if (typeof node === 'string') return;
 
         if (node.element && node.ref) {
+            // If viewport_limit is enabled, only include elements that are in the viewport
+            if (viewportLimitEnabled && !isInViewport(node.element)) {
+                // Skip this element but still process its children
+                if (node.children) {
+                    for (const child of node.children) {
+                        collectElementsFromTree(child, elementsMap, viewportLimitEnabled);
+                    }
+                }
+                return;
+            }
+
             // Get visual coordinates for this element
             const coordinates = getElementCoordinates(node.element);
 
@@ -891,7 +932,7 @@
         // Recursively process children
         if (node.children) {
             for (const child of node.children) {
-                collectElementsFromTree(child, elementsMap);
+                collectElementsFromTree(child, elementsMap, viewportLimitEnabled);
             }
         }
     }
@@ -931,7 +972,7 @@
         [tree] = normalizeTree(tree);
 
         const elementsMap = {};
-        collectElementsFromTree(tree, elementsMap);
+        collectElementsFromTree(tree, elementsMap, viewport_limit);
 
         // Verify uniqueness of aria-ref attributes (debugging aid)
         const ariaRefCounts = {};
