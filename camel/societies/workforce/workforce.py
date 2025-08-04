@@ -84,7 +84,7 @@ logger = get_logger(__name__)
 # Constants for configuration values
 MAX_TASK_RETRIES = 3
 MAX_PENDING_TASKS_LIMIT = 20
-TASK_TIMEOUT_SECONDS = 180.0
+TASK_TIMEOUT_SECONDS = 480.0
 DEFAULT_WORKER_POOL_SIZE = 10
 
 
@@ -163,6 +163,11 @@ class Workforce(BaseNode):
             for graceful shutdown when a task fails 3 times. During this
             period, the workforce remains active for debugging.
             Set to 0 for immediate shutdown. (default: :obj:`15.0`)
+        task_timeout_seconds (Optional[float], optional): The timeout in
+            seconds for waiting for tasks to be returned by workers. If None,
+            uses the global TASK_TIMEOUT_SECONDS value (600.0 seconds).
+            Increase this value for tasks that require more processing time.
+            (default: :obj:`None`)
         share_memory (bool, optional): Whether to enable shared memory across
             SingleAgentWorker instances in the workforce. When enabled, all
             SingleAgentWorker instances, coordinator agent, and task planning
@@ -231,6 +236,7 @@ class Workforce(BaseNode):
         graceful_shutdown_timeout: float = 15.0,
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
+        task_timeout_seconds: Optional[float] = None,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[
@@ -241,6 +247,9 @@ class Workforce(BaseNode):
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
         self.share_memory = share_memory
         self.use_structured_output_handler = use_structured_output_handler
+        self.task_timeout_seconds = (
+            task_timeout_seconds or TASK_TIMEOUT_SECONDS
+        )
         if self.use_structured_output_handler:
             self.structured_handler = StructuredOutputHandler()
         self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
@@ -343,12 +352,7 @@ class Workforce(BaseNode):
         # Set up task agent with default system message and required tools
         task_sys_msg = BaseMessage.make_assistant_message(
             role_name="Task Planner",
-            content="You are going to compose and decompose tasks. Keep "
-            "tasks that are sequential and require the same type of "
-            "agent together in one agent process. Only decompose tasks "
-            "that can be handled in parallel and require different types "
-            "of agents. This ensures efficient execution by minimizing "
-            "context switching between agents.",
+            content="You are going to handle tasks.",
         )
         task_planning_tools = TaskPlanningToolkit().get_tools()
 
@@ -2311,7 +2315,7 @@ class Workforce(BaseNode):
             # Add timeout to prevent indefinite waiting
             return await asyncio.wait_for(
                 self._channel.get_returned_task_by_publisher(self.node_id),
-                timeout=TASK_TIMEOUT_SECONDS,
+                timeout=self.task_timeout_seconds,
             )
         except Exception as e:
             error_msg = (
@@ -3066,6 +3070,7 @@ class Workforce(BaseNode):
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
             use_structured_output_handler=self.use_structured_output_handler,
+            task_timeout_seconds=self.task_timeout_seconds,
         )
 
         for child in self._children:
