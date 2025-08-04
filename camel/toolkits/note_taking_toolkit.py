@@ -138,7 +138,7 @@ class NoteTakingToolkit(BaseToolkit):
             self.registry.append(note_name)
             self._save_registry()
 
-    def create_note(self, note_name: str, content: str = "") -> str:
+    def create_note(self, note_name: str, content: str) -> str:
         r"""Creates a new note with a unique name.
 
         This function will create a new file for your note.
@@ -149,12 +149,11 @@ class NoteTakingToolkit(BaseToolkit):
         Args:
             note_name (str): The name for your new note (without the .md
                 extension). This name must be unique.
-            content (str, optional): The initial content to write in the note.
-                If not provided, an empty note will be created. Defaults to "".
+            content (str): The initial content to write in the note.
 
         Returns:
             str: A message confirming the creation of the note or an error if
-                 the note name is not valid or already exists.
+                the note name is not valid or already exists.
         """
         try:
             note_path = self.working_directory / f"{note_name}.md"
