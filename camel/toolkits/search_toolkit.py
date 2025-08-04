@@ -675,12 +675,34 @@ class SearchToolkit(BaseToolkit):
             )
         except requests.exceptions.HTTPError as e:
             error_message = f"Google API HTTP error: {e}"
-            if e.response.status_code == 429:
-                error_message = (
-                    "Google API rate limit exceeded. Please try again later."
-                )
-            elif e.response.status_code == 403:
-                error_message = "Google API access forbidden. Please check your API key and permissions."
+            try:
+                error_data = e.response.json()
+                if "error" in error_data and "message" in error_data["error"]:
+                    api_error_message = error_data["error"]["message"]
+                    error_code = error_data["error"].get(
+                        "code", e.response.status_code
+                    )
+                    error_message = (
+                        f"Google API error {error_code}: {api_error_message}"
+                    )
+
+                    if e.response.status_code == 429:
+                        error_message = f"Google API rate limit exceeded: {api_error_message}"
+                    elif e.response.status_code == 400:
+                        if "API key" in api_error_message:
+                            error_message = (
+                                f"Invalid Google API key: {api_error_message}"
+                            )
+                        else:
+                            error_message = f"Bad request to Google API: {api_error_message}"
+            except (ValueError, KeyError):
+                if e.response.status_code == 429:
+                    error_message = "Google API rate limit exceeded. Please try again later."
+                elif e.response.status_code == 400:
+                    error_message = "Google API bad request. Please check your API key and search engine ID."
+                elif e.response.status_code == 403:
+                    error_message = "Google API access forbidden. Please check your API key permissions."
+
             logger.error(error_message)
             responses.append({"error": error_message})
         except requests.exceptions.RequestException as e:

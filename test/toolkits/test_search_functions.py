@@ -276,19 +276,56 @@ def test_search_google_error_handling(mock_get, search_toolkit):
         assert "error" in result[0]
         assert "timed out" in result[0]["error"]
 
-        # Test HTTP 429 error (rate limit)
+        # Test HTTP 429 error (rate limit) with API message
         mock_response = MagicMock()
+        mock_error_response = MagicMock()
+        mock_error_response.status_code = 429
+        mock_error_response.json.return_value = {
+            "error": {
+                "code": 429,
+                "message": "Rate limit exceeded. Try again in 1 minute.",
+            }
+        }
         mock_response.raise_for_status.side_effect = (
-            requests.exceptions.HTTPError(response=MagicMock(status_code=429))
+            requests.exceptions.HTTPError(response=mock_error_response)
         )
         mock_get.side_effect = None
         mock_get.return_value = mock_response
         result = search_toolkit.search_google(query="test")
-        assert "rate limit exceeded" in result[0]["error"]
+        assert "Google API rate limit exceeded" in result[0]["error"]
+        assert "Try again in 1 minute" in result[0]["error"]
 
-        # Test HTTP 403 error (forbidden)
+        # Test HTTP 400 error (bad request) with API key error
+        mock_error_response.status_code = 400
+        mock_error_response.json.return_value = {
+            "error": {
+                "code": 400,
+                "message": "API key not valid. Please pass a valid API key.",
+            }
+        }
         mock_response.raise_for_status.side_effect = (
-            requests.exceptions.HTTPError(response=MagicMock(status_code=403))
+            requests.exceptions.HTTPError(response=mock_error_response)
+        )
+        result = search_toolkit.search_google(query="test")
+        assert "Invalid Google API key" in result[0]["error"]
+        assert "API key not valid" in result[0]["error"]
+
+        # Test HTTP 400 error (bad request) without API key error
+        mock_error_response.json.return_value = {
+            "error": {
+                "code": 400,
+                "message": "Request contains an invalid argument.",
+            }
+        }
+        result = search_toolkit.search_google(query="test")
+        assert "Bad request to Google API" in result[0]["error"]
+        assert "invalid argument" in result[0]["error"]
+
+        # Test HTTP 403 error (forbidden) - fallback when no JSON
+        mock_error_response.status_code = 403
+        mock_error_response.json.side_effect = ValueError("No JSON")
+        mock_response.raise_for_status.side_effect = (
+            requests.exceptions.HTTPError(response=mock_error_response)
         )
         result = search_toolkit.search_google(query="test")
         assert "access forbidden" in result[0]["error"]
