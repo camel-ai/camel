@@ -5,7 +5,7 @@
 ## HybridBrowserToolkit
 
 ```python
-class HybridBrowserToolkit(BaseToolkit):
+class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 ```
 
 A hybrid browser toolkit that combines non-visual, DOM-based browser
@@ -34,7 +34,7 @@ Initialize the HybridBrowserToolkit.
 - **stealth** (bool): Whether to run the browser in stealth mode to avoid bot detection. When enabled, hides WebDriver characteristics, spoofs navigator properties, and implements various anti-detection measures. Highly recommended for production use and when accessing sites with bot detection. Defaults to `False`.
 - **web_agent_model** (Optional[BaseModelBackend]): The language model backend to use for the high-level `solve_task` agent. This is required only if you plan to use `solve_task`. Defaults to `None`.
 - **cache_dir** (str): The directory to store cached files, such as screenshots. Defaults to `"tmp/"`.
-- **enabled_tools** (Optional[List[str]]): List of tool names to enable. If None, uses DEFAULT_TOOLS. Available tools: open_browser, close_browser, visit_page, back, forward, get_page_snapshot, get_som_screenshot, get_page_links, click, type, select, scroll, enter, wait_user, solve_task. Defaults to `None`.
+- **enabled_tools** (Optional[List[str]]): List of tool names to enable. If None, uses DEFAULT_TOOLS. Available tools: browser_open, browser_close, browser_visit_page, browser_back, browser_forward, browser_get_page_snapshot, browser_get_som_screenshot, browser_get_page_links, browser_click, browser_type, browser_select, browser_scroll, browser_enter, browser_wait_user, browser_solve_task. Defaults to `None`.
 - **browser_log_to_file** (bool): Whether to save detailed browser action logs to file. When enabled, logs action inputs/outputs, execution times, and page loading times. Logs are saved to an auto-generated timestamped file. Defaults to `False`.
 - **session_id** (Optional[str]): A unique identifier for this browser session. When multiple HybridBrowserToolkit instances are used concurrently, different session IDs prevent them from sharing the same browser session and causing conflicts. If None, a default session will be used. Defaults to `None`.
 - **default_start_url** (str): The default URL to navigate to when open_browser() is called without a start_url parameter or with None. Defaults to `"https://google.com/"`.
@@ -186,17 +186,6 @@ def clear_logs(self):
 
 Clear the log buffer.
 
-<a id="camel.toolkits.hybrid_browser_toolkit_py.hybrid_browser_toolkit.HybridBrowserToolkit.get_tools"></a>
-
-### get_tools
-
-```python
-def get_tools(self):
-```
-
-Get available function tools
-based on enabled_tools configuration.
-
 <a id="camel.toolkits.hybrid_browser_toolkit_py.hybrid_browser_toolkit.HybridBrowserToolkit.clone_for_new_session"></a>
 
 ### clone_for_new_session
@@ -216,3 +205,14 @@ session.
 
   A new HybridBrowserToolkit instance with the same configuration
 but a different session.
+
+<a id="camel.toolkits.hybrid_browser_toolkit_py.hybrid_browser_toolkit.HybridBrowserToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+Get available function tools
+based on enabled_tools configuration.

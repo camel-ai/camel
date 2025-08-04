@@ -840,6 +840,69 @@ class FileWriteToolkit(BaseToolkit):
 
         return text
 
+    def _ensure_html_utf8_meta(self, content: str) -> str:
+        r"""Ensure HTML content has UTF-8 meta tag.
+
+        Args:
+            content (str): The HTML content.
+
+        Returns:
+            str: HTML content with UTF-8 meta tag.
+        """
+        # Check if content already has a charset meta tag
+        has_charset = re.search(
+            r'<meta[^>]*charset[^>]*>', content, re.IGNORECASE
+        )
+
+        # UTF-8 meta tag
+        utf8_meta = '<meta charset="utf-8">'
+
+        if has_charset:
+            # Replace existing charset with UTF-8
+            content = re.sub(
+                r'<meta[^>]*charset[^>]*>',
+                utf8_meta,
+                content,
+                flags=re.IGNORECASE,
+            )
+        else:
+            # Add UTF-8 meta tag
+            # Try to find <head> tag
+            head_match = re.search(r'<head[^>]*>', content, re.IGNORECASE)
+            if head_match:
+                # Insert after <head> tag
+                insert_pos = head_match.end()
+                content = (
+                    content[:insert_pos]
+                    + '\n    '
+                    + utf8_meta
+                    + content[insert_pos:]
+                )
+            else:
+                # No <head> tag found, check if there's <html> tag
+                html_match = re.search(r'<html[^>]*>', content, re.IGNORECASE)
+                if html_match:
+                    # Insert <head> with meta tag after <html>
+                    insert_pos = html_match.end()
+                    content = (
+                        content[:insert_pos]
+                        + '\n<head>\n    '
+                        + utf8_meta
+                        + '\n</head>'
+                        + content[insert_pos:]
+                    )
+                else:
+                    # No proper HTML structure, wrap content
+                    content = (
+                        '<!DOCTYPE html>\n<html>\n<head>\n    '
+                        + utf8_meta
+                        + '\n</head>\n<body>\n'
+                        + content
+                        + '\n</body>\n</html>'
+                    )
+
+        return content
+
     def _write_csv_file(
         self,
         file_path: Path,
@@ -901,6 +964,10 @@ class FileWriteToolkit(BaseToolkit):
             content (str): The content to write.
             encoding (str): Character encoding to use. (default: :obj:`utf-8`)
         """
+        # For HTML files, ensure UTF-8 meta tag is present
+        if file_path.suffix.lower() in ['.html', '.htm']:
+            content = self._ensure_html_utf8_meta(content)
+
         with file_path.open("w", encoding=encoding) as f:
             f.write(content)
 
