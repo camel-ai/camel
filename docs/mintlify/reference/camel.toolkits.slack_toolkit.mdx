@@ -78,8 +78,9 @@ channel created.
 def join_slack_channel(self, channel_id: str):
 ```
 
-Joins an existing Slack channel. To get the `channel_id` of a
-channel, you can use the `get_slack_channel_information` function.
+Joins an existing Slack channel. When use this function you must
+call `get_slack_channel_information` function first to get the
+`channel id`.
 
 **Parameters:**
 
@@ -97,8 +98,9 @@ channel, you can use the `get_slack_channel_information` function.
 def leave_slack_channel(self, channel_id: str):
 ```
 
-Leaves an existing Slack channel. To get the `channel_id` of a
-channel, you can use the `get_slack_channel_information` function.
+Leaves an existing Slack channel. When use this function you must
+call `get_slack_channel_information` function first to get the
+`channel id`.
 
 **Parameters:**
 
@@ -130,9 +132,9 @@ object in the list contains 'id', 'name', 'created', and
 def get_slack_channel_message(self, channel_id: str):
 ```
 
-Retrieve messages from a Slack channel. To get the `channel_id`
-of a channel, you can use the `get_slack_channel_information`
-function.
+Retrieve messages from a Slack channel. When use this function you
+must call `get_slack_channel_information` function first to get the
+`channel id`.
 
 **Parameters:**
 
@@ -157,8 +159,9 @@ def send_slack_message(
 ):
 ```
 
-Send a message to a Slack channel. To get the `channel_id` of a
-channel, you can use the `get_slack_channel_information` function.
+Send a message to a Slack channel. When use this function you must
+call `get_slack_channel_information` function first to get the
+`channel id`.
 
 **Parameters:**
 
@@ -180,7 +183,9 @@ message.
 def delete_slack_message(self, time_stamp: str, channel_id: str):
 ```
 
-Delete a message from a Slack channel.
+Delete a message from a Slack channel. When use this function you
+must call `get_slack_channel_information` function first to get the
+`channel id`.
 
 **Parameters:**
 
