@@ -13,7 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
+
+from openai.types.chat import ChatCompletionContentPartTextParam
 
 from camel.messages import (
     BaseMessage,
@@ -47,16 +49,12 @@ class FunctionCallingMessage(BaseMessage):
             (default: :obj:`None`)
         tool_call_id (Optional[str]): The ID of the tool call, if available.
             (default: :obj:`None`)
-        mask_output (Optional[bool]): Whether to return a sanitized placeholder
-            instead of the raw tool output.
-            (default: :obj:`False`)
     """
 
     func_name: Optional[str] = None
     args: Optional[Dict] = None
     result: Optional[Any] = None
     tool_call_id: Optional[str] = None
-    mask_output: Optional[bool] = False
 
     def to_openai_message(
         self,
@@ -99,8 +97,10 @@ class FunctionCallingMessage(BaseMessage):
             # This is a function call
             # TODO: split the incoming types to be more specific
             #  and remove the type ignores
+            content_str = self.content or ""
+
             content = function_format.format_tool_call(
-                self.content or "",  # type: ignore[arg-type]
+                content_str,  # type: ignore[arg-type]
                 self.func_name,  # type: ignore[arg-type]
                 self.args,  # type: ignore[arg-type]
             )
@@ -109,13 +109,10 @@ class FunctionCallingMessage(BaseMessage):
             # This is a function response
             # TODO: Allow for more flexible setting of tool role,
             #  optionally to be the same as assistant messages
-            if self.mask_output:
-                content = "[MASKED]"
-            else:
-                content = function_format.format_tool_response(
-                    self.func_name,  # type: ignore[arg-type]
-                    self.result,  # type: ignore[arg-type]
-                )
+            content = function_format.format_tool_response(
+                self.func_name,  # type: ignore[arg-type]
+                self.result,  # type: ignore[arg-type]
+            )
             return ShareGPTMessage(from_="tool", value=content)  # type: ignore[call-arg]
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
@@ -131,13 +128,22 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name or arguments."
             )
 
+        # Use content array format
+        content_value: List[ChatCompletionContentPartTextParam] = []
+        if self.content:
+            content_value = [
+                ChatCompletionContentPartTextParam(
+                    type="text", text=self.content
+                )
+            ]
+
         return {
             "role": "assistant",
-            "content": self.content or "",
+            "content": content_value,
             "tool_calls": [
                 {
-                    "id": self.tool_call_id or "null",
                     "type": "function",
+                    "id": self.tool_call_id or "null",
                     "function": {
                         "name": self.func_name,
                         "arguments": json.dumps(self.args, ensure_ascii=False),
@@ -161,14 +167,16 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name."
             )
 
-        if self.mask_output:
-            result_content = "[MASKED]"
-        else:
-            result_content = str(self.result)
+        result_content = str(self.result)
 
+        # Support new content array format
         return {
             "role": "tool",
-            "content": result_content,
+            "content": [
+                ChatCompletionContentPartTextParam(
+                    type="text", text=result_content
+                )
+            ],
             "tool_call_id": self.tool_call_id or "null",
         }
 
@@ -186,5 +194,4 @@ class FunctionCallingMessage(BaseMessage):
             base["result"] = self.result
         if self.tool_call_id is not None:
             base["tool_call_id"] = self.tool_call_id
-        base["mask_output"] = self.mask_output
         return base
