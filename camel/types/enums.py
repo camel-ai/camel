@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from enum import Enum, EnumMeta
-from typing import cast
+from typing import Union, cast
 
 from camel.logger import get_logger
 from camel.types.unified_model_type import UnifiedModelType
@@ -30,7 +30,7 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
-    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4o-mini")
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4.1-mini-2025-04-14")
 
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
@@ -185,8 +185,8 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
-    GEMINI_2_5_FLASH_PREVIEW = "gemini-2.5-flash-preview-04-17"
-    GEMINI_2_5_PRO_PREVIEW = "gemini-2.5-pro-preview-06-05"
+    GEMINI_2_5_FLASH = "gemini-2.5-flash"
+    GEMINI_2_5_PRO = "gemini-2.5-pro"
     GEMINI_2_0_FLASH = "gemini-2.0-flash"
     GEMINI_2_0_FLASH_EXP = "gemini-2.0-flash-exp"
     GEMINI_2_0_FLASH_THINKING = "gemini-2.0-flash-thinking-exp"
@@ -209,6 +209,7 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
     MISTRAL_MEDIUM_3 = "mistral-medium-latest"
     MAGISTRAL_MEDIUM = "magistral-medium-2506"
+    MISTRAL_SMALL_3_2 = "mistral-small-2506"
 
     # Reka models
     REKA_CORE = "reka-core"
@@ -244,6 +245,7 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_QWQ_32B = "qwq-32b-preview"
     QWEN_QVQ_72B = "qvq-72b-preview"
     QWEN_QWQ_PLUS = "qwq-plus"
+    QWEN_3_CODER_PLUS = "qwen3-coder-plus"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -269,6 +271,7 @@ class ModelType(UnifiedModelType, Enum):
     MOONSHOT_V1_8K = "moonshot-v1-8k"
     MOONSHOT_V1_32K = "moonshot-v1-32k"
     MOONSHOT_V1_128K = "moonshot-v1-128k"
+    MOONSHOT_KIMI_K2 = "kimi-k2-0711-preview"
 
     # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
@@ -386,6 +389,16 @@ class ModelType(UnifiedModelType, Enum):
     )
     WATSONX_MISTRAL_LARGE = "mistralai/mistral-large"
 
+    # Qianfan models
+    ERNIE_X1_TURBO_32K = "ernie-x1-turbo-32k"
+    ERNIE_X1_32K = "ernie-x1-32k"
+    ERNIE_X1_32K_PREVIEW = "ernie-x1-32k-preview"
+    ERNIE_4_5_TURBO_128K = "ernie-4.5-turbo-128k"
+    ERNIE_4_5_TURBO_32K = "ernie-4.5-turbo-32k"
+    DEEPSEEK_V3 = "deepseek-v3"
+    DEEPSEEK_R1 = "deepseek-r1"
+    QWEN3_235B_A22B = "qwen3-235b-a22b"
+
     # Crynux models
     CRYNUX_DEEPSEEK_R1_DISTILL_QWEN_1_5B = (
         "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
@@ -408,11 +421,14 @@ class ModelType(UnifiedModelType, Enum):
     def __str__(self):
         return self.value
 
-    def __new__(cls, value) -> "ModelType":
+    def __repr__(self):
+        return self.value
+
+    def __new__(cls, value: Union["ModelType", str]) -> "ModelType":
         return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
     @classmethod
-    def from_name(cls, name):
+    def from_name(cls, name: str) -> "ModelType":
         r"""Returns the ModelType enum value from a string."""
         for model_type in cls:
             if model_type.value == name:
@@ -636,6 +652,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_3B,
             ModelType.MISTRAL_MEDIUM_3,
             ModelType.MAGISTRAL_MEDIUM,
+            ModelType.MISTRAL_SMALL_3_2,
         }
 
     @property
@@ -664,8 +681,8 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
-            ModelType.GEMINI_2_5_FLASH_PREVIEW,
-            ModelType.GEMINI_2_5_PRO_PREVIEW,
+            ModelType.GEMINI_2_5_FLASH,
+            ModelType.GEMINI_2_5_PRO,
             ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_2_0_FLASH_EXP,
             ModelType.GEMINI_2_0_FLASH_THINKING,
@@ -747,6 +764,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_PLUS_2025_04_28,
             ModelType.QWEN_TURBO_LATEST,
             ModelType.QWEN_TURBO_2025_04_28,
+            ModelType.QWEN_3_CODER_PLUS,
         }
 
     @property
@@ -821,6 +839,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_8K,
             ModelType.MOONSHOT_V1_32K,
             ModelType.MOONSHOT_V1_128K,
+            ModelType.MOONSHOT_KIMI_K2,
         }
 
     @property
@@ -865,6 +884,19 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.WATSONX_LLAMA_3_2_90B_VISION_INSTRUCT,
             ModelType.WATSONX_LLAMA_GUARD_3_11B_VISION_INSTRUCT,
             ModelType.WATSONX_MISTRAL_LARGE,
+        }
+
+    @property
+    def is_qianfan(self) -> bool:
+        return self in {
+            ModelType.ERNIE_X1_TURBO_32K,
+            ModelType.ERNIE_X1_32K,
+            ModelType.ERNIE_X1_32K_PREVIEW,
+            ModelType.ERNIE_4_5_TURBO_128K,
+            ModelType.ERNIE_4_5_TURBO_32K,
+            ModelType.DEEPSEEK_V3,
+            ModelType.DEEPSEEK_R1,
+            ModelType.QWEN3_235B_A22B,
         }
 
     @property
@@ -1038,6 +1070,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CRYNUX_QWEN_2_5_7B_INSTRUCT,
             ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_1_8B,
             ModelType.CRYNUX_NOUS_HERMES_3_LLAMA_3_2_3B,
+            ModelType.ERNIE_X1_TURBO_32K,
+            ModelType.ERNIE_X1_32K,
+            ModelType.ERNIE_X1_32K_PREVIEW,
+            ModelType.ERNIE_4_5_TURBO_32K,
+            ModelType.QWEN3_235B_A22B,
         }:
             return 32_000
         elif self in {
@@ -1118,6 +1155,7 @@ class ModelType(UnifiedModelType, Enum):
             return 65_535
         elif self in {
             ModelType.NOVITA_QWEN_2_5_V1_72B,
+            ModelType.DEEPSEEK_R1,
         }:
             return 96_000
         elif self in {
@@ -1137,6 +1175,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
+            ModelType.MISTRAL_SMALL_3_2,
             ModelType.QWEN_2_5_CODER_32B,
             ModelType.QWEN_2_5_VL_72B,
             ModelType.QWEN_2_5_72B,
@@ -1171,6 +1210,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
             ModelType.MISTRAL_MEDIUM_3,
+            ModelType.ERNIE_4_5_TURBO_128K,
+            ModelType.DEEPSEEK_V3,
+            ModelType.MOONSHOT_KIMI_K2,
         }:
             return 128_000
         elif self in {
@@ -1247,8 +1289,8 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 512_000
         elif self in {
-            ModelType.GEMINI_2_5_FLASH_PREVIEW,
-            ModelType.GEMINI_2_5_PRO_PREVIEW,
+            ModelType.GEMINI_2_5_FLASH,
+            ModelType.GEMINI_2_5_PRO,
             ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_2_0_FLASH_EXP,
             ModelType.GEMINI_2_0_FLASH_THINKING,
@@ -1266,6 +1308,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
         }:
             return 1_048_576
+        elif self in {
+            ModelType.QWEN_3_CODER_PLUS,
+        }:
+            return 1_000_000
         elif self in {
             ModelType.QWEN_LONG,
             ModelType.TOGETHER_LLAMA_4_SCOUT,
@@ -1502,6 +1548,7 @@ class ModelPlatformType(Enum):
     NETMIND = "netmind"
     NOVITA = "novita"
     WATSONX = "watsonx"
+    QIANFAN = "qianfan"
     CRYNUX = "crynux"
 
     @classmethod

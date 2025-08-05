@@ -49,6 +49,9 @@ class VLLMModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client initialization.
 
     References:
         https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
@@ -62,6 +65,8 @@ class VLLMModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = VLLMConfig().as_dict()
@@ -79,6 +84,8 @@ class VLLMModel(OpenAICompatibleModel):
             url=self._url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
 
     def _start_server(self) -> None:

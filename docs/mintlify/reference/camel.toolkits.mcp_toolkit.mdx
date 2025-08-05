@@ -76,7 +76,6 @@ await toolkit.disconnect()
 - **config_path** (Optional[str], optional): Path to a JSON configuration file defining MCP servers. The file should contain server configurations in the standard MCP format. (default: :obj:`None`)
 - **config_dict** (Optional[Dict[str, Any]], optional): Dictionary containing MCP server configurations in the same format as the config file. This allows for programmatic configuration without file I/O. (default: :obj:`None`)
 - **timeout** (Optional[float], optional): Timeout for connection attempts in seconds. This timeout applies to individual client connections. (default: :obj:`None`)
-- **strict** (Optional[bool], optional): Flag to indicate strict mode. (default: :obj:`False`)
 - **clients** (List[MCPClient]): List of :obj:`MCPClient` instances being managed by this toolkit.
 
 <a id="camel.toolkits.mcp_toolkit.MCPToolkit.__init__"></a>
@@ -89,8 +88,7 @@ def __init__(
     clients: Optional[List[MCPClient]] = None,
     config_path: Optional[str] = None,
     config_dict: Optional[Dict[str, Any]] = None,
-    timeout: Optional[float] = None,
-    strict: Optional[bool] = False
+    timeout: Optional[float] = None
 ):
 ```
 
@@ -162,8 +160,7 @@ def create_sync(
     clients: Optional[List[MCPClient]] = None,
     config_path: Optional[str] = None,
     config_dict: Optional[Dict[str, Any]] = None,
-    timeout: Optional[float] = None,
-    strict: Optional[bool] = False
+    timeout: Optional[float] = None
 ):
 ```
 
@@ -199,6 +196,25 @@ def _create_client_from_config(self, name: str, cfg: Dict[str, Any]):
 
 Create a single MCP client from configuration.
 
+<a id="camel.toolkits.mcp_toolkit.MCPToolkit._ensure_strict_tool_schema"></a>
+
+### _ensure_strict_tool_schema
+
+```python
+def _ensure_strict_tool_schema(self, tool: FunctionTool):
+```
+
+Ensure a tool has a strict schema compatible with OpenAI's
+requirements according to the structured outputs specification.
+
+**Parameters:**
+
+- **tool** (FunctionTool): The tool to check and update if necessary.
+
+**Returns:**
+
+  FunctionTool: The tool with a strict schema.
+
 <a id="camel.toolkits.mcp_toolkit.MCPToolkit.get_tools"></a>
 
 ### get_tools
@@ -210,8 +226,9 @@ def get_tools(self):
 **Returns:**
 
   List[FunctionTool]: Combined list of all available function tools
-from all connected MCP servers. Returns an empty list if no
-clients are connected or if no tools are available.
+from all connected MCP servers with strict schemas. Returns an
+empty list if no clients are connected or if no tools are
+available.
 
 <a id="camel.toolkits.mcp_toolkit.MCPToolkit.get_text_tools"></a>
 

@@ -50,6 +50,10 @@ class AWSBedrockModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
 
     References:
         https://docs.aws.amazon.com/bedrock/latest/APIReference/welcome.html
@@ -69,6 +73,8 @@ class AWSBedrockModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = BedrockConfig().as_dict()
@@ -84,6 +90,8 @@ class AWSBedrockModel(OpenAICompatibleModel):
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
 
     async def _arun(
