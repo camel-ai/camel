@@ -169,7 +169,9 @@ and generation.
 <operating_environment>
 - **System**: {platform.system()} ({platform.machine()})
 - **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must 
-occur here, but you can access files from any place in the file system.
+occur here, but you can access files from any place in the file system. For 
+all file system operations, you MUST use absolute paths to ensure precision 
+and avoid ambiguity.
 - **Current Date**: {datetime.date.today()}.
 </operating_environment>
 
@@ -379,8 +381,10 @@ comprehensive and well-documented information.
 
 <operating_environment>
 - **System**: {platform.system()} ({platform.machine()})
-- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must 
-occur here.
+- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must
+  occur here, but you can access files from any place in the file system. For
+  all file system operations, you MUST use absolute paths to ensure precision
+  and avoid ambiguity.
 - **Current Date**: {datetime.date.today()}.
 </operating_environment>
 
@@ -535,8 +539,10 @@ to be embedded in your work.
 
 <operating_environment>
 - **System**: {platform.system()} ({platform.machine()})
-- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must 
-occur here.
+- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must
+  occur here, but you can access files from any place in the file system. For
+  all file system operations, you MUST use absolute paths to ensure precision
+  and avoid ambiguity.
 - **Current Date**: {datetime.date.today()}.
 </operating_environment>
 
@@ -727,8 +733,10 @@ presentations, and other documents.
 
 <operating_environment>
 - **System**: {platform.system()} ({platform.machine()})
-- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must 
-occur here.
+- **Working Directory**: `{WORKING_DIRECTORY}`. All local file operations must
+  occur here, but you can access files from any place in the file system. For
+  all file system operations, you MUST use absolute paths to ensure precision
+  and avoid ambiguity.
 - **Current Date**: {datetime.date.today()}.
 </operating_environment>
 
@@ -940,8 +948,10 @@ async def main():
             f""""
 You are a helpful coordinator.
 - You are now working in system {platform.system()} with architecture
-{platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
-work related to local operations should be done in that directory.
+{platform.machine()} at working directory `{WORKING_DIRECTORY}`. All local
+file operations must occur here, but you can access files from any place in
+the file system. For all file system operations, you MUST use absolute paths
+to ensure precision and avoid ambiguity.
 The current date is {datetime.date.today()}. For any date-related tasks, you 
 MUST use this as the current date.
 
@@ -962,8 +972,10 @@ access and can resolve a wide range of issues.
 
 You are a helpful task planner.
 - You are now working in system {platform.system()} with architecture
-{platform.machine()} at working directory `{WORKING_DIRECTORY}`. All your
-work related to local operations should be done in that directory.
+{platform.machine()} at working directory `{WORKING_DIRECTORY}`. All local
+file operations must occur here, but you can access files from any place in
+the file system. For all file system operations, you MUST use absolute paths
+to ensure precision and avoid ambiguity.
 The current date is {datetime.date.today()}. For any date-related tasks, you 
 MUST use this as the current date.
         """,
@@ -981,8 +993,10 @@ MUST use this as the current date.
         f"detailed, and easy-to-read format. Avoid using markdown tables for "
         f"presenting data; use plain text formatting instead. You are now "
         f"working in "
-        f"`{WORKING_DIRECTORY}` All your work related to local "
-        "operations should be done in that "
+        f"`{WORKING_DIRECTORY}` All local file operations must occur here, "
+        f"but you can access files from any place in the file system. For all "
+        f"file system operations, you MUST use absolute paths to ensure "
+        f"precision and avoid ambiguity."
         "directory. You can also communicate with other agents "
         "using messaging tools - use `list_available_agents` to see "
         "available team members and `send_message` to coordinate work "
