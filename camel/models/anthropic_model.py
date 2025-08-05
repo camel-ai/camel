@@ -21,8 +21,8 @@ from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import (
-    AnthropicTokenCounter,
     BaseTokenCounter,
+    OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
 )
@@ -141,11 +141,13 @@ class AnthropicModel(OpenAICompatibleModel):
         r"""Initialize the token counter for the model backend.
 
         Returns:
-            BaseTokenCounter: The token counter following the model's
+            OpenAITokenCounter: The token counter following the model's
                 tokenization style.
         """
+        # TODO: use anthropic token counter
+
         if not self._token_counter:
-            self._token_counter = AnthropicTokenCounter(self.model_type)
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     def check_model_config(self):
