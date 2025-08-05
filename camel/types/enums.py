@@ -498,7 +498,14 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O4_MINI,
             ModelType.O3,
         }
-
+        
+    @property
+    def is_amd(self) -> bool:
+        r"""Returns whether this type of models is a AMD model."""
+        return self in {
+            ModelType.AMD_GPT4,
+        }
+        
     @property
     def is_aws_bedrock(self) -> bool:
         r"""Returns whether this type of models is an AWS Bedrock model."""
@@ -1535,6 +1542,7 @@ class ModelPlatformType(Enum):
     COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
+    AMD = "amd"
     NVIDIA = "nvidia"
     DEEPSEEK = "deepseek"
     PPIO = "ppio"
