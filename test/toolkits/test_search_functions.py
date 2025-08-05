@@ -90,6 +90,339 @@ def test_google_api():
             assert result.status_code == 200
 
 
+@patch('requests.get')
+def test_search_google_web_success(mock_get, search_toolkit):
+    """Test successful Google web search."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "items": [
+            {
+                "title": "Test Title 1",
+                "snippet": "Test snippet 1",
+                "link": "https://example1.com",
+                "pagemap": {
+                    "metatags": [{"og:description": "Test long description 1"}]
+                },
+            },
+            {
+                "title": "Test Title 2",
+                "snippet": "Test snippet 2",
+                "link": "https://example2.com",
+                "pagemap": {
+                    "metatags": [{"description": "Test long description 2"}]
+                },
+            },
+        ]
+    }
+    mock_get.return_value = mock_response
+
+    with patch.dict(
+        os.environ,
+        {
+            'GOOGLE_API_KEY': 'fake_api_key',
+            'SEARCH_ENGINE_ID': 'fake_search_engine_id',
+        },
+    ):
+        result = search_toolkit.search_google(
+            query="test query", number_of_result_pages=2
+        )
+
+    assert len(result) == 2
+    assert result[0] == {
+        "result_id": 1,
+        "title": "Test Title 1",
+        "description": "Test snippet 1",
+        "long_description": "Test long description 1",
+        "url": "https://example1.com",
+    }
+    assert result[1] == {
+        "result_id": 2,
+        "title": "Test Title 2",
+        "description": "Test snippet 2",
+        "long_description": "Test long description 2",
+        "url": "https://example2.com",
+    }
+
+    # Verify the request was made with correct parameters
+    mock_get.assert_called_once()
+    call_args = mock_get.call_args[0][0]
+    assert "q=test%20query" in call_args
+    assert "num=2" in call_args
+
+
+@patch('requests.get')
+def test_search_google_image_success(mock_get, search_toolkit):
+    """Test successful Google image search."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "items": [
+            {
+                "title": "Image Title 1",
+                "link": "https://example.com/image1.jpg",
+                "displayLink": "example.com",
+                "image": {
+                    "contextLink": "https://example.com/page1.html",
+                    "width": 800,
+                    "height": 600,
+                },
+            }
+        ]
+    }
+    mock_get.return_value = mock_response
+
+    with patch.dict(
+        os.environ,
+        {
+            'GOOGLE_API_KEY': 'fake_api_key',
+            'SEARCH_ENGINE_ID': 'fake_search_engine_id',
+        },
+    ):
+        result = search_toolkit.search_google(
+            query="test image", search_type="image", number_of_result_pages=1
+        )
+
+    assert len(result) == 1
+    assert result[0] == {
+        "result_id": 1,
+        "title": "Image Title 1",
+        "image_url": "https://example.com/image1.jpg",
+        "display_link": "example.com",
+        "context_url": "https://example.com/page1.html",
+        "width": 800,
+        "height": 600,
+    }
+
+    # Verify searchType parameter was included
+    call_args = mock_get.call_args[0][0]
+    assert "searchType=image" in call_args
+
+
+@patch('requests.get')
+def test_search_google_no_results(mock_get, search_toolkit):
+    """Test Google search with no results."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "searchInformation": {"totalResults": "0"}
+    }
+    mock_get.return_value = mock_response
+
+    with patch.dict(
+        os.environ,
+        {
+            'GOOGLE_API_KEY': 'fake_api_key',
+            'SEARCH_ENGINE_ID': 'fake_search_engine_id',
+        },
+    ):
+        result = search_toolkit.search_google(query="very specific query")
+
+    assert len(result) == 1
+    assert "error" in result[0]
+    assert "No results found" in result[0]["error"]
+
+
+def test_search_google_parameter_validation(search_toolkit):
+    """Test parameter validation for Google search."""
+    with patch.dict(
+        os.environ,
+        {
+            'GOOGLE_API_KEY': 'fake_api_key',
+            'SEARCH_ENGINE_ID': 'fake_search_engine_id',
+        },
+    ):
+        # Test invalid start_page
+        with pytest.raises(
+            ValueError, match="start_page must be a positive integer"
+        ):
+            search_toolkit.search_google(query="test", start_page=0)
+
+        with pytest.raises(
+            ValueError, match="start_page must be a positive integer"
+        ):
+            search_toolkit.search_google(query="test", start_page=-1)
+
+        # Test invalid number_of_result_pages
+        with pytest.raises(
+            ValueError,
+            match="number_of_result_pages must be a positive integer",
+        ):
+            search_toolkit.search_google(
+                query="test", number_of_result_pages=0
+            )
+
+        # Test invalid search_type
+        with pytest.raises(
+            ValueError, match="search_type must be either 'web' or 'image'"
+        ):
+            search_toolkit.search_google(query="test", search_type="invalid")
+
+
+@patch('requests.get')
+def test_search_google_error_handling(mock_get, search_toolkit):
+    """Test error handling in Google search."""
+    with patch.dict(
+        os.environ,
+        {
+            'GOOGLE_API_KEY': 'fake_api_key',
+            'SEARCH_ENGINE_ID': 'fake_search_engine_id',
+        },
+    ):
+        # Test timeout error
+        mock_get.side_effect = requests.exceptions.Timeout()
+        result = search_toolkit.search_google(query="test")
+        assert len(result) == 1
+        assert "error" in result[0]
+        assert "timed out" in result[0]["error"]
+
+        # Test HTTP 429 error (rate limit) with API message
+        mock_response = MagicMock()
+        mock_error_response = MagicMock()
+        mock_error_response.status_code = 429
+        mock_error_response.json.return_value = {
+            "error": {
+                "code": 429,
+                "message": "Rate limit exceeded. Try again in 1 minute.",
+            }
+        }
+        mock_response.raise_for_status.side_effect = (
+            requests.exceptions.HTTPError(response=mock_error_response)
+        )
+        mock_get.side_effect = None
+        mock_get.return_value = mock_response
+        result = search_toolkit.search_google(query="test")
+        assert "Google API rate limit exceeded" in result[0]["error"]
+        assert "Try again in 1 minute" in result[0]["error"]
+
+        # Test HTTP 400 error (bad request) with API key error
+        mock_error_response.status_code = 400
+        mock_error_response.json.return_value = {
+            "error": {
+                "code": 400,
+                "message": "API key not valid. Please pass a valid API key.",
+            }
+        }
+        mock_response.raise_for_status.side_effect = (
+            requests.exceptions.HTTPError(response=mock_error_response)
+        )
+        result = search_toolkit.search_google(query="test")
+        assert "Invalid Google API key" in result[0]["error"]
+        assert "API key not valid" in result[0]["error"]
+
+        # Test HTTP 400 error (bad request) without API key error
+        mock_error_response.json.return_value = {
+            "error": {
+                "code": 400,
+                "message": "Request contains an invalid argument.",
+            }
+        }
+        result = search_toolkit.search_google(query="test")
+        assert "Bad request to Google API" in result[0]["error"]
+        assert "invalid argument" in result[0]["error"]
+
+        # Test HTTP 403 error (forbidden) - fallback when no JSON
+        mock_error_response.status_code = 403
+        mock_error_response.json.side_effect = ValueError("No JSON")
+        mock_response.raise_for_status.side_effect = (
+            requests.exceptions.HTTPError(response=mock_error_response)
+        )
+        result = search_toolkit.search_google(query="test")
+        assert "access forbidden" in result[0]["error"]
+
+
+@patch('requests.get')
+def test_search_google_with_exclude_domains(mock_get):
+    """Test Google search with excluded domains."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"items": []}
+    mock_get.return_value = mock_response
+
+    # Create toolkit with exclude_domains
+    toolkit_with_exclusions = SearchToolkit(
+        exclude_domains=["example.com", "test.com"]
+    )
+
+    with patch.dict(
+        os.environ,
+        {
+            'GOOGLE_API_KEY': 'fake_api_key',
+            'SEARCH_ENGINE_ID': 'fake_search_engine_id',
+        },
+    ):
+        toolkit_with_exclusions.search_google(query="test query")
+
+    # Verify the query includes exclusion terms
+    call_args = mock_get.call_args[0][0]
+    assert "test%20query%20-site%3Aexample.com%20-site%3Atest.com" in call_args
+
+
+@patch('requests.get')
+def test_search_google_special_characters(mock_get, search_toolkit):
+    """Test Google search with special characters in query."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"items": []}
+    mock_get.return_value = mock_response
+
+    with patch.dict(
+        os.environ,
+        {
+            'GOOGLE_API_KEY': 'fake_api_key',
+            'SEARCH_ENGINE_ID': 'fake_search_engine_id',
+        },
+    ):
+        search_toolkit.search_google(query="C++ & Python programming")
+
+    # Verify special characters are properly encoded
+    call_args = mock_get.call_args[0][0]
+    assert "C%2B%2B%20%26%20Python%20programming" in call_args
+
+
+@patch('requests.get')
+def test_search_google_without_metatags(mock_get, search_toolkit):
+    """Test Google search handling results without metatags."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "items": [
+            {
+                "title": "Test Title Without Metatags",
+                "snippet": "Test snippet without metatags",
+                "link": "https://example.com/no-metatags",
+                # No pagemap/metatags
+            },
+            {
+                "title": "Test Title With Twitter Description",
+                "snippet": "Test snippet with twitter description",
+                "link": "https://example.com/twitter",
+                "pagemap": {
+                    "metatags": [
+                        {"twitter:description": "Twitter description only"}
+                    ]
+                },
+            },
+        ]
+    }
+    mock_get.return_value = mock_response
+
+    with patch.dict(
+        os.environ,
+        {
+            'GOOGLE_API_KEY': 'fake_api_key',
+            'SEARCH_ENGINE_ID': 'fake_search_engine_id',
+        },
+    ):
+        result = search_toolkit.search_google(query="test query")
+
+    assert len(result) == 2
+    # First result should have N/A for long_description
+    assert result[0]["long_description"] == "N/A"
+    # Second result should use twitter:description
+    assert result[1]["long_description"] == "Twitter description only"
+
+
 search_duckduckgo = SearchToolkit().search_duckduckgo
 
 
