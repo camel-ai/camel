@@ -253,7 +253,7 @@ wheels = [
 
 [[package]]
 name = "anyio"
-version = "4.9.0"
+version = "4.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
@@ -261,9 +261,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/95/7d/4c1bd541d4dffa1b52bd83fb8527089e097a106fc90b467a7313b105f840/anyio-4.9.0.tar.gz", hash = "sha256:673c0c244e15788651a4ff38710fea9675823028a6f08a5eda409e0c9840a028", size = 190949, upload-time = "2025-03-17T00:02:54.77Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f1/b4/636b3b65173d3ce9a38ef5f0522789614e590dab6a8d505340a4efe4c567/anyio-4.10.0.tar.gz", hash = "sha256:3f3fae35c96039744587aa5b8371e7e8e603c0702999535961dd336026973ba6", size = 213252, upload-time = "2025-08-04T08:54:26.451Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a1/ee/48ca1a7c89ffec8b6a0c5d02b89c305671d5ffd8d3c94acf8b8c408575bb/anyio-4.9.0-py3-none-any.whl", hash = "sha256:9f76d541cad6e36af7beb62e978876f3b41e3e04f2c1fbf0884604c0a9c4d93c", size = 100916, upload-time = "2025-03-17T00:02:52.713Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/12/e5e0282d673bb9746bacfb6e2dba8719989d3660cdb2ea79aee9a9651afb/anyio-4.10.0-py3-none-any.whl", hash = "sha256:60e474ac86736bbfd6f210f7a61218939c318f43f9972497381f1c5e930ed3d1", size = 107213, upload-time = "2025-08-04T08:54:24.882Z" },
 ]
 
 [[package]]
@@ -677,7 +677,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.74a5"
+version = "0.2.74a6"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -1695,7 +1695,7 @@ wheels = [
 
 [[package]]
 name = "cohere"
-version = "5.16.1"
+version = "5.16.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fastavro" },
@@ -1708,9 +1708,9 @@ dependencies = [
     { name = "types-requests" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ed/c7/fd1e4c61cf3f0aac9d9d73fce63a766c9778e1270f7a26812eb289b4851d/cohere-5.16.1.tar.gz", hash = "sha256:02aa87668689ad0fbac2cda979c190310afdb99fb132552e8848fdd0aff7cd40", size = 162300, upload-time = "2025-07-09T20:47:36.348Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ed/c0/dcbbef24aea47b7fa58887dd3e002fa378a04cef19ad0207a90c2eadfee8/cohere-5.16.2.tar.gz", hash = "sha256:30febd58168983647b4125831a6ac2a8db4643d222cf04373e53b9959c8d05f9", size = 163976, upload-time = "2025-08-04T13:06:37.004Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/82/c6/72309ac75f3567425ca31a601ad394bfee8d0f4a1569dfbc80cbb2890d07/cohere-5.16.1-py3-none-any.whl", hash = "sha256:37e2c1d69b1804071b5e5f5cb44f8b74127e318376e234572d021a1a729c6baa", size = 291894, upload-time = "2025-07-09T20:47:34.919Z" },
+    { url = "https://files.pythonhosted.org/packages/46/8a/3fbe81a41673d320acbc721eb4a050bef15c8bafa251b10eeddfe0cf9f61/cohere-5.16.2-py3-none-any.whl", hash = "sha256:c2c877dd6fd0bdbc8686b390322a340ad736e1cc65e3e0b6b0cbdc339bfeadbc", size = 294027, upload-time = "2025-08-04T13:06:35.325Z" },
 ]
 
 [[package]]
@@ -2339,7 +2339,7 @@ wheels = [
 
 [[package]]
 name = "e2b"
-version = "1.10.0"
+version = "1.11.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -2350,9 +2350,9 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/12/4f/77e4e5e6be8a181ec71fdd7e85271131a096db90b94004de58a146efe589/e2b-1.10.0.tar.gz", hash = "sha256:fc9120ad890476b6c8e8c51057be2df0a314b58eee8af52daca704bef0465237", size = 62115, upload-time = "2025-07-31T09:44:23.629Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/75/3a/89bb3d479299ede7bca0f34cd9117e851244b6e418ce9c8c894b6c0c3616/e2b-1.11.0.tar.gz", hash = "sha256:40023cf0d569d49b5d9688a21f84d41bbbf57fbb49984dcb74490f41ab5a5c6d", size = 62028, upload-time = "2025-08-04T12:39:44.352Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c7/bc/a24e14c663705b32efcd8e1973c94e2e778d178097a78a7d41fd9874b30a/e2b-1.10.0-py3-none-any.whl", hash = "sha256:15f06a3b8e515e43eea2f8a0793079ebc5d2b2ef69b718cdb9ef87fb4234dd6f", size = 114976, upload-time = "2025-07-31T09:44:22.299Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/61/d0e2c5c037123dcff8d89d2ba3d7dbc7df9c4c8fe2c40b1924a66e3a1626/e2b-1.11.0-py3-none-any.whl", hash = "sha256:3027dd2e9aed1b90e4475c879238bd8a19cf1dc6fd5f042c5dc1a06027cd3b35", size = 114951, upload-time = "2025-08-04T12:39:42.581Z" },
 ]
 
 [[package]]
