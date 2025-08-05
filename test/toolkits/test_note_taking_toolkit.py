@@ -42,7 +42,7 @@ def test_create_note(note_taking_toolkit):
     assert "already exists" in result
 
     # Test creating a note with empty content
-    result = note_taking_toolkit.create_note("empty_note")
+    result = note_taking_toolkit.create_note("empty_note", "")
     assert "successfully created" in result
 
 
