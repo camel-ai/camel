@@ -60,6 +60,8 @@ class ModelType(UnifiedModelType, Enum):
     AWS_CLAUDE_SONNET_4 = "anthropic.claude-sonnet-4-20250514-v1:0"
     AWS_CLAUDE_OPUS_4 = "anthropic.claude-opus-4-20250514-v1:0"
 
+    AMD_GPT4 = "dvue-aoai-001-gpt-4.1"
+
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
     GLM_4V_FLASH = "glm-4v-flash"
