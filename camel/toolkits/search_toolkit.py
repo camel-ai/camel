@@ -1317,6 +1317,73 @@ class SearchToolkit(BaseToolkit):
                 f"search: {e!s}"
             }
 
+    @api_keys_required([(None, 'METASO_API_KEY')])
+    def search_metaso(
+        self,
+        query: str,
+        page: int = 1,
+        include_summary: bool = False,
+        include_raw_content: bool = False,
+        concise_snippet: bool = False,
+        scope: Literal[
+            "webpage", "document", "scholar", "image", "video", "podcast"
+        ] = "webpage",
+    ) -> Dict[str, Any]:
+        r"""Perform a web search using the metaso.cn API.
+
+        Args:
+            query (str): The search query string.
+            page (int): Page number. (default: :obj:`1`)
+            include_summary (bool): Whether to include summary in the result.
+                (default: :obj:`False`)
+            include_raw_content (bool): Whether to include raw content in the
+                result. (default: :obj:`False`)
+            concise_snippet (bool): Whether to return concise snippet.
+                (default: :obj:`False`)
+            scope (Literal["webpage", "document", "scholar", "image", "video",
+                "podcast"]): Search scope. (default: :obj:`"webpage"`)
+
+        Returns:
+            Dict[str, Any]: Search results or error information.
+        """
+        import http.client
+        import json
+
+        # It is recommended to put the token in environment variable for
+        # security
+
+        METASO_API_KEY = os.getenv("METASO_API_KEY")
+
+        conn = http.client.HTTPSConnection("metaso.cn")
+        payload = json.dumps(
+            {
+                "q": query,
+                "scope": scope,
+                "includeSummary": include_summary,
+                "page": str(page),
+                "includeRawContent": include_raw_content,
+                "conciseSnippet": concise_snippet,
+            }
+        )
+        headers = {
+            'Authorization': f'Bearer {METASO_API_KEY}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        }
+        try:
+            conn.request("POST", "/api/v1/search", payload, headers)
+            res = conn.getresponse()
+            data = res.read()
+            result = data.decode("utf-8")
+            try:
+                return json.loads(result)
+            except Exception:
+                return {
+                    "error": f"Metaso returned content could not be parsed: {result}"
+                }
+        except Exception as e:
+            return {"error": f"Metaso search failed: {e}"}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -1337,4 +1404,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_bing),
             FunctionTool(self.search_exa),
             FunctionTool(self.search_alibaba_tongxiao),
+            FunctionTool(self.search_metaso),
         ]
