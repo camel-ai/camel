@@ -463,14 +463,14 @@ Perform a web search using the metaso.cn API.
 **Parameters:**
 
 - **query** (str): The search query string.
-- **page** (int): Page number, default is 1.
-- **include_summary** (bool): Whether to include summary in the result.
-- **include_raw_content** (bool): Whether to include raw content in the result.
-- **concise_snippet** (bool): Whether to return concise snippet. scope (Literal[ "webpage", "document", "scholar", "image", "video", "podcast" ]): Search scope, default is 'webpage'.
+- **page** (int): Page number. (default: :obj:`1`) (default: 1)
+- **include_summary** (bool): Whether to include summary in the result. (default: :obj:`False`)
+- **include_raw_content** (bool): Whether to include raw content in the result. (default: :obj:`False`)
+- **concise_snippet** (bool): Whether to return concise snippet. (default: :obj:`False`) scope (Literal["webpage", "document", "scholar", "image", "video", "podcast"]): Search scope. (default: :obj:`"webpage"`)
 
 **Returns:**
 
-  dict: Search results or error information.
+  Dict[str, Any]: Search results or error information.
 
 <a id="camel.toolkits.search_toolkit.SearchToolkit.get_tools"></a>
 
