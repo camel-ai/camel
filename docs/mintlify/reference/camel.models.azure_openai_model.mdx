@@ -130,14 +130,6 @@ def _request_stream_parse(
 
 Request streaming structured output parsing.
 
-<a id="camel.models.azure_openai_model.AzureOpenAIModel.check_model_config"></a>
-
-### check_model_config
-
-```python
-def check_model_config(self):
-```
-
 <a id="camel.models.azure_openai_model.AzureOpenAIModel.stream"></a>
 
 ### stream
