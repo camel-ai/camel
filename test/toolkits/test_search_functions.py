@@ -833,3 +833,118 @@ def test_search_alibaba_tongxiao(mock_get, search_toolkit):
                 }
             ],
         }
+
+@patch('http.client.HTTPSConnection')
+def test_search_metaso_success(mock_https_connection, search_toolkit):
+    # Mock the connection and response
+    mock_conn = MagicMock()
+    mock_https_connection.return_value = mock_conn
+
+    mock_response = MagicMock()
+    mock_response.read.return_value = b'{"results": [{"title": "Test Title", "url": "https://example.com", "snippet": "Test snippet"}], "total": 1}'
+    mock_conn.getresponse.return_value = mock_response
+
+    # Mock environment variable
+    with patch.dict(os.environ, {'METASO_API_KEY': 'test_api_key'}):
+        result = search_toolkit.search_metaso(query="test query")
+
+    # Verify the result
+    expected_result = {
+        "results": [
+            {
+                "title": "Test Title",
+                "url": "https://example.com",
+                "snippet": "Test snippet"
+            }
+        ],
+        "total": 1
+    }
+    assert result == expected_result
+
+    # Verify the API call
+    mock_https_connection.assert_called_once_with("metaso.cn")
+    mock_conn.request.assert_called_once()
+
+    # Verify request parameters
+    call_args = mock_conn.request.call_args
+    assert call_args[0][0] == "POST"
+    assert call_args[0][1] == "/api/v1/search"
+
+    # Verify headers
+    headers = call_args[0][3]
+    assert headers['Authorization'] == 'Bearer test_api_key'
+    assert headers['Accept'] == 'application/json'
+    assert headers['Content-Type'] == 'application/json'
+
+
+@patch('http.client.HTTPSConnection')
+def test_search_metaso_with_parameters(mock_https_connection, search_toolkit):
+    # Mock the connection and response
+    mock_conn = MagicMock()
+    mock_https_connection.return_value = mock_conn
+
+    mock_response = MagicMock()
+    mock_response.read.return_value = b'{"results": [], "total": 0}'
+    mock_conn.getresponse.return_value = mock_response
+
+    with patch.dict(os.environ, {'METASO_API_KEY': 'test_api_key'}):
+        search_toolkit.search_metaso(
+            query="test query",
+            page=2,
+            include_summary=True,
+            include_raw_content=True,
+            concise_snippet=True,
+            scope="document"
+        )
+
+    # Verify the payload contains correct parameters
+    call_args = mock_conn.request.call_args
+    payload = call_args[0][2]
+    import json
+    payload_data = json.loads(payload)
+
+    assert payload_data["q"] == "test query"
+    assert payload_data["page"] == "2"
+    assert payload_data["includeSummary"] is True
+    assert payload_data["includeRawContent"] is True
+    assert payload_data["conciseSnippet"] is True
+    assert payload_data["scope"] == "document"
+
+
+@patch('http.client.HTTPSConnection')
+def test_search_metaso_connection_error(mock_https_connection, search_toolkit):
+    # Mock connection error
+    mock_conn = MagicMock()
+    mock_https_connection.return_value = mock_conn
+    mock_conn.request.side_effect = Exception("Connection failed")
+
+    with patch.dict(os.environ, {'METASO_API_KEY': 'test_api_key'}):
+        result = search_toolkit.search_metaso(query="test query")
+
+    assert "error" in result
+    assert "Metaso search failed: Connection failed" in result["error"]
+
+    # Verify connection was attempted
+    mock_https_connection.assert_called_once_with("metaso.cn")
+    mock_conn.request.assert_called_once()
+
+
+@patch('http.client.HTTPSConnection')
+def test_search_metaso_invalid_json(mock_https_connection, search_toolkit):
+    # Mock invalid JSON response
+    mock_conn = MagicMock()
+    mock_https_connection.return_value = mock_conn
+
+    mock_response = MagicMock()
+    mock_response.read.return_value = b'invalid json response'
+    mock_conn.getresponse.return_value = mock_response
+
+    with patch.dict(os.environ, {'METASO_API_KEY': 'test_api_key'}):
+        result = search_toolkit.search_metaso(query="test query")
+
+    assert "error" in result
+    assert "Metaso returned content could not be parsed" in result["error"]
+
+    # Verify connection was attempted
+    mock_https_connection.assert_called_once_with("metaso.cn")
+    mock_conn.request.assert_called_once()
