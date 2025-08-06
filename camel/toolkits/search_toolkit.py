@@ -455,13 +455,28 @@ class SearchToolkit(BaseToolkit):
         self,
         query: str,
         search_type: str = "web",
+        number_of_result_pages: int = 10,
+        start_page: int = 1,
     ) -> List[Dict[str, Any]]:
         r"""Use Google search engine to search information for the given query.
 
         Args:
             query (str): The query to be searched.
-            search_type (str): The type of search to perform. Either "web" for
-                web pages or "image" for image search. (default: "web")
+            search_type (str): The type of search to perform. Must be either
+                "web" for web pages or "image" for image search. Any other
+                value will raise a ValueError. (default: "web")
+            number_of_result_pages (int): The number of result pages to
+                retrieve. Must be a positive integer between 1 and 10.
+                Google Custom Search API limits results to 10 per request.
+                If a value greater than 10 is provided, it will be capped
+                at 10 with a warning. Adjust this based on your task - use
+                fewer results for focused searches and more for comprehensive
+                searches. (default: :obj:`10`)
+            start_page (int): The result page to start from. Must be a
+                positive integer (>= 1). Use this for pagination - e.g.,
+                start_page=1 for results 1-10, start_page=11 for results
+                11-20, etc. This allows agents to check initial results
+                and continue searching if needed. (default: :obj:`1`)
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
@@ -507,17 +522,40 @@ class SearchToolkit(BaseToolkit):
                     'height': 600
                 }
         """
-        from urllib.parse import urlencode
+        from urllib.parse import quote
 
         import requests
+
+        # Validate input parameters
+        if not isinstance(start_page, int) or start_page < 1:
+            raise ValueError("start_page must be a positive integer")
+
+        if (
+            not isinstance(number_of_result_pages, int)
+            or number_of_result_pages < 1
+        ):
+            raise ValueError(
+                "number_of_result_pages must be a positive integer"
+            )
+
+        # Google Custom Search API has a limit of 10 results per request
+        if number_of_result_pages > 10:
+            logger.warning(
+                f"Google API limits results to 10 per request. "
+                f"Requested {number_of_result_pages}, using 10 instead."
+            )
+            number_of_result_pages = 10
+
+        if search_type not in ["web", "image"]:
+            raise ValueError("search_type must be either 'web' or 'image'")
 
         # https://developers.google.com/custom-search/v1/overview
         GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
         # https://cse.google.com/cse/all
         SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
 
-        # Using the first page
-        start_page_idx = 1
+        # Using the specified start page
+        start_page_idx = start_page
         # Different language may get different result
         search_language = "en"
 
@@ -530,23 +568,21 @@ class SearchToolkit(BaseToolkit):
             modified_query = f"{query} {exclusion_terms}"
             logger.debug(f"Excluded domains, modified query: {modified_query}")
 
-        # Constructing the URL with proper encoding
+        encoded_query = quote(modified_query)
+
+        # Constructing the URL
         # Doc: https://developers.google.com/custom-search/v1/using_rest
-        params = {
-            "key": GOOGLE_API_KEY,
-            "cx": SEARCH_ENGINE_ID,
-            "q": modified_query,
-            "start": start_page_idx,
-            "lr": search_language,
-            "num": self.number_of_result_pages,
-        }
+        base_url = (
+            f"https://www.googleapis.com/customsearch/v1?"
+            f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={encoded_query}&start="
+            f"{start_page_idx}&lr={search_language}&num={number_of_result_pages}"
+        )
 
         # Add searchType parameter for image search
         if search_type == "image":
-            params["searchType"] = "image"
-
-        base_url = "https://www.googleapis.com/customsearch/v1"
-        url = f"{base_url}?{urlencode(params)}"
+            url = base_url + "&searchType=image"
+        else:
+            url = base_url
 
         responses = []
         # Fetch the results given the URL
