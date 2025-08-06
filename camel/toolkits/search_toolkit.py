@@ -1241,10 +1241,11 @@ class SearchToolkit(BaseToolkit):
         include_summary: bool = False,
         include_raw_content: bool = False,
         concise_snippet: bool = False,
-        scope: str = "webpage",
+        scope: Literal[
+            "webpage", "document", "scholar", "image", "video", "podcast"
+        ] = "webpage",
     ) -> dict[str, Any]:
-        """
-        Perform a web search using the metaso.cn API.
+        r"""Perform a web search using the metaso.cn API.
 
         Args:
             query (str): The search query string.
@@ -1252,7 +1253,9 @@ class SearchToolkit(BaseToolkit):
             include_summary (bool): Whether to include summary in the result.
             include_raw_content (bool): Whether to include raw content in the result.
             concise_snippet (bool): Whether to return concise snippet.
-            scope (str): Search scope, default is 'webpage'.
+            scope (Literal[
+            "webpage", "document", "scholar", "image", "video", "podcast"
+            ]): Search scope, default is 'webpage'.
 
         Returns:
             dict: Search results or error information.
@@ -1288,7 +1291,7 @@ class SearchToolkit(BaseToolkit):
             except Exception:
                 return {"error": f"Metaso returned content could not be parsed: {result}"}
         except Exception as e:
-            return {"error": f"Metaso search failed: {e!s}"}
+            return {"error": f"Metaso search failed: {e}"}
 
 
     def get_tools(self) -> List[FunctionTool]:
