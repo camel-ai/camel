@@ -192,7 +192,7 @@ def interactive_mode(agent, toolkit):
                 break
 
             if user_input.lower() == "clear":
-                result = toolkit.delete_memories()
+                result = toolkit.clear_memory()
                 print(f"🧹 {result}")
                 continue
 
@@ -245,7 +245,7 @@ def main():
         print("\n" + "=" * 50)
         cleanup = input("Clear all example memories? (y/n): ").strip().lower()
         if cleanup in ['y', 'yes']:
-            result = toolkit.delete_memories()
+            result = toolkit.clear_memory()
             print(f"🧹 {result}")
 
         print("\n✅ Example completed successfully!")

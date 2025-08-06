@@ -26,7 +26,7 @@ from camel.storages.key_value_storages.mem0_cloud import Mem0Storage
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.types import ModelType, OpenAIBackendRole, RoleType
-from camel.utils import MCPServer, OpenAITokenCounter, dependencies_required
+from camel.utils import BaseTokenCounter, MCPServer, OpenAITokenCounter, dependencies_required
 
 
 @MCPServer()
@@ -41,6 +41,11 @@ class Mem0CloudToolkit(BaseToolkit):
     Args:
         agent_id (str): The agent identifier for memory organization.
         user_id (str): The user identifier for memory organization.
+        token_counter (Optional[BaseTokenCounter], optional): Token counter
+            for memory context management. If None, defaults to OpenAI GPT-4o-mini.
+            (default: :obj:`None`)
+        token_limit (int, optional): Maximum token limit for memory context.
+            (default: :obj:`4096`)
         timeout (Optional[float], optional): Maximum execution time allowed for
             toolkit operations in seconds. If None, no timeout is applied.
             (default: :obj:`None`)
@@ -50,19 +55,22 @@ class Mem0CloudToolkit(BaseToolkit):
         self,
         agent_id: str,
         user_id: str,
+        token_counter: Optional[BaseTokenCounter] = None,
+        token_limit: int = 4096,
         timeout: Optional[float] = None,
     ):
         super().__init__(timeout=timeout)
         self.agent_id = agent_id
         self.user_id = user_id
+        self.token_counter = token_counter or OpenAITokenCounter(ModelType.GPT_4O_MINI)
+        self.token_limit = token_limit
         self.memory = self._setup_memory()
 
     def _setup_memory(self) -> ChatHistoryMemory:
         r"""Sets up CAMEL's memory components with Mem0 as the backend."""
         storage = Mem0Storage(agent_id=self.agent_id, user_id=self.user_id)
-        token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         context_creator = ScoreBasedContextCreator(
-            token_counter=token_counter, token_limit=4096
+            token_counter=self.token_counter, token_limit=self.token_limit
         )
         return ChatHistoryMemory(
             context_creator=context_creator,
@@ -140,20 +148,37 @@ class Mem0CloudToolkit(BaseToolkit):
                 rerank=True,  # Better result ordering
                 threshold=0.01,  # Lower threshold for better recall
                 top_k=10,  # Get more results
-                keyword_search=True,  # Enable keyword matching alongside
-                # semantic
+                keyword_search=True,  # Enable keyword matching alongside semantic search
             )
             return f"Raw API Response:\n{results!s}"
         except Exception as e:
             return f"API Error: {e!s}"
 
     @dependencies_required("mem0")
-    def delete_memories(self) -> str:
-        r"""Deletes all memories from Mem0 cloud storage for the current user
-        and agent.
+    def delete_memory(self, memory_id: str) -> str:
+        r"""Deletes a specific memory from Mem0 cloud storage by ID.
+
+        Args:
+            memory_id (str): The unique identifier of the memory to delete.
 
         Returns:
             str: A confirmation message indicating successful memory deletion.
+        """
+        try:
+            self.memory._chat_history_block.storage.client.delete(
+                memory_id=memory_id
+            )
+            return f"Memory {memory_id} deleted successfully from Mem0 cloud."
+        except Exception as e:
+            return f"API Error: {e!s}"
+
+    @dependencies_required("mem0")
+    def clear_memory(self) -> str:
+        r"""Clears all memories from Mem0 cloud storage for the current user
+        and agent.
+
+        Returns:
+            str: A confirmation message indicating successful memory clearing.
         """
         self.memory.clear()
         return "All memories have been cleared from Mem0 cloud storage."
@@ -170,6 +195,7 @@ class Mem0CloudToolkit(BaseToolkit):
             FunctionTool(self.add_memory),
             FunctionTool(self.retrieve_memories),
             FunctionTool(self.search_memories),
-            FunctionTool(self.delete_memories),
+            FunctionTool(self.delete_memory),
+            FunctionTool(self.clear_memory),
         ]
 
