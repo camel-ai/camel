@@ -834,6 +834,7 @@ def test_search_alibaba_tongxiao(mock_get, search_toolkit):
             ],
         }
 
+
 @patch('http.client.HTTPSConnection')
 def test_search_metaso_success(mock_https_connection, search_toolkit):
     # Mock the connection and response
@@ -841,7 +842,11 @@ def test_search_metaso_success(mock_https_connection, search_toolkit):
     mock_https_connection.return_value = mock_conn
 
     mock_response = MagicMock()
-    mock_response.read.return_value = b'{"results": [{"title": "Test Title", "url": "https://example.com", "snippet": "Test snippet"}], "total": 1}'
+    mock_response.read.return_value = (
+        b'{"results": [{"title": "Test Title", '
+        b'"url": "https://example.com", "snippet": "Test snippet"}], '
+        b'"total": 1}'
+    )
     mock_conn.getresponse.return_value = mock_response
 
     # Mock environment variable
@@ -854,10 +859,10 @@ def test_search_metaso_success(mock_https_connection, search_toolkit):
             {
                 "title": "Test Title",
                 "url": "https://example.com",
-                "snippet": "Test snippet"
+                "snippet": "Test snippet",
             }
         ],
-        "total": 1
+        "total": 1,
     }
     assert result == expected_result
 
@@ -894,13 +899,14 @@ def test_search_metaso_with_parameters(mock_https_connection, search_toolkit):
             include_summary=True,
             include_raw_content=True,
             concise_snippet=True,
-            scope="document"
+            scope="document",
         )
 
     # Verify the payload contains correct parameters
     call_args = mock_conn.request.call_args
     payload = call_args[0][2]
     import json
+
     payload_data = json.loads(payload)
 
     assert payload_data["q"] == "test query"
