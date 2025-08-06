@@ -38,7 +38,7 @@ class TestLoaderWrapper:
         mock_loader.convert_file.return_value = "test content"
 
         wrapper = _LoaderWrapper(mock_loader)
-        result = wrapper.convert_file("test.txt")
+        result = wrapper.parse_file("test.txt")
 
         assert result == "test content"
         mock_loader.convert_file.assert_called_once_with("test.txt")
@@ -53,7 +53,7 @@ class TestLoaderWrapper:
         with pytest.raises(
             AttributeError, match="Loader must expose convert_file method"
         ):
-            wrapper.convert_file("test.txt")
+            wrapper.parse_file("test.txt")
 
 
 class TestInitLoader:
@@ -470,7 +470,7 @@ class TestFileHandlers:
         self, document_toolkit, sample_html_file
     ):
         r"""Test handling HTML files successfully with loader."""
-        document_toolkit._loader.convert_file.return_value = (
+        document_toolkit._loader.parse_file.return_value = (
             "Processed HTML content"
         )
 
@@ -483,7 +483,7 @@ class TestFileHandlers:
         self, document_toolkit, sample_html_file
     ):
         r"""Test handling HTML files with fallback to raw content."""
-        document_toolkit._loader.convert_file.side_effect = Exception(
+        document_toolkit._loader.parse_file.side_effect = Exception(
             "Loader error"
         )
 
@@ -801,7 +801,7 @@ class TestWebpageHandling:
     ):
         r"""Test handling webpage with fallback to MarkItDown."""
         mock_extract.side_effect = Exception("Crawl4AI failed")
-        document_toolkit.mid_loader.convert_file.return_value = (
+        document_toolkit.mid_loader.parse_file.return_value = (
             "MarkItDown webpage content"
         )
 
@@ -914,7 +914,7 @@ class TestMainExtractionMethod:
 
     def test_extract_office_document_with_markitdown(self, document_toolkit):
         r"""Test extracting Office document with MarkItDown loader."""
-        document_toolkit.mid_loader.convert_file.return_value = (
+        document_toolkit.mid_loader.parse_file.return_value = (
             "Office document content"
         )
 
@@ -962,7 +962,7 @@ class TestMainExtractionMethod:
     def test_extract_document_general_error(self, document_toolkit):
         r"""Test general error handling in extract_document_content."""
         # Mock the generic loader to raise an exception
-        document_toolkit._loader.convert_file.side_effect = Exception(
+        document_toolkit._loader.parse_file.side_effect = Exception(
             "Generic loader error"
         )
 
@@ -1032,7 +1032,7 @@ class TestAsyncMethods:
     @pytest.mark.asyncio
     async def test_extract_async(self, document_toolkit):
         r"""Test asynchronous document extraction."""
-        document_toolkit._loader.convert_file.return_value = (
+        document_toolkit._loader.parse_file.return_value = (
             "Async extracted content"
         )
 
@@ -1042,7 +1042,7 @@ class TestAsyncMethods:
 
     def test_extract_document_content_sync(self, document_toolkit):
         r"""Test synchronous wrapper for document extraction."""
-        document_toolkit._loader.convert_file.return_value = (
+        document_toolkit._loader.parse_file.return_value = (
             "Sync extracted content"
         )
 

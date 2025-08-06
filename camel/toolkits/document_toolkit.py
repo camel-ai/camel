@@ -12,18 +12,19 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-# from __future__ import annotations
 
-import hashlib
-import mimetypes
-import traceback
-import zipfile
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Set, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+)
 from urllib.parse import urlparse
-
-import requests
 
 from camel.loaders import MarkItDownLoader
 from camel.logger import get_logger
@@ -68,7 +69,7 @@ class FileEditResult:
 class _LoaderWrapper:
     r"""Uniform interface wrapper for different document loaders.
 
-    Every loader exposes convert_file(path) -> str method for consistent usage.
+    Every loader exposes parse_file(path) -> str method for consistent usage.
 
     Args:
         loader (object): The underlying loader instance.
@@ -78,7 +79,7 @@ class _LoaderWrapper:
         r"""Initialize the loader wrapper."""
         self._loader = loader
 
-    def convert_file(self, path: str) -> Tuple[bool, str]:
+    def parse_file(self, path: str) -> Tuple[bool, str]:
         r"""Convert a file to plain text using the wrapped loader.
 
         Args:
@@ -88,14 +89,14 @@ class _LoaderWrapper:
             Tuple[bool, str]: A tuple containing success status and either
                 the extracted plain text content or an error message.
         """
-        if hasattr(self._loader, "convert_file"):
+        if hasattr(self._loader, "parse_file"):
             try:
-                content = self._loader.convert_file(path)  # type: ignore[attr-defined]
+                content = self._loader.parse_file(path)  # type: ignore[attr-defined]
                 return True, content
             except Exception as e:
                 return False, f"Loader failed to convert file {path}: {e}"
 
-        return False, "Loader does not support convert_file method"
+        return False, "Loader does not support parse_file method"
 
 
 def _init_loader(
@@ -144,6 +145,7 @@ class DocumentToolkit(BaseToolkit):
         self,
         *,
         cache_dir: str | Path | None = None,
+        timeout: Optional[float] = None,
         model: Optional[BaseModelBackend] = None,
         loader_type: str = "markitdown",
         loader_kwargs: Optional[dict] = None,
@@ -154,13 +156,15 @@ class DocumentToolkit(BaseToolkit):
         Args:
             cache_dir (str | Path | None): Directory for caching processed
                 documents. Defaults to ~/.cache/camel/documents.
+            timeout (Optional[float]): The timeout for the toolkit.
+                (default: :obj:`None`)
             model (Optional[object]): Model backend for image analysis.
             loader_type (str): Primary document loader type ('markitdown').
             loader_kwargs (Optional[dict]): Additional arguments for the
                 primary loader.
             enable_cache (bool): Whether to enable disk and memory caching.
         """
-        super().__init__()
+        super().__init__(timeout=timeout)
         self._file_history: Dict[str, List[FileEditResult]] = defaultdict(list)
 
         self.enable_cache = enable_cache
@@ -180,19 +184,6 @@ class DocumentToolkit(BaseToolkit):
         logger.info(
             "DocumentProcessingToolkit initialised with %s loader", loader_type
         )
-
-        # Initialize optional MarkItDown loader for improved Office/PDF support
-        self.mid_loader: Optional[MarkItDownLoader]
-        if MarkItDownLoader is not None:
-            try:
-                self.mid_loader = MarkItDownLoader()
-            except Exception as e:  # pragma: no cover
-                logger.debug(
-                    "Falling back - MarkItDown initialisation failed: %s", e
-                )
-                self.mid_loader = None
-        else:
-            self.mid_loader = None
 
         # Initialize in-memory cache (keyed by SHA-256 of path + mtime)
         self._cache: Dict[str, str] = {}
@@ -510,6 +501,8 @@ class DocumentToolkit(BaseToolkit):
                 the document was processed successfully, and the content of the
                 document (if success).
         """
+        import traceback
+
         try:
             cache_key = self._hash_key(document_path)
             if self.enable_cache and cache_key in self._cache:
@@ -561,27 +554,16 @@ class DocumentToolkit(BaseToolkit):
             if suffix in extensions:
                 return handler(document_path)
 
-        # Handle Office/PDF documents with preferred loader
+        # Handle Office/PDF documents
         if suffix in _DOC_EXTS:
-            if self.mid_loader is not None:
-                try:
-                    txt = self.mid_loader.convert_file(document_path)
-                    return True, txt
-                except Exception as e:
-                    logger.warning("MarkItDown loader failed: %s", e)
-            # Fall through to generic loader
-            else:
-                logger.warning(
-                    "No suitable loader for DOC/PDF "
-                    "- falling back to generic loader"
-                )
+            return self._loader.parse_file(document_path)
 
         # Check if it's a webpage (for URLs without web extensions)
         if self._is_webpage(document_path):
             return self._handle_webpage(document_path)
 
         # Fallback to generic loader
-        return self._loader.convert_file(document_path)
+        return self._loader.parse_file(document_path)
 
     def _is_url(self, path: str) -> bool:
         r"""Check if the path is a URL.
@@ -608,6 +590,10 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             bool: True if the URL is a webpage, False otherwise.
         """
+        import mimetypes
+
+        import requests
+
         try:
             parsed_url = urlparse(url)
             is_url = all([parsed_url.scheme, parsed_url.netloc])
@@ -647,11 +633,7 @@ class DocumentToolkit(BaseToolkit):
             )
             try:
                 # Try using MarkItDown as fallback
-                if self.mid_loader is not None:
-                    txt = self.mid_loader.convert_file(url)  # type: ignore[attr-defined]
-                    return True, txt
-                else:
-                    return False, "No suitable loader for webpage processing."
+                return self._loader.parse_file(url)
             except Exception as e2:
                 logger.error(
                     f"All webpage processing methods failed for {url}: {e2}"
@@ -1191,7 +1173,7 @@ class DocumentToolkit(BaseToolkit):
             Tuple[bool, str]: Success status and processed content.
         """
         # Try using the generic loader first
-        ok, txt = self._loader.convert_file(path)
+        ok, txt = self._loader.parse_file(path)
         if ok:
             return True, txt
 
@@ -1212,6 +1194,9 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             Tuple[bool, str]: Success status and combined content of all files.
         """
+        import traceback
+        import zipfile
+
         try:
             if not self.cache_dir:
                 return (
@@ -1280,6 +1265,8 @@ class DocumentToolkit(BaseToolkit):
             IOError: If file cannot be saved to disk.
         """
         import re
+
+        import requests
 
         if not self.cache_dir:
             raise RuntimeError(
@@ -1387,6 +1374,8 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             str: SHA-256 hash string to use as cache key.
         """
+        import hashlib
+
         if self._is_webpage(path):
             # For URLs, use the URL itself as the key component
             return hashlib.sha256(f"{path}:url".encode()).hexdigest()
@@ -1404,6 +1393,8 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             str: Short (8-character) hash string.
         """
+        import hashlib
+
         return hashlib.sha256(str(path).encode()).hexdigest()[:8]
 
     def get_tools(self) -> List[FunctionTool]:
@@ -1433,7 +1424,7 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             str: Extracted document content.
         """
-        ok, content = self._loader.convert_file(document_path)
+        ok, content = self._loader.parse_file(document_path)
         if ok:
             return content
         else:
