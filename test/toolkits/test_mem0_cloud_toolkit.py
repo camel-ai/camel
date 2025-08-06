@@ -43,7 +43,24 @@ class TestMem0CloudToolkit:
             assert toolkit.agent_id == "test-agent"
             assert toolkit.user_id == "test-user"
             assert toolkit.timeout == 30.0
+            assert toolkit.token_limit == 4096  # default value
             assert toolkit.memory is not None
+
+    def test_init_with_custom_params(self):
+        """Test toolkit initialization with custom token parameters."""
+        from camel.utils import OpenAITokenCounter
+        from camel.types import ModelType
+        
+        custom_counter = OpenAITokenCounter(ModelType.GPT_4O)
+        with patch('camel.toolkits.mem0_cloud_toolkit.Mem0Storage'):
+            toolkit = Mem0CloudToolkit(
+                agent_id="test-agent", 
+                user_id="test-user",
+                token_counter=custom_counter,
+                token_limit=8192
+            )
+            assert toolkit.token_counter == custom_counter
+            assert toolkit.token_limit == 8192
 
     def test_add_memory(self, mem0_cloud_toolkit):
         """Test adding a memory record."""
@@ -137,11 +154,34 @@ class TestMem0CloudToolkit:
         assert "API Error:" in result
         assert error_message in result
 
-    def test_delete_memories(self, mem0_cloud_toolkit):
-        """Test deleting all memories."""
+    def test_delete_memory(self, mem0_cloud_toolkit):
+        """Test deleting a specific memory."""
+        memory_id = "test-memory-id"
+        client = mem0_cloud_toolkit.memory._chat_history_block.storage.client
+        client.delete = Mock()
+
+        result = mem0_cloud_toolkit.delete_memory(memory_id)
+
+        assert f"Memory {memory_id} deleted successfully" in result
+        client.delete.assert_called_once_with(memory_id=memory_id)
+
+    def test_delete_memory_error(self, mem0_cloud_toolkit):
+        """Test deleting a memory with API error."""
+        memory_id = "test-memory-id"
+        error_message = "Memory not found"
+        client = mem0_cloud_toolkit.memory._chat_history_block.storage.client
+        client.delete.side_effect = Exception(error_message)
+
+        result = mem0_cloud_toolkit.delete_memory(memory_id)
+
+        assert "API Error:" in result
+        assert error_message in result
+
+    def test_clear_memory(self, mem0_cloud_toolkit):
+        """Test clearing all memories."""
         mem0_cloud_toolkit.memory.clear = Mock()
 
-        result = mem0_cloud_toolkit.delete_memories()
+        result = mem0_cloud_toolkit.clear_memory()
 
         assert (
             result == "All memories have been cleared from Mem0 cloud storage."
@@ -152,13 +192,14 @@ class TestMem0CloudToolkit:
         """Test getting list of function tools."""
         tools = mem0_cloud_toolkit.get_tools()
 
-        assert len(tools) == 4
+        assert len(tools) == 5
         tool_names = [tool.get_function_name() for tool in tools]
         expected_tools = [
             "add_memory",
             "retrieve_memories",
             "search_memories",
-            "delete_memories",
+            "delete_memory",
+            "clear_memory",
         ]
         assert all(name in tool_names for name in expected_tools)
 
@@ -244,9 +285,13 @@ class TestMem0CloudToolkitIntegration:
         retrieve_result = toolkit.retrieve_memories()
         assert "Raw API Response" in retrieve_result
 
-        # 4. Delete memories
-        delete_result = toolkit.delete_memories()
-        assert "cleared" in delete_result
+        # 4. Delete specific memory
+        delete_result = toolkit.delete_memory("test-memory-id")
+        assert "deleted successfully" in delete_result
+
+        # 5. Clear all memories
+        clear_result = toolkit.clear_memory()
+        assert "cleared" in clear_result
 
         # Verify all methods were called
         toolkit.memory.write_records.assert_called_once()
