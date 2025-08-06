@@ -18,7 +18,7 @@ import pytest
 from camel.configs import AnthropicConfig
 from camel.models import AnthropicModel
 from camel.types import ModelType
-from camel.utils import AnthropicTokenCounter
+from camel.utils import OpenAITokenCounter
 
 
 @pytest.mark.model_backend
@@ -39,7 +39,7 @@ def test_anthropic_model(model_type: ModelType):
     model = AnthropicModel(model_type)
     assert model.model_type == model_type
     assert model.model_config_dict == AnthropicConfig().as_dict()
-    assert isinstance(model.token_counter, AnthropicTokenCounter)
+    assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 

@@ -59,6 +59,7 @@ class ModelType(UnifiedModelType, Enum):
     AWS_LLAMA_3_2_11B_INSTRUCT = "us.meta.llama3-2-11b-instruct-v1:0"
     AWS_CLAUDE_SONNET_4 = "anthropic.claude-sonnet-4-20250514-v1:0"
     AWS_CLAUDE_OPUS_4 = "anthropic.claude-opus-4-20250514-v1:0"
+    AWS_CLAUDE_OPUS_4_1 = "anthropic.claude-opus-4-1-20250805-v1:0"
 
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
@@ -91,6 +92,7 @@ class ModelType(UnifiedModelType, Enum):
     OPENROUTER_LLAMA_4_SCOUT = "meta-llama/llama-4-scout"
     OPENROUTER_LLAMA_4_SCOUT_FREE = "meta-llama/llama-4-scout:free"
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
+    OPENROUTER_HORIZON_ALPHA = "openrouter/horizon-alpha"
 
     # LMStudio models
     LMSTUDIO_GEMMA_3_1B = "gemma-3-1b"
@@ -157,6 +159,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
+    CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -513,6 +516,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
             ModelType.AWS_CLAUDE_SONNET_4,
             ModelType.AWS_CLAUDE_OPUS_4,
+            ModelType.AWS_CLAUDE_OPUS_4_1,
         }
 
     @property
@@ -577,6 +581,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
+            ModelType.CLAUDE_OPUS_4_1,
         }
 
     @property
@@ -603,6 +608,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.OPENROUTER_OLYMPICODER_7B,
+            ModelType.OPENROUTER_HORIZON_ALPHA,
         }
 
     @property
@@ -1262,6 +1268,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
+            ModelType.CLAUDE_OPUS_4_1,
             ModelType.YI_MEDIUM_200K,
             ModelType.AWS_CLAUDE_3_5_SONNET,
             ModelType.AWS_CLAUDE_3_HAIKU,
@@ -1269,6 +1276,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_CLAUDE_3_7_SONNET,
             ModelType.AWS_CLAUDE_SONNET_4,
             ModelType.AWS_CLAUDE_OPUS_4,
+            ModelType.AWS_CLAUDE_OPUS_4_1,
             ModelType.O4_MINI,
             ModelType.O3,
         }:
@@ -1276,6 +1284,7 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.MISTRAL_CODESTRAL_MAMBA,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
+            ModelType.OPENROUTER_HORIZON_ALPHA,
         }:
             return 256_000
 

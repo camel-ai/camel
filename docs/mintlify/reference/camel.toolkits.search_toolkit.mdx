@@ -442,6 +442,36 @@ features:
 message. Each result contains title, snippet, url and other
 metadata.
 
+<a id="camel.toolkits.search_toolkit.SearchToolkit.search_metaso"></a>
+
+### search_metaso
+
+```python
+def search_metaso(
+    self,
+    query: str,
+    page: int = 1,
+    include_summary: bool = False,
+    include_raw_content: bool = False,
+    concise_snippet: bool = False,
+    scope: Literal['webpage', 'document', 'scholar', 'image', 'video', 'podcast'] = 'webpage'
+):
+```
+
+Perform a web search using the metaso.cn API.
+
+**Parameters:**
+
+- **query** (str): The search query string.
+- **page** (int): Page number, default is 1.
+- **include_summary** (bool): Whether to include summary in the result.
+- **include_raw_content** (bool): Whether to include raw content in the result.
+- **concise_snippet** (bool): Whether to return concise snippet. scope (Literal[ "webpage", "document", "scholar", "image", "video", "podcast" ]): Search scope, default is 'webpage'.
+
+**Returns:**
+
+  dict: Search results or error information.
+
 <a id="camel.toolkits.search_toolkit.SearchToolkit.get_tools"></a>
 
 ### get_tools

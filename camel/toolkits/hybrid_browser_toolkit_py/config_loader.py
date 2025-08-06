@@ -40,6 +40,9 @@ class BrowserConfig:
     # Default action limits
     DEFAULT_MAX_SCROLL_AMOUNT = 5000  # Maximum scroll distance in pixels
 
+    # Default config limits
+    DEFAULT_MAX_LOG_LIMIT = 1000
+
     @staticmethod
     def get_timeout_config() -> Dict[str, int]:
         r"""Get timeout configuration with environment variable support.
@@ -104,6 +107,22 @@ class BrowserConfig:
                 os.getenv(
                     'HYBRID_BROWSER_MAX_SCROLL_AMOUNT',
                     BrowserConfig.DEFAULT_MAX_SCROLL_AMOUNT,
+                )
+            ),
+        }
+
+    @staticmethod
+    def get_log_limits() -> Dict[str, int]:
+        r"""Get log limits configuration with environment variable support.
+
+        Returns:
+            Dict[str, int]: Console Log limits configuration.
+        """
+        return {
+            'max_log_limit': int(
+                os.getenv(
+                    'HYBRID_BROWSER_MAX_LOG_LIMIT',
+                    BrowserConfig.DEFAULT_MAX_LOG_LIMIT,
                 )
             ),
         }
@@ -177,6 +196,20 @@ class BrowserConfig:
         if override is not None:
             return override
         return BrowserConfig.get_action_limits()['max_scroll_amount']
+
+    @staticmethod
+    def get_max_log_limit(override: Optional[int] = None) -> int:
+        r"""Get maximum log limit with optional override.
+
+        Args:
+            override: Optional log limit override value.
+
+        Returns:
+            int: Maximum log limit.
+        """
+        if override is not None:
+            return override
+        return BrowserConfig.get_log_limits()['max_log_limit']
 
     @staticmethod
     def get_screenshot_timeout(override: Optional[int] = None) -> int:
@@ -371,6 +404,11 @@ class ConfigLoader:
         return BrowserConfig.get_max_scroll_amount(override)
 
     @classmethod
+    def get_max_log_limit(cls, override: Optional[int] = None) -> int:
+        r"""Get maximum log limit with optional override."""
+        return BrowserConfig.get_max_log_limit(override)
+
+    @classmethod
     def get_screenshot_timeout(cls, override: Optional[int] = None) -> int:
         r"""Get screenshot timeout with optional override."""
         return BrowserConfig.get_screenshot_timeout(override)
@@ -430,6 +468,11 @@ def get_network_idle_timeout(override: Optional[int] = None) -> int:
 def get_max_scroll_amount(override: Optional[int] = None) -> int:
     r"""Get maximum scroll amount with optional override."""
     return BrowserConfig.get_max_scroll_amount(override)
+
+
+def get_max_log_limit(override: Optional[int] = None) -> int:
+    r"""Get maximum log limit with optional override."""
+    return BrowserConfig.get_max_log_limit(override)
 
 
 def get_screenshot_timeout(override: Optional[int] = None) -> int:
