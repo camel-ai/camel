@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
-from urllib.parse import quote
 
 import requests
 
@@ -36,6 +35,7 @@ class SearchToolkit(BaseToolkit):
     def __init__(
         self,
         timeout: Optional[float] = None,
+        number_of_result_pages: int = 10,
         exclude_domains: Optional[List[str]] = None,
     ):
         r"""Initializes the SearchToolkit.
@@ -43,12 +43,15 @@ class SearchToolkit(BaseToolkit):
         Args:
             timeout (float): Timeout for API requests in seconds.
                 (default: :obj:`None`)
+            number_of_result_pages (int): The number of result pages to
+                retrieve. (default: :obj:`10`)
             exclude_domains (Optional[List[str]]): List of domains to
                 exclude from search results. Currently only supported
                 by the `search_google` function.
                 (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
+        self.number_of_result_pages = number_of_result_pages
         self.exclude_domains = exclude_domains
 
     @dependencies_required("wikipedia")
@@ -452,8 +455,6 @@ class SearchToolkit(BaseToolkit):
         self,
         query: str,
         search_type: str = "web",
-        number_of_result_pages: int = 10,
-        start_page: int = 1,
     ) -> List[Dict[str, Any]]:
         r"""Use Google search engine to search information for the given query.
 
@@ -461,15 +462,6 @@ class SearchToolkit(BaseToolkit):
             query (str): The query to be searched.
             search_type (str): The type of search to perform. Either "web" for
                 web pages or "image" for image search. (default: "web")
-            number_of_result_pages (int): The number of result pages to
-                retrieve. Adjust this based on your task - use fewer results
-                for focused searches and more for comprehensive searches.
-                (default: :obj:`10`)
-            start_page (int): The result page to start from. Use this for
-                pagination - e.g., start_page=1 for results 1-10,
-                start_page=11 for results 11-20, etc. This allows agents to
-                check initial results and continue searching if needed.
-                (default: :obj:`1`)
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
@@ -515,38 +507,17 @@ class SearchToolkit(BaseToolkit):
                     'height': 600
                 }
         """
+        from urllib.parse import urlencode
+
         import requests
-
-        # Validate input parameters
-        if not isinstance(start_page, int) or start_page < 1:
-            raise ValueError("start_page must be a positive integer")
-
-        if (
-            not isinstance(number_of_result_pages, int)
-            or number_of_result_pages < 1
-        ):
-            raise ValueError(
-                "number_of_result_pages must be a positive integer"
-            )
-
-        # Google Custom Search API has a limit of 10 results per request
-        if number_of_result_pages > 10:
-            logger.warning(
-                f"Google API limits results to 10 per request. "
-                f"Requested {number_of_result_pages}, using 10 instead."
-            )
-            number_of_result_pages = 10
-
-        if search_type not in ["web", "image"]:
-            raise ValueError("search_type must be either 'web' or 'image'")
 
         # https://developers.google.com/custom-search/v1/overview
         GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
         # https://cse.google.com/cse/all
         SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
 
-        # Using the specified start page
-        start_page_idx = start_page
+        # Using the first page
+        start_page_idx = 1
         # Different language may get different result
         search_language = "en"
 
@@ -559,27 +530,29 @@ class SearchToolkit(BaseToolkit):
             modified_query = f"{query} {exclusion_terms}"
             logger.debug(f"Excluded domains, modified query: {modified_query}")
 
-        encoded_query = quote(modified_query)
-
-        # Constructing the URL
+        # Constructing the URL with proper encoding
         # Doc: https://developers.google.com/custom-search/v1/using_rest
-        base_url = (
-            f"https://www.googleapis.com/customsearch/v1?"
-            f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={encoded_query}&start="
-            f"{start_page_idx}&lr={search_language}&num={number_of_result_pages}"
-        )
+        params = {
+            "key": GOOGLE_API_KEY,
+            "cx": SEARCH_ENGINE_ID,
+            "q": modified_query,
+            "start": start_page_idx,
+            "lr": search_language,
+            "num": self.number_of_result_pages,
+        }
 
         # Add searchType parameter for image search
         if search_type == "image":
-            url = base_url + "&searchType=image"
-        else:
-            url = base_url
+            params["searchType"] = "image"
+
+        base_url = "https://www.googleapis.com/customsearch/v1"
+        url = f"{base_url}?{urlencode(params)}"
 
         responses = []
         # Fetch the results given the URL
         try:
-            result = requests.get(url, timeout=30)
-            result.raise_for_status()  # Raise exception for bad status codes
+            # Make the get
+            result = requests.get(url)
             data = result.json()
 
             # Get the result items
@@ -610,7 +583,6 @@ class SearchToolkit(BaseToolkit):
                             "context_url": context_url,
                         }
 
-                        # Add dimensions if available
                         if width:
                             response["width"] = int(width)
                         if height:
@@ -618,31 +590,23 @@ class SearchToolkit(BaseToolkit):
 
                         responses.append(response)
                     else:
-                        title = search_item.get("title", "")
-                        snippet = search_item.get("snippet", "")
-                        link = search_item.get("link", "")
-
-                        long_description = "N/A"
-                        if (
-                            "pagemap" in search_item
-                            and "metatags" in search_item["pagemap"]
-                        ):
-                            metatags = search_item["pagemap"]["metatags"]
-                            if metatags and len(metatags) > 0:
-                                meta = metatags[0]
-                                long_description = (
-                                    meta.get("og:description")
-                                    or meta.get("description")
-                                    or meta.get("twitter:description")
-                                    or "N/A"
-                                )
-
-                        if not title and not snippet and not link:
-                            logger.debug(
-                                f"Skipping result {i} due to missing essential fields"
-                            )
+                        if "pagemap" not in search_item:
                             continue
+                        if "metatags" not in search_item["pagemap"]:
+                            continue
+                        if (
+                            "og:description"
+                            in search_item["pagemap"]["metatags"][0]
+                        ):
+                            long_description = search_item["pagemap"][
+                                "metatags"
+                            ][0]["og:description"]
+                        else:
+                            long_description = "N/A"
+                        title = search_item.get("title")
+                        snippet = search_item.get("snippet")
 
+                        link = search_item.get("link")
                         response = {
                             "result_id": i,
                             "title": title,
@@ -652,74 +616,39 @@ class SearchToolkit(BaseToolkit):
                         }
                         responses.append(response)
             else:
-                logger.debug(f"Google API response without items: {data}")
-                error_info = data.get("error", {})
-                if error_info:
-                    error_code = error_info.get("code", "Unknown")
-                    error_message = error_info.get("message", "Unknown error")
-                    error_details = f"Error {error_code}: {error_message}"
+                if "error" in data:
+                    error_info = data.get("error", {})
+                    logger.error(
+                        f"Google search failed - API response: {error_info}"
+                    )
+                    responses.append(
+                        {
+                            "error": f"Google search failed - "
+                            f"API response: {error_info}"
+                        }
+                    )
+                elif "searchInformation" in data:
+                    search_info = data.get("searchInformation", {})
+                    total_results = search_info.get("totalResults", "0")
+                    if total_results == "0":
+                        logger.info(f"No results found for query: {query}")
+                        # Return empty list to indicate no results (not an error)
+                        responses = []
+                    else:
+                        logger.warning(
+                            f"Google search returned no items but claims {total_results} results"
+                        )
+                        responses = []
                 else:
-                    error_details = (
-                        "No results found or API returned empty response"
+                    logger.error(
+                        f"Unexpected Google API response format: {data}"
+                    )
+                    responses.append(
+                        {"error": "Unexpected response format from Google API"}
                     )
 
-                logger.error(f"Google search failed - {error_details}")
-                responses.append(
-                    {"error": f"Google search failed - {error_details}"}
-                )
-
-        except requests.exceptions.Timeout:
-            logger.error("Google search request timed out")
-            responses.append(
-                {"error": "Google search request timed out after 30 seconds"}
-            )
-        except requests.exceptions.HTTPError as e:
-            error_message = f"Google API HTTP error: {e}"
-            try:
-                error_data = e.response.json()
-                if "error" in error_data and "message" in error_data["error"]:
-                    api_error_message = error_data["error"]["message"]
-                    error_code = error_data["error"].get(
-                        "code", e.response.status_code
-                    )
-                    error_message = (
-                        f"Google API error {error_code}: {api_error_message}"
-                    )
-
-                    if e.response.status_code == 429:
-                        error_message = f"Google API rate limit exceeded: {api_error_message}"
-                    elif e.response.status_code == 400:
-                        if "API key" in api_error_message:
-                            error_message = (
-                                f"Invalid Google API key: {api_error_message}"
-                            )
-                        else:
-                            error_message = f"Bad request to Google API: {api_error_message}"
-            except (ValueError, KeyError):
-                if e.response.status_code == 429:
-                    error_message = "Google API rate limit exceeded. Please try again later."
-                elif e.response.status_code == 400:
-                    error_message = "Google API bad request. Please check your API key and search engine ID."
-                elif e.response.status_code == 403:
-                    error_message = "Google API access forbidden. Please check your API key permissions."
-
-            logger.error(error_message)
-            responses.append({"error": error_message})
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Google search network error: {e}")
-            responses.append(
-                {"error": f"Network error during Google search: {e!s}"}
-            )
-        except ValueError as e:
-            logger.error(f"Google search response parsing error: {e}")
-            responses.append(
-                {"error": f"Failed to parse Google search response: {e!s}"}
-            )
         except Exception as e:
-            logger.error(f"Unexpected error during Google search: {e}")
-            responses.append(
-                {"error": f"Unexpected error during Google search: {e!s}"}
-            )
+            responses.append({"error": f"google search failed: {e!s}"})
         return responses
 
     def tavily_search(
