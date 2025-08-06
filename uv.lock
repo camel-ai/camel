@@ -1117,13 +1117,13 @@ requires-dist = [
     { name = "chromadb", marker = "extra == 'all'", specifier = ">=0.6.0,<1.0.0" },
     { name = "chromadb", marker = "extra == 'rag'", specifier = ">=0.6.0,<1.0.0" },
     { name = "chromadb", marker = "extra == 'storage'", specifier = ">=0.6.0,<1.0.0" },
-    { name = "chunkr-ai", marker = "extra == 'all'", specifier = ">=0.0.50" },
-    { name = "chunkr-ai", marker = "extra == 'document-tools'", specifier = ">=0.0.50" },
+    { name = "chunkr-ai", marker = "extra == 'all'", specifier = ">=0.0.50,<0.1.0" },
+    { name = "chunkr-ai", marker = "extra == 'document-tools'", specifier = ">=0.0.50,<0.1.0" },
     { name = "chunkr-ai", marker = "extra == 'eigent'", specifier = ">=0.0.41" },
-    { name = "chunkr-ai", marker = "extra == 'eigent'", specifier = ">=0.0.50" },
+    { name = "chunkr-ai", marker = "extra == 'eigent'", specifier = ">=0.0.50,<0.1.0" },
     { name = "chunkr-ai", marker = "extra == 'owl'", specifier = ">=0.0.41" },
-    { name = "chunkr-ai", marker = "extra == 'owl'", specifier = ">=0.0.50" },
-    { name = "chunkr-ai", marker = "extra == 'rag'", specifier = ">=0.0.50" },
+    { name = "chunkr-ai", marker = "extra == 'owl'", specifier = ">=0.0.50,<0.1.0" },
+    { name = "chunkr-ai", marker = "extra == 'rag'", specifier = ">=0.0.50,<0.1.0" },
     { name = "cohere", marker = "extra == 'all'", specifier = ">=5.11.0,<6" },
     { name = "cohere", marker = "extra == 'model-platforms'", specifier = ">=5.11.0,<6" },
     { name = "cohere", marker = "extra == 'rag'", specifier = ">=5.11.0,<6" },
@@ -1657,20 +1657,18 @@ wheels = [
 
 [[package]]
 name = "chunkr-ai"
-version = "0.3.4"
+version = "0.0.50"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
-    { name = "matplotlib" },
     { name = "nest-asyncio" },
     { name = "pillow" },
     { name = "pydantic" },
     { name = "python-dotenv" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/65/d1/228d8598ca0e4b312e51d4cdc66e5a710a156cc960a9281814dabb6fffb4/chunkr_ai-0.3.4.tar.gz", hash = "sha256:41954c772217767711f75c3058d08bba85d2aea4242d69e15a8d17d5ec1b3f69", size = 26484, upload-time = "2025-08-06T03:05:37.777Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/93/2a8262f50fda96068e6ea9acb387fb87f201457c1fa65474abbc318e6d96/chunkr_ai-0.0.50.tar.gz", hash = "sha256:da4d94866818d42997e479bad8d8414b2876b06a98e2ec4788cd89b24fd712df", size = 20023, upload-time = "2025-05-22T23:16:05.426Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bb/34/0c3f97b0bfe8865f1cb20f2dcf2c7ca83828fc73a09c6758ab4db8cbd68d/chunkr_ai-0.3.4-py3-none-any.whl", hash = "sha256:3c0563046ea4dd04ab2b245658063b443641991bb293be2d1f19b66aa7f752c9", size = 17865, upload-time = "2025-08-06T03:05:36.704Z" },
+    { url = "https://files.pythonhosted.org/packages/37/ca/57d7647caf903ff465b5af4e6e1ea75dc2f42b2b0684487e02161706773b/chunkr_ai-0.0.50-py3-none-any.whl", hash = "sha256:3a8652cf16a3fd9d1f51d8a922dfc91984e2befab32a6faaaa28dae7dcb6324d", size = 16751, upload-time = "2025-05-22T23:16:04.009Z" },
 ]
 
 [[package]]
