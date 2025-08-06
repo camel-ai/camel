@@ -15,7 +15,7 @@
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import NVIDIA_API_PARAMS, NvidiaConfig
+from camel.configs import NvidiaConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import BaseTokenCounter, api_keys_required
@@ -82,18 +82,3 @@ class NvidiaModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to NVIDIA API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to NVIDIA API.
-        """
-        for param in self.model_config_dict:
-            if param not in NVIDIA_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into NVIDIA model backend."
-                )
