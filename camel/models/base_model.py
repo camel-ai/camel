@@ -105,7 +105,6 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             == "true"
         )
         self._log_dir = os.environ.get("CAMEL_LOG_DIR", "camel_logs")
-        self.check_model_config()
 
     @property
     @abstractmethod
@@ -456,17 +455,6 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
             self._log_response(log_path, result)
 
         return result
-
-    @abstractmethod
-    def check_model_config(self):
-        r"""Check whether the input model configuration contains unexpected
-        arguments
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected argument for this model class.
-        """
-        pass
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count the number of tokens in the messages using the specific

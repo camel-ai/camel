@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import re
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -80,23 +79,6 @@ def test_sglang_model(model_type: ModelType, sglang_model_cleanup):
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type, UnifiedModelType)
     assert isinstance(model.token_limit, int)
-
-
-@pytest.mark.model_backend
-def test_sglang_model_unexpected_argument(sglang_model_cleanup):
-    model_type = ModelType.GPT_4
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into SGLang model backend."
-            )
-        ),
-    ):
-        _ = sglang_model_cleanup(model_type, model_config_dict)
 
 
 @pytest.mark.model_backend

@@ -33,9 +33,6 @@ class TestBaseModelBackend:
             def run(self, messages):
                 pass
 
-            def check_model_config(self):
-                pass
-
             def _run(self, messages, response_format=None, tools=None):
                 pass
 
@@ -120,9 +117,6 @@ class TestBaseModelBackend:
                 processed_messages = messages
                 return None
 
-            def check_model_config(self):
-                pass
-
             def _run(self, messages, response_format=None, tools=None):
                 pass
 
@@ -150,9 +144,6 @@ class TestBaseModelBackend:
                 pass
 
             def run(self, messages):
-                pass
-
-            def check_model_config(self):
                 pass
 
             def _run(self, messages, response_format=None, tools=None):

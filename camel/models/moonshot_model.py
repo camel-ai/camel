@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncStream
 from pydantic import BaseModel
 
-from camel.configs import MOONSHOT_API_PARAMS, MoonshotConfig
+from camel.configs import MoonshotConfig
 from camel.messages import OpenAIMessage
 from camel.models._utils import try_modify_message_with_format
 from camel.models.openai_compatible_model import OpenAICompatibleModel
@@ -183,18 +183,3 @@ class MoonshotModel(OpenAICompatibleModel):
             model=self.model_type,
             **request_config,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Moonshot API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Moonshot API.
-        """
-        for param in self.model_config_dict:
-            if param not in MOONSHOT_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Moonshot model backend."
-                )
