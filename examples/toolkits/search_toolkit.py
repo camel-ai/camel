@@ -382,7 +382,7 @@ print(search_alibaba_tongxiao_response)
 metaso_response = SearchToolkit().search_metaso(
     query="What is CAMEL-AI?",
     scope="webpage",
-    page= 1,
+    page=1,
 )
 
 print(metaso_response)
@@ -416,4 +416,4 @@ print(metaso_response)
    \nPrecision: 1.0000\nRecall: 1.0000\nF1 Score: 1.0000\nAverage
  Similarity: 0.9584", 'position': 10, 'date': '2025年05月23日'}], 'total': 38}
 ===============================================================================
-"""
+"""  # noqa: E501
