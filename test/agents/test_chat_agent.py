@@ -246,7 +246,6 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
 
     model_config_dict = ChatGPTConfig(
         tools=tool_list,
-        temperature=0.0,
     ).as_dict()
 
     model = ModelFactory.create(
@@ -378,7 +377,6 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
 
     model_config_dict = ChatGPTConfig(
         tools=tool_list,
-        temperature=0.0,
     ).as_dict()
 
     model = ModelFactory.create(
