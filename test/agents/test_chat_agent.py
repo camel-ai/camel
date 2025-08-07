@@ -22,10 +22,8 @@ import pytest
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_function_tool_call import (
+    ChatCompletionMessageFunctionToolCall,
     Function,
-)
-from openai.types.chat.chat_completion_message_tool_call import (
-    ChatCompletionMessageToolCall,
 )
 from openai.types.completion_usage import CompletionUsage
 from PIL import Image
@@ -270,7 +268,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
@@ -280,7 +278,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                             ),
                             type='function',
                         ),
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123457',
                             function=Function(
                                 arguments='{ \
@@ -317,7 +315,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{"a":1776,"b":2007}', name='sub'
@@ -402,7 +400,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
@@ -412,7 +410,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
                             ),
                             type='function',
                         ),
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123457',
                             function=Function(
                                 arguments='{ \
@@ -449,7 +447,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{"a":1776,"b":2007}', name='sub'
@@ -859,7 +857,7 @@ def test_tool_calling_sync(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
@@ -871,7 +869,7 @@ def test_tool_calling_sync(step_call_count=3):
                             ),
                             type='function',
                         ),
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123457',
                             function=Function(
                                 arguments='{"a": 0, "b": 10}', name='sub'
@@ -904,7 +902,7 @@ def test_tool_calling_sync(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_kIJby7Y6As6gAbWoxDqxD6HG',
                             function=Function(
                                 arguments='{"a":16,"b":10}', name='sub'
@@ -1028,7 +1026,7 @@ async def test_tool_calling_math_async(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
@@ -1135,7 +1133,7 @@ async def test_tool_calling_async(step_call_count=3):
         # Reset tool_calls at the beginning of each new round of step() call
         if model.run.call_count % 2 == 1:
             model_backend_rsp_tool_async.choices[0].message.tool_calls = [
-                ChatCompletionMessageToolCall(
+                ChatCompletionMessageFunctionToolCall(
                     id='call_mock_123456',
                     function=Function(
                         arguments='{"second":1}', name='async_sleep'
