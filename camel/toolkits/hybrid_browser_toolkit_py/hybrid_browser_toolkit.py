@@ -25,7 +25,7 @@ from camel.logger import get_logger
 from camel.models import BaseModelBackend
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.utils import sanitize_filename
+from camel.utils import sanitize_filename, MCPServer
 from camel.utils.commons import dependencies_required
 
 from .agent import PlaywrightLLMAgent
@@ -35,6 +35,7 @@ from .config_loader import ConfigLoader
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     r"""A hybrid browser toolkit that combines non-visual, DOM-based browser
     automation with visual, screenshot-based capabilities.
