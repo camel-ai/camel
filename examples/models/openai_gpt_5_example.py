@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 
 gpt_5_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_5_MINI,
+    model_type=ModelType.GPT_5,
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 
@@ -35,9 +35,8 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-Hello CAMEL AI! It's great to meet an open-source community dedicated to the 
-study of autonomous and communicative agents. Looking forward to seeing the 
-innovations and advancements you bring to the field! If there's anything I can 
-assist with, just let me know.
+Hello, CAMEL AI! Great to connect with an open-source community advancing 
+autonomous and communicative agents. Wishing you continued success—excited to 
+see what you build next!
 ===============================================================================
 '''
