@@ -37,6 +37,6 @@ print(response.msgs[0].content)
 ===============================================================================
 Hello, CAMEL AI! Great to connect with an open-source community advancing 
 autonomous and communicative agents. Wishing you continued success—excited to 
-see what you build next!
+see what you build next! 
 ===============================================================================
 '''
