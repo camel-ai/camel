@@ -35,7 +35,6 @@ class SearchToolkit(BaseToolkit):
     def __init__(
         self,
         timeout: Optional[float] = None,
-        number_of_result_pages: int = 10,
         exclude_domains: Optional[List[str]] = None,
     ):
         r"""Initializes the SearchToolkit.
@@ -43,15 +42,12 @@ class SearchToolkit(BaseToolkit):
         Args:
             timeout (float): Timeout for API requests in seconds.
                 (default: :obj:`None`)
-            number_of_result_pages (int): The number of result pages to
-                retrieve. (default: :obj:`10`)
             exclude_domains (Optional[List[str]]): List of domains to
                 exclude from search results. Currently only supported
                 by the `search_google` function.
                 (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
-        self.number_of_result_pages = number_of_result_pages
         self.exclude_domains = exclude_domains
 
     @dependencies_required("wikipedia")
