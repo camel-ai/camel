@@ -73,6 +73,13 @@
             ]
           },
           {
+            "group": "Awesome Toolkits",
+            "pages": [
+              "key_modules/browsertoolkit",
+              "key_modules/terminaltoolkit"
+            ]
+          },
+          {
             "group": "CAMEL with MCP",
             "pages": [
               "mcp/overview",
