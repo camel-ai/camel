@@ -19,7 +19,10 @@ from camel.toolkits import HybridBrowserToolkit
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run HybridBrowserToolkit with MCP server mode.",
-        usage=f"python {sys.argv[0]} [--mode MODE] [--timeout TIMEOUT] [--headless] [--stealth] [--implementation]",
+        usage=(
+            f"python {sys.argv[0]} [--mode MODE] [--timeout TIMEOUT] "
+            "[--headless] [--stealth] [--implementation]"
+        ),
     )
     parser.add_argument(
         "--mode",

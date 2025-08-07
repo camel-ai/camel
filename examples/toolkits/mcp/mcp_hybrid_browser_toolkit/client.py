@@ -19,6 +19,15 @@ from mcp.types import CallToolResult
 from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
 
 
+def _print_result(result: CallToolResult, max_length: int = 500) -> None:
+    """Helper function to print truncated result content."""
+    content = result.content[0].text
+    if len(content) > max_length:
+        print(content[:max_length] + "...")
+    else:
+        print(content)
+
+
 async def run_example_async():
     """Example of using HybridBrowserToolkit MCP server asynchronously."""
     config = {
@@ -51,28 +60,28 @@ async def run_example_async():
         res1: CallToolResult = await mcp_client.session.call_tool(
             "browser_open", {}
         )
-        print(res1.content[0].text[:500] + "..." if len(res1.content[0].text) > 500 else res1.content[0].text)
+        _print_result(res1)
 
         # Test visiting a page
         print("\n=== Visiting Google ===")
         res2: CallToolResult = await mcp_client.session.call_tool(
             "browser_visit_page", {"url": "https://www.google.com"}
         )
-        print(res2.content[0].text[:500] + "..." if len(res2.content[0].text) > 500 else res2.content[0].text)
+        _print_result(res2)
 
         # Test getting page snapshot
         print("\n=== Getting Page Snapshot ===")
         res3: CallToolResult = await mcp_client.session.call_tool(
             "browser_get_page_snapshot", {}
         )
-        print(res3.content[0].text[:500] + "..." if len(res3.content[0].text) > 500 else res3.content[0].text)
+        _print_result(res3)
 
         # Test closing browser
         print("\n=== Closing Browser ===")
         res4: CallToolResult = await mcp_client.session.call_tool(
             "browser_close", {}
         )
-        print(res4.content[0].text[:500] + "..." if len(res4.content[0].text) > 500 else res4.content[0].text)
+        _print_result(res4)
 
 
 def run_example_sync():
@@ -104,33 +113,29 @@ def run_example_sync():
 
         # Test opening browser
         print("\n=== Opening Browser (Sync) ===")
-        res1: CallToolResult = mcp_client.call_tool_sync(
-            "browser_open", {}
-        )
-        print(res1.content[0].text[:500] + "..." if len(res1.content[0].text) > 500 else res1.content[0].text)
+        res1: CallToolResult = mcp_client.call_tool_sync("browser_open", {})
+        _print_result(res1)
 
         # Test visiting a page
         print("\n=== Visiting Example.com (Sync) ===")
         res2: CallToolResult = mcp_client.call_tool_sync(
             "browser_visit_page", {"url": "https://www.example.com"}
         )
-        print(res2.content[0].text[:500] + "..." if len(res2.content[0].text) > 500 else res2.content[0].text)
+        _print_result(res2)
 
         # Test closing browser
         print("\n=== Closing Browser (Sync) ===")
-        res3: CallToolResult = mcp_client.call_tool_sync(
-            "browser_close", {}
-        )
-        print(res3.content[0].text[:500] + "..." if len(res3.content[0].text) > 500 else res3.content[0].text)
+        res3: CallToolResult = mcp_client.call_tool_sync("browser_close", {})
+        _print_result(res3)
 
 
 if __name__ == "__main__":
     print("Choose mode:")
     print("1. Async example")
     print("2. Sync example")
-    
+
     choice = input("Enter your choice (1 or 2): ").strip()
-    
+
     if choice == "1":
         print("Running async example...")
         asyncio.run(run_example_async())
