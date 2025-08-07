@@ -21,9 +21,11 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.chat.chat_completion_message_function_tool_call import (
+    Function,
+)
 from openai.types.chat.chat_completion_message_tool_call import (
     ChatCompletionMessageToolCall,
-    Function,
 )
 from openai.types.completion_usage import CompletionUsage
 from PIL import Image

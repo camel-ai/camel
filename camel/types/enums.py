@@ -48,6 +48,9 @@ class ModelType(UnifiedModelType, Enum):
     O4_MINI = "o4-mini"
     O3 = "o3"
     O3_PRO = "o3-pro"
+    GPT_5 = "gpt-5"
+    GPT_5_MINI = "gpt-4.1-mini"
+    GPT_5_NANO = "gpt-4.1-nano"
 
     AWS_CLAUDE_3_7_SONNET = "anthropic.claude-3-7-sonnet-20250219-v1:0"
     AWS_CLAUDE_3_5_SONNET = "anthropic.claude-3-5-sonnet-20241022-v2:0"
@@ -498,6 +501,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_5,
+            ModelType.GPT_5_MINI,
+            ModelType.GPT_5_NANO,
             ModelType.O4_MINI,
             ModelType.O3,
         }
@@ -539,6 +545,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_5,
             ModelType.O4_MINI,
             ModelType.O3,
         }
@@ -1176,6 +1183,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
             ModelType.GPT_4_5_PREVIEW,
+            ModelType.GPT_5,
+            ModelType.GPT_5_NANO,
+            ModelType.GPT_5_MINI,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.MISTRAL_PIXTRAL_12B,
