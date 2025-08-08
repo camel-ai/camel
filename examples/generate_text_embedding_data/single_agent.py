@@ -66,7 +66,7 @@ def main() -> None:
             model_platform=ModelPlatformType.DEFAULT,
             model_type=ModelType.DEFAULT,
             model_config_dict=ChatGPTConfig(
-                temperature=0.0, response_format={"type": "json_object"}
+                response_format={"type": "json_object"}
             ).as_dict(),
         )
 
