@@ -14,6 +14,7 @@
 
 # Enables postponed evaluation of annotations (for string-based type hints)
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Union
 
 from camel.logger import get_logger
@@ -41,7 +42,7 @@ class ExcelToolkit(BaseToolkit):
     def __init__(
         self,
         timeout: Optional[float] = None,
-        file_path: Optional[str] = None,
+        working_directory: Optional[str] = None,
     ):
         r"""Initializes a new instance of the ExcelToolkit class.
 
@@ -49,16 +50,28 @@ class ExcelToolkit(BaseToolkit):
             timeout (Optional[float]): The timeout value for API requests
                 in seconds. If None, no timeout is applied.
                 (default: :obj:`None`)
-            file_path (Optional[str]): Path to an existing Excel file to load.
-                (default: :obj:`None`)
+            working_directory (str, optional): The default directory for
+                output files. If not provided, it will be determined by the
+                `CAMEL_WORKDIR` environment variable (if set). If the
+                environment variable is not set, it defaults to
+                `camel_working_dir`.
         """
         super().__init__(timeout=timeout)
-        self.file_path = file_path
         self.wb = None
-        if file_path and os.path.exists(file_path):
-            from openpyxl import load_workbook
+        if working_directory:
+            self.working_directory = Path(working_directory).resolve()
+        else:
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                self.working_directory = Path(camel_workdir).resolve()
+            else:
+                self.working_directory = Path("./camel_working_dir").resolve()
 
-            self.wb = load_workbook(file_path)
+        self.working_directory.mkdir(parents=True, exist_ok=True)
+        logger.info(
+            f"ExcelToolkit initialized with output directory: "
+            f"{self.working_directory}"
+        )
 
     def _validate_file_path(self, file_path: str) -> bool:
         r"""Validate file path for security.
@@ -232,12 +245,11 @@ class ExcelToolkit(BaseToolkit):
             logger.error(f"Failed to process Excel file {document_path}: {e}")
             return f"Failed to process Excel file {document_path}: {e}"
 
-    def _save_workbook(self, file_path: Optional[str] = None) -> str:
+    def _save_workbook(self, file_path: str) -> str:
         r"""Save the current workbook to file.
 
         Args:
-            file_path (Optional[str]): The path to save the workbook.
-                If None, uses self.file_path.
+            file_path (str): The path to save the workbook.
 
         Returns:
             str: Success or error message.
@@ -245,23 +257,46 @@ class ExcelToolkit(BaseToolkit):
         if not self.wb:
             return "Error: No workbook loaded to save."
 
-        save_path = file_path or self.file_path
-        if not save_path:
-            return "Error: No file path specified for saving."
-
-        if not self._validate_file_path(save_path):
+        if not self._validate_file_path(file_path):
             return "Error: Invalid file path for saving."
 
         try:
-            self.wb.save(save_path)
-            return f"Workbook saved successfully to {save_path}"
+            self.wb.save(file_path)
+            return f"Workbook saved successfully to {file_path}"
         except Exception as e:
             logger.error(f"Failed to save workbook: {e}")
             return f"Error: Failed to save workbook: {e}"
 
+    def save_workbook(self, filename: str) -> str:
+        r"""Save the current in-memory workbook to a file.
+
+        Args:
+            filename (str): The filename to save the workbook. Must end with
+                .xlsx extension. The file will be saved in self.
+                working_directory.
+
+        Returns:
+            str: Success message or error details.
+        """
+        if not self.wb:
+            return "Error: No workbook is currently loaded in memory."
+
+        # Validate filename
+        if not filename:
+            return "Error: Filename is required."
+
+        if not filename.endswith('.xlsx'):
+            return "Error: Filename must end with .xlsx extension."
+
+        # Create full path in working directory
+        file_path = self.working_directory / filename
+        resolved_file_path = str(file_path.resolve())
+
+        return self._save_workbook(resolved_file_path)
+
     def create_workbook(
         self,
-        file_path: str,
+        filename: Optional[str] = None,
         sheet_name: Optional[str] = None,
         data: Optional[List[List[Union[str, int, float, None]]]] = None,
     ) -> str:
@@ -271,8 +306,9 @@ class ExcelToolkit(BaseToolkit):
         toolkit to work with the new file and optionally adds initial data.
 
         Args:
-            file_path (str): Where to save the new Excel file. Must end with .
-                xlsx.
+            filename (Optional[str]): The filename for the workbook. Must end
+                with .xlsx extension. The file will be saved in
+                self.working_directory. (default: :obj:`None`)
             sheet_name (Optional[str]): Name for the first sheet. If None,
                 creates "Sheet1". (default: :obj:`None`)
             data (Optional[List[List[Union[str, int, float, None]]]]): Initial
@@ -284,14 +320,31 @@ class ExcelToolkit(BaseToolkit):
         """
         from openpyxl import Workbook
 
-        if not self._validate_file_path(file_path):
+        # Validate filename
+        if filename is None:
+            return "Error: Filename is required."
+
+        if not filename.endswith('.xlsx'):
+            return "Error: Filename must end with .xlsx extension."
+
+        # Create full path in working directory
+        file_path = self.working_directory / filename
+        resolved_file_path = str(file_path.resolve())
+
+        if not self._validate_file_path(resolved_file_path):
             return "Error: Invalid file path."
+
+        # Check if file already exists
+        if os.path.exists(resolved_file_path):
+            return (
+                f"Error: File {filename} already exists in "
+                f"{self.working_directory}."
+            )
 
         try:
             # Create a new workbook
             wb = Workbook()
             self.wb = wb
-            self.file_path = file_path
 
             # Handle sheet creation safely
             if sheet_name:
@@ -312,42 +365,55 @@ class ExcelToolkit(BaseToolkit):
                     ws.append(row)
 
             # Save the workbook to the specified file path
-            wb.save(file_path)
+            wb.save(resolved_file_path)
 
-            return f"Workbook created successfully at {file_path}"
+            return f"Workbook created successfully at {resolved_file_path}"
         except Exception as e:
             logger.error(f"Failed to create workbook: {e}")
             return f"Error: Failed to create workbook: {e}"
 
-    def delete_workbook(self, file_path: Optional[str] = None) -> str:
-        r"""Delete a spreadsheet file.
+    def delete_workbook(self, filename: str) -> str:
+        r"""Delete a spreadsheet file from the working directory.
 
         Args:
-            file_path (Optional[str]): The path of the file to delete.
-                If None, uses self.file_path.
+            filename (str): The filename to delete. Must end with .xlsx
+                extension. The file will be deleted from self.
+                working_directory.
 
         Returns:
-            str: Success message.
+            str: Success message or error details.
         """
-        target_path = file_path or self.file_path
-        if not target_path:
-            return "Error: No file path specified for deletion."
+        # Validate filename
+        if not filename:
+            return "Error: Filename is required."
+
+        if not filename.endswith('.xlsx'):
+            return "Error: Filename must end with .xlsx extension."
+
+        # Create full path in working directory
+        file_path = self.working_directory / filename
+        target_path = str(file_path.resolve())
 
         if not self._validate_file_path(target_path):
             return "Error: Invalid file path."
 
         if not os.path.exists(target_path):
-            return f"File {target_path} does not exist."
+            return (
+                f"Error: File {filename} does not exist in "
+                f"{self.working_directory}."
+            )
 
         try:
             os.remove(target_path)
-            if target_path == self.file_path:
-                self.wb = None
-                self.file_path = None
-            return f"Workbook {target_path} deleted successfully."
+            # Clean up workbook if one is loaded
+            self.wb = None
+            return (
+                f"Workbook {filename} deleted successfully from "
+                f"{self.working_directory}."
+            )
         except Exception as e:
             logger.error(f"Failed to delete workbook: {e}")
-            return f"Failed to delete workbook {target_path}: {e}"
+            return f"Error: Failed to delete workbook {filename}: {e}"
 
     def create_sheet(
         self,
@@ -379,9 +445,6 @@ class ExcelToolkit(BaseToolkit):
                 for row in data:
                     ws.append(row)
 
-            save_result = self._save_workbook()
-            if save_result.startswith("Error"):
-                return save_result
             return f"Sheet {sheet_name} created successfully."
         except Exception as e:
             logger.error(f"Failed to create sheet: {e}")
@@ -408,9 +471,6 @@ class ExcelToolkit(BaseToolkit):
         try:
             ws = self.wb[sheet_name]
             self.wb.remove(ws)
-            save_result = self._save_workbook()
-            if save_result.startswith("Error"):
-                return save_result
             return f"Sheet {sheet_name} deleted successfully."
         except Exception as e:
             logger.error(f"Failed to delete sheet: {e}")
@@ -439,9 +499,6 @@ class ExcelToolkit(BaseToolkit):
                 for cell in row:
                     cell.value = None
 
-            save_result = self._save_workbook()
-            if save_result.startswith("Error"):
-                return save_result
             return f"Sheet {sheet_name} cleared successfully."
         except Exception as e:
             logger.error(f"Failed to clear sheet: {e}")
@@ -479,7 +536,6 @@ class ExcelToolkit(BaseToolkit):
         num_rows = end_row - start_row + 1
         ws.delete_rows(start_row, num_rows)
 
-        self._save_workbook()
         return (
             f"Deleted rows {start_row} to {end_row} from sheet "
             f"{sheet_name} successfully."
@@ -518,7 +574,6 @@ class ExcelToolkit(BaseToolkit):
         num_cols = end_col - start_col + 1
         ws.delete_cols(start_col, num_cols)
 
-        self._save_workbook()
         return (
             f"Deleted columns {start_col} to {end_col} from sheet "
             f"{sheet_name} successfully."
@@ -585,9 +640,6 @@ class ExcelToolkit(BaseToolkit):
                 ws[cell_reference].value = None
             else:
                 ws[cell_reference] = value
-            save_result = self._save_workbook()
-            if save_result.startswith("Error"):
-                return save_result
             return (
                 f"Cell {cell_reference} updated successfully in sheet "
                 f"{sheet_name}."
@@ -765,10 +817,9 @@ class ExcelToolkit(BaseToolkit):
                     if col_idx < len(values[row_idx]):
                         cell.value = values[row_idx][col_idx]
 
-        self._save_workbook()
         return f"Values set for range {cell_range} in sheet {sheet_name}."
 
-    def export_sheet_to_csv(self, sheet_name: str, csv_path: str) -> str:
+    def export_sheet_to_csv(self, sheet_name: str, csv_filename: str) -> str:
         r"""Export a specific sheet to CSV format.
 
         Use this to convert Excel sheets to CSV files for compatibility or
@@ -776,24 +827,63 @@ class ExcelToolkit(BaseToolkit):
 
         Args:
             sheet_name (str): Name of the sheet to export.
-            csv_path (str): File path where CSV will be saved.
+            csv_filename (str): Filename for the CSV file. Must end with .csv
+                extension. The file will be saved in self.working_directory.
 
         Returns:
             str: Success confirmation message or error details.
         """
         if not self.wb:
-            return "Error: Workbook not initialized."
+            return (
+                "Error: No workbook is currently loaded. Use "
+                "extract_excel_content to load a workbook first."
+            )
 
         if sheet_name not in self.wb.sheetnames:
-            return f"Error: Sheet {sheet_name} does not exist."
+            return (
+                f"Error: Sheet {sheet_name} does not exist in the current "
+                "workbook."
+            )
 
-        import pandas as pd
+        # Validate filename
+        if not csv_filename:
+            return "Error: CSV filename is required."
 
-        # Read the specific sheet
-        df = pd.read_excel(self.file_path, sheet_name=sheet_name)
-        df.to_csv(csv_path, index=False)
+        if not csv_filename.endswith('.csv'):
+            return "Error: CSV filename must end with .csv extension."
 
-        return f"Sheet {sheet_name} exported to CSV: {csv_path}"
+        # Create full path in working directory
+        csv_path = self.working_directory / csv_filename
+        resolved_csv_path = str(csv_path.resolve())
+
+        if not self._validate_file_path(resolved_csv_path):
+            return "Error: Invalid file path."
+
+        try:
+            # Get the worksheet
+            ws = self.wb[sheet_name]
+
+            # Convert worksheet to list of lists
+            data = []
+            for row in ws.iter_rows(values_only=True):
+                data.append(list(row))
+
+            # Write to CSV
+            import csv
+
+            with open(
+                resolved_csv_path, 'w', newline='', encoding='utf-8'
+            ) as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerows(data)
+
+            return (
+                f"Sheet {sheet_name} exported to {csv_filename} "
+                f"in {self.working_directory}."
+            )
+        except Exception as e:
+            logger.error(f"Failed to export sheet to CSV: {e}")
+            return f"Error: Failed to export sheet {sheet_name} to CSV: {e}"
 
     def get_rows(
         self,
@@ -862,7 +952,6 @@ class ExcelToolkit(BaseToolkit):
             return f"Error: Sheet {sheet_name} does not exist."
         ws = self.wb[sheet_name]
         ws.append(row_data)
-        self._save_workbook()
         return f"Row appended to sheet {sheet_name} successfully."
 
     def update_row(
@@ -901,7 +990,6 @@ class ExcelToolkit(BaseToolkit):
         for col_idx, value in enumerate(row_data, 1):
             ws.cell(row=row_number, column=col_idx).value = value
 
-        self._save_workbook()
         return f"Row {row_number} updated in sheet {sheet_name} successfully."
 
     def get_tools(self) -> List[FunctionTool]:
@@ -916,6 +1004,7 @@ class ExcelToolkit(BaseToolkit):
             # File operations
             FunctionTool(self.extract_excel_content),
             FunctionTool(self.create_workbook),
+            FunctionTool(self.save_workbook),
             FunctionTool(self.delete_workbook),
             FunctionTool(self.export_sheet_to_csv),
             # Sheet operations

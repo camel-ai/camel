@@ -20,14 +20,14 @@ if TYPE_CHECKING:
 # Logging support
 from camel.logger import get_logger
 
+from .config_loader import ConfigLoader
+
 logger = get_logger(__name__)
 
 
 class PageSnapshot:
     """Utility for capturing YAML-like page snapshots and diff-only
     variants."""
-
-    MAX_TIMEOUT_MS = 5000  # wait_for_load_state timeout
 
     def __init__(self, page: "Page"):
         self.page = page
@@ -37,12 +37,17 @@ class PageSnapshot:
             "is_diff": False,
             "priorities": [1, 2, 3],
         }
+        self.dom_timeout = ConfigLoader.get_dom_content_loaded_timeout()
 
     # ---------------------------------------------------------------------
     # Public API
     # ---------------------------------------------------------------------
     async def capture(
-        self, *, force_refresh: bool = False, diff_only: bool = False
+        self,
+        *,
+        force_refresh: bool = False,
+        diff_only: bool = False,
+        viewport_limit: bool = False,
     ) -> str:
         """Return current snapshot or just the diff to previous one."""
         try:
@@ -60,11 +65,13 @@ class PageSnapshot:
 
             # ensure DOM stability
             await self.page.wait_for_load_state(
-                'domcontentloaded', timeout=self.MAX_TIMEOUT_MS
+                'domcontentloaded', timeout=self.dom_timeout
             )
 
             logger.debug("Capturing page snapshot …")
-            snapshot_result = await self._get_snapshot_direct()
+            snapshot_result = await self._get_snapshot_direct(
+                viewport_limit=viewport_limit
+            )
 
             # Extract snapshot text from the unified analyzer result
             if (
@@ -110,7 +117,7 @@ class PageSnapshot:
     _snapshot_js_cache: Optional[str] = None  # class-level cache
 
     async def _get_snapshot_direct(
-        self,
+        self, viewport_limit: bool = False
     ) -> Optional[Union[str, Dict[str, Any]]]:
         r"""Evaluate the snapshot-extraction JS with simple retry logic.
 
@@ -132,7 +139,7 @@ class PageSnapshot:
         retries: int = 3
         while retries > 0:
             try:
-                return await self.page.evaluate(js_code)
+                return await self.page.evaluate(js_code, viewport_limit)
             except Exception as e:
                 msg = str(e)
 
@@ -153,7 +160,7 @@ class PageSnapshot:
                     # Wait for next DOM stability before retrying
                     try:
                         await self.page.wait_for_load_state(
-                            "domcontentloaded", timeout=self.MAX_TIMEOUT_MS
+                            "domcontentloaded", timeout=self.dom_timeout
                         )
                     except Exception:
                         # Even if waiting fails, attempt retry to give it

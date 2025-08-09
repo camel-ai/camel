@@ -11,13 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
-
-if TYPE_CHECKING:
-    from reportlab.platypus import Table
+from typing import List, Optional, Tuple, Union
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -25,9 +23,6 @@ from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer, dependencies_required
 
 logger = get_logger(__name__)
-
-# Default format when no extension is provided
-DEFAULT_FORMAT = '.md'
 
 
 @MCPServer()
@@ -43,7 +38,7 @@ class FileWriteToolkit(BaseToolkit):
 
     def __init__(
         self,
-        output_dir: str = "./",
+        working_directory: Optional[str] = None,
         timeout: Optional[float] = None,
         default_encoding: str = "utf-8",
         backup_enabled: bool = True,
@@ -51,8 +46,11 @@ class FileWriteToolkit(BaseToolkit):
         r"""Initialize the FileWriteToolkit.
 
         Args:
-            output_dir (str): The default directory for output files.
-                Defaults to the current working directory.
+            working_directory (str, optional): The default directory for
+                output files. If not provided, it will be determined by the
+                `CAMEL_WORKDIR` environment variable (if set). If the
+                environment variable is not set, it defaults to
+                `camel_working_dir`.
             timeout (Optional[float]): The timeout for the toolkit.
                 (default: :obj:`None`)
             default_encoding (str): Default character encoding for text
@@ -61,13 +59,20 @@ class FileWriteToolkit(BaseToolkit):
                 before overwriting. (default: :obj:`True`)
         """
         super().__init__(timeout=timeout)
-        self.output_dir = Path(output_dir).resolve()
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        if working_directory:
+            self.working_directory = Path(working_directory).resolve()
+        else:
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                self.working_directory = Path(camel_workdir).resolve()
+            else:
+                self.working_directory = Path("./camel_working_dir").resolve()
+        self.working_directory.mkdir(parents=True, exist_ok=True)
         self.default_encoding = default_encoding
         self.backup_enabled = backup_enabled
         logger.info(
             f"FileWriteToolkit initialized with output directory"
-            f": {self.output_dir}, encoding: {default_encoding}"
+            f": {self.working_directory}, encoding: {default_encoding}"
         )
 
     def _resolve_filepath(self, file_path: str) -> Path:
@@ -86,11 +91,27 @@ class FileWriteToolkit(BaseToolkit):
         """
         path_obj = Path(file_path)
         if not path_obj.is_absolute():
-            path_obj = self.output_dir / path_obj
+            path_obj = self.working_directory / path_obj
 
         sanitized_filename = self._sanitize_filename(path_obj.name)
         path_obj = path_obj.parent / sanitized_filename
         return path_obj.resolve()
+
+    def _sanitize_filename(self, filename: str) -> str:
+        r"""Sanitize a filename by replacing any character that is not
+        alphanumeric, a dot (.), hyphen (-), or underscore (_) with an
+        underscore (_).
+
+        Args:
+            filename (str): The original filename which may contain spaces or
+                special characters.
+
+        Returns:
+            str: The sanitized filename with disallowed characters replaced by
+                underscores.
+        """
+        safe = re.sub(r'[^\w\-.]', '_', filename)
+        return safe
 
     def _write_text_file(
         self, file_path: Path, content: str, encoding: str = "utf-8"
@@ -104,7 +125,6 @@ class FileWriteToolkit(BaseToolkit):
         """
         with file_path.open("w", encoding=encoding) as f:
             f.write(content)
-        logger.debug(f"Wrote text to {file_path} with {encoding} encoding")
 
     def _generate_unique_filename(self, file_path: Path) -> Path:
         r"""Generate a unique filename if the target file already exists.
@@ -163,7 +183,6 @@ class FileWriteToolkit(BaseToolkit):
             para.style = style
 
         document.save(str(file_path))
-        logger.debug(f"Wrote DOCX to {file_path} with default formatting")
 
     @dependencies_required('reportlab')
     def _write_pdf_file(
@@ -331,9 +350,6 @@ class FileWriteToolkit(BaseToolkit):
                     isinstance(row, list) for row in content
                 ):
                     # Content is a table (List[List[str]])
-                    logger.debug(
-                        f"Processing content as table with {len(content)} rows"
-                    )
                     if content:
                         table = self._create_pdf_table(content)
                         story.append(table)
@@ -364,7 +380,6 @@ class FileWriteToolkit(BaseToolkit):
 
         # Process content
         lines = content.split('\n')
-        logger.debug(f"Processing {len(lines)} lines of content")
 
         # Parse all tables from the content first
         tables = self._parse_markdown_table(lines)
@@ -396,8 +411,6 @@ class FileWriteToolkit(BaseToolkit):
                 )
 
                 if current_table_idx < len(tables):
-                    table_row_count = len(tables[current_table_idx])
-                    logger.debug(f"Adding table with {table_row_count} rows")
                     try:
                         table = self._create_pdf_table(
                             tables[current_table_idx]
@@ -530,10 +543,8 @@ class FileWriteToolkit(BaseToolkit):
                         addMapping(font_name, 0, 1, font_name)  # italic
                         addMapping(font_name, 1, 0, font_name)  # bold
                         addMapping(font_name, 1, 1, font_name)  # bold italic
-                        logger.debug(f"Registered Chinese font: {font_path}")
                     return font_name
-                except Exception as e:
-                    logger.debug(f"Failed to register font {font_path}: {e}")
+                except Exception:
                     continue
 
         # Fallback to Helvetica if no Chinese font found
@@ -559,38 +570,29 @@ class FileWriteToolkit(BaseToolkit):
 
             # Check for table (Markdown-style)
             if self._is_table_row(line):
-                logger.debug(f"Found table line: {line}")
-
                 if not in_table:
                     in_table = True
                     current_table_data = []
-                    logger.debug("Starting new table")
 
                 # Skip separator lines (e.g., |---|---|)
                 if self._is_table_separator(line):
-                    logger.debug("Skipping separator line")
                     continue
 
                 # Parse table row
                 cells = self._parse_table_row(line)
                 if cells:
                     current_table_data.append(cells)
-                    logger.debug(f"Added table row: {cells}")
                 continue
 
             # If we were in a table and now we're not, finalize the table
             if in_table:
                 if current_table_data:
-                    row_count = len(current_table_data)
-                    logger.debug(f"Finalizing table with {row_count} rows")
                     tables.append(current_table_data)
                 current_table_data = []
                 in_table = False
 
         # Add any remaining table
         if in_table and current_table_data:
-            row_count = len(current_table_data)
-            logger.debug(f"Adding final table with {row_count} rows")
             tables.append(current_table_data)
 
         return tables
@@ -646,7 +648,7 @@ class FileWriteToolkit(BaseToolkit):
 
         return cells
 
-    def _create_pdf_table(self, table_data: List[List[str]]) -> "Table":
+    def _create_pdf_table(self, table_data: List[List[str]]):
         r"""Create a formatted table for PDF.
 
         Args:
@@ -656,40 +658,153 @@ class FileWriteToolkit(BaseToolkit):
             Table: A formatted reportlab Table object.
         """
         from reportlab.lib import colors
-        from reportlab.platypus import Table, TableStyle
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.platypus import Paragraph, Table, TableStyle
 
         try:
             # Get Chinese font for table
             chinese_font = self._register_chinese_font()
 
-            # Debug: Log table data
-            logger.debug(f"Creating table with {len(table_data)} rows")
-            for i, row in enumerate(table_data):
-                logger.debug(f"Row {i}: {row}")
+            # Calculate available width (A4 width minus margins)
+            page_width = A4[0]  # A4 width in points
+            margins = 144  # left + right margins (72 each)
+            available_width = page_width - margins
 
-            # Create table
-            table = Table(table_data)
+            # Calculate column widths and font size based on content
+            if table_data:
+                num_columns = len(table_data[0])
 
-            # Style the table with Chinese font support
+                # Calculate max content length for each column
+                max_lengths = [0] * num_columns
+                max_cell_length = 0
+                for row in table_data:
+                    for i, cell in enumerate(row):
+                        if i < len(max_lengths):
+                            cell_length = len(str(cell))
+                            max_lengths[i] = max(max_lengths[i], cell_length)
+                            max_cell_length = max(max_cell_length, cell_length)
+
+                # Dynamic font size calculation based on columns and content
+                # Base font sizes
+                base_header_font = 9
+                base_body_font = 8
+
+                # Calculate font size factor based on columns and content
+                column_factors = {10: 0.6, 8: 0.7, 6: 0.8, 4: 0.9}
+                font_size_factor = next(
+                    (
+                        factor
+                        for cols, factor in column_factors.items()
+                        if num_columns > cols
+                    ),
+                    1.0,
+                )
+
+                # Further adjust if max cell content is very long
+                if max_cell_length > 30:
+                    font_size_factor *= 0.8
+                elif max_cell_length > 20:
+                    font_size_factor *= 0.9
+
+                header_font_size = max(
+                    5, int(base_header_font * font_size_factor)
+                )
+                body_font_size = max(5, int(base_body_font * font_size_factor))
+
+                # Calculate minimum column width based on font size
+                min_col_width = max(30, 40 * font_size_factor)
+
+                # Distribute width proportionally with minimum width
+                total_length = sum(max_lengths)
+                if total_length > 0:
+                    # Calculate proportional widths
+                    proportional_widths = [
+                        (length / total_length) * available_width
+                        for length in max_lengths
+                    ]
+
+                    # Ensure minimum width and adjust if necessary
+                    col_widths = []
+                    total_width = 0
+                    for width in proportional_widths:
+                        adjusted_width = max(min_col_width, width)
+                        col_widths.append(adjusted_width)
+                        total_width += adjusted_width
+
+                    # Scale down if total exceeds available width
+                    if total_width > available_width:
+                        scale_factor = available_width / total_width
+                        col_widths = [w * scale_factor for w in col_widths]
+                else:
+                    col_widths = [available_width / num_columns] * num_columns
+
+                # Adjust padding based on font size
+                h_padding = max(2, int(6 * font_size_factor))
+                v_padding = max(2, int(4 * font_size_factor))
+            else:
+                col_widths = None
+                header_font_size = 9
+                body_font_size = 8
+                h_padding = 6
+                v_padding = 4
+
+            # Create paragraph styles for wrapping text
+            header_style = ParagraphStyle(
+                'TableHeader',
+                fontName=chinese_font,
+                fontSize=header_font_size,
+                textColor=colors.whitesmoke,
+                alignment=0,  # LEFT alignment
+                leading=header_font_size * 1.2,
+            )
+
+            body_style = ParagraphStyle(
+                'TableBody',
+                fontName=chinese_font,
+                fontSize=body_font_size,
+                textColor=colors.black,
+                alignment=0,  # LEFT alignment
+                leading=body_font_size * 1.2,
+            )
+
+            # Convert table data to Paragraph objects for text wrapping
+            wrapped_data = []
+            for row_idx, row in enumerate(table_data):
+                wrapped_row = []
+                for cell in row:
+                    cell_text = str(cell)
+                    # Use header style for first row, body style for others
+                    style = header_style if row_idx == 0 else body_style
+                    # Escape special characters for XML
+                    cell_text = (
+                        cell_text.replace('&', '&amp;')
+                        .replace('<', '&lt;')
+                        .replace('>', '&gt;')
+                    )
+                    para = Paragraph(cell_text, style)
+                    wrapped_row.append(para)
+                wrapped_data.append(wrapped_row)
+
+            # Create table with wrapped data
+            table = Table(wrapped_data, colWidths=col_widths, repeatRows=1)
+
+            # Style the table with dynamic formatting
             table.setStyle(
                 TableStyle(
                     [
                         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                        ('FONTNAME', (0, 0), (-1, 0), chinese_font),
-                        ('FONTSIZE', (0, 0), (-1, 0), 10),
-                        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                        ('FONTNAME', (0, 1), (-1, -1), chinese_font),
-                        ('FONTSIZE', (0, 1), (-1, -1), 9),
-                        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                        ('LEFTPADDING', (0, 0), (-1, -1), h_padding),
+                        ('RIGHTPADDING', (0, 0), (-1, -1), h_padding),
+                        ('TOPPADDING', (0, 0), (-1, -1), v_padding),
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), v_padding),
                     ]
                 )
             )
 
-            logger.debug("Table created successfully")
             return table
 
         except Exception as e:
@@ -708,20 +823,85 @@ class FileWriteToolkit(BaseToolkit):
         Returns:
             str: Text with HTML formatting.
         """
-        # Bold text (check double markers first)
-        text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
-        text = re.sub(r'__(.*?)__', r'<b>\1</b>', text)
+        # Define conversion patterns
+        conversions = [
+            (r'\*\*(.*?)\*\*', r'<b>\1</b>'),  # Bold with **
+            (r'__(.*?)__', r'<b>\1</b>'),  # Bold with __
+            (
+                r'(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)',
+                r'<i>\1</i>',
+            ),  # Italic with *
+            (r'(?<!_)_(?!_)(.*?)(?<!_)_(?!_)', r'<i>\1</i>'),  # Italic with _
+            (r'`(.*?)`', r'<font name="Courier">\1</font>'),  # Inline code
+        ]
 
-        # Italic text (single markers after double markers)
-        text = re.sub(
-            r'(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)', r'<i>\1</i>', text
-        )
-        text = re.sub(r'(?<!_)_(?!_)(.*?)(?<!_)_(?!_)', r'<i>\1</i>', text)
-
-        # Code (inline)
-        text = re.sub(r'`(.*?)`', r'<font name="Courier">\1</font>', text)
+        for pattern, replacement in conversions:
+            text = re.sub(pattern, replacement, text)
 
         return text
+
+    def _ensure_html_utf8_meta(self, content: str) -> str:
+        r"""Ensure HTML content has UTF-8 meta tag.
+
+        Args:
+            content (str): The HTML content.
+
+        Returns:
+            str: HTML content with UTF-8 meta tag.
+        """
+        # Check if content already has a charset meta tag
+        has_charset = re.search(
+            r'<meta[^>]*charset[^>]*>', content, re.IGNORECASE
+        )
+
+        # UTF-8 meta tag
+        utf8_meta = '<meta charset="utf-8">'
+
+        if has_charset:
+            # Replace existing charset with UTF-8
+            content = re.sub(
+                r'<meta[^>]*charset[^>]*>',
+                utf8_meta,
+                content,
+                flags=re.IGNORECASE,
+            )
+        else:
+            # Add UTF-8 meta tag
+            # Try to find <head> tag
+            head_match = re.search(r'<head[^>]*>', content, re.IGNORECASE)
+            if head_match:
+                # Insert after <head> tag
+                insert_pos = head_match.end()
+                content = (
+                    content[:insert_pos]
+                    + '\n    '
+                    + utf8_meta
+                    + content[insert_pos:]
+                )
+            else:
+                # No <head> tag found, check if there's <html> tag
+                html_match = re.search(r'<html[^>]*>', content, re.IGNORECASE)
+                if html_match:
+                    # Insert <head> with meta tag after <html>
+                    insert_pos = html_match.end()
+                    content = (
+                        content[:insert_pos]
+                        + '\n<head>\n    '
+                        + utf8_meta
+                        + '\n</head>'
+                        + content[insert_pos:]
+                    )
+                else:
+                    # No proper HTML structure, wrap content
+                    content = (
+                        '<!DOCTYPE html>\n<html>\n<head>\n    '
+                        + utf8_meta
+                        + '\n</head>\n<body>\n'
+                        + content
+                        + '\n</body>\n</html>'
+                    )
+
+        return content
 
     def _write_csv_file(
         self,
@@ -745,7 +925,6 @@ class FileWriteToolkit(BaseToolkit):
             else:
                 writer = csv.writer(f)
                 writer.writerows(content)
-        logger.debug(f"Wrote CSV to {file_path} with {encoding} encoding")
 
     def _write_json_file(
         self,
@@ -774,52 +953,23 @@ class FileWriteToolkit(BaseToolkit):
             else:
                 # If not string, dump as JSON
                 json.dump(content, f, ensure_ascii=False)
-        logger.debug(f"Wrote JSON to {file_path} with {encoding} encoding")
 
-    def _write_yaml_file(
-        self,
-        file_path: Path,
-        content: str,
-        encoding: str = "utf-8",
-    ) -> None:
-        r"""Write YAML content to a file.
-
-        Args:
-            file_path (Path): The target file path.
-            content (str): The YAML content as a string.
-            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
-        """
-        with file_path.open("w", encoding=encoding) as f:
-            f.write(content)
-        logger.debug(f"Wrote YAML to {file_path} with {encoding} encoding")
-
-    def _write_html_file(
+    def _write_simple_text_file(
         self, file_path: Path, content: str, encoding: str = "utf-8"
     ) -> None:
-        r"""Write text content to an HTML file.
+        r"""Write text content to a file (used for HTML, Markdown, YAML, etc.).
 
         Args:
             file_path (Path): The target file path.
-            content (str): The HTML content to write.
+            content (str): The content to write.
             encoding (str): Character encoding to use. (default: :obj:`utf-8`)
         """
+        # For HTML files, ensure UTF-8 meta tag is present
+        if file_path.suffix.lower() in ['.html', '.htm']:
+            content = self._ensure_html_utf8_meta(content)
+
         with file_path.open("w", encoding=encoding) as f:
             f.write(content)
-        logger.debug(f"Wrote HTML to {file_path} with {encoding} encoding")
-
-    def _write_markdown_file(
-        self, file_path: Path, content: str, encoding: str = "utf-8"
-    ) -> None:
-        r"""Write text content to a Markdown file.
-
-        Args:
-            file_path (Path): The target file path.
-            content (str): The Markdown content to write.
-            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
-        """
-        with file_path.open("w", encoding=encoding) as f:
-            f.write(content)
-        logger.debug(f"Wrote Markdown to {file_path} with {encoding} encoding")
 
     def write_to_file(
         self,
@@ -844,7 +994,7 @@ class FileWriteToolkit(BaseToolkit):
                 - CSV: string or list of lists
                 - JSON: string or serializable object
             filename (str): The name or path of the file. If a relative path is
-                supplied, it is resolved to self.output_dir.
+                supplied, it is resolved to self.working_directory.
             encoding (Optional[str]): The character encoding to use. (default:
                 :obj: `None`)
             use_latex (bool): Whether to use LaTeX for math rendering.
@@ -861,10 +1011,10 @@ class FileWriteToolkit(BaseToolkit):
 
         extension = file_path.suffix.lower()
 
-        # If no extension is provided, use the default format
+        # If no extension is provided, use markdown as default
         if extension == "":
-            file_path = file_path.with_suffix(DEFAULT_FORMAT)
-            extension = DEFAULT_FORMAT
+            file_path = file_path.with_suffix('.md')
+            extension = '.md'
 
         try:
             # Get encoding or use default
@@ -884,16 +1034,15 @@ class FileWriteToolkit(BaseToolkit):
                     content,  # type: ignore[arg-type]
                     encoding=file_encoding,
                 )
-            elif extension in [".yml", ".yaml"]:
-                self._write_yaml_file(
-                    file_path, str(content), encoding=file_encoding
-                )
-            elif extension in [".html", ".htm"]:
-                self._write_html_file(
-                    file_path, str(content), encoding=file_encoding
-                )
-            elif extension in [".md", ".markdown"]:
-                self._write_markdown_file(
+            elif extension in [
+                ".yml",
+                ".yaml",
+                ".html",
+                ".htm",
+                ".md",
+                ".markdown",
+            ]:
+                self._write_simple_text_file(
                     file_path, str(content), encoding=file_encoding
                 )
             else:
@@ -924,19 +1073,3 @@ class FileWriteToolkit(BaseToolkit):
         return [
             FunctionTool(self.write_to_file),
         ]
-
-    def _sanitize_filename(self, filename: str) -> str:
-        r"""Sanitize a filename by replacing any character that is not
-        alphanumeric, a dot (.), hyphen (-), or underscore (_) with an
-        underscore (_).
-
-        Args:
-            filename (str): The original filename which may contain spaces or
-                special characters.
-
-        Returns:
-            str: The sanitized filename with disallowed characters replaced by
-                underscores.
-        """
-        safe = re.sub(r'[^\w\-.]', '_', filename)
-        return safe

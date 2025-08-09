@@ -43,7 +43,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **Anthropic**    | claude-2.1, claude-2.0, claude-instant-1.2<br/>claude-3-opus-latest, claude-3-sonnet-20240229, claude-3-haiku-20240307<br/>claude-3-5-sonnet-latest, claude-3-5-haiku-latest |
 | **Gemini**       | gemini-2.5-pro, gemini-2.5-flash<br/>gemini-2.0-flash, gemini-2.0-flash-thinking<br/> gemini-2.0-flash-lite|
 | **Lingyiwanwu**  | yi-lightning, yi-large, yi-medium<br/>yi-large-turbo, yi-vision, yi-medium-200k<br/>yi-spark, yi-large-rag, yi-large-fc |
-| **Qwen**         | qwq-32b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long<br/>qwen-vl-max, qwen-vl-plus, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo<br/>qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
+| **Qwen**         | qwen3-coder-plus,qwq-32b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long<br/>qwen-vl-max, qwen-vl-plus, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo<br/>qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
 | **DeepSeek**     | deepseek-chat<br/>deepseek-reasoner |
 | **ZhipuAI**      | glm-4, glm-4v, glm-4v-flash<br/>glm-4v-plus-0111, glm-4-plus, glm-4-air<br/>glm-4-air-0111, glm-4-airx, glm-4-long<br/>glm-4-flashx, glm-zero-preview, glm-4-flash, glm-3-turbo |
 | **InternLM**     | internlm3-latest, internlm3-8b-instruct<br/>internlm2.5-latest, internlm2-pro-chat |
@@ -197,6 +197,8 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
 
   <Tab title="Qwen">
 
+  Leverage [Qwen](https://qwenlm.github.io/)'s state-of-the-art models for coding and reasoning:
+
   ```python
   from camel.models import ModelFactory
   from camel.types import ModelPlatformType, ModelType
@@ -216,9 +218,80 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
 
   </Tab>
 
+   <Tab title="OpenRouter">
+  Access a wide variety of models through [OpenRouter](https://openrouter.ai/)'s unified API:
+
+  **Setup:** Set your OpenRouter API key as an environment variable:
+  ```bash
+  export OPENROUTER_API_KEY="your-api-key-here"
+  ```
+
+  ```python
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType, ModelType
+  from camel.configs import OpenRouterConfig
+  from camel.agents import ChatAgent
+
+  # Using predefined OpenRouter models
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.OPENROUTER,
+      model_type=ModelType.OPENROUTER_LLAMA_3_1_70B,
+      model_config_dict=OpenRouterConfig(temperature=0.2).as_dict(),
+  )
+
+  agent = ChatAgent(
+      system_message="You are a helpful assistant.",
+      model=model
+  )
+
+  response = agent.step("Say hi to CAMEL AI community.")
+  print(response.msgs[0].content)
+  ```
+
+  <Note type="info">
+    CAMEL supports several predefined OpenRouter models including:
+    - `OPENROUTER_LLAMA_3_1_405B` - Meta's Llama 3.1 405B model
+    - `OPENROUTER_LLAMA_3_1_70B` - Meta's Llama 3.1 70B model
+    - `OPENROUTER_LLAMA_4_MAVERICK` - Meta's Llama 4 Maverick model
+    - `OPENROUTER_LLAMA_4_SCOUT` - Meta's Llama 4 Scout model
+    - `OPENROUTER_OLYMPICODER_7B` - Open R1's OlympicCoder 7B model
+    - `OPENROUTER_HORIZON_ALPHA` - Horizon Alpha model
+    
+    Free versions are also available for some models (e.g., `OPENROUTER_LLAMA_4_MAVERICK_FREE`).
+  </Note>
+
+  You can also use any OpenRouter model via the OpenAI-compatible interface:
+
+  ```python
+  import os
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType
+
+  # Use any model available on OpenRouter
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+      model_type="anthropic/claude-3.5-sonnet",  # Any OpenRouter model
+      url="https://openrouter.ai/api/v1",
+      api_key=os.getenv("OPENROUTER_API_KEY"),
+      model_config_dict={"temperature": 0.2},
+  )
+
+  agent = ChatAgent(
+      system_message="You are a helpful assistant.",
+      model=model
+  )
+
+  response = agent.step("Explain quantum computing in simple terms.")
+  print(response.msgs[0].content)
+  ```
+
+  **Available Models:** View the full list of models available through OpenRouter at [openrouter.ai/models](https://openrouter.ai/models).
+
+  </Tab>
+
   <Tab title="Groq">
     
-  Using Groq's powerful models (e.g., Llama 3.3-70B):
+  Using [Groq](https://groq.com/)'s powerful models (e.g., Llama 3.3-70B):
 
   ```python
   from camel.models import ModelFactory

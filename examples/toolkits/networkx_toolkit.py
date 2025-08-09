@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits import NetworkXToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -23,14 +22,10 @@ sys_msg = "You are a helpful assistant for graph analysis"
 
 # Set model config and initialize toolkit
 tools = NetworkXToolkit(graph_type='digraph').get_tools()
-model_config_dict = ChatGPTConfig(
-    temperature=0.0,
-).as_dict()
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    model_config_dict=model_config_dict,
 )
 
 # Set agent

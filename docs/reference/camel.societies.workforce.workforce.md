@@ -65,6 +65,7 @@ capabilities
 - **new_worker_agent** (Optional[ChatAgent], optional): A template agent for workers created dynamically at runtime when existing workers cannot handle failed tasks. If None, workers will be created with default settings including SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. (default: :obj:`None`)
 - **graceful_shutdown_timeout** (float, optional): The timeout in seconds for graceful shutdown when a task fails 3 times. During this period, the workforce remains active for debugging. Set to 0 for immediate shutdown. (default: :obj:`15.0`)
 - **share_memory** (bool, optional): Whether to enable shared memory across SingleAgentWorker instances in the workforce. When enabled, all SingleAgentWorker instances, coordinator agent, and task planning agent will share their complete conversation history and function-calling trajectory, providing better context for task handoffs and continuity. Note: Currently only supports SingleAgentWorker instances; RolePlayingWorker and nested Workforce instances do not participate in memory sharing. (default: :obj:`False`)
+- **use_structured_output_handler** (bool, optional): Whether to use the structured output handler instead of native structured output. When enabled, the workforce will use prompts with structured output instructions and regex extraction to parse responses. This ensures compatibility with agents that don't reliably support native structured output. When disabled, the workforce uses the native response_format parameter. (default: :obj:`True`)
 
 **Note:**
 
@@ -88,9 +89,26 @@ def __init__(
     task_agent: Optional[ChatAgent] = None,
     new_worker_agent: Optional[ChatAgent] = None,
     graceful_shutdown_timeout: float = 15.0,
-    share_memory: bool = False
+    share_memory: bool = False,
+    use_structured_output_handler: bool = True
 ):
 ```
+
+<a id="camel.societies.workforce.workforce.Workforce._validate_agent_compatibility"></a>
+
+### _validate_agent_compatibility
+
+```python
+def _validate_agent_compatibility(self, agent: ChatAgent, agent_context: str = 'agent'):
+```
+
+Validate that agent configuration is compatible with workforce
+settings.
+
+**Parameters:**
+
+- **agent** (ChatAgent): The agent to validate.
+- **agent_context** (str): Context description for error messages.
 
 <a id="camel.societies.workforce.workforce.Workforce._attach_pause_event_to_agent"></a>
 
@@ -219,7 +237,8 @@ def _decompose_task(self, task: Task):
 
 **Returns:**
 
-  List[Task]: The subtasks.
+  Union[List[Task], Generator[List[Task], None, None]]:
+The subtasks or generator of subtasks.
 
 <a id="camel.societies.workforce.workforce.Workforce._analyze_failure"></a>
 

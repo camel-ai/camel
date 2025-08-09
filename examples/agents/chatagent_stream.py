@@ -12,14 +12,27 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
+import logging
 import time
 
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.models import ModelFactory
 from camel.toolkits import FunctionTool
 from camel.types import ModelPlatformType, ModelType
+
+# Set up logging to see debug info from chat agent
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+)
+logger = get_logger(__name__)
+
+# Also set the camel chat agent logger to INFO level to see tool execution logs
+chat_agent_logger = get_logger('camel.agents.chat_agent')
+chat_agent_logger.setLevel(logging.INFO)
 
 # Create a streaming model
 streaming_model = ModelFactory.create(
@@ -115,7 +128,8 @@ async def test_async_tool_execution():
 
     previous_content = ""
 
-    async for response in agent.astep(query):
+    streaming_response = await agent.astep(query)
+    async for response in streaming_response:
         if response.msgs:
             current_content = response.msgs[0].content
 
@@ -229,7 +243,8 @@ async def test_async_structured_output():
 
     previous_content = ""
 
-    async for response in agent.astep(query, response_format=Thinking):
+    streaming_response = await agent.astep(query, response_format=Thinking)
+    async for response in streaming_response:
         if response.msgs:
             current_content = response.msgs[0].content
 

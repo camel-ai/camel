@@ -13,10 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import logging
+import os
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.toolkits import HybridBrowserToolkit
+from camel.toolkits import FileWriteToolkit, HybridBrowserToolkit
 from camel.types import ModelPlatformType, ModelType
 
 logging.basicConfig(
@@ -58,32 +59,59 @@ model_backend = ModelFactory.create(
 
 # Example 3: Use custom tools selection
 custom_tools = [
-    "open_browser",
-    "close_browser",
-    "visit_page",
-    "get_som_screenshot",  # Add screenshot capability
-    "click",
-    "type",
+    "browser_open",
+    "browser_close",
+    "browser_visit_page",
+    "browser_back",
+    "browser_forward",
+    "browser_click",
+    "browser_type",
+    "browser_switch_tab",
+    "browser_enter",
+    # "browser_get_som_screenshot", # remove it to achieve faster operation
+    "browser_press_key",
+    "browser_console_view",
+    "browser_console_exec",
+    "browser_mouse_drag",
 ]
 
 web_toolkit_custom = HybridBrowserToolkit(
-    headless=False, user_data_dir=USER_DATA_DIR, enabled_tools=custom_tools
+    headless=False,
+    user_data_dir=USER_DATA_DIR,
+    enabled_tools=custom_tools,
+    browser_log_to_file=True,  # generate detailed log file in ./browser_log
+    stealth=True,  # Using stealth mode during browser operation
+    mode="python",
+    # Limit snapshot to current viewport to reduce context
 )
 print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
+output_dir = "./file_write_outputs"
+os.makedirs(output_dir, exist_ok=True)
 
+# Initialize the FileWriteToolkit with the output directory
+file_toolkit = FileWriteToolkit(working_directory=output_dir)
+
+# Get the tools from the toolkit
+tools_list = file_toolkit.get_tools()
 
 # Use the custom toolkit for the actual task
 agent = ChatAgent(
     model=model_backend,
-    tools=[*web_toolkit_custom.get_tools()],
+    tools=[*web_toolkit_custom.get_tools(), *file_toolkit.get_tools()],
+    toolkits_to_register_agent=[web_toolkit_custom],
     max_iteration=10,
 )
 
 TASK_PROMPT = r"""
-Open Amazon.com, search for a beautiful keyboard, 
-click it and add it to the cart
-and use get_som_screenshot to see the final 
-picture of keyboard and describe its appearance
+Use Google Search to search for news in Munich today, and click on relevant 
+websites to get the news and write it in markdown.
+
+I mean you need to browse multiple websites. After visiting each website, 
+write the news in markdown, then return to the Google search results page 
+and click on other websites.
+
+Use enter to confirm search or input.
+If you see a cookie page, click accept all.
 """
 
 
@@ -94,13 +122,6 @@ async def main() -> None:
     print(f"Enabled tools: {web_toolkit_custom.enabled_tools}")
     print("\nResponse from agent:")
     print(response.msgs[0].content if response.msgs else "<no response>")
-
-    try:
-        await web_toolkit_custom.close_browser()
-    except Exception as err:
-        logging.warning(
-            "Failed to close " "browser session explicitly: %s", err
-        )
 
 
 if __name__ == "__main__":

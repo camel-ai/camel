@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
-from camel.configs import DEEPSEEK_API_PARAMS, DeepSeekConfig
+from camel.configs import DeepSeekConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models._utils import try_modify_message_with_format
@@ -287,18 +287,3 @@ class DeepSeekModel(OpenAICompatibleModel):
         )
 
         return self._post_handle_response(response)
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to DeepSeek API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to DeepSeek API.
-        """
-        for param in self.model_config_dict:
-            if param not in DEEPSEEK_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into DeepSeek model backend."
-                )

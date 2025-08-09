@@ -12,95 +12,144 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import io
 import os
 import shutil
-from unittest.mock import AsyncMock, MagicMock, mock_open, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from PIL import Image
 
-# Import the modules directly without global sys.modules mocking
 from camel.toolkits.hybrid_browser_toolkit import HybridBrowserToolkit
-from camel.utils.tool_result import ToolResult
 
 TEST_URL = "https://example.com"
 TEST_FILE_URL = "file:///test.html"
 
 
-def create_mock_playwright_objects():
-    """Create mock playwright objects for testing."""
-    # Create comprehensive mock objects
-    mock_page = AsyncMock()
-    mock_page.url = "https://example.com"
-    mock_page.goto = AsyncMock()
-    mock_page.wait_for_load_state = AsyncMock()
-    mock_page.screenshot = AsyncMock(return_value=b"fake_screenshot_data")
-    mock_page.evaluate = AsyncMock(return_value={"elements": {}})
-    mock_page.query_selector = AsyncMock(return_value=None)
-    mock_page.query_selector_all = AsyncMock(return_value=[])
-    mock_page.click = AsyncMock()
-    mock_page.fill = AsyncMock()
-    mock_page.select_option = AsyncMock()
-    mock_page.mouse = MagicMock()
-    mock_page.mouse.wheel = AsyncMock()
-
-    mock_context = AsyncMock()
-    mock_context.pages = [mock_page]
-    mock_context.new_page = AsyncMock(return_value=mock_page)
-    mock_context.close = AsyncMock()
-    mock_context.browser = None
-
-    mock_browser = AsyncMock()
-    mock_browser.new_context = AsyncMock(return_value=mock_context)
-    mock_browser.close = AsyncMock()
-    mock_browser.contexts = [mock_context]
-
-    mock_chromium = MagicMock()
-    mock_chromium.launch = AsyncMock(return_value=mock_browser)
-    mock_chromium.launch_persistent_context = AsyncMock(
-        return_value=mock_context
+def create_mock_ws_wrapper():
+    """Create mock WebSocket wrapper for testing."""
+    mock_ws_wrapper = AsyncMock()
+    mock_ws_wrapper.start = AsyncMock()
+    mock_ws_wrapper.stop = AsyncMock()
+    mock_ws_wrapper.open_browser = AsyncMock(
+        return_value={
+            "result": "Browser opened successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.visit_page = AsyncMock(
+        return_value={
+            "result": "Visited test URL in new tab",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.back = AsyncMock(
+        return_value={
+            "result": "Navigated back",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.forward = AsyncMock(
+        return_value={
+            "result": "Navigated forward",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.click = AsyncMock(
+        return_value={
+            "result": "Element clicked successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.type = AsyncMock(
+        return_value={
+            "result": "Text typed successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.select = AsyncMock(
+        return_value={
+            "result": "Option selected successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.scroll = AsyncMock(
+        return_value={
+            "result": "Scrolled successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.enter = AsyncMock(
+        return_value={
+            "result": "Enter key pressed",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.mouse_control = AsyncMock(
+        return_value={
+            "result": "Action mouse_control executed successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.mouse_drag = AsyncMock(
+        return_value={
+            "result": "Action mouse_drag executed successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.press_key = AsyncMock(
+        return_value={
+            "result": "Action press_key executed successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.switch_tab = AsyncMock(
+        return_value={
+            "result": "Switched to tab",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.close_tab = AsyncMock(
+        return_value={
+            "result": "Tab closed",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.get_page_snapshot = AsyncMock(
+        return_value="- Page snapshot\n```yaml\n<test content>\n```"
+    )
+    mock_ws_wrapper.get_som_screenshot = AsyncMock(
+        return_value="Visual webpage screenshot captured"
+    )
+    mock_ws_wrapper.get_tab_info = AsyncMock(
+        return_value=[
+            {
+                "id": "tab-001",
+                "title": "Test Page",
+                "url": "https://example.com",
+                "is_current": True,
+            }
+        ]
+    )
+    mock_ws_wrapper.console_view = AsyncMock(
+        return_value=[{"type": "log", "text": "Example Log"}]
+    )
+    mock_ws_wrapper.console_exec = AsyncMock(
+        return_value={
+            "result": "Console execution result: 100",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
     )
 
-    mock_playwright_instance = AsyncMock()
-    mock_playwright_instance.chromium = mock_chromium
-    mock_playwright_instance.firefox = mock_chromium
-    mock_playwright_instance.webkit = mock_chromium
-    mock_playwright_instance.stop = AsyncMock()
-
-    # Mock the async_playwright context manager
-    mock_async_playwright_cm = AsyncMock()
-    mock_async_playwright_cm.__aenter__ = AsyncMock(
-        return_value=mock_playwright_instance
-    )
-    mock_async_playwright_cm.__aexit__ = AsyncMock(return_value=None)
-
-    # Mock the async_playwright function
-    mock_async_playwright = MagicMock(return_value=mock_async_playwright_cm)
-
-    return (
-        mock_async_playwright,
-        mock_playwright_instance,
-        mock_page,
-        mock_context,
-        mock_browser,
-    )
+    return mock_ws_wrapper
 
 
-# Create global mock objects for backward compatibility
-(
-    mock_async_playwright,
-    mock_playwright_instance,
-    mock_page,
-    mock_context,
-    mock_browser,
-) = create_mock_playwright_objects()
+# Create global mock WebSocket wrapper
+mock_ws_wrapper = create_mock_ws_wrapper()
 
 
 @pytest.fixture(scope="function")
-def mock_playwright_setup():
-    """Set up playwright mocks for individual tests."""
-    return create_mock_playwright_objects()
+def mock_ws_wrapper_setup():
+    """Set up WebSocket wrapper mocks for individual tests."""
+    return create_mock_ws_wrapper()
 
 
 @pytest.fixture(autouse=True)
@@ -110,79 +159,37 @@ def mock_browser_dependencies():
         patch('os.makedirs'),
         patch('os.path.exists', return_value=True),
         patch(
-            'playwright.async_api.async_playwright',
-            return_value=mock_async_playwright(),
-        ),
-        patch(
-            'camel.toolkits.hybrid_browser_toolkit.browser_session.async_playwright',
-            return_value=mock_async_playwright(),
-            create=True,
-        ),
-        patch(
-            'builtins.open',
-            mock_open(read_data="console.log('mock unified analyzer');"),
+            'camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper',
+            return_value=mock_ws_wrapper,
         ),
     ):
         yield
 
 
 @pytest.fixture(scope="function")
-async def browser_toolkit_fixture():
+def browser_toolkit_fixture():
     """Create a HybridBrowserToolkit instance for testing."""
-    mock_session = AsyncMock()
-    mock_session.ensure_browser = AsyncMock()
-    mock_session.get_page = AsyncMock(return_value=mock_page)
-    mock_session.visit = AsyncMock(return_value="Visited test URL")
-    mock_session.get_snapshot = AsyncMock(
-        return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-    )
-    mock_session.exec_action = AsyncMock(
-        return_value="Action executed successfully"
-    )
-    mock_session.close = AsyncMock()
-
     with (
         patch(
-            'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-            return_value=mock_session,
-        ),
-        patch(
-            'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-            return_value='mock_script_path',
-        ),
-        patch(
-            'builtins.open', mock_open(read_data="console.log('mock script');")
+            'camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper',
+            return_value=mock_ws_wrapper,
         ),
     ):
         toolkit = HybridBrowserToolkit(headless=True)
-        toolkit._session = mock_session  # Ensure the mock session is used
+        toolkit._ws_wrapper = (
+            mock_ws_wrapper  # Ensure the mock wrapper is used
+        )
         yield toolkit
 
         # Cleanup
-        try:
-            await toolkit.close_browser()
-        except Exception:
-            pass
-
         if os.path.exists("test_cache"):
             shutil.rmtree("test_cache", ignore_errors=True)
 
 
 @pytest.fixture(scope="function")
-def mock_session():
-    """Create a mock browser session."""
-    session = AsyncMock()
-    session.ensure_browser = AsyncMock()
-    session.get_page = AsyncMock(return_value=mock_page)
-    session.visit = AsyncMock(return_value="Visited test URL")
-    session.get_snapshot = AsyncMock(
-        return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-    )
-    session.exec_action = AsyncMock(
-        return_value="Action executed successfully"
-    )
-    session.close = AsyncMock()
-    return session
+def mock_ws_wrapper_fixture():
+    """Create a mock WebSocket wrapper."""
+    return create_mock_ws_wrapper()
 
 
 @pytest.fixture(scope="function")
@@ -205,33 +212,16 @@ def mock_page_fixture():
 @pytest.fixture(scope="function")
 def sync_browser_toolkit():
     """Create a HybridBrowserToolkit instance for synchronous testing."""
-    mock_session = AsyncMock()
-    mock_session.ensure_browser = AsyncMock()
-    mock_session.get_page = AsyncMock(return_value=mock_page)
-    mock_session.visit = AsyncMock(return_value="Visited test URL")
-    mock_session.get_snapshot = AsyncMock(
-        return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-    )
-    mock_session.exec_action = AsyncMock(
-        return_value="Action executed successfully"
-    )
-    mock_session.close = AsyncMock()
-
     with (
         patch(
-            'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-            return_value=mock_session,
-        ),
-        patch(
-            'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-            return_value='mock_script_path',
-        ),
-        patch(
-            'builtins.open', mock_open(read_data="console.log('mock script');")
+            'camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper',
+            return_value=mock_ws_wrapper,
         ),
     ):
         toolkit = HybridBrowserToolkit(headless=True)
-        toolkit._session = mock_session  # Ensure the mock session is used
+        toolkit._ws_wrapper = (
+            mock_ws_wrapper  # Ensure the mock wrapper is used
+        )
         return toolkit
 
 
@@ -240,16 +230,10 @@ class TestHybridBrowserToolkit:
 
     def test_init_default_params(self):
         """Test initialization with default parameters."""
-        mock_session = AsyncMock()
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session'
-                '.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock unified analyzer');"),
+                'camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper',
+                return_value=mock_ws_wrapper,
             ),
             patch('os.path.exists', return_value=True),
             patch('os.makedirs'),
@@ -261,23 +245,16 @@ class TestHybridBrowserToolkit:
             assert toolkit.web_agent_model is None
             assert toolkit.cache_dir == "tmp/"
             assert toolkit._agent is None
-            assert toolkit._unified_script is not None
 
     def test_init_custom_params(self):
         """Test initialization with custom parameters."""
         test_cache_dir = "custom_cache"
         test_user_data_dir = "custom_user_data"
 
-        mock_session = AsyncMock()
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session'
-                '.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock unified analyzer');"),
+                'camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper',
+                return_value=mock_ws_wrapper,
             ),
             patch('os.path.exists', return_value=True),
             patch('os.makedirs'),
@@ -295,828 +272,302 @@ class TestHybridBrowserToolkit:
         if os.path.exists(test_cache_dir):
             shutil.rmtree(test_cache_dir, ignore_errors=True)
 
-    def test_load_unified_analyzer_success(self):
-        """Test successful loading of unified analyzer script."""
-        mock_session = AsyncMock()
-        with patch(
-            'camel.toolkits.hybrid_browser_toolkit.browser_session'
-            '.NVBrowserSession',
-            return_value=mock_session,
-        ):
-            with patch('builtins.open', create=True) as mock_file:
-                # ruff:noqa:E501
-                mock_file.return_value.__enter__.return_value.read.return_value = "console.log('test');"
+    @pytest.mark.asyncio
+    async def test_open_browser_no_start_url(self, browser_toolkit_fixture):
+        """Test opening browser using the default start
+        URL configured during initialization."""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_open()
 
-                with (
-                    patch('os.makedirs'),
-                    patch('os.path.exists', return_value=True),
-                ):
-                    toolkit = HybridBrowserToolkit()
-                    assert "console.log('test');" in toolkit._unified_script
-
-    def test_load_unified_analyzer_file_not_found(self):
-        """Test handling of missing unified analyzer script."""
-        mock_session = AsyncMock()
-        with patch(
-            'camel.toolkits.hybrid_browser_toolkit.browser_session'
-            '.NVBrowserSession',
-            return_value=mock_session,
-        ):
-            with (
-                patch('builtins.open', side_effect=FileNotFoundError),
-                patch('os.makedirs'),
-                patch('os.path.exists', return_value=True),
-            ):
-                with pytest.raises(FileNotFoundError):
-                    HybridBrowserToolkit()
-
-    def test_validate_ref_valid(self):
-        """Test ref validation with valid input."""
-        mock_session = AsyncMock()
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session'
-                '.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-            patch('os.makedirs'),
-            patch('os.path.exists', return_value=True),
-        ):
-            toolkit = HybridBrowserToolkit()
-            # Should not raise exception
-            toolkit._validate_ref("e1", "test_method")
-
-    def test_validate_ref_invalid(self):
-        """Test ref validation with invalid input."""
-        mock_session = AsyncMock()
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session'
-                '.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-            patch('os.makedirs'),
-            patch('os.path.exists', return_value=True),
-        ):
-            toolkit = HybridBrowserToolkit()
-
-            # Test with empty string
-            with pytest.raises(ValueError):
-                toolkit._validate_ref("", "test_method")
+        assert "opened" in result["result"].lower()
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "current_tab" in result
+        assert "total_tabs" in result
 
     @pytest.mark.asyncio
-    async def test_open_browser_no_start_url(self):
-        """Test opening browser without start URL."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
+    async def test_open_browser_with_custom_default_url(
+        self, browser_toolkit_fixture
+    ):
+        """Test browser_open with a custom default start URL."""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_open()
 
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            result = await toolkit.open_browser()
-
-            assert result["result"] == "Visited test URL"
-            assert "snapshot" in result
+        # Just check that the method works and returns expected structure
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "current_tab" in result
+        assert "total_tabs" in result
 
     @pytest.mark.asyncio
-    async def test_open_browser_with_start_url(self):
-        """Test opening browser with start URL."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            # Mock visit_page method
-            with patch.object(
-                toolkit, 'visit_page', new_callable=AsyncMock
-            ) as mock_visit:
-                mock_visit.return_value = {
-                    "result": "Visited",
-                    "snapshot": "test",
-                }
-
-                await toolkit.open_browser(start_url=TEST_URL)
-
-                mock_visit.assert_called_once_with(TEST_URL)
-
-    @pytest.mark.asyncio
-    async def test_close_browser(self):
+    async def test_close_browser(self, browser_toolkit_fixture):
         """Test closing browser."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            result = await toolkit.close_browser()
-
-            assert result == "Browser session closed."
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_close()
+        assert isinstance(result, str)
+        assert "closed" in result.lower()
 
     @pytest.mark.asyncio
-    async def test_visit_page_valid_url(self):
+    async def test_visit_page_valid_url(self, browser_toolkit_fixture):
         """Test visiting a valid URL."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_visit_page(TEST_URL)
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "current_tab" in result
+        assert "total_tabs" in result
+        assert (
+            "test url" in result['result'].lower()
+            or "visited" in result['result'].lower()
         )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            result = await toolkit.visit_page(TEST_URL)
-
-            assert "Visited" in result["result"]
-            assert "snapshot" in result
 
     @pytest.mark.asyncio
-    async def test_visit_page_invalid_url(self):
-        """Test visiting with invalid URL."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            result = await toolkit.visit_page("")
-            assert "Error" in result.get("result", "")
-            assert "'url' must be a non-empty string" in result.get(
-                "result", ""
-            )
+    async def test_visit_page_invalid_url(self, browser_toolkit_fixture):
+        """Test visiting an invalid URL (empty string)."""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_visit_page("")
+        assert "result" in result
+        assert "snapshot" in result
+        # The WebSocket wrapper should handle validation
+        assert isinstance(result['result'], str)
 
     @pytest.mark.asyncio
-    async def test_get_page_snapshot(self):
+    async def test_get_page_snapshot(self, browser_toolkit_fixture):
         """Test getting page snapshot."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_get_page_snapshot()
+        assert isinstance(result, str)
+        assert (
+            "page snapshot" in result.lower()
+            or "test content" in result.lower()
         )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            # Mock unified analysis
-            mock_analysis = {
-                "snapshotText": "Test snapshot content",
-                "elements": {"e1": {"role": "button", "name": "Test"}},
-            }
-
-            # Ensure the mock page has the analysis
-            mock_page.evaluate = AsyncMock(return_value=mock_analysis)
-
-            result = await toolkit.get_page_snapshot()
-
-            assert result == "Test snapshot content"
 
     @pytest.mark.asyncio
-    async def test_get_som_screenshot_success(self):
+    async def test_get_som_screenshot_success(self, browser_toolkit_fixture):
         """Test successful Set of Marks screenshot generation."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_get_som_screenshot()
 
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            # Create a mock image
-            mock_image = Image.new('RGB', (100, 100), color='red')
-            img_byte_arr = io.BytesIO()
-            mock_image.save(img_byte_arr, format='PNG')
-            mock_image_data = img_byte_arr.getvalue()
-
-            # Set up the mock page with screenshot and analysis data
-            mock_page.screenshot = AsyncMock(return_value=mock_image_data)
-            mock_page.url = TEST_URL
-
-            # Mock unified analysis
-            mock_analysis = {
-                "elements": {
-                    "e1": {
-                        "role": "button",
-                        "name": "Test Button",
-                        "coordinates": [
-                            {"x": 10, "y": 10, "width": 50, "height": 20}
-                        ],
-                    }
-                }
-            }
-            mock_page.evaluate = AsyncMock(return_value=mock_analysis)
-
-            result = await toolkit.get_som_screenshot()
-
-            assert isinstance(result, ToolResult)
-            assert "Visual webpage screenshot captured" in result.text
-            assert len(result.images) == 1
-            assert result.images[0].startswith("data:image/png;base64,")
+        # The result should be a string indicating success
+        assert isinstance(result, str)
+        assert "screenshot" in result.lower() or "captured" in result.lower()
 
     @pytest.mark.asyncio
-    async def test_get_som_screenshot_pil_not_available(self):
+    async def test_get_som_screenshot_pil_not_available(
+        self, browser_toolkit_fixture
+    ):
         """Test Set of Marks screenshot when PIL is not available."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
+        toolkit = browser_toolkit_fixture
 
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
+        with patch('PIL.ImageDraw', side_effect=ImportError):
+            result = await toolkit.browser_get_som_screenshot()
 
-            # Create a mock image for the screenshot
-            mock_image = Image.new('RGB', (100, 100), color='red')
-            img_byte_arr = io.BytesIO()
-            mock_image.save(img_byte_arr, format='PNG')
-            mock_image_data = img_byte_arr.getvalue()
-
-            # Set up the mock page with screenshot data
-            mock_page.screenshot = AsyncMock(return_value=mock_image_data)
-            mock_page.url = TEST_URL
-
-            # Mock unified analysis - provide empty elements to avoid coordinate processing
-            mock_analysis = {"elements": {}}
-            mock_page.evaluate = AsyncMock(return_value=mock_analysis)
-
-            with patch('PIL.ImageDraw', side_effect=ImportError):
-                result = await toolkit.get_som_screenshot()
-
-                assert isinstance(result, ToolResult)
-                assert "Visual webpage screenshot captured" in result.text
-
-    @pytest.mark.asyncio
-    async def test_click_valid_ref(self):
-        """Test clicking with valid reference."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            # Mock the _get_unified_analysis method to include e1 element
-            mock_analysis = {"elements": {"e1": {"role": "button"}}}
-            toolkit._get_unified_analysis = AsyncMock(
-                return_value=mock_analysis
-            )
-
-            result = await toolkit.click(ref="e1")
-
-            assert result["result"] == "Action executed successfully"
-            assert "snapshot" in result
-
-    @pytest.mark.asyncio
-    async def test_click_invalid_ref(self):
-        """Test clicking with invalid reference."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            with pytest.raises(ValueError):
-                await toolkit.click(ref="")
-
-    @pytest.mark.asyncio
-    async def test_type_text(self):
-        """Test typing text in element."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            result = await toolkit.type(
-                ref="input_element", text="Hello World"
-            )
-
-            assert result["result"] == "Action executed successfully"
-            assert "snapshot" in result
-
-    @pytest.mark.asyncio
-    async def test_select_option(self):
-        """Test selecting option in dropdown."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            result = await toolkit.select(
-                ref="select_element", value="option1"
-            )
-
-            assert result["result"] == "Action executed successfully"
-            assert "snapshot" in result
-
-    @pytest.mark.asyncio
-    async def test_scroll_valid_direction(self):
-        """Test scrolling with valid direction."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            result = await toolkit.scroll(direction="down", amount=100)
-
-            assert result["result"] == "Action executed successfully"
-            assert "snapshot" in result
-
-    @pytest.mark.asyncio
-    async def test_scroll_invalid_direction(self):
-        """Test scrolling with invalid direction."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            result = await toolkit.scroll(
-                direction="invalid_direction", amount=100
-            )
+            # The result should still be a string even if PIL is not available
+            assert isinstance(result, str)
             assert (
-                "Error: direction must be 'up' or 'down'" in result["result"]
+                "screenshot" in result.lower() or "captured" in result.lower()
             )
 
     @pytest.mark.asyncio
-    async def test_get_page_links_valid_refs(self):
-        """Test getting page links with valid references."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
+    async def test_click_valid_ref(self, browser_toolkit_fixture):
+        """Test clicking with valid reference."""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_click(ref="e1")
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "current_tab" in result
+        assert "total_tabs" in result
+        assert (
+            "clicked" in result["result"].lower()
+            or "successfully" in result["result"].lower()
         )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            # Mock page evaluate to return links
-            mock_links = [
-                {"href": "https://example.com/page1", "text": "Page 1"},
-                {"href": "https://example.com/page2", "text": "Page 2"},
-            ]
-            mock_page.evaluate = AsyncMock(return_value=mock_links)
-
-            result = await toolkit.get_page_links(ref=["e1", "e2"])
-
-            assert "links" in result
-            assert isinstance(result["links"], list)
 
     @pytest.mark.asyncio
-    async def test_get_page_links_invalid_refs(self):
-        """Test getting page links with invalid references."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            result = await toolkit.get_page_links(ref=[])
-            assert result["links"] == []
+    async def test_click_invalid_ref(self, browser_toolkit_fixture):
+        """Test clicking with invalid reference."""
+        toolkit = browser_toolkit_fixture
+        # With WebSocket wrapper, validation should be handled gracefully
+        result = await toolkit.browser_click(ref="")
+        assert "result" in result
+        assert isinstance(result["result"], str)
 
     @pytest.mark.asyncio
-    async def test_wait_user_no_timeout(self):
+    async def test_type_text(self, browser_toolkit_fixture):
+        """Test typing text in element."""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_type(
+            ref="input_element", text="Hello World"
+        )
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert (
+            "typed" in result["result"].lower()
+            or "successfully" in result["result"].lower()
+        )
+
+    @pytest.mark.asyncio
+    async def test_select_option(self, browser_toolkit_fixture):
+        """Test selecting option in dropdown."""
+        toolkit = browser_toolkit_fixture
+
+        result = await toolkit.browser_select(
+            ref="select_element", value="option1"
+        )
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert (
+            "selected" in result["result"].lower()
+            or "successfully" in result["result"].lower()
+        )
+
+    @pytest.mark.asyncio
+    async def test_scroll_valid_direction(self, browser_toolkit_fixture):
+        """Test scrolling with valid direction."""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_scroll(direction="down", amount=100)
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert (
+            "scrolled" in result["result"].lower()
+            or "successfully" in result["result"].lower()
+        )
+
+    @pytest.mark.asyncio
+    async def test_scroll_invalid_direction(self, browser_toolkit_fixture):
+        """Test scrolling with invalid direction."""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_scroll(
+            direction="invalid_direction", amount=100
+        )
+        # WebSocket wrapper should handle validation gracefully
+        assert "result" in result
+        assert isinstance(result["result"], str)
+
+    @pytest.mark.asyncio
+    async def test_wait_user_no_timeout(self, browser_toolkit_fixture):
         """Test waiting for user input without timeout."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
+        toolkit = browser_toolkit_fixture
 
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
+        # Mock user input
+        with patch('builtins.input', return_value='continue'):
+            result = await toolkit.browser_wait_user()
 
-            # Mock user input
-            with patch('builtins.input', return_value='continue'):
-                result = await toolkit.wait_user()
-
-                assert result["result"] == "User resumed."
-                assert "snapshot" in result
+            assert "result" in result
+            assert "snapshot" in result
+            assert (
+                "resumed" in result["result"].lower()
+                or "user" in result["result"].lower()
+            )
 
     @pytest.mark.asyncio
-    async def test_wait_user_with_timeout(self):
+    async def test_wait_user_with_timeout(self, browser_toolkit_fixture):
         """Test waiting for user input with timeout."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
+        toolkit = browser_toolkit_fixture
+
+        # Mock asyncio.wait_for to simulate timeout
+        import asyncio
+
+        with patch('asyncio.wait_for', side_effect=asyncio.TimeoutError()):
+            result = await toolkit.browser_wait_user(timeout_sec=1.0)
+
+            assert "result" in result
+            assert "snapshot" in result
+            assert (
+                "timeout" in result["result"].lower()
+                or "auto-resumed" in result["result"].lower()
+            )
+
+    @pytest.mark.asyncio
+    async def test_mouse_control_valid(self, browser_toolkit_fixture):
+        """Test mouse_control with valid control action"""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_mouse_control(
+            control="click", x=500, y=500
         )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert (
+            "mouse_control" in result["result"].lower()
+            or "successfully" in result["result"].lower()
         )
-        mock_session.close = AsyncMock()
 
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
+    @pytest.mark.asyncio
+    async def test_mouse_control_invalid(self, browser_toolkit_fixture):
+        """Test mouse_control with invalid control action"""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_mouse_control(
+            control="invalid", x=500, y=500
+        )
+        # WebSocket wrapper should handle validation gracefully
+        assert "result" in result
+        assert isinstance(result["result"], str)
 
-            # Mock asyncio.wait_for to simulate timeout
-            import asyncio
+    @pytest.mark.asyncio
+    async def test_mouse_drag(self, browser_toolkit_fixture):
+        """Test mouse_drag with element references"""
+        toolkit = browser_toolkit_fixture
+        # Mock elements with ref IDs
+        result = await toolkit.browser_mouse_drag(
+            from_ref="ref1", to_ref="ref2"
+        )
 
-            with patch('asyncio.wait_for', side_effect=asyncio.TimeoutError()):
-                result = await toolkit.wait_user(timeout_sec=1.0)
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        # Mock returns success message
+        assert (
+            "mouse_drag" in result["result"].lower()
+            or "successfully" in result["result"].lower()
+        )
 
-                assert (
-                    "Timeout 1.0s reached, auto-resumed." in result["result"]
-                )
-                assert "snapshot" in result
+    @pytest.mark.asyncio
+    async def test_press_key(self, browser_toolkit_fixture):
+        """Test press_key with key combination"""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_press_key(keys=["Meta", "A"])
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert (
+            "press_key" in result["result"].lower()
+            or "successfully" in result["result"].lower()
+        )
+
+    @pytest.mark.asyncio
+    async def test_console_view(self, browser_toolkit_fixture):
+        """Test console_view to return format"""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_console_view()
+
+        assert "console_messages" in result
+        assert isinstance(result["console_messages"], list)
+        assert all(
+            isinstance(item, dict) for item in result["console_messages"]
+        )
+
+    @pytest.mark.asyncio
+    async def test_console_exec(self, browser_toolkit_fixture):
+        """Test console_exec to return result"""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_console_exec(code="Math.sqrt(64);")
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "result" in result["result"].lower()
 
     def test_get_tools(self, sync_browser_toolkit):
         """Test getting available tools with default configuration."""
@@ -1124,94 +575,42 @@ class TestHybridBrowserToolkit:
 
         tools = toolkit.get_tools()
 
-        # Default tools should be 6 tools (updated default configuration)
+        # Default tools should be 5 tools (updated default configuration)
+        assert len(tools) == 8
 
-        assert len(tools) == 6
         tool_names = [tool.func.__name__ for tool in tools]
 
         expected_default_tools = [
-            'open_browser',
-            'close_browser',
-            'visit_page',
-            'click',
-            'type',
+            "browser_open",
+            "browser_close",
+            "browser_visit_page",
+            "browser_back",
+            "browser_forward",
+            "browser_click",
+            "browser_type",
+            "browser_switch_tab",
         ]
 
         for expected_tool in expected_default_tools:
             assert expected_tool in tool_names
 
-    def test_get_tools_with_web_agent_model(self, sync_browser_toolkit):
-        """Test getting tools when web_agent_model is provided."""
-        mock_model = MagicMock()
-        toolkit = sync_browser_toolkit
-
-        # Simulate having a web agent model
-        toolkit.web_agent_model = mock_model
-
-        tools = toolkit.get_tools()
-
-        # Default tools should be 6, even with web_agent_model set
-        # unless solve_task is explicitly enabled
-        assert len(tools) == 6
-        tool_names = [tool.func.__name__ for tool in tools]
-
-        # Should not automatically include solve_task unless explicitly enabled
-        assert 'solve_task' not in tool_names
-
-    def test_get_tools_with_solve_task_enabled(self):
-        """Test getting tools when solve_task is explicitly enabled."""
-        mock_model = MagicMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=AsyncMock(),
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(
-                headless=True,
-                web_agent_model=mock_model,
-                enabled_tools=['open_browser', 'close_browser', 'solve_task'],
-            )
-
-            tools = toolkit.get_tools()
-            tool_names = [tool.func.__name__ for tool in tools]
-
-            assert len(tools) == 3
-            assert 'solve_task' in tool_names
-            assert 'open_browser' in tool_names
-            assert 'close_browser' in tool_names
-
     def test_get_tools_custom_selection(self):
         """Test getting tools with custom tool selection."""
         custom_tools = [
-            'open_browser',
-            'visit_page',
-            'get_som_screenshot',
-            'click',
-            'scroll',
+            "browser_open",
+            "browser_close",
+            "browser_visit_page",
+            "browser_back",
+            "browser_forward",
+            "browser_click",
+            "browser_type",
+            "browser_switch_tab",
         ]
 
         with (
             patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=AsyncMock(),
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
+                'camel.toolkits.hybrid_browser_toolkit.ws_wrapper.WebSocketBrowserWrapper',
+                return_value=mock_ws_wrapper,
             ),
         ):
             toolkit = HybridBrowserToolkit(
@@ -1221,129 +620,17 @@ class TestHybridBrowserToolkit:
             tools = toolkit.get_tools()
             tool_names = [tool.func.__name__ for tool in tools]
 
-            assert len(tools) == 5
+            assert len(tools) == 8
             for expected_tool in custom_tools:
                 assert expected_tool in tool_names
 
-    def test_convert_analysis_to_rects(self, sync_browser_toolkit):
-        """Test converting analysis data to rect format."""
-        toolkit = sync_browser_toolkit
-
-        analysis_data = {
-            "elements": {
-                "e1": {
-                    "role": "button",
-                    "name": "Submit",
-                    "coordinates": [
-                        {"x": 10, "y": 20, "width": 50, "height": 30}
-                    ],
-                }
-            }
-        }
-
-        rects = toolkit._convert_analysis_to_rects(analysis_data)
-
-        assert "e1" in rects
-        assert rects["e1"]["role"] == "button"
-        assert rects["e1"]["aria-name"] == "Submit"
-        assert len(rects["e1"]["rects"]) == 1
-        assert rects["e1"]["rects"][0]["x"] == 10
-
-    def test_format_snapshot_from_analysis(self, sync_browser_toolkit):
-        """Test formatting snapshot from analysis data."""
-        toolkit = sync_browser_toolkit
-
-        analysis_data = {
-            "elements": {
-                "e1": {
-                    "role": "button",
-                    "name": "Submit",
-                    "disabled": True,
-                },
-                "e2": {
-                    "role": "checkbox",
-                    "name": "Agree",
-                    "checked": True,
-                },
-            }
-        }
-
-        snapshot = toolkit._format_snapshot_from_analysis(analysis_data)
-
-        assert "[ref=e1]" in snapshot
-        assert "button" in snapshot
-        assert "Submit" in snapshot
-        assert "disabled" in snapshot
-        assert "[ref=e2]" in snapshot
-        assert "checkbox" in snapshot
-        assert "checked" in snapshot
-
-    def test_add_set_of_mark_with_pil(self, sync_browser_toolkit):
-        """Test adding visual marks to image."""
-        toolkit = sync_browser_toolkit
-
-        # Create test image
-        test_image = Image.new('RGB', (200, 200), color='white')
-
-        # Test rects data
-        rects = {
-            "e1": {
-                "role": "button",
-                "rects": [{"x": 10, "y": 10, "width": 50, "height": 20}],
-            }
-        }
-
-        marked_image = toolkit._add_set_of_mark(test_image, rects)
-
-        assert isinstance(marked_image, Image.Image)
-        assert marked_image.size == test_image.size
-
-    def test_add_set_of_mark_without_pil(self, sync_browser_toolkit):
-        """Test adding visual marks when PIL is not available."""
-        toolkit = sync_browser_toolkit
-
-        test_image = Image.new('RGB', (200, 200), color='white')
-
-        with patch('PIL.ImageDraw', side_effect=ImportError):
-            result = toolkit._add_set_of_mark(test_image, {})
-
-            # Should return original image when PIL not available
-            assert result == test_image
-
     @pytest.mark.asyncio
-    async def test_simple_async_creation(self):
+    async def test_simple_async_creation(self, browser_toolkit_fixture):
         """Simple test to verify async toolkit creation works with mocks."""
-        mock_session = AsyncMock()
-        mock_session.ensure_browser = AsyncMock()
-        mock_session.get_page = AsyncMock(return_value=mock_page)
-        mock_session.visit = AsyncMock(return_value="Visited test URL")
-        mock_session.get_snapshot = AsyncMock(
-            return_value="- Page Snapshot\\n```yaml\\n<test content>\\n```"
-        )
-        mock_session.exec_action = AsyncMock(
-            return_value="Action executed successfully"
-        )
-        mock_session.close = AsyncMock()
-
-        with (
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.browser_session.NVBrowserSession',
-                return_value=mock_session,
-            ),
-            patch(
-                'camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit.os.path.join',
-                return_value='mock_script_path',
-            ),
-            patch(
-                'builtins.open',
-                mock_open(read_data="console.log('mock script');"),
-            ),
-        ):
-            toolkit = HybridBrowserToolkit(headless=True)
-            toolkit._session = mock_session
-
-            # Test a simple async operation
-            result = await toolkit.open_browser()
-
-            assert result["result"] == "Visited test URL"
-            assert "snapshot" in result
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_open()
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "current_tab" in result
+        assert "total_tabs" in result

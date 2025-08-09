@@ -46,14 +46,14 @@ credentials, file paths).
 ### send_message_to_user
 
 ```python
-def send_message_to_user(self, message: str):
+def send_message_to_user(self, message: str) -> str:
 ```
 
 Use this tool to send a tidy message to the user in one short
 sentence.
 
 This one-way tool keeps the user informed about your progress,
-decisions, or actions. It does not require a response.
+decisions, or actions. It does not require a response from user.
 You should use it to:
 - Announce what you are about to do (e.g., "I will now search for
 papers on GUI Agents.").
