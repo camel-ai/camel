@@ -132,13 +132,13 @@ def ubuntu_docker_runtime(task: str = "play-zork", task_description: str = None,
         # runtime.mount(os.path.abspath(f"{log_dir}/app"), "/app")
 
         test_dir = f"/app/{task}/tests/"
+        # In the ubuntu_docker_runtime function, ensure TTY parameters:
         runtime = UbuntuDockerRuntime(
             image=task,
-            python_path="/app/venv/bin/python",   # Use the virtual environment's Python if available
-            # python_path="/usr/bin/python3",         # Use the system Python
+            python_path="/app/venv/bin/python",
             ports=0,
             name=container_name,
-            command=["sh", "-c", "sleep infinity"],
+            command=["sh", "-c", "sleep infinity"],  # Keep simple
             environment={
                 "HOST": "0.0.0.0",
                 "OPENAI_API_KEY": openai_api_key,
@@ -149,11 +149,14 @@ def ubuntu_docker_runtime(task: str = "play-zork", task_description: str = None,
                 "VIRTUAL_ENV": "/app/venv",
                 "CAMEL_MODEL_LOG_ENABLED": "true",
                 "CAMEL_WORKDIR": "/app",
+                "TERM": "xterm-256color",
+                "CAMEL_DOCKER_MODE": "true",  # Add this
+                "DOCKER_CONTAINER": "true",   # Add this 
+                # "NO_PTY": "true",            # Add this to disable PTY operations
             },
             detach=True,
-            # volumes={
-            #     os.path.abspath(f"{log_dir}/app"): {"bind": "/app", "mode": "rw"},
-            # }
+            tty=True,
+            stdin_open=True,
         )
         try:
             # runtime.copy(source=os.path.abspath(f"tasks/{task}/"), dest=f"/app")
