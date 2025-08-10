@@ -171,7 +171,8 @@ def ubuntu_docker_runtime(task: str = "play-zork", task_description: str = None,
 
         log_file_path = os.path.join(log_dir, "run.log")
         logger.info(f"Capturing container output to console and '{log_file_path}'...")
-
+        
+        exit()
         with open(log_file_path, 'a', encoding='utf-8') as log_file:
             def stream_callback(output: str):
                 print(output, end='', file=sys.stdout, flush=True)
