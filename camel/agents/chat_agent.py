@@ -2148,9 +2148,9 @@ class ChatAgent(BaseAgent):
         if tool_calls := response.choices[0].message.tool_calls:
             tool_call_requests = []
             for tool_call in tool_calls:
-                tool_name = tool_call.function.name
+                tool_name = tool_call.function.name  # type: ignore[union-attr]
                 tool_call_id = tool_call.id
-                args = json.loads(tool_call.function.arguments)
+                args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
                 tool_call_request = ToolCallRequest(
                     tool_name=tool_name, args=args, tool_call_id=tool_call_id
                 )
@@ -2798,12 +2798,7 @@ class ChatAgent(BaseAgent):
             )
             thread = threading.Thread(
                 target=tool_worker,
-                args=(
-                    self._internal_tools[function_name],
-                    args,
-                    result_queue,
-                    tool_call_data,
-                ),
+                args=(result_queue, tool_call_data),
             )
             thread.start()
 

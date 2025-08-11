@@ -182,7 +182,3 @@ class StubModel(BaseModelBackend):
             ),
         )
         return response
-
-    def check_model_config(self):
-        r"""Directly pass the check on arguments to STUB model."""
-        pass

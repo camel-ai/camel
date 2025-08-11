@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncStream
 from pydantic import BaseModel
 
-from camel.configs import MOONSHOT_API_PARAMS, MoonshotConfig
+from camel.configs import MoonshotConfig
 from camel.messages import OpenAIMessage
 from camel.models._utils import try_modify_message_with_format
 from camel.models.openai_compatible_model import OpenAICompatibleModel
@@ -61,7 +61,9 @@ class MoonshotModel(OpenAICompatibleModel):
         api_key (Optional[str], optional): The API key for authenticating with
             the Moonshot service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Moonshot service.
-            (default: :obj:`https://api.moonshot.cn/v1`)
+            For Chinese users, use :obj:`https://api.moonshot.cn/v1`.
+            For overseas users, the default endpoint will be used.
+            (default: :obj:`https://api.moonshot.ai/v1`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4)` will be used.
@@ -82,7 +84,7 @@ class MoonshotModel(OpenAICompatibleModel):
         model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
-        url: Optional[str] = None,
+        url: Optional[str] = "https://api.moonshot.ai/v1",
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
@@ -91,10 +93,7 @@ class MoonshotModel(OpenAICompatibleModel):
         if model_config_dict is None:
             model_config_dict = MoonshotConfig().as_dict()
         api_key = api_key or os.environ.get("MOONSHOT_API_KEY")
-        url = url or os.environ.get(
-            "MOONSHOT_API_BASE_URL",
-            "https://api.moonshot.cn/v1",
-        )
+        url = url or os.environ.get("MOONSHOT_API_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
             model_type=model_type,
@@ -183,18 +182,3 @@ class MoonshotModel(OpenAICompatibleModel):
             model=self.model_type,
             **request_config,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Moonshot API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Moonshot API.
-        """
-        for param in self.model_config_dict:
-            if param not in MOONSHOT_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Moonshot model backend."
-                )

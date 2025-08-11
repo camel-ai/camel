@@ -30,7 +30,7 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
-    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4.1-mini-2025-04-14")
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-5-mini")
 
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
@@ -48,6 +48,9 @@ class ModelType(UnifiedModelType, Enum):
     O4_MINI = "o4-mini"
     O3 = "o3"
     O3_PRO = "o3-pro"
+    GPT_5 = "gpt-5"
+    GPT_5_MINI = "gpt-5-mini"
+    GPT_5_NANO = "gpt-5-nano"
 
     AWS_CLAUDE_3_7_SONNET = "anthropic.claude-3-7-sonnet-20250219-v1:0"
     AWS_CLAUDE_3_5_SONNET = "anthropic.claude-3-5-sonnet-20241022-v2:0"
@@ -59,6 +62,7 @@ class ModelType(UnifiedModelType, Enum):
     AWS_LLAMA_3_2_11B_INSTRUCT = "us.meta.llama3-2-11b-instruct-v1:0"
     AWS_CLAUDE_SONNET_4 = "anthropic.claude-sonnet-4-20250514-v1:0"
     AWS_CLAUDE_OPUS_4 = "anthropic.claude-opus-4-20250514-v1:0"
+    AWS_CLAUDE_OPUS_4_1 = "anthropic.claude-opus-4-1-20250805-v1:0"
 
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
@@ -91,6 +95,7 @@ class ModelType(UnifiedModelType, Enum):
     OPENROUTER_LLAMA_4_SCOUT = "meta-llama/llama-4-scout"
     OPENROUTER_LLAMA_4_SCOUT_FREE = "meta-llama/llama-4-scout:free"
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
+    OPENROUTER_HORIZON_ALPHA = "openrouter/horizon-alpha"
 
     # LMStudio models
     LMSTUDIO_GEMMA_3_1B = "gemma-3-1b"
@@ -157,6 +162,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
+    CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -245,6 +251,7 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_QWQ_32B = "qwq-32b-preview"
     QWEN_QVQ_72B = "qvq-72b-preview"
     QWEN_QWQ_PLUS = "qwq-plus"
+    QWEN_3_CODER_PLUS = "qwen3-coder-plus"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -494,6 +501,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_5,
+            ModelType.GPT_5_MINI,
+            ModelType.GPT_5_NANO,
             ModelType.O4_MINI,
             ModelType.O3,
         }
@@ -512,6 +522,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
             ModelType.AWS_CLAUDE_SONNET_4,
             ModelType.AWS_CLAUDE_OPUS_4,
+            ModelType.AWS_CLAUDE_OPUS_4_1,
         }
 
     @property
@@ -534,6 +545,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_5,
             ModelType.O4_MINI,
             ModelType.O3,
         }
@@ -576,6 +588,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
+            ModelType.CLAUDE_OPUS_4_1,
         }
 
     @property
@@ -602,6 +615,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.OPENROUTER_OLYMPICODER_7B,
+            ModelType.OPENROUTER_HORIZON_ALPHA,
         }
 
     @property
@@ -763,6 +777,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_PLUS_2025_04_28,
             ModelType.QWEN_TURBO_LATEST,
             ModelType.QWEN_TURBO_2025_04_28,
+            ModelType.QWEN_3_CODER_PLUS,
         }
 
     @property
@@ -1168,6 +1183,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
             ModelType.GPT_4_5_PREVIEW,
+            ModelType.GPT_5,
+            ModelType.GPT_5_NANO,
+            ModelType.GPT_5_MINI,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.MISTRAL_PIXTRAL_12B,
@@ -1260,6 +1278,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
+            ModelType.CLAUDE_OPUS_4_1,
             ModelType.YI_MEDIUM_200K,
             ModelType.AWS_CLAUDE_3_5_SONNET,
             ModelType.AWS_CLAUDE_3_HAIKU,
@@ -1267,6 +1286,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_CLAUDE_3_7_SONNET,
             ModelType.AWS_CLAUDE_SONNET_4,
             ModelType.AWS_CLAUDE_OPUS_4,
+            ModelType.AWS_CLAUDE_OPUS_4_1,
             ModelType.O4_MINI,
             ModelType.O3,
         }:
@@ -1274,6 +1294,7 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.MISTRAL_CODESTRAL_MAMBA,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
+            ModelType.OPENROUTER_HORIZON_ALPHA,
         }:
             return 256_000
 
@@ -1306,6 +1327,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_4_MAVERICK_17B,
         }:
             return 1_048_576
+        elif self in {
+            ModelType.QWEN_3_CODER_PLUS,
+        }:
+            return 1_000_000
         elif self in {
             ModelType.QWEN_LONG,
             ModelType.TOGETHER_LLAMA_4_SCOUT,

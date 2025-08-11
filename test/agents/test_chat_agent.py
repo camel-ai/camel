@@ -21,8 +21,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
-from openai.types.chat.chat_completion_message_tool_call import (
-    ChatCompletionMessageToolCall,
+from openai.types.chat.chat_completion_message_function_tool_call import (
+    ChatCompletionMessageFunctionToolCall,
     Function,
 )
 from openai.types.completion_usage import CompletionUsage
@@ -83,7 +83,7 @@ parametrize = pytest.mark.parametrize(
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4_1_MINI,
+            model_type=ModelType.GPT_5_MINI,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -103,11 +103,11 @@ def test_chat_agent(model, step_call_count=3):
     assistant_without_sys_msg = ChatAgent(model=model)
 
     assert str(assistant_with_sys_msg) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_4_1_MINI})"
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_5_MINI})"
     )
     assert str(assistant_without_sys_msg) == (
         "ChatAgent(assistant, "
-        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_4_1_MINI)})"
+        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_5_MINI)})"
     )
 
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
@@ -246,12 +246,11 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
 
     model_config_dict = ChatGPTConfig(
         tools=tool_list,
-        temperature=0.0,
     ).as_dict()
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=model_config_dict,
     )
     model_backend_external1 = ChatCompletion(
@@ -268,7 +267,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
@@ -278,7 +277,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                             ),
                             type='function',
                         ),
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123457',
                             function=Function(
                                 arguments='{ \
@@ -293,7 +292,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
             )
         ],
         created=1730745899,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -315,7 +314,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{"a":1776,"b":2007}', name='sub'
@@ -327,7 +326,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
             )
         ],
         created=1730745902,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -378,12 +377,11 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
 
     model_config_dict = ChatGPTConfig(
         tools=tool_list,
-        temperature=0.0,
     ).as_dict()
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=model_config_dict,
     )
     model_backend_external1 = ChatCompletion(
@@ -400,7 +398,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
@@ -410,7 +408,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
                             ),
                             type='function',
                         ),
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123457',
                             function=Function(
                                 arguments='{ \
@@ -425,7 +423,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
             )
         ],
         created=1730745899,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -447,7 +445,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{"a":1776,"b":2007}', name='sub'
@@ -459,7 +457,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
             )
         ],
         created=1730745902,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -583,7 +581,7 @@ def test_chat_agent_multiple_return_messages(n, step_call_count=3):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=model_config.as_dict(),
     )
     model_backend_rsp_tool = ChatCompletion(
@@ -656,7 +654,7 @@ def test_chat_agent_multiple_return_message_error(n, step_call_count=3):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=model_config.as_dict(),
     )
     model_backend_multi_messages = deepcopy(model_backend_rsp_base)
@@ -717,7 +715,7 @@ def test_chat_agent_stream_output(step_call_count=3):
     stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=stream_model_config.as_dict(),
     )
     model.run = MagicMock(return_value=model_backend_rsp_base)
@@ -825,7 +823,7 @@ def test_tool_calling_sync(step_call_count=3):
     )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -857,7 +855,7 @@ def test_tool_calling_sync(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
@@ -869,7 +867,7 @@ def test_tool_calling_sync(step_call_count=3):
                             ),
                             type='function',
                         ),
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123457',
                             function=Function(
                                 arguments='{"a": 0, "b": 10}', name='sub'
@@ -881,7 +879,7 @@ def test_tool_calling_sync(step_call_count=3):
             )
         ],
         created=1730752528,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -902,7 +900,7 @@ def test_tool_calling_sync(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_kIJby7Y6As6gAbWoxDqxD6HG',
                             function=Function(
                                 arguments='{"a":16,"b":10}', name='sub'
@@ -914,7 +912,7 @@ def test_tool_calling_sync(step_call_count=3):
             )
         ],
         created=1730752528,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -940,7 +938,7 @@ def test_tool_calling_sync(step_call_count=3):
             )
         ],
         created=1730752528,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -992,7 +990,7 @@ async def test_tool_calling_math_async(step_call_count=3):
     math_funcs = sync_funcs_to_async([FunctionTool(MathToolkit().multiply)])
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(
@@ -1026,7 +1024,7 @@ async def test_tool_calling_math_async(step_call_count=3):
                     audio=None,
                     function_call=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
@@ -1043,7 +1041,7 @@ async def test_tool_calling_math_async(step_call_count=3):
             )
         ],
         created=1730752528,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -1068,7 +1066,7 @@ async def test_tool_calling_math_async(step_call_count=3):
             )
         ],
         created=1730752528,
-        model='gpt-4o-mini-2024-07-18',
+        model='gpt-5-mini-2024-07-18',
         object='chat.completion',
         service_tier=None,
         usage=CompletionUsage(
@@ -1124,7 +1122,7 @@ async def test_tool_calling_async(step_call_count=3):
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
     )
     model_backend_rsp_tool_async = deepcopy(model_backend_rsp_base)
 
@@ -1133,7 +1131,7 @@ async def test_tool_calling_async(step_call_count=3):
         # Reset tool_calls at the beginning of each new round of step() call
         if model.run.call_count % 2 == 1:
             model_backend_rsp_tool_async.choices[0].message.tool_calls = [
-                ChatCompletionMessageToolCall(
+                ChatCompletionMessageFunctionToolCall(
                     id='call_mock_123456',
                     function=Function(
                         arguments='{"second":1}', name='async_sleep'
@@ -1233,7 +1231,7 @@ def test_chat_agent_vision(step_call_count=3):
     model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_5_MINI,
         model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(
@@ -1297,15 +1295,15 @@ def test_chat_agent_creation_methods():
     specifications.
     """
     # Method 1: Initialize with just a string (model name)
-    agent_1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini")
-    assert agent_1.model_type.value == "gpt-4o-mini"
+    agent_1 = ChatAgent("You are a helpful assistant.", model="gpt-5-mini")
+    assert agent_1.model_type.value == "gpt-5-mini"
     assert isinstance(agent_1.model_backend.models[0], OpenAIModel)
 
     # Method 2: Initialize with just a ModelType enum
     agent_2 = ChatAgent(
-        "You are a helpful assistant.", model=ModelType.GPT_4O_MINI
+        "You are a helpful assistant.", model=ModelType.GPT_5_MINI
     )
-    assert agent_2.model_type.value == "gpt-4o-mini"
+    assert agent_2.model_type.value == "gpt-5-mini"
     assert isinstance(agent_2.model_backend.models[0], OpenAIModel)
 
     # Method 3: Initialize with a tuple of strings (platform, model)
@@ -1361,7 +1359,7 @@ def test_memory_setter_preserves_system_message():
 
     # Create a new memory instance
     context_creator = ScoreBasedContextCreator(
-        token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+        token_counter=OpenAITokenCounter(ModelType.GPT_5_MINI),
         token_limit=1024,
     )
     new_memory = ChatHistoryMemory(context_creator=context_creator)

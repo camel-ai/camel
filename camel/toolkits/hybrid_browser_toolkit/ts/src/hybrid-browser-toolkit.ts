@@ -1,6 +1,7 @@
 import {HybridBrowserSession} from './browser-session';
 import {ActionResult, BrowserAction, BrowserToolkitConfig, SnapshotResult, TabInfo, VisualMarkResult} from './types';
 import {ConfigLoader} from './config-loader';
+import {ConsoleMessage} from 'playwright';
 
 export class HybridBrowserToolkit {
   private session: HybridBrowserSession;
@@ -382,6 +383,21 @@ export class HybridBrowserToolkit {
     return this.executeActionWithSnapshot(action);
   }
 
+  async mouseControl(control: 'click' | 'right_click'| 'dblclick', x: number, y: number): Promise<any> {
+    const action: BrowserAction = { type: 'mouse_control', control, x, y };
+    return this.executeActionWithSnapshot(action);
+  }
+
+  async mouseDrag(from_ref: string, to_ref: string): Promise<any> {
+    const action: BrowserAction = { type: 'mouse_drag', from_ref, to_ref };
+    return this.executeActionWithSnapshot(action);
+  }
+
+  async pressKeys(keys: string[]): Promise<any> {
+    const action: BrowserAction = { type: 'press_key', keys};
+    return this.executeActionWithSnapshot(action);
+  }
+
   async back(): Promise<ActionResult> {
     const startTime = Date.now();
     
@@ -519,4 +535,93 @@ export class HybridBrowserToolkit {
     return await this.session.getTabInfo();
   }
 
+  async getConsoleView(): Promise<any> {
+    const currentLogs = await this.session.getCurrentLogs();
+    // Format logs
+    return currentLogs.map(item => ({
+      type: item.type(),
+      text: item.text(),
+    }));
+  }
+
+  async consoleExecute(code: string): Promise<any> {
+    const startTime = Date.now();
+    try {
+      const page = await this.session.getCurrentPage();
+      
+      // Wrap the code to capture console.log output
+      const wrappedCode = `
+        (function() {
+          const _logs = [];
+          const originalLog = console.log;
+          console.log = function(...args) {
+            _logs.push(args.map(arg => {
+              try {
+                return typeof arg === 'object' ? JSON.stringify(arg) : String(arg);
+              } catch (e) {
+                return String(arg);
+              }
+            }).join(' '));
+            originalLog.apply(console, args);
+          };
+          
+          let result;
+          try {
+            result = eval(${JSON.stringify(code)});
+          } catch (e) {
+            try {
+              result = (function() { ${code} })();
+            } catch (error) {
+              console.log = originalLog;
+              throw error;
+            }
+          }
+          
+          console.log = originalLog;
+          return { result, logs: _logs };
+        })()
+      `;
+      
+      const evalResult = await page.evaluate(wrappedCode) as { result: any; logs: string[] };
+      const { result, logs } = evalResult;
+
+      const snapshotStart = Date.now();
+      const snapshot = await this.getPageSnapshot(this.viewportLimit);
+      const snapshotTime = Date.now() - snapshotStart;
+      const totalTime = Date.now() - startTime;
+
+      // Properly serialize the result
+      let resultStr: string;
+      try {
+        resultStr = JSON.stringify(result, null, 2);
+      } catch (e) {
+        // Fallback for non-serializable values
+        resultStr = String(result);
+      }
+
+      return {
+        result: `Console execution result: ${resultStr}`,
+        console_output: logs,
+        snapshot: snapshot,
+        timing: {
+          total_time_ms: totalTime,
+          snapshot_time_ms: snapshotTime,
+        },
+      };
+      
+    } catch (error) {
+      const totalTime = Date.now() - startTime;
+      return {
+        result: `Console execution failed: ${error}`,
+        console_output: [],
+        snapshot: '',
+        timing: {
+          total_time_ms: totalTime,
+          snapshot_time_ms: 0,
+        },
+      };
+    }
+  }
+
 }
+

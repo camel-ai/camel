@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.73a5"
+version = "0.2.75a2"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -81,7 +81,7 @@ rag = [
     "crawl4ai>=0.3.745",
     "pyobvector>=0.1.18",
     "google-genai>=1.13.0",
-    "chunkr-ai>=0.0.50",
+    "chunkr-ai>=0.0.50, <0.1.0",
     "chromadb>=0.6.0,<1.0.0",
 ]
 web_tools = [
@@ -93,7 +93,6 @@ web_tools = [
     "wolframalpha>=5.0.0,<6",
     "tavily-python>=0.5.0,<0.6",
     "dappier>=0.3.3,<0.4",
-    "newspaper3k>=0.2.8,<0.3",
     "pyowm>=3.3.0,<4",
     "googlemaps>=4.10.0,<5",
     "requests_oauthlib>=1.3.1,<2",
@@ -125,10 +124,10 @@ document_tools = [
     "crawl4ai>=0.3.745",
     "markitdown>=0.1.1",
     "pylatex>=1.4.2",
-    "chunkr-ai>=0.0.50",
+    "chunkr-ai>=0.0.50, <0.1.0",
     "python-pptx>=1.0.2",
     "reportlab>=4.4.2",
-    "onnxruntime<=1.20.1",
+    "onnxruntime<=1.19.2",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -245,7 +244,6 @@ owl = [
     "docx>=0.2.4",
     "duckduckgo-search>=6.3.5,<7",
     "wikipedia>=1,<2",
-    "newspaper3k>=0.2.8,<0.3",
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
     "requests_oauthlib>=1.3.1,<2",
@@ -261,13 +259,50 @@ owl = [
     "pyautogui>=0.9.54,<0.10",
     "aci-sdk>=1.0.0b1",
     "pylatex>=1.4.2",
-    "chunkr-ai>=0.0.50",
+    "chunkr-ai>=0.0.50, <0.1.0",
     "python-pptx>=1.0.2",
     "pytesseract>=0.3.13",
     "markitdown>=0.1.1",
     "exa-py>=1.10.0,<2",
     "reportlab>=4.4.2",
-    "onnxruntime<=1.20.1",
+    "onnxruntime<=1.19.2",
+]
+eigent = [
+    "numpy>=1.2,<=2.2",
+    "chunkr-ai>=0.0.41",
+    "mcp-simple-arxiv==0.2.2",
+    "mcp-server-fetch==2025.1.17",
+    "python-dotenv>=1.0.0,<2",
+    "anthropic>=0.47.0,<0.50.0",
+    "datasets>=3,<4",
+    "pydub>=0.25.1,<0.26",
+    "ffmpeg-python>=0.2.0,<0.3",
+    "imageio[pyav]>=2.34.2,<3",
+    "yt-dlp>=2024.11.4,<2025",
+    "scenedetect>=0.6.5.2",
+    "xls2xlsx>=0.2.0",
+    "tabulate>=0.9.0",
+    "openpyxl>=3.1.5",
+    "docx>=0.2.4",
+    "duckduckgo-search>=6.3.5,<7",
+    "wikipedia>=1,<2",
+    "playwright>=1.50.0",
+    "html2text>=2024.2.26",
+    "requests_oauthlib>=1.3.1,<2",
+    "websockets>=13.0,<15.1",
+    "pandas>=1.5.3,<2",
+    "crawl4ai>=0.3.745",
+    "pyautogui>=0.9.54,<0.10",
+    "aci-sdk>=1.0.0b1",
+    "pylatex>=1.4.2",
+    "chunkr-ai>=0.0.50, <0.1.0",
+    "python-pptx>=1.0.2",
+    "pytesseract>=0.3.13",
+    "markitdown[all]>=0.1.1",
+    "exa-py>=1.10.0,<2",
+    "reportlab>=4.4.2",
+    "onnxruntime<=1.19.2",
+    "slack-sdk>=3.27.2,<4",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -284,7 +319,6 @@ all = [
     "wikipedia>=1,<2",
     "linkup-sdk>=0.2.1,<0.3",
     "duckduckgo-search>=6.3.5,<7",
-    "newspaper3k>=0.2.8,<0.3",
     "wolframalpha>=5.0.0,<6",
     "sympy>=1.13.3,<2",
     "pyowm>=3.3.0,<4",
@@ -382,7 +416,7 @@ all = [
     "google-genai>=1.13.0",
     "aci-sdk>=1.0.0b1",
     "pylatex>=1.4.2",
-    "chunkr-ai>=0.0.50",
+    "chunkr-ai>=0.0.50, <0.1.0",
     "weaviate-client>=4.15.0",
     "python-pptx>=1.0.2",
     "langfuse>=2.60.5",
@@ -395,7 +429,7 @@ all = [
     "chromadb>=0.6.0,<1.0.0",
     "traceroot==0.0.4a5",
     "reportlab>=4.4.2",
-    "onnxruntime<=1.20.1",
+    "onnxruntime<=1.19.2",
 ]
 
 [project.urls]
