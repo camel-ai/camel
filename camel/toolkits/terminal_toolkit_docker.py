@@ -34,7 +34,7 @@ import io
 import tarfile
 from pathlib import Path
 import docker.errors
-
+from types import SimpleNamespace
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -421,8 +421,14 @@ class TerminalToolkitDocker(BaseToolkit):
         result = self._exec_run(
             ["timeout", f"{max_timeout_sec}s", "tmux", "wait", "done"]
         )
-        if result.exit_code != 0:
+        if hasattr(result, "exit_code") and (result.exit_code != 0):
             raise TimeoutError(f"Command timed out after {max_timeout_sec} seconds")
+
+        else:
+            logger.error(
+                f"Result type error with keys {keys}. ",
+                f"Expected ExecResult, got {result}."
+            )
 
         elapsed_time_sec = time.time() - start_time_sec
         logger.debug(f"Blocking command completed in {elapsed_time_sec:.2f}s.")
@@ -498,7 +504,25 @@ class TerminalToolkitDocker(BaseToolkit):
 
 
     def _exec_run(self, cmd: list[str]) -> ExecResult:
-        return self.container.exec_run(cmd, user=self._user)
+        result = self.container.exec_run(cmd, user=self._user)
+            # Normalize result if it's a tuple
+        # if isinstance(result, tuple) and len(result) == 2:
+        #     logger.error(
+        #         f"Exec run returned a tuple: {result}. "
+        #         f"This is unexpected and may indicate an issue with the command {cmd}."
+        #     )
+        #     exit_code, output = result
+        #     return SimpleNamespace(exit_code=exit_code, output=output)
+
+        # Handle raw string (error case you're hitting)
+        if isinstance(result, str):
+            logger.error(
+                f"Exec run returned a raw string: {result}. "
+                f"This is unexpected and may indicate an issue with the command {cmd}."
+            )
+            return SimpleNamespace(exit_code=-1, output=result)
+        
+        return result
 
     def is_session_alive(self) -> bool:
         """Check if the tmux session is still alive."""
@@ -609,8 +633,12 @@ class TerminalToolkitDocker(BaseToolkit):
         pass
 
     def shell_exec(self, command: str) -> str:
-        r"""Executes a shell command in the tmux session.
+        r"""Executes a shell command in the tmux session within the Docker container.
 
+        This method sends a shell command to the tmux session running inside the 
+        Docker container and waits for its execution to complete. The command's 
+        output is captured and returned. 
+        
         Args:
             command (str): The shell command to execute.
 
@@ -622,7 +650,7 @@ class TerminalToolkitDocker(BaseToolkit):
             command = [command, 'Enter']
         self._save_to_file(command, "Commands")
         pre_session_content = self.get_incremental_output()
-        self.send_keys(command, block=True)
+        self.send_keys(command, block=True, max_timeout_sec=self._timeout)
         post_session_content = self.get_incremental_output()
 
         self._save_to_file(post_session_content, "Outputs")
@@ -630,6 +658,9 @@ class TerminalToolkitDocker(BaseToolkit):
     
     def session_view(self, ) -> str:
         r"""Retrieves the current tmux session screen content.
+        
+        This is useful for checking the history of a session, especially after a
+        command has finished execution.
 
         Returns:
             str: The current tmux session screen content.
