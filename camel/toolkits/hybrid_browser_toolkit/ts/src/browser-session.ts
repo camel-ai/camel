@@ -1,4 +1,4 @@
-import { Page, Browser, BrowserContext, chromium } from 'playwright';
+import { Page, Browser, BrowserContext, chromium, ConsoleMessage } from 'playwright';
 import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
 
@@ -6,18 +6,43 @@ export class HybridBrowserSession {
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
   private pages: Map<string, Page> = new Map();
+  private consoleLogs: Map<string, ConsoleMessage[]> = new Map();
   private currentTabId: string | null = null;
   private tabCounter = 0;
   private configLoader: ConfigLoader;
   private scrollPosition: { x: number; y: number } = {x: 0, y: 0};
   private hasNavigatedBefore = false; //  Track if we've navigated before
+  private logLimit: number; 
 
   constructor(config: BrowserToolkitConfig = {}) {
     // Use ConfigLoader's fromPythonConfig to handle conversion properly
     this.configLoader = ConfigLoader.fromPythonConfig(config);
+    // Load browser configuration for console log limit, default to 1000
+    this.logLimit = this.configLoader.getBrowserConfig().consoleLogLimit || 1000;
   }
 
-  async ensureBrowser(): Promise<void> {
+  private registerNewPage(tabId: string, page: Page): void {
+    // Register page and logs with tabId
+    this.pages.set(tabId, page);
+    this.consoleLogs.set(tabId, []);
+    // Set up console log listener for the page
+    page.on('console', (msg: ConsoleMessage) => {
+      const logs = this.consoleLogs.get(tabId);
+      if (logs) {
+        logs.push(msg);
+        if (logs.length >  this.logLimit) {
+          logs.shift();
+        }
+      }
+    });
+
+    // Clean logs on page close
+    page.on('close', () => {
+      this.consoleLogs.delete(tabId);
+    });
+  }
+
+  async ensureBrowser(): Promise<void> {  
     if (this.browser) {
       return;
     }
@@ -57,7 +82,7 @@ export class HybridBrowserSession {
           // In CDP mode, only consider pages with about:blank as available
           if (pageUrl === 'about:blank') {
             const tabId = this.generateTabId();
-            this.pages.set(tabId, page);
+            this.registerNewPage(tabId, page);
             if (!this.currentTabId) {
               this.currentTabId = tabId;
               availablePageFound = true;
@@ -97,7 +122,7 @@ export class HybridBrowserSession {
         const pages = this.context.pages();
         if (pages.length > 0) {
           const initialTabId = this.generateTabId();
-          this.pages.set(initialTabId, pages[0]);
+          this.registerNewPage(initialTabId, pages[0]);
           this.currentTabId = initialTabId;
         }
       } else {
@@ -115,7 +140,7 @@ export class HybridBrowserSession {
         
         const initialPage = await this.context.newPage();
         const initialTabId = this.generateTabId();
-        this.pages.set(initialTabId, initialPage);
+        this.registerNewPage(initialTabId, initialPage);
         this.currentTabId = initialTabId;
       }
     }
@@ -137,6 +162,13 @@ export class HybridBrowserSession {
       throw new Error('No active page available');
     }
     return this.pages.get(this.currentTabId)!;
+  }
+
+  async getCurrentLogs(): Promise<ConsoleMessage[]> {
+    if (!this.currentTabId || !this.consoleLogs.has(this.currentTabId)) {
+      return [];
+    }
+    return this.consoleLogs.get(this.currentTabId) || [];
   }
 
   /**
@@ -343,7 +375,7 @@ export class HybridBrowserSession {
           
           // Generate tab ID for the new page
           const newTabId = this.generateTabId();
-          this.pages.set(newTabId, newPage);
+          this.registerNewPage(newTabId, newPage);
           
           // Set up page properties
           const browserConfig = this.configLoader.getBrowserConfig();
@@ -434,7 +466,97 @@ export class HybridBrowserSession {
     }
   }
 
+  /**
+   *  Simplified mouse control implementation
+   */
+  private async performMouseControl(page: Page, control: string, x: number, y: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      const viewport = page.viewportSize();
+      if (!viewport) {
+        return { success: false, error: 'Viewport size not available from page.' };
+      }
+      if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) {
+        return { success: false, error: `Invalid coordinates, outside viewport bounds: (${x}, ${y})` };
+      }
+      switch (control) {
+        case 'click': {
+          await page.mouse.click(x, y);
+          break;
+        }
+        case 'right_click': {
+          await page.mouse.click(x, y, { button: 'right' });
+          break;
+        }
+        case 'dblclick': {
+          await page.mouse.dblclick(x, y);
+          break;
+        }
+        default:
+          return { success: false, error: `Invalid control action: ${control}` };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: `Mouse action failed: ${error}` };
+    }
+  }
 
+  /**
+   *  Enhanced mouse drag and drop implementation using ref IDs
+   */
+  private async performMouseDrag(page: Page, fromRef: string, toRef: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Ensure we have the latest snapshot
+      await (page as any)._snapshotForAI();
+      
+      // Get elements using Playwright's aria-ref selector
+      const fromSelector = `aria-ref=${fromRef}`;
+      const toSelector = `aria-ref=${toRef}`;
+      
+      const fromElement = await page.locator(fromSelector).first();
+      const toElement = await page.locator(toSelector).first();
+      
+      // Check if elements exist
+      const fromExists = await fromElement.count() > 0;
+      const toExists = await toElement.count() > 0;
+      
+      if (!fromExists) {
+        return { success: false, error: `Source element with ref ${fromRef} not found` };
+      }
+      
+      if (!toExists) {
+        return { success: false, error: `Target element with ref ${toRef} not found` };
+      }
+      
+      // Get the center coordinates of both elements
+      const fromBox = await fromElement.boundingBox();
+      const toBox = await toElement.boundingBox();
+      
+      if (!fromBox) {
+        return { success: false, error: `Could not get bounding box for source element with ref ${fromRef}` };
+      }
+      
+      if (!toBox) {
+        return { success: false, error: `Could not get bounding box for target element with ref ${toRef}` };
+      }
+      
+      const fromX = fromBox.x + fromBox.width / 2;
+      const fromY = fromBox.y + fromBox.height / 2;
+      const toX = toBox.x + toBox.width / 2;
+      const toY = toBox.y + toBox.height / 2;
+
+      // Perform the drag operation
+      await page.mouse.move(fromX, fromY);
+      await page.mouse.down();
+      // Destination coordinates
+      await page.mouse.move(toX, toY);
+      await page.mouse.up();
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: `Mouse drag action failed: ${error}` };
+    }
+  }
 
   async executeAction(action: BrowserAction): Promise<ActionResult> {
     const startTime = Date.now();
@@ -517,6 +639,40 @@ export class HybridBrowserSession {
           const browserConfig = this.configLoader.getBrowserConfig();
           await page.keyboard.press(browserConfig.enterKey);
           actionExecutionTime = Date.now() - enterStart;
+          break;
+        }
+
+        case 'mouse_control': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const mouseControlStart = Date.now();
+          const mouseControlResult = await this.performMouseControl(page, action.control, action.x, action.y);
+
+          if (!mouseControlResult.success) {
+            throw new Error(`Action failed: ${mouseControlResult.error}`);
+          }
+          actionExecutionTime = Date.now() - mouseControlStart;
+          break;
+        }
+
+        case 'mouse_drag': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const mouseDragStart = Date.now();
+          const mouseDragResult = await this.performMouseDrag(page, action.from_ref, action.to_ref);
+
+          if (!mouseDragResult.success) {
+            throw new Error(`Action failed: ${mouseDragResult.error}`);
+          }
+          actionExecutionTime = Date.now() - mouseDragStart;
+          break;
+        }
+
+        case 'press_key': {
+          elementSearchTime = Date.now() - elementSearchStart;
+          const keyPressStart = Date.now();
+          // concatenate keys with '+' for key combinations
+          const keys = action.keys.join('+');
+          await page.keyboard.press(keys);
+          actionExecutionTime = Date.now() - keyPressStart;
           break;
         }
           
@@ -651,7 +807,7 @@ export class HybridBrowserSession {
             if (!isTracked && pageUrl === 'about:blank') {
               newPage = page;
               newTabId = this.generateTabId();
-              this.pages.set(newTabId, newPage);
+              this.registerNewPage(newTabId, newPage);
               break;
             }
           }
@@ -663,7 +819,7 @@ export class HybridBrowserSession {
           // Non-CDP mode: create new page as usual
           newPage = await this.context.newPage();
           newTabId = this.generateTabId();
-          this.pages.set(newTabId, newPage);
+          this.registerNewPage(newTabId, newPage);
         }
         
         // Set up page properties

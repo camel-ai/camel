@@ -33,7 +33,7 @@ from openai.types.chat.chat_completion_user_message_param import (
 from openai.types.completion_usage import CompletionUsage
 from openai.types.chat import ParsedChatCompletion
 from openai._types import NOT_GIVEN, NotGiven
-from openai.types.chat import ChatCompletionMessageToolCall
+from openai.types.chat import ChatCompletionMessageFunctionToolCall
 
 __all__ = [
     "Choice",
@@ -45,7 +45,7 @@ __all__ = [
     "ChatCompletionUserMessageParam",
     "ChatCompletionAssistantMessageParam",
     "ChatCompletionToolMessageParam",
-    "ChatCompletionMessageToolCall",
+    "ChatCompletionMessageFunctionToolCall",
     "CompletionUsage",
     "ParsedChatCompletion",
     "NOT_GIVEN",

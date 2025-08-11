@@ -131,11 +131,3 @@ def stream(self):
 **Returns:**
 
   bool: Whether the model is in stream mode.
-
-<a id="camel.models.openai_compatible_model.OpenAICompatibleModel.check_model_config"></a>
-
-### check_model_config
-
-```python
-def check_model_config(self):
-```

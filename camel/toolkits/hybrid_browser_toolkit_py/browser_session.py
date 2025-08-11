@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections import deque
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple
 
 from camel.logger import get_logger
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
     from playwright.async_api import (
         Browser,
         BrowserContext,
+        ConsoleMessage,
         Page,
         Playwright,
     )
@@ -188,7 +190,9 @@ class HybridBrowserSession:
 
         # Dictionary-based tab management with monotonic IDs
         self._pages: Dict[str, Page] = {}  # tab_id -> Page object
+        self._console_logs: Dict[str, Any] = {}  # tab_id -> page logs
         self._current_tab_id: Optional[str] = None  # Current active tab ID
+        self.log_limit: int = ConfigLoader.get_max_log_limit() or 1000
 
         self.snapshot: Optional[PageSnapshot] = None
         self.executor: Optional[ActionExecutor] = None
@@ -266,7 +270,7 @@ class HybridBrowserSession:
                 )
 
         # Store in pages dictionary
-        self._pages[tab_id] = new_page
+        await self._register_new_page(tab_id, new_page)
 
         # Navigate if URL provided
         if url:
@@ -280,6 +284,32 @@ class HybridBrowserSession:
             f"Created new tab {tab_id}, total tabs: {len(self._pages)}"
         )
         return tab_id
+
+    async def _register_new_page(self, tab_id: str, new_page: "Page") -> None:
+        r"""Register a page and add console event listerers.
+
+        Args:
+            new_page (Page): The new page object to register.
+        """
+        # Add new page
+        self._pages[tab_id] = new_page
+        # Create log for the page
+        self._console_logs[tab_id] = deque(maxlen=self.log_limit)
+
+        # Add event function
+        def handle_console_log(msg: ConsoleMessage):
+            logs = self._console_logs.get(tab_id)
+            if logs is not None:
+                logs.append({"type": msg.type, "text": msg.text})
+
+        # Add event listener for console logs
+        new_page.on(event="console", f=handle_console_log)
+
+        def handle_page_close(page: "Page"):
+            self._console_logs.pop(tab_id, None)
+
+        # Add event listener for cleanup
+        new_page.on(event="close", f=handle_page_close)
 
     async def register_page(self, new_page: "Page") -> str:
         r"""Register a page that was created externally (e.g., by a click).
@@ -297,7 +327,7 @@ class HybridBrowserSession:
 
         # Create new ID for the page
         tab_id = await TabIdGenerator.generate_tab_id()
-        self._pages[tab_id] = new_page
+        await self._register_new_page(tab_id, new_page)
 
         logger.info(
             f"Registered new tab {tab_id} (opened by user action). "
@@ -458,6 +488,7 @@ class HybridBrowserSession:
             self._context = singleton_instance._context
             self._page = singleton_instance._page
             self._pages = singleton_instance._pages
+            self._console_logs = singleton_instance._console_logs
             self._current_tab_id = singleton_instance._current_tab_id
             self.snapshot = singleton_instance.snapshot
             self.executor = singleton_instance.executor
@@ -502,16 +533,16 @@ class HybridBrowserSession:
                 self._page = pages[0]
                 # Create ID for initial page
                 initial_tab_id = await TabIdGenerator.generate_tab_id()
-                self._pages[initial_tab_id] = pages[0]
+                await self._register_new_page(initial_tab_id, pages[0])
                 self._current_tab_id = initial_tab_id
                 # Handle additional pages if any
                 for page in pages[1:]:
                     tab_id = await TabIdGenerator.generate_tab_id()
-                    self._pages[tab_id] = page
+                    await self._register_new_page(tab_id, page)
             else:
                 self._page = await context.new_page()
                 initial_tab_id = await TabIdGenerator.generate_tab_id()
-                self._pages[initial_tab_id] = self._page
+                await self._register_new_page(initial_tab_id, self._page)
                 self._current_tab_id = initial_tab_id
         else:
             self._browser = await self._playwright.chromium.launch(
@@ -522,7 +553,7 @@ class HybridBrowserSession:
 
             # Create ID for initial page
             initial_tab_id = await TabIdGenerator.generate_tab_id()
-            self._pages[initial_tab_id] = self._page
+            await self._register_new_page(initial_tab_id, self._page)
             self._current_tab_id = initial_tab_id
 
         # Apply stealth modifications if enabled
@@ -713,13 +744,19 @@ class HybridBrowserSession:
         return f"Navigated to {url}"
 
     async def get_snapshot(
-        self, *, force_refresh: bool = False, diff_only: bool = False
+        self,
+        *,
+        force_refresh: bool = False,
+        diff_only: bool = False,
+        viewport_limit: bool = False,
     ) -> str:
         r"""Get snapshot for current tab."""
         if not self.snapshot:
             return "<empty>"
         return await self.snapshot.capture(
-            force_refresh=force_refresh, diff_only=diff_only
+            force_refresh=force_refresh,
+            diff_only=diff_only,
+            viewport_limit=viewport_limit,
         )
 
     async def exec_action(self, action: Dict[str, Any]) -> Dict[str, Any]:
@@ -738,3 +775,13 @@ class HybridBrowserSession:
         if self._page is None:
             raise RuntimeError("No active page available")
         return self._page
+
+    async def get_console_logs(self) -> Dict[str, Any]:
+        r"""Get current active logs."""
+        await self.ensure_browser()
+        if self._current_tab_id is None:
+            raise RuntimeError("No active tab available")
+        logs = self._console_logs.get(self._current_tab_id, None)
+        if logs is None:
+            raise RuntimeError("No active logs available for the page")
+        return logs
