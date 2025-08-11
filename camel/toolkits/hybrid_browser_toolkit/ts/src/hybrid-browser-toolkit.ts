@@ -69,35 +69,52 @@ export class HybridBrowserToolkit {
   }
 
   async visitPage(url: string): Promise<any> {
-    const result = await this.session.visitPage(url);
-    
-    // Format response for Python layer compatibility
-    const response: any = {
-      result: result.message,
-      snapshot: '',
-    };
-    
-    if (result.success) {
-      const snapshotStart = Date.now();
-      response.snapshot = await this.getPageSnapshot(this.viewportLimit);
-      const snapshotTime = Date.now() - snapshotStart;
+    try {
+      // Ensure browser is initialized before visiting page
+      await this.session.ensureBrowser();
       
-      if (result.timing) {
-        result.timing.snapshot_time_ms = snapshotTime;
+      const result = await this.session.visitPage(url);
+      
+      // Format response for Python layer compatibility
+      const response: any = {
+        result: result.message,
+        snapshot: '',
+      };
+      
+      if (result.success) {
+        const snapshotStart = Date.now();
+        response.snapshot = await this.getPageSnapshot(this.viewportLimit);
+        const snapshotTime = Date.now() - snapshotStart;
+        
+        if (result.timing) {
+          result.timing.snapshot_time_ms = snapshotTime;
+        }
       }
+      
+      // Include timing if available
+      if (result.timing) {
+        response.timing = result.timing;
+      }
+      
+      // Include newTabId if present
+      if (result.newTabId) {
+        response.newTabId = result.newTabId;
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('[visitPage] Error:', error);
+      return {
+        result: `Navigation to ${url} failed: ${error}`,
+        snapshot: '',
+        timing: {
+          total_time_ms: 0,
+          navigation_time_ms: 0,
+          dom_content_loaded_time_ms: 0,
+          network_idle_time_ms: 0,
+        }
+      };
     }
-    
-    // Include timing if available
-    if (result.timing) {
-      response.timing = result.timing;
-    }
-    
-    // Include newTabId if present
-    if (result.newTabId) {
-      response.newTabId = result.newTabId;
-    }
-    
-    return response;
   }
 
   async getPageSnapshot(viewportLimit: boolean = false): Promise<string> {
