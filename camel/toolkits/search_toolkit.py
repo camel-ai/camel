@@ -458,17 +458,21 @@ class SearchToolkit(BaseToolkit):
 
         Args:
             query (str): The query to be searched.
-            search_type (str): The type of search to perform. Either "web" for
-                web pages or "image" for image search. (default: "web")
+            search_type (str): The type of search to perform. Must be either
+                "web" for web pages or "image" for image search. Any other
+                value will raise a ValueError. (default: "web")
             number_of_result_pages (int): The number of result pages to
-                retrieve. Adjust this based on your task - use fewer results
-                for focused searches and more for comprehensive searches.
-                (default: :obj:`10`)
-            start_page (int): The result page to start from. Use this for
-                pagination - e.g., start_page=1 for results 1-10,
-                start_page=11 for results 11-20, etc. This allows agents to
-                check initial results and continue searching if needed.
-                (default: :obj:`1`)
+                retrieve. Must be a positive integer between 1 and 10.
+                Google Custom Search API limits results to 10 per request.
+                If a value greater than 10 is provided, it will be capped
+                at 10 with a warning. Adjust this based on your task - use
+                fewer results for focused searches and more for comprehensive
+                searches. (default: :obj:`10`)
+            start_page (int): The result page to start from. Must be a
+                positive integer (>= 1). Use this for pagination - e.g.,
+                start_page=1 for results 1-10, start_page=11 for results
+                11-20, etc. This allows agents to check initial results
+                and continue searching if needed. (default: :obj:`1`)
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
@@ -514,7 +518,32 @@ class SearchToolkit(BaseToolkit):
                     'height': 600
                 }
         """
+        from urllib.parse import quote
+
         import requests
+
+        # Validate input parameters
+        if not isinstance(start_page, int) or start_page < 1:
+            raise ValueError("start_page must be a positive integer")
+
+        if (
+            not isinstance(number_of_result_pages, int)
+            or number_of_result_pages < 1
+        ):
+            raise ValueError(
+                "number_of_result_pages must be a positive integer"
+            )
+
+        # Google Custom Search API has a limit of 10 results per request
+        if number_of_result_pages > 10:
+            logger.warning(
+                f"Google API limits results to 10 per request. "
+                f"Requested {number_of_result_pages}, using 10 instead."
+            )
+            number_of_result_pages = 10
+
+        if search_type not in ["web", "image"]:
+            raise ValueError("search_type must be either 'web' or 'image'")
 
         # https://developers.google.com/custom-search/v1/overview
         GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -535,11 +564,13 @@ class SearchToolkit(BaseToolkit):
             modified_query = f"{query} {exclusion_terms}"
             logger.debug(f"Excluded domains, modified query: {modified_query}")
 
+        encoded_query = quote(modified_query)
+
         # Constructing the URL
         # Doc: https://developers.google.com/custom-search/v1/using_rest
         base_url = (
             f"https://www.googleapis.com/customsearch/v1?"
-            f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={modified_query}&start="
+            f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={encoded_query}&start="
             f"{start_page_idx}&lr={search_language}&num={number_of_result_pages}"
         )
 
@@ -584,7 +615,6 @@ class SearchToolkit(BaseToolkit):
                             "context_url": context_url,
                         }
 
-                        # Add dimensions if available
                         if width:
                             response["width"] = int(width)
                         if height:
@@ -592,8 +622,6 @@ class SearchToolkit(BaseToolkit):
 
                         responses.append(response)
                     else:
-                        # Process web search results (existing logic)
-                        # Check metatags are present
                         if "pagemap" not in search_item:
                             continue
                         if "metatags" not in search_item["pagemap"]:
@@ -607,12 +635,9 @@ class SearchToolkit(BaseToolkit):
                             ][0]["og:description"]
                         else:
                             long_description = "N/A"
-                        # Get the page title
                         title = search_item.get("title")
-                        # Page snippet
                         snippet = search_item.get("snippet")
 
-                        # Extract the page url
                         link = search_item.get("link")
                         response = {
                             "result_id": i,
@@ -623,16 +648,36 @@ class SearchToolkit(BaseToolkit):
                         }
                         responses.append(response)
             else:
-                error_info = data.get("error", {})
-                logger.error(
-                    f"Google search failed - API response: {error_info}"
-                )
-                responses.append(
-                    {
-                        "error": f"Google search failed - "
-                        f"API response: {error_info}"
-                    }
-                )
+                if "error" in data:
+                    error_info = data.get("error", {})
+                    logger.error(
+                        f"Google search failed - API response: {error_info}"
+                    )
+                    responses.append(
+                        {
+                            "error": f"Google search failed - "
+                            f"API response: {error_info}"
+                        }
+                    )
+                elif "searchInformation" in data:
+                    search_info = data.get("searchInformation", {})
+                    total_results = search_info.get("totalResults", "0")
+                    if total_results == "0":
+                        logger.info(f"No results found for query: {query}")
+                        # Return empty list to indicate no results (not an error)
+                        responses = []
+                    else:
+                        logger.warning(
+                            f"Google search returned no items but claims {total_results} results"
+                        )
+                        responses = []
+                else:
+                    logger.error(
+                        f"Unexpected Google API response format: {data}"
+                    )
+                    responses.append(
+                        {"error": "Unexpected response format from Google API"}
+                    )
 
         except Exception as e:
             responses.append({"error": f"google search failed: {e!s}"})
@@ -1233,6 +1278,73 @@ class SearchToolkit(BaseToolkit):
                 f"search: {e!s}"
             }
 
+    @api_keys_required([(None, 'METASO_API_KEY')])
+    def search_metaso(
+        self,
+        query: str,
+        page: int = 1,
+        include_summary: bool = False,
+        include_raw_content: bool = False,
+        concise_snippet: bool = False,
+        scope: Literal[
+            "webpage", "document", "scholar", "image", "video", "podcast"
+        ] = "webpage",
+    ) -> Dict[str, Any]:
+        r"""Perform a web search using the metaso.cn API.
+
+        Args:
+            query (str): The search query string.
+            page (int): Page number. (default: :obj:`1`)
+            include_summary (bool): Whether to include summary in the result.
+                (default: :obj:`False`)
+            include_raw_content (bool): Whether to include raw content in the
+                result. (default: :obj:`False`)
+            concise_snippet (bool): Whether to return concise snippet.
+                (default: :obj:`False`)
+            scope (Literal["webpage", "document", "scholar", "image", "video",
+                "podcast"]): Search scope. (default: :obj:`"webpage"`)
+
+        Returns:
+            Dict[str, Any]: Search results or error information.
+        """
+        import http.client
+        import json
+
+        # It is recommended to put the token in environment variable for
+        # security
+
+        METASO_API_KEY = os.getenv("METASO_API_KEY")
+
+        conn = http.client.HTTPSConnection("metaso.cn")
+        payload = json.dumps(
+            {
+                "q": query,
+                "scope": scope,
+                "includeSummary": include_summary,
+                "page": str(page),
+                "includeRawContent": include_raw_content,
+                "conciseSnippet": concise_snippet,
+            }
+        )
+        headers = {
+            'Authorization': f'Bearer {METASO_API_KEY}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        }
+        try:
+            conn.request("POST", "/api/v1/search", payload, headers)
+            res = conn.getresponse()
+            data = res.read()
+            result = data.decode("utf-8")
+            try:
+                return json.loads(result)
+            except Exception:
+                return {
+                    "error": f"Metaso returned content could not be parsed: {result}"
+                }
+        except Exception as e:
+            return {"error": f"Metaso search failed: {e}"}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -1253,4 +1365,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_bing),
             FunctionTool(self.search_exa),
             FunctionTool(self.search_alibaba_tongxiao),
+            FunctionTool(self.search_metaso),
         ]

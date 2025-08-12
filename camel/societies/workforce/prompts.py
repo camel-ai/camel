@@ -61,14 +61,7 @@ Each assignment dictionary should have:
 - "dependencies": list of task IDs that this task depends on (empty list if no dependencies)
 
 Example valid response:
-{{
-  "assignments": [
-    {{"task_id": "task_1", "assignee_id": "node_12345", "dependencies": []}},
-    {{"task_id": "task_2", "assignee_id": "node_67890", "dependencies": ["task_1"]}},
-    {{"task_id": "task_3", "assignee_id": "node_12345", "dependencies": []}},
-    {{"task_id": "task_4", "assignee_id": "node_67890", "dependencies": ["task_1", "task_2"]}}
-  ]
-}}
+{{"assignments": [{{"task_id": "task_1", "assignee_id": "node_12345", "dependencies": []}}, {{"task_id": "task_2", "assignee_id": "node_67890", "dependencies": ["task_1"]}}, {{"task_id": "task_3", "assignee_id": "node_12345", "dependencies": []}}, {{"task_id": "task_4", "assignee_id": "node_67890", "dependencies": ["task_1", "task_2"]}}]}}
 
 ***CRITICAL: DEPENDENCY MANAGEMENT IS YOUR IMPORTANT RESPONSIBILITY.***
 Carefully analyze the sequence of tasks. A task's dependencies MUST include the IDs of all prior tasks whose outputs are necessary for its execution. For example, a task to 'Summarize Paper X' MUST depend on the task that 'Finds/Retrieves Paper X'. Similarly, a task that 'Compiles a report from summaries' MUST depend on all 'Summarize Paper X' tasks. **Incorrect or missing dependencies will lead to critical operational failures and an inability to complete the overall objective.** Be meticulous in defining these relationships.
