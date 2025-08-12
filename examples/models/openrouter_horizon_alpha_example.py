@@ -13,42 +13,37 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
+from camel.configs import OpenRouterConfig
 from camel.models import ModelFactory
-from camel.toolkits import SymPyToolkit
 from camel.types import ModelPlatformType, ModelType
 
-# Define system message
-sys_msg = """You are a helpful math assistant that can perform symbolic 
-computations"""
-
-# Set model config
-tools = SymPyToolkit().get_tools()
-
+# Create Horizon Alpha model
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.DEFAULT,
-    model_type=ModelType.DEFAULT,
+    model_platform=ModelPlatformType.OPENROUTER,
+    model_type=ModelType.OPENROUTER_HORIZON_ALPHA,
+    model_config_dict=OpenRouterConfig(temperature=0.7).as_dict(),
 )
+
+# Define system message
+sys_msg = "You are a helpful AI assistant powered by Horizon Alpha model."
 
 # Set agent
-camel_agent = ChatAgent(
-    system_message=sys_msg,
-    model=model,
-    tools=tools,
-)
-camel_agent.reset()
+camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-# Define a user message with a complex expression
-usr_msg = """Simplify the expression: (x^4 - 16)/(x^2 - 4) + sin(x)^2 + cos(x)
-^2 + (x^3 + 6*x^2 + 12*x + 8)/(x + 2)"""
+user_msg = """Tell me about your capabilities and what makes you unique 
+    as the Horizon Alpha model."""
 
 # Get response information
-response = camel_agent.step(usr_msg)
-print(response.info['tool_calls'])
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+
 '''
 ===============================================================================
-[ToolCallingRecord(tool_name='simplify_expression', args={'expression': '(x**4 
-- 16)/(x**2 - 4) + sin(x)**2 + cos(x)**2 + (x**3 + 6*x**2 + 12*x + 8)/(x + 2)
-'}, result='{"status": "success", "result": "2*x**2 + 4*x + 9"}', 
-tool_call_id='call_CdoZsLWeagT0yBM13RYuz09W')]
+This example demonstrates how to use the Horizon Alpha model from OpenRouter
+with CAMEL AI framework. The Horizon Alpha model is a cloaked model provided 
+for community feedback with 256,000 context tokens support.
+
+Note: During the testing period, this model is free to use. Make sure to set
+your OPENROUTER_API_KEY environment variable before running this example.
 ===============================================================================
 '''
