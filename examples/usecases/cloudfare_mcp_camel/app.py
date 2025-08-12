@@ -42,7 +42,7 @@ agent = ChatAgent(
         role_name="cloudflare assistant",
         role_type="assistant",
         meta_dict={},
-        content="You are a helpful assistant that can access Cloudflare's services via MCP"
+        content="You are a helpful assistant that can access Cloudflare's services via MCP",
     ),
     model=model,
     tools=mcp_toolkit.get_tools(),
@@ -50,9 +50,7 @@ agent = ChatAgent(
 
 # Set page config
 st.set_page_config(
-    page_title="Cloudflare MCP Interface",
-    page_icon="☁️",
-    layout="wide"
+    page_title="Cloudflare MCP Interface", page_icon="☁️", layout="wide"
 )
 
 # Title and description
@@ -71,7 +69,7 @@ tab1, tab2, tab3 = st.tabs(["📚 Documentation", "📊 Radar", "🌐 Browser"])
 with tab1:
     st.header("Cloudflare Documentation")
     st.markdown("Ask questions about Cloudflare's documentation and services.")
-    
+
     doc_query = st.text_area("Enter your documentation query:", height=100)
     if st.button("Search Documentation", key="doc_search"):
         if doc_query:
@@ -90,15 +88,22 @@ with tab1:
 with tab2:
     st.header("Cloudflare Radar")
     st.markdown("Get insights about internet traffic and trends.")
-    
+
     radar_options = st.selectbox(
         "Select Radar Query Type:",
-        ["Traffic Trends", "URL Analysis", "DNS Analytics", "HTTP Protocol Analysis"]
+        [
+            "Traffic Trends",
+            "URL Analysis",
+            "DNS Analytics",
+            "HTTP Protocol Analysis",
+        ],
     )
-    
+
     if radar_options == "Traffic Trends":
         st.markdown("Get insights about global internet traffic trends.")
-        trend_query = st.text_input("Enter your trend query (e.g., 'Show me traffic trends for the last week'):")
+        trend_query = st.text_input(
+            "Enter your trend query (e.g., 'Show me traffic trends for the last week'):"
+        )
     elif radar_options == "URL Analysis":
         st.markdown("Analyze a specific URL's traffic and performance.")
         url = st.text_input("Enter URL to analyze:")
@@ -110,7 +115,7 @@ with tab2:
     else:  # HTTP Protocol Analysis
         st.markdown("Get insights about HTTP protocol usage.")
         trend_query = "Show HTTP protocol analysis and trends"
-    
+
     if st.button("Get Radar Insights", key="radar_search"):
         if trend_query:
             with st.spinner("Fetching radar insights..."):
@@ -127,21 +132,21 @@ with tab2:
 with tab3:
     st.header("Cloudflare Browser")
     st.markdown("Fetch and analyze web pages.")
-    
+
     browser_options = st.selectbox(
         "Select Browser Action:",
-        ["Fetch Page", "Take Screenshot", "Convert to Markdown"]
+        ["Fetch Page", "Take Screenshot", "Convert to Markdown"],
     )
-    
+
     url = st.text_input("Enter URL:")
-    
+
     if browser_options == "Fetch Page":
         action = "Fetch and analyze the content of"
     elif browser_options == "Take Screenshot":
         action = "Take a screenshot of"
     else:  # Convert to Markdown
         action = "Convert to markdown the content of"
-    
+
     if st.button("Execute Browser Action", key="browser_action"):
         if url:
             with st.spinner("Processing..."):
@@ -167,10 +172,10 @@ with st.sidebar:
     
     Select a tab above to interact with each service.
     """)
-    
+
     st.header("Tips")
     st.markdown("""
     - Be specific in your queries
     - For Radar insights, try different query types
     - For Browser actions, ensure URLs are complete
-    """) 
+    """)

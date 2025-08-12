@@ -13,9 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from enum import Enum
 from functools import wraps
-from typing import Callable, List, Optional
+from typing import TYPE_CHECKING, Callable, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+if TYPE_CHECKING:
+    from camel.tasks.task import Task
 
 
 class WorkerConf(BaseModel):
@@ -64,6 +67,7 @@ class TaskAssignment(BaseModel):
         return [d.strip() for d in dep_str.split(',') if d.strip()]
 
     @field_validator("dependencies", mode="before")
+    @classmethod
     def validate_dependencies(cls, v) -> List[str]:
         if v is None:
             return []
@@ -234,3 +238,16 @@ def check_if_running(
         return wrapper
 
     return decorator
+
+
+def find_task_by_id(tasks: List['Task'], task_id: str) -> Optional['Task']:
+    """Find a task in a list of tasks by ID.
+
+    Args:
+        tasks: List of tasks to search through
+        task_id: The ID of the task to find
+
+    Returns:
+        The task if found, None otherwise
+    """
+    return next((task for task in tasks if task.id == task_id), None)

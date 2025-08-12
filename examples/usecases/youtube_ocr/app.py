@@ -28,23 +28,28 @@ pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_CMD", "tesseract")
 video_tool = VideoDownloaderToolkit()
 agent = ChatAgent()
 
+
 def process_video(url, question):
     video_path = video_tool.download_video(url)
     # Extract audio
     audio_path = "audio.wav"
-    ffmpeg.input(video_path).output(audio_path, acodec='pcm_s16le', ac=1, ar='16k').run()
+    ffmpeg.input(video_path).output(
+        audio_path, acodec='pcm_s16le', ac=1, ar='16k'
+    ).run()
     # Transcribe
     model = whisper.load_model("base")
     transcript = model.transcribe(audio_path)["text"]
     # Extract frames every 4s
     cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS); interval = 4
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    interval = 4
     frames = []
     frame_count = 0
     while True:
         ret, frame = cap.read()
-        if not ret: break
-        if frame_count % int(fps*interval) == 0:
+        if not ret:
+            break
+        if frame_count % int(fps * interval) == 0:
             fname = f"frame_{frame_count}.png"
             cv2.imwrite(fname, frame)
             frames.append(fname)
@@ -58,10 +63,12 @@ def process_video(url, question):
     ocr_content = "\n".join(ocr_texts)
     # Prepare context and query agent
     knowledge = f"Transcript:\n{transcript}\n\nOn-screen Text:\n{ocr_content}"
-    user_msg = BaseMessage.make_user_message(role_name="User", 
-                content=f"{knowledge}\n\nQuestion: {question}")
+    user_msg = BaseMessage.make_user_message(
+        role_name="User", content=f"{knowledge}\n\nQuestion: {question}"
+    )
     response = agent.step(user_msg)
     return response.msgs[0].content
+
 
 # Streamlit UI
 st.title("YouTube Video Q&A with CAMEL")

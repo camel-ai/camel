@@ -14,7 +14,7 @@
 
 from .role_playing_worker import RolePlayingWorker
 from .single_agent_worker import SingleAgentWorker
-from .workforce import Workforce
+from .workforce_split.core import WorkforceCore as Workforce
 
 __all__ = [
     "Workforce",
