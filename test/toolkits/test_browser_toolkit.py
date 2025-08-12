@@ -187,9 +187,20 @@ def test_browser_visit_page(base_browser_fixture):
     browser.page.wait_for_load_state.assert_called_once()
 
 
-def test_browser_get_screenshot(base_browser_fixture):
+def test_browser_get_screenshot_multi_tab(base_browser_fixture):
+    """Test getting screenshots from multiple tabs - multi-tab version of test_browser_get_screenshot."""
     browser = base_browser_fixture
     browser.init()
+
+    # Create mock pages for multiple tabs
+    mock_page_0 = browser.page  # Original page
+    mock_page_1 = MagicMock()
+    mock_page_2 = MagicMock()
+
+    # Configure is_closed to return False for open tabs
+    mock_page_0.is_closed.return_value = False
+    mock_page_1.is_closed.return_value = False
+    mock_page_2.is_closed.return_value = False
 
     # Create a mock image for testing
     mock_image = Image.new('RGB', (100, 100))
@@ -197,27 +208,34 @@ def test_browser_get_screenshot(base_browser_fixture):
     mock_image.save(img_byte_arr, format='PNG')
     img_byte_arr = img_byte_arr.getvalue()
 
-    browser.page.screenshot = MagicMock(return_value=img_byte_arr)
+    # Configure screenshot methods for all pages
+    mock_page_0.screenshot = MagicMock(return_value=img_byte_arr)
+    mock_page_1.screenshot = MagicMock(return_value=img_byte_arr)
+    mock_page_2.screenshot = MagicMock(return_value=img_byte_arr)
 
-    image, file_path = browser.get_screenshot(save_image=False)
-    assert isinstance(image, Image.Image)
-    assert file_path is None
+    # Set up tabs dictionary
+    browser.tabs = {0: mock_page_0, 1: mock_page_1, 2: mock_page_2}
+    browser.current_tab_id = 0
 
+    # Test screenshots for multiple tabs without saving
+    result = browser.get_screenshot(save_image=False, tab_id=[1, 2])
 
-def test_browser_toolkit_browse_url(browser_toolkit_fixture):
-    toolkit = browser_toolkit_fixture
+    # Verify result structure
+    assert isinstance(result, dict)
+    assert len(result) == 2
+    assert 1 in result
+    assert 2 in result
 
-    # Mock necessary components
-    toolkit.browser.visit_page = MagicMock()
-    toolkit._observe = MagicMock(return_value=("obs", "reason", "stop()"))
-    toolkit._get_final_answer = MagicMock(return_value="Task completed")
+    # Verify each tab's screenshot result
+    for _tab_id, (image, file_path) in result.items():
+        assert isinstance(image, Image.Image)
+        assert file_path is None
 
-    result = toolkit.browse_url(
-        task_prompt="Test task", start_url=TEST_URL, round_limit=1
-    )
-
-    assert result == "Task completed"
-    toolkit.browser.visit_page.assert_called_once_with(TEST_URL)
+    # Verify screenshots were called for the specified tabs
+    mock_page_1.screenshot.assert_called_once()
+    mock_page_2.screenshot.assert_called_once()
+    # Original page (tab 0) should not be called since we specified tabs 1 and 2
+    mock_page_0.screenshot.assert_not_called()
 
 
 def test_browser_clean_cache(base_browser_fixture):
@@ -246,13 +264,51 @@ def test_browser_click_blank_area(base_browser_fixture):
     browser.page.wait_for_load_state.assert_called_once()
 
 
-def test_browser_get_url(base_browser_fixture):
+def test_browser_get_url_multi_tab(base_browser_fixture):
+    """Test getting URLs from multiple tabs simultaneously."""
     browser = base_browser_fixture
     browser.init()
 
-    browser.page.url = TEST_URL
+    # Create mock pages for multiple tabs
+    mock_page_0 = browser.page  # Original page
+    mock_page_1 = MagicMock()
+    mock_page_2 = MagicMock()
 
-    assert browser.get_url() == TEST_URL
+    # Configure is_closed to return False for open tabs
+    mock_page_0.is_closed.return_value = False
+    mock_page_1.is_closed.return_value = False
+    mock_page_2.is_closed.return_value = False
+
+    # Set up different URLs for each tab
+    mock_page_0.url = TEST_URL
+    mock_page_1.url = "https://tab1.com"
+    mock_page_2.url = "https://tab2.com"
+
+    # Set up tabs dictionary
+    browser.tabs = {0: mock_page_0, 1: mock_page_1, 2: mock_page_2}
+    browser.current_tab_id = 0
+
+    # Test single tab operations
+    assert browser.get_url() == TEST_URL  # Current tab
+    assert browser.get_url(tab_id=1) == "https://tab1.com"  # Specific tab
+
+    # Test multi-tab operations
+    result = browser.get_url(tab_id=[1, 2])
+    assert isinstance(result, dict)
+    assert result == {1: "https://tab1.com", 2: "https://tab2.com"}
+
+    # Test error cases
+    with pytest.raises(ValueError, match="Tabs \\[3\\] do not exist"):
+        browser.get_url(tab_id=[1, 3])
+
+    # Test edge cases
+    assert browser.get_url(tab_id=[]) == {}  # Empty list
+
+    with pytest.raises(
+        TypeError,
+        match="tab_id must be None, an integer, or a list of integers",
+    ):
+        browser.get_url(tab_id="invalid")
 
 
 def test_browser_back_navigation(base_browser_fixture):
@@ -308,8 +364,10 @@ def test_interactive_region_from_dict():
     assert len(region["rects"]) == 1
 
 
-def test_visual_viewport_from_dict():
-    viewport_dict = {
+def test_visual_viewport_from_dict_multi_tab():
+    """Test visual viewport creation from dictionaries for multiple tabs simultaneously."""
+    # Create different viewport dictionaries for different tabs
+    viewport_dict_1 = {
         "height": 800,
         "width": 600,
         "offsetLeft": 0,
@@ -322,6 +380,493 @@ def test_visual_viewport_from_dict():
         "scrollWidth": 600,
         "scrollHeight": 1200,
     }
-    viewport = visual_viewport_from_dict(viewport_dict)
-    assert viewport["height"] == 800
-    assert viewport["scrollHeight"] == 1200
+
+    viewport_dict_2 = {
+        "height": 1024,
+        "width": 768,
+        "offsetLeft": 10,
+        "offsetTop": 20,
+        "pageLeft": 5,
+        "pageTop": 15,
+        "scale": 1.2,
+        "clientWidth": 768,
+        "clientHeight": 1024,
+        "scrollWidth": 800,
+        "scrollHeight": 1500,
+    }
+
+    viewport_dict_3 = {
+        "height": 900,
+        "width": 1200,
+        "offsetLeft": 0,
+        "offsetTop": 0,
+        "pageLeft": 0,
+        "pageTop": 0,
+        "scale": 0.8,
+        "clientWidth": 1200,
+        "clientHeight": 900,
+        "scrollWidth": 1200,
+        "scrollHeight": 2000,
+    }
+
+    # Test single viewport creation (original functionality)
+    viewport_1 = visual_viewport_from_dict(viewport_dict_1)
+    assert viewport_1["height"] == 800
+    assert viewport_1["scrollHeight"] == 1200
+    assert viewport_1["scale"] == 1
+
+    # Test multiple viewport creation for different tabs
+    viewport_2 = visual_viewport_from_dict(viewport_dict_2)
+    viewport_3 = visual_viewport_from_dict(viewport_dict_3)
+
+    # Verify each viewport has correct properties
+    assert viewport_2["height"] == 1024
+    assert viewport_2["width"] == 768
+    assert viewport_2["scale"] == 1.2
+    assert viewport_2["offsetLeft"] == 10
+    assert viewport_2["offsetTop"] == 20
+
+    assert viewport_3["height"] == 900
+    assert viewport_3["width"] == 1200
+    assert viewport_3["scale"] == 0.8
+    assert viewport_3["scrollHeight"] == 2000
+
+    # Test creating a dictionary of viewports for multiple tabs
+    tab_viewports = {1: viewport_1, 2: viewport_2, 3: viewport_3}
+
+    # Verify the multi-tab viewport dictionary structure
+    assert isinstance(tab_viewports, dict)
+    assert len(tab_viewports) == 3
+    assert 1 in tab_viewports
+    assert 2 in tab_viewports
+    assert 3 in tab_viewports
+
+    # Verify each tab's viewport maintains its unique properties
+    assert tab_viewports[1]["height"] == 800
+    assert tab_viewports[2]["height"] == 1024
+    assert tab_viewports[3]["height"] == 900
+
+    assert tab_viewports[1]["scale"] == 1
+    assert tab_viewports[2]["scale"] == 1.2
+    assert tab_viewports[3]["scale"] == 0.8
+
+    # Test edge cases for multi-tab viewport handling
+    empty_viewport_dict = {
+        "height": 0,
+        "width": 0,
+        "offsetLeft": 0,
+        "offsetTop": 0,
+        "pageLeft": 0,
+        "pageTop": 0,
+        "scale": 0,
+        "clientWidth": 0,
+        "clientHeight": 0,
+        "scrollWidth": 0,
+        "scrollHeight": 0,
+    }
+
+    empty_viewport = visual_viewport_from_dict(empty_viewport_dict)
+    assert empty_viewport["height"] == 0
+    assert empty_viewport["scale"] == 0
+
+    # Test that empty viewport can be included in multi-tab context
+    tab_viewports[4] = empty_viewport
+    assert len(tab_viewports) == 4
+    assert tab_viewports[4]["height"] == 0
+
+
+def test_close_tab_multiple_tabs(base_browser_fixture):
+    """Test closing multiple tabs simultaneously."""
+    browser = base_browser_fixture
+    browser.init()
+
+    # Create mock pages for multiple tabs
+    mock_page_0 = browser.page  # Original page
+    mock_page_1 = MagicMock()
+    mock_page_2 = MagicMock()
+    mock_page_3 = MagicMock()
+
+    # Configure is_closed to return False for open tabs
+    mock_page_0.is_closed.return_value = False
+    mock_page_1.is_closed.return_value = False
+    mock_page_2.is_closed.return_value = False
+    mock_page_3.is_closed.return_value = False
+
+    # Set up tabs dictionary
+    browser.tabs = {
+        0: mock_page_0,
+        1: mock_page_1,
+        2: mock_page_2,
+        3: mock_page_3,
+    }
+    browser.current_tab_id = 0
+
+    # Test closing multiple tabs
+    result = browser.close_tab([1, 3])
+
+    # Verify tabs are removed
+    assert 1 not in browser.tabs
+    assert 3 not in browser.tabs
+    assert 0 in browser.tabs
+    assert 2 in browser.tabs
+
+    # Verify current tab unchanged
+    assert browser.current_tab_id == 0
+    assert browser.page == mock_page_0
+
+    # Verify result format for multiple tabs
+    assert isinstance(result, list)
+    assert len(result) == 2
+    for tab_result in result:
+        assert isinstance(tab_result, tuple)
+        assert len(tab_result) == 3  # (tab_id, success, message)
+        assert isinstance(tab_result[0], int)
+        assert isinstance(tab_result[1], bool)
+        assert isinstance(tab_result[2], str)
+
+    # Verify tabs were closed
+    mock_page_1.close.assert_called_once()
+    mock_page_3.close.assert_called_once()
+
+
+def test_capture_full_page_screenshot_multiple_tabs(base_browser_fixture):
+    """Test capturing full page screenshots of multiple tabs simultaneously."""
+    browser = base_browser_fixture
+    browser.init()
+
+    # Create mock pages for multiple tabs
+    mock_page_0 = browser.page  # Original page
+    mock_page_1 = MagicMock()
+    mock_page_2 = MagicMock()
+
+    # Configure is_closed to return False for open tabs
+    mock_page_0.is_closed.return_value = False
+    mock_page_1.is_closed.return_value = False
+    mock_page_2.is_closed.return_value = False
+
+    # Create mock images for testing
+    mock_image = Image.new('RGB', (100, 100))
+    img_byte_arr = io.BytesIO()
+    mock_image.save(img_byte_arr, format='PNG')
+    img_byte_arr = img_byte_arr.getvalue()
+
+    # Configure pages with more robust mock evaluate functions
+    def create_evaluate_mock(scroll_height, final_scroll_y):
+        """Create a mock evaluate function that handles multiple calls properly."""
+        call_count = 0
+
+        def evaluate_side_effect(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+
+            if "document.body.scrollHeight" in str(args[0]):
+                return scroll_height
+            elif "window.scrollY" in str(args[0]):
+                # Return 0 for first call, then final_scroll_y for subsequent calls
+                if call_count <= 2:  # First few calls
+                    return 0.0
+                else:
+                    return final_scroll_y
+            elif "window.scrollBy" in str(args[0]):
+                return None  # scrollBy doesn't return a value
+            else:
+                return 0.0  # Default fallback
+
+        return MagicMock(side_effect=evaluate_side_effect)
+
+    mock_page_0.screenshot = MagicMock(return_value=img_byte_arr)
+    mock_page_0.url = "https://example.com"
+    mock_page_0.viewport_size = {"width": 800, "height": 600}
+    mock_page_0.evaluate = create_evaluate_mock(1000.0, 100.0)
+
+    mock_page_1.screenshot = MagicMock(return_value=img_byte_arr)
+    mock_page_1.url = "https://tab1.com"
+    mock_page_1.viewport_size = {"width": 800, "height": 600}
+    mock_page_1.evaluate = create_evaluate_mock(1200.0, 150.0)
+
+    mock_page_2.screenshot = MagicMock(return_value=img_byte_arr)
+    mock_page_2.url = "https://tab2.com"
+    mock_page_2.viewport_size = {"width": 800, "height": 600}
+    mock_page_2.evaluate = create_evaluate_mock(800.0, 0.0)
+
+    # Set up tabs dictionary
+    browser.tabs = {0: mock_page_0, 1: mock_page_1, 2: mock_page_2}
+    browser.current_tab_id = 0
+
+    # Test full page screenshots for multiple tabs
+    result = browser.capture_full_page_screenshots(
+        scroll_ratio=0.8, tab_id=[1, 2]
+    )
+
+    assert isinstance(result, dict)
+    assert len(result) == 2
+    assert 1 in result
+    assert 2 in result
+
+    for _tab_id, screenshots in result.items():
+        assert isinstance(screenshots, list)
+        assert len(screenshots) > 0
+
+        for screenshot_path in screenshots:
+            assert isinstance(screenshot_path, str)
+            assert os.path.exists(screenshot_path)
+            assert screenshot_path.endswith('.png')
+
+
+def test_act_method_multi_tab_dictionary_format(browser_toolkit_fixture):
+    """Test that the act method properly handles dictionary format for multi-tab actions."""
+    toolkit = browser_toolkit_fixture
+
+    with patch('playwright.sync_api.sync_playwright'):
+        # Mock browser components
+        toolkit.browser.init = MagicMock()
+        toolkit.browser.visit_page = MagicMock()
+        toolkit.browser.close = MagicMock()
+
+        # Mock browser functions
+        toolkit.browser.click_id = MagicMock(return_value=None)
+        toolkit.browser.fill_input_id = MagicMock(return_value="Input filled")
+        toolkit.browser.scroll_down = MagicMock(return_value=None)
+
+        # Test dictionary format actions
+        dict_actions = [
+            # Simple dictionary with string values
+            (
+                "{1: 'login', 2: 'search'}",
+                "Simple dictionary with string values",
+            ),
+            # Dictionary with action codes
+            (
+                "{1: 'click_id(login)', 2: 'fill_input_id(search, query)'}",
+                "Dictionary with action codes",
+            ),
+            # Dictionary with mixed types
+            (
+                "{1: 'click_id(button)', 2: 'scroll_down()', 3: 'fill_input_id(input, text)'}",
+                "Dictionary with mixed action types",
+            ),
+        ]
+
+        for action_code, _description in dict_actions:
+            with (
+                patch.object(toolkit.browser, 'click_id', return_value=None),
+                patch.object(
+                    toolkit.browser, 'fill_input_id', return_value="filled"
+                ),
+                patch.object(
+                    toolkit.browser, 'scroll_down', return_value=None
+                ),
+            ):
+                # Execute the action
+                success, result = toolkit._act(action_code)
+
+                # Verify the action was processed
+                assert isinstance(success, bool)
+                assert isinstance(result, str)
+
+
+def test_browse_url_multi_tab_integration(browser_toolkit_fixture):
+    """Test browse_url with multi-tab functionality."""
+    toolkit = browser_toolkit_fixture
+
+    with patch('playwright.sync_api.sync_playwright'):
+        # Mock browser components
+        toolkit.browser.init = MagicMock()
+        toolkit.browser.visit_page = MagicMock()
+        toolkit.browser.close = MagicMock()
+
+        # Mock _reset to prevent clearing tabs
+        toolkit._reset = MagicMock()
+
+        # Fix the get_url mock to handle both single and multiple tab IDs
+        def get_url_side_effect(tab_id=None):
+            if tab_id is None:
+                return TEST_URL
+            elif isinstance(tab_id, int):
+                return {
+                    0: TEST_URL,
+                    1: "https://tab1.com",
+                    2: "https://tab2.com",
+                }.get(tab_id, TEST_URL)
+            elif isinstance(tab_id, list):
+                return {
+                    0: TEST_URL,
+                    1: "https://tab1.com",
+                    2: "https://tab2.com",
+                }
+            else:
+                return TEST_URL
+
+        toolkit.browser.get_url = MagicMock(side_effect=get_url_side_effect)
+
+        # Set up multi-tab state
+        toolkit.browser.tabs = {0: MagicMock(), 1: MagicMock(), 2: MagicMock()}
+        toolkit.browser.current_tab_id = 0
+
+        # Mock the planning method
+        toolkit._task_planning = MagicMock(
+            return_value="1. Open multiple tabs\n2. Navigate to different sites\n3. Complete task"
+        )
+
+        # Mock _observe to return multi-tab actions
+        observe_calls = [
+            (
+                "Page loaded",
+                "Need to open new tab",
+                "open_tab('https://tab1.com')",
+            ),
+            ("Tab opened", "Switch to new tab", "switch_tab(1)"),
+            (
+                "Tab switched",
+                "Open another tab",
+                "open_tab('https://tab2.com')",
+            ),
+            ("All tabs ready", "Complete task", "stop()"),
+        ]
+        toolkit._observe = MagicMock(side_effect=observe_calls)
+
+        # Mock _act to handle multi-tab actions
+        def act_side_effect(action_code):
+            if "open_tab" in action_code:
+                return True, "Tab opened successfully"
+            elif "switch_tab" in action_code:
+                return True, "Tab switched successfully"
+            else:
+                return True, "Action completed"
+
+        toolkit._act = MagicMock(side_effect=act_side_effect)
+        toolkit._get_final_answer = MagicMock(
+            return_value="Multi-tab task completed"
+        )
+
+        # Execute browse_url
+        result = toolkit.browse_url(
+            task_prompt="Test multi-tab browsing task",
+            start_url=TEST_URL,
+            round_limit=5,
+        )
+
+        # Verify multi-tab functionality
+        assert result == "Multi-tab task completed"
+        assert len(toolkit.history) == 4
+
+        # Verify multi-tab information in trajectories
+        for trajectory in toolkit.history:
+            assert "current_tab_id" in trajectory
+            assert "all_tab_urls" in trajectory
+            assert "total_tabs" in trajectory
+            assert isinstance(trajectory["current_tab_id"], int)
+            assert isinstance(trajectory["all_tab_urls"], dict)
+            assert isinstance(trajectory["total_tabs"], int)
+
+
+def test_parallel_execution_thread_safety(base_browser_fixture):
+    """Test thread safety of parallel operations."""
+    browser = base_browser_fixture
+    browser.init()
+
+    # Create mock pages for multiple tabs
+    mock_page_0 = browser.page  # Original page
+    mock_page_1 = MagicMock()
+    mock_page_2 = MagicMock()
+
+    # Configure is_closed to return False for open tabs
+    mock_page_0.is_closed.return_value = False
+    mock_page_1.is_closed.return_value = False
+    mock_page_2.is_closed.return_value = False
+
+    # Configure URL attributes for mock pages
+    mock_page_0.url = "https://example.com"
+    mock_page_1.url = "https://tab1.com"
+    mock_page_2.url = "https://tab2.com"
+
+    # Set up tabs dictionary
+    browser.tabs = {0: mock_page_0, 1: mock_page_1, 2: mock_page_2}
+    browser.current_tab_id = 0
+
+    # Test concurrent tab operations
+    import threading
+    import time
+
+    results = []
+    errors = []
+
+    def operation_worker(tab_id):
+        try:
+            # Simulate concurrent operations
+            time.sleep(0.01)  # Small delay to simulate work
+            result = browser.get_url(tab_id=tab_id)
+            results.append((tab_id, result))
+        except Exception as e:
+            errors.append((tab_id, str(e)))
+
+    # Create multiple threads
+    threads = []
+    for _i in range(5):
+        thread = threading.Thread(target=operation_worker, args=(1,))
+        threads.append(thread)
+        thread.start()
+
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
+
+    # Verify no errors occurred
+    assert len(errors) == 0
+    assert len(results) == 5
+
+    # Verify all results are consistent
+    for _tab_id, result in results:
+        assert isinstance(result, str)
+
+
+def test_tab_id_assignment_atomicity(base_browser_fixture):
+    """Test atomic tab ID assignment using threading lock."""
+    browser = base_browser_fixture
+    browser.init()
+
+    # Mock context
+    mock_context = MagicMock()
+    browser.context = mock_context
+
+    # Mock page creation
+    mock_page = MagicMock()
+    mock_context.new_page.return_value = mock_page
+    mock_page.goto = MagicMock()
+    mock_page.wait_for_load_state = MagicMock()
+
+    # Test concurrent tab opening
+    import threading
+
+    tab_ids = []
+    errors = []
+
+    def open_tab_worker():
+        try:
+            tab_id = browser.open_tab("https://example.com")
+            tab_ids.append(tab_id)
+        except Exception as e:
+            errors.append(str(e))
+
+    # Create multiple threads to open tabs concurrently
+    threads = []
+    for _i in range(10):
+        thread = threading.Thread(target=open_tab_worker)
+        threads.append(thread)
+        thread.start()
+
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
+
+    # Verify no errors occurred
+    assert len(errors) == 0
+
+    # Verify all tab IDs are unique
+    assert len(tab_ids) == 10
+    assert len(set(tab_ids)) == 10
+
+    # Verify tab IDs are sequential
+    sorted_ids = sorted(tab_ids)
+    for i, tab_id in enumerate(sorted_ids):
+        assert tab_id == i + 1  # Starting from 1 since 0 is the original page
