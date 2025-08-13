@@ -213,9 +213,7 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
-    MISTRAL_MEDIUM_3 = "mistral-medium-latest"
-    MISTRAL_MEDIUM_3_1 = "mistral-medium-latest"
-    MAGISTRAL_MEDIUM = "magistral-medium-2506"
+    MISTRAL_MEDIUM_3_1 = "mistral-medium-2508"
     MISTRAL_SMALL_3_2 = "mistral-small-2506"
 
     # Reka models
@@ -664,9 +662,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
-            ModelType.MISTRAL_MEDIUM_3,
             ModelType.MISTRAL_MEDIUM_3_1,
-            ModelType.MAGISTRAL_MEDIUM,
             ModelType.MISTRAL_SMALL_3_2,
         }
 
@@ -1227,7 +1223,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_R1,
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
-            ModelType.MISTRAL_MEDIUM_3,
             ModelType.MISTRAL_MEDIUM_3_1,
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
@@ -1339,10 +1334,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
-        elif self in {
-            ModelType.MAGISTRAL_MEDIUM,
-        }:
-            return 40_000
+        
 
         else:
             logger.warning(
