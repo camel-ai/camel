@@ -178,63 +178,46 @@ graph TD
 </Card>
 
 <Card title="Advanced Usage: Human-in-the-Loop (HITL)" icon="hand">
-The `Workforce` offers powerful features for human intervention, perfect for debugging or workflows requiring human oversight. To use HITL, run `process_task` in a separate thread to keep the main thread free for user input.
+To enable HITL inside a Workforce, equip the agents (coordinator, task agent, or workers) with the `HumanToolkit`. Agents can then call a human during execution (e.g., to clarify requirements, approve actions, or unblock errors).
 
-```python title="hitl_example.py" expandable
-import threading
-import time
+```python title="hitl_with_human_toolkit.py"
 from camel.societies.workforce import Workforce
 from camel.agents import ChatAgent
-from camel.tasks import Task
+from camel.toolkits import HumanToolkit
 
-# Setup workforce
+# 1) Create the workforce
 workforce = Workforce("Interactive Workforce")
-worker = ChatAgent(system_message="A simple worker")
+
+# 2) Prepare human-in-the-loop tools
+human_toolkit = HumanToolkit()
+human_tools = human_toolkit.get_tools()  # includes ask_human_via_console, send_message_to_user, ...
+
+# 3) Attach HumanToolkit to any agents that may need human help
+coordinator = ChatAgent(
+    system_message="You coordinate tasks and may ask a human for help when needed.",
+    tools=human_tools,
+)
+
+worker = ChatAgent(
+    system_message="You execute tasks and can ask the human for clarification.",
+    tools=[human_toolkit.ask_human_via_console],  # or use `human_tools`
+)
+
+# 4) Register agents into the workforce
+workforce = Workforce(
+    description="Interactive Workforce",
+    coordinator_agent=coordinator,
+    task_agent=None,
+)
 workforce.add_single_agent_worker(description="Worker", worker=worker)
-task = Task(content="This is a test task.")
 
-# Function to run the workforce
-def run_workforce():
-    print("Workforce started in background thread.")
-    workforce.process_task(task)
-    print("Workforce finished.")
-
-# Run the workforce in a background thread
-workforce_thread = threading.Thread(target=run_workforce)
-workforce_thread.start()
-
-# Give the workforce time to start
-time.sleep(1)
-
-# Main thread for user interaction
-print("Press 'p' to pause, 'r' to resume, 's' to stop.")
-while workforce_thread.is_alive():
-    try:
-        user_input = input()
-        if user_input == 'p':
-            workforce.pause()
-            print("Workforce paused.")
-            pending_tasks = workforce.get_pending_tasks()
-            print(f"Pending tasks ({len(pending_tasks)}):")
-            for t in pending_tasks:
-                print(f"- {t.id}: {t.content}")
-        elif user_input == 'r':
-            workforce.resume()
-            print("Workforce resumed.")
-        elif user_input == 's':
-            workforce.stop_gracefully()
-            print("Workforce stopping.")
-            break
-    except (KeyboardInterrupt, EOFError):
-        workforce.stop_gracefully()
-        break
-
-workforce_thread.join()
-print("HITL example finished.")
+# 5) Run tasks as usual. When an agent invokes a human tool, it will prompt via console.
+# workforce.process_task(Task(content="Build a quick demo and confirm requirements with the human."))
 ```
-<Note>
-The `process_task` method is a synchronous wrapper that manages the asyncio event loop internally. For more direct control in async applications, use `process_task_async`.
-</Note>
+
+Notes:
+- No special threading is required. Agents prompt the user when they call a `HumanToolkit` tool.
+- If you need async control, `process_task_async` is available, but it is not required for HITL.
 </Card>
 
 <Card title="Key Data Structures" icon="database">
