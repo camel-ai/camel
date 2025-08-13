@@ -21,7 +21,9 @@ import signal
 import subprocess
 import sys
 import threading
+import time
 import venv
+from pathlib import Path
 from queue import Queue
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -66,6 +68,16 @@ class TerminalToolkit(BaseToolkit):
             connecting them to the terminal's standard input. This is useful
             for commands that require user input, like `ssh`. Interactive mode
             is only supported on macOS and Linux. (default: :obj:`False`)
+        enable_tmux_backend (bool): Whether to enable tmux backend.
+            (default: :obj:`False`)
+        use_docker_backend (bool): Whether to enable docker backend.
+            (default: :obj:`False`)
+        docker_container (Optional[str]): The name of the docker container.
+            (default: :obj:`None`)
+        docker_image (Optional[str]): The image of the docker container.
+            (default: :obj:`None`)
+        session_logs_dir (Optional[str]): The directory to store session logs.
+            (default: :obj:`None`)
 
     Note:
         Most functions are compatible with Unix-based systems (macOS, Linux).
@@ -83,6 +95,12 @@ class TerminalToolkit(BaseToolkit):
         clone_current_env: bool = False,
         safe_mode: bool = True,
         interactive: bool = False,
+        # Enhanced backends (optional; default keeps original behavior)
+        enable_tmux_backend: bool = False,
+        use_docker_backend: bool = False,
+        docker_container: Optional[str] = None,
+        docker_image: Optional[str] = None,
+        session_logs_dir: Optional[str] = None,
     ):
         # Store timeout before calling super().__init__
         self._timeout = timeout
@@ -99,6 +117,13 @@ class TerminalToolkit(BaseToolkit):
         self.use_shell_mode = use_shell_mode
         self._human_takeover_active = False
         self.interactive = interactive
+        self.enable_tmux_backend = enable_tmux_backend
+        self.use_docker_backend = use_docker_backend
+        self.docker_container_name = docker_container
+        self.docker_image = docker_image or "ubuntu:latest"
+        self._tmux_sessions: Dict[str, str] = {}
+        self._docker_client = None
+        self._docker_container = None
 
         self.python_executable = sys.executable
         self.is_macos = platform.system() == 'Darwin'
@@ -119,6 +144,18 @@ class TerminalToolkit(BaseToolkit):
 
         if not os.path.exists(self.working_dir):
             os.makedirs(self.working_dir, exist_ok=True)
+
+        # Per-session logs directory (for tmux/docker)
+        self._session_logs_dir = (
+            Path(session_logs_dir)
+            if session_logs_dir
+            else Path(self.working_dir) / "terminal_logs"
+        )
+        try:
+            self._session_logs_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            # Fallback silently if path creation fails
+            pass
         self._update_terminal_output(
             f"Working directory set to: {self.working_dir}\n"
         )
@@ -148,6 +185,13 @@ class TerminalToolkit(BaseToolkit):
                 )
                 self.gui_thread.start()
                 self.terminal_ready.wait(timeout=5)
+
+        # Optionally prepare Docker container upfront
+        if self.use_docker_backend:
+            try:
+                self._docker_ensure_container()
+            except Exception as e:
+                logger.warning(f"Docker backend initialization failed: {e}")
 
     def _setup_file_output(self):
         r"""Set up file output to replace GUI, using a fixed file to simulate
@@ -735,7 +779,235 @@ class TerminalToolkit(BaseToolkit):
                 otherwise returns False
         """
         abs_path = os.path.abspath(path)
+        # In Docker mode, allow container mount path '/workspace' as safe
+        if self.use_docker_backend and abs_path.startswith("/workspace"):
+            return True
         return abs_path.startswith(self.working_dir)
+
+    # =========================
+    # Tmux backend (private)
+    # =========================
+    def _tmux_available(self) -> bool:
+        try:
+            return shutil.which("tmux") is not None
+        except Exception:
+            return False
+
+    def _tmux_session_name(self, id: str) -> str:
+        return f"camel_{id}"
+
+    def _tmux_log_file(self, id: str) -> Optional[str]:
+        try:
+            self._session_logs_dir.mkdir(parents=True, exist_ok=True)
+            return str(self._session_logs_dir / f"{id}.log")
+        except Exception:
+            return None
+
+    def _tmux_has_session(self, tmux_name: str) -> bool:
+        try:
+            result = subprocess.run(
+                ["tmux", "has-session", "-t", tmux_name],
+                capture_output=True,
+                text=True,
+            )
+            return result.returncode == 0
+        except Exception:
+            return False
+
+    def _tmux_ensure_session(self, id: str) -> Optional[str]:
+        if not self._tmux_available():
+            return None
+        tmux_name = self._tmux_session_name(id)
+        if not self._tmux_has_session(tmux_name):
+            cmd = [
+                "tmux",
+                "new-session",
+                "-d",
+                "-s",
+                tmux_name,
+                "-x",
+                "160",
+                "-y",
+                "40",
+                "-c",
+                self.working_dir,
+            ]
+            try:
+                subprocess.run(cmd, check=True, capture_output=True)
+                # remain-on-exit for short-lived commands
+                subprocess.run(
+                    [
+                        "tmux",
+                        "set-option",
+                        "-t",
+                        tmux_name,
+                        "remain-on-exit",
+                        "on",
+                    ],
+                    capture_output=True,
+                )
+                # history-limit
+                subprocess.run(
+                    [
+                        "tmux",
+                        "set-option",
+                        "-t",
+                        tmux_name,
+                        "history-limit",
+                        "10000",
+                    ],
+                    capture_output=True,
+                )
+                # pipe-pane to per-session log
+                log_file = self._tmux_log_file(id)
+                if log_file:
+                    subprocess.run(
+                        [
+                            "tmux",
+                            "pipe-pane",
+                            "-t",
+                            tmux_name,
+                            f"cat > {log_file}",
+                        ],
+                        capture_output=True,
+                    )
+                self._tmux_sessions[id] = tmux_name
+            except Exception as e:
+                logger.warning(
+                    f"Failed to create tmux session {tmux_name}: {e}"
+                )
+                return None
+        return tmux_name
+
+    def _tmux_send_command(self, id: str, command: str) -> str:
+        tmux_name = self._tmux_ensure_session(id)
+        if not tmux_name:
+            return "Tmux backend unavailable"
+        try:
+            # Send command and Enter
+            subprocess.run(
+                ["tmux", "send-keys", "-t", tmux_name, command, "Enter"],
+                capture_output=True,
+                text=True,
+            )
+            # Small delay to accumulate output
+            time.sleep(0.2)
+            # Capture last 80 lines
+            result = subprocess.run(
+                ["tmux", "capture-pane", "-p", "-t", tmux_name, "-S", "-80"],
+                capture_output=True,
+                text=True,
+            )
+            return result.stdout
+        except Exception as e:
+            return f"Tmux command failed: {e}"
+
+    # =========================
+    # Docker backend (private)
+    # =========================
+    def _docker_ensure_client(self):
+        if self._docker_client is not None:
+            return
+        try:
+            import docker
+        except Exception as e:
+            raise RuntimeError(
+                "Docker backend requested but python 'docker' "
+                "package is not installed."
+            ) from e
+        try:
+            self._docker_client = docker.from_env()
+        except Exception as e:
+            raise RuntimeError(f"Failed to create Docker client: {e}")
+
+    def _docker_ensure_container(self):
+        self._docker_ensure_client()
+        if self._docker_container is not None:
+            return
+        import docker
+
+        try:
+            if self.docker_container_name:
+                try:
+                    self._docker_container = (
+                        self._docker_client.containers.get(
+                            self.docker_container_name
+                        )
+                    )
+                    # Ensure running
+                    if (
+                        getattr(self._docker_container, "status", None)
+                        != "running"
+                    ):
+                        self._docker_container.start()
+                except docker.errors.NotFound:
+                    self._docker_container = None
+            if self._docker_container is None:
+                # Run new container; mount working_dir -> /workspace
+                volumes = {
+                    self.working_dir: {"bind": "/workspace", "mode": "rw"}
+                }
+                self._docker_container = self._docker_client.containers.run(
+                    self.docker_image,
+                    name=self.docker_container_name
+                    or f"camel_terminal_{int(time.time())}",
+                    detach=True,
+                    tty=True,
+                    stdin_open=True,
+                    working_dir="/workspace",
+                    volumes=volumes,
+                    command="/bin/bash",
+                    remove=False,
+                )
+            # Ensure tmux inside container when needed
+            try:
+                result = self._docker_container.exec_run("tmux -V")
+                if result.exit_code != 0:
+                    # Try to install tmux (Debian/Ubuntu, Alpine, RHEL)
+                    # Run as root (most base images default root)
+                    self._docker_container.exec_run("apt-get update || true")
+                    self._docker_container.exec_run(
+                        "apt-get install -y tmux || yum install -y tmux || "
+                        "apk add --no-cache tmux || true"
+                    )
+            except Exception:
+                pass
+        except Exception as e:
+            raise RuntimeError(f"Failed to ensure Docker container: {e}")
+
+    def _docker_exec(self, command: str) -> str:
+        if not self._docker_container:
+            return "Docker container not available"
+        try:
+            result = self._docker_container.exec_run(
+                command, workdir="/workspace"
+            )
+            out = result.output
+            if isinstance(out, bytes):
+                return out.decode(errors="replace")
+            return str(out)
+        except Exception as e:
+            return f"Docker exec failed: {e}"
+
+    def _docker_tmux_session_name(self, id: str) -> str:
+        return f"camel_{id}"
+
+    def _docker_tmux_ensure_session(self, id: str) -> bool:
+        if not self._docker_container:
+            return False
+        name = self._docker_tmux_session_name(id)
+        try:
+            result = self._docker_container.exec_run(
+                f"tmux has-session -t {name}"
+            )
+            if result.exit_code != 0:
+                # Create session with working dir
+                self._docker_container.exec_run(
+                    f"tmux new-session -d -s {name} -c /workspace"
+                )
+            return True
+        except Exception:
+            return False
 
     def _enforce_working_dir_for_execution(self, path: str) -> Optional[str]:
         r"""Enforce working directory restrictions, return error message
@@ -1042,6 +1314,55 @@ class TerminalToolkit(BaseToolkit):
             if not is_safe:
                 return f"Command rejected: {sanitized_command}"
             command = sanitized_command
+
+        # Prefer Docker backend if enabled
+        if self.use_docker_backend:
+            try:
+                self._docker_ensure_container()
+                # If command obviously needs a tty / long-running,
+                # route via tmux inside container
+                needs_tmux = any(
+                    kw in command
+                    for kw in [
+                        "python -m http.server",
+                        "npm run",
+                        "tail -f",
+                        "top",
+                        "htop",
+                    ]
+                )
+                if needs_tmux:
+                    # Ensure per-id tmux session inside container
+                    self._docker_tmux_ensure_session(id)
+                    # Send command via tmux to keep alive
+                    tmux_name = self._docker_tmux_session_name(id)
+                    self._docker_container.exec_run(
+                        f"tmux send-keys -t {tmux_name} '{command}' Enter"
+                    )
+                    time.sleep(0.3)
+                    pane = self._docker_container.exec_run(
+                        f"tmux capture-pane -p -t {tmux_name} -S -80"
+                    )
+                    out = (
+                        pane.output.decode(errors="replace")
+                        if isinstance(pane.output, bytes)
+                        else str(pane.output)
+                    )
+                    self._update_terminal_output(out + "\n")
+                    return out
+                else:
+                    out = self._docker_exec(command)
+                    self._update_terminal_output(out + "\n")
+                    return out
+            except Exception as e:
+                # Fall through to local execution if docker fails
+                logger.warning(f"Docker execution fallback due to: {e}")
+
+        # If tmux backend is enabled, run via tmux to allow long-running tasks
+        if self.enable_tmux_backend and self._tmux_available():
+            out = self._tmux_send_command(id, command)
+            self._update_terminal_output(out + "\n")
+            return out
 
         if id not in self.shell_sessions:
             self.shell_sessions[id] = {
@@ -1767,6 +2088,35 @@ class TerminalToolkit(BaseToolkit):
                 self.root.destroy()
             except Exception as e:
                 logger.error(f"Error closing terminal GUI: {e}")
+
+        # Clean up tmux sessions we created
+        try:
+            if hasattr(self, "_tmux_sessions"):
+                for _sid, _tmux in list(
+                    getattr(self, "_tmux_sessions", {}).items()
+                ):
+                    try:
+                        subprocess.run(
+                            ["tmux", "kill-session", "-t", _tmux],
+                            capture_output=True,
+                        )
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # Clean up Docker container if created by this toolkit
+        try:
+            if getattr(self, "use_docker_backend", False) and getattr(
+                self, "_docker_container", None
+            ):
+                try:
+                    self._docker_container.stop()
+                    self._docker_container.remove()
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
         logger.info("TerminalToolkit cleanup completed")
 
