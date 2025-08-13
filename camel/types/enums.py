@@ -214,6 +214,9 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
     MISTRAL_MEDIUM_3 = "mistral-medium-latest"
+    # Alias for the newly released Medium 3.1; currently served under the
+    # same canonical ID by Mistral API
+    MISTRAL_MEDIUM_3_1 = "mistral-medium-latest"
     MAGISTRAL_MEDIUM = "magistral-medium-2506"
     MISTRAL_SMALL_3_2 = "mistral-small-2506"
 
@@ -664,6 +667,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
             ModelType.MISTRAL_MEDIUM_3,
+            ModelType.MISTRAL_MEDIUM_3_1,
             ModelType.MAGISTRAL_MEDIUM,
             ModelType.MISTRAL_SMALL_3_2,
         }
@@ -1226,6 +1230,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
             ModelType.MISTRAL_MEDIUM_3,
+            ModelType.MISTRAL_MEDIUM_3_1,
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
             ModelType.MOONSHOT_KIMI_K2,
