@@ -41,14 +41,14 @@ from camel.toolkits import BrowserToolkit
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
-# Define custom models for the agents
+# Define custom models for the agents (use latest OpenAI models)
 web_agent_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4_VISION,
+    model_type=ModelType.GPT_5_MINI,
 )
 planning_agent_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4_TURBO,
+    model_type=ModelType.O4_MINI,
 )
 
 browser_toolkit = BrowserToolkit(
