@@ -1334,7 +1334,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
-        
 
         else:
             logger.warning(
