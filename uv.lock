@@ -677,7 +677,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.75a2"
+version = "0.2.75a3"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -916,6 +916,7 @@ eigent = [
     { name = "duckduckgo-search" },
     { name = "exa-py" },
     { name = "ffmpeg-python" },
+    { name = "google-api-python-client" },
     { name = "html2text" },
     { name = "imageio", extra = ["pyav"] },
     { name = "markitdown", extra = ["all"] },
@@ -1187,6 +1188,7 @@ requires-dist = [
     { name = "flask", marker = "extra == 'all'", specifier = ">=2.0" },
     { name = "flask", marker = "extra == 'dev'", specifier = ">=2.0" },
     { name = "google-api-python-client", marker = "extra == 'all'", specifier = "==2.166.0" },
+    { name = "google-api-python-client", marker = "extra == 'eigent'", specifier = "==2.166.0" },
     { name = "google-api-python-client", marker = "extra == 'web-tools'", specifier = "==2.166.0" },
     { name = "google-auth-httplib2", marker = "extra == 'all'", specifier = "==0.2.0" },
     { name = "google-auth-httplib2", marker = "extra == 'web-tools'", specifier = "==0.2.0" },
