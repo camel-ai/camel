@@ -1,0 +1,104 @@
+<a id="camel.societies.workforce.dynamic_agent"></a>
+
+<a id="camel.societies.workforce.dynamic_agent.DynamicAgentCreator"></a>
+
+## DynamicAgentCreator
+
+```python
+class DynamicAgentCreator:
+```
+
+A class to dynamically create agents based on task content.
+Supports multiple tool discovery strategies.
+
+Attributes:
+tool_selector (ToolSelector): An instance of ToolSelector used for
+selecting tools based on the task.
+
+Methods:
+generate_prompt(task_content: str) -> dict:
+Generates a role and system message prompt using an LLM based on
+the provided task content.
+
+select_tools(task_content: str) -> list:
+Selects relevant tools for the given task using the tool selector.
+
+create_agent(task_content: str) -> ChatAgent:
+Creates and returns a ChatAgent configured with a generated system
+message and selected tools.
+
+<a id="camel.societies.workforce.dynamic_agent.DynamicAgentCreator.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, tool_selector: ToolSelector):
+```
+
+Initializes the DynamicAgentCreator with a tool selector.
+
+**Parameters:**
+
+- **tool_selector** (ToolSelector): The tool selector instance to be used for tool discovery.
+
+<a id="camel.societies.workforce.dynamic_agent.DynamicAgentCreator.generate_prompt"></a>
+
+### generate_prompt
+
+```python
+def generate_prompt(self, task_content: str):
+```
+
+Generates a JSON-formatted prompt containing a role name and system
+message for an agent,
+based on the provided task content using an LLM.
+
+**Parameters:**
+
+- **task_content** (str): Description of the task for which the agent is being created.
+
+**Returns:**
+
+  dict: A dictionary containing 'role' and 'sys_msg' keys
+representing the agent's role and system message.
+
+<a id="camel.societies.workforce.dynamic_agent.DynamicAgentCreator.select_tools"></a>
+
+### select_tools
+
+```python
+def select_tools(self, task_content: str):
+```
+
+Uses the tool selector to find relevant tools for the given task
+content.
+
+**Parameters:**
+
+- **task_content** (str): Description of the task for which tools are being selected.
+
+**Returns:**
+
+  list: A list of selected tools suitable for handling the task.
+
+<a id="camel.societies.workforce.dynamic_agent.DynamicAgentCreator.create_agent"></a>
+
+### create_agent
+
+```python
+def create_agent(self, task_content: str):
+```
+
+Orchestrates the agent creation process by:
+1. Generating a system prompt using the task content.
+2. Selecting appropriate tools.
+3. Configuring a model with the selected tools.
+4. Creating and returning a ChatAgent instance.
+
+**Parameters:**
+
+- **task_content** (str): Description of the task for which the agent is being created.
+
+**Returns:**
+
+  ChatAgent: A fully configured agent ready to execute the task.
