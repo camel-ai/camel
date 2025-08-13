@@ -21,7 +21,10 @@ import pytest
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.societies.workforce.task_channel import TaskChannel
-from camel.societies.workforce.workforce import Workforce
+from camel.societies.workforce.workforce_split.core import (
+    WorkforceCore as Workforce,
+)
+from camel.societies.workforce.workforce_split.state import WorkforceState
 from camel.tasks.task import Task, TaskState
 from camel.types import ModelPlatformType, ModelType
 
@@ -199,18 +202,20 @@ async def test_workforce_with_timeout_integration():
             # Get returned task
             returned_task = await workforce._get_returned_task()
 
+            # Verify the channel was called inside the patched function
+            assert mock_channel.get_returned_task_by_publisher.call_count == 1
+
             # Handle completed task
             await workforce._handle_completed_task(returned_task)
+
+            # Verify methods were called inside the patched function
+            workforce._post_ready_tasks.assert_called_once()
+            workforce._handle_completed_task.assert_called_once_with(mock_task)
 
         workforce._running = False
 
     with patch.object(workforce, '_listen_to_channel', patched_listen):
         await workforce.start()
-
-    # Verify methods were called
-    mock_channel.get_returned_task_by_publisher.assert_called_once()
-    workforce._post_ready_tasks.assert_called_once()
-    workforce._handle_completed_task.assert_called_once_with(mock_task)
 
 
 @pytest.mark.asyncio
@@ -251,8 +256,17 @@ async def test_multiple_timeout_points():
             # Get task - should succeed
             returned_task = await workforce._get_returned_task()
 
+            # Verify the channel was called
+            assert mock_channel.get_returned_task_by_publisher.call_count == 1
+
+            # This should raise a TimeoutError due to the
+            # mock_channel.archive_task.side_effect
             with pytest.raises(asyncio.TimeoutError):
                 await workforce._handle_failed_task(returned_task)
+
+            # Verify archive_task was called (this is where the timeout
+            # occurred)
+            mock_channel.archive_task.assert_called_once_with(mock_task.id)
 
         finally:
             workforce._running = False
@@ -268,11 +282,6 @@ async def test_multiple_timeout_points():
         patch.object(workforce, 'start', direct_start),
     ):
         await workforce.start()
-
-    # Verify get_returned_task_by_publisher was called
-    mock_channel.get_returned_task_by_publisher.assert_called_once()
-    # Verify archive_task was called (this is where the timeout occurred)
-    mock_channel.archive_task.assert_called_once_with(mock_task.id)
 
 
 @pytest.fixture
@@ -420,7 +429,6 @@ def test_cross_agent_memory_access(mock_model, sample_shared_memory):
 def test_dynamic_worker_addition():
     r"""Test adding workers dynamically during different workforce states"""
     workforce = Workforce(description="Dynamic Test Workforce")
-    from camel.societies.workforce.workforce import WorkforceState
 
     # Test 1: Add worker in IDLE state (should work)
     agent1 = ChatAgent("You are a test agent.")
@@ -449,7 +457,6 @@ def test_dynamic_worker_addition():
 async def test_dynamic_worker_types():
     r"""Test adding different types of workers during pause"""
     workforce = Workforce(description="Worker Types Test")
-    from camel.societies.workforce.workforce import WorkforceState
 
     workforce._state = WorkforceState.PAUSED
 
@@ -475,7 +482,6 @@ async def test_dynamic_worker_types():
 def test_start_child_node_helper():
     r"""Test the _start_child_node_when_paused helper function"""
     workforce = Workforce(description="Helper Test")
-    from camel.societies.workforce.workforce import WorkforceState
 
     async def mock_coroutine():
         return "test"

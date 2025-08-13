@@ -25,13 +25,22 @@ load_dotenv()
 # Initialize toolkits
 video_downloader = VideoDownloaderToolkit(working_directory="downloads/")
 audio_toolkit = AudioAnalysisToolkit(cache_dir="downloads/")
-summarizer_agent = ChatAgent(system_message="You are a helpful assistant that summarizes transcripts.", model="gpt-4o-mini")
-qa_agent = ChatAgent(system_message="Answer the question based on the context provided.", model="gpt-4o-mini")
+summarizer_agent = ChatAgent(
+    system_message="You are a helpful assistant that summarizes transcripts.",
+    model="gpt-4o-mini",
+)
+qa_agent = ChatAgent(
+    system_message="Answer the question based on the context provided.",
+    model="gpt-4o-mini",
+)
 
 st.title("🎥 Video Content Q&A with CAMEL")
 
 # Input URL
-url = st.text_input("Enter a YouTube video URL:",value="https://www.youtube.com/watch?v=hT_nvWreIhg")
+url = st.text_input(
+    "Enter a YouTube video URL:",
+    value="https://www.youtube.com/watch?v=hT_nvWreIhg",
+)
 
 if st.button("Process Video"):
     if url:
@@ -42,8 +51,10 @@ if st.button("Process Video"):
 
             # Extract audio
             audio_path = os.path.splitext(video_path)[0] + ".wav"
-            ffmpeg.input(video_path).output(audio_path, ac=1, ar=16000).run(overwrite_output=True)
-            
+            ffmpeg.input(video_path).output(audio_path, ac=1, ar=16000).run(
+                overwrite_output=True
+            )
+
             # Transcribe
             transcript = audio_toolkit.audio2text(audio_path)
 

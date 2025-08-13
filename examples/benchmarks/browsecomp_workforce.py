@@ -16,7 +16,7 @@ from camel.agents.chat_agent import ChatAgent
 from camel.benchmarks.browsecomp import BrowseCompBenchmark
 from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
-from camel.societies.workforce.workforce import Workforce
+from camel.societies.workforce import Workforce
 from camel.types.enums import ModelPlatformType, ModelType
 
 if __name__ == '__main__':

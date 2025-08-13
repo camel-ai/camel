@@ -28,7 +28,9 @@ from camel.agents.chat_agent import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
 from camel.logger import get_logger
 from camel.societies.role_playing import RolePlaying
-from camel.societies.workforce.workforce import Workforce
+from camel.societies.workforce.workforce_split.core import (
+    WorkforceCore as Workforce,
+)
 from camel.tasks.task import Task
 
 logger = get_logger(__name__)

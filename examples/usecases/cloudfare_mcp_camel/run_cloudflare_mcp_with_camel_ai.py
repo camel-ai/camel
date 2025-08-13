@@ -24,7 +24,7 @@ sys_msg = BaseMessage(
     role_name="cloudfare assistant",
     role_type="assistant",
     meta_dict={},
-    content="You are a helpful assistant that can access Cloudflare's documentation via MCP"
+    content="You are a helpful assistant that can access Cloudflare's documentation via MCP",
 )
 
 
@@ -34,9 +34,9 @@ model = ModelFactory.create(
     model_type="gemini-2.5-pro-preview-05-06",
     api_key=os.getenv("GEMINI_API_KEY"),
     model_config_dict={"temperature": 0.5, "max_tokens": 4096},
-    )
+)
 
-#configure the mcp camel toolkit with the path of the config file
+# configure the mcp camel toolkit with the path of the config file
 mcp_toolkit = MCPToolkit(config_path="mcp_config.json")
 
 # Get the tools from the toolkit

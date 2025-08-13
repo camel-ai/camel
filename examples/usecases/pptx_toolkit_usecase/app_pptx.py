@@ -24,32 +24,50 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.agents import ChatAgent
 
+
 # --- Pydantic Models for Structured Output ---
 class TitleSlide(BaseModel):
     """Title slide model"""
+
     title: str = Field(description="Main title of the presentation")
     subtitle: str = Field(description="Subtitle or description")
 
+
 class TableData(BaseModel):
     """Table data model"""
+
     headers: List[str] = Field(description="Table column headers")
     rows: List[List[str]] = Field(description="Table rows data")
 
+
 class BulletSlide(BaseModel):
     """Bullet point slide model"""
+
     heading: str = Field(description="Slide heading")
-    bullet_points: List[str] = Field(description="List of bullet points, use >> prefix for step-by-step slides")
-    img_keywords: Optional[str] = Field(default="", description="Keywords for image search (not URLs)")
+    bullet_points: List[str] = Field(
+        description="List of bullet points, use >> prefix for step-by-step slides"
+    )
+    img_keywords: Optional[str] = Field(
+        default="", description="Keywords for image search (not URLs)"
+    )
+
 
 class TableSlide(BaseModel):
     """Table slide model"""
+
     heading: str = Field(description="Slide heading")
     table: TableData = Field(description="Table data with headers and rows")
-    img_keywords: Optional[str] = Field(default="", description="Keywords for image search (not URLs)")
+    img_keywords: Optional[str] = Field(
+        default="", description="Keywords for image search (not URLs)"
+    )
+
 
 class PresentationSlides(BaseModel):
     """Complete presentation model"""
-    title_slide: TitleSlide = Field(description="First slide must be a title slide")
+
+    title_slide: TitleSlide = Field(
+        description="First slide must be a title slide"
+    )
     content_slides: List[Union[BulletSlide, TableSlide]] = Field(
         description="Content slides including bullet slides and table slides"
     )
@@ -61,6 +79,7 @@ def get_base64_img(path, w=32):
         b64 = base64.b64encode(img_f.read()).decode()
     return f"<img src='data:image/png;base64,{b64}' width='{w}' style='vertical-align:middle;margin-bottom:4px;'>"
 
+
 camel_logo = get_base64_img("assets/CAMEL_logo.jpg", 40)
 
 # --- Page config ---
@@ -71,23 +90,27 @@ st.markdown(
         {camel_logo}
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 # --- Sidebar Config ---
 st.sidebar.header("⚙️ Configuration")
 openai_key = st.sidebar.text_input(
-    "OpenAI API Key (for ChatAgent/OpenAI backend)", type="password",
-    help="Get yours at https://platform.openai.com/account/api-keys"
+    "OpenAI API Key (for ChatAgent/OpenAI backend)",
+    type="password",
+    help="Get yours at https://platform.openai.com/account/api-keys",
 )
 pexels_key = st.sidebar.text_input(
-    "Pexels API Key", type="password", help="(Optional) Needed if you want images fetched from Pexels"
+    "Pexels API Key",
+    type="password",
+    help="(Optional) Needed if you want images fetched from Pexels",
 )
 
 # --- User Input ---
 st.header("1. Enter Your Presentation Topic")
 topic = st.text_input("Topic (e.g., ‘Blockchain for Beginners’)")
 slide_count = st.slider("Number of slides (excluding title slide)", 3, 10, 5)
+
 
 # --- Construct the JSON‐generation instructions ---
 def pptx_prompt(topic: str, slide_count: int) -> str:
@@ -104,6 +127,7 @@ Requirements:
 The presentation should cover key aspects of {topic}, including practical information, processes, and relevant data.
 """
 
+
 # --- Generate Slide JSON via ChatAgent ---
 def generate_pptx_json_with_agent(topic: str, slide_count: int, api_key: str):
     # 1. Build the full instruction prompt
@@ -118,48 +142,57 @@ def generate_pptx_json_with_agent(topic: str, slide_count: int, api_key: str):
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_4_1,
             model_config_dict={"temperature": 0.0},
-        )
+        ),
     )
 
     # 3. Call the agent with our instruction prompt
     try:
-        response = agent.step(full_prompt,response_format=PresentationSlides)
+        response = agent.step(full_prompt, response_format=PresentationSlides)
 
         # Parse JSON string into Pydantic object
         json_content = response.msgs[0].content
-        presentation_data = PresentationSlides.model_validate_json(json_content)
+        presentation_data = PresentationSlides.model_validate_json(
+            json_content
+        )
 
         # Convert to the expected JSON format
         slides_json = []
 
         # Add title slide
-        slides_json.append({
-            "title": presentation_data.title_slide.title,
-            "subtitle": presentation_data.title_slide.subtitle
-        })
+        slides_json.append(
+            {
+                "title": presentation_data.title_slide.title,
+                "subtitle": presentation_data.title_slide.subtitle,
+            }
+        )
 
         # Add content slides
         for slide in presentation_data.content_slides:
             if isinstance(slide, BulletSlide):
-                slides_json.append({
-                    "heading": slide.heading,
-                    "bullet_points": slide.bullet_points,
-                    "img_keywords": slide.img_keywords or ""
-                })
+                slides_json.append(
+                    {
+                        "heading": slide.heading,
+                        "bullet_points": slide.bullet_points,
+                        "img_keywords": slide.img_keywords or "",
+                    }
+                )
             elif isinstance(slide, TableSlide):
-                slides_json.append({
-                    "heading": slide.heading,
-                    "table": {
-                        "headers": slide.table.headers,
-                        "rows": slide.table.rows
-                    },
-                    "img_keywords": slide.img_keywords or ""
-                })
+                slides_json.append(
+                    {
+                        "heading": slide.heading,
+                        "table": {
+                            "headers": slide.table.headers,
+                            "rows": slide.table.rows,
+                        },
+                        "img_keywords": slide.img_keywords or "",
+                    }
+                )
 
         return slides_json, None
 
     except Exception as e:
         return None, f"❌ Structured output generation failed: {e}"
+
 
 # --- Build & Return PPTX Bytes ---
 def build_pptx(slides):
@@ -175,6 +208,7 @@ def build_pptx(slides):
     else:
         return None, None, result
 
+
 # --- Main App Logic ---
 if not openai_key:
     st.info("Please enter your OpenAI API key in the sidebar to continue.")
@@ -182,7 +216,9 @@ if not openai_key:
 
 if topic and st.button("Generate Presentation"):
     st.info("🕒 Generating slide JSON with ChatAgent (GPT-4.1)...")
-    slides, error = generate_pptx_json_with_agent(topic, slide_count, openai_key)
+    slides, error = generate_pptx_json_with_agent(
+        topic, slide_count, openai_key
+    )
     if error:
         st.error(error)
         st.stop()
@@ -196,7 +232,7 @@ if topic and st.button("Generate Presentation"):
             label=f"Download {fname}",
             data=pptx_bytes,
             file_name=fname,
-            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         )
     else:
         st.error(f"PPTX generation failed: {pptx_result}")
