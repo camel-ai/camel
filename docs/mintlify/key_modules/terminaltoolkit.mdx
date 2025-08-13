@@ -62,15 +62,15 @@ terminal_toolkit = TerminalToolkit(clone_current_env=True)
 ### Executing Commands
 The `shell_exec` function is the primary way to execute commands. Each command is run within a session, identified by a unique `id`.
 
-<CodeGroup>
-<CodeGroup.Tab title="Listing Files">
+<Tabs>
+<Tab title="Listing Files">
 ```python
 # Execute the 'ls -l' command in 'session_1'
 output = terminal_toolkit.shell_exec(id='session_1', command='ls -l')
 print(output)
 ```
-</CodeGroup.Tab>
-<CodeGroup.Tab title="Running a Python Script">
+</Tab>
+<Tab title="Running a Python Script">
 ```python
 # First, create a python script inside the workspace
 write_script_cmd = """
@@ -82,8 +82,8 @@ terminal_toolkit.shell_exec(id='session_1', command=write_script_cmd)
 output = terminal_toolkit.shell_exec(id='session_1', command='python hello.py')
 print(output)
 ```
-</CodeGroup.Tab>
-</CodeGroup>
+</Tab>
+</Tabs>
 
 ### Interacting with Processes
 You can manage long-running or interactive processes.
