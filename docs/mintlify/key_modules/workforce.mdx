@@ -36,7 +36,7 @@ class Workforce(BaseNode):
 -   `task_agent`: A `ChatAgent` for decomposing tasks.
 -   `new_worker_agent`: A template `ChatAgent` for creating new workers.
 -   `share_memory`: If `True`, `SingleAgentWorker` instances will share memory.
--   `use_structured_output_handler`: Defaults to `True` for robust JSON parsing.
+-   `use_structured_output_handler`: Defaults to `True`. Enables structured output handling so models without native JSON + tool-calling can still interop reliably.
 </Card>
 
 <Card title="Worker Types" icon="users-gear">
@@ -104,7 +104,7 @@ from camel.types import ModelType
 workforce = Workforce("Creative Writing Team")
 
 # Create an agent with a specific model for creative tasks
-creative_model = ModelFactory.create(model_type=ModelType.GPT_4)
+creative_model = ModelFactory.create(model_type=ModelType.GPT_5_MINI)
 creative_agent = ChatAgent(
     system_message="A creative writer for generating stories.",
     model=creative_model
