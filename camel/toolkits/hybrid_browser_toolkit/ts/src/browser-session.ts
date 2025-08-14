@@ -451,25 +451,67 @@ export class HybridBrowserSession {
 
   /**
    *  Simplified type implementation using Playwright's aria-ref selector
+   *  Supports both single and multiple input operations
    */
-  private async performType(page: Page, ref: string, text: string): Promise<{ success: boolean; error?: string }> {
+  private async performType(page: Page, ref: string | undefined, text: string | undefined, inputs?: Array<{ ref: string; text: string }>): Promise<{ success: boolean; error?: string; details?: Record<string, any> }> {
     try {
       // Ensure we have the latest snapshot
       await (page as any)._snapshotForAI();
       
-      // Use Playwright's aria-ref selector
-      const selector = `aria-ref=${ref}`;
-      const element = await page.locator(selector).first();
-      
-      const exists = await element.count() > 0;
-      if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+      // Handle multiple inputs if provided
+      if (inputs && inputs.length > 0) {
+        const results: Record<string, { success: boolean; error?: string }> = {};
+        
+        for (const input of inputs) {
+          const selector = `aria-ref=${input.ref}`;
+          const element = await page.locator(selector).first();
+          
+          const exists = await element.count() > 0;
+          if (!exists) {
+            results[input.ref] = { success: false, error: `Element with ref ${input.ref} not found` };
+            continue;
+          }
+          
+          try {
+            // Type text using Playwright's built-in fill method
+            await element.fill(input.text);
+            results[input.ref] = { success: true };
+          } catch (error) {
+            results[input.ref] = { success: false, error: `Type failed: ${error}` };
+          }
+        }
+        
+        // Check if all inputs were successful
+        const allSuccess = Object.values(results).every(r => r.success);
+        const errors = Object.entries(results)
+          .filter(([_, r]) => !r.success)
+          .map(([ref, r]) => `${ref}: ${r.error}`)
+          .join('; ');
+        
+        return {
+          success: allSuccess,
+          error: allSuccess ? undefined : `Some inputs failed: ${errors}`,
+          details: results
+        };
       }
       
-      // Type text using Playwright's built-in fill method
-      await element.fill(text);
+      // Handle single input (backward compatibility)
+      if (ref && text !== undefined) {
+        const selector = `aria-ref=${ref}`;
+        const element = await page.locator(selector).first();
+        
+        const exists = await element.count() > 0;
+        if (!exists) {
+          return { success: false, error: `Element with ref ${ref} not found` };
+        }
+        
+        // Type text using Playwright's built-in fill method
+        await element.fill(text);
+        
+        return { success: true };
+      }
       
-      return { success: true };
+      return { success: false, error: 'No valid input provided' };
     } catch (error) {
       return { success: false, error: `Type failed: ${error}` };
     }
@@ -607,6 +649,8 @@ export class HybridBrowserSession {
       //  No need to pre-fetch snapshot - each action method handles this
       
       let newTabId: string | undefined;
+      let customMessage: string | undefined;
+      let actionDetails: Record<string, any> | undefined;
       
       switch (action.type) {
         case 'click': {
@@ -631,10 +675,18 @@ export class HybridBrowserSession {
           elementSearchTime = Date.now() - elementSearchStart;
           const typeStart = Date.now();
 
-          const typeResult = await this.performType(page, action.ref, action.text);
+          const typeResult = await this.performType(page, action.ref, action.text, action.inputs);
           
           if (!typeResult.success) {
             throw new Error(`Type failed: ${typeResult.error}`);
+          }
+          
+          // Set custom message and details if multiple inputs were used
+          if (typeResult.details) {
+            const successCount = Object.values(typeResult.details).filter((r: any) => r.success).length;
+            const totalCount = Object.keys(typeResult.details).length;
+            customMessage = `Typed text into ${successCount}/${totalCount} elements`;
+            actionDetails = typeResult.details;
           }
           
           actionExecutionTime = Date.now() - typeStart;
@@ -724,7 +776,7 @@ export class HybridBrowserSession {
       
       return {
         success: true,
-        message: `Action ${action.type} executed successfully`,
+        message: customMessage || `Action ${action.type} executed successfully`,
         timing: {
           total_time_ms: totalTime,
           element_search_time_ms: elementSearchTime,
@@ -734,6 +786,7 @@ export class HybridBrowserSession {
           network_idle_time_ms: stabilityResult.networkIdleTime,
         },
         ...(newTabId && { newTabId }), //  Include new tab ID if present
+        ...(actionDetails && { details: actionDetails }), // Include action details if present
       };
     } catch (error) {
       const totalTime = Date.now() - startTime;

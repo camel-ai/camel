@@ -414,8 +414,20 @@ export class HybridBrowserToolkit {
     return this.executeActionWithSnapshot(action);
   }
 
-  async type(ref: string, text: string): Promise<any> {
-    const action: BrowserAction = { type: 'type', ref, text };
+  async type(refOrInputs: string | Array<{ ref: string; text: string }>, text?: string): Promise<any> {
+    let action: BrowserAction;
+    
+    if (typeof refOrInputs === 'string') {
+      // Single input mode (backward compatibility)
+      if (text === undefined) {
+        throw new Error('Text parameter is required when ref is a string');
+      }
+      action = { type: 'type', ref: refOrInputs, text };
+    } else {
+      // Multiple inputs mode
+      action = { type: 'type', inputs: refOrInputs };
+    }
+    
     return this.executeActionWithSnapshot(action);
   }
 

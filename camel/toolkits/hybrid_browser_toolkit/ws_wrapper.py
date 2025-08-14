@@ -503,21 +503,49 @@ class WebSocketBrowserWrapper:
 
         return ToolResult(text=response['text'], images=response['images'])
 
+    def _ensure_ref_prefix(self, ref: str) -> str:
+        """Ensure ref has 'e' prefix."""
+        if ref and not ref.startswith('e'):
+            return f'e{ref}'
+        return ref
+
     @action_logger
     async def click(self, ref: str) -> Dict[str, Any]:
         """Click an element."""
+        ref = self._ensure_ref_prefix(ref)
         response = await self._send_command('click', {'ref': ref})
         return response
 
     @action_logger
     async def type(self, ref: str, text: str) -> Dict[str, Any]:
         """Type text into an element."""
+        ref = self._ensure_ref_prefix(ref)
         response = await self._send_command('type', {'ref': ref, 'text': text})
+        return response
+
+    @action_logger
+    async def type_multiple(
+        self, inputs: List[Dict[str, str]]
+    ) -> Dict[str, Any]:
+        """Type text into multiple elements."""
+        # Process each input to ensure ref has 'e' prefix
+        processed_inputs = []
+        for input_item in inputs:
+            processed_input = input_item.copy()
+            if 'ref' in processed_input:
+                processed_input['ref'] = self._ensure_ref_prefix(
+                    processed_input['ref']
+                )
+            processed_inputs.append(processed_input)
+        response = await self._send_command(
+            'type', {'inputs': processed_inputs}
+        )
         return response
 
     @action_logger
     async def select(self, ref: str, value: str) -> Dict[str, Any]:
         """Select an option."""
+        ref = self._ensure_ref_prefix(ref)
         response = await self._send_command(
             'select', {'ref': ref, 'value': value}
         )
@@ -550,6 +578,8 @@ class WebSocketBrowserWrapper:
     @action_logger
     async def mouse_drag(self, from_ref: str, to_ref: str) -> Dict[str, Any]:
         """Control the mouse to drag and drop in the browser using ref IDs."""
+        from_ref = self._ensure_ref_prefix(from_ref)
+        to_ref = self._ensure_ref_prefix(to_ref)
         response = await self._send_command(
             'mouse_drag',
             {'from_ref': from_ref, 'to_ref': to_ref},
