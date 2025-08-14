@@ -1373,24 +1373,18 @@ class ChatAgent(BaseAgent):
             reserved_response_tokens = self._count_tokens_for_json(schema_dict)
 
         context_creator = self.memory.get_context_creator()
-        model_token_limit = getattr(context_creator, "_token_limit", None)
+        original_limit = context_creator._token_limit  # type: ignore[attr-defined]
         effective_token_limit = max(
             0,
-            model_token_limit
-            - reserved_tool_tokens
-            - reserved_response_tokens,
+            original_limit - reserved_tool_tokens - reserved_response_tokens,
         )
 
         # Temporarily override context creator token limit if possible
-        original_limit = getattr(context_creator, "_token_limit", None)
-        if original_limit is not None:
-            context_creator._token_limit = int(effective_token_limit)  # type: ignore[attr-defined]
-            try:
-                openai_messages, num_tokens = self.memory.get_context()
-            finally:
-                context_creator._token_limit = original_limit  # type: ignore[attr-defined]
-        else:
+        context_creator._token_limit = int(effective_token_limit)  # type: ignore[attr-defined]
+        try:
             openai_messages, num_tokens = self.memory.get_context()
+        finally:
+            context_creator._token_limit = original_limit  # type: ignore[attr-defined]
 
         return openai_messages, num_tokens, tool_schemas
 
