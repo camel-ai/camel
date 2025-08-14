@@ -1373,9 +1373,7 @@ class ChatAgent(BaseAgent):
             reserved_response_tokens = self._count_tokens_for_json(schema_dict)
 
         context_creator = self.memory.get_context_creator()
-        model_token_limit = getattr(
-            context_creator, "_token_limit", None
-        )
+        model_token_limit = getattr(context_creator, "_token_limit", None)
         effective_token_limit = max(
             0,
             model_token_limit
