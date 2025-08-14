@@ -1341,6 +1341,61 @@ class ChatAgent(BaseAgent):
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
 
+    def _count_tokens_for_json(self, obj: object) -> int:
+        try:
+            serialized = json.dumps(
+                obj, ensure_ascii=False, separators=(",", ":")
+            )
+        except Exception:
+            return 0
+        try:
+            return len(self.model_backend.token_counter.encode(serialized))
+        except Exception:
+            return 0
+
+    def _reserve_and_get_context(
+        self, response_format: Optional[Type[BaseModel]]
+    ) -> Tuple[List[OpenAIMessage], int, Any]:
+        r"""Reserve tokens for tools/response_format and fetch context.
+
+        Returns:
+            (openai_messages, num_tokens, tool_schemas)
+        """
+        tool_schemas = self._get_full_tool_schemas()
+        reserved_tool_tokens = self._count_tokens_for_json(tool_schemas)
+
+        reserved_response_tokens = 0
+        if response_format is not None:
+            try:
+                schema_dict = response_format.model_json_schema()
+            except Exception:
+                schema_dict = None
+            reserved_response_tokens = self._count_tokens_for_json(schema_dict)
+
+        context_creator = self.memory.get_context_creator()
+        model_token_limit = getattr(
+            context_creator, "_token_limit", None
+        )
+        effective_token_limit = max(
+            0,
+            model_token_limit
+            - reserved_tool_tokens
+            - reserved_response_tokens,
+        )
+
+        # Temporarily override context creator token limit if possible
+        original_limit = getattr(context_creator, "_token_limit", None)
+        if original_limit is not None:
+            context_creator._token_limit = int(effective_token_limit)  # type: ignore[attr-defined]
+            try:
+                openai_messages, num_tokens = self.memory.get_context()
+            finally:
+                context_creator._token_limit = original_limit  # type: ignore[attr-defined]
+        else:
+            openai_messages, num_tokens = self.memory.get_context()
+
+        return openai_messages, num_tokens, tool_schemas
+
     @observe()
     def step(
         self,
@@ -1417,7 +1472,9 @@ class ChatAgent(BaseAgent):
                     time.sleep(0.001)
 
             try:
-                openai_messages, num_tokens = self.memory.get_context()
+                openai_messages, num_tokens, tool_schemas = (
+                    self._reserve_and_get_context(response_format)
+                )
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
@@ -1429,7 +1486,7 @@ class ChatAgent(BaseAgent):
                 num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=self._get_full_tool_schemas(),
+                tool_schemas=tool_schemas,
                 prev_num_openai_messages=prev_num_openai_messages,
             )
             prev_num_openai_messages = len(openai_messages)
@@ -1606,7 +1663,9 @@ class ChatAgent(BaseAgent):
             if self.pause_event is not None and not self.pause_event.is_set():
                 await self.pause_event.wait()
             try:
-                openai_messages, num_tokens = self.memory.get_context()
+                openai_messages, num_tokens, tool_schemas = (
+                    self._reserve_and_get_context(response_format)
+                )
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
                 return self._step_terminate(
@@ -1618,7 +1677,7 @@ class ChatAgent(BaseAgent):
                 num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=self._get_full_tool_schemas(),
+                tool_schemas=tool_schemas,
                 prev_num_openai_messages=prev_num_openai_messages,
             )
             prev_num_openai_messages = len(openai_messages)
@@ -2392,7 +2451,9 @@ class ChatAgent(BaseAgent):
 
         # Get context for streaming
         try:
-            openai_messages, num_tokens = self.memory.get_context()
+            openai_messages, num_tokens, _ = self._reserve_and_get_context(
+                response_format
+            )
         except RuntimeError as e:
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
@@ -2437,10 +2498,14 @@ class ChatAgent(BaseAgent):
 
             # Get streaming response from model
             try:
+                # Reuse tool_schemas used for reservation to avoid mismatch
+                _, _, tool_schemas = self._reserve_and_get_context(
+                    response_format
+                )
                 response = self.model_backend.run(
                     openai_messages,
                     response_format,
-                    self._get_full_tool_schemas() or None,
+                    tool_schemas or None,
                 )
                 iteration_count += 1
             except Exception as exc:
@@ -3049,7 +3114,9 @@ class ChatAgent(BaseAgent):
 
         # Get context for streaming
         try:
-            openai_messages, num_tokens = self.memory.get_context()
+            openai_messages, num_tokens, _ = self._reserve_and_get_context(
+                response_format
+            )
         except RuntimeError as e:
             yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
             return
@@ -3097,10 +3164,14 @@ class ChatAgent(BaseAgent):
 
             # Get async streaming response from model
             try:
+                # Reuse tool_schemas used for reservation to avoid mismatch
+                _, _, tool_schemas = self._reserve_and_get_context(
+                    response_format
+                )
                 response = await self.model_backend.arun(
                     openai_messages,
                     response_format,
-                    self._get_full_tool_schemas() or None,
+                    tool_schemas or None,
                 )
                 iteration_count += 1
             except Exception as exc:
@@ -3148,8 +3219,8 @@ class ChatAgent(BaseAgent):
                     ):
                         # Update messages with tool results for next iteration
                         try:
-                            openai_messages, num_tokens = (
-                                self.memory.get_context()
+                            openai_messages, num_tokens, _ = (
+                                self._reserve_and_get_context(response_format)
                             )
                         except RuntimeError as e:
                             yield self._step_terminate(
