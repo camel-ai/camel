@@ -109,10 +109,11 @@ class MCPServer:
         def new_init(instance, *args, **kwargs):
             from camel.toolkits.base import BaseToolkit
 
-            # Allow optional decoupling of MCP initialization for easier debugging
-            # and flexibility. Users can:
-            # - pass enable_mcp: bool keyword argument to the class constructor, or
-            # - set environment variable CAMEL_ENABLE_MCP to one of {"1","true","yes"}
+            # Allow optional decoupling of MCP initialization for easier
+            # debugging and flexibility. Users can:
+            # - pass enable_mcp: bool keyword argument to the class
+            #   constructor, or
+            # - set env var CAMEL_ENABLE_MCP to {"1","true","yes"}
             # If neither is provided, MCP is enabled by default to preserve
             # backward compatibility.
             enable_mcp = kwargs.pop("enable_mcp", None)
@@ -131,11 +132,14 @@ class MCPServer:
                     enable_mcp = True
 
             if enable_mcp:
-                # Import here so projects can run without MCP dependency when disabled
+                # Import here so projects can run without MCP dependency
+                # when disabled
                 from mcp.server.fastmcp import FastMCP  # local import
+
                 instance.mcp = FastMCP(self.server_name)
             else:
-                # Mark as disabled; run_mcp_server will raise a helpful error if used
+                # Mark as disabled; run_mcp_server will raise a helpful
+                # error if used
                 instance.mcp = None  # type: ignore[assignment]
 
             if not self.function_names and not isinstance(
@@ -150,15 +154,16 @@ class MCPServer:
                 function_names = self.function_names
                 if not function_names and isinstance(instance, BaseToolkit):
                     function_names = [
-                        tool.get_function_name() for tool in instance.get_tools()
+                        tool.get_function_name()
+                        for tool in instance.get_tools()
                     ]
 
                 for name in function_names:
                     func = getattr(instance, name, None)
                     if func is None or not callable(func):
                         raise ValueError(
-                            f"Method {name} not found in class {cls.__name__} or "
-                            "cannot be called."
+                            f"Method {name} not found in class "
+                            f"{cls.__name__} or cannot be called."
                         )
                     wrapper = self.make_wrapper(func)
                     instance.mcp.tool(name=name)(wrapper)

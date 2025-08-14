@@ -65,10 +65,10 @@ if __name__ == "__main__":
 
     toolkit = HybridBrowserToolkit(
         mode=args.implementation,
-        timeout=args.timeout,
+        default_timeout=args.timeout,
         headless=args.headless,
         stealth=args.stealth,
         enabled_tools=None,  # Use default tools
     )
 
-    toolkit.run_mcp_server(mode=args.mode)
+    toolkit.run_mcp_server(args.mode)

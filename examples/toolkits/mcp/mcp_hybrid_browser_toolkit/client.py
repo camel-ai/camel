@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
+import os
 import sys
 
 from mcp.types import CallToolResult
@@ -20,22 +21,46 @@ from camel.toolkits.mcp_toolkit import MCPClient, MCPToolkit
 
 
 def _print_result(result: CallToolResult, max_length: int = 500) -> None:
-    """Helper function to print truncated result content."""
-    content = result.content[0].text
-    if len(content) > max_length:
-        print(content[:max_length] + "...")
-    else:
-        print(content)
+    """Print truncated content; handle empty and non-text parts gracefully."""
+    try:
+        parts = getattr(result, "content", []) or []
+        if not parts:
+            print("<empty>")
+            return
+        texts = []
+        for p in parts:
+            # Prefer text when available
+            text = getattr(p, "text", None)
+            if text:
+                texts.append(str(text))
+                continue
+            # Fallbacks for common content shapes
+            uri = getattr(p, "uri", None)
+            if uri:
+                texts.append(f"<image: {uri}>")
+                continue
+            resource = getattr(p, "resource", None)
+            if resource:
+                texts.append(f"<resource: {resource}>")
+                continue
+            texts.append(str(p))
+        out = "\n".join(texts)
+        print(out[:max_length] + ("..." if len(out) > max_length else ""))
+    except Exception as e:
+        print(f"<error printing result: {e}>")
 
 
 async def run_example_async():
     """Example of using HybridBrowserToolkit MCP server asynchronously."""
+    server_script = os.path.join(
+        os.path.dirname(__file__), "hybrid_browser_toolkit_server.py"
+    )
     config = {
         "mcpServers": {
             "hybrid_browser_toolkit": {
                 "command": sys.executable,
                 "args": [
-                    "examples/toolkits/mcp/mcp_hybrid_browser_toolkit/hybrid_browser_toolkit_server.py",
+                    server_script,
                     "--mode",
                     "stdio",
                     "--headless",
@@ -86,12 +111,15 @@ async def run_example_async():
 
 def run_example_sync():
     """Example of using HybridBrowserToolkit MCP server synchronously."""
+    server_script = os.path.join(
+        os.path.dirname(__file__), "hybrid_browser_toolkit_server.py"
+    )
     config = {
         "mcpServers": {
             "hybrid_browser_toolkit": {
                 "command": sys.executable,
                 "args": [
-                    "examples/toolkits/mcp/mcp_hybrid_browser_toolkit/hybrid_browser_toolkit_server.py",
+                    server_script,
                     "--mode",
                     "stdio",
                     "--headless",
