@@ -37,6 +37,7 @@ from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
+from camel.memories.workflow_manager import WorkflowRecorder
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce.base import BaseNode
@@ -45,6 +46,7 @@ from camel.societies.workforce.prompts import (
     CREATE_NODE_PROMPT,
     FAILURE_ANALYSIS_PROMPT,
     TASK_DECOMPOSE_PROMPT,
+    WORKFLOW_SELECTION_PROMPT,
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
@@ -185,6 +187,13 @@ class Workforce(BaseNode):
             support native structured output. When disabled, the workforce
             uses the native response_format parameter.
             (default: :obj:`True`)
+        workflow_recorder (WorkflowRecorder, optional): A workflow recorder
+            instance for recording and retrieving agent workflows in markdown
+            format. When provided, the workforce will search for relevant past
+            workflows before task execution and record new workflows after
+            task completion (both successful and failed). This enables agents
+            to learn from past experiences and improve future performance.
+            (default: :obj:`None`)
 
     Example:
         >>> import asyncio
@@ -237,6 +246,7 @@ class Workforce(BaseNode):
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
         task_timeout_seconds: Optional[float] = None,
+        workflow_recorder: Optional[WorkflowRecorder] = None,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[
@@ -274,6 +284,7 @@ class Workforce(BaseNode):
         self._last_snapshot_time: float = 0.0
         # Minimum seconds between automatic snapshots
         self.snapshot_interval: float = 30.0
+        self.workflow_recorder = workflow_recorder
         if self.metrics_logger:
             for child in self._children:
                 worker_type = type(child).__name__
@@ -1211,6 +1222,15 @@ class Workforce(BaseNode):
                 task_type=task.type,
                 metadata=task.additional_info,
             )
+
+        # Pre-execution: Search for relevant workflows and provide context
+        # via step
+        if self.workflow_recorder and self.coordinator_agent:
+            try:
+                await self._provide_workflow_context(task.content)
+            except Exception as e:
+                logger.warning(f"Failed to provide workflow context: {e}")
+
         task.state = TaskState.FAILED
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
@@ -1261,6 +1281,22 @@ class Workforce(BaseNode):
                 task.state = TaskState.DONE
             else:
                 task.state = TaskState.FAILED
+
+        # Post-execution: Record workflow after task completion
+        if self.workflow_recorder and self.coordinator_agent:
+            try:
+                workflow_filename = (
+                    await self.workflow_recorder.record_workflow_from_task(
+                        task,
+                        agent=self.coordinator_agent,
+                        agent_role="Workforce Coordinator",
+                        agent_id=f"workforce_{self.node_id}",
+                    )
+                )
+                if workflow_filename:
+                    logger.info(f"Recorded workflow: {workflow_filename}")
+            except Exception as e:
+                logger.warning(f"Failed to record workflow: {e}")
 
         return task
 
@@ -1722,6 +1758,91 @@ class Workforce(BaseNode):
         self._channel = channel
         for child in self._children:
             child.set_channel(channel)
+
+    async def _provide_workflow_context(self, task_description: str) -> None:
+        r"""Provide workflow context by showing available workflows and
+        stepping with selected content.
+
+        This method handles the complete workflow context process:
+        1. Gets tree view of available workflows
+        2. Asks coordinator to select relevant workflow
+        3. Reads selected workflow content
+
+        Args:
+            task_description (str): Description of the task to find workflows
+                for.
+        """
+        # Check if workflow_recorder and coordinator_agent are available
+        if not self.workflow_recorder or not self.coordinator_agent:
+            logger.info(
+                "Workflow recorder or coordinator agent not available "
+                "for context"
+            )
+            return
+
+        try:
+            # Get tree view of available workflows
+            workflows_tree = self.workflow_recorder.get_workflows_tree()
+
+            if "(empty - no workflows recorded yet)" in workflows_tree:
+                logger.info("No workflows available for context")
+                return
+
+            # ask coordinator to select relevant workflow
+            selection_prompt = WORKFLOW_SELECTION_PROMPT.format(
+                task_description=task_description,
+                workflows_tree=workflows_tree,
+            )
+
+            selection_message = BaseMessage.make_user_message(
+                role_name="WorkflowSelector", content=selection_prompt
+            )
+
+            response = self.coordinator_agent.step(selection_message)
+
+            if response and response.msg:
+                selected_filename = response.msg.content.strip()
+
+                # Check if agent selected a workflow
+                if selected_filename and selected_filename.lower() != "none":
+                    # Read the selected workflow content
+                    workflow_content = self.workflow_recorder.read_workflow(
+                        selected_filename
+                    )
+
+                    if workflow_content and "Error" not in workflow_content:
+                        logger.info(
+                            f"Providing workflow context from: "
+                            f"{selected_filename}"
+                        )
+
+                        # Step with workflow content as context
+                        context_message = BaseMessage.make_user_message(
+                            role_name="WorkflowContext",
+                            content=(
+                                f"=== RELEVANT WORKFLOW EXPERIENCE ===\n"
+                                f"{workflow_content}\n"
+                                f"=== END WORKFLOW EXPERIENCE ==="
+                            ),
+                        )
+                        self.coordinator_agent.step(context_message)
+                        logger.info(
+                            "Successfully provided workflow context for task"
+                        )
+                    else:
+                        logger.warning(
+                            f"Could not read selected workflow: "
+                            f"{selected_filename}"
+                        )
+                else:
+                    logger.info("No relevant workflow selected")
+            else:
+                logger.info(
+                    "No response from coordinator for workflow selection"
+                )
+
+        except Exception as e:
+            logger.error(f"Error providing workflow context: {e}")
 
     def _get_child_nodes_info(self) -> str:
         r"""Get the information of all the child nodes under this node."""

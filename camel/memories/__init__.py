@@ -22,6 +22,7 @@ from .blocks.chat_history_block import ChatHistoryBlock
 from .blocks.vectordb_block import VectorDBBlock
 from .context_creators.score_based import ScoreBasedContextCreator
 from .records import ContextRecord, MemoryRecord
+from .workflow_manager import WorkflowRecorder
 
 __all__ = [
     'MemoryRecord',
@@ -35,4 +36,5 @@ __all__ = [
     'ChatHistoryBlock',
     'VectorDBBlock',
     'LongtermAgentMemory',
+    'WorkflowRecorder',
 ]
