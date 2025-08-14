@@ -106,6 +106,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         page_stability_timeout: Optional[int] = None,
         dom_content_loaded_timeout: Optional[int] = None,
         viewport_limit: bool = False,
+        enable_mcp: Optional[bool] = None,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 

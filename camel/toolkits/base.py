@@ -71,6 +71,12 @@ class BaseToolkit(metaclass=AgentOpsMeta):
             mode (Literal["stdio", "sse", "streamable-http"]): The mode to run
                 the MCP server in.
         """
+        if getattr(self, "mcp", None) is None:
+            raise RuntimeError(
+                "MCP is disabled for this toolkit. Enable it by passing "
+                "enable_mcp=True to the constructor or setting environment "
+                "variable CAMEL_ENABLE_MCP=1."
+            )
         self.mcp.run(mode)
 
 

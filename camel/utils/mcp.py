@@ -104,16 +104,39 @@ class MCPServer:
                 `BaseToolkit` subclass,
                 or if a specified method cannot be found or is not callable.
         """
-        from mcp.server.fastmcp import FastMCP
-
         original_init = cls.__init__
 
         def new_init(instance, *args, **kwargs):
             from camel.toolkits.base import BaseToolkit
 
+            # Allow optional decoupling of MCP initialization for easier debugging
+            # and flexibility. Users can:
+            # - pass enable_mcp: bool keyword argument to the class constructor, or
+            # - set environment variable CAMEL_ENABLE_MCP to one of {"1","true","yes"}
+            # If neither is provided, MCP is enabled by default to preserve
+            # backward compatibility.
+            enable_mcp = kwargs.pop("enable_mcp", None)
+
             original_init(instance, *args, **kwargs)
             self.server_name = self.server_name or cls.__name__
-            instance.mcp = FastMCP(self.server_name)
+
+            if enable_mcp is None:
+                try:
+                    import os
+
+                    env_val = os.getenv("CAMEL_ENABLE_MCP", "1").lower()
+                    enable_mcp = env_val in ("1", "true", "yes")
+                except Exception:
+                    # Fallback to enabled if environment access fails
+                    enable_mcp = True
+
+            if enable_mcp:
+                # Import here so projects can run without MCP dependency when disabled
+                from mcp.server.fastmcp import FastMCP  # local import
+                instance.mcp = FastMCP(self.server_name)
+            else:
+                # Mark as disabled; run_mcp_server will raise a helpful error if used
+                instance.mcp = None  # type: ignore[assignment]
 
             if not self.function_names and not isinstance(
                 instance, BaseToolkit
@@ -122,21 +145,23 @@ class MCPServer:
                     "Please specify function names or use BaseToolkit."
                 )
 
-            function_names = self.function_names
-            if not function_names and isinstance(instance, BaseToolkit):
-                function_names = [
-                    tool.get_function_name() for tool in instance.get_tools()
-                ]
+            # Only register tools when MCP is enabled
+            if getattr(instance, "mcp", None) is not None:
+                function_names = self.function_names
+                if not function_names and isinstance(instance, BaseToolkit):
+                    function_names = [
+                        tool.get_function_name() for tool in instance.get_tools()
+                    ]
 
-            for name in function_names:
-                func = getattr(instance, name, None)
-                if func is None or not callable(func):
-                    raise ValueError(
-                        f"Method {name} not found in class {cls.__name__} or "
-                        "cannot be called."
-                    )
-                wrapper = self.make_wrapper(func)
-                instance.mcp.tool(name=name)(wrapper)
+                for name in function_names:
+                    func = getattr(instance, name, None)
+                    if func is None or not callable(func):
+                        raise ValueError(
+                            f"Method {name} not found in class {cls.__name__} or "
+                            "cannot be called."
+                        )
+                    wrapper = self.make_wrapper(func)
+                    instance.mcp.tool(name=name)(wrapper)
 
         cls.__init__ = new_init
         return cls
