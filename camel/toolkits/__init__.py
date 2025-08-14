@@ -68,7 +68,6 @@ from .pubmed_toolkit import PubMedToolkit
 from .data_commons_toolkit import DataCommonsToolkit
 from .thinking_toolkit import ThinkingToolkit
 from .pyautogui_toolkit import PyAutoGUIToolkit
-from .openai_agent_toolkit import OpenAIAgentToolkit
 from .searxng_toolkit import SearxNGToolkit
 from .jina_reranker_toolkit import JinaRerankerToolkit
 from .pulse_mcp_search_toolkit import PulseMCPSearchToolkit
@@ -143,7 +142,6 @@ __all__ = [
     'DataCommonsToolkit',
     'ThinkingToolkit',
     'PyAutoGUIToolkit',
-    'OpenAIAgentToolkit',
     'SearxNGToolkit',
     'JinaRerankerToolkit',
     'OrigeneToolkit',
