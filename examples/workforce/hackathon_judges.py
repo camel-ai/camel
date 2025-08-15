@@ -332,7 +332,6 @@ and trends on AI and Open Sourced projects.)
 total_tasks_created: 8
 total_tasks_completed: 8
 total_tasks_failed: 0
-error_types_count: {}
 worker_utilization: {'dd947275-ccd5-49b2-9563-fb4f5f80ca60': '37.50%', 
 '9fd6b827-4891-4af8-8daa-656be0f4d1b3': '12.50%', 
 '661df9e3-6ebd-4977-be74-7ea929531dd8': '12.50%', 

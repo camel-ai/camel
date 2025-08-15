@@ -619,20 +619,20 @@ class BrowseCompBenchmark(BaseBenchmark):
                         assistant_response, user_response = pipeline.step(
                             input_msg
                         )
-                        if assistant_response.terminated:  # type: ignore[attr-defined]
+                        if assistant_response.terminated:  # type: ignore[union-attr]
                             break
-                        if user_response.terminated:  # type: ignore[attr-defined]
+                        if user_response.terminated:  # type: ignore[union-attr]
                             break
-                        if "CAMEL_TASK_DONE" in user_response.msg.content:  # type: ignore[attr-defined]
+                        if "CAMEL_TASK_DONE" in user_response.msg.content:  # type: ignore[union-attr]
                             break
 
                         chat_history.append(
-                            f"AI User: {user_response.msg.content}"  # type: ignore[attr-defined]
+                            f"AI User: {user_response.msg.content}"  # type: ignore[union-attr]
                         )
                         chat_history.append(
-                            f"AI Assistant: {assistant_response.msg.content}"  # type: ignore[attr-defined]
+                            f"AI Assistant: {assistant_response.msg.content}"  # type: ignore[union-attr]
                         )
-                        input_msg = assistant_response.msg  # type: ignore[attr-defined]
+                        input_msg = assistant_response.msg  # type: ignore[union-attr]
 
                     chat_history_str = "\n".join(chat_history)
                     if roleplaying_summarizer:

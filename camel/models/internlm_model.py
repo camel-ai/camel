@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncStream
 from pydantic import BaseModel
 
-from camel.configs import INTERNLM_API_PARAMS, InternLMConfig
+from camel.configs import InternLMConfig
 from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
@@ -101,18 +101,3 @@ class InternLMModel(OpenAICompatibleModel):
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         raise NotImplementedError("InternLM does not support async inference.")
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to InternLM API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to InternLM API.
-        """
-        for param in self.model_config_dict:
-            if param not in INTERNLM_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into InternLM model backend."
-                )

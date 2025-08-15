@@ -25,7 +25,6 @@ tool_list = MathToolkit().get_tools()
 
 model_config_dict = ChatGPTConfig(
     tools=tool_list,
-    temperature=0.0,
 ).as_dict()
 
 model = ModelFactory.create(

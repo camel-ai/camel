@@ -12,11 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
+import uuid
 from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel
 
-from camel.configs import LITELLM_API_PARAMS, LiteLLMConfig
+from camel.configs import LiteLLMConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -98,23 +99,47 @@ class LiteLLMModel(BaseModelBackend):
         Returns:
             ChatCompletion: The response object in OpenAI's format.
         """
+
+        converted_choices = []
+        for choice in response.choices:
+            # Build the assistant message dict
+            msg_dict: Dict[str, Any] = {
+                "role": choice.message.role,
+                "content": choice.message.content,
+            }
+
+            if getattr(choice.message, "tool_calls", None):
+                msg_dict["tool_calls"] = choice.message.tool_calls
+
+            elif getattr(choice.message, "function_call", None):
+                func_call = choice.message.function_call
+                msg_dict["tool_calls"] = [
+                    {
+                        "id": f"call_{uuid.uuid4().hex[:24]}",
+                        "type": "function",
+                        "function": {
+                            "name": getattr(func_call, "name", None),
+                            "arguments": getattr(func_call, "arguments", "{}"),
+                        },
+                    }
+                ]
+
+            converted_choices.append(
+                {
+                    "index": choice.index,
+                    "message": msg_dict,
+                    "finish_reason": choice.finish_reason,
+                }
+            )
+
         return ChatCompletion.construct(
             id=response.id,
-            choices=[
-                {
-                    "index": response.choices[0].index,
-                    "message": {
-                        "role": response.choices[0].message.role,
-                        "content": response.choices[0].message.content,
-                    },
-                    "finish_reason": response.choices[0].finish_reason,
-                }
-            ],
-            created=response.created,
-            model=response.model,
-            object=response.object,
-            system_fingerprint=response.system_fingerprint,
-            usage=response.usage,
+            choices=converted_choices,
+            created=getattr(response, "created", None),
+            model=getattr(response, "model", None),
+            object=getattr(response, "object", None),
+            system_fingerprint=getattr(response, "system_fingerprint", None),
+            usage=getattr(response, "usage", None),
         )
 
     @property
@@ -148,6 +173,13 @@ class LiteLLMModel(BaseModelBackend):
         Returns:
             ChatCompletion
         """
+
+        request_config = self.model_config_dict.copy()
+        if tools:
+            request_config['tools'] = tools
+        if response_format:
+            request_config['response_format'] = response_format
+
         update_current_observation(
             input={
                 "messages": messages,
@@ -176,7 +208,7 @@ class LiteLLMModel(BaseModelBackend):
             base_url=self._url,
             model=self.model_type,
             messages=messages,
-            **self.model_config_dict,
+            **request_config,
             **self.kwargs,
         )
         response = self._convert_response_from_litellm_to_openai(response)
@@ -185,18 +217,3 @@ class LiteLLMModel(BaseModelBackend):
             usage=response.usage,
         )
         return response
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected
-        arguments to LiteLLM API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments.
-        """
-        for param in self.model_config_dict:
-            if param not in LITELLM_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into LiteLLM model backend."
-                )

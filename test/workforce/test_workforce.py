@@ -73,12 +73,15 @@ async def test_post_task_timeout():
     mock_task = MagicMock(spec=Task)
     mock_task.id = "test_task_id"
 
-    # Only verify that a TimeoutError is raised, not its specific message
-    with pytest.raises(asyncio.TimeoutError):
-        await workforce._post_task(mock_task, "test_worker_id")
+    # Since _post_task catches TimeoutError and doesn't re-raise it,
+    # we should test that it completes without raising an exception
+    # and that the in_flight_tasks counter is properly decremented
+    workforce._in_flight_tasks = 0
+    await workforce._post_task(mock_task, "test_worker_id")
 
     # Verify the channel method was called
     mock_channel.post_task.assert_called_once()
+    assert workforce._in_flight_tasks == 0
 
 
 @pytest.mark.asyncio
@@ -123,18 +126,22 @@ async def test_listen_to_channel_recovers_from_timeout():
             # Post initial ready tasks
             await workforce._post_ready_tasks()
 
-            # First try to get returned task - should timeout
-            try:
-                returned_task = await workforce._get_returned_task()
-                raise asyncio.TimeoutError("Simulated timeout")
-            except asyncio.TimeoutError:
-                # This is expected
-                pass
+            returned_task_first = await workforce._get_returned_task()
+            assert returned_task_first is None  # Should return None on timeout
+
+            # Ensure the mock was called for the first attempt
+            assert mock_channel.get_returned_task_by_publisher.call_count == 1
 
             # Second try should succeed
-            returned_task = await workforce._get_returned_task()
+            returned_task_after_timeout = await workforce._get_returned_task()
+            assert returned_task_after_timeout is mock_task
+
+            # Ensure the mock was called for the second attempt
+            assert mock_channel.get_returned_task_by_publisher.call_count == 2
+
             # Process the task
-            await workforce._handle_completed_task(returned_task)
+            await workforce._handle_completed_task(returned_task_after_timeout)
+            workforce._handle_completed_task.assert_called_once_with(mock_task)
 
         finally:
             workforce._running = False
@@ -219,6 +226,7 @@ async def test_multiple_timeout_points():
     mock_task.content = "Test task content"
     mock_task.additional_info = {}
     mock_task.result = "Mock task failed"
+    mock_task.assigned_worker_id = "test_worker_id"
 
     mock_task.failure_count = 0
     mock_task.get_depth.return_value = 0
@@ -243,13 +251,8 @@ async def test_multiple_timeout_points():
             # Get task - should succeed
             returned_task = await workforce._get_returned_task()
 
-            # Handle failed task - should timeout during remove_task
-            try:
+            with pytest.raises(asyncio.TimeoutError):
                 await workforce._handle_failed_task(returned_task)
-                raise AssertionError("Should have timed out on first attempt")
-            except asyncio.TimeoutError:
-                # This is expected
-                pass
 
         finally:
             workforce._running = False
@@ -312,10 +315,16 @@ def sample_shared_memory():
 @pytest.mark.parametrize("share_memory", [True, False])
 def test_workforce_initialization(mock_model, share_memory):
     r"""Test workforce initialization with different memory configurations"""
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.", model=mock_model
+    )
+    task_agent = ChatAgent("You are a helpful task planner.", model=mock_model)
+
     workforce = Workforce(
         description="Test Workforce",
-        coordinator_agent_kwargs={"model": mock_model},
-        task_agent_kwargs={"model": mock_model},
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
         share_memory=share_memory,
         graceful_shutdown_timeout=2.0,
     )
@@ -328,10 +337,16 @@ def test_shared_memory_operations(
     mock_model, mock_agent, sample_shared_memory
 ):
     r"""Test shared memory collection and synchronization"""
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.", model=mock_model
+    )
+    task_agent = ChatAgent("You are a helpful task planner.", model=mock_model)
+
     workforce = Workforce(
         description="Test Workforce",
-        coordinator_agent_kwargs={"model": mock_model},
-        task_agent_kwargs={"model": mock_model},
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
         share_memory=True,
     )
 
@@ -350,10 +365,16 @@ def test_shared_memory_operations(
 
 def test_cross_agent_memory_access(mock_model, sample_shared_memory):
     r"""Test cross-agent information access after memory sync"""
+    # Create custom agents for the workforce
+    coordinator_agent = ChatAgent(
+        "You are a helpful coordinator.", model=mock_model
+    )
+    task_agent = ChatAgent("You are a helpful task planner.", model=mock_model)
+
     workforce = Workforce(
         description="Test Workforce",
-        coordinator_agent_kwargs={"model": mock_model},
-        task_agent_kwargs={"model": mock_model},
+        coordinator_agent=coordinator_agent,
+        task_agent=task_agent,
         share_memory=True,
     )
 
@@ -394,3 +415,76 @@ def test_cross_agent_memory_access(mock_model, sample_shared_memory):
     # Both should know both pieces of information
     for content in [alice_content, bob_content]:
         assert "blue42" in content and "314" in content
+
+
+def test_dynamic_worker_addition():
+    r"""Test adding workers dynamically during different workforce states"""
+    workforce = Workforce(description="Dynamic Test Workforce")
+    from camel.societies.workforce.workforce import WorkforceState
+
+    # Test 1: Add worker in IDLE state (should work)
+    agent1 = ChatAgent("You are a test agent.")
+    workforce.add_single_agent_worker("Test Worker 1", agent1)
+    assert len(workforce._children) == 1
+
+    # Test 2: Add worker in PAUSED state (should work)
+    workforce._state = WorkforceState.PAUSED
+    agent2 = ChatAgent("You are another test agent.")
+    workforce.add_single_agent_worker("Test Worker 2", agent2)
+    assert len(workforce._children) == 2
+
+    # Test 3: Try to add worker in RUNNING state (should fail)
+    workforce._state = WorkforceState.RUNNING
+    agent3 = ChatAgent("You should not be added.")
+
+    with pytest.raises(
+        RuntimeError, match="Cannot add workers while workforce is running"
+    ):
+        workforce.add_single_agent_worker("Should Fail", agent3)
+
+    assert len(workforce._children) == 2  # No new worker added
+
+
+@pytest.mark.asyncio
+async def test_dynamic_worker_types():
+    r"""Test adding different types of workers during pause"""
+    workforce = Workforce(description="Worker Types Test")
+    from camel.societies.workforce.workforce import WorkforceState
+
+    workforce._state = WorkforceState.PAUSED
+
+    # Add SingleAgentWorker
+    agent = ChatAgent("You are a specialist.")
+    workforce.add_single_agent_worker("Specialist", agent)
+    assert len(workforce._children) == 1
+
+    # Add RolePlayingWorker
+    workforce.add_role_playing_worker(
+        description="Analysis Team",
+        assistant_role_name="Analyst",
+        user_role_name="Expert",
+    )
+    assert len(workforce._children) == 2
+
+    # Add nested Workforce
+    nested = Workforce(description="Sub-team")
+    workforce.add_workforce(nested)
+    assert len(workforce._children) == 3
+
+
+def test_start_child_node_helper():
+    r"""Test the _start_child_node_when_paused helper function"""
+    workforce = Workforce(description="Helper Test")
+    from camel.societies.workforce.workforce import WorkforceState
+
+    async def mock_coroutine():
+        return "test"
+
+    # Should do nothing when not paused
+    workforce._state = WorkforceState.IDLE
+    workforce._start_child_node_when_paused(mock_coroutine())
+
+    # Should do nothing when no loop
+    workforce._state = WorkforceState.PAUSED
+    workforce._loop = None
+    workforce._start_child_node_when_paused(mock_coroutine())

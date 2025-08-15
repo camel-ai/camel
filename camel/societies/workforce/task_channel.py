@@ -23,6 +23,8 @@ class PacketStatus(Enum):
     states:
 
     - ``SENT``: The packet has been sent to a worker.
+    - ``PROCESSING``: The packet has been claimed by a worker and is being
+    processed.
     - ``RETURNED``: The packet has been returned by the worker, meaning that
       the status of the task inside has been updated.
     - ``ARCHIVED``: The packet has been archived, meaning that the content of
@@ -31,6 +33,7 @@ class PacketStatus(Enum):
     """
 
     SENT = "SENT"
+    PROCESSING = "PROCESSING"
     RETURNED = "RETURNED"
     ARCHIVED = "ARCHIVED"
 
@@ -88,17 +91,21 @@ class TaskChannel:
         """
         async with self._condition:
             while True:
-                for packet in self._task_dict.values():
+                for task_id, packet in list(self._task_dict.items()):
                     if packet.publisher_id != publisher_id:
                         continue
                     if packet.status != PacketStatus.RETURNED:
                         continue
+                    # Remove the task to prevent returning it again
+                    del self._task_dict[task_id]
+                    self._condition.notify_all()
                     return packet.task
                 await self._condition.wait()
 
     async def get_assigned_task_by_assignee(self, assignee_id: str) -> Task:
-        r"""Get a task from the channel that has been assigned to the
-        assignee.
+        r"""Atomically get and claim a task from the channel that has been
+        assigned to the assignee. This prevents race conditions where multiple
+        concurrent calls might retrieve the same task.
         """
         async with self._condition:
             while True:
@@ -107,6 +114,9 @@ class TaskChannel:
                         packet.status == PacketStatus.SENT
                         and packet.assignee_id == assignee_id
                     ):
+                        # Atomically claim the task by changing its status
+                        packet.status = PacketStatus.PROCESSING
+                        self._condition.notify_all()
                         return packet.task
                 await self._condition.wait()
 
