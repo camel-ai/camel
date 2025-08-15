@@ -396,6 +396,9 @@ class WebSocketBrowserWrapper:
         """Send a command to the WebSocket server and get response."""
         await self._ensure_connection()
 
+        # Process params to ensure refs have 'e' prefix
+        params = self._process_refs_in_params(params)
+
         message_id = str(uuid.uuid4())
         message = {'id': message_id, 'command': command, 'params': params}
 
@@ -509,17 +512,53 @@ class WebSocketBrowserWrapper:
             return f'e{ref}'
         return ref
 
+    def _process_refs_in_params(
+        self, params: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Process parameters to ensure all refs have 'e' prefix."""
+        if not params:
+            return params
+
+        # Create a copy to avoid modifying the original
+        processed = params.copy()
+
+        # Handle direct ref parameters
+        if 'ref' in processed:
+            processed['ref'] = self._ensure_ref_prefix(processed['ref'])
+
+        # Handle from_ref and to_ref for drag operations
+        if 'from_ref' in processed:
+            processed['from_ref'] = self._ensure_ref_prefix(
+                processed['from_ref']
+            )
+        if 'to_ref' in processed:
+            processed['to_ref'] = self._ensure_ref_prefix(processed['to_ref'])
+
+        # Handle inputs array for type_multiple
+        if 'inputs' in processed and isinstance(processed['inputs'], list):
+            processed_inputs = []
+            for input_item in processed['inputs']:
+                if isinstance(input_item, dict) and 'ref' in input_item:
+                    processed_input = input_item.copy()
+                    processed_input['ref'] = self._ensure_ref_prefix(
+                        input_item['ref']
+                    )
+                    processed_inputs.append(processed_input)
+                else:
+                    processed_inputs.append(input_item)
+            processed['inputs'] = processed_inputs
+
+        return processed
+
     @action_logger
     async def click(self, ref: str) -> Dict[str, Any]:
         """Click an element."""
-        ref = self._ensure_ref_prefix(ref)
         response = await self._send_command('click', {'ref': ref})
         return response
 
     @action_logger
     async def type(self, ref: str, text: str) -> Dict[str, Any]:
         """Type text into an element."""
-        ref = self._ensure_ref_prefix(ref)
         response = await self._send_command('type', {'ref': ref, 'text': text})
         return response
 
@@ -528,24 +567,12 @@ class WebSocketBrowserWrapper:
         self, inputs: List[Dict[str, str]]
     ) -> Dict[str, Any]:
         """Type text into multiple elements."""
-        # Process each input to ensure ref has 'e' prefix
-        processed_inputs = []
-        for input_item in inputs:
-            processed_input = input_item.copy()
-            if 'ref' in processed_input:
-                processed_input['ref'] = self._ensure_ref_prefix(
-                    processed_input['ref']
-                )
-            processed_inputs.append(processed_input)
-        response = await self._send_command(
-            'type', {'inputs': processed_inputs}
-        )
+        response = await self._send_command('type', {'inputs': inputs})
         return response
 
     @action_logger
     async def select(self, ref: str, value: str) -> Dict[str, Any]:
         """Select an option."""
-        ref = self._ensure_ref_prefix(ref)
         response = await self._send_command(
             'select', {'ref': ref, 'value': value}
         )
@@ -578,8 +605,6 @@ class WebSocketBrowserWrapper:
     @action_logger
     async def mouse_drag(self, from_ref: str, to_ref: str) -> Dict[str, Any]:
         """Control the mouse to drag and drop in the browser using ref IDs."""
-        from_ref = self._ensure_ref_prefix(from_ref)
-        to_ref = self._ensure_ref_prefix(to_ref)
         response = await self._send_command(
             'mouse_drag',
             {'from_ref': from_ref, 'to_ref': to_ref},
