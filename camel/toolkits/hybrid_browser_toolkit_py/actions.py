@@ -132,12 +132,78 @@ class ActionExecutor:
             "new_tab_created": False,
         }
 
-        # Find the first valid selector
+        # Find the first valid selector with retry logic for navigation errors
+        max_retries = 3
         found_selector = None
-        for sel in strategies:
-            if await self.page.locator(sel).count() > 0:
-                found_selector = sel
-                break
+
+        for attempt in range(max_retries):
+            try:
+                # Check if page is still valid before proceeding
+                if self.page.is_closed():
+                    raise Exception(
+                        "Target page, context or browser has been closed"
+                    )
+
+                for sel in strategies:
+                    try:
+                        # Validate page context before calling count()
+                        if self.page.is_closed():
+                            raise Exception(
+                                "Target page, context or browser has been "
+                                "closed"
+                            )
+
+                        count = await self.page.locator(sel).count()
+                        if count > 0:
+                            found_selector = sel
+                            break
+                    except Exception as e:
+                        error_msg = str(e)
+                        # Check if this is a navigation-related error
+                        is_navigation_error = (
+                            "Target page, context or browser has been closed"
+                            in error_msg
+                            or "Execution context was destroyed" in error_msg
+                            or "Most likely because of a navigation"
+                            in error_msg
+                        )
+
+                        if is_navigation_error and attempt < max_retries - 1:
+                            # Wait a bit and retry
+                            await asyncio.sleep(0.1)
+                            break  # Break inner loop to retry
+                        else:
+                            # Re-raise for non-navigation errors or final
+                            # attempt
+                            raise
+
+                # If we found a selector, break out of retry loop
+                if found_selector:
+                    break
+
+            except Exception as e:
+                error_msg = str(e)
+                is_navigation_error = (
+                    "Target page, context or browser has been closed"
+                    in error_msg
+                    or "Execution context was destroyed" in error_msg
+                    or "Most likely because of a navigation" in error_msg
+                )
+
+                if is_navigation_error and attempt < max_retries - 1:
+                    # Wait and retry for navigation errors
+                    await asyncio.sleep(0.1)
+                    continue
+                else:
+                    # Re-raise for non-navigation errors or final attempt
+                    details['error'] = f"Page context error: {error_msg}"
+                    return {
+                        "message": (
+                            f"Error: Click failed due to page context issue: "
+                            f"{error_msg}"
+                        ),
+                        "details": details,
+                    }
 
         if not found_selector:
             details['error'] = "Element not found with any strategy"
@@ -237,15 +303,46 @@ class ActionExecutor:
             "text_length": len(text),
         }
 
-        try:
-            await self.page.fill(target, text, timeout=self.short_timeout)
-            return {
-                "message": f"Typed '{text}' into {target}",
-                "details": details,
-            }
-        except Exception as exc:
-            details["error"] = str(exc)
-            return {"message": f"Type failed: {exc}", "details": details}
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # Check if page is still valid before proceeding
+                if self.page.is_closed():
+                    raise Exception(
+                        "Target page, context or browser has been closed"
+                    )
+
+                await self.page.fill(target, text, timeout=self.short_timeout)
+                return {
+                    "message": f"Typed '{text}' into {target}",
+                    "details": details,
+                }
+            except Exception as exc:
+                error_msg = str(exc)
+                is_navigation_error = (
+                    "Target page, context or browser has been closed"
+                    in error_msg
+                    or "Execution context was destroyed" in error_msg
+                    or "Most likely because of a navigation" in error_msg
+                )
+
+                if is_navigation_error and attempt < max_retries - 1:
+                    # Wait and retry for navigation errors
+                    await asyncio.sleep(0.1)
+                    continue
+                else:
+                    # Final attempt or non-navigation error
+                    details["error"] = str(exc)
+                    return {
+                        "message": f"Type failed: {exc}",
+                        "details": details,
+                    }
+
+        # Fallback return (should never reach here)
+        return {
+            "message": "Type failed: Maximum retries exceeded",
+            "details": details,
+        }
 
     async def _select(self, action: Dict[str, Any]) -> Dict[str, Any]:
         r"""Handle selecting options from dropdowns."""
@@ -266,17 +363,48 @@ class ActionExecutor:
             "value": value,
         }
 
-        try:
-            await self.page.select_option(
-                target, value, timeout=self.default_timeout
-            )
-            return {
-                "message": f"Selected '{value}' in {target}",
-                "details": details,
-            }
-        except Exception as exc:
-            details["error"] = str(exc)
-            return {"message": f"Select failed: {exc}", "details": details}
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # Check if page is still valid before proceeding
+                if self.page.is_closed():
+                    raise Exception(
+                        "Target page, context or browser has been closed"
+                    )
+
+                await self.page.select_option(
+                    target, value, timeout=self.default_timeout
+                )
+                return {
+                    "message": f"Selected '{value}' in {target}",
+                    "details": details,
+                }
+            except Exception as exc:
+                error_msg = str(exc)
+                is_navigation_error = (
+                    "Target page, context or browser has been closed"
+                    in error_msg
+                    or "Execution context was destroyed" in error_msg
+                    or "Most likely because of a navigation" in error_msg
+                )
+
+                if is_navigation_error and attempt < max_retries - 1:
+                    # Wait and retry for navigation errors
+                    await asyncio.sleep(0.1)
+                    continue
+                else:
+                    # Final attempt or non-navigation error
+                    details["error"] = str(exc)
+                    return {
+                        "message": f"Select failed: {exc}",
+                        "details": details,
+                    }
+
+        # Fallback return (should never reach here)
+        return {
+            "message": "Select failed: Maximum retries exceeded",
+            "details": details,
+        }
 
     async def _wait(self, action: Dict[str, Any]) -> Dict[str, Any]:
         r"""Handle wait actions."""
