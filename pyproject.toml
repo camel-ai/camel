@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.75a2"
+version = "0.2.75a3"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -72,6 +72,7 @@ rag = [
     "pytidb-experimental==0.0.1.dev4",
     "faiss-cpu>=1.7.2,<2",
     "weaviate-client>=4.15.0",
+    "protobuf>=6.0.0",
     "neo4j>=5.18.0,<6",
     "nebula3-python==3.8.2",
     "rank-bm25>=0.2.2,<0.3",
@@ -177,7 +178,6 @@ dev_tools = [
     "daytona-sdk==0.20.0",
     "aci-sdk>=1.0.0b1",
     "langfuse>=2.60.5",
-    "traceroot==0.0.4a5",
 ]
 model_platforms = [
     "litellm>=1.38.1,<2",
@@ -210,6 +210,7 @@ storage = [
     "mem0ai>=0.1.73",
     "pyobvector>=0.1.18",
     "weaviate-client>=4.15.0",
+    "protobuf>=6.0.0",
     "psycopg[binary]>=3.1.18,<4",
     "pgvector>=0.2.4,<0.3",
     "surrealdb>=1.0.6",
@@ -303,6 +304,7 @@ eigent = [
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
     "slack-sdk>=3.27.2,<4",
+    "google-api-python-client==2.166.0",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -418,6 +420,7 @@ all = [
     "pylatex>=1.4.2",
     "chunkr-ai>=0.0.50, <0.1.0",
     "weaviate-client>=4.15.0",
+    "protobuf>=6.0.0",
     "python-pptx>=1.0.2",
     "langfuse>=2.60.5",
     "Flask>=2.0",
@@ -427,7 +430,6 @@ all = [
     "pgvector>=0.2.4,<0.3",
     "surrealdb>=1.0.6",
     "chromadb>=0.6.0,<1.0.0",
-    "traceroot==0.0.4a5",
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
 ]
