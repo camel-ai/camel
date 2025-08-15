@@ -14,6 +14,7 @@
 
 import atexit
 import os
+import re
 import platform
 import queue
 import shutil
@@ -85,6 +86,10 @@ class TerminalToolkit(BaseToolkit):
         needed.
     """
 
+    _ENTER_KEYS = {"Enter", "C-m", "KPEnter", "C-j", "^M", "^J"}
+    _ENDS_WITH_NEWLINE_PATTERN = r"[\r\n]$"
+    _NEWLINE_CHARS = "\r\n"
+    _TMUX_COMPLETION_COMMAND = "; tmux wait -S done"
     def __init__(
         self,
         timeout: Optional[float] = 20.0,
@@ -130,6 +135,8 @@ class TerminalToolkit(BaseToolkit):
         self.initial_env_path: Optional[str] = None
         self.initial_env_prepared = False
         self.uv_path: Optional[str] = None
+
+        self._previous_buffer: Optional[str] = None  # For incremental output
 
         atexit.register(self.__del__)
 
@@ -198,7 +205,7 @@ class TerminalToolkit(BaseToolkit):
         terminal.
         """
 
-        self.log_file = os.path.join(os.getcwd(), "camel_terminal.txt")
+        self.log_file = os.path.join(self.working_dir, "camel_terminal.txt")
 
         # Inform the user
         logger.info(f"Terminal output will be redirected to: {self.log_file}")
@@ -788,90 +795,80 @@ class TerminalToolkit(BaseToolkit):
     # Tmux backend (private)
     # =========================
     def _tmux_available(self) -> bool:
-        try:
-            return shutil.which("tmux") is not None
-        except Exception:
-            return False
+        if self.use_docker_backend:
+            result = self._docker_container.exec_run("tmux -V")
+            if result.exit_code != 0:
+                return False
+        else:
+            try:
+                return shutil.which("tmux") is not None
+            except Exception:
+                return False
+        return True
 
     def _tmux_session_name(self, id: str) -> str:
-        return f"camel_{id}"
+        return f"{id}"
 
     def _tmux_log_file(self, id: str) -> Optional[str]:
         try:
-            self._session_logs_dir.mkdir(parents=True, exist_ok=True)
+            # self._session_logs_dir.mkdir(parents=True, exist_ok=True)
             return str(self._session_logs_dir / f"{id}.log")
         except Exception:
             return None
 
     def _tmux_has_session(self, tmux_name: str) -> bool:
-        try:
+        # try:
+        if self.use_docker_backend:
+            # Check if tmux session exists in the Docker container
+            result = self._docker_container.exec_run(
+                ["tmux", "has-session", "-t", tmux_name],
+            )
+            return result.exit_code == 0
+        else:
             result = subprocess.run(
                 ["tmux", "has-session", "-t", tmux_name],
                 capture_output=True,
                 text=True,
             )
             return result.returncode == 0
-        except Exception:
-            return False
+        # except 
+        #     return False
 
     def _tmux_ensure_session(self, id: str) -> Optional[str]:
         if not self._tmux_available():
             return None
         tmux_name = self._tmux_session_name(id)
+
         if not self._tmux_has_session(tmux_name):
+            # If tmux session doesn't exist, create it
+            logger.info(f"Creating new tmux session: {tmux_name}")
+            log_file = self._tmux_log_file(id)
+            logger.info(f"Logging to: {log_file}")
             cmd = [
-                "tmux",
-                "new-session",
-                "-d",
-                "-s",
-                tmux_name,
-                "-x",
-                "160",
-                "-y",
-                "40",
-                "-c",
-                self.working_dir,
-            ]
+                    "bash",
+                    "-c",
+                    (
+                        # TODO(alexgshaw) make x & y configurable.
+                        f"tmux new-session -x 160 -y 40 -d -s {tmux_name} \\; "
+                        f"pipe-pane -t {tmux_name} "
+                        f'"cat > {log_file}"'
+                    ),
+                    ]
             try:
-                subprocess.run(cmd, check=True, capture_output=True)
-                # remain-on-exit for short-lived commands
-                subprocess.run(
-                    [
-                        "tmux",
-                        "set-option",
-                        "-t",
-                        tmux_name,
-                        "remain-on-exit",
-                        "on",
-                    ],
-                    capture_output=True,
-                )
-                # history-limit
-                subprocess.run(
-                    [
-                        "tmux",
-                        "set-option",
-                        "-t",
-                        tmux_name,
-                        "history-limit",
-                        "10000",
-                    ],
-                    capture_output=True,
-                )
-                # pipe-pane to per-session log
-                log_file = self._tmux_log_file(id)
-                if log_file:
-                    subprocess.run(
-                        [
-                            "tmux",
-                            "pipe-pane",
-                            "-t",
-                            tmux_name,
-                            f"cat > {log_file}",
-                        ],
-                        capture_output=True,
+                if self.use_docker_backend:
+                    self._docker_ensure_container()
+                    if not self._docker_container:
+                        logger.warning(
+                            "Docker container not available for tmux session"
+                        )
+                        return None
+                    self._docker_container.exec_run(
+                        cmd,
                     )
+                else:
+                    subprocess.run(cmd, check=True, capture_output=True)
                 self._tmux_sessions[id] = tmux_name
+                return tmux_name
             except Exception as e:
                 logger.warning(
                     f"Failed to create tmux session {tmux_name}: {e}"
@@ -879,28 +876,210 @@ class TerminalToolkit(BaseToolkit):
                 return None
         return tmux_name
 
-    def _tmux_send_command(self, id: str, command: str) -> str:
+
+    def capture_pane(self, id:str, capture_entire: bool = False) -> str:
+        """
+        Capture the current tmux pane content.
+        
+        Args:
+            capture_entire (bool): If True, captures the entire pane content,
+                otherwise captures the last 80 lines.
+        
+        Returns:
+            str: The captured pane content.
+        """
+        tmux_name = self._tmux_session_name(id)
+        if not self._tmux_has_session(tmux_name):
+            return "Tmux session not available"
+        
+        # Capture entire pane or last 80 lines
+        capture_cmd = ["tmux", "capture-pane", "-p", "-t", tmux_name]
+        if capture_entire:
+            capture_cmd += ["-S", "-"]
+        
+        # switch between docker / subprocess 
+        if self.use_docker_backend:
+            self._docker_ensure_container()
+            if not self._docker_container:
+                raise RuntimeError
+                "Docker container not available for pane capture"
+                
+            result = self._docker_exec(capture_cmd)
+            return result
+        else:
+            result = subprocess.run(
+                capture_cmd, capture_output=True, text=True, check=True
+            )
+        
+            return result.stdout
+
+    def get_incremental_output(self, id:str) -> str:
+        """
+        Get either new terminal output since last call, or current screen if
+        unable to determine.
+        
+        This method tracks the previous buffer state and attempts to find new content
+        by comparing against the current full buffer. This provides better handling for
+        commands with large output that would overflow the visible screen.
+        
+        Returns:
+            str: Formatted output with either "New Terminal Output:" or
+                 "Current Terminal Screen:"
+        """
+        current_buffer = self.capture_pane(id, capture_entire=True)
+        
+        # First capture - no previous state
+        if self._previous_buffer is None:
+            self._previous_buffer = current_buffer
+            return f"Current Terminal Screen:\n{current_buffer}"
+        
+        # Try to find new content
+        new_content = self._find_new_content(current_buffer)
+        
+        # Update state
+        self._previous_buffer = current_buffer
+        
+        if new_content is not None:
+            if new_content.strip():
+                return f"New Terminal Output:\n{new_content}"
+            else:
+                # No new content, show current screen
+                return f""
+        else:
+            # Couldn't reliably determine new content, fall back to current screen
+            return f""
+    
+    def _find_new_content(self, current_buffer):
+        """
+        Find new content by comparing current buffer with previous buffer.
+        
+        Args:
+            current_lines: Current buffer split into lines
+            
+        Returns:
+            str: New content, or None if can't reliably determine
+        """
+        pb = self._previous_buffer.strip()
+        if pb in current_buffer:
+            idx = current_buffer.index(pb)
+            # Find the end of the previous buffer content
+            if '\n' in pb:
+                idx = pb.rfind("\n")
+            return current_buffer[idx:]
+        return None
+
+    def _is_enter_key(self, key: str) -> bool:
+        return key in self._ENTER_KEYS
+
+    def _ends_with_newline(self, key: str) -> bool:
+        result = re.search(self._ENDS_WITH_NEWLINE_PATTERN, key)
+        return result is not None
+
+    def _is_executing_command(self, key: str) -> bool:
+        return self._is_enter_key(key) or self._ends_with_newline(key)
+
+    def _prevent_execution(self, keys: list[str]) -> list[str]:
+        keys = keys.copy()
+        while keys and self._is_executing_command(keys[-1]):
+            if self._is_enter_key(keys[-1]):
+                keys.pop()
+            else:
+                stripped_key = keys[-1].rstrip(self._NEWLINE_CHARS)
+
+                if stripped_key:
+                    keys[-1] = stripped_key
+                else:
+                    keys.pop()
+
+        return keys
+
+    def _prepare_keys(
+        self,
+        keys: str | list[str],
+        block: bool,
+    ) -> tuple[list[str], bool]:
+        """
+        Prepare keys for sending to the terminal.
+
+        Args:
+            keys (str | list[str]): The keys to send to the terminal.
+            block (bool): Whether to wait for the command to complete.
+
+        Returns:
+            tuple[list[str], bool]: The keys to send to the terminal and whether the
+                the keys are blocking.
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        if not block or not keys or not self._is_executing_command(keys[-1]):
+            return keys
+
+        keys = self._prevent_execution(keys)
+        keys.extend([self._TMUX_COMPLETION_COMMAND, "Enter"])
+
+        return keys
+
+    def _tmux_send_command(self, id: str, command: str, block=False) -> str:
         tmux_name = self._tmux_ensure_session(id)
         if not tmux_name:
             return "Tmux backend unavailable"
+
+        command = ["tmux", "send-keys", "-t", tmux_name, f"{command}", "C-m"]
+        command = self._prepare_keys(command, block=block)
+
+        # update terminal session previous content
+        self.get_incremental_output(id)
+        print(f"Session {id} screen before running command: \n",
+                    self._previous_buffer.strip())
+
+        # Execute the block command in the tmux 
         try:
-            # Send command and Enter
-            subprocess.run(
-                ["tmux", "send-keys", "-t", tmux_name, command, "Enter"],
-                capture_output=True,
-                text=True,
-            )
-            # Small delay to accumulate output
-            time.sleep(0.2)
-            # Capture last 80 lines
-            result = subprocess.run(
-                ["tmux", "capture-pane", "-p", "-t", tmux_name, "-S", "-80"],
-                capture_output=True,
-                text=True,
-            )
-            return result.stdout
+            if self.use_docker_backend:
+                self._docker_ensure_container()
+                if not self._docker_container:
+                    return "[Error]: Docker container not available for tmux command"
+
+                result = self._docker_container.exec_run(command)
+                self._update_terminal_output(' '.join(command))
+                # timeout control
+                if block:
+                    result = self._docker_container.exec_run(
+                        ["timeout", f"{self._timeout}s", "tmux", "wait", "done"]
+                    )
+                    if result.exit_code != 0:
+                        return f"[Error]: Command execution failed: {result.output.decode()}"
+                
+                output = self.get_incremental_output(id)
+                self._update_terminal_output(output)
+                print(f"Session {id} screen after running command: \n",
+                            self._previous_buffer.strip())
+                return output
+            else:
+                subprocess.run(command, check=True, capture_output=True)
+
+                # timeout control
+                try:
+                    result = subprocess.run(
+                        f"timeout {self._timeout} tmux wait done",
+                        shell=True,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                    # print("Command succeeded:", result.stdout)
+                    output = self.get_incremental_output(id)
+                    return output
+                except subprocess.CalledProcessError as e:
+                    if e.returncode == 124:
+                        return f"[Error]: Command timed out after {self._timeout} seconds"
+                    else:
+                        return f"[Error]: Command failed with return code {e.returncode}: {e.stderr}"
+
+        except subprocess.CalledProcessError as e:
+            return f"[Error]: Failed to send command: {e.stderr.strip()}"
         except Exception as e:
-            return f"Tmux command failed: {e}"
+            return f"[Error]: Failed to send command: {e}"
 
     # =========================
     # Docker backend (private)
@@ -975,17 +1154,17 @@ class TerminalToolkit(BaseToolkit):
         except Exception as e:
             raise RuntimeError(f"Failed to ensure Docker container: {e}")
 
-    def _docker_exec(self, command: str) -> str:
+    def _docker_exec(self, command: str | list[str]) -> str:
         if not self._docker_container:
             return "Docker container not available"
         try:
             result = self._docker_container.exec_run(
-                command, workdir="/workspace"
+                command,
             )
             out = result.output
             if isinstance(out, bytes):
                 return out.decode(errors="replace")
-            return str(out)
+            return str(out).strip()
         except Exception as e:
             return f"Docker exec failed: {e}"
 
@@ -1280,18 +1459,23 @@ class TerminalToolkit(BaseToolkit):
 
         return True, command
 
-    def shell_exec(self, id: str, command: str) -> str:
+    def shell_exec(self, id: str, command: str, block: bool = False) -> str:
         r"""Executes a shell command in a specified session.
 
         This function creates and manages shell sessions to execute commands,
         simulating a real terminal. The behavior depends on the toolkit's
         interactive mode setting. Each session is identified by a unique ID.
-        If a session with the given ID does not exist, it will be created.
+        If a session with the given ID does not exist, it will be created. Use same id for multi-round
+        interactive programs to keep in the same session. Don't block when running multi-round interactive programs.
 
         Args:
-            id (str): A unique identifier for the shell session. This is used
-                to manage multiple concurrent shell processes.
+            id (str): A unique identifier for the shell session or tmux sessions. This is used
+                to manage multiple concurrent shell processes. Use same id when running interactive
+                program in tmux session to keep in the same session.
             command (str): The shell command to be executed.
+            block (bool): If True, the function will wait for the command to
+                complete before returning. If False, it will return immediately
+                after sending the command to the shell.
 
         Returns:
             str: The standard output and standard error from the command. If an
@@ -1321,49 +1505,23 @@ class TerminalToolkit(BaseToolkit):
                 self._docker_ensure_container()
                 # If command obviously needs a tty / long-running,
                 # route via tmux inside container
-                needs_tmux = any(
-                    kw in command
-                    for kw in [
-                        "python -m http.server",
-                        "npm run",
-                        "tail -f",
-                        "top",
-                        "htop",
-                    ]
-                )
-                if needs_tmux:
-                    # Ensure per-id tmux session inside container
-                    self._docker_tmux_ensure_session(id)
-                    # Send command via tmux to keep alive
-                    tmux_name = self._docker_tmux_session_name(id)
-                    container = self._docker_container
-                    if container is None:
-                        return "Docker container not available"
-                    container.exec_run(
-                        f"tmux send-keys -t {tmux_name} '{command}' Enter"
-                    )
-                    time.sleep(0.3)
-                    pane = container.exec_run(
-                        f"tmux capture-pane -p -t {tmux_name} -S -80"
-                    )
-                    out = (
-                        pane.output.decode(errors="replace")
-                        if isinstance(pane.output, bytes)
-                        else str(pane.output)
-                    )
-                    self._update_terminal_output(out + "\n")
-                    return out
+                if self.enable_tmux_backend:
+                    out = self._tmux_send_command(id, command, block)
                 else:
                     out = self._docker_exec(command)
-                    self._update_terminal_output(out + "\n")
-                    return out
+                assert not out.startswith("[Error]"), (
+                    f"Docker execution failed: {out}"
+                )
+                self._update_terminal_output(out + "\n")
+                return out
+                
             except Exception as e:
                 # Fall through to local execution if docker fails
                 logger.warning(f"Docker execution fallback due to: {e}")
 
         # If tmux backend is enabled, run via tmux to allow long-running tasks
         if self.enable_tmux_backend and self._tmux_available():
-            out = self._tmux_send_command(id, command)
+            out = self._tmux_send_command(id, command, block)
             self._update_terminal_output(out + "\n")
             return out
 
