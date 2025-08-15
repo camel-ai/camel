@@ -35,7 +35,7 @@ You can turn any CAMEL toolkit into a full-featured MCP server—making its tool
 Below is a minimal script to expose <b>ArxivToolkit</b> as an MCP server.  
 Swap in any other toolkit (e.g., <code>SearchToolkit</code>, <code>MathToolkit</code>), they all work the same way!
 
-<CodeBlock language="python" title="arxiv_toolkit_server.py">
+```python
 from camel.toolkits import ArxivToolkit
 import argparse
 
@@ -52,7 +52,7 @@ args = parser.parse_args()
 
 toolkit = ArxivToolkit()
 toolkit.mcp.run(args.mode)
-</CodeBlock>
+```
 
 - **stdio:** For local IPC (default, fast and secure for single-machine setups)
 - **sse:** Server-Sent Events (good for remote servers and web clients)
