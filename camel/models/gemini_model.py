@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
-from camel.configs import Gemini_API_PARAMS, GeminiConfig
+from camel.configs import GeminiConfig
 from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
@@ -335,18 +335,3 @@ class GeminiModel(OpenAICompatibleModel):
             model=self.model_type,
             **request_config,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Gemini API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Gemini API.
-        """
-        for param in self.model_config_dict:
-            if param not in Gemini_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Gemini model backend."
-                )

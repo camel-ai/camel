@@ -40,6 +40,18 @@ def get_action_limits():
 
   Dict[str, int]: Action limits configuration.
 
+<a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.BrowserConfig.get_log_limits"></a>
+
+### get_log_limits
+
+```python
+def get_log_limits():
+```
+
+**Returns:**
+
+  Dict[str, int]: Console Log limits configuration.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.BrowserConfig.get_action_timeout"></a>
 
 ### get_action_timeout
@@ -129,6 +141,24 @@ Get maximum scroll amount with optional override.
 **Returns:**
 
   int: Maximum scroll amount in pixels.
+
+<a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.BrowserConfig.get_max_log_limit"></a>
+
+### get_max_log_limit
+
+```python
+def get_max_log_limit(override: Optional[int] = None):
+```
+
+Get maximum log limit with optional override.
+
+**Parameters:**
+
+- **override**: Optional log limit override value.
+
+**Returns:**
+
+  int: Maximum log limit.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.BrowserConfig.get_screenshot_timeout"></a>
 
@@ -335,6 +365,16 @@ def get_max_scroll_amount(cls, override: Optional[int] = None):
 
 Get maximum scroll amount with optional override.
 
+<a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_max_log_limit"></a>
+
+### get_max_log_limit
+
+```python
+def get_max_log_limit(cls, override: Optional[int] = None):
+```
+
+Get maximum log limit with optional override.
+
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.ConfigLoader.get_screenshot_timeout"></a>
 
 ### get_screenshot_timeout
@@ -444,6 +484,16 @@ def get_max_scroll_amount(override: Optional[int] = None):
 ```
 
 Get maximum scroll amount with optional override.
+
+<a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_max_log_limit"></a>
+
+## get_max_log_limit
+
+```python
+def get_max_log_limit(override: Optional[int] = None):
+```
+
+Get maximum log limit with optional override.
 
 <a id="camel.toolkits.hybrid_browser_toolkit_py.config_loader.get_screenshot_timeout"></a>
 

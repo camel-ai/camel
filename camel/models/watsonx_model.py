@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel
 
-from camel.configs import WATSONX_API_PARAMS, WatsonXConfig
+from camel.configs import WatsonXConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
@@ -291,21 +291,6 @@ class WatsonXModel(BaseModelBackend):
         except Exception as e:
             logger.error(f"Unexpected error when calling WatsonX API: {e!s}")
             raise
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected
-        arguments to WatsonX API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to WatsonX API.
-        """
-        for param in self.model_config_dict:
-            if param not in WATSONX_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into WatsonX model backend."
-                )
 
     @property
     def stream(self) -> bool:

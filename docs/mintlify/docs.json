@@ -506,7 +506,6 @@
               "reference/camel.toolkits.notion_mcp_toolkit",
               "reference/camel.toolkits.notion_toolkit",
               "reference/camel.toolkits.open_api_toolkit",
-              "reference/camel.toolkits.openai_agent_toolkit",
               "reference/camel.toolkits.openai_image_toolkit",
               "reference/camel.toolkits.openbb_toolkit",
               "reference/camel.toolkits.origene_mcp_toolkit",
