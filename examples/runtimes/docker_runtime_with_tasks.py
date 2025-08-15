@@ -15,7 +15,6 @@
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.runtimes import DockerRuntime, TaskConfig
 from camel.toolkits.code_execution import CodeExecutionToolkit
@@ -42,15 +41,9 @@ runtime = (
 
 tools = runtime.get_tools()
 
-# set up LLM model
-assistant_model_config = ChatGPTConfig(
-    temperature=0.0,
-)
-
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    model_config_dict=assistant_model_config.as_dict(),
 )
 
 
