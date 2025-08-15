@@ -60,7 +60,6 @@ from camel.memories import (
     MemoryRecord,
     ScoreBasedContextCreator,
 )
-from camel.memories.context_compressors import ContextCompressionService
 from camel.messages import (
     BaseMessage,
     FunctionCallingMessage,
@@ -387,17 +386,6 @@ class ChatAgent(BaseAgent):
             usage. When enabled, removes FUNCTION/TOOL role messages and
             ASSISTANT messages with tool_calls after each step.
             (default: :obj:`False`)
-        auto_compress_context (bool): Whether to automatically compress the
-            context of the agent. If set to true, exceeding a number of
-            messages or tokens in the context triggers a summarization of the
-            context to be replaced with the full conversation history.
-            (default: :obj:`False`)
-        compress_message_limit (int): The number of messages in history to
-            trigger a context compression. Works only if auto_compress_context
-            is set to true. (default: :obj:`40`)
-        compress_token_limit (Optional[int]): The number of tokens in history
-            to trigger a context compression. Works only if
-            auto_compress_context is set to true. (default: :obj:`None`)
         memory_save_directory (Optional[str]): The directory to save the
             summary of conversation and the full conversation history. If set,
             the memory will be saved to this directory.
@@ -441,9 +429,6 @@ class ChatAgent(BaseAgent):
         mask_tool_output: bool = False,
         pause_event: Optional[asyncio.Event] = None,
         prune_tool_calls_from_memory: bool = False,
-        auto_compress_context: bool = False,
-        compress_message_limit: int = 40,
-        compress_token_limit: Optional[int] = None,
         memory_save_directory: Optional[str] = None,
     ) -> None:
         if isinstance(model, ModelManager):
@@ -466,13 +451,11 @@ class ChatAgent(BaseAgent):
             token_limit or self.model_backend.token_limit,
         )
 
-        # only warn if auto_compress_context is enabled
-        warn_on_empty = auto_compress_context
         self._memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator,
             window_size=message_window_size,
             agent_id=self.agent_id,
-            warn_on_empty=warn_on_empty,
+            warn_on_empty=False,
         )
 
         # So we don't have to pass agent_id when we define memory
@@ -533,17 +516,7 @@ class ChatAgent(BaseAgent):
         self._secure_result_store: Dict[str, Any] = {}
         self.pause_event = pause_event
         self.prune_tool_calls_from_memory = prune_tool_calls_from_memory
-        self.auto_compress_context = auto_compress_context
-        self.compress_message_limit = compress_message_limit
-        self.compress_token_limit = compress_token_limit
-        self.is_compressing_context = False
         self.memory_save_directory = memory_save_directory
-
-        if self.auto_compress_context:
-            self._context_compression_service = ContextCompressionService(
-                summary_agent=self,
-                working_directory=self.memory_save_directory,
-            )
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -1532,9 +1505,6 @@ class ChatAgent(BaseAgent):
 
         self._record_final_output(response.output_messages)
 
-        # Compress context if needed (after assistant response is recorded)
-        if self.auto_compress_context and self._should_compress_context():
-            self.compress_context()
 
         # Clean tool call messages from memory after response generation
         if self.prune_tool_calls_from_memory and tool_call_records:
@@ -3868,89 +3838,3 @@ class ChatAgent(BaseAgent):
 
         return mcp_server
 
-    def _should_compress_context(self) -> bool:
-        r"""Check if the context should be compressed based
-        on the compress_message_limit and compress_token_limit.
-
-        Returns:
-            bool: True if the context should be compressed, False otherwise.
-        """
-        # if we already detected that we must compress context,
-        # we must return False to avoid infinite recursion
-        if self.is_compressing_context:
-            return False
-
-        try:
-            conversation_message_count = len(self.memory.retrieve())
-
-            # check message limit
-            if conversation_message_count > self.compress_message_limit:
-                return True
-
-            # check token limit if specified
-            if self.compress_token_limit:
-                _, token_count = self.memory.get_context()
-                if token_count > self.compress_token_limit:
-                    return True
-
-            return False
-        except Exception as e:
-            logger.error(
-                f"Error checking if context should be compressed: {e}"
-            )
-            return False
-
-    def refresh_context_with_summary(self, summary: str) -> bool:
-        r"""Empty the agent's memory and replace it with a summary
-        of the conversation history.
-
-        Args:
-            summary (str): The summary of the conversation history.
-
-        Returns:
-            bool: True if the context was refreshed successfully, False
-                otherwise.
-        """
-        try:
-            # clear the memory with compression reason (suppresses warning)
-            self.clear_memory()
-
-            # add summary as context
-            if summary and summary.strip():
-                summary_message = BaseMessage.make_assistant_message(
-                    role_name="Assistant",
-                    content=f"[Context Summary]\n\n{summary}",
-                )
-                self.update_memory(
-                    summary_message, OpenAIBackendRole.ASSISTANT
-                )
-                return True
-            return False
-
-        except Exception as e:
-            logger.error(
-                f"Failed to empty memory and replace it with summary: {e}"
-            )
-            return False
-
-    def compress_context(self) -> None:
-        r"""Compress context by generating summary and saving history."""
-        try:
-            # get current memory records
-            records = [cr.memory_record for cr in self.memory.retrieve()]
-
-            # use context compression service for complete pipeline
-            summary = self._context_compression_service.compress_and_save(
-                records
-            )
-
-            # empty memory and replace it with the summary
-            self.refresh_context_with_summary(summary)
-
-            logger.info(
-                f"Context compressed - replaced {len(records)} messages with "
-                f"summary"
-            )
-
-        except Exception as e:
-            logger.error(f"Failed to compress context: {e}")

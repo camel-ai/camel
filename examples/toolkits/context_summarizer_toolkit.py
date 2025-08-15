@@ -14,24 +14,25 @@
 
 from camel.agents import ChatAgent
 from camel.models.model_factory import ModelFactory
-from camel.toolkits.markdown_memory_toolkit import MarkdownMemoryToolkit
+from camel.toolkits.context_summarizer_toolkit import ContextSummarizerToolkit
 from camel.types import ModelPlatformType, ModelType
 
 """
-This example demonstrates the MarkdownMemoryToolkit, which provides manual
-memory management capabilities for ChatAgent. Unlike automatic compression,
-this toolkit allows agents to:
+This example demonstrates the ContextSummarizerToolkit, which provides intelligent
+context summarization and memory management capabilities for ChatAgent. The toolkit
+enables agents to:
 1. Manually save conversation memory when context becomes cluttered
 2. Load previous context summaries 
-3. Search through conversation history semantically
+3. Search through conversation history using text search
 4. Get information about current memory state
+5. Check if context should be compressed based on message/token limits
 
 The toolkit is particularly useful when you want the agent to have control over
 when to save/refresh memory, rather than relying on automatic thresholds.
 """
 
-# Set up directory for saving markdown memory files
-memory_dir = "./agent_memory_toolkit"
+# Set up directory for saving context files
+memory_dir = "./agent_context_toolkit"
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
@@ -43,29 +44,30 @@ model = ModelFactory.create(
 agent = ChatAgent(
     system_message="""You are a helpful AI assistant providing travel advice. 
     
-    You have access to memory management tools that allow you to:
+    You have access to context management tools that allow you to:
     - Save conversation memory when context becomes cluttered: 
-      save_conversation_memory()
+      summarize_context_and_save_memory()
     - Load previous context: load_memory_context()  
     - Search conversation history: search_conversation_history()
     - Check memory status: get_memory_info()
+    - Check if compression is needed: should_compress_context()
     
     Use these tools strategically when conversations become complex or 
     unfocused.""",
     model=model,
-    agent_id="markdown_toolkit_agent_001",
+    agent_id="context_toolkit_agent_001",
 )
 
-# Initialize the markdown memory toolkit
-memory_toolkit = MarkdownMemoryToolkit(
+# Initialize the context summarizer toolkit
+context_toolkit = ContextSummarizerToolkit(
     agent=agent,
     working_directory=memory_dir,
 )
 
 # Add toolkit to agent
-agent.add_tools(memory_toolkit.get_tools())
+agent.add_tools(context_toolkit.get_tools())
 
-print("=== MarkdownMemoryToolkit Example ===\n")
+print("=== ContextSummarizerToolkit Example ===\n")
 
 # 1. Start conversation about travel planning
 user_input_1 = (
@@ -141,8 +143,8 @@ response_9 = agent.step(user_input_9)
 print(f"User: {user_input_9}")
 print(f"Assistant: {response_9.msgs[0].content}\n")
 
-print("=== Testing semantic search ===")
-# 10. Test semantic search functionality
+print("=== Testing text search ===")
+# 10. Test text search functionality
 user_input_10 = (
     "Can you search our conversation history for information "
     "about transportation in Japan?"
@@ -162,8 +164,8 @@ print(f"Assistant: {response_11.msgs[0].content}\n")
 
 print("\n=== Example Complete ===")
 print("This example demonstrated:")
-print("- Manual memory management using the MarkdownMemoryToolkit")
+print("- Manual memory management using the ContextSummarizerToolkit")
 print("- Agent-driven decision making about when to save memory")
-print("- Context loading and semantic search capabilities")
+print("- Context loading and text search capabilities")
 print("- Integration of memory tools with natural conversation flow")
 print(f"- Memory files saved in: {memory_dir}")
