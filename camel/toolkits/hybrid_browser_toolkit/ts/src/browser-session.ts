@@ -205,6 +205,11 @@ export class HybridBrowserSession {
     const page = await this.getCurrentPage();
     
     try {
+      // Check if page is still valid before proceeding
+      if (page.isClosed()) {
+        throw new Error("Target page, context or browser has been closed");
+      }
+      
       //  Use _snapshotForAI() to properly update _lastAriaSnapshot
       const snapshotStart = Date.now();
       const snapshotText = await (page as any)._snapshotForAI();
@@ -226,8 +231,19 @@ export class HybridBrowserSession {
         // Get coordinates for each ref using aria-ref selector
         for (const ref of refs) {
           try {
+            // Check if page is still valid before each element operation
+            if (page.isClosed()) {
+              throw new Error("Target page, context or browser has been closed");
+            }
+            
             const selector = `aria-ref=${ref}`;
             const element = await page.locator(selector).first();
+            
+            // Validate context before calling count()
+            if (page.isClosed()) {
+              throw new Error("Target page, context or browser has been closed");
+            }
+            
             const exists = await element.count() > 0;
             
             if (exists) {
@@ -247,7 +263,8 @@ export class HybridBrowserSession {
               }
             }
           } catch (error) {
-            // Failed to get coordinates for element
+            // Failed to get coordinates for element - log but continue
+            console.log(`Failed to get coordinates for element ${ref}:`, error);
           }
         }
       }
@@ -311,159 +328,297 @@ export class HybridBrowserSession {
    */
   private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string }> {
     
-    try {
-      //  Ensure we have the latest snapshot and mapping
-      await (page as any)._snapshotForAI();
-      
-      //  Use Playwright's aria-ref selector engine
-      const selector = `aria-ref=${ref}`;
-      
-      // Check if element exists
-      const element = await page.locator(selector).first();
-      const exists = await element.count() > 0;
-      
-      if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
-      }
-      
-      //  Check element properties
-      const browserConfig = this.configLoader.getBrowserConfig();
-      const target = await element.getAttribute(browserConfig.targetAttribute);
-      const href = await element.getAttribute(browserConfig.hrefAttribute);
-      const onclick = await element.getAttribute(browserConfig.onclickAttribute);
-      const tagName = await element.evaluate(el => el.tagName.toLowerCase());
-      
-      // Check if element naturally opens new tab
-      const naturallyOpensNewTab = (
-        target === browserConfig.blankTarget || 
-        (onclick && onclick.includes(browserConfig.windowOpenString)) ||
-        (tagName === 'a' && href && (href.includes(`javascript:${browserConfig.windowOpenString}`) || href.includes(browserConfig.blankTarget)))
-      );
-      
-      //  Open ALL links in new tabs
-      // Check if this is a navigable link
-      const isNavigableLink = tagName === 'a' && href && 
-        !href.startsWith(browserConfig.anchorOnly) &&  // Not an anchor link
-        !href.startsWith(browserConfig.javascriptVoidPrefix) && // Not a void javascript
-        href !== browserConfig.javascriptVoidEmpty && // Not empty javascript
-        href !== browserConfig.anchorOnly; // Not just #
-      
-      const shouldOpenNewTab = naturallyOpensNewTab || isNavigableLink;
-      
-      
-      if (shouldOpenNewTab) {
-        //  Handle new tab opening
-        
-        // If it's a link that doesn't naturally open in new tab, force it
-        if (isNavigableLink && !naturallyOpensNewTab) {
-          await element.evaluate((el, blankTarget) => {
-            if (el.tagName.toLowerCase() === 'a') {
-              el.setAttribute('target', blankTarget);
-            }
-          }, browserConfig.blankTarget);
+    const maxRetries = 3;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Check if page is still valid before proceeding
+        if (page.isClosed()) {
+          throw new Error("Target page, context or browser has been closed");
         }
         
-        // Set up popup listener before clicking
-        const popupPromise = page.context().waitForEvent('page', { timeout: browserConfig.popupTimeout });
+        //  Ensure we have the latest snapshot and mapping
+        await (page as any)._snapshotForAI();
         
-        // Click with force to avoid scrolling issues
-        await element.click({ force: browserConfig.forceClick });
+        //  Use Playwright's aria-ref selector engine
+        const selector = `aria-ref=${ref}`;
         
-        try {
-          // Wait for new page to open
-          const newPage = await popupPromise;
+        // Check if element exists with context validation
+        const element = await page.locator(selector).first();
+        
+        // Validate context before calling count()
+        if (page.isClosed()) {
+          throw new Error("Target page, context or browser has been closed");
+        }
+        
+        const exists = await element.count() > 0;
+        
+        if (!exists) {
+          return { success: false, error: `Element with ref ${ref} not found` };
+        }
+        
+        //  Check element properties
+        const browserConfig = this.configLoader.getBrowserConfig();
+        const target = await element.getAttribute(browserConfig.targetAttribute);
+        const href = await element.getAttribute(browserConfig.hrefAttribute);
+        const onclick = await element.getAttribute(browserConfig.onclickAttribute);
+        const tagName = await element.evaluate(el => el.tagName.toLowerCase());
+        
+        // Check if element naturally opens new tab
+        const naturallyOpensNewTab = (
+          target === browserConfig.blankTarget || 
+          (onclick && onclick.includes(browserConfig.windowOpenString)) ||
+          (tagName === 'a' && href && (href.includes(`javascript:${browserConfig.windowOpenString}`) || href.includes(browserConfig.blankTarget)))
+        );
+        
+        //  Open ALL links in new tabs
+        // Check if this is a navigable link
+        const isNavigableLink = tagName === 'a' && href && 
+          !href.startsWith(browserConfig.anchorOnly) &&  // Not an anchor link
+          !href.startsWith(browserConfig.javascriptVoidPrefix) && // Not a void javascript
+          href !== browserConfig.javascriptVoidEmpty && // Not empty javascript
+          href !== browserConfig.anchorOnly; // Not just #
+        
+        const shouldOpenNewTab = naturallyOpensNewTab || isNavigableLink;
+        
+        
+        if (shouldOpenNewTab) {
+          //  Handle new tab opening
           
-          // Generate tab ID for the new page
-          const newTabId = this.generateTabId();
-          this.registerNewPage(newTabId, newPage);
+          // If it's a link that doesn't naturally open in new tab, force it
+          if (isNavigableLink && !naturallyOpensNewTab) {
+            await element.evaluate((el, blankTarget) => {
+              if (el.tagName.toLowerCase() === 'a') {
+                el.setAttribute('target', blankTarget);
+              }
+            }, browserConfig.blankTarget);
+          }
           
-          // Set up page properties
-          const browserConfig = this.configLoader.getBrowserConfig();
-          newPage.setDefaultNavigationTimeout(browserConfig.navigationTimeout);
-          newPage.setDefaultTimeout(browserConfig.navigationTimeout);
+          // Set up popup listener before clicking
+          const popupPromise = page.context().waitForEvent('page', { timeout: browserConfig.popupTimeout });
           
+          // Click with force to avoid scrolling issues
+          await element.click({ force: browserConfig.forceClick });
           
-          //  Automatically switch to the new tab
-          this.currentTabId = newTabId;
-          await newPage.bringToFront();
+          try {
+            // Wait for new page to open
+            const newPage = await popupPromise;
+            
+            // Generate tab ID for the new page
+            const newTabId = this.generateTabId();
+            this.registerNewPage(newTabId, newPage);
+            
+            // Set up page properties
+            const browserConfig = this.configLoader.getBrowserConfig();
+            newPage.setDefaultNavigationTimeout(browserConfig.navigationTimeout);
+            newPage.setDefaultTimeout(browserConfig.navigationTimeout);
+            
+            
+            //  Automatically switch to the new tab
+            this.currentTabId = newTabId;
+            await newPage.bringToFront();
+            
+            // Wait for new page to be ready
+            await newPage.waitForLoadState('domcontentloaded', { timeout: browserConfig.popupTimeout }).catch(() => {});
+            
+            return { success: true, method: 'playwright-aria-ref-newtab', newTabId };
+          } catch (popupError) {
+            return { success: true, method: 'playwright-aria-ref' };
+          }
+        } else {
+          //  Add options to prevent scrolling issues
+          try {
+            // First try normal click
+            const browserConfig = this.configLoader.getBrowserConfig();
+            await element.click({ timeout: browserConfig.clickTimeout });
+          } catch (clickError) {
+            // If normal click fails due to scrolling, try force click
+            await element.click({ force: browserConfig.forceClick });
+          }
           
-          // Wait for new page to be ready
-          await newPage.waitForLoadState('domcontentloaded', { timeout: browserConfig.popupTimeout }).catch(() => {});
-          
-          return { success: true, method: 'playwright-aria-ref-newtab', newTabId };
-        } catch (popupError) {
           return { success: true, method: 'playwright-aria-ref' };
         }
-      } else {
-        //  Add options to prevent scrolling issues
-        try {
-          // First try normal click
-          const browserConfig = this.configLoader.getBrowserConfig();
-          await element.click({ timeout: browserConfig.clickTimeout });
-        } catch (clickError) {
-          // If normal click fails due to scrolling, try force click
-          await element.click({ force: browserConfig.forceClick });
+        
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        
+        // Check if this is a navigation-related error that we can retry
+        const isNavigationError = (
+          errorMsg.includes("Execution context was destroyed") ||
+          errorMsg.includes("Most likely because of a navigation") ||
+          errorMsg.includes("Target page, context or browser has been closed")
+        );
+        
+        if (isNavigationError && attempt < maxRetries - 1) {
+          console.log(`Navigation error in click operation (attempt ${attempt + 1}/${maxRetries}): ${errorMsg}. Retrying...`);
+          
+          // Wait a bit for page stability before retrying
+          try {
+            if (!page.isClosed()) {
+              await page.waitForLoadState('domcontentloaded', { timeout: 5000 });
+              // Small delay for JS context to stabilize
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          } catch (waitError) {
+            // Continue even if wait fails
+            console.log(`Wait for page stability failed: ${waitError}`);
+          }
+          
+          continue;
         }
         
-        return { success: true, method: 'playwright-aria-ref' };
+        // Non-navigation error or final attempt - return error
+        console.error(`[performClick] Exception during click for ref: ${ref}`, error);
+        return { success: false, error: `Click failed: ${errorMsg}` };
       }
-      
-    } catch (error) {
-      console.error('[performClick] Exception during click for ref: %s', ref, error);
-      return { success: false, error: `Click failed with exception: ${error}` };
     }
+    
+    // Should not reach here, but just in case
+    return { success: false, error: "Click failed after all retry attempts" };
   }
 
   /**
    *  Simplified type implementation using Playwright's aria-ref selector
    */
   private async performType(page: Page, ref: string, text: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Ensure we have the latest snapshot
-      await (page as any)._snapshotForAI();
-      
-      // Use Playwright's aria-ref selector
-      const selector = `aria-ref=${ref}`;
-      const element = await page.locator(selector).first();
-      
-      const exists = await element.count() > 0;
-      if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+    const maxRetries = 3;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Check if page is still valid before proceeding
+        if (page.isClosed()) {
+          throw new Error("Target page, context or browser has been closed");
+        }
+        
+        // Ensure we have the latest snapshot
+        await (page as any)._snapshotForAI();
+        
+        // Use Playwright's aria-ref selector
+        const selector = `aria-ref=${ref}`;
+        const element = await page.locator(selector).first();
+        
+        // Validate context before calling count()
+        if (page.isClosed()) {
+          throw new Error("Target page, context or browser has been closed");
+        }
+        
+        const exists = await element.count() > 0;
+        if (!exists) {
+          return { success: false, error: `Element with ref ${ref} not found` };
+        }
+        
+        // Type text using Playwright's built-in fill method
+        await element.fill(text);
+        
+        return { success: true };
+        
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        
+        // Check if this is a navigation-related error that we can retry
+        const isNavigationError = (
+          errorMsg.includes("Execution context was destroyed") ||
+          errorMsg.includes("Most likely because of a navigation") ||
+          errorMsg.includes("Target page, context or browser has been closed")
+        );
+        
+        if (isNavigationError && attempt < maxRetries - 1) {
+          console.log(`Navigation error in type operation (attempt ${attempt + 1}/${maxRetries}): ${errorMsg}. Retrying...`);
+          
+          // Wait a bit for page stability before retrying
+          try {
+            if (!page.isClosed()) {
+              await page.waitForLoadState('domcontentloaded', { timeout: 5000 });
+              // Small delay for JS context to stabilize
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          } catch (waitError) {
+            // Continue even if wait fails
+            console.log(`Wait for page stability failed: ${waitError}`);
+          }
+          
+          continue;
+        }
+        
+        // Non-navigation error or final attempt - return error
+        return { success: false, error: `Type failed: ${errorMsg}` };
       }
-      
-      // Type text using Playwright's built-in fill method
-      await element.fill(text);
-      
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: `Type failed: ${error}` };
     }
+    
+    // Should not reach here, but just in case
+    return { success: false, error: "Type failed after all retry attempts" };
   }
 
   /**
    *  Simplified select implementation using Playwright's aria-ref selector
    */
   private async performSelect(page: Page, ref: string, value: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Ensure we have the latest snapshot
-      await (page as any)._snapshotForAI();
-      
-      // Use Playwright's aria-ref selector
-      const selector = `aria-ref=${ref}`;
-      const element = await page.locator(selector).first();
-      
-      const exists = await element.count() > 0;
-      if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+    const maxRetries = 3;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Check if page is still valid before proceeding
+        if (page.isClosed()) {
+          throw new Error("Target page, context or browser has been closed");
+        }
+        
+        // Ensure we have the latest snapshot
+        await (page as any)._snapshotForAI();
+        
+        // Use Playwright's aria-ref selector
+        const selector = `aria-ref=${ref}`;
+        const element = await page.locator(selector).first();
+        
+        // Validate context before calling count()
+        if (page.isClosed()) {
+          throw new Error("Target page, context or browser has been closed");
+        }
+        
+        const exists = await element.count() > 0;
+        if (!exists) {
+          return { success: false, error: `Element with ref ${ref} not found` };
+        }
+        
+        // Select value using Playwright's built-in selectOption method
+        await element.selectOption(value);
+        
+        return { success: true };
+        
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        
+        // Check if this is a navigation-related error that we can retry
+        const isNavigationError = (
+          errorMsg.includes("Execution context was destroyed") ||
+          errorMsg.includes("Most likely because of a navigation") ||
+          errorMsg.includes("Target page, context or browser has been closed")
+        );
+        
+        if (isNavigationError && attempt < maxRetries - 1) {
+          console.log(`Navigation error in select operation (attempt ${attempt + 1}/${maxRetries}): ${errorMsg}. Retrying...`);
+          
+          // Wait a bit for page stability before retrying
+          try {
+            if (!page.isClosed()) {
+              await page.waitForLoadState('domcontentloaded', { timeout: 5000 });
+              // Small delay for JS context to stabilize
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          } catch (waitError) {
+            // Continue even if wait fails
+            console.log(`Wait for page stability failed: ${waitError}`);
+          }
+          
+          continue;
+        }
+        
+        // Non-navigation error or final attempt - return error
+        return { success: false, error: `Select failed: ${errorMsg}` };
       }
-      
-      // Select value using Playwright's built-in selectOption method
-      await element.selectOption(value);
-      
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: `Select failed: ${error}` };
     }
+    
+    // Should not reach here, but just in case
+    return { success: false, error: "Select failed after all retry attempts" };
   }
 
   /**
