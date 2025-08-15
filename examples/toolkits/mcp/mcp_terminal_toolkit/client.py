@@ -83,9 +83,9 @@ if __name__ == "__main__":
     print("Choose mode:")
     print("1. Async example")
     print("2. Sync example")
-    
+
     choice = input("Enter your choice (1 or 2): ").strip()
-    
+
     if choice == "1":
         print("Running async example...")
         asyncio.run(run_example_async())

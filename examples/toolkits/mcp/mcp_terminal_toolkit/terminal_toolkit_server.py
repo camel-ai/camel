@@ -38,4 +38,4 @@ if __name__ == "__main__":
 
     toolkit = TerminalToolkit(timeout=args.timeout)
 
-    toolkit.run_mcp_server(mode=args.mode) 
+    toolkit.run_mcp_server(mode=args.mode)
