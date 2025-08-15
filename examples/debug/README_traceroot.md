@@ -26,6 +26,8 @@ Before using TraceRoot, set the following environment variables:
 # Enable TraceRoot for debugging
 export TRACEROOT_ENABLED="true"
 python examples/debug/traceroot_example.py
+# or
+python examples/debug/eigent.py
 ```
 
 Some of the configuration options specified in the `.traceroot-config.yaml` file.

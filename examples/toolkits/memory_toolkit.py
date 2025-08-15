@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.toolkits.memory_toolkit import MemoryToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -26,11 +25,9 @@ def run_memory_toolkit_example():
     """
 
     # Create a Model
-    model_config_dict = ChatGPTConfig(temperature=0.0).as_dict()
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
         model_type=ModelType.DEFAULT,
-        model_config_dict=model_config_dict,
     )
 
     # Create a ChatAgent
