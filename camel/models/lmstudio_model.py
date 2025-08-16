@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import LMSTUDIO_API_PARAMS, LMStudioConfig
+from camel.configs import LMStudioConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import BaseTokenCounter
@@ -77,19 +77,3 @@ class LMStudioModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected
-        arguments to LMStudio API. But LMStudio API does not have any
-        additional arguments to check.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to LMStudio API.
-        """
-        for param in self.model_config_dict:
-            if param not in LMSTUDIO_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into LMStudio model backend."
-                )

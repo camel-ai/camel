@@ -229,3 +229,62 @@ which more generally states that for any arithmetic progression an + b where
 gcd(a,b) = 1, there are infinitely many primes in that progression.
 ===============================================================================
 """  # noqa: RUF001
+
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.ANTHROPIC,
+    model_type=ModelType.CLAUDE_OPUS_4_1,
+    model_config_dict={
+        "extra_body": {"thinking": {"type": "enabled", "budget_tokens": 2000}}
+    },
+)
+
+camel_agent = ChatAgent(model=model)
+
+user_msg = """Are there an infinite number of prime numbers such that n mod 4 
+== 3?"""
+
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+
+"""
+===============================================================================
+Yes, there are infinitely many prime numbers p such that p ≡ 3 (mod 4).
+
+Here's a proof by contradiction:
+
+**Proof:**
+
+Suppose there are only finitely many primes ≡ 3 (mod 4). Let's call them p₁, 
+p₂, ..., pₙ.
+
+Consider the number:
+**N = 4p₁p₂···pₙ - 1**
+
+Key observations about N:
+1. **N ≡ 3 (mod 4)** since N = 4(p₁p₂···pₙ) - 1
+2. N is odd (so 2 doesn't divide N)
+3. None of the primes p₁, p₂, ..., pₙ divide N (if pᵢ divided N, then pᵢ would 
+divide N - 4p₁p₂···pₙ = -1, which is impossible)
+
+Now, N must have prime factorization. Every odd prime is either ≡ 1 (mod 4) or 
+≡ 3 (mod 4).
+
+**Crucial fact:** The product of numbers that are all ≡ 1 (mod 4) is also ≡ 1 
+(mod 4).
+
+Since N ≡ 3 (mod 4), not all of its prime factors can be ≡ 1 (mod 4). 
+Therefore, N must have at least one prime factor q where q ≡ 3 (mod 4).
+
+But we established that none of p₁, p₂, ..., pₙ divide N, so q must be a prime 
+≡ 3 (mod 4) that's not in our supposedly complete list. This is a 
+contradiction!
+
+Therefore, there must be infinitely many primes ≡ 3 (mod 4).
+
+This same argument structure can also prove there are infinitely many primes ≡ 
+2 (mod 3), but interestingly, it *cannot* directly prove there are infinitely 
+many primes ≡ 1 (mod 4) (that requires Dirichlet's theorem on primes in 
+arithmetic progressions).
+===============================================================================
+"""

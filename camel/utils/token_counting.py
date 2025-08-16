@@ -133,7 +133,11 @@ class OpenAITokenCounter(BaseTokenCounter):
             self.tokens_per_message = 4
             # If there's a name, the role is omitted
             self.tokens_per_name = -1
-        elif ("gpt-3.5-turbo" in self.model) or ("gpt-4" in self.model):
+        elif (
+            ("gpt-3.5-turbo" in self.model)
+            or ("gpt-4" in self.model)
+            or ("gpt-5" in self.model)
+        ):
             self.tokens_per_message = 3
             self.tokens_per_name = 1
         elif (
@@ -280,15 +284,26 @@ class OpenAITokenCounter(BaseTokenCounter):
 
 class AnthropicTokenCounter(BaseTokenCounter):
     @dependencies_required('anthropic')
-    def __init__(self, model: str):
+    def __init__(
+        self,
+        model: str,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+    ):
         r"""Constructor for the token counter for Anthropic models.
 
         Args:
             model (str): The name of the Anthropic model being used.
+            api_key (Optional[str], optional): The API key for authenticating
+                with the Anthropic service. If not provided, it will use the
+                ANTHROPIC_API_KEY environment variable. (default: :obj:`None`)
+            base_url (Optional[str], optional): The URL of the Anthropic
+                service. If not provided, it will use the default Anthropic
+                URL. (default: :obj:`None`)
         """
         from anthropic import Anthropic
 
-        self.client = Anthropic()
+        self.client = Anthropic(api_key=api_key, base_url=base_url)
         self.model = model
 
     @dependencies_required('anthropic')

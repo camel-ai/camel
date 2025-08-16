@@ -25,10 +25,9 @@ def __init__(
     size: Optional[Literal['256x256', '512x512', '1024x1024', '1536x1024', '1024x1536', '1792x1024', '1024x1792', 'auto']] = '1024x1024',
     quality: Optional[Literal['auto', 'low', 'medium', 'high', 'standard', 'hd']] = 'standard',
     response_format: Optional[Literal['url', 'b64_json']] = 'b64_json',
-    n: Optional[int] = 1,
     background: Optional[Literal['transparent', 'opaque', 'auto']] = 'auto',
     style: Optional[Literal['vivid', 'natural']] = None,
-    image_save_path: Optional[str] = 'image_save'
+    working_directory: Optional[str] = 'image_save'
 ):
 ```
 
@@ -41,10 +40,9 @@ Initializes a new instance of the OpenAIImageToolkit class.
 - **model** (Optional[str]): The model to use. (default: :obj:`"dall-e-3"`)
 - **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`) size (Optional[Literal["256x256", "512x512", "1024x1024", "1536x1024", "1024x1536", "1792x1024", "1024x1792", "auto"]]): The size of the image to generate. (default: :obj:`"1024x1024"`) quality (Optional[Literal["auto", "low", "medium", "high", "standard", "hd"]]):The quality of the image to generate. Different models support different values. (default: :obj:`"standard"`)
 - **response_format** (`Optional[Literal["url", "b64_json"]]`): The format of the response.(default: :obj:`"b64_json"`)
-- **n** (Optional[int]): The number of images to generate. (default: :obj:`1`)
 - **background** (`Optional[Literal["transparent", "opaque", "auto"]]`): The background of the image.(default: :obj:`"auto"`)
 - **style** (`Optional[Literal["vivid", "natural"]]`): The style of the image.(default: :obj:`None`)
-- **image_save_path** (Optional[str]): The path to save the generated image.(default: :obj:`"image_save"`)
+- **working_directory** (Optional[str]): The path to save the generated image.(default: :obj:`"image_save"`)
 
 <a id="camel.toolkits.openai_image_toolkit.OpenAIImageToolkit.base64_to_image"></a>
 

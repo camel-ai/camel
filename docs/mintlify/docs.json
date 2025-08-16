@@ -88,9 +88,9 @@
               {
                 "group": "Basic Concepts",
                 "pages": [
-                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/agents_message",
                   "cookbooks/basic_concepts/agents_prompting",
+                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/create_your_first_agents_society",
                   "cookbooks/basic_concepts/model_speed_comparison"
                 ]
@@ -98,6 +98,7 @@
               {
                 "group": "Advanced Features",
                 "pages": [
+                  "cookbooks/advanced_features/agent_generate_structured_output",
                   "cookbooks/advanced_features/agents_tracking",
                   "cookbooks/advanced_features/agents_with_MCP",
                   "cookbooks/advanced_features/agents_with_dkg",
@@ -121,6 +122,7 @@
                   "cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG",
                   "cookbooks/applications/dynamic_travel_planner",
                   "cookbooks/applications/finance_discord_bot",
+                  "cookbooks/applications/pptx_toolkit",
                   "cookbooks/applications/roleplaying_scraper"
                 ]
               },
@@ -443,6 +445,7 @@
               "reference/camel.storages.vectordb_storages.oceanbase",
               "reference/camel.storages.vectordb_storages.pgvector",
               "reference/camel.storages.vectordb_storages.qdrant",
+              "reference/camel.storages.vectordb_storages.surreal",
               "reference/camel.storages.vectordb_storages.tidb",
               "reference/camel.storages.vectordb_storages.weaviate"
             ]
@@ -498,14 +501,16 @@
               "reference/camel.toolkits.memory_toolkit",
               "reference/camel.toolkits.meshy_toolkit",
               "reference/camel.toolkits.message_agent_toolkit",
+              "reference/camel.toolkits.message_integration",
               "reference/camel.toolkits.mineru_toolkit",
               "reference/camel.toolkits.networkx_toolkit",
               "reference/camel.toolkits.note_taking_toolkit",
+              "reference/camel.toolkits.notion_mcp_toolkit",
               "reference/camel.toolkits.notion_toolkit",
               "reference/camel.toolkits.open_api_toolkit",
-              "reference/camel.toolkits.openai_agent_toolkit",
               "reference/camel.toolkits.openai_image_toolkit",
               "reference/camel.toolkits.openbb_toolkit",
+              "reference/camel.toolkits.origene_mcp_toolkit",
               "reference/camel.toolkits.playwright_mcp_toolkit",
               "reference/camel.toolkits.pptx_toolkit",
               "reference/camel.toolkits.pubmed_toolkit",
@@ -513,6 +518,7 @@
               "reference/camel.toolkits.pyautogui_toolkit",
               "reference/camel.toolkits.reddit_toolkit",
               "reference/camel.toolkits.retrieval_toolkit",
+              "reference/camel.toolkits.screenshot_toolkit",
               "reference/camel.toolkits.search_toolkit",
               "reference/camel.toolkits.searxng_toolkit",
               "reference/camel.toolkits.semantic_scholar_toolkit",
@@ -526,6 +532,7 @@
               "reference/camel.toolkits.video_analysis_toolkit",
               "reference/camel.toolkits.video_download_toolkit",
               "reference/camel.toolkits.weather_toolkit",
+              "reference/camel.toolkits.web_deploy_toolkit",
               "reference/camel.toolkits.whatsapp_toolkit",
               "reference/camel.toolkits.wolfram_alpha_toolkit",
               "reference/camel.toolkits.zapier_toolkit",
@@ -534,8 +541,16 @@
               "reference/camel.toolkits.hybrid_browser_toolkit.browser_session",
               "reference/camel.toolkits.hybrid_browser_toolkit.config_loader",
               "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit",
+              "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts",
               "reference/camel.toolkits.hybrid_browser_toolkit.snapshot",
               "reference/camel.toolkits.hybrid_browser_toolkit.stealth_config",
+              "reference/camel.toolkits.hybrid_browser_toolkit.ws_wrapper",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.actions",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.agent",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.browser_session",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.config_loader",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.hybrid_browser_toolkit",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.snapshot",
               "reference/camel.toolkits.non_visual_browser_toolkit.actions",
               "reference/camel.toolkits.non_visual_browser_toolkit.agent",
               "reference/camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit",

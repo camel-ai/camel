@@ -59,14 +59,20 @@ model_backend = ModelFactory.create(
 
 # Example 3: Use custom tools selection
 custom_tools = [
-    "open_browser",
-    "close_browser",
-    "visit_page",
-    "click",
-    "type",
-    "back",
-    "forward",
-    "switch_tab",
+    "browser_open",
+    "browser_close",
+    "browser_visit_page",
+    "browser_back",
+    "browser_forward",
+    "browser_click",
+    "browser_type",
+    "browser_switch_tab",
+    "browser_enter",
+    # "browser_get_som_screenshot", # remove it to achieve faster operation
+    "browser_press_key",
+    "browser_console_view",
+    "browser_console_exec",
+    "browser_mouse_drag",
 ]
 
 web_toolkit_custom = HybridBrowserToolkit(
@@ -75,13 +81,15 @@ web_toolkit_custom = HybridBrowserToolkit(
     enabled_tools=custom_tools,
     browser_log_to_file=True,  # generate detailed log file in ./browser_log
     stealth=True,  # Using stealth mode during browser operation
+    mode="python",
+    # Limit snapshot to current viewport to reduce context
 )
 print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
 output_dir = "./file_write_outputs"
 os.makedirs(output_dir, exist_ok=True)
 
 # Initialize the FileWriteToolkit with the output directory
-file_toolkit = FileWriteToolkit(output_dir=output_dir)
+file_toolkit = FileWriteToolkit(working_directory=output_dir)
 
 # Get the tools from the toolkit
 tools_list = file_toolkit.get_tools()
@@ -90,6 +98,7 @@ tools_list = file_toolkit.get_tools()
 agent = ChatAgent(
     model=model_backend,
     tools=[*web_toolkit_custom.get_tools(), *file_toolkit.get_tools()],
+    toolkits_to_register_agent=[web_toolkit_custom],
     max_iteration=10,
 )
 
@@ -101,14 +110,8 @@ I mean you need to browse multiple websites. After visiting each website,
 write the news in markdown, then return to the Google search results page 
 and click on other websites.
 
-If you encounter "snapshot": "snapshot not changed" when clicking, it might 
-be because you've clicked on plain text that doesn't lead to another page. 
-Don't be discouraged—keep trying to click on different links (but do not 
-click the same reference more than once). Note that in the Google search 
-results, the text inside the heading tags is clickable and will lead to the 
-result page.
-
-
+Use enter to confirm search or input.
+If you see a cookie page, click accept all.
 """
 
 
@@ -119,22 +122,6 @@ async def main() -> None:
     print(f"Enabled tools: {web_toolkit_custom.enabled_tools}")
     print("\nResponse from agent:")
     print(response.msgs[0].content if response.msgs else "<no response>")
-
-    # Ensure proper cleanup
-    try:
-        await web_toolkit_custom.close_browser()
-        # Close all browser sessions to ensure complete cleanup
-        from camel.toolkits.hybrid_browser_toolkit.browser_session import (
-            HybridBrowserSession,
-        )
-
-        await HybridBrowserSession.close_all_sessions()
-        # Give Playwright time to fully shut down subprocesses
-        await asyncio.sleep(0.5)
-    except Exception as err:
-        logging.warning(
-            "Failed to close " "browser session explicitly: %s", err
-        )
 
 
 if __name__ == "__main__":

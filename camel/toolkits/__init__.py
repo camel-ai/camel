@@ -31,7 +31,7 @@ from .meshy_toolkit import MeshyToolkit
 from .openbb_toolkit import OpenBBToolkit
 from .bohrium_toolkit import BohriumToolkit
 
-from .base import BaseToolkit
+from .base import BaseToolkit, RegisteredAgentToolkit
 from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
@@ -68,12 +68,12 @@ from .pubmed_toolkit import PubMedToolkit
 from .data_commons_toolkit import DataCommonsToolkit
 from .thinking_toolkit import ThinkingToolkit
 from .pyautogui_toolkit import PyAutoGUIToolkit
-from .openai_agent_toolkit import OpenAIAgentToolkit
 from .searxng_toolkit import SearxNGToolkit
 from .jina_reranker_toolkit import JinaRerankerToolkit
 from .pulse_mcp_search_toolkit import PulseMCPSearchToolkit
 from .klavis_toolkit import KlavisToolkit
 from .aci_toolkit import ACIToolkit
+from .origene_mcp_toolkit import OrigeneToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
 from .task_planning_toolkit import TaskPlanningToolkit
@@ -84,6 +84,10 @@ from .craw4ai_toolkit import Crawl4AIToolkit
 from .markitdown_toolkit import MarkItDownToolkit
 from .note_taking_toolkit import NoteTakingToolkit
 from .message_agent_toolkit import AgentCommunicationToolkit
+from .web_deploy_toolkit import WebDeployToolkit
+from .screenshot_toolkit import ScreenshotToolkit
+from .message_integration import ToolkitMessageIntegration
+from .notion_mcp_toolkit import NotionMCPToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -138,9 +142,9 @@ __all__ = [
     'DataCommonsToolkit',
     'ThinkingToolkit',
     'PyAutoGUIToolkit',
-    'OpenAIAgentToolkit',
     'SearxNGToolkit',
     'JinaRerankerToolkit',
+    'OrigeneToolkit',
     'PulseMCPSearchToolkit',
     'KlavisToolkit',
     'ACIToolkit',
@@ -156,4 +160,9 @@ __all__ = [
     'MarkItDownToolkit',
     'NoteTakingToolkit',
     'AgentCommunicationToolkit',
+    'WebDeployToolkit',
+    'ScreenshotToolkit',
+    'RegisteredAgentToolkit',
+    'ToolkitMessageIntegration',
+    'NotionMCPToolkit',
 ]
