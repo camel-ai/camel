@@ -98,6 +98,7 @@
               {
                 "group": "Advanced Features",
                 "pages": [
+                  "cookbooks/advanced_features/agent_generate_structured_output",
                   "cookbooks/advanced_features/agents_tracking",
                   "cookbooks/advanced_features/agents_with_MCP",
                   "cookbooks/advanced_features/agents_with_dkg",
