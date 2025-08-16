@@ -14,9 +14,8 @@
 
 import base64
 import os
-import uuid
 from io import BytesIO
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Union
 
 from openai import OpenAI
 from PIL import Image
@@ -64,13 +63,15 @@ class OpenAIImageToolkit(BaseToolkit):
             Literal["auto", "low", "medium", "high", "standard", "hd"]
         ] = "standard",
         response_format: Optional[Literal["url", "b64_json"]] = "b64_json",
-        n: Optional[int] = 1,
         background: Optional[
             Literal["transparent", "opaque", "auto"]
         ] = "auto",
         style: Optional[Literal["vivid", "natural"]] = None,
         working_directory: Optional[str] = "image_save",
     ):
+        # NOTE: Some arguments are set in the constructor to prevent the agent
+        # from making invalid API calls with model-specific parameters. For
+        # example, the 'style' argument is only supported by 'dall-e-3'.
         r"""Initializes a new instance of the OpenAIImageToolkit class.
 
         Args:
@@ -94,8 +95,6 @@ class OpenAIImageToolkit(BaseToolkit):
                 (default: :obj:`"standard"`)
             response_format (Optional[Literal["url", "b64_json"]]):
                 The format of the response.(default: :obj:`"b64_json"`)
-            n (Optional[int]): The number of images to generate.
-                (default: :obj:`1`)
             background (Optional[Literal["transparent", "opaque", "auto"]]):
                 The background of the image.(default: :obj:`"auto"`)
             style (Optional[Literal["vivid", "natural"]]): The style of the
@@ -111,7 +110,6 @@ class OpenAIImageToolkit(BaseToolkit):
         self.size = size
         self.quality = quality
         self.response_format = response_format
-        self.n = n
         self.background = background
         self.style = style
         self.working_directory: str = working_directory or "image_save"
@@ -140,11 +138,12 @@ class OpenAIImageToolkit(BaseToolkit):
             )
             return None
 
-    def _build_base_params(self, prompt: str) -> dict:
+    def _build_base_params(self, prompt: str, n: Optional[int] = None) -> dict:
         r"""Build base parameters dict for OpenAI API calls.
 
         Args:
             prompt (str): The text prompt for the image operation.
+            n (Optional[int]): The number of images to generate.
 
         Returns:
             dict: Parameters dictionary with non-None values.
@@ -152,8 +151,8 @@ class OpenAIImageToolkit(BaseToolkit):
         params = {"prompt": prompt, "model": self.model}
 
         # basic parameters supported by all models
-        if self.n is not None:
-            params["n"] = self.n  # type: ignore[assignment]
+        if n is not None:
+            params["n"] = n  # type: ignore[assignment]
         if self.size is not None:
             params["size"] = self.size
 
@@ -184,13 +183,16 @@ class OpenAIImageToolkit(BaseToolkit):
         return params
 
     def _handle_api_response(
-        self, response, image_name: str, operation: str
+        self, response, image_name: Union[str, List[str]], operation: str
     ) -> str:
         r"""Handle API response from OpenAI image operations.
 
         Args:
             response: The response object from OpenAI API.
-            image_name (str): Name for the saved image file.
+            image_name (Union[str, List[str]]): Name(s) for the saved image
+                file(s). If str, the same name is used for all images (will
+                cause error for multiple images). If list, must have exactly
+                the same length as the number of images generated.
             operation (str): Operation type for success message ("generated").
 
         Returns:
@@ -200,6 +202,21 @@ class OpenAIImageToolkit(BaseToolkit):
             error_msg = "No image data returned from OpenAI API."
             logger.error(error_msg)
             return error_msg
+
+        # Validate image_name parameter
+        if isinstance(image_name, list):
+            if len(image_name) != len(response.data):
+                error_msg = (
+                    f"Error: Number of image names"
+                    f" ({len(image_name)}) does not match number of "
+                    f"images generated({len(response.data)})"
+                )
+                logger.error(error_msg)
+                return error_msg
+            image_names = image_name
+        else:
+            # If string, use same name for all images
+            image_names = [image_name] * len(response.data)
 
         results = []
 
@@ -215,18 +232,27 @@ class OpenAIImageToolkit(BaseToolkit):
                 image_bytes = base64.b64decode(image_b64)
                 os.makedirs(self.working_directory, exist_ok=True)
 
-                # Add index to filename when multiple images
-                if len(response.data) > 1:
-                    filename = f"{image_name}_{i+1}_{uuid.uuid4().hex}.png"
-                else:
-                    filename = f"{image_name}_{uuid.uuid4().hex}.png"
+                filename = f"{image_names[i]}"
 
                 image_path = os.path.join(self.working_directory, filename)
 
-                with open(image_path, "wb") as f:
-                    f.write(image_bytes)
+                # Check if file already exists
+                if os.path.exists(image_path):
+                    error_msg = (
+                        f"Error: File '{image_path}' already exists. "
+                        "Please use a different image_name."
+                    )
+                    logger.error(error_msg)
+                    return error_msg
 
-                results.append(f"Image saved to {image_path}")
+                try:
+                    with open(image_path, "wb") as f:
+                        f.write(image_bytes)
+                    results.append(f"Image saved to {image_path}")
+                except Exception as e:
+                    error_msg = f"Error saving image to '{image_path}': {e!s}"
+                    logger.error(error_msg)
+                    return error_msg
             else:
                 error_msg = (
                     f"No valid image data (URL or base64) found in image {i+1}"
@@ -254,7 +280,8 @@ class OpenAIImageToolkit(BaseToolkit):
     def generate_image(
         self,
         prompt: str,
-        image_name: str = "image",
+        image_name: Union[str, List[str]] = "image.png",
+        n: int = 1,
     ) -> str:
         r"""Generate an image using OpenAI's Image Generation models.
         The generated image will be saved locally (for ``b64_json`` response
@@ -263,14 +290,18 @@ class OpenAIImageToolkit(BaseToolkit):
 
         Args:
             prompt (str): The text prompt to generate the image.
-            image_name (str): The name of the image to save.
-                (default: :obj:`"image"`)
+            image_name (Union[str, List[str]]): The name(s) of the image(s) to
+                save. The image name must end with `.png`. If str: same name
+                used for all images (causes error if n > 1). If list: must
+                match the number of images being generated (n parameter).
+                (default: :obj:`"image.png"`)
+            n (int): The number of images to generate. (default: :obj:`1`)
 
         Returns:
             str: the content of the model response or format of the response.
         """
         try:
-            params = self._build_base_params(prompt)
+            params = self._build_base_params(prompt, n)
             response = self.client.images.generate(**params)
             return self._handle_api_response(response, image_name, "generated")
         except Exception as e:
