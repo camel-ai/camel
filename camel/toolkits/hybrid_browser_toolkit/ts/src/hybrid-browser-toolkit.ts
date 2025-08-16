@@ -69,35 +69,52 @@ export class HybridBrowserToolkit {
   }
 
   async visitPage(url: string): Promise<any> {
-    const result = await this.session.visitPage(url);
-    
-    // Format response for Python layer compatibility
-    const response: any = {
-      result: result.message,
-      snapshot: '',
-    };
-    
-    if (result.success) {
-      const snapshotStart = Date.now();
-      response.snapshot = await this.getPageSnapshot(this.viewportLimit);
-      const snapshotTime = Date.now() - snapshotStart;
+    try {
+      // Ensure browser is initialized before visiting page
+      await this.session.ensureBrowser();
       
-      if (result.timing) {
-        result.timing.snapshot_time_ms = snapshotTime;
+      const result = await this.session.visitPage(url);
+      
+      // Format response for Python layer compatibility
+      const response: any = {
+        result: result.message,
+        snapshot: '',
+      };
+      
+      if (result.success) {
+        const snapshotStart = Date.now();
+        response.snapshot = await this.getPageSnapshot(this.viewportLimit);
+        const snapshotTime = Date.now() - snapshotStart;
+        
+        if (result.timing) {
+          result.timing.snapshot_time_ms = snapshotTime;
+        }
       }
+      
+      // Include timing if available
+      if (result.timing) {
+        response.timing = result.timing;
+      }
+      
+      // Include newTabId if present
+      if (result.newTabId) {
+        response.newTabId = result.newTabId;
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('[visitPage] Error:', error);
+      return {
+        result: `Navigation to ${url} failed: ${error}`,
+        snapshot: '',
+        timing: {
+          total_time_ms: 0,
+          navigation_time_ms: 0,
+          dom_content_loaded_time_ms: 0,
+          network_idle_time_ms: 0,
+        }
+      };
     }
-    
-    // Include timing if available
-    if (result.timing) {
-      response.timing = result.timing;
-    }
-    
-    // Include newTabId if present
-    if (result.newTabId) {
-      response.newTabId = result.newTabId;
-    }
-    
-    return response;
   }
 
   async getPageSnapshot(viewportLimit: boolean = false): Promise<string> {
@@ -179,7 +196,40 @@ export class HybridBrowserToolkit {
       // Use sharp for image processing
       const sharp = require('sharp');
       const page = await this.session.getCurrentPage();
-      const viewport = page.viewportSize() || { width: 1280, height: 720 };
+      let viewport = page.viewportSize();
+      
+      // In CDP mode, viewportSize might be null, get it from window dimensions
+      if (!viewport) {
+        const windowSize = await page.evaluate(() => ({
+          width: window.innerWidth,
+          height: window.innerHeight
+        }));
+        viewport = windowSize;
+      }
+      
+      // Get device pixel ratio to handle high DPI screens
+      const dpr = await page.evaluate(() => window.devicePixelRatio) || 1;
+      
+      // Get actual screenshot dimensions
+      const metadata = await sharp(screenshotBuffer).metadata();
+      const screenshotWidth = metadata.width || viewport.width;
+      const screenshotHeight = metadata.height || viewport.height;
+      
+      // Calculate scaling factor between CSS pixels and screenshot pixels
+      const scaleX = screenshotWidth / viewport.width;
+      const scaleY = screenshotHeight / viewport.height;
+      
+      // Debug logging for CDP mode
+      if (process.env.HYBRID_BROWSER_DEBUG === '1') {
+        console.log('[CDP Debug] Viewport size:', viewport);
+        console.log('[CDP Debug] Device pixel ratio:', dpr);
+        console.log('[CDP Debug] Screenshot dimensions:', { width: screenshotWidth, height: screenshotHeight });
+        console.log('[CDP Debug] Scale factors:', { scaleX, scaleY });
+        console.log('[CDP Debug] Elements with coordinates:', elementsWithCoords.length);
+        elementsWithCoords.slice(0, 3).forEach(([ref, element]) => {
+          console.log(`[CDP Debug] Element ${ref}:`, element.coordinates);
+        });
+      }
       
       // Filter elements visible in viewport
       const visibleElements = elementsWithCoords.filter(([ref, element]) => {
@@ -198,18 +248,19 @@ export class HybridBrowserToolkit {
         const coords = element.coordinates!;
         const isClickable = clickableElements.has(ref);
         
-        // Use original coordinates for elements within viewport
-        // Clamp only to prevent marks from extending beyond screenshot bounds
-        const x = Math.max(0, coords.x);
-        const y = Math.max(0, coords.y);
-        const maxWidth = viewport.width - x;
-        const maxHeight = viewport.height - y;
-        const width = Math.min(coords.width, maxWidth);
-        const height = Math.min(coords.height, maxHeight);
+        // Scale coordinates from CSS pixels to screenshot pixels
+        const x = Math.max(0, coords.x * scaleX);
+        const y = Math.max(0, coords.y * scaleY);
+        const width = coords.width * scaleX;
+        const height = coords.height * scaleY;
+        
+        // Clamp to screenshot bounds
+        const clampedWidth = Math.min(width, screenshotWidth - x);
+        const clampedHeight = Math.min(height, screenshotHeight - y);
         
         // Position text to be visible even if element is partially cut off
-        const textX = Math.max(2, Math.min(x + 2, viewport.width - 40));
-        const textY = Math.max(14, Math.min(y + 14, viewport.height - 4));
+        const textX = Math.max(2, Math.min(x + 2, screenshotWidth - 40));
+        const textY = Math.max(14, Math.min(y + 14, screenshotHeight - 4));
         
         // Different colors for clickable vs non-clickable elements
         const colors = isClickable ? {
@@ -223,7 +274,7 @@ export class HybridBrowserToolkit {
         };
         
         return `
-          <rect x="${x}" y="${y}" width="${width}" height="${height}" 
+          <rect x="${x}" y="${y}" width="${clampedWidth}" height="${clampedHeight}" 
                 fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="2" rx="2"/>
           <text x="${textX}" y="${textY}" font-family="Arial, sans-serif" 
                 font-size="12" fill="${colors.textFill}" font-weight="bold">${ref}</text>
@@ -231,7 +282,7 @@ export class HybridBrowserToolkit {
       }).join('');
       
       const svgOverlay = `
-        <svg width="${viewport.width}" height="${viewport.height}" xmlns="http://www.w3.org/2000/svg">
+        <svg width="${screenshotWidth}" height="${screenshotHeight}" xmlns="http://www.w3.org/2000/svg">
           ${marks}
         </svg>
       `;
@@ -363,8 +414,20 @@ export class HybridBrowserToolkit {
     return this.executeActionWithSnapshot(action);
   }
 
-  async type(ref: string, text: string): Promise<any> {
-    const action: BrowserAction = { type: 'type', ref, text };
+  async type(refOrInputs: string | Array<{ ref: string; text: string }>, text?: string): Promise<any> {
+    let action: BrowserAction;
+    
+    if (typeof refOrInputs === 'string') {
+      // Single input mode (backward compatibility)
+      if (text === undefined) {
+        throw new Error('Text parameter is required when ref is a string');
+      }
+      action = { type: 'type', ref: refOrInputs, text };
+    } else {
+      // Multiple inputs mode
+      action = { type: 'type', inputs: refOrInputs };
+    }
+    
     return this.executeActionWithSnapshot(action);
   }
 

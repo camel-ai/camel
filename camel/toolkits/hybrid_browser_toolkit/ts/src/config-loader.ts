@@ -117,7 +117,7 @@ function getDefaultBrowserConfig(): BrowserConfig {
     consoleLogLimit: 1000,
     scrollPositionScale: 0.1,
     navigationDelay: 100,
-    blankPageUrls: ['about:blank', ''],
+    blankPageUrls: [],
     dataUrlPrefix: 'data:',
     domContentLoadedState: 'domcontentloaded',
     networkIdleState: 'networkidle',
