@@ -386,6 +386,9 @@ class ChatAgent(BaseAgent):
             usage. When enabled, removes FUNCTION/TOOL role messages and
             ASSISTANT messages with tool_calls after each step.
             (default: :obj:`False`)
+        memory_save_directory (Optional[str]): The directory to save the
+            summary of conversation and the full conversation history. If set,
+            the memory will be saved to this directory.
     """
 
     def __init__(
@@ -426,6 +429,7 @@ class ChatAgent(BaseAgent):
         mask_tool_output: bool = False,
         pause_event: Optional[asyncio.Event] = None,
         prune_tool_calls_from_memory: bool = False,
+        memory_save_directory: Optional[str] = None,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -451,6 +455,7 @@ class ChatAgent(BaseAgent):
             context_creator,
             window_size=message_window_size,
             agent_id=self.agent_id,
+            warn_on_empty=False,
         )
 
         # So we don't have to pass agent_id when we define memory
@@ -511,6 +516,7 @@ class ChatAgent(BaseAgent):
         self._secure_result_store: Dict[str, Any] = {}
         self.pause_event = pause_event
         self.prune_tool_calls_from_memory = prune_tool_calls_from_memory
+        self.memory_save_directory = memory_save_directory
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -1019,6 +1025,7 @@ class ChatAgent(BaseAgent):
             None
         """
         self.memory.clear()
+
         if self.system_message is not None:
             self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
 
@@ -1497,6 +1504,7 @@ class ChatAgent(BaseAgent):
             )
 
         self._record_final_output(response.output_messages)
+
 
         # Clean tool call messages from memory after response generation
         if self.prune_tool_calls_from_memory and tool_call_records:
@@ -3829,3 +3837,4 @@ class ChatAgent(BaseAgent):
         mcp_server.tool()(get_available_tools)
 
         return mcp_server
+
