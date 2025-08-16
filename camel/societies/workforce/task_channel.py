@@ -12,8 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
+from collections import defaultdict, deque
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 from camel.tasks import Task
 
@@ -79,11 +80,67 @@ class Packet:
 
 
 class TaskChannel:
-    r"""An internal class used by Workforce to manage tasks."""
+    r"""An internal class used by Workforce to manage tasks.
+
+    This implementation uses a hybrid data structure approach:
+    - Hash map (_task_dict) for O(1) task lookup by ID
+    - Status-based index (_task_by_status) for efficient filtering by status
+    - Assignee/publisher queues for ordered task processing
+    """
 
     def __init__(self) -> None:
         self._condition = asyncio.Condition()
         self._task_dict: Dict[str, Packet] = {}
+
+        self._task_by_status: Dict[PacketStatus, Set[str]] = defaultdict(set)
+
+        # task by assignee store which are sent to
+        self._task_by_assignee: Dict[str, deque[str]] = defaultdict(deque)
+
+        self._task_by_publisher: Dict[str, deque[str]] = defaultdict(deque)
+
+    def _update_task_status(
+        self, task_id: str, new_status: PacketStatus
+    ) -> None:
+        r"""Helper method to properly update task status in all indexes."""
+        if task_id not in self._task_dict:
+            return
+
+        packet = self._task_dict[task_id]
+        old_status = packet.status
+
+        if old_status in self._task_by_status:
+            self._task_by_status[old_status].discard(task_id)
+
+        packet.status = new_status
+
+        self._task_by_status[new_status].add(task_id)
+
+    def _cleanup_task_from_indexes(self, task_id: str) -> None:
+        r"""Helper method to remove a task from all indexes.
+
+        Args:
+            task_id (str): The ID of the task to remove from indexes.
+        """
+        if task_id not in self._task_dict:
+            return
+
+        packet = self._task_dict[task_id]
+
+        if packet.status in self._task_by_status:
+            self._task_by_status[packet.status].discard(task_id)
+
+        if packet.assignee_id and packet.assignee_id in self._task_by_assignee:
+            assignee_queue = self._task_by_assignee[packet.assignee_id]
+            self._task_by_assignee[packet.assignee_id] = deque(
+                task for task in assignee_queue if task != task_id
+            )
+
+        if packet.publisher_id in self._task_by_publisher:
+            publisher_queue = self._task_by_publisher[packet.publisher_id]
+            self._task_by_publisher[packet.publisher_id] = deque(
+                task for task in publisher_queue if task != task_id
+            )
 
     async def get_returned_task_by_publisher(self, publisher_id: str) -> Task:
         r"""Get a task from the channel that has been returned by the
@@ -91,15 +148,24 @@ class TaskChannel:
         """
         async with self._condition:
             while True:
-                for task_id, packet in list(self._task_dict.items()):
-                    if packet.publisher_id != publisher_id:
-                        continue
-                    if packet.status != PacketStatus.RETURNED:
-                        continue
-                    # Remove the task to prevent returning it again
-                    del self._task_dict[task_id]
-                    self._condition.notify_all()
-                    return packet.task
+                task_ids = self._task_by_publisher[publisher_id]
+
+                if task_ids:
+                    task_id = task_ids.popleft()
+
+                    if task_id in self._task_dict:
+                        packet = self._task_dict[task_id]
+
+                        if (
+                            packet.status == PacketStatus.RETURNED
+                            and packet.publisher_id == publisher_id
+                        ):
+                            # Clean up all indexes before removing
+                            self._cleanup_task_from_indexes(task_id)
+                            del self._task_dict[task_id]
+                            self._condition.notify_all()
+                            return packet.task
+
                 await self._condition.wait()
 
     async def get_assigned_task_by_assignee(self, assignee_id: str) -> Task:
@@ -109,15 +175,26 @@ class TaskChannel:
         """
         async with self._condition:
             while True:
-                for packet in self._task_dict.values():
-                    if (
-                        packet.status == PacketStatus.SENT
-                        and packet.assignee_id == assignee_id
-                    ):
-                        # Atomically claim the task by changing its status
-                        packet.status = PacketStatus.PROCESSING
-                        self._condition.notify_all()
-                        return packet.task
+                task_ids = self._task_by_assignee.get(assignee_id, deque())
+
+                # Process all available tasks until we find a valid one
+                while task_ids:
+                    task_id = task_ids.popleft()
+
+                    if task_id in self._task_dict:
+                        packet = self._task_dict[task_id]
+
+                        if (
+                            packet.status == PacketStatus.SENT
+                            and packet.assignee_id == assignee_id
+                        ):
+                            # Use helper method to properly update status
+                            self._update_task_status(
+                                task_id, PacketStatus.PROCESSING
+                            )
+                            self._condition.notify_all()
+                            return packet.task
+
                 await self._condition.wait()
 
     async def post_task(
@@ -128,6 +205,8 @@ class TaskChannel:
         async with self._condition:
             packet = Packet(task, publisher_id, assignee_id)
             self._task_dict[packet.task.id] = packet
+            self._task_by_status[PacketStatus.SENT].add(packet.task.id)
+            self._task_by_assignee[assignee_id].append(packet.task.id)
             self._condition.notify_all()
 
     async def post_dependency(
@@ -140,6 +219,7 @@ class TaskChannel:
                 dependency, publisher_id, status=PacketStatus.ARCHIVED
             )
             self._task_dict[packet.task.id] = packet
+            self._task_by_status[PacketStatus.ARCHIVED].add(packet.task.id)
             self._condition.notify_all()
 
     async def return_task(self, task_id: str) -> None:
@@ -148,7 +228,12 @@ class TaskChannel:
         async with self._condition:
             if task_id in self._task_dict:
                 packet = self._task_dict[task_id]
-                packet.status = PacketStatus.RETURNED
+                # Only add to publisher queue if not already returned
+                if packet.status != PacketStatus.RETURNED:
+                    self._update_task_status(task_id, PacketStatus.RETURNED)
+                    self._task_by_publisher[packet.publisher_id].append(
+                        packet.task.id
+                    )
             self._condition.notify_all()
 
     async def archive_task(self, task_id: str) -> None:
@@ -156,7 +241,17 @@ class TaskChannel:
         async with self._condition:
             if task_id in self._task_dict:
                 packet = self._task_dict[task_id]
-                packet.status = PacketStatus.ARCHIVED
+                # Remove from assignee queue before archiving
+                if (
+                    packet.assignee_id
+                    and packet.assignee_id in self._task_by_assignee
+                ):
+                    assignee_queue = self._task_by_assignee[packet.assignee_id]
+                    self._task_by_assignee[packet.assignee_id] = deque(
+                        task for task in assignee_queue if task != task_id
+                    )
+                # Update status (keeps in status index for dependencies)
+                self._update_task_status(task_id, PacketStatus.ARCHIVED)
             self._condition.notify_all()
 
     async def remove_task(self, task_id: str) -> None:
@@ -164,17 +259,15 @@ class TaskChannel:
         async with self._condition:
             # Check if task ID exists before removing
             if task_id in self._task_dict:
+                # Clean up all indexes before removing
+                self._cleanup_task_from_indexes(task_id)
                 del self._task_dict[task_id]
             self._condition.notify_all()
 
     async def get_dependency_ids(self) -> List[str]:
         r"""Get the IDs of all dependencies in the channel."""
         async with self._condition:
-            dependency_ids = []
-            for task_id, packet in self._task_dict.items():
-                if packet.status == PacketStatus.ARCHIVED:
-                    dependency_ids.append(task_id)
-            return dependency_ids
+            return list(self._task_by_status[PacketStatus.ARCHIVED])
 
     async def get_task_by_id(self, task_id: str) -> Task:
         r"""Get a task from the channel by its ID."""

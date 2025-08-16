@@ -42,7 +42,7 @@ camel_agent = ChatAgent(
 )
 
 # Define a user message
-usr_msg = "Generate an image of a camel working out in a gym."
+usr_msg = "Generate 3 images of a camel working out in a gym."
 
 # Get response information
 response = camel_agent.step(usr_msg)
