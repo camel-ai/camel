@@ -80,7 +80,13 @@ class Packet:
 
 
 class TaskChannel:
-    r"""An internal class used by Workforce to manage tasks."""
+    r"""An internal class used by Workforce to manage tasks.
+
+    This implementation uses a hybrid data structure approach:
+    - Hash map (_task_dict) for O(1) task lookup by ID
+    - Status-based index (_task_by_status) for efficient filtering by status
+    - Assignee/publisher queues for ordered task processing
+    """
 
     def __init__(self) -> None:
         self._condition = asyncio.Condition()
@@ -169,9 +175,10 @@ class TaskChannel:
         """
         async with self._condition:
             while True:
-                task_ids = self._task_by_assignee[assignee_id]
+                task_ids = self._task_by_assignee.get(assignee_id, deque())
 
-                if task_ids:
+                # Process all available tasks until we find a valid one
+                while task_ids:
                     task_id = task_ids.popleft()
 
                     if task_id in self._task_dict:
@@ -220,20 +227,31 @@ class TaskChannel:
         processed by the worker."""
         async with self._condition:
             if task_id in self._task_dict:
-                # Use helper method to properly update status
-                self._update_task_status(task_id, PacketStatus.RETURNED)
                 packet = self._task_dict[task_id]
-                self._task_by_publisher[packet.publisher_id].append(
-                    packet.task.id
-                )
+                # Only add to publisher queue if not already returned
+                if packet.status != PacketStatus.RETURNED:
+                    self._update_task_status(task_id, PacketStatus.RETURNED)
+                    self._task_by_publisher[packet.publisher_id].append(
+                        packet.task.id
+                    )
             self._condition.notify_all()
 
     async def archive_task(self, task_id: str) -> None:
         r"""Archive a task in channel, making it to become a dependency."""
         async with self._condition:
             if task_id in self._task_dict:
+                packet = self._task_dict[task_id]
+                # Remove from assignee queue before archiving
+                if (
+                    packet.assignee_id
+                    and packet.assignee_id in self._task_by_assignee
+                ):
+                    assignee_queue = self._task_by_assignee[packet.assignee_id]
+                    self._task_by_assignee[packet.assignee_id] = deque(
+                        task for task in assignee_queue if task != task_id
+                    )
+                # Update status (keeps in status index for dependencies)
                 self._update_task_status(task_id, PacketStatus.ARCHIVED)
-                self._cleanup_task_from_indexes(task_id)
             self._condition.notify_all()
 
     async def remove_task(self, task_id: str) -> None:
