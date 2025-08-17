@@ -987,7 +987,9 @@ async def test_tool_calling_math_async(step_call_count=3):
         content="You are a help assistant.",
     )
     model_config = ChatGPTConfig(temperature=0)
-    math_funcs = sync_funcs_to_async([FunctionTool(MathToolkit().multiply)])
+    math_funcs = sync_funcs_to_async(
+        [FunctionTool(MathToolkit().math_multiply)]
+    )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_5_MINI,

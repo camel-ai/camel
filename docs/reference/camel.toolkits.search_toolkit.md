@@ -175,12 +175,12 @@ Each dictionary contains the following keys:
 - 'long_description': More detail of the website.
 - 'url': The URL of the website.
 
-<a id="camel.toolkits.search_toolkit.SearchToolkit.tavily_search"></a>
+<a id="camel.toolkits.search_toolkit.SearchToolkit.search_tavily"></a>
 
-### tavily_search
+### search_tavily
 
 ```python
-def tavily_search(
+def search_tavily(
     self,
     query: str,
     num_results: int = 5,
