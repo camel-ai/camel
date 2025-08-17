@@ -17,9 +17,10 @@ import asyncio
 import datetime
 import time
 from collections import deque
-from typing import Any, List, Optional
+from typing import Any, List, Dict, Optional
 
 from colorama import Fore
+from sentence_transformers import SentenceTransformer as ST, util
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
@@ -62,6 +63,8 @@ class AgentPool:
         self.max_size = max_size
         self.auto_scale = auto_scale
         self.idle_timeout = idle_timeout
+        self._agent_metadata_pool: Dict[str, Dict[str, Any]] = {}
+        self.transformer = ST('all-MiniLM-L6-v2')
 
         # Pool management
         self._available_agents: deque = deque()
@@ -87,47 +90,74 @@ class AgentPool:
         r"""Create a fresh agent instance."""
         agent = self.base_agent.clone(with_memory=False)
         self._total_clones_created += 1
+        self._agent_metadata_pool[id(agent)] = {
+            'task_count': 0,
+            'error_count': 0,
+            'prev_task_embeddings': None,
+        }
         return agent
+    
+    def _calculate_affinity_score(self, agent: ChatAgent, task_embeddings) -> float:
+        r"""Calculate the affinity score of a task based on its metadata."""
+        metadata = self._agent_metadata_pool.get(id(agent))
 
-    async def get_agent(self) -> ChatAgent:
+        # Semantic similarity of current and previous tasks to make sure accurate affinity determination
+        sim_score = util.cos_sim(metadata['prev_task_embeddings'], task_embeddings) \
+            if metadata['prev_task_embeddings'] else 0.0
+
+        success_rate = 1 - (metadata['error_count'] / metadata['task_count']) if metadata['task_count'] > 0 else 0.75
+        # Optimistic default value 0.75 for fresh agents
+        
+        freshness = 1.0 if metadata['task_count'] == 0 else 0.0
+
+        return (0.5 * sim_score) + (0.3 * success_rate) + (0.2 * freshness)
+
+    def _get_task_embedding(self, task: Task) -> str:
+        r"""Generate embeddings for the task based on its content."""
+        return self.transformer.encode(task.content)
+
+    async def get_agent(self, task: Task) -> ChatAgent:
         r"""Get an agent from the pool, creating one if necessary."""
         async with self._lock:
             self._total_borrows += 1
+            start_wait_time = 0
 
-            # Try to get from available agents first
+            # Check if we need to wait for an available agent
+            while not self._available_agents:
+                total_agents = len(self._in_use_agents)
+                if total_agents < self.max_size or self.auto_scale:
+                    break  # We can create a new agent, so no need to wait.
+
+                if not start_wait_time:
+                    start_wait_time = time.time()
+                    self._tasks_waited += 1
+                
+                await asyncio.sleep(0.1)
+            
+            if start_wait_time:
+                self._total_wait_time += time.time() - start_wait_time
+            
+            best_agent = None
             if self._available_agents:
-                agent = self._available_agents.popleft()
-                self._in_use_agents.add(id(agent))
+                task_embeddings = self._get_task_embedding(task)
+                # Find the agent with the highest affinity to the given task from the available agents
+                best_agent = max(
+                    self._available_agents,
+                    key=lambda a: self._calculate_affinity_score(a, task_embeddings),
+                )
+                self._available_agents.remove(best_agent)
                 self._pool_hits += 1
-
-                # Reset the agent state
-                agent.reset()
-                return agent
-
-            # Check if we can create new agents
-            total_agents = len(self._available_agents) + len(
-                self._in_use_agents
-            )
-            if total_agents < self.max_size:
-                agent = self._create_fresh_agent()
-                self._in_use_agents.add(id(agent))
-                return agent
-
-            # Pool exhausted, wait and retry or create temporary agent
-            if self.auto_scale:
-                # Create a temporary agent that won't be returned to pool
-                return self._create_fresh_agent()
             else:
-                # Wait for an agent to become available
-                while not self._available_agents:
-                    await asyncio.sleep(0.1)
+                total_agents = len(self._available_agents) + len(self._in_use_agents)
+                # Check if we can create a fresh agent
+                if total_agents < self.max_size or self.auto_scale:
+                    best_agent = self._create_fresh_agent()
 
-                agent = self._available_agents.popleft()
-                self._in_use_agents.add(id(agent))
-                agent.reset()
-                return agent
+            best_agent.reset()
+            self._in_use_agents.add(id(best_agent))
+            return best_agent
 
-    async def return_agent(self, agent: ChatAgent) -> None:
+    async def return_agent(self, agent: ChatAgent, task: Task) -> None:
         r"""Return an agent to the pool."""
         async with self._lock:
             agent_id = id(agent)
@@ -137,8 +167,13 @@ class AgentPool:
 
                 # Only return to pool if we're under max size
                 if len(self._available_agents) < self.max_size:
+                    # Update metadata of agent after performing the task
+                    metadata = self._agent_metadata_pool[agent_id]
+                    metadata['task_count'] += 1
+                    metadata['error_count'] += 1 if task.state == TaskState.FAILED else 0
+                    metadata['prev_task_embeddings'] = self._get_task_embedding(task)
+                    
                     # Reset agent state before returning to pool
-                    agent.reset()
                     self._available_agents.append(agent)
                     self._agent_last_used[agent_id] = time.time()
 
@@ -250,18 +285,18 @@ class SingleAgentWorker(Worker):
                 base_agent=self.worker,
             )
 
-    async def _get_worker_agent(self) -> ChatAgent:
+    async def _get_worker_agent(self, task: Task) -> ChatAgent:
         r"""Get a worker agent, either from pool or by cloning."""
         if self.use_agent_pool and self.agent_pool:
-            return await self.agent_pool.get_agent()
+            return await self.agent_pool.get_agent(task)
         else:
             # Fallback to original cloning approach
             return self.worker.clone(with_memory=False)
 
-    async def _return_worker_agent(self, agent: ChatAgent) -> None:
+    async def _return_worker_agent(self, agent: ChatAgent, task: Task) -> None:
         r"""Return a worker agent to the pool if pooling is enabled."""
-        if self.use_agent_pool and self.agent_pool:
-            await self.agent_pool.return_agent(agent)
+        if self.use_agent_pool and self.agent_pool:                
+            await self.agent_pool.return_agent(agent, task)
         # If not using pool, agent will be garbage collected
 
     async def _process_task(
@@ -285,7 +320,7 @@ class SingleAgentWorker(Worker):
                 `TaskState.FAILED`.
         """
         # Get agent efficiently (from pool or by cloning)
-        worker_agent = await self._get_worker_agent()
+        worker_agent = await self._get_worker_agent(task)
         response_content = ""
 
         try:
@@ -391,7 +426,7 @@ class SingleAgentWorker(Worker):
             return TaskState.FAILED
         finally:
             # Return agent to pool or let it be garbage collected
-            await self._return_worker_agent(worker_agent)
+            await self._return_worker_agent(worker_agent, task)
 
         # Populate additional_info with worker attempt details
         if task.additional_info is None:
@@ -489,4 +524,4 @@ class SingleAgentWorker(Worker):
         r"""Get agent pool statistics if pool is enabled."""
         if self.use_agent_pool and self.agent_pool:
             return self.agent_pool.get_stats()
-        return None
+    
