@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import asyncio
 import datetime
 import traceback
 import uuid
@@ -19,6 +18,7 @@ from typing import TYPE_CHECKING, Any, List
 
 if TYPE_CHECKING:
     from a2a.types import (
+        AgentCard,
         InvalidAgentResponseError,
         SendMessageSuccessResponse,
     )
@@ -42,19 +42,14 @@ class A2AAgent(Worker):
         base_url (str): The base URL of the A2A compliant agent service.
         http_kwargs (dict): A dictionary of keyword arguments to be passed to
             the underlying `httpx.AsyncClient`.
-        agent_card (Any): The pre-fetched agent card of the A2A service.
-        use_structured_output_handler (bool, optional): This parameter is
-            included for API consistency with other workers but is not used,
-            as the A2A protocol provides its own structured output mechanism.
-            (default: :obj:`True`)
+        agent_card (AgentCard): The pre-fetched agent card of the A2A service.
     """
 
     def __init__(
         self,
         base_url: str,
         http_kwargs: dict,
-        agent_card: Any,
-        use_structured_output_handler: bool = True,
+        agent_card: "AgentCard",
     ) -> None:
         from a2a.client import A2ACardResolver, A2AClient
 
@@ -71,7 +66,6 @@ class A2AAgent(Worker):
             httpx_client=self.http_client, agent_card=agent_card
         )
         self.context_id: str | None = None
-        self.use_structured_output_handler = False
 
     @classmethod
     async def create(
@@ -83,10 +77,17 @@ class A2AAgent(Worker):
         from a2a.client import A2ACardResolver
 
         http_kwargs = http_kwargs or {}
-        http_client = AsyncClient(**http_kwargs)
-        resolver = A2ACardResolver(base_url=base_url, httpx_client=http_client)
-        agent_card = await resolver.get_agent_card()
-        await http_client.aclose()
+        # Create a temporary client just for fetching the agent card
+        temp_client = AsyncClient(**http_kwargs)
+        try:
+            resolver = A2ACardResolver(
+                base_url=base_url, httpx_client=temp_client
+            )
+            agent_card = await resolver.get_agent_card()
+        finally:
+            await temp_client.aclose()
+
+        # Create the actual instance with its own HTTP client
         return cls(base_url, http_kwargs, agent_card)
 
     def reset(self) -> Any:
@@ -111,24 +112,6 @@ class A2AAgent(Worker):
                 await self.http_client.aclose()
         except Exception as e:
             print(f"Error during A2A agent cleanup: {e}")
-
-    def __del__(self):
-        r"""Destructor to ensure cleanup on garbage collection."""
-        try:
-            if hasattr(self, 'http_client') and not self.http_client.is_closed:
-                # Schedule cleanup if event loop is still running
-                try:
-                    loop = asyncio.get_event_loop()
-                    if not loop.is_closed():
-                        task = loop.create_task(self.http_client.aclose())
-                        # Store reference to prevent RUF006 warning
-                        _ = task
-                except RuntimeError:
-                    # Event loop is closed, skip cleanup
-                    pass
-        except Exception:
-            # Ignore cleanup errors during destruction
-            pass
 
     def _extract_text_from_parts(self, parts) -> str:
         r"""Extract text content from parts list."""
@@ -160,8 +143,8 @@ class A2AAgent(Worker):
         msg_obj = Message(
             role=Role.user,
             parts=[Part(root=TextPart(kind="text", text=message))],
-            messageId=str(uuid.uuid4()),
-            contextId=self.context_id,
+            message_id=str(uuid.uuid4()),
+            context_id=self.context_id,
         )
         params = MessageSendParams(message=msg_obj)
         request = SendMessageRequest(
@@ -179,7 +162,10 @@ class A2AAgent(Worker):
         elif isinstance(response.root, JSONRPCErrorResponse):
             raise RuntimeError(f"A2A JSONRPCErrorResponse: {response.root}")
         else:
-            raise TypeError(f"Unexpected response type: {type(response.root)}")
+            raise TypeError(
+                f"Unexpected response type: {type(response.root).__name__}, "
+                f"response: {response.root}"
+            )
 
     async def _process_task(
         self, task: Task, dependencies: List[Task]
@@ -200,6 +186,7 @@ class A2AAgent(Worker):
             SendMessageSuccessResponse,
         )
 
+        response = None
         try:
             dependency_tasks_info = self._get_dep_tasks_info(dependencies)
             prompt = PROCESS_TASK_PROMPT.format(
@@ -213,9 +200,9 @@ class A2AAgent(Worker):
 
             # Update context ID if available
             if (
-                self.context_id is None
-                and hasattr(response, "result")
+                hasattr(response, "result")
                 and hasattr(response.result, "contextId")
+                and response.result.contextId
             ):
                 self.context_id = response.result.contextId
 
@@ -251,7 +238,9 @@ class A2AAgent(Worker):
                     )
 
                 if not task_result_content:
-                    task_result_content = "Task completed, but no text content found in response"
+                    task_result_content = (
+                        "Task completed, but no text content found in response"
+                    )
 
                 task.result = task_result_content
                 print(f"======\n{Fore.GREEN}Response from {self}:{Fore.RESET}")
@@ -264,7 +253,7 @@ class A2AAgent(Worker):
                 error_msg = (
                     f"Error from A2A Agent: {error_obj.message}"
                     if error_obj and hasattr(error_obj, "message")
-                    else "Error from A2A Agent: Unknown error format."
+                    else f"Error from A2A Agent: {response!s}"
                 )
                 task.result = error_msg
                 print(f"======\n{Fore.RED}Error from {self}:{Fore.RESET}")
@@ -296,9 +285,7 @@ class A2AAgent(Worker):
                         f"A2A worker {self.node_id} processed task: "
                         f"{task.content}"
                     ),
-                    "response_content": str(response)
-                    if 'response' in locals()
-                    else "",
+                    "response_content": str(response) if response else "",
                     "tool_calls": None,
                     "total_tokens": 0,
                 }
