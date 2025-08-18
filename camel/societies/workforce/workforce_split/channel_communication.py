@@ -31,13 +31,14 @@ TASK_TIMEOUT_SECONDS = 180.0
 
 
 class ChannelCommunication:
-    """Class to handle channel communication operations for workforce tasks."""
+    r"""Class to handle channel communication operations for workforce
+    tasks."""
 
     def __init__(self):
-        """Initialize the ChannelCommunication class."""
+        r"""Initialize the ChannelCommunication class."""
         pass
 
-    async def post_task(
+    async def _post_task(
         self,
         task: Task,
         assignee_id: str,
@@ -47,17 +48,19 @@ class ChannelCommunication:
         metrics_logger=None,
         increment_in_flight_tasks_func=None,
     ) -> None:
-        """Post a task to the channel with the specified assignee.
+        r"""Post a task to the channel with the specified assignee.
 
         Args:
-            task: The task to post
-            assignee_id: The ID of the assignee
-            channel: The task channel for communication
-            node_id: The node identifier
-            task_start_times: Dictionary tracking task start times
-            metrics_logger: Optional metrics logger
-            increment_in_flight_tasks_func: Function to increment in-flight
-                tasks
+            task (Task): The task to post.
+            assignee_id (str): The ID of the assignee.
+            channel (TaskChannel): The task channel for communication.
+            node_id (str): The node identifier.
+            task_start_times (Dict[str, float]): Dictionary tracking task
+                start times.
+            metrics_logger (Any, optional): Optional metrics logger.
+                (default: :obj:`None`)
+            increment_in_flight_tasks_func (Callable, optional): Function to
+                increment in-flight tasks. (default: :obj:`None`)
         """
         # Record the start time when a task is posted
         task_start_times[task.id] = time.time()
@@ -83,40 +86,40 @@ class ChannelCommunication:
                 f"{e}{Fore.RESET}"
             )
 
-    async def post_dependency(
+    async def _post_dependency(
         self,
         dependency: Task,
         channel: TaskChannel,
         node_id: str,
     ) -> None:
-        """Post a dependency to the channel.
+        r"""Post a dependency to the channel.
 
         Args:
-            dependency: The dependency task to post
-            channel: The task channel for communication
-            node_id: The node identifier
+            dependency (Task): The dependency task to post.
+            channel (TaskChannel): The task channel for communication.
+            node_id (str): The node identifier.
         """
         await channel.post_dependency(dependency, node_id)
 
-    async def get_returned_task(
+    async def _get_returned_task(
         self,
         channel: TaskChannel,
         node_id: str,
         pending_tasks: List[Task],
         in_flight_tasks: int,
     ) -> Optional[Task]:
-        """Get the task that's published by this node and just get returned
+        r"""Get the task that's published by this node and just get returned
         from the assignee. Includes timeout handling to prevent indefinite
         waiting.
 
         Args:
-            channel: The task channel for communication
-            node_id: The node identifier
-            pending_tasks: List of pending tasks
-            in_flight_tasks: Number of in-flight tasks
+            channel (TaskChannel): The task channel for communication.
+            node_id (str): The node identifier.
+            pending_tasks (List[Task]): List of pending tasks.
+            in_flight_tasks (int): Number of in-flight tasks.
 
         Returns:
-            The returned task or None if no task is returned
+            Optional[Task]: The returned task or None if no task is returned.
         """
         try:
             # Add timeout to prevent indefinite waiting
@@ -134,7 +137,7 @@ class ChannelCommunication:
             logger.error(error_msg, exc_info=True)
             return None
 
-    async def post_ready_tasks(
+    async def _post_ready_tasks(
         self,
         pending_tasks: List[Task],
         completed_tasks: List[Task],
@@ -147,21 +150,26 @@ class ChannelCommunication:
         increment_in_flight_tasks_func=None,
         find_assignee_func=None,
     ) -> None:
-        """Checks for unassigned tasks, assigns them, and then posts any
+        r"""Checks for unassigned tasks, assigns them, and then posts any
         ready tasks to the channel.
 
         Args:
-            pending_tasks: List of pending tasks
-            completed_tasks: List of completed tasks
-            task_dependencies: Dictionary mapping task IDs to dependencies
-            assignees: Dictionary mapping task IDs to assignee IDs
-            task_start_times: Dictionary tracking task start times
-            channel: The task channel for communication
-            node_id: The node identifier
-            metrics_logger: Optional metrics logger
-            increment_in_flight_tasks_func: Function to increment in-flight
-                tasks
-            find_assignee_func: Function to find task assignees
+            pending_tasks (List[Task]): List of pending tasks.
+            completed_tasks (List[Task]): List of completed tasks.
+            task_dependencies (Dict[str, List[str]]): Dictionary mapping task
+                IDs to dependencies.
+            assignees (Dict[str, str]): Dictionary mapping task IDs to
+                assignee IDs.
+            task_start_times (Dict[str, float]): Dictionary tracking task
+                start times.
+            channel (TaskChannel): The task channel for communication.
+            node_id (str): The node identifier.
+            metrics_logger (Any, optional): Optional metrics logger.
+                (default: :obj:`None`)
+            increment_in_flight_tasks_func (Callable, optional): Function to
+                increment in-flight tasks. (default: :obj:`None`)
+            find_assignee_func (Callable, optional): Function to find task
+                assignees. (default: :obj:`None`)
         """
 
         # Step 1: Identify and assign any new tasks in the pending queue
@@ -216,7 +224,7 @@ class ChannelCommunication:
                         f"Posting task {task.id} to assignee {assignee_id}. "
                         f"Dependencies met."
                     )
-                    await self.post_task(
+                    await self._post_task(
                         task,
                         assignee_id,
                         channel,
@@ -236,280 +244,17 @@ class ChannelCommunication:
                 # fine
                 pass
 
-    async def listen_to_channel(
-        self,
-        channel: TaskChannel,
-        node_id: str,
-        pending_tasks: List[Task],
-        completed_tasks: List[Task],
-        task_dependencies: Dict[str, List[str]],
-        assignees: Dict[str, str],
-        task_start_times: Dict[str, float],
-        in_flight_tasks: int,
-        metrics_logger=None,
-        find_assignee_func=None,
-        increment_in_flight_tasks_func=None,
-        decrement_in_flight_tasks_func=None,
-        handle_failed_task_func=None,
-        handle_completed_task_func=None,
-        graceful_shutdown_func=None,
-        is_task_result_insufficient_func=None,
-        pause_event=None,
-        stop_requested=False,
-        running=False,
-        state=None,
-        last_snapshot_time=0,
-        snapshot_interval=60,
-        save_snapshot_func=None,
-        loop=None,
-    ) -> None:
-        """Continuously listen to the channel, post task to the channel and
-        track the status of posted tasks. Now supports pause/resume and
-        graceful stop.
-
-        Args:
-            channel: The task channel for communication
-            node_id: The node identifier
-            pending_tasks: List of pending tasks
-            completed_tasks: List of completed tasks
-            task_dependencies: Dictionary mapping task IDs to dependencies
-            assignees: Dictionary mapping task IDs to assignee IDs
-            task_start_times: Dictionary tracking task start times
-            in_flight_tasks: Number of in-flight tasks
-            metrics_logger: Optional metrics logger
-            find_assignee_func: Function to find task assignees
-            increment_in_flight_tasks_func: Function to increment in-flight
-                tasks
-            decrement_in_flight_tasks_func: Function to decrement in-flight
-                tasks
-            handle_failed_task_func: Function to handle failed tasks
-            handle_completed_task_func: Function to handle completed tasks
-            graceful_shutdown_func: Function for graceful shutdown
-            is_task_result_insufficient_func: Function to check if task result
-                is insufficient
-            pause_event: Event for pause functionality
-            stop_requested: Flag indicating if stop was requested
-            running: Flag indicating if running
-            state: Current state
-            last_snapshot_time: Last snapshot time
-            snapshot_interval: Snapshot interval
-            save_snapshot_func: Function to save snapshots
-            loop: Event loop
-        """
-
-        logger.info(f"Workforce {node_id} started.")
-
-        await self.post_ready_tasks(
-            pending_tasks,
-            completed_tasks,
-            task_dependencies,
-            assignees,
-            channel,
-            node_id,
-            task_start_times,
-            metrics_logger,
-            increment_in_flight_tasks_func,
-            find_assignee_func,
-        )
-
-        while (
-            len(pending_tasks) > 0 or in_flight_tasks > 0
-        ) and not stop_requested:
-            try:
-                # Check for pause request at the beginning of each loop
-                # iteration
-                if pause_event:
-                    await pause_event.wait()
-
-                # Check for stop request after potential pause
-                if stop_requested:
-                    logger.info("Stop requested, breaking execution loop.")
-                    break
-
-                # Save snapshot before processing next task
-                if pending_tasks:
-                    current_task = pending_tasks[0]
-                    # Throttled snapshot
-                    if time.time() - last_snapshot_time >= snapshot_interval:
-                        if save_snapshot_func:
-                            save_snapshot_func(
-                                f"Before processing task: {current_task.id}"
-                            )
-                        last_snapshot_time = time.time()
-
-                # Get returned task
-                returned_task = await self.get_returned_task(
-                    channel,
-                    node_id,
-                    pending_tasks,
-                    in_flight_tasks,
-                )
-
-                # If no task was returned, continue
-                if returned_task is None:
-                    logger.debug(
-                        f"No task returned in workforce {node_id}. "
-                        f"Pending: {len(pending_tasks)}, "
-                        f"In-flight: {in_flight_tasks}"
-                    )
-                    await self.post_ready_tasks(
-                        pending_tasks,
-                        completed_tasks,
-                        task_dependencies,
-                        assignees,
-                        channel,
-                        node_id,
-                        task_start_times,
-                        metrics_logger,
-                        increment_in_flight_tasks_func,
-                        find_assignee_func,
-                    )
-                    continue
-
-                if decrement_in_flight_tasks_func:
-                    decrement_in_flight_tasks_func(
-                        returned_task.id, "task returned successfully"
-                    )
-
-                # Process the returned task based on its state
-                if returned_task.state == TaskState.DONE:
-                    # Task completed successfully
-                    # Check if the "completed" task actually failed to provide
-                    # useful results
-                    if (
-                        is_task_result_insufficient_func
-                        and is_task_result_insufficient_func(returned_task)
-                    ):
-                        result_preview = (
-                            returned_task.result
-                            if returned_task.result
-                            else "No result"
-                        )
-                        logger.warning(
-                            f"Task {returned_task.id} marked as DONE but "
-                            f"result is insufficient. "
-                            f"Treating as failed. Result: '{result_preview}'"
-                        )
-                        returned_task.state = TaskState.FAILED
-                        try:
-                            if handle_failed_task_func:
-                                halt = await handle_failed_task_func(
-                                    returned_task
-                                )
-                                if not halt:
-                                    continue
-                                error_msg = (
-                                    returned_task.result or "Unknown error"
-                                )
-                                print(
-                                    f"{Fore.RED}Task {returned_task.id} has "
-                                    f"failed for 3 times after "
-                                    f"insufficient results, halting the "
-                                    f"workforce. Final error: "
-                                    f"{error_msg}"
-                                    f"{Fore.RESET}"
-                                )
-                                if graceful_shutdown_func:
-                                    await graceful_shutdown_func(returned_task)
-                                break
-                        except Exception as e:
-                            logger.error(
-                                f"Error handling insufficient task result "
-                                f"{returned_task.id}: {e}",
-                                exc_info=True,
-                            )
-                            continue
-                    else:
-                        # Task completed successfully with sufficient results
-                        if handle_completed_task_func:
-                            await handle_completed_task_func(returned_task)
-                        print(
-                            f"{Fore.GREEN}✅ Task {returned_task.id} "
-                            f"completed successfully.{Fore.RESET}"
-                        )
-                elif returned_task.state == TaskState.FAILED:
-                    try:
-                        if handle_failed_task_func:
-                            halt = await handle_failed_task_func(
-                                returned_task,
-                            )
-                            if not halt:
-                                continue
-                            error_msg = returned_task.result or 'Unknown error'
-                            print(
-                                f"{Fore.RED}Task {returned_task.id} has "
-                                f"failed for 3 times, halting the "
-                                f"workforce. Final error: "
-                                f"{error_msg}"
-                                f"{Fore.RESET}",
-                            )
-                            # Graceful shutdown instead of immediate break
-                            if graceful_shutdown_func:
-                                await graceful_shutdown_func(returned_task)
-                            break
-                    except Exception as e:
-                        logger.error(
-                            f"Error handling failed task "
-                            f"{returned_task.id}: {e}",
-                            exc_info=True,
-                        )
-                        # Continue to prevent hanging
-                        continue
-                elif returned_task.state == TaskState.OPEN:
-                    # Task is in OPEN state - it's ready to be processed
-                    # This typically means the task was returned without being
-                    # processed
-                    logger.info(
-                        f"Task {returned_task.id} returned in OPEN state - "
-                        f"ready for processing"
-                    )
-                    # Move task back to pending queue for reassignment
-                    pending_tasks.append(returned_task)
-                    if decrement_in_flight_tasks_func:
-                        decrement_in_flight_tasks_func(
-                            returned_task.id, "task returned in OPEN state"
-                        )
-                else:
-                    raise ValueError(
-                        f"Task {returned_task.id} has an unexpected state."
-                    )
-
-            except Exception as e:
-                # Decrement in-flight counter to prevent hanging
-                if decrement_in_flight_tasks_func:
-                    decrement_in_flight_tasks_func(
-                        "unknown", "exception in task processing loop"
-                    )
-
-                logger.error(
-                    f"Error processing task in workforce {node_id}: {e}"
-                    f"Workforce state - Pending tasks: "
-                    f"{len(pending_tasks)}, "
-                    f"In-flight tasks: {in_flight_tasks}, "
-                    f"Completed tasks: {len(completed_tasks)}"
-                )
-
-                if stop_requested:
-                    break
-                # Continue with next iteration unless stop is requested
-                continue
-
-        # Handle final state
-        if stop_requested:
-            logger.info("Workforce stopped by user request.")
-        elif not pending_tasks and in_flight_tasks == 0:
-            logger.info("All tasks completed.")
-
-    def submit_coro_to_loop(
+    def _submit_coro_to_loop(
         self,
         coro: Coroutine,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
-        """Thread-safe submission of coroutine to the workforce loop.
+        r"""Thread-safe submission of coroutine to the workforce loop.
 
         Args:
-            coro: The coroutine to submit
-            loop: The event loop to submit to
+            coro (Coroutine): The coroutine to submit.
+            loop (asyncio.AbstractEventLoop, optional): The event loop to
+                submit to. (default: :obj:`None`)
         """
 
         if loop is None or loop.is_closed():

@@ -33,6 +33,7 @@ from camel.societies.workforce.worker import Worker
 from camel.societies.workforce.workforce_split.introspection import (
     IntrospectionHelper,
 )
+from camel.societies.workforce.workforce_split.state import WorkforceState
 from camel.tasks.task import Task
 from camel.toolkits import (
     CodeExecutionToolkit,
@@ -48,7 +49,7 @@ DEFAULT_WORKER_POOL_SIZE = 10
 
 
 class WorkerManagement:
-    """Class for managing worker operations in a workforce system."""
+    r"""Class for managing worker operations in a workforce system."""
 
     def __init__(
         self,
@@ -60,23 +61,32 @@ class WorkerManagement:
         channel: Optional[TaskChannel] = None,
         pause_event: Optional[asyncio.Event] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
-        state: Optional[Any] = None,
+        state: Optional[WorkforceState] = None,
         metrics_logger: Optional[Any] = None,
     ):
-        """Initialize the WorkerManagement class.
+        r"""Initialize the WorkerManagement class.
 
         Args:
-            coordinator_agent: The coordinator agent for task assignment.
-            new_worker_agent: Template agent for creating new workers.
-            use_structured_output_handler: Whether to use structured output
-                handler.
-            structured_handler: The structured output handler instance.
-            children: List of child nodes.
-            channel: The task channel for communication.
-            pause_event: Event for pausing the workforce.
-            loop: The asyncio event loop.
-            state: The current workforce state.
-            metrics_logger: Logger for metrics.
+            coordinator_agent (ChatAgent, optional): The coordinator agent for
+                task assignment. (default: :obj:`None`)
+            new_worker_agent (ChatAgent, optional): Template agent for creating
+                new workers. (default: :obj:`None`)
+            use_structured_output_handler (bool, optional): Whether to use
+                structured output handler. (default: :obj:`True`)
+            structured_handler (Any, optional): The structured output handler
+                instance. (default: :obj:`None`)
+            children (List, optional): List of child nodes.
+                (default: :obj:`None`)
+            channel (TaskChannel, optional): The task channel for
+                communication. (default: :obj:`None`)
+            pause_event (asyncio.Event, optional): Event for pausing the
+                workforce. (default: :obj:`None`)
+            loop (asyncio.AbstractEventLoop, optional): The asyncio event
+                loop. (default: :obj:`None`)
+            state (WorkforceState, optional): The current workforce state.
+                (default: :obj:`None`)
+            metrics_logger (Any, optional): Logger for metrics.
+                (default: :obj:`None`)
         """
         self.coordinator_agent = coordinator_agent
         self.new_worker_agent = new_worker_agent
@@ -86,11 +96,11 @@ class WorkerManagement:
         self._channel = channel
         self._pause_event = pause_event
         self._loop = loop
-        self._state = state
+        self._state = state or WorkforceState.IDLE
         self.metrics_logger = metrics_logger
         self._child_listening_tasks: List = []
 
-    async def create_worker_node_for_task(self, task: Task) -> Worker:
+    async def _create_worker_node_for_task(self, task: Task) -> Worker:
         r"""Creates a new worker node for a given task and add it to the
         children list of this node. This is one of the actions that
         the coordinator can take when a task has failed.
@@ -104,7 +114,7 @@ class WorkerManagement:
         introspection_helper = IntrospectionHelper()
         prompt = CREATE_NODE_PROMPT.format(
             content=task.content,
-            child_nodes_info=introspection_helper.get_child_nodes_info(
+            child_nodes_info=introspection_helper._get_child_nodes_info(
                 self._children
             ),
             additional_info=task.additional_info,
@@ -201,7 +211,7 @@ class WorkerManagement:
                         f"Coordinator agent returned malformed JSON response. "
                     ) from e
 
-        new_agent = await self.create_new_agent(
+        new_agent = await self._create_new_agent(
             new_node_conf.role, new_node_conf.sys_msg
         )
 
@@ -236,8 +246,8 @@ class WorkerManagement:
         )
         return new_node
 
-    async def create_new_agent(self, role: str, sys_msg: str) -> ChatAgent:
-        """Create a new agent with the specified role and system message.
+    async def _create_new_agent(self, role: str, sys_msg: str) -> ChatAgent:
+        r"""Create a new agent with the specified role and system message.
 
         Args:
             role (str): The role name for the agent.
@@ -279,13 +289,18 @@ class WorkerManagement:
                 pause_event=self._pause_event,
             )
 
-    def start_child_node_when_paused(self, start_coroutine: Coroutine) -> None:
+    def _start_child_node_when_paused(
+        self, start_coroutine: Coroutine
+    ) -> None:
         r"""Helper to start a child node when workforce is paused.
 
         Args:
-            start_coroutine: The coroutine to start (e.g., worker_node.start())
+            start_coroutine (Coroutine): The coroutine to start (e.g.,
+                worker_node.start()).
         """
-        if self._state == "PAUSED" and hasattr(self, '_child_listening_tasks'):
+        if self._state == WorkforceState.PAUSED and hasattr(
+            self, '_child_listening_tasks'
+        ):
             if self._loop and not self._loop.is_closed():
                 # Use thread-safe coroutine execution for dynamic addition
                 child_task: Union[asyncio.Task, concurrent.futures.Future]
@@ -334,7 +349,7 @@ class WorkerManagement:
             ValueError: If worker has tools and stream mode enabled but
                 use_structured_output_handler is False.
         """
-        if self._state == "RUNNING":
+        if self._state == WorkforceState.RUNNING:
             raise RuntimeError(
                 "Cannot add workers while workforce is running. "
                 "Pause the workforce first."
@@ -359,7 +374,7 @@ class WorkerManagement:
             worker_node.set_channel(self._channel)
 
         # If workforce is paused, start the worker's listening task
-        self.start_child_node_when_paused(worker_node.start())
+        self._start_child_node_when_paused(worker_node.start())
 
         if self.metrics_logger:
             self.metrics_logger.log_worker_created(
@@ -404,7 +419,7 @@ class WorkerManagement:
         Raises:
             RuntimeError: If called while workforce is running (not paused).
         """
-        if self._state == "RUNNING":
+        if self._state == WorkforceState.RUNNING:
             raise RuntimeError(
                 "Cannot add workers while workforce is running. "
                 "Pause the workforce first."
@@ -438,7 +453,7 @@ class WorkerManagement:
             worker_node.set_channel(self._channel)
 
         # If workforce is paused, start the worker's listening task
-        self.start_child_node_when_paused(worker_node.start())
+        self._start_child_node_when_paused(worker_node.start())
 
         if self.metrics_logger:
             self.metrics_logger.log_worker_created(
@@ -463,7 +478,7 @@ class WorkerManagement:
         Raises:
             RuntimeError: If called while workforce is running (not paused).
         """
-        if self._state == "RUNNING":
+        if self._state == WorkforceState.RUNNING:
             raise RuntimeError(
                 "Cannot add workers while workforce is running. "
                 "Pause the workforce first."
@@ -478,34 +493,103 @@ class WorkerManagement:
             workforce.set_channel(self._channel)
 
         # If workforce is paused, start the child workforce's listening task
-        self.start_child_node_when_paused(workforce.start())
+        self._start_child_node_when_paused(workforce.start())
         return self
 
     def _validate_agent_compatibility(
         self, agent: ChatAgent, agent_name: str
     ) -> None:
-        """Validate agent compatibility (placeholder method)."""
-        # This would contain the actual validation logic
-        pass
+        r"""Validate that agent configuration is compatible with workforce
+        settings.
+
+        Args:
+            agent (ChatAgent): The agent to validate.
+            agent_name (str): Context description for error messages.
+
+        Raises:
+            ValueError: If agent has tools and stream mode enabled but
+                use_structured_output_handler is False.
+        """
+        agent_has_tools = (
+            bool(agent.tool_dict) if hasattr(agent, 'tool_dict') else False
+        )
+        agent_stream_mode = (
+            getattr(agent.model_backend, 'stream', False)
+            if hasattr(agent, 'model_backend')
+            else False
+        )
+
+        if (
+            agent_has_tools
+            and agent_stream_mode
+            and not self.use_structured_output_handler
+        ):
+            raise ValueError(
+                f"{agent_name} has tools and stream mode enabled, but "
+                "use_structured_output_handler is False. Native structured "
+                "output doesn't work with tool calls in stream mode. "
+                "Please set use_structured_output_handler=True when creating "
+                "the Workforce."
+            )
 
     def _attach_pause_event_to_agent(self, agent: ChatAgent) -> None:
-        """Attach pause event to agent (placeholder method)."""
-        # This would contain the actual attachment logic
-        pass
+        r"""Ensure the given ChatAgent shares this workforce's pause_event.
 
-    def _ensure_pause_event_in_kwargs(
-        self, kwargs: Optional[Dict]
-    ) -> Optional[Dict]:
-        """Ensure pause event is in kwargs (placeholder method)."""
-        # This would contain the actual logic
-        return kwargs
+        If the agent already has a different pause_event we overwrite it and
+        emit a debug log (it is unlikely an agent needs multiple independent
+        pause controls once managed by this workforce).
+
+        Args:
+            agent (ChatAgent): The agent to attach the pause event to.
+        """
+        try:
+            existing_pause_event = getattr(agent, "pause_event", None)
+            if existing_pause_event is not self._pause_event:
+                if existing_pause_event is not None:
+                    logger.debug(
+                        f"Overriding pause_event for agent {agent.agent_id} "
+                        f"(had different pause_event: "
+                        f"{id(existing_pause_event)} "
+                        f"-> {id(self._pause_event)})"
+                    )
+                agent.pause_event = self._pause_event
+        except AttributeError:
+            # Should not happen, but guard against unexpected objects
+            logger.warning(
+                f"Cannot attach pause_event to object {type(agent)} - "
+                f"missing pause_event attribute"
+            )
+
+    def _ensure_pause_event_in_kwargs(self, kwargs: Optional[Dict]) -> Dict:
+        r"""Insert pause_event into kwargs dict for ChatAgent construction.
+
+        Args:
+            kwargs (Optional[Dict]): The keyword arguments to check.
+
+        Returns:
+            Dict: The updated keyword arguments with pause_event included.
+        """
+        new_kwargs = dict(kwargs) if kwargs else {}
+        new_kwargs.setdefault("pause_event", self._pause_event)
+        return new_kwargs
 
     def set_channel(self, channel: TaskChannel) -> None:
-        """Set the task channel (placeholder method)."""
+        r"""Set the task channel (placeholder method).
+
+        Args:
+            channel (TaskChannel): The task channel to set.
+        """
         # This would contain the actual logic
         pass
 
     def start(self) -> Coroutine:
-        """Start the worker management (placeholder method)."""
+        r"""Start the worker management (placeholder method).
+
+        Returns:
+            Coroutine: The start coroutine.
+
+        Raises:
+            NotImplementedError: This method is not implemented.
+        """
         # This would contain the actual start logic
         raise NotImplementedError("WorkerManagement.start() not implemented")

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import time
 from collections import deque
 from typing import (
     Any,
@@ -30,10 +31,15 @@ from typing import (
     Union,
 )
 
+from colorama import Fore
+
 from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.societies.workforce.base import BaseNode
+from camel.societies.workforce.structured_output_handler import (
+    StructuredOutputHandler,
+)
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
     RecoveryDecision,
@@ -72,7 +78,10 @@ from camel.societies.workforce.workforce_split.snapshots import (
     WorkforceSnapshot,
     WorkforceSnapshotManager,
 )
-from camel.societies.workforce.workforce_split.state import WorkforceState
+from camel.societies.workforce.workforce_split.state import (
+    WorkforceState,
+    WorkforceStateManager,
+)
 from camel.societies.workforce.workforce_split.task_management import (
     TaskManager,
 )
@@ -82,6 +91,7 @@ from camel.societies.workforce.workforce_split.worker_management import (
 from camel.tasks.task import (
     Task,
     TaskState,
+    is_task_result_insufficient,
     validate_task_content,
 )
 from camel.toolkits import TaskPlanningToolkit
@@ -89,6 +99,9 @@ from camel.toolkits import TaskPlanningToolkit
 from .complete_failure_dispatch import (
     WorkforceFailureDispatch,
 )
+
+# Add the constant definition (or you could import it from workforce.py)
+TASK_TIMEOUT_SECONDS = 480.0
 
 logger = get_logger(__name__)
 
@@ -111,6 +124,7 @@ class WorkforceCore(BaseNode):
         graceful_shutdown_timeout: float = 15.0,
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
+        task_timeout_seconds: Optional[float] = None,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[
@@ -121,10 +135,16 @@ class WorkforceCore(BaseNode):
         self.graceful_shutdown_timeout = graceful_shutdown_timeout
         self.share_memory = share_memory
         self.use_structured_output_handler = use_structured_output_handler
+        self.task_timeout_seconds = (
+            task_timeout_seconds or TASK_TIMEOUT_SECONDS
+        )
+        if self.use_structured_output_handler:
+            self.structured_handler = StructuredOutputHandler()
         self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
         self._task: Optional[Task] = None
         self._pending_tasks: Deque[Task] = deque()
-        self._task_dependencies: Dict[str, List[str]] = {}
+        # Let DependencyManager own the dictionary
+        self.dependency_manager = DependencyManager()
         self._assignees: Dict[str, str] = {}
         self._in_flight_tasks: int = 0
         # Dictionary to track task start times
@@ -145,6 +165,7 @@ class WorkforceCore(BaseNode):
         self.snapshot_interval: float = 30.0
 
         self.snapshot_manager = WorkforceSnapshotManager()
+        self.state_manager = WorkforceStateManager()
         self.task_manager = TaskManager()
         self.shared_memory_manager = SharedMemoryManager()
         self.channel_communication = ChannelCommunication()
@@ -155,10 +176,17 @@ class WorkforceCore(BaseNode):
             metrics_logger=self.metrics_logger
         )
         self.in_flight_tracker = InFlightTaskTracker()
-        self.failure_analyzer = FailureAnalyzer()
-        self.dependency_manager = DependencyManager(
-            task_dependencies=self._task_dependencies
-        )
+
+        # Add missing worker creation logging
+        if self.metrics_logger:
+            for child in self._children:
+                worker_type = type(child).__name__
+                role_or_desc = child.description
+                self.metrics_logger.log_worker_created(
+                    worker_id=child.node_id,
+                    worker_type=worker_type,
+                    role=role_or_desc,
+                )
 
         # Set up coordinator agent with default system message
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
@@ -236,12 +264,7 @@ class WorkforceCore(BaseNode):
         # Set up task agent with default system message and required tools
         task_sys_msg = BaseMessage.make_assistant_message(
             role_name="Task Planner",
-            content="You are going to compose and decompose tasks. Keep "
-            "tasks that are sequential and require the same type of "
-            "agent together in one agent process. Only decompose tasks "
-            "that can be handled in parallel and require different types "
-            "of agents. This ensures efficient execution by minimizing "
-            "context switching between agents.",
+            content="You are going to handle tasks.",
         )
         task_planning_tools = TaskPlanningToolkit().get_tools()
 
@@ -327,6 +350,13 @@ class WorkforceCore(BaseNode):
                 "better context continuity during task handoffs."
             )
 
+        # Initialize failure analyzer AFTER task_agent is set up
+        self.failure_analyzer = FailureAnalyzer(
+            task_agent=self.task_agent,
+            structured_handler=self.structured_handler,
+            use_structured=self.use_structured_output_handler,
+        )
+
         # Initialize worker management AFTER coordinator_agent is set up
         self.worker_management = WorkerManagement(
             coordinator_agent=self.coordinator_agent,
@@ -355,7 +385,7 @@ class WorkforceCore(BaseNode):
         self._pending_tasks.clear()
         self._child_listening_tasks.clear()
         # Clear dependency tracking
-        self._task_dependencies.clear()
+        self._clear_task_dependencies()
         self._completed_tasks = []
         self._assignees.clear()
         self._in_flight_tasks = 0
@@ -423,34 +453,8 @@ class WorkforceCore(BaseNode):
                 child_listening_task = asyncio.create_task(child.start())
                 self._child_listening_tasks.append(child_listening_task)
 
-            # Call the channel communication's listen_to_channel method
-            await self.channel_communication.listen_to_channel(
-                channel=self._channel,
-                node_id=self.node_id,
-                pending_tasks=list(self._pending_tasks),
-                completed_tasks=self._completed_tasks,
-                task_dependencies=self._task_dependencies,
-                assignees=self._assignees,
-                task_start_times=self._task_start_times,
-                in_flight_tasks=self._in_flight_tasks,
-                metrics_logger=self.metrics_logger,
-                find_assignee_func=self._find_assignee,
-                increment_in_flight_tasks_func=self._increment_in_flight_tasks,
-                decrement_in_flight_tasks_func=self._decrement_in_flight_tasks,
-                handle_failed_task_func=self._handle_failed_task,
-                handle_completed_task_func=self._handle_completed_task,
-                graceful_shutdown_func=self._graceful_shutdown,
-                is_task_result_insufficient_func=None,  # You can add this if
-                # needed
-                pause_event=self._pause_event,
-                stop_requested=self._stop_requested,
-                running=self._running,
-                state=self._state,
-                last_snapshot_time=self._last_snapshot_time,
-                snapshot_interval=self.snapshot_interval,
-                save_snapshot_func=self.save_snapshot,
-                loop=self._loop,
-            )
+            # Call the local listen_to_channel method
+            await self._listen_to_channel()
         finally:
             self._running = False
             # Set final state based on stop request
@@ -519,18 +523,18 @@ class WorkforceCore(BaseNode):
     # ========== Worker Management Delegation ==========
 
     async def _create_worker_node_for_task(self, task: Task):
-        """Delegate worker creation to worker management."""
-        return await self.worker_management.create_worker_node_for_task(task)
+        r"""Delegate worker creation to worker management."""
+        return await self.worker_management._create_worker_node_for_task(task)
 
     async def _create_new_agent(self, role: str, sys_msg: str) -> ChatAgent:
-        """Delegate agent creation to worker management."""
-        return await self.worker_management.create_new_agent(role, sys_msg)
+        r"""Delegate agent creation to worker management."""
+        return await self.worker_management._create_new_agent(role, sys_msg)
 
     def _start_child_node_when_paused(
         self, start_coroutine: Coroutine
     ) -> None:
-        """Delegate child node starting to worker management."""
-        self.worker_management.start_child_node_when_paused(start_coroutine)
+        r"""Delegate child node starting to worker management."""
+        self.worker_management._start_child_node_when_paused(start_coroutine)
 
     def add_single_agent_worker(
         self,
@@ -538,7 +542,10 @@ class WorkforceCore(BaseNode):
         worker: ChatAgent,
         pool_max_size: int = 10,
     ) -> 'WorkforceCore':
-        """Add a single agent worker to the workforce."""
+        r"""Add a single agent worker to the workforce."""
+        if self._state == WorkforceState.RUNNING:
+            raise RuntimeError("Cannot add workers while workforce is running")
+
         self.worker_management.add_single_agent_worker(
             description, worker, pool_max_size
         )
@@ -556,7 +563,7 @@ class WorkforceCore(BaseNode):
         summarize_agent_kwargs: Optional[Dict] = None,
         chat_turn_limit: int = 3,
     ) -> 'WorkforceCore':
-        """Add a role playing worker to the workforce."""
+        r"""Add a role playing worker to the workforce."""
         self.worker_management.add_role_playing_worker(
             description,
             assistant_role_name,
@@ -571,17 +578,40 @@ class WorkforceCore(BaseNode):
         return self
 
     def add_workforce(self, workforce: 'WorkforceCore') -> 'WorkforceCore':
-        """Add a workforce node to the workforce."""
-        # Directly append to children instead of delegating to
-        # worker_management since worker_management expects a
-        # WorkerManagement instance
+        r"""Add a workforce node to the workforce.
+        Can be called when workforce is paused to dynamically add workers.
+
+        Args:
+            workforce (WorkforceCore): The workforce node to be added.
+
+        Returns:
+            WorkforceCore: The workforce node itself.
+
+        Raises:
+            RuntimeError: If called while workforce is running (not paused).
+        """
+        if self._state == WorkforceState.RUNNING:
+            raise RuntimeError(
+                "Cannot add workers while workforce is running. "
+                "Pause the workforce first."
+            )
+        # Align child workforce's pause_event with this one for unified
+        # control of worker agents only.
+        workforce._pause_event = self._pause_event
         self._children.append(workforce)
+
+        # If we have a channel set up, set it for the new workforce
+        if hasattr(self, '_channel') and self._channel is not None:
+            workforce.set_channel(self._channel)
+
+        # If workforce is paused, start the child workforce's listening task
+        self._start_child_node_when_paused(workforce.start())
         return self
 
     # ========== Shared Memory Management Delegation ==========
 
     def _collect_shared_memory(self) -> Dict[str, List]:
-        """Collect memory from all agents for sharing."""
+        r"""Collect memory from all agents for sharing."""
         return self.shared_memory_manager.collect_shared_memory(
             coordinator_agent=self.coordinator_agent,
             task_agent=self.task_agent,
@@ -592,7 +622,7 @@ class WorkforceCore(BaseNode):
     def _share_memory_with_agents(
         self, shared_memory: Dict[str, List]
     ) -> None:
-        """Share collected memory with all agents."""
+        r"""Share collected memory with all agents."""
         self.shared_memory_manager.share_memory_with_agents(
             shared_memory=shared_memory,
             coordinator_agent=self.coordinator_agent,
@@ -602,13 +632,9 @@ class WorkforceCore(BaseNode):
         )
 
     def _sync_shared_memory(self) -> None:
-        """Synchronize memory across all agents."""
-        self.shared_memory_manager.sync_shared_memory(
-            coordinator_agent=self.coordinator_agent,
-            task_agent=self.task_agent,
-            children=self._children,
-            share_memory=self.share_memory,
-        )
+        r"""Synchronize memory across all agents."""
+        shared_memory = self._collect_shared_memory()
+        self._share_memory_with_agents(shared_memory)
 
     # ========== High-level Entrypoints ==========
 
@@ -901,33 +927,8 @@ class WorkforceCore(BaseNode):
     async def _continue_execution(self) -> Optional[Task]:
         r"""Internal method to continue execution after pause."""
         try:
-            # Call the channel communication's listen_to_channel method
-            await self.channel_communication.listen_to_channel(
-                channel=self._channel,
-                node_id=self.node_id,
-                pending_tasks=list(self._pending_tasks),
-                completed_tasks=self._completed_tasks,
-                task_dependencies=self._task_dependencies,
-                assignees=self._assignees,
-                task_start_times=self._task_start_times,
-                in_flight_tasks=self._in_flight_tasks,
-                metrics_logger=self.metrics_logger,
-                find_assignee_func=self._find_assignee,
-                increment_in_flight_tasks_func=self._increment_in_flight_tasks,
-                decrement_in_flight_tasks_func=self._decrement_in_flight_tasks,
-                handle_failed_task_func=self._handle_failed_task,
-                handle_completed_task_func=self._handle_completed_task,
-                graceful_shutdown_func=self._graceful_shutdown,
-                is_task_result_insufficient_func=None,
-                pause_event=self._pause_event,
-                stop_requested=self._stop_requested,
-                running=self._running,
-                state=self._state,
-                last_snapshot_time=self._last_snapshot_time,
-                snapshot_interval=self.snapshot_interval,
-                save_snapshot_func=self.save_snapshot,
-                loop=self._loop,
-            )
+            # Call the local listen_to_channel method
+            await self._listen_to_channel()
         except Exception as e:
             logger.error(f"Error in continued execution: {e}")
             self._state = WorkforceState.STOPPED
@@ -944,95 +945,38 @@ class WorkforceCore(BaseNode):
 
     def get_workforce_status(self) -> Dict:
         r"""Get current workforce status for human review."""
-        return {
-            "state": self._state.value,
-            "pending_tasks_count": len(self._pending_tasks),
-            "completed_tasks_count": len(self._completed_tasks),
-            "snapshots_count": len(self._snapshots),
-            "children_count": len(self._children),
-            "main_task_id": self._task.id if self._task else None,
-        }
+        return self.state_manager.get_workforce_status(self)
 
     # ========== Utility Methods ==========
 
     def _validate_agent_compatibility(
         self, agent: ChatAgent, agent_context: str = "agent"
     ) -> None:
-        r"""Validate that agent configuration is compatible with workforce
-        settings.
-
-        Args:
-            agent (ChatAgent): The agent to validate.
-            agent_context (str): Context description for error messages.
-
-        Raises:
-            ValueError: If agent has tools and stream mode enabled but
-                use_structured_output_handler is False.
-        """
-        agent_has_tools = (
-            bool(agent.tool_dict) if hasattr(agent, 'tool_dict') else False
+        r"""Delegate agent compatibility validation to worker management."""
+        self.worker_management._validate_agent_compatibility(
+            agent, agent_context
         )
-        agent_stream_mode = (
-            getattr(agent.model_backend, 'stream', False)
-            if hasattr(agent, 'model_backend')
-            else False
-        )
-
-        if (
-            agent_has_tools
-            and agent_stream_mode
-            and not self.use_structured_output_handler
-        ):
-            raise ValueError(
-                f"{agent_context} has tools and stream mode enabled, but "
-                "use_structured_output_handler is False. Native structured "
-                "output doesn't work with tool calls in stream mode. "
-                "Please set use_structured_output_handler=True when creating "
-                "the Workforce."
-            )
 
     def _attach_pause_event_to_agent(self, agent: ChatAgent) -> None:
-        r"""Ensure the given ChatAgent shares this workforce's pause_event.
-
-        If the agent already has a different pause_event we overwrite it and
-        emit a debug log (it is unlikely an agent needs multiple independent
-        pause controls once managed by this workforce)."""
-        try:
-            existing_pause_event = getattr(agent, "pause_event", None)
-            if existing_pause_event is not self._pause_event:
-                if existing_pause_event is not None:
-                    logger.debug(
-                        f"Overriding pause_event for agent {agent.agent_id} "
-                        f"(had different pause_event: "
-                        f"{id(existing_pause_event)} "
-                        f"-> {id(self._pause_event)})"
-                    )
-                agent.pause_event = self._pause_event
-        except AttributeError:
-            # Should not happen, but guard against unexpected objects
-            logger.warning(
-                f"Cannot attach pause_event to object {type(agent)} - "
-                f"missing pause_event attribute"
-            )
+        r"""Delegate pause event attachment to worker management."""
+        self.worker_management._attach_pause_event_to_agent(agent)
 
     def _ensure_pause_event_in_kwargs(self, kwargs: Optional[Dict]) -> Dict:
-        r"""Insert pause_event into kwargs dict for ChatAgent construction."""
-        new_kwargs = dict(kwargs) if kwargs else {}
-        new_kwargs.setdefault("pause_event", self._pause_event)
-        return new_kwargs
+        r"""Delegate pause event kwargs preparation to worker management."""
+        return self.worker_management._ensure_pause_event_in_kwargs(kwargs)
 
     # ========== Task Management Delegation ==========
 
     def get_pending_tasks(self) -> List[Task]:
-        """Get current pending tasks for human review."""
+        r"""Get current pending tasks for human review."""
         return self.task_manager.get_pending_tasks(self._pending_tasks)
 
     def get_completed_tasks(self) -> List[Task]:
-        """Get completed tasks."""
+        r"""Get completed tasks."""
         return self.task_manager.get_completed_tasks(self._completed_tasks)
 
     def modify_task_content(self, task_id: str, new_content: str) -> bool:
-        """Modify the content of a pending task."""
+        r"""Modify the content of a pending task."""
         return self.task_manager.modify_task_content(
             task_id, new_content, self._pending_tasks
         )
@@ -1044,7 +988,7 @@ class WorkforceCore(BaseNode):
         additional_info: Optional[Dict[str, Any]] = None,
         insert_position: int = -1,
     ) -> Task:
-        """Add a new task to the pending queue."""
+        r"""Add a new task to the pending queue."""
         return self.task_manager.add_task(
             content=content,
             pending_tasks=self._pending_tasks,
@@ -1054,29 +998,29 @@ class WorkforceCore(BaseNode):
         )
 
     def remove_task(self, task_id: str) -> bool:
-        """Remove a task from the pending queue."""
+        r"""Remove a task from the pending queue."""
         return self.task_manager.remove_task(task_id, self._pending_tasks)
 
     def reorder_tasks(self, task_ids: List[str]) -> bool:
-        """Reorder pending tasks according to the provided task IDs list."""
+        r"""Reorder pending tasks according to the provided task IDs list."""
         return self.task_manager.reorder_tasks(task_ids, self._pending_tasks)
 
     # ========== Snapshot Management Delegation ==========
 
     def save_snapshot(self, description: str = "") -> None:
-        """Save current state as a snapshot."""
+        r"""Save current state as a snapshot."""
         self.snapshot_manager.save_snapshot(self, description)
 
     def list_snapshots(self) -> List[str]:
-        """List all available snapshots."""
+        r"""List all available snapshots."""
         return self.snapshot_manager.list_snapshots(self)
 
     def resume_from_task(self, task_id: str) -> bool:
-        """Resume execution from a specific task."""
+        r"""Resume execution from a specific task."""
         return self.snapshot_manager.resume_from_task(self, task_id)
 
     def restore_from_snapshot(self, snapshot_index: int) -> bool:
-        """Restore workforce state from a snapshot."""
+        r"""Restore workforce state from a snapshot."""
         return self.snapshot_manager.restore_from_snapshot(
             self, snapshot_index
         )
@@ -1088,16 +1032,17 @@ class WorkforceCore(BaseNode):
         tasks: List[Task],
         child_nodes_info: str,
         invalid_ids: Optional[List[str]] = None,
+        valid_ids: Optional[Set[str]] = None,
     ) -> TaskAssignResult:
-        """Delegate assignment coordination to assignment manager."""
+        r"""Delegate assignment coordination to assignment manager."""
         return self.assignment_manager.call_coordinator_for_assignment(
-            tasks, child_nodes_info, invalid_ids
+            tasks, child_nodes_info, invalid_ids, valid_ids
         )
 
     def _validate_assignments(
         self, assignments: List[TaskAssignment], valid_ids: Set[str]
     ) -> Tuple[List[TaskAssignment], List[TaskAssignment]]:
-        """Delegate assignment validation to assignment manager."""
+        r"""Delegate assignment validation to assignment manager."""
         return self.assignment_manager.validate_assignments(
             assignments, valid_ids
         )
@@ -1105,7 +1050,7 @@ class WorkforceCore(BaseNode):
     async def _handle_task_assignment_fallbacks(
         self, tasks: List[Task], create_worker_node_for_task_func: Callable
     ) -> List[TaskAssignment]:
-        """Delegate assignment fallback handling to assignment manager."""
+        r"""Delegate assignment fallback handling to assignment manager."""
         return await self.assignment_manager.handle_task_assignment_fallbacks(
             tasks, create_worker_node_for_task_func
         )
@@ -1117,7 +1062,7 @@ class WorkforceCore(BaseNode):
         valid_worker_ids: Set[str],
         create_worker_node_for_task_func: Callable,
     ) -> List[TaskAssignment]:
-        """Delegate assignment retry and fallback to assignment manager."""
+        r"""Delegate assignment retry and fallback to assignment manager."""
         return (
             await self.assignment_manager.handle_assignment_retry_and_fallback(
                 invalid_assignments,
@@ -1134,13 +1079,13 @@ class WorkforceCore(BaseNode):
         completed_tasks: List[Task],
         pending_tasks: List[Task],
     ) -> None:
-        """Delegate dependency updates to assignment manager."""
+        r"""Delegate dependency updates to assignment manager."""
         self.assignment_manager.update_task_dependencies_from_assignments(
             assignments, tasks, completed_tasks, pending_tasks
         )
 
     async def _find_assignee(self, tasks: List[Task]) -> TaskAssignResult:
-        """Delegate assignee finding to assignment manager."""
+        r"""Delegate assignee finding to assignment manager."""
         valid_worker_ids = self._get_valid_worker_ids()
         child_nodes_info = self._get_child_nodes_info()
         return await self.assignment_manager.find_assignee(
@@ -1164,7 +1109,7 @@ class WorkforceCore(BaseNode):
         metrics_logger=None,
         increment_in_flight_tasks_func=None,
     ) -> None:
-        """Delegate task posting to channel communication manager."""
+        r"""Delegate task posting to channel communication manager."""
         # Use instance attributes if not provided
         if channel is None:
             channel = self._channel
@@ -1173,7 +1118,7 @@ class WorkforceCore(BaseNode):
         if task_start_times is None:
             task_start_times = self._task_start_times
 
-        await self.channel_communication.post_task(
+        await self.channel_communication._post_task(
             task,
             assignee_id,
             channel,
@@ -1190,7 +1135,7 @@ class WorkforceCore(BaseNode):
         pending_tasks: Optional[List[Task]] = None,
         in_flight_tasks: Optional[int] = None,
     ) -> Optional[Task]:
-        """Delegate task retrieval to channel communication manager."""
+        r"""Delegate task retrieval to channel communication manager."""
         # Use instance attributes if not provided
         if channel is None:
             channel = self._channel
@@ -1201,7 +1146,7 @@ class WorkforceCore(BaseNode):
         if in_flight_tasks is None:
             in_flight_tasks = self._in_flight_tasks
 
-        return await self.channel_communication.get_returned_task(
+        return await self.channel_communication._get_returned_task(
             channel, node_id, pending_tasks, in_flight_tasks
         )
 
@@ -1218,14 +1163,14 @@ class WorkforceCore(BaseNode):
         increment_in_flight_tasks_func=None,
         find_assignee_func=None,
     ) -> None:
-        """Delegate ready task posting to channel communication manager."""
+        r"""Delegate ready task posting to channel communication manager."""
         # Use instance attributes if not provided
         if pending_tasks is None:
             pending_tasks = list(self._pending_tasks)
         if completed_tasks is None:
             completed_tasks = self._completed_tasks
         if task_dependencies is None:
-            task_dependencies = self._task_dependencies
+            task_dependencies = self._get_task_dependencies()
         if assignees is None:
             assignees = self._assignees
         if channel is None:
@@ -1235,7 +1180,7 @@ class WorkforceCore(BaseNode):
         if task_start_times is None:
             task_start_times = self._task_start_times
 
-        await self.channel_communication.post_ready_tasks(
+        await self.channel_communication._post_ready_tasks(
             pending_tasks,
             completed_tasks,
             task_dependencies,
@@ -1249,123 +1194,196 @@ class WorkforceCore(BaseNode):
         )
 
     async def _listen_to_channel(self) -> None:
-        """Listen to channel - base class implementation."""
-        await self.channel_communication.listen_to_channel(
-            self._channel,
-            self.node_id,
-            list(self._pending_tasks),
-            self._completed_tasks,
-            self._task_dependencies,
-            self._assignees,
-            self._task_start_times,
-            self._in_flight_tasks,
-            self.metrics_logger,
-            self._find_assignee,
-            self._increment_in_flight_tasks,
-            self._decrement_in_flight_tasks,
-            self._handle_failed_task,
-            self._handle_completed_task,
-            self._graceful_shutdown,
-            None,
-            self._pause_event,
-            self._stop_requested,
-            self._running,
-            self._state,
-            self._last_snapshot_time,
-            self.snapshot_interval,
-            None,
-            self._loop,
-        )
+        r"""Continuously listen to the channel, post task to the channel and
+        track the status of posted tasks. Now supports pause/resume and
+        graceful stop.
+        """
+        logger.info(f"Workforce {self.node_id} started.")
 
-    async def _listen_to_channel_with_params(
-        self,
-        channel: TaskChannel,
-        node_id: str,
-        pending_tasks: List[Task],
-        completed_tasks: List[Task],
-        task_dependencies: Dict[str, List[str]],
-        assignees: Dict[str, str],
-        task_start_times: Dict[str, float],
-        in_flight_tasks: int,
-        metrics_logger=None,
-        find_assignee_func=None,
-        increment_in_flight_tasks_func=None,
-        decrement_in_flight_tasks_func=None,
-        handle_failed_task_func=None,
-        handle_completed_task_func=None,
-        graceful_shutdown_func=None,
-        is_task_result_insufficient_func=None,
-        pause_event=None,
-        stop_requested=False,
-        running=False,
-        state=None,
-        last_snapshot_time=0,
-        snapshot_interval=60,
-        save_snapshot_func=None,
-        loop=None,
-    ) -> None:
-        """Listen to channel with parameters."""
-        await self.channel_communication.listen_to_channel(
-            channel,
-            node_id,
-            pending_tasks,
-            completed_tasks,
-            task_dependencies,
-            assignees,
-            task_start_times,
-            in_flight_tasks,
-            metrics_logger,
-            find_assignee_func,
-            increment_in_flight_tasks_func,
-            decrement_in_flight_tasks_func,
-            handle_failed_task_func,
-            handle_completed_task_func,
-            graceful_shutdown_func,
-            is_task_result_insufficient_func,
-            pause_event,
-            stop_requested,
-            running,
-            state,
-            last_snapshot_time,
-            snapshot_interval,
-            save_snapshot_func,
-            loop,
-        )
+        await self._post_ready_tasks()
+
+        while (
+            len(self._pending_tasks) > 0 or self._in_flight_tasks > 0
+        ) and not self._stop_requested:
+            try:
+                # Check for pause request at the beginning of each loop
+                # iteration
+                if self._pause_event:
+                    await self._pause_event.wait()
+
+                # Check for stop request after potential pause
+                if self._stop_requested:
+                    logger.info("Stop requested, breaking execution loop.")
+                    break
+
+                # Save snapshot before processing next task
+                if self._pending_tasks:
+                    current_task = self._pending_tasks[0]
+                    # Throttled snapshot
+                    if (
+                        time.time() - self._last_snapshot_time
+                        >= self.snapshot_interval
+                    ):
+                        self.snapshot_manager.save_snapshot(
+                            self, f"Before processing task: {current_task.id}"
+                        )
+                        self._last_snapshot_time = time.time()
+
+                # Get returned task
+                returned_task = await self._get_returned_task()
+
+                # If no task was returned, continue
+                if returned_task is None:
+                    logger.debug(
+                        f"No task returned in workforce {self.node_id}. "
+                        f"Pending: {len(self._pending_tasks)}, "
+                        f"In-flight: {self._in_flight_tasks}"
+                    )
+                    await self._post_ready_tasks()
+                    continue
+
+                self._decrement_in_flight_tasks(
+                    returned_task.id, "task returned successfully"
+                )
+
+                # Process the returned task based on its state
+                if returned_task.state == TaskState.DONE:
+                    # Task completed successfully
+                    # Check if the "completed" task actually failed to provide
+                    # useful results
+                    if is_task_result_insufficient(returned_task):
+                        result_preview = (
+                            returned_task.result
+                            if returned_task.result
+                            else "No result"
+                        )
+                        logger.warning(
+                            f"Task {returned_task.id} marked as DONE but "
+                            f"result is insufficient. "
+                            f"Treating as failed. Result: '{result_preview}'"
+                        )
+                        returned_task.state = TaskState.FAILED
+                        try:
+                            halt = await self._handle_failed_task(
+                                returned_task
+                            )
+                            if not halt:
+                                continue
+                            error_msg = returned_task.result or "Unknown error"
+                            print(
+                                f"{Fore.RED}Task {returned_task.id} has "
+                                f"failed for 3 times after "
+                                f"insufficient results, halting the "
+                                f"workforce. Final error: "
+                                f"{error_msg}"
+                                f"{Fore.RESET}"
+                            )
+                            await self._graceful_shutdown(returned_task)
+                            break
+                        except Exception as e:
+                            logger.error(
+                                f"Error handling insufficient task result "
+                                f"{returned_task.id}: {e}",
+                                exc_info=True,
+                            )
+                            continue
+                    else:
+                        # Task completed successfully with sufficient results
+                        await self._handle_completed_task(returned_task)
+                        print(
+                            f"{Fore.GREEN}✅ Task {returned_task.id} "
+                            f"completed successfully.{Fore.RESET}"
+                        )
+                elif returned_task.state == TaskState.FAILED:
+                    try:
+                        halt = await self._handle_failed_task(returned_task)
+                        if not halt:
+                            continue
+                        error_msg = returned_task.result or 'Unknown error'
+                        print(
+                            f"{Fore.RED}Task {returned_task.id} has "
+                            f"failed for 3 times, halting the "
+                            f"workforce. Final error: "
+                            f"{error_msg}"
+                            f"{Fore.RESET}",
+                        )
+                        # Graceful shutdown instead of immediate break
+                        await self._graceful_shutdown(returned_task)
+                        break
+                    except Exception as e:
+                        logger.error(
+                            f"Error handling failed task "
+                            f"{returned_task.id}: {e}",
+                            exc_info=True,
+                        )
+                        # Continue to prevent hanging
+                        continue
+                elif returned_task.state == TaskState.OPEN:
+                    # Task is in OPEN state - it's ready to be processed
+                    # This typically means the task was returned without being
+                    # processed
+                    logger.info(
+                        f"Task {returned_task.id} returned in OPEN state - "
+                        f"ready for processing"
+                    )
+                    # Move task back to pending queue for reassignment
+                    self._pending_tasks.append(returned_task)
+                    self._decrement_in_flight_tasks(
+                        returned_task.id, "task returned in OPEN state"
+                    )
+                else:
+                    raise ValueError(
+                        f"Task {returned_task.id} has an unexpected state."
+                    )
+
+            except Exception as e:
+                # Decrement in-flight counter to prevent hanging
+                self._decrement_in_flight_tasks(
+                    "unknown", "exception in task processing loop"
+                )
+
+                logger.error(
+                    f"Error processing task in workforce {self.node_id}: {e}"
+                    f"Workforce state - Pending tasks: "
+                    f"{len(self._pending_tasks)}, "
+                    f"In-flight tasks: {self._in_flight_tasks}, "
+                    f"Completed tasks: {len(self._completed_tasks)}"
+                )
+
+                if self._stop_requested:
+                    break
+                # Continue with next iteration unless stop is requested
+                continue
+
+        # Handle final state
+        if self._stop_requested:
+            logger.info("Workforce stopped by user request.")
+        elif not self._pending_tasks and self._in_flight_tasks == 0:
+            logger.info("All tasks completed.")
 
     def _submit_coro_to_loop(
         self, coro: Coroutine, loop: Optional[asyncio.AbstractEventLoop] = None
     ) -> None:
-        """Delegate coroutine submission to channel communication manager."""
-        self.channel_communication.submit_coro_to_loop(coro, loop)
+        r"""Delegate coroutine submission to channel communication manager."""
+        self.channel_communication._submit_coro_to_loop(coro, loop)
 
     # ========== Failure Dispatch Delegation ==========
 
     async def _handle_failed_task(self, task: Task) -> bool:
-        """Delegate failed task handling to failure dispatch manager."""
+        r"""Delegate failed task handling to failure dispatch manager."""
         return await self.failure_dispatch.handle_failed_task(self, task)
 
     async def _handle_completed_task(self, task: Task) -> None:
-        """Delegate completed task handling to failure dispatch manager."""
+        r"""Delegate completed task handling to failure dispatch manager."""
         await self.failure_dispatch.handle_completed_task(self, task)
 
     async def _graceful_shutdown(self, failed_task: Task) -> None:
-        """Delegate graceful shutdown to failure dispatch manager."""
+        r"""Delegate graceful shutdown to failure dispatch manager."""
         await self.failure_dispatch.graceful_shutdown(self, failed_task)
 
     def clone(self, with_memory: bool = False) -> 'WorkforceCore':
-        """Clone the workforce core."""
-        # Create a new instance with the same configuration
-        cloned_core = WorkforceCore(
-            description=self.description,
-            children=self._children.copy() if self._children else None,
-            coordinator_agent=self.coordinator_agent,
-            task_agent=self.task_agent,
-            new_worker_agent=self.new_worker_agent,
-            graceful_shutdown_timeout=self.graceful_shutdown_timeout,
-            share_memory=self.share_memory,
-            use_structured_output_handler=self.use_structured_output_handler,
-        )
-        return cloned_core
+        r"""Clone the workforce core."""
+        return self.failure_dispatch.clone_workforce(self, with_memory)
 
     def to_mcp(
         self,
@@ -1378,39 +1396,38 @@ class WorkforceCore(BaseNode):
         host: str = "localhost",
         port: int = 8001,
     ):
-        """Delegate MCP server creation to failure dispatch manager."""
+        r"""Delegate MCP server creation to failure dispatch manager."""
         return self.failure_dispatch.to_mcp(
             self, name, description, dependencies, host, port
         )
 
     # ========== Intervention Delegation ==========
 
-    async def async_pause(
+    async def _async_pause(
         self, node_id: str, loop: Optional[asyncio.AbstractEventLoop] = None
     ) -> None:
-        """Delegate async pause to intervention manager."""
-        await self.intervention.async_pause(
-            self._state, self._pause_event, node_id, loop
-        )
+        r"""Delegate async pause to intervention manager."""
+        await self.intervention.async_pause(self._pause_event, node_id, loop)
 
     def pause(
         self, node_id: str, loop: Optional[asyncio.AbstractEventLoop] = None
     ) -> None:
-        """Delegate pause to intervention manager."""
+        r"""Delegate pause to intervention manager."""
         self._state = WorkforceState.PAUSED
         self.worker_management._state = self._state
-        self.intervention.pause(self._state, self._pause_event, node_id, loop)
+        self.intervention.pause(
+            self._pause_event, node_id, loop, self._submit_coro_to_loop
+        )
 
-    async def async_resume(
+    async def _async_resume(
         self,
         node_id: str,
         pending_tasks=None,
         post_ready_tasks_func=None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
-        """Delegate async resume to intervention manager."""
+        r"""Delegate async resume to intervention manager."""
         await self.intervention.async_resume(
-            self._state,
             self._pause_event,
             node_id,
             pending_tasks,
@@ -1425,22 +1442,24 @@ class WorkforceCore(BaseNode):
         post_ready_tasks_func=None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
-        """Delegate resume to intervention manager."""
+        r"""Delegate resume to intervention manager."""
         self._state = WorkforceState.RUNNING
         self.worker_management._state = self._state
         self.intervention.resume(
-            self._state,
             self._pause_event,
             node_id,
             pending_tasks,
             post_ready_tasks_func,
             loop,
+            self._submit_coro_to_loop,
         )
 
-    async def async_stop_gracefully(
+    async def _async_stop_gracefully(
         self, node_id: str, loop: Optional[asyncio.AbstractEventLoop] = None
     ) -> None:
-        """Delegate async graceful stop to intervention manager."""
+        r"""Delegate async graceful stop to intervention manager."""
+        # Set the stop requested flag first, like the original implementation
+        self._stop_requested = True
         await self.intervention.async_stop_gracefully(
             self._pause_event, node_id, loop
         )
@@ -1448,57 +1467,68 @@ class WorkforceCore(BaseNode):
     def stop_gracefully(
         self, node_id: str, loop: Optional[asyncio.AbstractEventLoop] = None
     ) -> None:
-        """Delegate graceful stop to intervention manager."""
-        self.intervention.stop_gracefully(self._pause_event, node_id, loop)
+        r"""Delegate graceful stop to intervention manager."""
+        if self._loop and not self._loop.is_closed():
+            # Use _submit_coro_to_loop like the original implementation
+            self._submit_coro_to_loop(
+                self._async_stop_gracefully(node_id, loop)
+            )
+        else:
+            # Loop not yet created, set the flag synchronously so later
+            # startup will respect it, like the original implementation
+            self._stop_requested = True
+            # Ensure any pending pause is released so that when the loop does
+            # start it can see the stop request and exit.
+            self._pause_event.set()
+            logger.info(
+                f"Workforce {node_id} stop requested "
+                f"(event-loop not yet started)."
+            )
 
     # ========== Introspection Delegation ==========
 
     def _get_child_nodes_info(self) -> str:
-        """Delegate child nodes info to introspection helper."""
-        return self.introspection_helper.get_child_nodes_info(self._children)
+        r"""Delegate child nodes info to introspection helper."""
+        return self.introspection_helper._get_child_nodes_info(self._children)
 
     def _get_node_info(self, node) -> str:
-        """Delegate node info to introspection helper."""
-        return self.introspection_helper.get_node_info(node)
+        r"""Delegate node info to introspection helper."""
+        return self.introspection_helper._get_node_info(node)
 
-    def _get_single_agent_info(self, worker) -> str:
-        """Delegate single agent info to introspection helper."""
-        return self.introspection_helper.get_single_agent_info(worker)
+    def _get_single_agent_toolkit_info(self, worker) -> str:
+        r"""Delegate single agent info to introspection helper."""
+        return self.introspection_helper._get_single_agent_toolkit_info(worker)
 
     def _get_valid_worker_ids(self) -> Set[str]:
-        """Delegate valid worker IDs to introspection helper."""
-        return self.introspection_helper.get_valid_worker_ids(self._children)
+        r"""Delegate valid worker IDs to introspection helper."""
+        return self.introspection_helper._get_valid_worker_ids(self._children)
 
     def _group_tools_by_toolkit(
         self, tool_dict: Dict[str, Any]
     ) -> Dict[str, List[str]]:
-        """Delegate tool grouping to introspection helper."""
-        return self.introspection_helper.group_tools_by_toolkit(tool_dict)
+        r"""Delegate tool grouping to introspection helper."""
+        return self.introspection_helper._group_tools_by_toolkit(tool_dict)
 
     # ========== Logger Delegation ==========
 
-    def get_workforce_logs(self) -> Dict[str, Any]:
-        """Delegate workforce logs to logger wrapper."""
-        return self.logger_wrapper.get_workforce_logs()
-
     def get_workforce_log_tree(self) -> str:
-        """Delegate workforce log tree to logger wrapper."""
+        r"""Delegate workforce log tree to logger wrapper."""
         return self.logger_wrapper.get_workforce_log_tree()
 
     def get_workforce_kpis(self) -> Dict[str, Any]:
-        """Delegate workforce KPIs to logger wrapper."""
+        r"""Delegate workforce KPIs to logger wrapper."""
         return self.logger_wrapper.get_workforce_kpis()
 
     def dump_workforce_logs(self, file_path: str) -> None:
-        """Delegate log dumping to logger wrapper."""
+        r"""Delegate log dumping to logger wrapper."""
         self.logger_wrapper.dump_workforce_logs(file_path)
 
     # ========== In-Flight Tracking Delegation ==========
 
     def _increment_in_flight_tasks(self, task_id: str) -> int:
-        """Delegate in-flight task increment to tracker."""
+        r"""Delegate in-flight task increment to tracker."""
         self._in_flight_tasks = (
-            self.in_flight_tracker.increment_in_flight_tasks(
+            self.in_flight_tracker._increment_in_flight_tasks(
                 self._in_flight_tasks, task_id
             )
         )
@@ -1507,24 +1537,26 @@ class WorkforceCore(BaseNode):
     def _decrement_in_flight_tasks(
         self, task_id: str, context: str = ""
     ) -> int:
-        """Delegate in-flight task decrement to tracker."""
+        r"""Delegate in-flight task decrement to tracker."""
         self._in_flight_tasks = (
-            self.in_flight_tracker.decrement_in_flight_tasks(
+            self.in_flight_tracker._decrement_in_flight_tasks(
                 self._in_flight_tasks, task_id, context
             )
         )
         return self._in_flight_tasks
 
     def _cleanup_task_tracking(self, task_id: str) -> None:
-        """Delegate task tracking cleanup to tracker."""
-        self._task_start_times, self._task_dependencies, self._assignees = (
-            self.in_flight_tracker.cleanup_task_tracking(
+        r"""Delegate task tracking cleanup to tracker."""
+        current_deps = self._get_task_dependencies()
+        self._task_start_times, updated_deps, self._assignees = (
+            self.in_flight_tracker._cleanup_task_tracking(
                 task_id,
                 self._task_start_times,
-                self._task_dependencies,
+                current_deps,
                 self._assignees,
             )
         )
+        self._set_task_dependencies(updated_deps)
 
     # ========== Failure Analysis Delegation ==========
 
@@ -1532,38 +1564,44 @@ class WorkforceCore(BaseNode):
         self,
         task: Task,
         error_message: str,
-        task_agent: Any,
-        structured_handler: Any = None,
-        use_structured: bool = True,
     ) -> RecoveryDecision:
-        """Delegate failure analysis to failure analyzer."""
-        return self.failure_analyzer.analyze_failure(
-            task, error_message, task_agent, structured_handler, use_structured
-        )
+        r"""Delegate failure analysis to failure analyzer."""
+        return self.failure_analyzer._analyze_failure(task, error_message)
 
     # ========== Dependency Management Delegation ==========
 
     def _update_dependencies_for_decomposition(
         self, original_task: Task, subtasks: List[Task]
     ) -> None:
-        """Delegate dependency updates to dependency manager."""
-        self.dependency_manager.update_dependencies_for_decomposition(
+        r"""Delegate dependency updates to dependency manager."""
+        self.dependency_manager._update_dependencies_for_decomposition(
             original_task, subtasks
         )
+
+    def _get_task_dependencies(self) -> Dict[str, List[str]]:
+        r"""Get the current task dependencies."""
+        return self.dependency_manager.get_dependencies()
+
+    def _set_task_dependencies(self, deps: Dict[str, List[str]]) -> None:
+        r"""Set the current task dependencies."""
+        self.dependency_manager.set_dependencies(deps)
+
+    def _clear_task_dependencies(self) -> None:
+        r"""Clear the current task dependencies."""
+        self.dependency_manager.clear_dependencies()
 
     def _decompose_task(
         self, task: Task
     ) -> Union[List[Task], Generator[List[Task], None, None]]:
-        """Decompose the task into subtasks."""
-        return self.failure_analyzer.decompose_task(
+        r"""Decompose the task into subtasks."""
+        return self.failure_analyzer._decompose_task(
             task,
-            self.task_agent,
             self._get_child_nodes_info(),
             self._update_dependencies_for_decomposition,
         )
 
     def _find_task_by_id(self, task_id: str) -> Optional[Task]:
-        """Find a task by its ID in pending or completed tasks."""
+        r"""Find a task by its ID in pending or completed tasks."""
         # Check pending tasks
         pending_task = find_task_by_id(list(self._pending_tasks), task_id)
         if pending_task:
@@ -1577,8 +1615,8 @@ class WorkforceCore(BaseNode):
         return None
 
     async def _post_dependency(self, dependency: Task) -> None:
-        """Post a dependency to the channel."""
-        await self.channel_communication.post_dependency(
+        r"""Post a dependency to the channel."""
+        await self.channel_communication._post_dependency(
             dependency, self._channel, self.node_id
         )
 

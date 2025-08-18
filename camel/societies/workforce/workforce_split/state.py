@@ -13,12 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-import time
-from collections import deque
 from enum import Enum
-from typing import Deque, Dict, List, Optional
-
-from camel.tasks.task import Task
+from typing import Dict
 
 
 class WorkforceStateManager:
@@ -32,41 +28,32 @@ class WorkforceStateManager:
         PAUSED = "paused"
         STOPPED = "stopped"
 
-    class WorkforceSnapshot:
-        r"""Snapshot of workforce state for resuming execution."""
-
-        def __init__(
-            self,
-            main_task: Optional[Task] = None,
-            pending_tasks: Optional[Deque[Task]] = None,
-            completed_tasks: Optional[List[Task]] = None,
-            task_dependencies: Optional[Dict[str, List[str]]] = None,
-            assignees: Optional[Dict[str, str]] = None,
-            current_task_index: int = 0,
-            description: str = "",
-        ):
-            self.main_task = main_task
-            self.pending_tasks = (
-                pending_tasks.copy() if pending_tasks else deque()
-            )
-            self.completed_tasks = (
-                completed_tasks.copy() if completed_tasks else []
-            )
-            self.task_dependencies = (
-                task_dependencies.copy() if task_dependencies else {}
-            )
-            self.assignees = assignees.copy() if assignees else {}
-            self.current_task_index = current_task_index
-            self.description = description
-            self.timestamp = time.time()
-
     def __init__(self):
-        """Initialize the WorkforceStateManager."""
+        r"""Initialize the WorkforceStateManager."""
         pass
+
+    def get_workforce_status(self, workforce_instance) -> Dict:
+        r"""Get current workforce status for human review.
+
+        Args:
+            workforce_instance: The workforce instance to get status from.
+
+        Returns:
+            Dict: Dictionary containing current workforce status information.
+        """
+        return {
+            "state": workforce_instance._state.value,
+            "pending_tasks_count": len(workforce_instance._pending_tasks),
+            "completed_tasks_count": len(workforce_instance._completed_tasks),
+            "snapshots_count": len(workforce_instance._snapshots),
+            "children_count": len(workforce_instance._children),
+            "main_task_id": workforce_instance._task.id
+            if workforce_instance._task
+            else None,
+        }
 
 
 # Export the classes at module level for easier importing
 WorkforceState = WorkforceStateManager.WorkforceState
-WorkforceSnapshot = WorkforceStateManager.WorkforceSnapshot
 
-__all__ = ['WorkforceStateManager', 'WorkforceState', 'WorkforceSnapshot']
+__all__ = ['WorkforceStateManager', 'WorkforceState']

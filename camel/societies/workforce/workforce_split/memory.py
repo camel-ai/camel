@@ -44,10 +44,11 @@ class SharedMemoryManager:
         r"""Collect memory from all SingleAgentWorker instances for sharing.
 
         Args:
-            coordinator_agent: The coordinator agent
-            task_agent: The task agent
-            children: List of child workers
-            share_memory: Whether to share memory
+            coordinator_agent (ChatAgent): The coordinator agent.
+            task_agent (ChatAgent): The task agent.
+            children (List): List of child workers.
+            share_memory (bool, optional): Whether to share memory.
+                (default: :obj:`False`)
 
         Returns:
             Dict[str, List]: A dictionary mapping agent types to their memory
@@ -107,10 +108,11 @@ class SharedMemoryManager:
         Args:
             shared_memory (Dict[str, List]): Memory records collected from
                 all agents to be shared.
-            coordinator_agent: The coordinator agent
-            task_agent: The task agent
-            children: List of child workers
-            share_memory: Whether to share memory
+            coordinator_agent (ChatAgent): The coordinator agent.
+            task_agent (ChatAgent): The task agent.
+            children (List): List of child workers.
+            share_memory (bool, optional): Whether to share memory.
+                (default: :obj:`False`)
         """
         if not share_memory or not shared_memory:
             return
@@ -182,10 +184,11 @@ class SharedMemoryManager:
         r"""Synchronize memory across all agents by collecting and sharing.
 
         Args:
-            coordinator_agent: The coordinator agent
-            task_agent: The task agent
-            children: List of child workers
-            share_memory: Whether to share memory
+            coordinator_agent (ChatAgent): The coordinator agent.
+            task_agent (ChatAgent): The task agent.
+            children (List): List of child workers.
+            share_memory (bool, optional): Whether to share memory.
+                (default: :obj:`False`)
         """
         if not share_memory:
             return

@@ -21,16 +21,16 @@ logger = get_logger(__name__)
 
 
 class InFlightTaskTracker:
-    """A class for tracking in-flight tasks with safety checks and logging."""
+    r"""A class for tracking in-flight tasks with safety checks and logging."""
 
     def __init__(self):
-        """Initialize the InFlightTaskTracker."""
+        r"""Initialize the InFlightTaskTracker."""
         pass
 
-    def increment_in_flight_tasks(
+    def _increment_in_flight_tasks(
         self, in_flight_tasks: int, task_id: str
     ) -> int:
-        """Safely increment the in-flight tasks counter with logging.
+        r"""Safely increment the in-flight tasks counter with logging.
 
         Args:
             in_flight_tasks (int): Current count of in-flight tasks.
@@ -46,15 +46,16 @@ class InFlightTaskTracker:
         )
         return new_count
 
-    def decrement_in_flight_tasks(
+    def _decrement_in_flight_tasks(
         self, in_flight_tasks: int, task_id: str, context: str = ""
     ) -> int:
-        """Safely decrement the in-flight tasks counter with safety checks.
+        r"""Safely decrement the in-flight tasks counter with safety checks.
 
         Args:
             in_flight_tasks (int): Current count of in-flight tasks.
             task_id (str): The ID of the task being tracked.
             context (str, optional): Additional context for logging purposes.
+                (default: :obj:`""`)
 
         Returns:
             int: The updated count of in-flight tasks.
@@ -74,14 +75,14 @@ class InFlightTaskTracker:
             )
             return in_flight_tasks
 
-    def cleanup_task_tracking(
+    def _cleanup_task_tracking(
         self,
         task_id: str,
         task_start_times: Dict[str, float],
         task_dependencies: Dict[str, list],
         assignees: Dict[str, str],
     ) -> tuple[Dict[str, float], Dict[str, list], Dict[str, str]]:
-        """Clean up tracking data for a task to prevent memory leaks.
+        r"""Clean up tracking data for a task to prevent memory leaks.
 
         Args:
             task_id (str): The ID of the task to clean up.
@@ -92,7 +93,8 @@ class InFlightTaskTracker:
             assignees (Dict[str, str]): Dictionary of task assignees.
 
         Returns:
-            tuple: Updated dictionaries with the task_id removed.
+            tuple[Dict[str, float], Dict[str, list], Dict[str, str]]: Updated
+                dictionaries with the task_id removed.
         """
         updated_start_times = task_start_times.copy()
         updated_dependencies = task_dependencies.copy()

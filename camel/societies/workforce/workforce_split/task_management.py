@@ -16,44 +16,54 @@ from collections import deque
 from typing import Any, Dict, List, Optional
 
 from camel.logger import get_logger
+from camel.societies.workforce.utils import find_task_by_id
 from camel.tasks.task import Task, validate_task_content
 
 logger = get_logger(__name__)
 
 
 class TaskManager:
-    """A class to manage task operations for workforce systems."""
+    r"""A class to manage task operations for workforce systems."""
 
     def __init__(self):
-        """Initialize the TaskManager."""
+        r"""Initialize the TaskManager."""
         pass
 
     def get_pending_tasks(self, pending_tasks: deque) -> List[Task]:
-        """Get current pending tasks for human review."""
+        r"""Get current pending tasks for human review.
+
+        Args:
+            pending_tasks (deque): The queue of pending tasks.
+
+        Returns:
+            List[Task]: List of pending tasks.
+        """
         return list(pending_tasks)
 
     def get_completed_tasks(self, completed_tasks: List[Task]) -> List[Task]:
-        """Get completed tasks."""
-        return completed_tasks.copy()
-
-    def find_task_by_id(
-        self, tasks: List[Task], task_id: str
-    ) -> Optional[Task]:
-        """Find a task in a list of tasks by ID.
+        r"""Get completed tasks.
 
         Args:
-            tasks: List of tasks to search through
-            task_id: The ID of the task to find
+            completed_tasks (List[Task]): The list of completed tasks.
 
         Returns:
-            The task if found, None otherwise
+            List[Task]: Copy of the completed tasks list.
         """
-        return next((task for task in tasks if task.id == task_id), None)
+        return completed_tasks.copy()
 
     def modify_task_content(
         self, task_id: str, new_content: str, pending_tasks: deque
     ) -> bool:
-        """Modify the content of a pending task."""
+        r"""Modify the content of a pending task.
+
+        Args:
+            task_id (str): The ID of the task to modify.
+            new_content (str): The new content for the task.
+            pending_tasks (deque): The queue of pending tasks.
+
+        Returns:
+            bool: True if modification was successful, False otherwise.
+        """
         # Validate the new content first
         if not validate_task_content(new_content, task_id):
             logger.warning(
@@ -62,7 +72,7 @@ class TaskManager:
             )
             return False
 
-        task = self.find_task_by_id(list(pending_tasks), task_id)
+        task = find_task_by_id(list(pending_tasks), task_id)
         if task:
             task.content = new_content
             logger.info(f"Task {task_id} content modified.")
@@ -78,7 +88,21 @@ class TaskManager:
         additional_info: Optional[Dict[str, Any]] = None,
         insert_position: int = -1,
     ) -> Task:
-        """Add a new task to the pending queue."""
+        r"""Add a new task to the pending queue.
+
+        Args:
+            content (str): The content of the task.
+            pending_tasks (deque): The queue of pending tasks.
+            task_id (str, optional): The ID for the task. If None, a default
+                ID will be generated. (default: :obj:`None`)
+            additional_info (Dict[str, Any], optional): Additional information
+                for the task. (default: :obj:`None`)
+            insert_position (int, optional): Position to insert the task.
+                -1 means append to the end. (default: :obj:`-1`)
+
+        Returns:
+            Task: The newly created task.
+        """
         new_task = Task(
             content=content,
             id=task_id or f"human_added_{len(pending_tasks)}",
@@ -98,8 +122,16 @@ class TaskManager:
         return new_task
 
     def remove_task(self, task_id: str, pending_tasks: deque) -> bool:
-        """Remove a task from the pending queue."""
-        task = self.find_task_by_id(list(pending_tasks), task_id)
+        r"""Remove a task from the pending queue.
+
+        Args:
+            task_id (str): The ID of the task to remove.
+            pending_tasks (deque): The queue of pending tasks.
+
+        Returns:
+            bool: True if removal was successful, False otherwise.
+        """
+        task = find_task_by_id(list(pending_tasks), task_id)
         if task:
             pending_tasks.remove(task)
             logger.info(f"Task {task_id} removed.")
@@ -108,7 +140,15 @@ class TaskManager:
         return False
 
     def reorder_tasks(self, task_ids: List[str], pending_tasks: deque) -> bool:
-        """Reorder pending tasks according to the provided task IDs list."""
+        r"""Reorder pending tasks according to the provided task IDs list.
+
+        Args:
+            task_ids (List[str]): List of task IDs in the desired order.
+            pending_tasks (deque): The queue of pending tasks.
+
+        Returns:
+            bool: True if reordering was successful, False otherwise.
+        """
         # Create a mapping of task_id to task
         tasks_dict = {task.id: task for task in pending_tasks}
 

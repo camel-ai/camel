@@ -45,7 +45,8 @@ MAX_PENDING_TASKS_LIMIT = 20
 
 
 class WorkforceFailureDispatch:
-    """A class that provides workforce failure handling and dispatch utilities.
+    r"""A class that provides workforce failure handling and dispatch
+    utilities.
 
     This class encapsulates various functions for handling failed tasks,
     completed tasks, graceful shutdown, workforce cloning, and MCP server
@@ -57,7 +58,7 @@ class WorkforceFailureDispatch:
         max_task_retries: int = MAX_TASK_RETRIES,
         max_pending_tasks_limit: int = MAX_PENDING_TASKS_LIMIT,
     ):
-        """Initialize the WorkforceFailureDispatch class.
+        r"""Initialize the WorkforceFailureDispatch class.
 
         Args:
             max_task_retries (int): Maximum number of retry attempts for
@@ -71,7 +72,7 @@ class WorkforceFailureDispatch:
     async def handle_failed_task(
         self, workforce_instance: "Workforce", task: Task
     ) -> bool:
-        """Handle a failed task with intelligent recovery strategies.
+        r"""Handle a failed task with intelligent recovery strategies.
 
         Args:
             workforce_instance: The workforce instance
@@ -146,7 +147,7 @@ class WorkforceFailureDispatch:
 
         # Use intelligent failure analysis to decide recovery strategy
         recovery_decision = workforce_instance._analyze_failure(
-            task, detailed_error, workforce_instance.task_agent
+            task, detailed_error
         )
 
         logger.info(
@@ -303,7 +304,7 @@ class WorkforceFailureDispatch:
     async def handle_completed_task(
         self, workforce_instance: "Workforce", task: Task
     ) -> None:
-        """Handle a completed task and update workforce state.
+        r"""Handle a completed task and update workforce state.
 
         Args:
             workforce_instance: The workforce instance
@@ -463,7 +464,7 @@ class WorkforceFailureDispatch:
     async def graceful_shutdown(
         self, workforce_instance: "Workforce", failed_task: Task
     ) -> None:
-        """Handle graceful shutdown with configurable timeout.
+        r"""Handle graceful shutdown with configurable timeout.
 
         This is used to keep the workforce running for a while to debug
         the failed task.
@@ -488,7 +489,7 @@ class WorkforceFailureDispatch:
     def clone_workforce(
         self, workforce_instance: "Workforce", with_memory: bool = False
     ) -> 'Workforce':
-        """Creates a new instance of Workforce with the same configuration.
+        r"""Creates a new instance of Workforce with the same configuration.
 
         Args:
             workforce_instance: The workforce instance to clone
@@ -559,7 +560,7 @@ class WorkforceFailureDispatch:
         host: str = "localhost",
         port: int = 8001,
     ):
-        """Expose this Workforce as an MCP server.
+        r"""Expose this Workforce as an MCP server.
 
         Args:
             workforce_instance: The workforce instance
@@ -600,7 +601,7 @@ class WorkforceFailureDispatch:
         async def process_task(
             task_content, task_id=None, additional_info=None
         ):
-            """Process a task using the workforce.
+            r"""Process a task using the workforce.
 
             Args:
                 task_content (str): The content of the task to be processed.
@@ -682,7 +683,7 @@ class WorkforceFailureDispatch:
 
         # Workforce info resource and tool
         def get_workforce_info():
-            """Get comprehensive information about the workforce.
+            r"""Get comprehensive information about the workforce.
 
             Retrieves the current state and configuration of the workforce
             including its ID, description, running status, and task queue
@@ -718,7 +719,7 @@ class WorkforceFailureDispatch:
 
         # Children info resource and tool
         def get_children_info():
-            """Get information about all child nodes in the workforce.
+            r"""Get information about all child nodes in the workforce.
 
             Retrieves comprehensive information about each child worker
             including their type, capabilities, and configuration details.
@@ -780,7 +781,7 @@ class WorkforceFailureDispatch:
             role_name="Assistant",
             agent_kwargs=None,
         ):
-            """Add a single agent worker to the workforce.
+            r"""Add a single agent worker to the workforce.
 
             Creates and adds a new SingleAgentWorker to the workforce with
             the specified configuration. The worker cannot be added while
@@ -858,7 +859,7 @@ class WorkforceFailureDispatch:
             user_agent_kwargs=None,
             summarize_agent_kwargs=None,
         ):
-            """Add a role playing worker to the workforce.
+            r"""Add a role playing worker to the workforce.
 
             Creates and adds a new RolePlayingWorker to the workforce that
             uses two agents in a conversational role-playing setup. The

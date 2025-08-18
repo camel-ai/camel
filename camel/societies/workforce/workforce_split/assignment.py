@@ -29,7 +29,7 @@ logger = get_logger(__name__)
 
 
 class TaskAssignmentManager:
-    """Manages task assignment operations including coordination, validation,
+    r"""Manages task assignment operations including coordination, validation,
     retry logic, and fallback mechanisms.
 
     This class encapsulates all the functionality related to assigning tasks
@@ -43,14 +43,15 @@ class TaskAssignmentManager:
         use_structured_output_handler: bool = True,
         structured_handler: Optional[Any] = None,
     ):
-        """Initialize the TaskAssignmentManager.
+        r"""Initialize the TaskAssignmentManager.
 
         Args:
             coordinator_agent (ChatAgent): The coordinator agent for task
                 assignment.
-            use_structured_output_handler (bool): Whether to use structured
-                output handler.
-            structured_handler: The structured output handler instance.
+            use_structured_output_handler (bool, optional): Whether to use
+                structured output handler. (default: :obj:`True`)
+            structured_handler (Any, optional): The structured output handler
+                instance. (default: :obj:`None`)
         """
         self.coordinator_agent = coordinator_agent
         self.use_structured_output_handler = use_structured_output_handler
@@ -61,15 +62,19 @@ class TaskAssignmentManager:
         tasks: List[Task],
         child_nodes_info: str,
         invalid_ids: Optional[List[str]] = None,
+        valid_ids: Optional[Set[str]] = None,
     ) -> TaskAssignResult:
-        """Call coordinator agent to assign tasks with optional validation
+        r"""Call coordinator agent to assign tasks with optional validation
         feedback in the case of invalid worker IDs.
 
         Args:
             tasks (List[Task]): Tasks to assign.
             child_nodes_info (str): Information about available worker nodes.
             invalid_ids (List[str], optional): Invalid worker IDs from previous
-                attempt (if any).
+                attempt (if any). (default: :obj:`None`)
+            valid_ids (Set[str], optional): Valid worker IDs for validation
+                feedback. Required when invalid_ids is provided.
+                (default: :obj:`None`)
 
         Returns:
             TaskAssignResult: Assignment result from coordinator.
@@ -92,10 +97,19 @@ class TaskAssignmentManager:
 
         # add feedback if this is a retry
         if invalid_ids:
+            if valid_ids is None:
+                logger.error(
+                    "valid_ids parameter is required when invalid_ids is "
+                    "provided"
+                )
+                return TaskAssignResult(assignments=[])
+
+            valid_worker_ids = list(valid_ids)
             feedback = (
                 f"VALIDATION ERROR: The following worker IDs are invalid: "
                 f"{invalid_ids}. "
-                f"Please reassign ONLY the above tasks using valid IDs."
+                f"VALID WORKER IDS: {valid_worker_ids}. "
+                f"Please reassign ONLY the above tasks using these valid IDs."
             )
             prompt = prompt + f"\n\n{feedback}"
 
@@ -170,15 +184,15 @@ class TaskAssignmentManager:
     def validate_assignments(
         self, assignments: List[TaskAssignment], valid_ids: Set[str]
     ) -> Tuple[List[TaskAssignment], List[TaskAssignment]]:
-        """Validate task assignments against valid worker IDs.
+        r"""Validate task assignments against valid worker IDs.
 
         Args:
             assignments (List[TaskAssignment]): Assignments to validate.
             valid_ids (Set[str]): Set of valid worker IDs.
 
         Returns:
-            Tuple[List[TaskAssignment], List[TaskAssignment]]:
-                (valid_assignments, invalid_assignments)
+            Tuple[List[TaskAssignment], List[TaskAssignment]]: A tuple
+                containing (valid_assignments, invalid_assignments).
         """
         valid_assignments: List[TaskAssignment] = []
         invalid_assignments: List[TaskAssignment] = []
@@ -196,11 +210,12 @@ class TaskAssignmentManager:
         tasks: List[Task],
         create_worker_node_for_task_func: Callable,
     ) -> List[TaskAssignment]:
-        """Create new workers for unassigned tasks as fallback.
+        r"""Create new workers for unassigned tasks as fallback.
 
         Args:
             tasks (List[Task]): Tasks that need new workers.
-            create_worker_node_for_task_func: Function to create worker nodes.
+            create_worker_node_for_task_func (Callable): Function to create
+                worker nodes.
 
         Returns:
             List[TaskAssignment]: Assignments for newly created workers.
@@ -227,7 +242,7 @@ class TaskAssignmentManager:
         valid_worker_ids: Set[str],
         create_worker_node_for_task_func: Callable,
     ) -> List[TaskAssignment]:
-        """Called if Coordinator agent fails to assign tasks to valid worker
+        r"""Called if Coordinator agent fails to assign tasks to valid worker
         IDs. Handles retry assignment and fallback worker creation for invalid
         assignments.
 
@@ -235,8 +250,9 @@ class TaskAssignmentManager:
             invalid_assignments (List[TaskAssignment]): Invalid assignments to
                 retry.
             tasks (List[Task]): Original tasks list for task lookup.
-            valid_worker_ids (set): Set of valid worker IDs.
-            create_worker_node_for_task_func: Function to create worker nodes.
+            valid_worker_ids (Set[str]): Set of valid worker IDs.
+            create_worker_node_for_task_func (Callable): Function to create
+                worker nodes.
 
         Returns:
             List[TaskAssignment]: Final assignments for the invalid tasks.
@@ -263,7 +279,7 @@ class TaskAssignmentManager:
 
         # retry assignment with feedback
         retry_result = self.call_coordinator_for_assignment(
-            invalid_tasks, "", invalid_ids
+            invalid_tasks, "", invalid_ids, valid_worker_ids
         )
         final_assignments = []
 
@@ -307,7 +323,7 @@ class TaskAssignmentManager:
         completed_tasks: List[Task],
         pending_tasks: List[Task],
     ) -> None:
-        """Update Task.dependencies with actual Task objects based on
+        r"""Update Task.dependencies with actual Task objects based on
         assignments.
 
         Args:
@@ -346,13 +362,14 @@ class TaskAssignmentManager:
         completed_tasks: List[Task],
         pending_tasks: List[Task],
     ) -> TaskAssignResult:
-        """Assigns multiple tasks to worker nodes with the best capabilities.
+        r"""Assigns multiple tasks to worker nodes with the best capabilities.
 
-        Parameters:
+        Args:
             tasks (List[Task]): The tasks to be assigned.
             valid_worker_ids (Set[str]): Set of valid worker IDs.
             child_nodes_info (str): Information about available worker nodes.
-            create_worker_node_for_task_func: Function to create worker nodes.
+            create_worker_node_for_task_func (Callable): Function to create
+                worker nodes.
             completed_tasks (List[Task]): List of completed tasks.
             pending_tasks (List[Task]): List of pending tasks.
 
@@ -368,7 +385,7 @@ class TaskAssignmentManager:
         )
 
         assignment_result = self.call_coordinator_for_assignment(
-            tasks, child_nodes_info
+            tasks, child_nodes_info, valid_ids=valid_worker_ids
         )
 
         # validate assignments

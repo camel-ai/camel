@@ -32,38 +32,42 @@ logger = logging.getLogger(__name__)
 
 
 class FailureAnalyzer:
-    """
-    A class that encapsulates failure analysis and recovery strategy
-    determination.
-    """
+    r"""A class that encapsulates failure analysis and recovery strategy
+    determination."""
 
-    def __init__(self):
-        """
-        Initialize the FailureAnalyzer.
-        """
-        pass
+    def __init__(
+        self,
+        task_agent: Optional[Any] = None,
+        structured_handler: Optional[Any] = None,
+        use_structured: bool = True,
+    ):
+        r"""Initialize the FailureAnalyzer.
 
-    def analyze_failure(
+        Args:
+            task_agent (Any, optional): ChatAgent used to generate recovery
+                decisions. (default: :obj:`None`)
+            structured_handler (Any, optional): Optional handler for structured
+                output parsing. (default: :obj:`None`)
+            use_structured (bool, optional): Whether to use the structured
+                handler vs native LLM output. (default: :obj:`True`)
+        """
+        self.task_agent = task_agent
+        self.structured_handler = structured_handler
+        self.use_structured = use_structured
+
+    def _analyze_failure(
         self,
         task: Task,
         error_message: str,
-        task_agent: Any,
-        structured_handler: Any = None,
-        use_structured: bool = True,
     ) -> RecoveryDecision:
-        """
-        Analyze a task failure and decide on the best recovery strategy.
+        r"""Analyze a task failure and decide on the best recovery strategy.
 
         Args:
-            task: The failed task
-            error_message: The error message from the failure
-            task_agent: ChatAgent used to generate recovery decisions
-            structured_handler: Optional handler for structured output parsing
-            use_structured: Whether to use the structured handler vs native
-                LLM output
+            task (Task): The failed task.
+            error_message (str): The error message from the failure.
 
         Returns:
-            RecoveryDecision: The decided recovery strategy with reasoning
+            RecoveryDecision: The decided recovery strategy with reasoning.
         """
         # First, do a quick smart analysis based on error patterns
         error_msg_lower = error_message.lower()
@@ -109,10 +113,10 @@ class FailureAnalyzer:
 
         try:
             # Check if we should use structured handler
-            if use_structured and structured_handler:
+            if self.use_structured and self.structured_handler:
                 # Use structured handler
                 enhanced_prompt = (
-                    structured_handler.generate_structured_prompt(
+                    self.structured_handler.generate_structured_prompt(
                         base_prompt=analysis_prompt,
                         schema=RecoveryDecision,
                         examples=[
@@ -126,37 +130,66 @@ class FailureAnalyzer:
                     )
                 )
 
-                task_agent.reset()
-                response = task_agent.step(enhanced_prompt)
+                if self.task_agent is not None:
+                    self.task_agent.reset()
+                    response = self.task_agent.step(enhanced_prompt)
 
-                result = structured_handler.parse_structured_response(
-                    response.msg.content if response.msg else "",
-                    schema=RecoveryDecision,
-                    fallback_values={
-                        "strategy": RecoveryStrategy.RETRY,
-                        "reasoning": "Defaulting to retry due to parsing "
-                        "issues",
-                        "modified_task_content": None,
-                    },
-                )
-                # Ensure we return a RecoveryDecision instance
-                if isinstance(result, RecoveryDecision):
-                    return result
-                elif isinstance(result, dict):
-                    return RecoveryDecision(**result)
+                    if self.structured_handler is not None:
+                        result = (
+                            self.structured_handler.parse_structured_response(
+                                response.msg.content if response.msg else "",
+                                schema=RecoveryDecision,
+                                fallback_values={
+                                    "strategy": RecoveryStrategy.RETRY,
+                                    "reasoning": (
+                                        "Defaulting to retry due to parsing "
+                                        "issues"
+                                    ),
+                                    "modified_task_content": None,
+                                },
+                            )
+                        )
+                        # Ensure we return a RecoveryDecision instance
+                        if isinstance(result, RecoveryDecision):
+                            return result
+                        elif isinstance(result, dict):
+                            return RecoveryDecision(**result)
+                        else:
+                            return RecoveryDecision(
+                                strategy=RecoveryStrategy.RETRY,
+                                reasoning="Failed to parse recovery decision",
+                                modified_task_content=None,
+                            )
+                    else:
+                        return RecoveryDecision(
+                            strategy=RecoveryStrategy.RETRY,
+                            reasoning="Structured handler not available",
+                            modified_task_content=None,
+                        )
                 else:
                     return RecoveryDecision(
                         strategy=RecoveryStrategy.RETRY,
-                        reasoning="Failed to parse recovery decision",
+                        reasoning=(
+                            "Task agent not available, " "defaulting to retry"
+                        ),
                         modified_task_content=None,
                     )
             else:
                 # Use existing native structured output code
-                task_agent.reset()
-                response = task_agent.step(
-                    analysis_prompt, response_format=RecoveryDecision
-                )
-                return response.msg.parsed
+                if self.task_agent is not None:
+                    self.task_agent.reset()
+                    response = self.task_agent.step(
+                        analysis_prompt, response_format=RecoveryDecision
+                    )
+                    return response.msg.parsed
+                else:
+                    return RecoveryDecision(
+                        strategy=RecoveryStrategy.RETRY,
+                        reasoning=(
+                            "Task agent not available, " "defaulting to retry"
+                        ),
+                        modified_task_content=None,
+                    )
 
         except Exception as e:
             logger.warning(
@@ -169,10 +202,9 @@ class FailureAnalyzer:
                 modified_task_content=None,
             )
 
-    def decompose_task(
+    def _decompose_task(
         self,
         task: Task,
-        task_agent: Any,
         child_nodes_info: str = "",
         update_dependencies_func: Optional[Callable] = None,
     ) -> Union[List[Task], Generator[List[Task], None, None]]:
@@ -182,7 +214,6 @@ class FailureAnalyzer:
 
         Args:
             task: The task to decompose
-            task_agent: ChatAgent used for task decomposition
             child_nodes_info: Information about available worker nodes
             update_dependencies_func: Optional function to update dependencies
 
@@ -195,8 +226,12 @@ class FailureAnalyzer:
             child_nodes_info=child_nodes_info,
             additional_info=task.additional_info,
         )
-        task_agent.reset()
-        result = task.decompose(task_agent, decompose_prompt)
+        if self.task_agent is not None:
+            self.task_agent.reset()
+            result = task.decompose(self.task_agent, decompose_prompt)
+        else:
+            logger.warning("Task agent not available for decomposition")
+            return []
 
         # Handle both streaming and non-streaming results
         if isinstance(result, Generator):
