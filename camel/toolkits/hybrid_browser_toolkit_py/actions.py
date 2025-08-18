@@ -12,9 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, Optional
+import logging
+import platform
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional
 
 from .config_loader import ConfigLoader
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -40,6 +45,45 @@ class ActionExecutor:
         self.max_scroll_amount = ConfigLoader.get_max_scroll_amount(
             max_scroll_amount
         )
+
+        # Determine platform-specific modifier key (typed for mypy)
+        self.modifier_key = (
+            "Meta" if platform.system() == "Darwin" else "Control"
+        )
+        self.modifier_key_click: Literal[
+            "Alt", "Control", "ControlOrMeta", "Meta", "Shift"
+        ] = self.modifier_key  # narrowed to allowed literals
+
+    # ------------------------------------------------------------------
+    # Error categorization helpers
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _is_navigation_error(error_msg: str) -> bool:
+        """Check if an error is related to navigation/context changes."""
+        navigation_indicators = [
+            "Target page, context or browser has been closed",
+            "Execution context was destroyed",
+            "Most likely because of a navigation",
+            "Protocol error",
+            "Target closed",
+        ]
+        return any(
+            indicator in error_msg for indicator in navigation_indicators
+        )
+
+    async def _wait_for_stability(self, timeout: int = 100) -> None:
+        """Wait for page to stabilize after navigation."""
+        try:
+            # First wait a small amount for immediate navigation
+            await asyncio.sleep(timeout / 1000)
+
+            # Then try to wait for DOM to be ready
+            if not self.page.is_closed():
+                await self.page.wait_for_load_state(
+                    'domcontentloaded', timeout=self.short_timeout
+                )
+        except Exception as e:
+            logger.debug(f"Stability wait interrupted: {e}")
 
     # ------------------------------------------------------------------
     # Public helpers
@@ -160,21 +204,18 @@ class ActionExecutor:
                     except Exception as e:
                         error_msg = str(e)
                         # Check if this is a navigation-related error
-                        is_navigation_error = (
-                            "Target page, context or browser has been closed"
-                            in error_msg
-                            or "Execution context was destroyed" in error_msg
-                            or "Most likely because of a navigation"
-                            in error_msg
-                        )
-
-                        if is_navigation_error and attempt < max_retries - 1:
-                            # Wait a bit and retry
-                            await asyncio.sleep(0.1)
+                        if (
+                            self._is_navigation_error(error_msg)
+                            and attempt < max_retries - 1
+                        ):
+                            logger.debug(
+                                "Navigation error during element search "
+                                f"(attempt {attempt + 1}): {error_msg}"
+                            )
+                            await self._wait_for_stability()
                             break  # Break inner loop to retry
                         else:
-                            # Re-raise for non-navigation errors or final
-                            # attempt
+                            # Re-raise for non-nav errors
                             raise
 
                 # If we found a selector, break out of retry loop
@@ -183,19 +224,19 @@ class ActionExecutor:
 
             except Exception as e:
                 error_msg = str(e)
-                is_navigation_error = (
-                    "Target page, context or browser has been closed"
-                    in error_msg
-                    or "Execution context was destroyed" in error_msg
-                    or "Most likely because of a navigation" in error_msg
-                )
-
-                if is_navigation_error and attempt < max_retries - 1:
-                    # Wait and retry for navigation errors
-                    await asyncio.sleep(0.1)
+                if (
+                    self._is_navigation_error(error_msg)
+                    and attempt < max_retries - 1
+                ):
+                    logger.debug(
+                        "Navigation error in click "
+                        f"(attempt {attempt + 1}): {error_msg}"
+                    )
+                    await self._wait_for_stability()
                     continue
                 else:
-                    # Re-raise for non-navigation errors or final attempt
+                    # Final attempt or non-navigation error
+                    logger.error(f"Click failed: {error_msg}")
                     details['error'] = f"Page context error: {error_msg}"
                     return {
                         "message": (
@@ -215,68 +256,118 @@ class ActionExecutor:
         element = self.page.locator(found_selector).first
         details['successful_strategy'] = found_selector
 
-        # Attempt ctrl+click first (always)
+        # Attempt modifier+click first (for potential new tab)
         try:
             if self.session:
+                # Use expectation-based approach for new tab handling
                 async with self.page.context.expect_page(
                     timeout=self.short_timeout
                 ) as new_page_info:
-                    await element.click(modifiers=["ControlOrMeta"])
-                new_page = await new_page_info.value
-                await new_page.wait_for_load_state('domcontentloaded')
-                new_tab_index = await self.session.register_page(new_page)
-                if new_tab_index is not None:
-                    await self.session.switch_to_tab(new_tab_index)
-                    self.page = new_page
-                details.update(
-                    {
-                        "click_method": "ctrl_click_new_tab",
-                        "new_tab_created": True,
-                        "new_tab_index": new_tab_index,
+                    await element.click(modifiers=[self.modifier_key_click])
+
+                try:
+                    new_page = await new_page_info.value
+                    await new_page.wait_for_load_state('domcontentloaded')
+                    new_tab_index = await self.session.register_page(new_page)
+
+                    if new_tab_index is not None:
+                        await self.session.switch_to_tab(new_tab_index)
+                        self.page = new_page
+
+                    details.update(
+                        {
+                            "click_method": (
+                                f"{self.modifier_key.lower()}_click_new_tab"
+                            ),
+                            "new_tab_created": True,
+                            "new_tab_index": new_tab_index,
+                        }
+                    )
+                    logger.info(
+                        f"Opened new tab {new_tab_index} via "
+                        f"{self.modifier_key}+click"
+                    )
+                    return {
+                        "message": (
+                            f"Clicked element ({self.modifier_key} click), "
+                            f"opened in new tab {new_tab_index}"
+                        ),
+                        "details": details,
                     }
+                except asyncio.TimeoutError:
+                    # No new tab opened, but click may have succeeded
+                    details["click_method"] = (
+                        f"{self.modifier_key.lower()}_click_same_tab"
+                    )
+                    return {
+                        "message": (
+                            f"Clicked element ({self.modifier_key} click, "
+                            f"same tab): {found_selector}"
+                        ),
+                        "details": details,
+                    }
+            else:
+                await element.click(modifiers=[self.modifier_key_click])
+                details["click_method"] = (
+                    f"{self.modifier_key.lower()}_click_no_session"
                 )
                 return {
-                    "message": f"Clicked element (ctrl click), opened in new "
-                    f"tab {new_tab_index}",
+                    "message": (
+                        f"Clicked element ({self.modifier_key} click, "
+                        f"no session): {found_selector}"
+                    ),
                     "details": details,
                 }
-            else:
-                await element.click(modifiers=["ControlOrMeta"])
-                details["click_method"] = "ctrl_click_no_session"
-                return {
-                    "message": f"Clicked element (ctrl click, no"
-                    f" session): {found_selector}",
-                    "details": details,
-                }
-        except asyncio.TimeoutError:
-            # No new tab was opened, click may have still worked
-            details["click_method"] = "ctrl_click_same_tab"
-            return {
-                "message": f"Clicked element (ctrl click, "
-                f"same tab): {found_selector}",
-                "details": details,
-            }
         except Exception as e:
+            error_msg = str(e)
+            logger.debug(f"{self.modifier_key}+click failed: {error_msg}")
             details['strategies_tried'].append(
                 {
                     'selector': found_selector,
-                    'method': 'ctrl_click',
-                    'error': str(e),
+                    'method': f'{self.modifier_key.lower()}_click',
+                    'error': error_msg,
                 }
             )
             # Fall through to fallback
 
-        # Fallback to normal force click if ctrl+click fails
+        # Fallback: Try normal click with navigation expectation
         try:
-            await element.click(force=True, timeout=self.default_timeout)
-            details["click_method"] = "playwright_force_click"
+            # Check if this might be a navigation click
+            is_link = await element.evaluate(
+                "el => el.tagName === 'A' || el.closest('a') !== null"
+            )
+
+            if is_link:
+                # Use expectation-based navigation for links
+                try:
+                    async with self.page.expect_navigation(
+                        timeout=self.short_timeout
+                    ):
+                        await element.click(
+                            force=True, timeout=self.default_timeout
+                        )
+                    await self.page.wait_for_load_state('domcontentloaded')
+                    details["click_method"] = "normal_click_with_navigation"
+                    logger.info(
+                        f"Navigated via normal click on {found_selector}"
+                    )
+                except asyncio.TimeoutError:
+                    # Click happened but no navigation
+                    details["click_method"] = "normal_click_no_navigation"
+            else:
+                # Non-link element, just click
+                await element.click(force=True, timeout=self.default_timeout)
+                details["click_method"] = "normal_force_click"
+
             return {
-                "message": f"Fallback clicked element: {found_selector}",
+                "message": f"Clicked element: {found_selector}",
                 "details": details,
             }
         except Exception as e:
-            details["click_method"] = "playwright_force_click_failed"
-            details["error"] = str(e)
+            error_msg = str(e)
+            logger.error(f"All click strategies failed: {error_msg}")
+            details["click_method"] = "all_strategies_failed"
+            details["error"] = error_msg
             return {
                 "message": f"Error: All click strategies "
                 f"failed for {found_selector}",
@@ -319,16 +410,15 @@ class ActionExecutor:
                 }
             except Exception as exc:
                 error_msg = str(exc)
-                is_navigation_error = (
-                    "Target page, context or browser has been closed"
-                    in error_msg
-                    or "Execution context was destroyed" in error_msg
-                    or "Most likely because of a navigation" in error_msg
-                )
-
-                if is_navigation_error and attempt < max_retries - 1:
-                    # Wait and retry for navigation errors
-                    await asyncio.sleep(0.1)
+                if (
+                    self._is_navigation_error(error_msg)
+                    and attempt < max_retries - 1
+                ):
+                    logger.debug(
+                        "Navigation error in type "
+                        f"(attempt {attempt + 1}): {error_msg}"
+                    )
+                    await self._wait_for_stability()
                     continue
                 else:
                     # Final attempt or non-navigation error
@@ -381,16 +471,15 @@ class ActionExecutor:
                 }
             except Exception as exc:
                 error_msg = str(exc)
-                is_navigation_error = (
-                    "Target page, context or browser has been closed"
-                    in error_msg
-                    or "Execution context was destroyed" in error_msg
-                    or "Most likely because of a navigation" in error_msg
-                )
-
-                if is_navigation_error and attempt < max_retries - 1:
-                    # Wait and retry for navigation errors
-                    await asyncio.sleep(0.1)
+                if (
+                    self._is_navigation_error(error_msg)
+                    and attempt < max_retries - 1
+                ):
+                    logger.debug(
+                        "Navigation error in select "
+                        f"(attempt {attempt + 1}): {error_msg}"
+                    )
+                    await self._wait_for_stability()
                     continue
                 else:
                     # Final attempt or non-navigation error
