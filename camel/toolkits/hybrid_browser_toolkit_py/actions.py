@@ -47,12 +47,13 @@ class ActionExecutor:
         )
 
         # Determine platform-specific modifier key (typed for mypy)
-        self.modifier_key = (
+        modifier: Literal["Meta", "Control"] = (
             "Meta" if platform.system() == "Darwin" else "Control"
         )
+        self.modifier_key = modifier
         self.modifier_key_click: Literal[
             "Alt", "Control", "ControlOrMeta", "Meta", "Shift"
-        ] = self.modifier_key  # narrowed to allowed literals
+        ] = modifier
 
     # ------------------------------------------------------------------
     # Error categorization helpers
