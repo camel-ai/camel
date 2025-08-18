@@ -24,7 +24,7 @@ from camel.toolkits import Mem0CloudToolkit
 def mem0_cloud_toolkit():
     """Create a Mem0CloudToolkit instance for testing."""
     with patch('camel.toolkits.mem0_cloud_toolkit.Mem0Storage'):
-        toolkit = Mem0CloudToolkit(agent_id="test-agent", user_id="test-user")
+        toolkit = Mem0CloudToolkit(agent_id="test-agent")  # Uses default user_id="camel_memory"
         # Mock the memory storage
         toolkit.memory = Mock()
         toolkit.memory._chat_history_block = Mock()
@@ -44,6 +44,14 @@ class TestMem0CloudToolkit:
             assert toolkit.user_id == "test-user"
             assert toolkit.timeout == 30.0
             assert toolkit.token_limit == 4096  # default value
+            assert toolkit.memory is not None
+
+    def test_init_default_user_id(self):
+        """Test toolkit initialization with default user_id."""
+        with patch('camel.toolkits.mem0_cloud_toolkit.Mem0Storage'):
+            toolkit = Mem0CloudToolkit(agent_id="test-agent")
+            assert toolkit.agent_id == "test-agent"
+            assert toolkit.user_id == "camel_memory"  # default value
             assert toolkit.memory is not None
 
     def test_init_with_custom_params(self):

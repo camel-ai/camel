@@ -40,7 +40,8 @@ class Mem0CloudToolkit(BaseToolkit):
 
     Args:
         agent_id (str): The agent identifier for memory organization.
-        user_id (str): The user identifier for memory organization.
+        user_id (str, optional): The user identifier for memory organization.
+            (default: :obj:`"camel_memory"`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter
             for memory context management. If None, defaults to OpenAI GPT-4o-mini.
             (default: :obj:`None`)
@@ -54,7 +55,7 @@ class Mem0CloudToolkit(BaseToolkit):
     def __init__(
         self,
         agent_id: str,
-        user_id: str,
+        user_id: str = "camel_memory",
         token_counter: Optional[BaseTokenCounter] = None,
         token_limit: int = 4096,
         timeout: Optional[float] = None,
