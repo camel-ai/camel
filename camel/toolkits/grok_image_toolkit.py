@@ -16,11 +16,14 @@ import os
 from typing import List, Literal, Optional, Union
 
 from openai import OpenAI
-from .openai_image_toolkit import OpenAIImageToolkit
+
 from camel.logger import get_logger
 from camel.utils import MCPServer, api_keys_required
 
+from .openai_image_toolkit import OpenAIImageToolkit
+
 logger = get_logger(__name__)
+
 
 @MCPServer()
 class GrokImageToolkit(OpenAIImageToolkit):
@@ -43,14 +46,13 @@ class GrokImageToolkit(OpenAIImageToolkit):
         timeout: Optional[float] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        response_format: Optional[
-            Literal["url", "b64_json"]
-        ] = "b64_json",
+        response_format: Optional[Literal["url", "b64_json"]] = "b64_json",
     ):
-        # NOTE: This class inherits from OpenAIImageToolkit because Grok's Image Generation API
-        # is compatible with the OpenAI API format, allowing us to reuse most of the
-        # parent class's functionality. However, not all parameters from the parent class
-        # are supported by Grok's API.
+        # NOTE: This class inherits from OpenAIImageToolkit because Grok's
+        # Image Generation API is compatible with the OpenAI API format,
+        # allowing us to reuse most of the parent class's functionality.
+        # However, not all parameters from the parent class are supported by
+        # Grok's API.
 
         # Unsupported parameters:
         #     - size: Grok does not support custom image dimensions
@@ -73,9 +75,8 @@ class GrokImageToolkit(OpenAIImageToolkit):
         api_key = api_key or os.environ.get("XAI_API_KEY")
         url = url or os.environ.get("XAI_API_BASE_URL")
         self.client = OpenAI(base_url=url, api_key=api_key)
-        self.model = model # type: ignore[assignment]
+        self.model = model  # type: ignore[assignment]
         self.response_format = response_format
-
 
     def _build_base_params(self, prompt: str, n: Optional[int] = None) -> dict:
         r"""Build base parameters dict for Grok API calls.
@@ -89,7 +90,7 @@ class GrokImageToolkit(OpenAIImageToolkit):
         """
         params = {"prompt": prompt, "model": self.model}
         if n is not None:
-            params["n"] = n # type: ignore[assignment]
+            params["n"] = n  # type: ignore[assignment]
 
         return params
 

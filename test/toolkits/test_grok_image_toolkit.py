@@ -20,6 +20,7 @@ from camel.toolkits import GrokImageToolkit
 def image_toolkit():
     return GrokImageToolkit()
 
+
 def test_toolkit_initialization_and_tools(image_toolkit):
     # test that toolkit initializes properly
     assert image_toolkit is not None
