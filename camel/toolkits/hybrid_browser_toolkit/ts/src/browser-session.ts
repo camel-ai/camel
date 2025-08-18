@@ -72,21 +72,19 @@ export class HybridBrowserSession {
         this.context = await this.browser.newContext(contextOptions);
       }
       
-      // Handle existing pages
       const pages = this.context.pages();
       if (pages.length > 0) {
-        // Map existing pages - for CDP, only use pages with about:blank URL
+        // Map existing pages - for CDP, find ONE available blank page
         let availablePageFound = false;
         for (const page of pages) {
           const pageUrl = page.url();
-          // In CDP mode, only consider pages with about:blank as available
-          if (pageUrl === 'about:blank') {
+          if (this.isBlankPageUrl(pageUrl)) {
             const tabId = this.generateTabId();
             this.registerNewPage(tabId, page);
-            if (!this.currentTabId) {
-              this.currentTabId = tabId;
-              availablePageFound = true;
-            }
+            this.currentTabId = tabId;
+            availablePageFound = true;
+            console.log(`[CDP] Registered blank page as initial tab: ${tabId}, URL: ${pageUrl}`);
+            break;  // Only register ONE page initially
           }
         }
         
@@ -157,8 +155,45 @@ export class HybridBrowserSession {
     return `${browserConfig.tabIdPrefix}${String(++this.tabCounter).padStart(browserConfig.tabCounterPadding, '0')}`;
   }
 
+  private isBlankPageUrl(url: string): boolean {
+    // Unified blank page detection logic used across the codebase
+    const browserConfig = this.configLoader.getBrowserConfig();
+    return (
+      // Standard about:blank variations (prefix match for query params)
+      url === 'about:blank' || 
+      url.startsWith('about:blank?') ||
+      // Configured blank page URLs (exact match for compatibility)
+      browserConfig.blankPageUrls.includes(url) ||
+      // Empty URL
+      url === '' ||
+      // Data URLs (often used for blank pages)
+      url.startsWith(browserConfig.dataUrlPrefix || 'data:')
+    );
+  }
+
   async getCurrentPage(): Promise<Page> {
     if (!this.currentTabId || !this.pages.has(this.currentTabId)) {
+      // In CDP mode, try to create a new page if none exists
+      const browserConfig = this.configLoader.getBrowserConfig();
+      if (browserConfig.connectOverCdp && this.context) {
+        console.log('[CDP] No active page found, attempting to create new page...');
+        try {
+          const newPage = await this.context.newPage();
+          const newTabId = this.generateTabId();
+          this.registerNewPage(newTabId, newPage);
+          this.currentTabId = newTabId;
+          
+          // Set page timeouts
+          newPage.setDefaultNavigationTimeout(browserConfig.navigationTimeout);
+          newPage.setDefaultTimeout(browserConfig.navigationTimeout);
+          
+          console.log(`[CDP] Created new page with tab ID: ${newTabId}`);
+          return newPage;
+        } catch (error) {
+          console.error('[CDP] Failed to create new page:', error);
+          throw new Error('No active page available and failed to create new page in CDP mode');
+        }
+      }
       throw new Error('No active page available');
     }
     return this.pages.get(this.currentTabId)!;
@@ -416,25 +451,67 @@ export class HybridBrowserSession {
 
   /**
    *  Simplified type implementation using Playwright's aria-ref selector
+   *  Supports both single and multiple input operations
    */
-  private async performType(page: Page, ref: string, text: string): Promise<{ success: boolean; error?: string }> {
+  private async performType(page: Page, ref: string | undefined, text: string | undefined, inputs?: Array<{ ref: string; text: string }>): Promise<{ success: boolean; error?: string; details?: Record<string, any> }> {
     try {
       // Ensure we have the latest snapshot
       await (page as any)._snapshotForAI();
       
-      // Use Playwright's aria-ref selector
-      const selector = `aria-ref=${ref}`;
-      const element = await page.locator(selector).first();
-      
-      const exists = await element.count() > 0;
-      if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+      // Handle multiple inputs if provided
+      if (inputs && inputs.length > 0) {
+        const results: Record<string, { success: boolean; error?: string }> = {};
+        
+        for (const input of inputs) {
+          const selector = `aria-ref=${input.ref}`;
+          const element = await page.locator(selector).first();
+          
+          const exists = await element.count() > 0;
+          if (!exists) {
+            results[input.ref] = { success: false, error: `Element with ref ${input.ref} not found` };
+            continue;
+          }
+          
+          try {
+            // Type text using Playwright's built-in fill method
+            await element.fill(input.text);
+            results[input.ref] = { success: true };
+          } catch (error) {
+            results[input.ref] = { success: false, error: `Type failed: ${error}` };
+          }
+        }
+        
+        // Check if all inputs were successful
+        const allSuccess = Object.values(results).every(r => r.success);
+        const errors = Object.entries(results)
+          .filter(([_, r]) => !r.success)
+          .map(([ref, r]) => `${ref}: ${r.error}`)
+          .join('; ');
+        
+        return {
+          success: allSuccess,
+          error: allSuccess ? undefined : `Some inputs failed: ${errors}`,
+          details: results
+        };
       }
       
-      // Type text using Playwright's built-in fill method
-      await element.fill(text);
+      // Handle single input (backward compatibility)
+      if (ref && text !== undefined) {
+        const selector = `aria-ref=${ref}`;
+        const element = await page.locator(selector).first();
+        
+        const exists = await element.count() > 0;
+        if (!exists) {
+          return { success: false, error: `Element with ref ${ref} not found` };
+        }
+        
+        // Type text using Playwright's built-in fill method
+        await element.fill(text);
+        
+        return { success: true };
+      }
       
-      return { success: true };
+      return { success: false, error: 'No valid input provided' };
     } catch (error) {
       return { success: false, error: `Type failed: ${error}` };
     }
@@ -572,6 +649,8 @@ export class HybridBrowserSession {
       //  No need to pre-fetch snapshot - each action method handles this
       
       let newTabId: string | undefined;
+      let customMessage: string | undefined;
+      let actionDetails: Record<string, any> | undefined;
       
       switch (action.type) {
         case 'click': {
@@ -596,10 +675,18 @@ export class HybridBrowserSession {
           elementSearchTime = Date.now() - elementSearchStart;
           const typeStart = Date.now();
 
-          const typeResult = await this.performType(page, action.ref, action.text);
+          const typeResult = await this.performType(page, action.ref, action.text, action.inputs);
           
           if (!typeResult.success) {
             throw new Error(`Type failed: ${typeResult.error}`);
+          }
+          
+          // Set custom message and details if multiple inputs were used
+          if (typeResult.details) {
+            const successCount = Object.values(typeResult.details).filter((r: any) => r.success).length;
+            const totalCount = Object.keys(typeResult.details).length;
+            customMessage = `Typed text into ${successCount}/${totalCount} elements`;
+            actionDetails = typeResult.details;
           }
           
           actionExecutionTime = Date.now() - typeStart;
@@ -689,7 +776,7 @@ export class HybridBrowserSession {
       
       return {
         success: true,
-        message: `Action ${action.type} executed successfully`,
+        message: customMessage || `Action ${action.type} executed successfully`,
         timing: {
           total_time_ms: totalTime,
           element_search_time_ms: elementSearchTime,
@@ -699,6 +786,7 @@ export class HybridBrowserSession {
           network_idle_time_ms: stabilityResult.networkIdleTime,
         },
         ...(newTabId && { newTabId }), //  Include new tab ID if present
+        ...(actionDetails && { details: actionDetails }), // Include action details if present
       };
     } catch (error) {
       const totalTime = Date.now() - startTime;
@@ -740,16 +828,23 @@ export class HybridBrowserSession {
     
     try {
       // Get current page to check if it's blank
-      const currentPage = await this.getCurrentPage();
-      const currentUrl = currentPage.url();
+      let currentPage: Page;
+      let currentUrl: string;
+      
+      try {
+        currentPage = await this.getCurrentPage();
+        currentUrl = currentPage.url();
+      } catch (error: any) {
+        // If no active page is available, getCurrentPage() will create one in CDP mode
+        console.log('[visitPage] Failed to get current page:', error);
+        throw new Error(`No active page available: ${error?.message || error}`);
+      }
       
       //  Check if current page is blank or if this is the first navigation
       const browserConfig = this.configLoader.getBrowserConfig();
-      const isBlankPage = (
-        browserConfig.blankPageUrls.includes(currentUrl) ||
-        currentUrl === browserConfig.defaultStartUrl ||
-        currentUrl.startsWith(browserConfig.dataUrlPrefix) // data URLs are often used for blank pages
-      );
+      
+      // Use unified blank page detection
+      const isBlankPage = this.isBlankPageUrl(currentUrl) || currentUrl === browserConfig.defaultStartUrl;
       
       const shouldUseCurrentTab = isBlankPage || !this.hasNavigatedBefore;
       
@@ -804,7 +899,7 @@ export class HybridBrowserSession {
             const pageUrl = page.url();
             // Check if this page is not already tracked and is blank
             const isTracked = Array.from(this.pages.values()).includes(page);
-            if (!isTracked && pageUrl === 'about:blank') {
+            if (!isTracked && this.isBlankPageUrl(pageUrl)) {
               newPage = page;
               newTabId = this.generateTabId();
               this.registerNewPage(newTabId, newPage);

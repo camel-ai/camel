@@ -160,7 +160,14 @@ class WebSocketBrowserServer {
 
       case 'type':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
-        return await this.toolkit.type(params.ref, params.text);
+        // Handle both single input and multiple inputs
+        if (params.inputs) {
+          // Multiple inputs mode - pass inputs array directly
+          return await this.toolkit.type(params.inputs);
+        } else {
+          // Single input mode - pass ref and text
+          return await this.toolkit.type(params.ref, params.text);
+        }
 
       case 'select':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
