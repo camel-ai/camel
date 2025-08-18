@@ -507,15 +507,14 @@ class WebSocketBrowserWrapper:
         return ToolResult(text=response['text'], images=response['images'])
 
     def _ensure_ref_prefix(self, ref: str) -> str:
-        """Ensure ref has proper prefix ('e' for main frame or 'f' for iframe)."""
+        """Ensure ref has proper prefix"""
         if not ref:
             return ref
-        
+
         # If ref is purely numeric, add 'e' prefix for main frame
         if ref.isdigit():
             return f'e{ref}'
-        
-        # Otherwise, keep ref as is (including those already with 'e' or 'f' prefix)
+
         return ref
 
     def _process_refs_in_params(
