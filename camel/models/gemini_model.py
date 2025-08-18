@@ -37,6 +37,11 @@ if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
         from langfuse.decorators import observe
     except ImportError:
         from camel.utils import observe
+elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+    try:
+        from traceroot import trace as observe  # type: ignore[import]
+    except ImportError:
+        from camel.utils import observe
 else:
     from camel.utils import observe
 
@@ -64,6 +69,10 @@ class GeminiModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -79,6 +88,8 @@ class GeminiModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = GeminiConfig().as_dict()
@@ -95,6 +106,8 @@ class GeminiModel(OpenAICompatibleModel):
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
 
     def _process_messages(self, messages) -> List[OpenAIMessage]:
@@ -230,7 +243,7 @@ class GeminiModel(OpenAICompatibleModel):
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
 
-                # Process parameters to remove anyOf
+                # Process parameters to remove anyOf and handle enum/format
                 if 'parameters' in function_dict:
                     params = function_dict['parameters']
                     if 'properties' in params:
@@ -246,6 +259,20 @@ class GeminiModel(OpenAICompatibleModel):
                                     params['properties'][prop_name][
                                         'description'
                                     ] = prop_value['description']
+
+                            # Handle enum and format restrictions for Gemini
+                            # API enum: only allowed for string type
+                            if prop_value.get('type') != 'string':
+                                prop_value.pop('enum', None)
+
+                            # format: only allowed for string, integer, and
+                            # number types
+                            if prop_value.get('type') not in [
+                                'string',
+                                'integer',
+                                'number',
+                            ]:
+                                prop_value.pop('format', None)
 
             request_config["tools"] = tools
 
@@ -270,7 +297,7 @@ class GeminiModel(OpenAICompatibleModel):
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
 
-                # Process parameters to remove anyOf
+                # Process parameters to remove anyOf and handle enum/format
                 if 'parameters' in function_dict:
                     params = function_dict['parameters']
                     if 'properties' in params:
@@ -286,6 +313,20 @@ class GeminiModel(OpenAICompatibleModel):
                                     params['properties'][prop_name][
                                         'description'
                                     ] = prop_value['description']
+
+                            # Handle enum and format restrictions for Gemini
+                            # API enum: only allowed for string type
+                            if prop_value.get('type') != 'string':
+                                prop_value.pop('enum', None)
+
+                            # format: only allowed for string, integer, and
+                            # number types
+                            if prop_value.get('type') not in [
+                                'string',
+                                'integer',
+                                'number',
+                            ]:
+                                prop_value.pop('format', None)
 
             request_config["tools"] = tools
 

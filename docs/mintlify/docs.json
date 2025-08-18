@@ -46,6 +46,7 @@
           {
             "group": "Get Started",
             "pages": [
+              "get_started/introduction",
               "get_started/installation",
               "get_started/setup"
             ]
@@ -54,21 +55,31 @@
             "group": "Key Modules",
             "pages": [
               "key_modules/agents",
+              "key_modules/models",
+              "key_modules/tools",
+              "key_modules/societies",
+              "key_modules/workforce",
               "key_modules/datagen",
               "key_modules/interpreters",
               "key_modules/runtimes",
-              "key_modules/society",
-              "key_modules/models",
               "key_modules/messages",
               "key_modules/memory",
-              "key_modules/tools",
               "key_modules/prompts",
               "key_modules/tasks",
               "key_modules/loaders",
               "key_modules/storages",
               "key_modules/embeddings",
-              "key_modules/retrievers",
-              "key_modules/workforce"
+              "key_modules/retrievers"
+            ]
+          },
+          {
+            "group": "CAMEL with MCP",
+            "pages": [
+              "mcp/overview",
+              "mcp/camel_agents_as_an_mcp_clients",
+              "mcp/export_camel_agent_as_mcp_server",
+              "mcp/camel_toolkits_as_an_mcp_server",
+              "mcp/mcp_hub"
             ]
           },
           {
@@ -77,9 +88,9 @@
               {
                 "group": "Basic Concepts",
                 "pages": [
+                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/agents_message",
                   "cookbooks/basic_concepts/agents_prompting",
-                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/create_your_first_agents_society",
                   "cookbooks/basic_concepts/model_speed_comparison"
                 ]
@@ -150,6 +161,7 @@
                 "group": "Multi Agent Society",
                 "pages": [
                   "cookbooks/multi_agent_society/agents_society",
+                  "cookbooks/multi_agent_society/azure_openai_claude_society",
                   "cookbooks/multi_agent_society/task_generation",
                   "cookbooks/multi_agent_society/workforce_judge_committee"
                 ]
@@ -157,7 +169,8 @@
               {
                 "group": "MCP",
                 "pages": [
-                  "cookbooks/mcp/agents_with_sql_mcp"
+                  "cookbooks/mcp/agents_with_sql_mcp",
+                  "cookbooks/mcp/camel_aci_mcp_cookbook"
                 ]
               }
             ]
@@ -219,6 +232,7 @@
               "reference/camel.configs.openai_config",
               "reference/camel.configs.openrouter_config",
               "reference/camel.configs.ppio_config",
+              "reference/camel.configs.qianfan_config",
               "reference/camel.configs.qwen_config",
               "reference/camel.configs.reka_config",
               "reference/camel.configs.samba_config",
@@ -304,6 +318,7 @@
               "reference/camel.models.openai_model",
               "reference/camel.models.openrouter_model",
               "reference/camel.models.ppio_model",
+              "reference/camel.models.qianfan_model",
               "reference/camel.models.qwen_model",
               "reference/camel.models.reka_model",
               "reference/camel.models.samba_model",
@@ -397,10 +412,12 @@
               "reference/camel.societies.workforce.base",
               "reference/camel.societies.workforce.role_playing_worker",
               "reference/camel.societies.workforce.single_agent_worker",
+              "reference/camel.societies.workforce.structured_output_handler",
               "reference/camel.societies.workforce.task_channel",
               "reference/camel.societies.workforce.utils",
               "reference/camel.societies.workforce.worker",
-              "reference/camel.societies.workforce.workforce"
+              "reference/camel.societies.workforce.workforce",
+              "reference/camel.societies.workforce.workforce_logger"
             ]
           },
           {
@@ -420,10 +437,13 @@
               "reference/camel.storages.object_storages.base",
               "reference/camel.storages.object_storages.google_cloud",
               "reference/camel.storages.vectordb_storages.base",
+              "reference/camel.storages.vectordb_storages.chroma",
               "reference/camel.storages.vectordb_storages.faiss",
               "reference/camel.storages.vectordb_storages.milvus",
               "reference/camel.storages.vectordb_storages.oceanbase",
+              "reference/camel.storages.vectordb_storages.pgvector",
               "reference/camel.storages.vectordb_storages.qdrant",
+              "reference/camel.storages.vectordb_storages.surreal",
               "reference/camel.storages.vectordb_storages.tidb",
               "reference/camel.storages.vectordb_storages.weaviate"
             ]
@@ -455,14 +475,17 @@
               "reference/camel.toolkits.browser_toolkit",
               "reference/camel.toolkits.browser_toolkit_commons",
               "reference/camel.toolkits.code_execution",
+              "reference/camel.toolkits.craw4ai_toolkit",
               "reference/camel.toolkits.dalle_toolkit",
               "reference/camel.toolkits.dappier_toolkit",
               "reference/camel.toolkits.data_commons_toolkit",
+              "reference/camel.toolkits.edgeone_pages_mcp_toolkit",
               "reference/camel.toolkits.excel_toolkit",
               "reference/camel.toolkits.file_write_toolkit",
               "reference/camel.toolkits.function_tool",
               "reference/camel.toolkits.github_toolkit",
               "reference/camel.toolkits.google_calendar_toolkit",
+              "reference/camel.toolkits.google_drive_mcp_toolkit",
               "reference/camel.toolkits.google_maps_toolkit",
               "reference/camel.toolkits.google_scholar_toolkit",
               "reference/camel.toolkits.human_toolkit",
@@ -470,16 +493,23 @@
               "reference/camel.toolkits.jina_reranker_toolkit",
               "reference/camel.toolkits.klavis_toolkit",
               "reference/camel.toolkits.linkedin_toolkit",
+              "reference/camel.toolkits.markitdown_toolkit",
               "reference/camel.toolkits.math_toolkit",
               "reference/camel.toolkits.mcp_toolkit",
               "reference/camel.toolkits.memory_toolkit",
               "reference/camel.toolkits.meshy_toolkit",
+              "reference/camel.toolkits.message_agent_toolkit",
+              "reference/camel.toolkits.message_integration",
               "reference/camel.toolkits.mineru_toolkit",
               "reference/camel.toolkits.networkx_toolkit",
+              "reference/camel.toolkits.note_taking_toolkit",
+              "reference/camel.toolkits.notion_mcp_toolkit",
               "reference/camel.toolkits.notion_toolkit",
               "reference/camel.toolkits.open_api_toolkit",
               "reference/camel.toolkits.openai_agent_toolkit",
+              "reference/camel.toolkits.openai_image_toolkit",
               "reference/camel.toolkits.openbb_toolkit",
+              "reference/camel.toolkits.origene_mcp_toolkit",
               "reference/camel.toolkits.playwright_mcp_toolkit",
               "reference/camel.toolkits.pptx_toolkit",
               "reference/camel.toolkits.pubmed_toolkit",
@@ -487,6 +517,7 @@
               "reference/camel.toolkits.pyautogui_toolkit",
               "reference/camel.toolkits.reddit_toolkit",
               "reference/camel.toolkits.retrieval_toolkit",
+              "reference/camel.toolkits.screenshot_toolkit",
               "reference/camel.toolkits.search_toolkit",
               "reference/camel.toolkits.searxng_toolkit",
               "reference/camel.toolkits.semantic_scholar_toolkit",
@@ -500,9 +531,30 @@
               "reference/camel.toolkits.video_analysis_toolkit",
               "reference/camel.toolkits.video_download_toolkit",
               "reference/camel.toolkits.weather_toolkit",
+              "reference/camel.toolkits.web_deploy_toolkit",
               "reference/camel.toolkits.whatsapp_toolkit",
               "reference/camel.toolkits.wolfram_alpha_toolkit",
-              "reference/camel.toolkits.zapier_toolkit"
+              "reference/camel.toolkits.zapier_toolkit",
+              "reference/camel.toolkits.hybrid_browser_toolkit.actions",
+              "reference/camel.toolkits.hybrid_browser_toolkit.agent",
+              "reference/camel.toolkits.hybrid_browser_toolkit.browser_session",
+              "reference/camel.toolkits.hybrid_browser_toolkit.config_loader",
+              "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit",
+              "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts",
+              "reference/camel.toolkits.hybrid_browser_toolkit.snapshot",
+              "reference/camel.toolkits.hybrid_browser_toolkit.stealth_config",
+              "reference/camel.toolkits.hybrid_browser_toolkit.ws_wrapper",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.actions",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.agent",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.browser_session",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.config_loader",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.hybrid_browser_toolkit",
+              "reference/camel.toolkits.hybrid_browser_toolkit_py.snapshot",
+              "reference/camel.toolkits.non_visual_browser_toolkit.actions",
+              "reference/camel.toolkits.non_visual_browser_toolkit.agent",
+              "reference/camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit",
+              "reference/camel.toolkits.non_visual_browser_toolkit.nv_browser_session",
+              "reference/camel.toolkits.non_visual_browser_toolkit.snapshot"
             ]
           },
           {
@@ -545,8 +597,10 @@
               "reference/camel.utils.langfuse",
               "reference/camel.utils.mcp",
               "reference/camel.utils.mcp_client",
+              "reference/camel.utils.message_summarizer",
               "reference/camel.utils.response_format",
               "reference/camel.utils.token_counting",
+              "reference/camel.utils.tool_result",
               "reference/camel.utils.chunker.base",
               "reference/camel.utils.chunker.code_chunker",
               "reference/camel.utils.chunker.uio_chunker"
@@ -557,6 +611,7 @@
             "pages": [
               "reference/camel.environments.models",
               "reference/camel.environments.multi_step",
+              "reference/camel.environments.rlcards_env",
               "reference/camel.environments.single_step",
               "reference/camel.environments.tic_tac_toe"
             ]
@@ -609,6 +664,7 @@
             "pages": [
               "reference/camel.loaders.apify_reader",
               "reference/camel.loaders.base_io",
+              "reference/camel.loaders.base_loader",
               "reference/camel.loaders.chunkr_reader",
               "reference/camel.loaders.crawl4ai_reader",
               "reference/camel.loaders.firecrawl_reader",

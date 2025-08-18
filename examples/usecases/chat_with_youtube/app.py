@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize toolkits
-video_downloader = VideoDownloaderToolkit(download_directory="downloads/")
+video_downloader = VideoDownloaderToolkit(working_directory="downloads/")
 audio_toolkit = AudioAnalysisToolkit(cache_dir="downloads/")
 summarizer_agent = ChatAgent(system_message="You are a helpful assistant that summarizes transcripts.", model="gpt-4o-mini")
 qa_agent = ChatAgent(system_message="Answer the question based on the context provided.", model="gpt-4o-mini")

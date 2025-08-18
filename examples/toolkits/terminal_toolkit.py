@@ -35,7 +35,7 @@ sys_msg = (
 )
 
 # Set model config
-tools = TerminalToolkit(working_dir=workspace_dir).get_tools()
+tools = TerminalToolkit(working_directory=workspace_dir).get_tools()
 
 model_config_dict = ChatGPTConfig(
     temperature=0.0,
@@ -212,3 +212,71 @@ usr_msg = "help me use uv pip install pptx, and create a ppt, and show me the"
 camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls']))
+
+usr_msg = (
+    "Use the terminal tool to create a Python file named 'python_file', "
+    "but first, you need to request user help using call_user_for_help. "
+    "The user will assist you with some configurations. "
+    "Then, create the Python file, and finally list the contents of the "
+    "current folder."
+)
+
+# Get response information for checking the processes
+camel_agent.reset()
+response = camel_agent.step(usr_msg)
+print(str(response.info['tool_calls']))
+"""
+===============================================================================
+[ToolCallingRecord(tool_name='shell_exec', args={'id': '1', 'command': 'pip 
+install python-pptx'}, result='\nStderr Output:\n/Users/enrei/Desktop/
+camel0605/camel/.venv/bin/python3: No module named pip\n', 
+tool_call_id='call_ogvH8cKGGBMlulMV6IOCyN4q')]
+
+============================================================
+🤖 CAMEL Agent needs human help! Session: terminal_session_1
+📂 Working directory: /Users/enrei/Desktop/camel0605/camel/workspace
+============================================================
+💡 Type commands or '/exit' to return control to agent.
+============================================================
+
+🧑‍💻 [terminal_session_1]> uv pip install python-pptx
+
+Stderr Output:
+Using Python 3.10.16 environment at: /Users/enrei/Desktop/camel0605/camel/.venv
+Audited 1 package in 16ms
+
+
+============================================================
+✅ Human assistance completed! Commands: 1
+🤖 Returning control to CAMEL agent...
+============================================================
+
+[ToolCallingRecord(tool_name='ask_user_for_help', args={'id': 
+'terminal_session_1'}, result="Human assistance completed successfully for 
+session 'terminal_session_1'. Total commands executed: 1. Working directory: /
+Users/enrei/Desktop/camel0605/camel/workspace", 
+tool_call_id='call_eYtpU38YncR6PnfdlBqouSoV'), ToolCallingRecord
+(tool_name='file_find_by_name', args={'path': '/Users/enrei/Desktop/camel0605/
+camel/workspace', 'glob': 'python_file'}, result='', 
+tool_call_id='call_pyuYHoNvpPvXFbMjfo9DMUNe'), ToolCallingRecord
+(tool_name='file_find_by_name', args={'path': '/Users/enrei/Desktop/camel0605/
+camel/workspace', 'glob': '*'}, result='/Users/enrei/Desktop/camel0605/camel/
+workspace\n/Users/enrei/Desktop/camel0605/camel/workspace/.venv\n/Users/enrei/
+Desktop/camel0605/camel/workspace/.venv/bin\n/Users/enrei/Desktop/camel0605/
+camel/workspace/.venv/bin/python3\n/Users/enrei/Desktop/camel0605/camel/
+workspace/.venv/bin/python\n/Users/enrei/Desktop/camel0605/camel/workspace/.
+venv/bin/python3.12\n/Users/enrei/Desktop/camel0605/camel/workspace/.venv/
+include\n/Users/enrei/Desktop/camel0605/camel/workspace/.venv/include/python3.
+12\n/Users/enrei/Desktop/camel0605/camel/workspace/.venv/pyvenv.cfg\n/Users/
+enrei/Desktop/camel0605/camel/workspace/.venv/lib\n/Users/enrei/Desktop/
+camel0605/camel/workspace/.venv/lib/python3.12\n/Users/enrei/Desktop/camel0605/
+camel/workspace/.venv/lib/python3.12/site-packages', 
+tool_call_id='call_WwB219FGm4tAssjFA9UsIrRT'), ToolCallingRecord
+(tool_name='shell_exec', args={'id': 'terminal_session_1', 'command': 'touch
+python_file.py'}, result='', tool_call_id='call_OBhkDr5i2mzBRpty0JiSF8Dj'),
+ToolCallingRecord(tool_name='shell_exec', args={'id': 'terminal_session_1',
+'command': 'ls -l'}, result='total 0\n-rw-r--r--  1 enrei  staff  0 Jun 27 
+17:26 python_file.py\n', tool_call_id='call_fllEujXWutTJmqpSWpHOOnIU')]
+(.venv) enrei@192 camel % 
+===============================================================================
+"""

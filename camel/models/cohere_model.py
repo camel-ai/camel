@@ -21,7 +21,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from cohere.types import ChatMessageV2, ChatResponse
+    from cohere.types import (  # type: ignore[attr-defined]
+        ChatMessageV2,
+        ChatResponse,
+    )
 
 from camel.configs import COHERE_API_PARAMS, CohereConfig
 from camel.messages import OpenAIMessage
@@ -76,6 +79,8 @@ class CohereModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -91,6 +96,7 @@ class CohereModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        **kwargs: Any,
     ):
         import cohere
 
@@ -105,10 +111,14 @@ class CohereModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter, timeout
         )
         self._client = cohere.ClientV2(
-            timeout=self._timeout, api_key=self._api_key
+            timeout=self._timeout,
+            api_key=self._api_key,
+            **kwargs,
         )
         self._async_client = cohere.AsyncClientV2(
-            timeout=self._timeout, api_key=self._api_key
+            timeout=self._timeout,
+            api_key=self._api_key,
+            **kwargs,
         )
 
     def _to_openai_response(self, response: 'ChatResponse') -> ChatCompletion:
