@@ -40,6 +40,8 @@ streaming_model = ModelFactory.create(
     model_type=ModelType.GPT_4O_MINI,
     model_config_dict={
         "stream": True,
+        # Ask OpenAI to include token usage in the final streamed chunk
+        "stream_options": {"include_usage": True},
     },
 )
 
@@ -103,6 +105,12 @@ def test_content_accumulation():
 
             previous_content = current_content
 
+    usage = response.info.get("usage", {})
+    print(
+        f"\n\nUsage: prompt={usage.get('prompt_tokens')}, "
+        f"completion={usage.get('completion_tokens')}, "
+        f"total={usage.get('total_tokens')}"
+    )
     print("\n✅ Content accumulation test passed!")
     print("\n" + "=" * 50)
     return True
