@@ -29,7 +29,7 @@ class HTMLToPPTXToolkit(BaseToolkit):
         self.config_path = os.path.join(current_dir, "mcp_config.json")
         self.node_project_path = current_dir
         # Initialize terminal toolkit with the correct working directory
-        self.terminal_toolkit = TerminalToolkit(working_dir=current_dir,need_terminal=False)
+        self.terminal_toolkit = TerminalToolkit(working_directory=current_dir,need_terminal=False)
         self._init_node_modules()
 
     def _init_node_modules(self):
