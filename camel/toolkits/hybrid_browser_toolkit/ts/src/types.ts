@@ -81,8 +81,9 @@ export interface ClickAction {
 
 export interface TypeAction {
   type: 'type';
-  ref: string;
-  text: string;
+  ref?: string;  // Optional for backward compatibility
+  text?: string; // Optional for backward compatibility
+  inputs?: Array<{ ref: string; text: string }>; // New field for multiple inputs
 }
 
 export interface SelectAction {
