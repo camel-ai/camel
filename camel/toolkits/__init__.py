@@ -24,6 +24,7 @@ from .math_toolkit import MathToolkit
 from .search_toolkit import SearchToolkit
 from .weather_toolkit import WeatherToolkit
 from .openai_image_toolkit import OpenAIImageToolkit
+from .grok_image_toolkit import GrokImageToolkit
 from .ask_news_toolkit import AskNewsToolkit, AsyncAskNewsToolkit
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
@@ -103,6 +104,7 @@ __all__ = [
     'SlackToolkit',
     'WhatsAppToolkit',
     'OpenAIImageToolkit',
+    'GrokImageToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
     'RetrievalToolkit',

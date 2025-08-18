@@ -183,7 +183,11 @@ class OpenAIImageToolkit(BaseToolkit):
         return params
 
     def _handle_api_response(
-        self, response, image_name: Union[str, List[str]], operation: str
+        self,
+        response,
+        image_name: Union[str, List[str]],
+        operation: str,
+        source: str = "OpenAI",
     ) -> str:
         r"""Handle API response from OpenAI image operations.
 
@@ -194,12 +198,14 @@ class OpenAIImageToolkit(BaseToolkit):
                 cause error for multiple images). If list, must have exactly
                 the same length as the number of images generated.
             operation (str): Operation type for success message ("generated").
+            source (str): The source of the API call.
+                (default: :obj:`"OpenAI"`)
 
         Returns:
             str: Success message with image path/URL or error message.
         """
         if response.data is None or len(response.data) == 0:
-            error_msg = "No image data returned from OpenAI API."
+            error_msg = f"No image data returned from {source} API."
             logger.error(error_msg)
             return error_msg
 
