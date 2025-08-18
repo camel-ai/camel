@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import re
 
 import pytest
 
@@ -38,20 +37,3 @@ def test_litellm_model(model_type: ModelType):
     assert isinstance(model.token_counter, LiteLLMTokenCounter)
     assert isinstance(model_type.value_for_tiktoken, str)
     assert isinstance(model_type.token_limit, int)
-
-
-@pytest.mark.model_backend
-def test_litellm_model_unexpected_argument():
-    model_type = ModelType.GPT_4.value
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into LiteLLM model backend."
-            )
-        ),
-    ):
-        _ = LiteLLMModel(model_type, model_config_dict)

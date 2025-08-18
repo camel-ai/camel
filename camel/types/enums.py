@@ -30,7 +30,7 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
-    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4.1-mini-2025-04-14")
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-5-mini")
 
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
@@ -48,6 +48,9 @@ class ModelType(UnifiedModelType, Enum):
     O4_MINI = "o4-mini"
     O3 = "o3"
     O3_PRO = "o3-pro"
+    GPT_5 = "gpt-5"
+    GPT_5_MINI = "gpt-5-mini"
+    GPT_5_NANO = "gpt-5-nano"
 
     AWS_CLAUDE_3_7_SONNET = "anthropic.claude-3-7-sonnet-20250219-v1:0"
     AWS_CLAUDE_3_5_SONNET = "anthropic.claude-3-5-sonnet-20241022-v2:0"
@@ -210,8 +213,7 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
-    MISTRAL_MEDIUM_3 = "mistral-medium-latest"
-    MAGISTRAL_MEDIUM = "magistral-medium-2506"
+    MISTRAL_MEDIUM_3_1 = "mistral-medium-2508"
     MISTRAL_SMALL_3_2 = "mistral-small-2506"
 
     # Reka models
@@ -498,6 +500,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_5,
+            ModelType.GPT_5_MINI,
+            ModelType.GPT_5_NANO,
             ModelType.O4_MINI,
             ModelType.O3,
         }
@@ -539,6 +544,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_5,
             ModelType.O4_MINI,
             ModelType.O3,
         }
@@ -656,8 +662,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
-            ModelType.MISTRAL_MEDIUM_3,
-            ModelType.MAGISTRAL_MEDIUM,
+            ModelType.MISTRAL_MEDIUM_3_1,
             ModelType.MISTRAL_SMALL_3_2,
         }
 
@@ -1176,6 +1181,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
             ModelType.GPT_4_5_PREVIEW,
+            ModelType.GPT_5,
+            ModelType.GPT_5_NANO,
+            ModelType.GPT_5_MINI,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.MISTRAL_PIXTRAL_12B,
@@ -1215,7 +1223,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_R1,
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
-            ModelType.MISTRAL_MEDIUM_3,
+            ModelType.MISTRAL_MEDIUM_3_1,
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
             ModelType.MOONSHOT_KIMI_K2,
@@ -1326,10 +1334,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
-        elif self in {
-            ModelType.MAGISTRAL_MEDIUM,
-        }:
-            return 40_000
 
         else:
             logger.warning(

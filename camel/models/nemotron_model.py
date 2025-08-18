@@ -80,8 +80,3 @@ class NemotronModel(OpenAICompatibleModel):
         raise NotImplementedError(
             "Nemotron model doesn't support token counter."
         )
-
-    def check_model_config(self):
-        raise NotImplementedError(
-            "Nemotron model doesn't support model config."
-        )
