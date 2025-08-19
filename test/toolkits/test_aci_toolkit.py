@@ -279,3 +279,31 @@ def test_execute_function(mock_aci):
     mock_client.handle_function_call.assert_called_once_with(
         "test_function", {"arg1": "value1"}, "test_owner", True
     )
+
+
+@patch("aci.ACI")
+@pytest.mark.asyncio
+async def test_aexecute_function(mock_aci):
+    r"""Test aexecute_function async method."""
+    # Setup mock
+    mock_client = MagicMock()
+    mock_aci.return_value = mock_client
+    mock_client.handle_function_call.return_value = {"result": "async_success"}
+
+    # Initialize toolkit and call async method
+    toolkit = ACIToolkit(api_key="test_key")
+    result = await toolkit.aexecute_function(
+        function_name="test_async_function",
+        function_arguments={"arg1": "async_value1"},
+        linked_account_owner_id="test_async_owner",
+        allowed_apps_only=False,
+    )
+
+    # Verify results
+    assert result == {"result": "async_success"}
+    mock_client.handle_function_call.assert_called_once_with(
+        "test_async_function",
+        {"arg1": "async_value1"},
+        "test_async_owner",
+        False,
+    )
