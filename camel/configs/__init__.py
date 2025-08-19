@@ -21,6 +21,7 @@ from .deepseek_config import DEEPSEEK_API_PARAMS, DeepSeekConfig
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .internlm_config import INTERNLM_API_PARAMS, InternLMConfig
+from .nebius_config import NEBIUS_API_PARAMS, NebiusConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .lmstudio_config import LMSTUDIO_API_PARAMS, LMStudioConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
@@ -58,6 +59,8 @@ __all__ = [
     'ANTHROPIC_API_PARAMS',
     'GROQ_API_PARAMS',
     'GroqConfig',
+    'NEBIUS_API_PARAMS',
+    'NebiusConfig',
     'LiteLLMConfig',
     'LITELLM_API_PARAMS',
     'NetmindConfig',

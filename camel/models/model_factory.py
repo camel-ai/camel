@@ -26,6 +26,7 @@ from camel.models.deepseek_model import DeepSeekModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
+from camel.models.nebius_model import NebiusModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.lmstudio_model import LMStudioModel
 from camel.models.mistral_model import MistralModel
@@ -83,6 +84,7 @@ class ModelFactory:
         ModelPlatformType.AZURE: AzureOpenAIModel,
         ModelPlatformType.ANTHROPIC: AnthropicModel,
         ModelPlatformType.GROQ: GroqModel,
+        ModelPlatformType.NEBIUS: NebiusModel,
         ModelPlatformType.LMSTUDIO: LMStudioModel,
         ModelPlatformType.OPENROUTER: OpenRouterModel,
         ModelPlatformType.ZHIPU: ZhipuAIModel,

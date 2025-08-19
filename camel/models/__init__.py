@@ -24,6 +24,7 @@ from .fish_audio_model import FishAudioModel
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .internlm_model import InternLMModel
+from .nebius_model import NebiusModel
 from .litellm_model import LiteLLMModel
 from .lmstudio_model import LMStudioModel
 from .mistral_model import MistralModel
@@ -87,6 +88,7 @@ __all__ = [
     'QwenModel',
     'AWSBedrockModel',
     'ModelProcessingError',
+    'NebiusModel',
     'DeepSeekModel',
     'FishAudioModel',
     'InternLMModel',

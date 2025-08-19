@@ -87,6 +87,11 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
+    # Nebius AI Studio platform models
+    NEBIUS_LLAMA_3_1_8B_INSTRUCT = "meta-llama/Meta-Llama-3.1-8B-Instruct-fast"
+    NEBIUS_LLAMA_3_1_70B_INSTRUCT = "meta-llama/Meta-Llama-3.1-70B-Instruct-fast"
+    NEBIUS_LLAMA_3_1_405B_INSTRUCT = "meta-llama/Meta-Llama-3.1-405B-Instruct-fast"
+
     # OpenRouter models
     OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.1-405b-instruct"
     OPENROUTER_LLAMA_3_1_70B = "meta-llama/llama-3.1-70b-instruct"
@@ -601,6 +606,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_LLAMA_3_70B,
             ModelType.GROQ_MIXTRAL_8_7B,
             ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
+    def is_nebius(self) -> bool:
+        r"""Returns whether this type of models is served by Nebius AI Studio."""
+        return self in {
+            ModelType.NEBIUS_LLAMA_3_1_8B_INSTRUCT,
+            ModelType.NEBIUS_LLAMA_3_1_70B_INSTRUCT,
+            ModelType.NEBIUS_LLAMA_3_1_405B_INSTRUCT,
         }
 
     @property
@@ -1532,6 +1546,7 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
+    NEBIUS = "nebius"
     OPENROUTER = "openrouter"
     OLLAMA = "ollama"
     LITELLM = "litellm"
