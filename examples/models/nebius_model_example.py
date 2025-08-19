@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.NEBIUS,
-    model_type=ModelType.NEBIUS_LLAMA_3_1_8B_INSTRUCT,
+    model_type=ModelType.NEBIUS_GPT_OSS_120B,
     model_config_dict=NebiusConfig(temperature=0.2).as_dict(),
 )
 

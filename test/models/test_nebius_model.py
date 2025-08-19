@@ -42,11 +42,11 @@ class TestNebiusModel:
         ).as_dict()
 
         model = NebiusModel(
-            model_type=ModelType.NEBIUS_LLAMA_3_1_8B_INSTRUCT,
+            model_type=ModelType.NEBIUS_GPT_OSS_120B,
             model_config_dict=config_dict,
         )
 
-        assert model.model_type == ModelType.NEBIUS_LLAMA_3_1_8B_INSTRUCT
+        assert model.model_type == ModelType.NEBIUS_GPT_OSS_120B
         assert model.model_config_dict == config_dict
 
     def test_nebius_model_api_keys_required(self):
@@ -58,7 +58,7 @@ class TestNebiusModel:
         monkeypatch.delenv("NEBIUS_API_BASE_URL", raising=False)
         monkeypatch.setenv("NEBIUS_API_KEY", "test_key")
 
-        model = NebiusModel(ModelType.NEBIUS_LLAMA_3_1_8B_INSTRUCT)
+        model = NebiusModel(ModelType.NEBIUS_GPT_OSS_120B)
         assert model._url == "https://api.studio.nebius.com/v1"
 
     def test_nebius_model_custom_url(self, monkeypatch):
@@ -67,18 +67,18 @@ class TestNebiusModel:
         monkeypatch.setenv("NEBIUS_API_BASE_URL", custom_url)
         monkeypatch.setenv("NEBIUS_API_KEY", "test_key")
 
-        model = NebiusModel(ModelType.NEBIUS_LLAMA_3_1_8B_INSTRUCT)
+        model = NebiusModel(ModelType.NEBIUS_GPT_OSS_120B)
         assert model._url == custom_url
 
     def test_nebius_model_extends_openai_compatible(self):
         # Test that NebiusModel inherits from OpenAICompatibleModel
         from camel.models.openai_compatible_model import OpenAICompatibleModel
 
-        model = NebiusModel(ModelType.NEBIUS_LLAMA_3_1_8B_INSTRUCT)
+        model = NebiusModel(ModelType.NEBIUS_GPT_OSS_120B)
         assert isinstance(model, OpenAICompatibleModel)
 
     def test_nebius_model_token_counter(self):
-        model = NebiusModel(ModelType.NEBIUS_LLAMA_3_1_8B_INSTRUCT)
+        model = NebiusModel(ModelType.NEBIUS_GPT_OSS_120B)
         # Should use the default OpenAI token counter
         assert model.token_counter is not None
         assert hasattr(model.token_counter, "count_tokens")
@@ -86,9 +86,13 @@ class TestNebiusModel:
     @pytest.mark.parametrize(
         "model_type",
         [
-            ModelType.NEBIUS_LLAMA_3_1_8B_INSTRUCT,
-            ModelType.NEBIUS_LLAMA_3_1_70B_INSTRUCT,
-            ModelType.NEBIUS_LLAMA_3_1_405B_INSTRUCT,
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
+            ModelType.NEBIUS_GLM_4_5,
+            ModelType.NEBIUS_DEEPSEEK_V3,
+            ModelType.NEBIUS_DEEPSEEK_R1,
+            ModelType.NEBIUS_LLAMA_3_1_70B,
+            ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
         ],
     )
     def test_nebius_model_types_available(self, model_type: ModelType):

@@ -88,9 +88,13 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
     # Nebius AI Studio platform models
-    NEBIUS_LLAMA_3_1_8B_INSTRUCT = "meta-llama/Meta-Llama-3.1-8B-Instruct-fast"
-    NEBIUS_LLAMA_3_1_70B_INSTRUCT = "meta-llama/Meta-Llama-3.1-70B-Instruct-fast"
-    NEBIUS_LLAMA_3_1_405B_INSTRUCT = "meta-llama/Meta-Llama-3.1-405B-Instruct-fast"
+    NEBIUS_GPT_OSS_120B = "gpt-oss-120b"
+    NEBIUS_GPT_OSS_20B = "gpt-oss-20b"
+    NEBIUS_GLM_4_5 = "GLM-4.5"
+    NEBIUS_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
+    NEBIUS_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
+    NEBIUS_LLAMA_3_1_70B = "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    NEBIUS_MISTRAL_7B_INSTRUCT = "mistralai/Mistral-7B-Instruct-v0.3"
 
     # OpenRouter models
     OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.1-405b-instruct"
@@ -612,9 +616,13 @@ class ModelType(UnifiedModelType, Enum):
     def is_nebius(self) -> bool:
         r"""Returns whether this type of models is served by Nebius AI Studio."""
         return self in {
-            ModelType.NEBIUS_LLAMA_3_1_8B_INSTRUCT,
-            ModelType.NEBIUS_LLAMA_3_1_70B_INSTRUCT,
-            ModelType.NEBIUS_LLAMA_3_1_405B_INSTRUCT,
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
+            ModelType.NEBIUS_GLM_4_5,
+            ModelType.NEBIUS_DEEPSEEK_V3,
+            ModelType.NEBIUS_DEEPSEEK_R1,
+            ModelType.NEBIUS_LLAMA_3_1_70B,
+            ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
         }
 
     @property
