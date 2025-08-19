@@ -2149,7 +2149,10 @@ class ChatAgent(BaseAgent):
             tool_call_requests = []
             for tool_call in tool_calls:
                 tool_name = tool_call.function.name  # type: ignore[union-attr]
-                tool_call_id = tool_call.id
+                if tool_call.id:
+                    tool_call_id = tool_call.id
+                else:
+                    tool_call_id = uuid.uuid4().hex[:9]
                 args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
                 tool_call_request = ToolCallRequest(
                     tool_name=tool_name, args=args, tool_call_id=tool_call_id
