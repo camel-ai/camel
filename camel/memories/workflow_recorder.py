@@ -12,9 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import json
 import time
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, Optional
+
+from camel.societies.workforce.prompts import (
+    WORKFLOW_SUMMARIZATION_PROMPT,
+)
 
 if TYPE_CHECKING:
     from camel.agents import ChatAgent
@@ -33,8 +38,8 @@ class WorkflowRecorder:
 
     This class provides functionality to:
     1. Record detailed workflows from task execution with agent summarization
-    2. Provide hierarchical tree view of workflows for agent selection
-    3. Store workflows as human-readable markdown files
+    2. Provide a list of workflows for agent selection
+    3. Store workflows as markdown
     4. Simple file-based workflow retrieval
 
     Args:
@@ -61,8 +66,6 @@ class WorkflowRecorder:
         self,
         task: Task,
         agent: 'ChatAgent',
-        agent_role: str = "Agent",
-        agent_id: Optional[str] = None,
     ) -> str:
         r"""Record a workflow from a completed task using agent summarization.
 
@@ -70,8 +73,6 @@ class WorkflowRecorder:
             task (Task): The completed task to record workflow from.
             agent (ChatAgent): The agent that executed the task, used for
                 generating workflow summary.
-            agent_role (str): The role/description of the agent for context.
-            agent_id (str, optional): ID of the agent that executed the task.
 
         Returns:
             str: The name of the created workflow file, or empty string if
@@ -82,8 +83,8 @@ class WorkflowRecorder:
             status = "Success" if task.state == TaskState.DONE else "Failure"
 
             # get workflow summary from agent
-            workflow_summary = await self._get_agent_workflow_summary(
-                agent, task, agent_role, status
+            workflow_summary = await self._get_workflow_from_agent(
+                agent, task, status
             )
 
             if not workflow_summary:
@@ -94,14 +95,14 @@ class WorkflowRecorder:
 
             # prepare metadata
             metadata = {
-                'agent_id': agent_id or 'Unknown',
+                'agent_id': agent.agent_id,
                 'task_id': task.id,
                 'timestamp': time.time(),
                 'status': status,
             }
 
             # format as markdown using agent-generated content
-            markdown_content = self._format_agent_workflow_markdown(
+            markdown_content = self._convert_workflow_to_markdown(
                 workflow_summary, metadata, task
             )
 
@@ -109,7 +110,7 @@ class WorkflowRecorder:
             workflow_name = workflow_summary.get(
                 'workflow_name', 'unnamed_workflow'
             )
-            # sanitize workflow name for filename
+            # workflow name for filename
             safe_name = "".join(
                 c
                 for c in workflow_name.lower()
@@ -130,33 +131,26 @@ class WorkflowRecorder:
             logger.error(f"Error recording workflow: {e}")
             return ""
 
-    async def _get_agent_workflow_summary(
-        self, agent: 'ChatAgent', task: Task, agent_role: str, status: str
+    async def _get_workflow_from_agent(
+        self, agent: 'ChatAgent', task: Task, status: str
     ) -> Optional[Dict[str, Any]]:
         r"""Get workflow summary from the agent that executed the task.
 
         Args:
             agent (ChatAgent): The agent to ask for the summary.
             task (Task): The completed task.
-            agent_role (str): Role/description of the agent.
             status (str): Task completion status.
 
         Returns:
             Dict[str, Any]: Workflow summary from the agent, or None if failed.
         """
         try:
-            import json
-
-            from camel.societies.workforce.prompts import (
-                WORKFLOW_SUMMARIZATION_PROMPT,
-            )
-
             # format the prompt with task details
             prompt_content = WORKFLOW_SUMMARIZATION_PROMPT.format(
                 task_content=task.content,
                 task_result=task.result or "No result available",
                 task_status=status,
-                agent_role=agent_role,
+                agent_role=agent.role_name,
             )
 
             # create message to send to agent
@@ -172,23 +166,28 @@ class WorkflowRecorder:
                     # parse the JSON response
                     workflow_data = json.loads(response.msg.content)
 
-                    # validate required fields
-                    required_fields = [
-                        'workflow_name',
-                        'description',
-                        'steps',
-                        'key_findings',
-                    ]
-                    if all(
-                        field in workflow_data for field in required_fields
-                    ):
-                        return workflow_data
-                    else:
+                    # validate and fill missing required fields with defaults
+                    required_fields = {
+                        'workflow_name': 'Unnamed Workflow',
+                        'description': 'No description provided',
+                        'steps': [],
+                        'key_findings': 'No key findings available',
+                    }
+
+                    missing_fields = []
+                    for field, default_value in required_fields.items():
+                        if field not in workflow_data:
+                            workflow_data[field] = default_value
+                            missing_fields.append(field)
+
+                    if missing_fields:
                         logger.warning(
-                            f"Agent response missing required fields: "
-                            f"{workflow_data}"
+                            f"Agent response missing fields {missing_fields}, "
+                            f"using defaults. Received: "
+                            f"{list(workflow_data.keys())}"
                         )
-                        return None
+
+                    return workflow_data
 
                 except json.JSONDecodeError as e:
                     logger.warning(
@@ -208,21 +207,19 @@ class WorkflowRecorder:
             logger.error(f"Error getting agent workflow summary: {e}")
             return None
 
-    def get_workflows_tree(self) -> str:
-        r"""Generate a hierarchical ASCII tree view of all workflows.
+    def get_workflows_tree(self) -> Dict[str, Dict[str, Any]]:
+        r"""Generate a JSON representation of all workflows and their steps.
 
         Returns:
-            str: ASCII tree showing workflows and their step structure.
+            Dict[str, Dict[str, Any]]: JSON structure with workflow names
+                as keys and workflow info (description, steps) as values.
         """
         try:
             # get all workflow files
-            workflows_list = self.note_toolkit.list_note()
+            workflows_list = self.list_workflows()
 
             if "No notes have been created yet." in workflows_list:
-                return (
-                    "Workflows Directory\n"
-                    "└── (empty - no workflows recorded yet)"
-                )
+                return {}
 
             # parse workflow filenames
             workflow_files = []
@@ -234,67 +231,72 @@ class WorkflowRecorder:
                         workflow_files.append(filename)
 
             if not workflow_files:
-                return (
-                    "Workflows Directory\n"
-                    "└── (empty - no workflows recorded yet)"
-                )
+                return {}
 
-            tree = "Workflows Directory\n"
+            workflows_json = {}
 
-            for i, filename in enumerate(workflow_files):
-                is_last = i == len(workflow_files) - 1
-                prefix = "└──" if is_last else "├──"
-
+            for filename in workflow_files:
                 # get workflow details
                 workflow_info = self._extract_workflow_info(filename)
                 workflow_name = workflow_info.get('name', 'Unknown Workflow')
+                description = workflow_info.get(
+                    'description', 'No description available'
+                )
                 steps = workflow_info.get('steps', [])
 
-                tree += f"{prefix} {workflow_name}\n"
-                tree += (
-                    f"    {'   ' if is_last else '│  '} File: {filename}.md\n"
-                )
+                workflows_json[workflow_name] = {
+                    'description': description,
+                    'steps': steps,
+                }
 
-                # add step structure
-                for j, step in enumerate(steps):
-                    step_is_last = j == len(steps) - 1
-                    step_prefix = "└──" if step_is_last else "├──"
-                    step_connector = "    " if is_last else "│   "
-                    tree += f"{step_connector}{step_prefix} {step}\n"
-
-            return tree
+            return workflows_json
 
         except Exception as e:
-            logger.error(f"Error generating workflows tree: {e}")
-            return f"Workflows Directory\n└── Error reading workflows: {e}"
+            logger.error(f"Error generating workflows JSON: {e}")
+            return {}
 
     def _extract_workflow_info(self, filename: str) -> Dict[str, Any]:
-        r"""Extract workflow name and step names from a workflow file.
+        r"""Extract workflow name, description, and step names from a
+        workflow file.
 
         Args:
             filename (str): The workflow filename (without .md extension).
 
         Returns:
-            Dict[str, Any]: Dictionary with workflow name and list of step
-                names.
+            Dict[str, Any]: Dictionary with workflow name, description,
+                and list of step names.
         """
         try:
             content = self.note_toolkit.read_note(filename)
 
             if not content or "Error" in content:
-                return {'name': 'Unknown Workflow', 'steps': []}
+                return {
+                    'name': 'Unknown Workflow',
+                    'description': 'No description available',
+                    'steps': [],
+                }
 
             # extract workflow name from first line
             lines = content.split('\n')
             workflow_name = 'Unknown Workflow'
+            description = 'No description available'
             steps = []
 
-            for line in lines:
+            for i, line in enumerate(lines):
                 line = line.strip()
 
                 # find workflow name
                 if line.startswith('# Workflow:'):
                     workflow_name = line.replace('# Workflow:', '').strip()
+
+                # find description (content under "## General Description")
+                elif line.startswith('## General Description'):
+                    # get the next non-empty line as description
+                    for j in range(i + 1, len(lines)):
+                        desc_line = lines[j].strip()
+                        if desc_line and not desc_line.startswith('#'):
+                            description = desc_line
+                            break
 
                 # find step names
                 elif line.startswith('### Step '):
@@ -303,15 +305,23 @@ class WorkflowRecorder:
                         step_name = line.split(':', 1)[1].strip()
                         steps.append(step_name)
 
-            return {'name': workflow_name, 'steps': steps}
+            return {
+                'name': workflow_name,
+                'description': description,
+                'steps': steps,
+            }
 
         except Exception as e:
             logger.error(
                 f"Error extracting workflow info from {filename}: {e}"
             )
-            return {'name': 'Unknown Workflow', 'steps': []}
+            return {
+                'name': 'Unknown Workflow',
+                'description': 'No description available',
+                'steps': [],
+            }
 
-    def _format_agent_workflow_markdown(
+    def _convert_workflow_to_markdown(
         self,
         workflow_summary: Dict[str, Any],
         metadata: Dict[str, Any],
@@ -406,20 +416,3 @@ class WorkflowRecorder:
             str: Content of the workflow file.
         """
         return self.note_toolkit.read_note(workflow_name)
-
-    def clear_workflows(self) -> None:
-        r"""Clear all stored workflows."""
-        try:
-            # Note: This just lists workflows for information
-            # Actual clearing would need to be done manually or through
-            # specific file operations since NoteTakingToolkit doesn't
-            # provide a bulk delete method
-            workflows_list = self.note_toolkit.list_note()
-            logger.info(f"Current workflows: {workflows_list}")
-            logger.warning(
-                "Manual workflow file deletion required - NoteTakingToolkit "
-                "doesn't support bulk delete"
-            )
-
-        except Exception as e:
-            logger.error(f"Error listing workflows for clearing: {e}")

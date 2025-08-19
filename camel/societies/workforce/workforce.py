@@ -37,7 +37,7 @@ from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
-from camel.memories.workflow_manager import WorkflowRecorder
+from camel.memories.workflow_recorder import WorkflowRecorder
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce.base import BaseNode
@@ -1289,8 +1289,6 @@ class Workforce(BaseNode):
                     await self.workflow_recorder.record_workflow_from_task(
                         task,
                         agent=self.coordinator_agent,
-                        agent_role="Workforce Coordinator",
-                        agent_id=f"workforce_{self.node_id}",
                     )
                 )
                 if workflow_filename:
@@ -1784,12 +1782,17 @@ class Workforce(BaseNode):
             return
 
         try:
-            # Get tree view of available workflows
-            workflows_tree = self.workflow_recorder.get_workflows_tree()
+            import json
 
-            if "(empty - no workflows recorded yet)" in workflows_tree:
+            # Get JSON representation of available workflows
+            workflows_json = self.workflow_recorder.get_workflows_tree()
+
+            if not workflows_json:
                 logger.info("No workflows available for context")
                 return
+
+            # Convert JSON to formatted string for the prompt
+            workflows_tree = json.dumps(workflows_json, indent=2)
 
             # ask coordinator to select relevant workflow
             selection_prompt = WORKFLOW_SELECTION_PROMPT.format(
