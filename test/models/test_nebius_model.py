@@ -17,7 +17,6 @@ import pytest
 from camel.configs import NebiusConfig
 from camel.models import NebiusModel
 from camel.types import ModelType
-from camel.utils import api_keys_required
 
 
 @pytest.mark.model_backend
@@ -25,9 +24,9 @@ class TestNebiusModel:
     @pytest.mark.parametrize(
         "model_type",
         [
-            ModelType.NEBIUS_LLAMA_3_1_8B_INSTRUCT,
-            ModelType.NEBIUS_LLAMA_3_1_70B_INSTRUCT,
-            ModelType.NEBIUS_LLAMA_3_1_405B_INSTRUCT,
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
+            ModelType.NEBIUS_GLM_4_5,
         ],
     )
     def test_nebius_model_create(self, model_type: ModelType):

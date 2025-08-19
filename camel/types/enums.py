@@ -614,7 +614,8 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def is_nebius(self) -> bool:
-        r"""Returns whether this type of models is served by Nebius AI Studio."""
+        r"""Returns whether this type of models is served by Nebius AI
+        Studio."""
         return self in {
             ModelType.NEBIUS_GPT_OSS_120B,
             ModelType.NEBIUS_GPT_OSS_20B,

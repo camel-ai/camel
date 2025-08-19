@@ -38,11 +38,12 @@ print(response.msgs[0].content)
 
 '''
 ===============================================================================
-Hello to the CAMEL AI community! It's great to connect with a group of like-minded 
-individuals who are passionate about advancing the field of autonomous and 
-communicative agents. Your open-source approach is commendable as it fosters 
-collaboration, innovation, and knowledge sharing across the AI research community. 
-I'm excited to see what groundbreaking work you'll accomplish in the study of 
-intelligent agents. Keep up the excellent work in pushing the boundaries of AI!
+Hello to the CAMEL AI community! It's great to connect with a group of 
+like-minded individuals who are passionate about advancing the field of 
+autonomous and communicative agents. Your open-source approach is commendable 
+as it fosters collaboration, innovation, and knowledge sharing across the AI 
+research community. I'm excited to see what groundbreaking work you'll 
+accomplish in the study of intelligent agents. Keep up the excellent work in 
+pushing the boundaries of AI!
 ===============================================================================
 '''

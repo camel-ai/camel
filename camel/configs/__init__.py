@@ -21,12 +21,12 @@ from .deepseek_config import DEEPSEEK_API_PARAMS, DeepSeekConfig
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .internlm_config import INTERNLM_API_PARAMS, InternLMConfig
-from .nebius_config import NEBIUS_API_PARAMS, NebiusConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .lmstudio_config import LMSTUDIO_API_PARAMS, LMStudioConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .modelscope_config import MODELSCOPE_API_PARAMS, ModelScopeConfig
 from .moonshot_config import MOONSHOT_API_PARAMS, MoonshotConfig
+from .nebius_config import NEBIUS_API_PARAMS, NebiusConfig
 from .netmind_config import NETMIND_API_PARAMS, NetmindConfig
 from .novita_config import NOVITA_API_PARAMS, NovitaConfig
 from .nvidia_config import NVIDIA_API_PARAMS, NvidiaConfig

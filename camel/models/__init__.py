@@ -24,7 +24,6 @@ from .fish_audio_model import FishAudioModel
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .internlm_model import InternLMModel
-from .nebius_model import NebiusModel
 from .litellm_model import LiteLLMModel
 from .lmstudio_model import LMStudioModel
 from .mistral_model import MistralModel
@@ -32,6 +31,7 @@ from .model_factory import ModelFactory
 from .model_manager import ModelManager, ModelProcessingError
 from .modelscope_model import ModelScopeModel
 from .moonshot_model import MoonshotModel
+from .nebius_model import NebiusModel
 from .nemotron_model import NemotronModel
 from .netmind_model import NetmindModel
 from .novita_model import NovitaModel

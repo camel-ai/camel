@@ -26,12 +26,12 @@ from camel.models.deepseek_model import DeepSeekModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
-from camel.models.nebius_model import NebiusModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.lmstudio_model import LMStudioModel
 from camel.models.mistral_model import MistralModel
 from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
+from camel.models.nebius_model import NebiusModel
 from camel.models.netmind_model import NetmindModel
 from camel.models.novita_model import NovitaModel
 from camel.models.nvidia_model import NvidiaModel

@@ -24,7 +24,8 @@ from camel.utils import (
 
 
 class NebiusModel(OpenAICompatibleModel):
-    r"""LLM API served by Nebius AI Studio in a unified OpenAICompatibleModel interface.
+    r"""LLM API served by Nebius AI Studio in a unified OpenAICompatibleModel
+    interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
