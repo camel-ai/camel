@@ -15,7 +15,7 @@
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import QIANFAN_API_PARAMS, QianfanConfig
+from camel.configs import QianfanConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
@@ -87,18 +87,3 @@ class QianfanModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Qianfan API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Qianfan API.
-        """
-        for param in self.model_config_dict:
-            if param not in QIANFAN_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into QIANFAN model backend."
-                )

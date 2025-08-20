@@ -12,7 +12,9 @@ E2B Code Interpreter implementation.
 
 **Parameters:**
 
-- **require_confirm** (bool, optional): If True, prompt user before running code strings for security. (default: :obj:`True`)
+- **require_confirm** (bool, optional): If True, prompt user before running code strings for security. (default: :obj:`True`) Environment Variables:
+- **E2B_API_KEY**: The API key for authenticating with the E2B service.
+- **E2B_DOMAIN**: The base URL for the E2B API. If not provided, will use the default E2B endpoint.
 
 <a id="camel.interpreters.e2b_interpreter.E2BInterpreter.__init__"></a>
 
