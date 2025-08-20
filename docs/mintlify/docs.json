@@ -88,9 +88,9 @@
               {
                 "group": "Basic Concepts",
                 "pages": [
-                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/agents_message",
                   "cookbooks/basic_concepts/agents_prompting",
+                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/create_your_first_agents_society",
                   "cookbooks/basic_concepts/model_speed_comparison"
                 ]
@@ -98,6 +98,7 @@
               {
                 "group": "Advanced Features",
                 "pages": [
+                  "cookbooks/advanced_features/agent_generate_structured_output",
                   "cookbooks/advanced_features/agents_tracking",
                   "cookbooks/advanced_features/agents_with_MCP",
                   "cookbooks/advanced_features/agents_with_dkg",
@@ -121,6 +122,7 @@
                   "cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG",
                   "cookbooks/applications/dynamic_travel_planner",
                   "cookbooks/applications/finance_discord_bot",
+                  "cookbooks/applications/pptx_toolkit",
                   "cookbooks/applications/roleplaying_scraper"
                 ]
               },

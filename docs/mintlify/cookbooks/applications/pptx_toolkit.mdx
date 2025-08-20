@@ -1,0 +1,130 @@
+---
+title: "🐫 📊 CAMEL-AI PPTXToolkit Cookbook"
+---
+
+This notebook shows you how to **automatically generate** and **assemble** professional PowerPoint decks using CAMEL-AI’s PPTXToolkit. You’ll learn how to:
+
+- Prompt an LLM to produce **fully structured JSON** for every slide  
+- Turn that JSON into a polished `.pptx` with **titles**, **bullets**, **step diagrams**, **tables**, and **images**  
+- Leverage **Markdown** styling (`**bold**`, `*italic*`) and **Pexels** image search via `img_keywords`  
+- Plug in your **own .pptx templates** (modern, boardroom, minimalist, etc.)  
+- Enjoy **auto-layout** selection for text, diagrams, and tables  
+
+<hr />
+
+## 🚥 Pipeline Overview
+
+1. **Single Agent: Content → JSON**  
+   - You send one prompt to the LLM  
+   - It returns a JSON list with:
+     - A **title slide** (`title`, `subtitle`)  
+     - At least one **step-by-step** slide (all bullets start with `>>`)  
+     - At least one **table** slide (`table`: `{headers, rows}`)  
+     - Two or more slides with meaningful `img_keywords`  
+     - All **bullet slides** using Markdown formatting  
+
+2. **PPTXToolkit: JSON → `.pptx`**  
+   - Pass that JSON into `PPTXToolkit.create_presentation(...)`  
+   - Renders slides with your chosen template, images via `img_keywords`, chevrons/pentagons, and tables  
+   - Outputs a ready-to-share PowerPoint file  
+
+---
+
+Ready to build your next deck? Let’s get started! 🎉  
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1W_dsoq1jrO8A_TzwUxzAr4wFSWeXLmn7?usp=sharing)
+
+
+
+```python
+%pip install "camel-ai[all]==0.2.66"
+```
+
+## ⚙️ Configuration
+Set your API keys securely:
+
+
+```python
+from getpass import getpass
+import os
+
+# Prompt the user securely (input is hidden)
+os.environ["OPENAI_API_KEY"] = getpass("🔑 Enter your OpenAI API key: ")
+os.environ["PEXELS_API_KEY"] = getpass("🔑 Enter your Pexels API key (leave blank if not using images): ")
+
+```
+
+## ✏️ Agent #1: Generate Structured JSON
+One single LLM call to produce exactly the JSON your toolkit expects.
+
+
+```python
+import os, json
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+
+def generate_slides_json(topic: str, slide_count: int) -> list:
+    # Build our strict prompt
+    prompt = f"""
+You are a world-class PowerPoint generator for CAMEL-AI's PPTXToolkit.
+
+Create a presentation about "{topic}" with exactly {slide_count + 1} slides (1 title + {slide_count} content).
+MANDATORY:
+1. First slide: title & subtitle.
+2. ≥1 step-by-step slide (all bullets start with ">>").
+3. ≥1 table slide (with headers & rows).
+4. ≥2 slides with non-empty img_keywords (search terms only).
+5. Bullet slides use Markdown (**bold**, *italic*) in bullet_points.
+6. Output MUST BE raw JSON (list of dicts), no markdown fences or commentary.
+
+Example:
+[
+  {{"title":"...","subtitle":"..."}},
+  {{"heading":"...","bullet_points":["...","..."],"img_keywords":"..."}},
+  {{"heading":"...","bullet_points":[">> Step 1..."],"img_keywords":"..."}},
+  {{"heading":"...","table":{{"headers":["A","B"],"rows":[["1","2"],["3","4"]]}},"img_keywords":"..."}}
+]
+"""
+    agent = ChatAgent(
+        system_message="You strictly output valid JSON for PowerPoint slides.",
+        message_window_size=5,
+        model=ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4_1,
+            model_config_dict={"temperature": 0.0},
+        )
+    )
+    resp = agent.step(prompt)
+    slides = json.loads(resp.msgs[0].content)
+    return slides
+
+```
+
+## 📦 Build & Save PPTX
+
+Local code uses PPTXToolkit to turn that JSON into a .pptx file:
+
+
+```python
+from camel.toolkits.pptx_toolkit import PPTXToolkit
+
+def build_pptx(slides_json: list, out_name: str = "presentation.pptx") -> str:
+    kit = PPTXToolkit(output_dir=".")
+    kit.create_presentation(json.dumps(slides_json), out_name)
+    return out_name
+```
+
+## 🔗 Run the Pipeline
+
+
+```python
+if __name__ == "__main__":
+    topic = input("🎯 Topic: ")
+    n     = int(input("📄 # of content slides: "))
+    slides = generate_slides_json(topic, n)
+    filename = f"{topic.replace(' ','_')}.pptx"
+    path = build_pptx(slides, out_name=filename)
+    print(f"✅ Deck saved to: {path}")
+
+```
