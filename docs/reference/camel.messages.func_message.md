@@ -17,7 +17,6 @@ function-related messages.
 - **args** (Optional[Dict]): The dictionary of arguments passed to the function. (default: :obj:`None`)
 - **result** (Optional[Any]): The result of function execution. (default: :obj:`None`)
 - **tool_call_id** (Optional[str]): The ID of the tool call, if available. (default: :obj:`None`)
-- **mask_output** (Optional[bool]): Whether to return a sanitized placeholder instead of the raw tool output. (default: :obj:`False`)
 
 <a id="camel.messages.func_message.FunctionCallingMessage.to_openai_message"></a>
 

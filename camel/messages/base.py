@@ -29,6 +29,7 @@ from typing import (
     Union,
 )
 
+from openai.types.chat import ChatCompletionContentPartTextParam
 from PIL import Image
 from pydantic import BaseModel
 
@@ -202,9 +203,9 @@ class BaseMessage:
             Union[BaseMessage, Any]: The result of the addition.
         """
         if isinstance(other, BaseMessage):
-            combined_content = self.content.__add__(other.content)
+            combined_content = self.content + other.content
         elif isinstance(other, str):
-            combined_content = self.content.__add__(other)
+            combined_content = self.content + other
         else:
             raise TypeError(
                 f"Unsupported operand type(s) for +: '{type(self)}' and "
@@ -222,7 +223,7 @@ class BaseMessage:
             Union[BaseMessage, Any]: The result of the multiplication.
         """
         if isinstance(other, int):
-            multiplied_content = self.content.__mul__(other)
+            multiplied_content = self.content * other
             return self.create_new_instance(multiplied_content)
         else:
             raise TypeError(
@@ -419,7 +420,15 @@ class BaseMessage:
             OpenAISystemMessage: The converted :obj:`OpenAISystemMessage`
                 object.
         """
-        return {"role": "system", "content": self.content}
+        # Use content array format
+        return {
+            "role": "system",
+            "content": [
+                ChatCompletionContentPartTextParam(
+                    type="text", text=self.content
+                )
+            ],
+        }
 
     def to_openai_user_message(self) -> OpenAIUserMessage:
         r"""Converts the message to an :obj:`OpenAIUserMessage` object.
@@ -427,13 +436,12 @@ class BaseMessage:
         Returns:
             OpenAIUserMessage: The converted :obj:`OpenAIUserMessage` object.
         """
-        hybrid_content: List[Any] = []
-        hybrid_content.append(
+        hybrid_content: List[Any] = [
             {
                 "type": "text",
                 "text": self.content,
             }
-        )
+        ]
         if self.image_list and len(self.image_list) > 0:
             for image in self.image_list:
                 if image.format is None:
@@ -521,9 +529,14 @@ class BaseMessage:
             }
         # This return just for str message
         else:
+            # Always use content array format
             return {
                 "role": "user",
-                "content": self.content,
+                "content": [
+                    ChatCompletionContentPartTextParam(
+                        type="text", text=self.content
+                    )
+                ],
             }
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
@@ -533,9 +546,18 @@ class BaseMessage:
             OpenAIAssistantMessage: The converted :obj:`OpenAIAssistantMessage`
                 object.
         """
+        # Use content array format
+        content_value: List[ChatCompletionContentPartTextParam] = []
+        if self.content:
+            content_value = [
+                ChatCompletionContentPartTextParam(
+                    type="text", text=self.content
+                )
+            ]
+
         message_dict: Dict[str, Any] = {
             "role": "assistant",
-            "content": self.content,
+            "content": content_value,
         }
 
         # Check if meta_dict contains tool_calls

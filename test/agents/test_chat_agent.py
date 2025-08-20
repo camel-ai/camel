@@ -762,10 +762,16 @@ def test_set_output_language():
     assert agent.output_language == output_language
 
     # Verify that the system message is updated with the new output language
+    # Now using content array format
     updated_system_message = {
         'role': 'system',
-        'content': 'You are a help assistant.\nRegardless of the '
-        'input language, you must output text in Arabic.',
+        'content': [
+            {
+                'type': 'text',
+                'text': 'You are a help assistant.\nRegardless of the '
+                'input language, you must output text in Arabic.',
+            }
+        ],
     }
     memory_content = agent.memory.get_context()
     assert memory_content[0][0] == updated_system_message
@@ -793,13 +799,23 @@ def test_set_multiple_output_language():
 
     updated_system_message_with_sys_msg = {
         'role': 'system',
-        'content': 'You are a help assistant.\nRegardless of the '
-        'input language, you must output text in French.',
+        'content': [
+            {
+                'type': 'text',
+                'text': 'You are a help assistant.\nRegardless of the '
+                'input language, you must output text in French.',
+            }
+        ],
     }
     updated_system_message_without_sys_msg = {
         'role': 'system',
-        'content': '\nRegardless of the input language, you must output '
-        'text in French.',
+        'content': [
+            {
+                'type': 'text',
+                'text': '\nRegardless of the input language, you must output '
+                'text in French.',
+            }
+        ],
     }
 
     memory_content_with_sys_msg = agent_with_sys_msg.memory.get_context()
@@ -1361,7 +1377,9 @@ def test_memory_setter_preserves_system_message():
     initial_context, _ = agent.memory.get_context()
     assert len(initial_context) > 0
     assert initial_context[0]['role'] == 'system'
-    assert initial_context[0]['content'] == system_content
+    # Check content array format
+    assert initial_context[0]['content'][0]['type'] == 'text'
+    assert initial_context[0]['content'][0]['text'] == system_content
 
     # Create a new memory instance
     context_creator = ScoreBasedContextCreator(
@@ -1377,4 +1395,6 @@ def test_memory_setter_preserves_system_message():
     new_context, _ = agent.memory.get_context()
     assert len(new_context) > 0
     assert new_context[0]['role'] == 'system'
-    assert new_context[0]['content'] == system_content
+    # Check content array format
+    assert new_context[0]['content'][0]['type'] == 'text'
+    assert new_context[0]['content'][0]['text'] == system_content
