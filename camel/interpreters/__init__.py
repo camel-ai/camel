@@ -19,7 +19,7 @@ from .internal_python_interpreter import InternalPythonInterpreter
 from .interpreter_error import InterpreterError
 from .ipython_interpreter import JupyterKernelInterpreter
 from .subprocess_interpreter import SubprocessInterpreter
-
+from .db_interpreter import DatabaseInterpreter
 __all__ = [
     'BaseInterpreter',
     'InterpreterError',
@@ -28,4 +28,5 @@ __all__ = [
     'DockerInterpreter',
     'JupyterKernelInterpreter',
     'E2BInterpreter',
+    'DatabaseInterpreter',
 ]
