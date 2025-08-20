@@ -19,6 +19,7 @@ import shutil
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import pytest_asyncio
 from PIL import Image
 
 from camel.toolkits.async_browser_toolkit import (
@@ -32,7 +33,7 @@ from camel.toolkits.browser_toolkit_commons import dom_rectangle_from_dict
 TEST_URL = "https://example.com"
 
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def async_base_browser_fixture():
     with patch('playwright.async_api.async_playwright'):
         browser = AsyncBaseBrowser(headless=True, cache_dir="test_cache")
@@ -42,7 +43,7 @@ async def async_base_browser_fixture():
             shutil.rmtree("test_cache", ignore_errors=True)
 
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def async_browser_toolkit_fixture():
     with patch('playwright.async_api.async_playwright'):
         # Mock the ChatAgent initialization to avoid model requirements
@@ -63,6 +64,7 @@ async def async_browser_toolkit_fixture():
                 shutil.rmtree("test_cache", ignore_errors=True)
 
 
+@pytest.mark.asyncio
 async def test_async_base_browser_init(async_base_browser_fixture):
     browser = async_base_browser_fixture
     assert browser.headless is True
@@ -74,23 +76,31 @@ async def test_async_base_browser_init(async_base_browser_fixture):
     )  # Added assertion for default user_data_dir
 
 
+@pytest.mark.asyncio
 async def test_async_base_browser_init_with_user_data_dir():
     test_user_dir = "test_user_data_dir_async"
     try:
         with patch('playwright.async_api.async_playwright'):
-            # Mock _ensure_browser_installed to prevent
-            # actual browser checks during this specific init test
-            with patch.object(
-                AsyncBaseBrowser, '_ensure_browser_installed', MagicMock()
-            ) as mock_ensure_installed:
-                AsyncBaseBrowser(headless=True, user_data_dir=test_user_dir)
-                # The method is called during __init__, so we need to check it was called
-                assert mock_ensure_installed.called
+            # Create AsyncBaseBrowser instance
+            browser = AsyncBaseBrowser(headless=True, user_data_dir=test_user_dir)
+            
+            # Verify the user_data_dir was set correctly
+            assert browser.user_data_dir == test_user_dir
+            assert browser.headless is True
+            assert isinstance(browser.history, list)
+            assert isinstance(browser.page_history, list)
+            
+            # Verify the user data directory was created
+            assert os.path.exists(test_user_dir)
+            
+            # Note: _ensure_browser_installed is NOT called during __init__ in AsyncBaseBrowser
+            # It's only called during async_init()
     finally:
         if os.path.exists(test_user_dir):
             shutil.rmtree(test_user_dir)
 
 
+@pytest.mark.asyncio
 async def test_async_base_browser_initialization_order():
     with patch('playwright.async_api.async_playwright'):
         browser = AsyncBaseBrowser(headless=True)  # __init__ called
@@ -104,6 +114,7 @@ async def test_async_base_browser_initialization_order():
         assert browser.page is not None  # page created
 
 
+@pytest.mark.asyncio
 async def test_async_base_browser_initialization_order_with_user_data_dir():
     test_init_dir = "test_init_user_data_async"
 
@@ -112,7 +123,7 @@ async def test_async_base_browser_initialization_order_with_user_data_dir():
             'playwright.async_api.async_playwright'
         ) as mock_async_playwright_entry,
         patch.object(
-            AsyncBaseBrowser, '_ensure_browser_installed', MagicMock()
+            AsyncBaseBrowser, 'async_ensure_browser_installed', AsyncMock()
         ) as mock_ensure_installed_in_init,
     ):
         # Configure the mock for async_playwright().start()
@@ -134,13 +145,16 @@ async def test_async_base_browser_initialization_order_with_user_data_dir():
                 headless=True, user_data_dir=test_init_dir
             )
             # Assertions for __init__ behaviour
-            assert (
-                mock_ensure_installed_in_init.called
-                or mock_ensure_installed_in_init.call_count >= 0
-            )
+            # Note: _ensure_browser_installed is NOT called during __init__ in AsyncBaseBrowser
+            # It's only called during async_init()
+            assert browser.user_data_dir == test_init_dir
+            assert browser.headless is True
 
             # Assertions for async_init() behaviour
             await browser.async_init()
+            # Verify that async_ensure_browser_installed was called during async_init
+            mock_ensure_installed_in_init.assert_called_once()
+            
             # For user_data_dir, browser should be None but context should be set
             assert (
                 browser.browser is None
@@ -161,12 +175,14 @@ async def test_async_base_browser_initialization_order_with_user_data_dir():
         "chromium",
     ],
 )
+@pytest.mark.asyncio
 async def test_async_browser_channel_selection(channel):
     with patch('playwright.async_api.async_playwright'):
         browser = AsyncBaseBrowser(headless=True, channel=channel)
         assert browser.channel == channel
 
 
+@pytest.mark.asyncio
 async def test_async_browser_visit_page(async_base_browser_fixture):
     browser = async_base_browser_fixture
     await browser.async_init()
@@ -177,6 +193,7 @@ async def test_async_browser_visit_page(async_base_browser_fixture):
     browser.page.wait_for_load_state.assert_called_once()
 
 
+@pytest.mark.asyncio
 async def test_async_browser_get_screenshot_multi_tab(
     async_base_browser_fixture,
 ):
@@ -242,6 +259,7 @@ async def test_async_browser_get_screenshot_multi_tab(
     assert file_path is None
 
 
+@pytest.mark.asyncio
 async def test_async_browser_clean_cache(async_base_browser_fixture):
     browser = async_base_browser_fixture
     # Create a test file in cache directory
@@ -255,6 +273,7 @@ async def test_async_browser_clean_cache(async_base_browser_fixture):
     assert not os.path.exists(test_file)
 
 
+@pytest.mark.asyncio
 async def test_async_browser_click_blank_area(async_base_browser_fixture):
     browser = async_base_browser_fixture
     await browser.async_init()
@@ -263,6 +282,7 @@ async def test_async_browser_click_blank_area(async_base_browser_fixture):
     browser.page.mouse.click.assert_called_once_with(0, 0)
 
 
+@pytest.mark.asyncio
 async def test_async_browser_get_url_multi_tab(async_base_browser_fixture):
     """Test getting URLs from multiple tabs simultaneously."""
     browser = async_base_browser_fixture
@@ -301,6 +321,7 @@ async def test_async_browser_get_url_multi_tab(async_base_browser_fixture):
         browser.get_url(tab_id=[1, 3])
 
 
+@pytest.mark.asyncio
 async def test_async_browser_back_navigation(async_base_browser_fixture):
     browser = async_base_browser_fixture
     await browser.async_init()
@@ -403,6 +424,7 @@ def test_visual_viewport_from_dict_multi_tab():
     assert result_2["offsetTop"] == 50
 
 
+@pytest.mark.asyncio
 async def test_async_close_tab_multiple_tabs(async_base_browser_fixture):
     """Test closing multiple tabs simultaneously."""
     browser = async_base_browser_fixture
@@ -458,6 +480,7 @@ async def test_async_close_tab_multiple_tabs(async_base_browser_fixture):
     assert 2 not in browser.tabs
 
 
+@pytest.mark.asyncio
 async def test_async_capture_full_page_screenshot_multiple_tabs(
     async_base_browser_fixture,
 ):
@@ -544,6 +567,7 @@ async def test_async_capture_full_page_screenshot_multiple_tabs(
             assert file_path.endswith('.png')
 
 
+@pytest.mark.asyncio
 async def test_async_act_method_multi_tab_dictionary_format(
     async_browser_toolkit_fixture,
 ):
@@ -599,6 +623,7 @@ async def test_async_act_method_multi_tab_dictionary_format(
         assert success is True
 
 
+@pytest.mark.asyncio
 async def test_async_browse_url_multi_tab_integration(
     async_browser_toolkit_fixture,
 ):
@@ -664,6 +689,7 @@ async def test_async_browse_url_multi_tab_integration(
     assert isinstance(trajectory["all_tab_urls"], dict)
 
 
+@pytest.mark.asyncio
 async def test_async_parallel_execution_thread_safety(
     async_base_browser_fixture,
 ):
@@ -699,6 +725,7 @@ async def test_async_parallel_execution_thread_safety(
         assert tab_id in browser.tabs
 
 
+@pytest.mark.asyncio
 async def test_async_tab_id_assignment_atomicity(async_base_browser_fixture):
     """Test that tab ID assignment is atomic and thread-safe."""
     browser = async_base_browser_fixture
@@ -734,6 +761,7 @@ async def test_async_tab_id_assignment_atomicity(async_base_browser_fixture):
     os.environ.get("OPENAI_API_KEY") is None,
     reason="OPENAI_API_KEY not available",
 )
+@pytest.mark.asyncio
 async def test_async_task_planning(async_browser_toolkit_fixture):
     """Test async_task_planning method with API key."""
     toolkit = async_browser_toolkit_fixture
@@ -753,6 +781,7 @@ async def test_async_task_planning(async_browser_toolkit_fixture):
     os.environ.get("OPENAI_API_KEY") is None,
     reason="OPENAI_API_KEY not available",
 )
+@pytest.mark.asyncio
 async def test_async_get_final_answer(async_browser_toolkit_fixture):
     """Test async_get_final_answer method with API key."""
     toolkit = async_browser_toolkit_fixture
@@ -770,6 +799,7 @@ async def test_async_get_final_answer(async_browser_toolkit_fixture):
     os.environ.get("OPENAI_API_KEY") is None,
     reason="OPENAI_API_KEY not available",
 )
+@pytest.mark.asyncio
 async def test_async_browse_url(async_browser_toolkit_fixture):
     """Test browse_url method with API key."""
     toolkit = async_browser_toolkit_fixture
