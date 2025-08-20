@@ -574,6 +574,67 @@ class MCPClient:
 
         return run_async(self.list_mcp_tools)()
 
+    def _normalize_type(self, type_value: Any) -> str:
+        r"""Normalizes a JSON schema type from a list to a single string.
+
+        Converts array types like ["string", "null"] to single string "string".
+        This fixes Gmail MCP tools that return list types.
+
+        Args:
+            type_value: The type value from JSON schema, could be string
+                or list.
+
+        Returns:
+            str: Normalized single type string.
+        """
+        if isinstance(type_value, list):
+            return next((t for t in type_value if t != "null"), type_value[0])
+        return type_value
+
+    def _sanitize_property_schema(
+        self, schema: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        r"""Sanitizes a single property schema for model compatibility.
+
+        Removes invalid enum declarations on non-string types and recursively
+        processes nested object schemas. This fixes Notion MCP tools.
+
+        Args:
+            schema: Property schema dictionary to sanitize.
+
+        Returns:
+            Dict[str, Any]: Sanitized schema dictionary.
+        """
+        clean_schema = dict(schema)
+        if "type" in clean_schema:
+            clean_schema["type"] = self._normalize_type(clean_schema["type"])
+        if "enum" in clean_schema and clean_schema.get("type") != "string":
+            clean_schema.pop("enum")
+        if (
+            clean_schema.get("type") == "object"
+            and "properties" in clean_schema
+        ):
+            clean_schema["properties"] = self._sanitize_properties(
+                clean_schema["properties"]
+            )
+        return clean_schema
+
+    def _sanitize_properties(
+        self, properties: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        r"""Recursively sanitizes all properties in a schema dictionary.
+
+        Args:
+            properties: Properties dictionary from tool schema.
+
+        Returns:
+            Dict[str, Any]: Sanitized properties dictionary.
+        """
+        return {
+            prop_name: self._sanitize_property_schema(prop_schema)
+            for prop_name, prop_schema in properties.items()
+        }
+
     def generate_function_from_mcp_tool(
         self, mcp_tool: types.Tool
     ) -> Callable:
@@ -606,8 +667,9 @@ class MCPClient:
 
         func_params = []
         for param_name, param_schema in parameters_schema.items():
-            param_type = param_schema.get("type", "Any")
-            param_type = type_map.get(param_type, Any)
+            raw_type = param_schema.get("type", "Any")
+            normalized_type = self._normalize_type(raw_type)
+            param_type = type_map.get(normalized_type, Any)
 
             annotations[param_name] = param_type
             if param_name not in required_params:
@@ -779,9 +841,11 @@ class MCPClient:
         properties = input_schema.get("properties", {})
         required = input_schema.get("required", [])
 
+        sanitized_properties = self._sanitize_properties(properties)
+
         parameters = {
             "type": "object",
-            "properties": properties,
+            "properties": sanitized_properties,
             "required": required,
             "additionalProperties": False,
         }
