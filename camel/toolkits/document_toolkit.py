@@ -28,8 +28,6 @@ from urllib.parse import urlparse
 
 from camel.loaders import MarkItDownLoader
 from camel.logger import get_logger
-from camel.models import BaseModelBackend
-from camel.toolkits import ImageAnalysisToolkit
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer, retry_on_error
@@ -43,7 +41,6 @@ logger = get_logger(__name__)
 
 _TEXT_EXTS: Set[str] = {".txt", ".md", ".rtf"}
 _DOC_EXTS: Set[str] = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".odt"}
-_IMAGE_EXTS: Set[str] = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp"}
 _EXCEL_EXTS: Set[str] = {".xls", ".xlsx", ".csv"}
 _ARCHIVE_EXTS: Set[str] = {".zip"}
 _WEB_EXTS: Set[str] = {".html", ".htm", ".xml"}
@@ -89,6 +86,7 @@ class _LoaderWrapper:
             Tuple[bool, str]: A tuple containing success status and either
                 the extracted plain text content or an error message.
         """
+        # Try parse_file method first (for loaders that have it)
         if hasattr(self._loader, "parse_file"):
             try:
                 content = self._loader.parse_file(path)  # type: ignore[attr-defined]
@@ -96,16 +94,24 @@ class _LoaderWrapper:
             except Exception as e:
                 return False, f"Loader failed to convert file {path}: {e}"
 
-        return False, "Loader does not support parse_file method"
+        # Try convert_file method (for MarkItDownLoader)
+        if hasattr(self._loader, "convert_file"):
+            try:
+                content = self._loader.convert_file(path)  # type: ignore[attr-defined]
+                return True, content
+            except Exception as e:
+                return False, f"Loader failed to convert file {path}: {e}"
+
+        return (
+            False,
+            "Loader does not support parse_file or convert_file method",
+        )
 
 
-def _init_loader(
-    loader_type: str, loader_kwargs: Optional[dict] | None
-) -> _LoaderWrapper:
-    r"""Initialize a document loader based on the specified type.
+def _init_loader(loader_kwargs: Optional[dict] | None) -> _LoaderWrapper:
+    r"""Initialize a document loader.
 
     Args:
-        loader_type (str): Type of loader to initialize ('markitdown').
         loader_kwargs (Optional[dict]): Additional keyword arguments for the
             loader.
 
@@ -114,22 +120,12 @@ def _init_loader(
 
     Raises:
         ImportError: If the required loader is not available.
-        ValueError: If the loader type is not supported.
     """
-    loader_type = loader_type.lower()
     loader_kwargs = loader_kwargs or {}
 
-    if loader_type == "markitdown":
-        if MarkItDownLoader is None:
-            raise ImportError(
-                "MarkItDownLoader unavailable - install `camel-ai[docs]` or "
-                "`markitdown`."
-            )
-        return _LoaderWrapper(MarkItDownLoader(**loader_kwargs))
-
-    raise ValueError(
-        "Unsupported loader_type. Only 'markitdown' is supported."
-    )
+    if MarkItDownLoader is None:
+        raise ImportError("MarkItDownLoader unavailable.")
+    return _LoaderWrapper(MarkItDownLoader(**loader_kwargs))
 
 
 @MCPServer()
@@ -137,7 +133,7 @@ class DocumentToolkit(BaseToolkit):
     r"""A comprehensive toolkit for processing various document formats.
 
     This toolkit can extract plain-text content from local files, remote URLs,
-    ZIP archives, and webpages. It supports images, Office documents, PDFs,
+    ZIP archives, and webpages. It supports Office documents, PDFs,
     Excel files, code files, and more.
     """
 
@@ -146,8 +142,6 @@ class DocumentToolkit(BaseToolkit):
         *,
         cache_dir: str | Path | None = None,
         timeout: Optional[float] = None,
-        model: Optional[BaseModelBackend] = None,
-        loader_type: str = "markitdown",
         loader_kwargs: Optional[dict] = None,
         enable_cache: bool = True,
     ) -> None:
@@ -158,8 +152,6 @@ class DocumentToolkit(BaseToolkit):
                 documents. Defaults to ~/.cache/camel/documents.
             timeout (Optional[float]): The timeout for the toolkit.
                 (default: :obj:`None`)
-            model (Optional[object]): Model backend for image analysis.
-            loader_type (str): Primary document loader type ('markitdown').
             loader_kwargs (Optional[dict]): Additional arguments for the
                 primary loader.
             enable_cache (bool): Whether to enable disk and memory caching.
@@ -176,14 +168,9 @@ class DocumentToolkit(BaseToolkit):
         else:
             self.cache_dir = None
 
-        # Initialize specialized toolkits for specific file types
-        self.image_tool = ImageAnalysisToolkit(model=model)
-
         # Initialize primary document loader
-        self._loader = _init_loader(loader_type, loader_kwargs)
-        logger.info(
-            "DocumentProcessingToolkit initialised with %s loader", loader_type
-        )
+        self._loader = _init_loader(loader_kwargs)
+        logger.info("DocumentProcessingToolkit initialised")
 
         # Initialize in-memory cache (keyed by SHA-256 of path + mtime)
         self._cache: Dict[str, str] = {}
@@ -197,48 +184,71 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             str: A message indicating the result of the operation.
         """
+        try:
+            # Get file extension first
+            if "." in path:
+                suffix = f".{path.lower().rsplit('.', 1)[-1]}"
+            else:
+                suffix = ""
+            allowed_exts = _TEXT_EXTS | _CODE_EXTS | _DATA_EXTS
+            if suffix not in allowed_exts:
+                return (
+                    f"Unsupported file type: {suffix} supported file types "
+                    f"are {_TEXT_EXTS} {_CODE_EXTS} {_DATA_EXTS}"
+                )
 
-        # Get file extension first
-        suffix = f".{path.lower().rsplit('.', 1)[-1]}" if "." in path else ""
-        allowed_exts = _TEXT_EXTS | _CODE_EXTS | _DATA_EXTS
-        if suffix not in allowed_exts:
-            return (
-                f"Unsupported file type: {suffix} supported file types "
-                f"are {_TEXT_EXTS} {_CODE_EXTS} {_DATA_EXTS}"
+            file_text = self.read_file_content(path).expandtabs()
+            new_str = new_str.expandtabs()
+            file_text_lines = file_text.split('\n')
+            n_lines_file = len(file_text_lines)
+
+            if insert_line < 0 or insert_line > n_lines_file:
+                return (
+                    f"Invalid line number: {insert_line}. "
+                    f"The file has {n_lines_file} lines."
+                )
+
+            new_str_lines = new_str.split('\n')
+            new_file_text_lines = (
+                file_text_lines[:insert_line]
+                + new_str_lines
+                + file_text_lines[insert_line:]
+            )
+            new_file_text = '\n'.join(new_file_text_lines)
+
+            # Try to write the file
+            write_result = self.write_file(path, new_file_text)
+
+            # Check if write was successful
+            if write_result.startswith("Error"):
+                return write_result
+
+            success_msg = (
+                f"Successfully inserted {new_str} at line "
+                f"{insert_line} in {path}."
             )
 
-        file_text = self.read_file_content(path).expandtabs()
-        new_str = new_str.expandtabs()
-        file_text_lines = file_text.split('\n')
-        n_lines_file = len(file_text_lines)
-        if insert_line < 0 or insert_line > n_lines_file:
-            return (
-                f"Invalid line number: {insert_line}. "
-                f"The file has {n_lines_file} lines."
+            self._file_history[path].append(
+                FileEditResult(
+                    success=True,
+                    message=success_msg,
+                    old_content=file_text,
+                    new_content=new_file_text,
+                )
             )
+            return success_msg
 
-        new_str_lines = new_str.split('\n')
-        new_file_text_lines = (
-            file_text_lines[:insert_line]
-            + new_str_lines
-            + file_text_lines[insert_line:]
-        )
-        new_file_text = '\n'.join(new_file_text_lines)
-        self.write_file(path, new_file_text)
-        self._file_history[path].append(
-            FileEditResult(
-                success=True,
-                message=(
-                    f"Successfully inserted {new_str} at line "
-                    f"{insert_line} in {path}."
-                ),
-                old_content=file_text,
-                new_content=new_file_text,
+        except Exception as e:
+            error_msg = (
+                f"Error inserting content at line {insert_line} in {path}: {e}"
             )
-        )
-        return (
-            f"Successfully inserted {new_str} at line {insert_line} in {path}."
-        )
+            self._file_history[path].append(
+                FileEditResult(
+                    success=False,
+                    message=error_msg,
+                )
+            )
+            return error_msg
 
     def undo_edit(self, path: str):
         r"""Undo the last edit operation on the file.
@@ -493,8 +503,8 @@ class DocumentToolkit(BaseToolkit):
 
         Args:
             document_path (str): The path of the document to be processed,
-                either a local path or a URL. It can process image, audio
-                files, zip files and webpages, etc.
+                either a local path or a URL. It can process Office documents,
+                PDFs, Excel files, code files, zip files, and webpages, etc.
 
         Returns:
             Tuple[bool, str]: A tuple containing a boolean indicating whether
@@ -540,7 +550,6 @@ class DocumentToolkit(BaseToolkit):
         """
         # Define handler mapping for different file types
         handlers: List[Tuple[set, Callable[[str], Tuple[bool, str]]]] = [
-            (_IMAGE_EXTS, self._handle_image),
             (_EXCEL_EXTS, self._handle_excel),
             (_ARCHIVE_EXTS, self._handle_zip),
             (_DATA_EXTS, self._handle_data_file),
@@ -684,24 +693,6 @@ class DocumentToolkit(BaseToolkit):
         except Exception as e:
             logger.error(f"Error scraping {url}: {e!s}")
             return f"Error while crawling the webpage: {e!s}"
-
-    # Specialized file type handlers
-    def _handle_image(self, path: str) -> Tuple[bool, str]:
-        r"""Process image files using the image analysis toolkit.
-
-        Args:
-            path (str): Path to the image file.
-
-        Returns:
-            Tuple[bool, str]: Success status and image description.
-        """
-        try:
-            res = self.image_tool.ask_question_about_image(
-                path, "Please make a detailed caption about the image."
-            )
-            return True, res
-        except Exception as e:
-            return False, f"Error processing image {path}: {e}"
 
     @dependencies_required('tabulate')
     def _convert_to_markdown(self, df: 'pd.DataFrame') -> str:
@@ -1309,10 +1300,6 @@ class DocumentToolkit(BaseToolkit):
                     "application/vnd.ms-excel": ".xls",
                     "application/vnd.openxmlformats-"
                     "officedocument.spreadsheetml.sheet": ".xlsx",
-                    "image/jpeg": ".jpg",
-                    "image/png": ".png",
-                    "image/gif": ".gif",
-                    "image/webp": ".webp",
                     "text/plain": ".txt",
                     "text/csv": ".csv",
                     "application/x-yaml": ".yaml",
