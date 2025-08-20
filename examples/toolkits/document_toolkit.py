@@ -12,13 +12,24 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-
 from __future__ import annotations
 
-import os
+import logging
+import tempfile
+import time
 import zipfile
+from pathlib import Path
+from typing import ClassVar, Optional
 
 import requests
+from requests.adapters import HTTPAdapter
+from requests.exceptions import (
+    ConnectionError,
+    HTTPError,
+    RequestException,
+    Timeout,
+)
+from urllib3.util.retry import Retry
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -26,184 +37,447 @@ from camel.models import ModelFactory
 from camel.toolkits import DocumentToolkit
 from camel.types import ModelPlatformType, ModelType
 
-# set test file
-download_dir = "./test"
-os.makedirs(download_dir, exist_ok=True)
-
-files = {
-    "https://arxiv.org/pdf/1512.03385.pdf": "1512.03385.pdf",
-    "https://arxiv.org/pdf/1706.03762.pdf": "1706.03762.pdf",
-}
-
-for url, filename in files.items():
-    file_path = os.path.join(download_dir, filename)
-    response = requests.get(url)
-    if response.status_code == 200:
-        with open(file_path, "wb") as f:
-            f.write(response.content)
-        print(f"Downloaded: {filename}")
-    else:
-        print(f"Failed to download: {url}")
-
-zip_path = os.path.join(download_dir, "test.zip")
-with zipfile.ZipFile(zip_path, "w") as zipf:
-    for filename in files.values():
-        zipf.write(os.path.join(download_dir, filename), arcname=filename)
-        print(f"Added to zip: {filename}")
-
-# # Init agent & toolkit
-doc_toolkit = DocumentToolkit()
-
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s'
 )
+logger = logging.getLogger(__name__)
 
-agent = ChatAgent(
-    system_message=(
-        "You are a helpful assistant that can read arbitrary documents. "
-        "Use the provided DocumentToolkit to extract text."
-    ),
-    model=model,
-    tools=[*doc_toolkit.get_tools()],
-)
 
-# Run agent
-response = agent.step(
-    rf"Extract content in the document located at {zip_path}, "
-    "return the abstract of them."
-)
+class NetworkConfig:
+    """Configuration for network requests."""
 
-print(response.msgs[0].content)
+    TIMEOUT: ClassVar[tuple[int, int]] = (
+        10,
+        30,
+    )  # (connect_timeout, read_timeout)
+    MAX_RETRIES: ClassVar[int] = 3
+    BACKOFF_FACTOR: ClassVar[float] = 0.3
+    RETRY_STATUS_CODES: ClassVar[list[int]] = [500, 502, 503, 504, 429]
+    CHUNK_SIZE: ClassVar[int] = 8192  # For streaming downloads
 
-# Expected agent response
-expected_response = (
-    "1. **Document: 1512.03385.pdf**\n"
-    "   - **Title:** Deep Residual Learning for Image Recognition\n"
-    "   - **Abstract:** Deeper neural networks are more difficult to train. "
-    "We present a residual learning framework to ease the training of "
-    "networks that are substantially deeper than those used previously. "
-    "We explicitly reformulate the layers as learning residual functions "
-    "with reference to the layer inputs, instead of learning unreferenced "
-    "functions. We provide comprehensive empirical evidence showing that "
-    "these residual networks are easier to optimize, and can gain accuracy "
-    "from considerably increased depth. On the ImageNet dataset, we evaluate "
-    "residual nets with a depth of up to 152 layers—8x deeper than VGG nets "
-    "but still having lower complexity. An ensemble of these residual nets "
-    "achieves 3.57% error on the ImageNet test set. This result won the 1st "
-    "place on the ILSVRC 2015 classification task. We also present analysis "
-    "on CIFAR-10 with 100 and 1000 layers. The depth of representations is "
-    "of central importance for many visual recognition tasks. Solely due to "
-    "our extremely deep representations, we obtain a 28% relative improvement "
-    "on the COCO object detection dataset. Deep residual nets are foundations "
-    "of our submissions to ILSVRC & COCO 2015 competitions, where we also "
-    "won the 1st places on the tasks of ImageNet detection, ImageNet "
-    "localization, COCO detection, and COCO segmentation.\n\n"
-    "2. **Document: 1706.03762.pdf**\n"
-    "   - **Title:** Attention Is All You Need\n"
-    "   - **Abstract:** The dominant sequence transduction models are based "
-    "on complex recurrent or convolutional neural networks that include an "
-    "encoder and a decoder. The best performing models also connect the "
-    "encoder and decoder through an attention mechanism. We propose a new "
-    "simple network architecture, the Transformer, based solely on attention "
-    "mechanisms, dispensing with recurrence and convolutions entirely. "
-    "Experiments on two machine translation tasks show these models to be "
-    "superior in quality while being more parallelizable and requiring "
-    "significantly less time to train. Our model achieves 28.4 BLEU on the "
-    "WMT 2014 English-to-German translation task, improving over the existing "
-    "best results, including ensembles, by over 2 BLEU. On the WMT 2014 "
-    "English-to-French translation task, our model establishes a new "
-    "single-model state-of-the-art BLEU score of 41.8 after training for 3.5 "
-    "days on eight GPUs, a small fraction of the training costs of the best "
-    "models from the literature. We show that the Transformer generalizes "
-    "well to other tasks by applying it successfully to English constituency "
-    "parsing both with large and limited training data."
-)
-print(expected_response)
 
-print(
-    doc_toolkit._handle_text_file(
-        "C:/Users/saedi/OneDrive/Desktop/yizhan/camel/camel/toolkits/example.txt",
-        start_line=1,
-        end_line=1,
+def create_robust_session() -> requests.Session:
+    """Create a requests session with retry strategy and timeout config."""
+    session = requests.Session()
+
+    # Configure retry strategy
+    retry_strategy = Retry(
+        total=NetworkConfig.MAX_RETRIES,
+        status_forcelist=NetworkConfig.RETRY_STATUS_CODES,
+        backoff_factor=NetworkConfig.BACKOFF_FACTOR,
+        raise_on_redirect=False,
+        raise_on_status=False,
     )
-)
 
-# Cleanup all files
-for filename in files.values():
-    file_path = os.path.join(download_dir, filename)
-    if os.path.exists(file_path):
-        os.remove(file_path)
-        print(f"Deleted: {file_path}")
+    # Mount adapter with retry strategy
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
 
-if os.path.exists(zip_path):
-    os.remove(zip_path)
-    print(f"Deleted: {zip_path}")
+    # Set default headers
+    session.headers.update(
+        {
+            'User-Agent': 'CAMEL-AI Document Processor/1.0',
+            'Accept': 'application/pdf,*/*',
+            'Connection': 'keep-alive',
+        }
+    )
 
-# Create an example file for agent tool calls
-demo_example_file = os.path.join(
-    os.path.dirname(__file__), '../../camel/toolkits/example.txt'
-)
-demo_example_file = os.path.abspath(demo_example_file)
+    return session
 
-response = agent.step(
-    f"create a new file named {demo_example_file} and add content about "
-    "camel-ai."
-)
-print(response.msgs[0].content)
 
-# The file `example.txt` has been successfully created at the specified
-# location:
-# **C:/Users/saedi/OneDrive/Desktop/yizhan/camel/camel/toolkits/example.txt**
-# The content about Camel-AI has been added to the file. If you need any
-# further assistance or modifications, feel free to ask!
+def download_file_with_progress(
+    session: requests.Session,
+    url: str,
+    file_path: Path,
+    max_size_mb: int = 100,
+) -> bool:
+    """
+    Download a file with progress indication and size limits.
 
-# 1. Insert a line
-response = agent.step(
-    f"Insert the line 'Inserted by agent' at line 1 in the file "
-    f"{demo_example_file}."
-)
-print(response.msgs[0].content)
+    Args:
+        session: Configured requests session
+        url: URL to download from
+        file_path: Local path to save the file
+        max_size_mb: Maximum file size in MB
 
-# 2. Replace content
-response = agent.step(
-    f"Replace the line 'Inserted by agent' with 'Replaced by agent' in the "
-    f"file {demo_example_file}."
-)
-print(response.msgs[0].content)
+    Returns:
+        bool: True if download successful, False otherwise
+    """
+    try:
+        logger.info(f"Starting download: {url}")
 
-# The line "Inserted by agent" has been successfully replaced with
-# "Replaced by agent" in the file:
-# **C:/Users/saedi/OneDrive/Desktop/yizhan/camel/camel/toolkits/example.txt**
+        # Make request with streaming
+        response = session.get(
+            url,
+            timeout=NetworkConfig.TIMEOUT,
+            stream=True,
+            allow_redirects=True,
+        )
+        response.raise_for_status()
 
-# The line is now back to "Inserted by agent." If you need any further
-# assistance or modifications, just let me know!  If you need any further
-# changes or assistance, feel free to ask!
-# The last edit has been successfully undone in the file:
-# **C:/Users/saedi/OneDrive/Desktop/yizhan/camel/camel/toolkits/example.txt**
-# The line is now back to "Inserted by agent." If you need any further
-# assistance or modifications, just let me know!
+        # Check content length
+        content_length = response.headers.get('content-length')
+        if content_length:
+            size_mb = int(content_length) / (1024 * 1024)
+            if size_mb > max_size_mb:
+                logger.warning(
+                    f"File too large ({size_mb:.1f}MB > {max_size_mb}MB): "
+                    f"{url}"
+                )
+                return False
+            logger.info(f"File size: {size_mb:.1f}MB")
 
-# 4. Read file content
-response = agent.step(f"Read lines 0 to 1 from the file {demo_example_file}.")
-print(response.msgs[0].content)
-"""ere are the contents of lines 0 to 1 from the file:
+        # Download with progress
+        downloaded_size = 0
+        max_bytes = max_size_mb * 1024 * 1024
 
-```
-```
-Camel-AI is an innovative framework designed to facilitate the development
-and deployment of artificial intelligence applications. It provides a
-comprehensive set of tools and libraries that streamline the process of
-building machine learning models, enabling developers to focus on creating
-intelligent solutions without getting bogged down by the complexities of
-underlying algorithms and data management.
-Inserted by agent
-```
+        with open(file_path, 'wb') as f:
+            for chunk in response.iter_content(
+                chunk_size=NetworkConfig.CHUNK_SIZE
+            ):
+                if chunk:  # Filter out keep-alive chunks
+                    f.write(chunk)
+                    downloaded_size += len(chunk)
 
-If you need further assistance or additional information, feel free to ask!
-"""
-# Cleanup the example file
-if os.path.exists(demo_example_file):
-    os.remove(demo_example_file)
-    print(f"Deleted: {demo_example_file}")
+                    # Check size limit during download
+                    if downloaded_size > max_bytes:
+                        logger.warning(f"Download size limit exceeded: {url}")
+                        file_path.unlink()  # Remove partial file
+                        return False
+
+        logger.info(
+            f"Successfully downloaded: {file_path.name} "
+            f"({downloaded_size:,} bytes)"
+        )
+        return True
+
+    # Handle specific request exceptions first (most specific to general)
+    except Timeout:
+        logger.error(f"Timeout downloading {url}")
+    except HTTPError as e:
+        logger.error(
+            f"HTTP error {e.response.status_code} downloading {url}: {e}"
+        )
+    except ConnectionError:
+        logger.error(f"Connection error downloading {url}")
+    except RequestException as e:
+        # This catches other requests-related exceptions
+        logger.error(f"Request error downloading {url}: {e}")
+    except OSError as e:
+        # File system errors (disk space, permissions, etc.)
+        # This is separate from requests exceptions
+        logger.error(f"File system error saving {file_path}: {e}")
+    except Exception as e:
+        logger.error(f"Unexpected error downloading {url}: {e}")
+
+    # Clean up partial file on error
+    if file_path.exists():
+        try:
+            file_path.unlink()
+        except OSError:
+            pass
+
+    return False
+
+
+def download_files_robust(
+    urls_filenames: dict,
+    download_dir: Path,
+) -> dict[str, bool]:
+    """
+    Download files with robust error handling and retry logic.
+
+    Args:
+        urls_filenames: Dict mapping URLs to filenames
+        download_dir: Directory to save files
+
+    Returns:
+        dict: Mapping of filenames to success status
+    """
+    download_dir.mkdir(exist_ok=True, parents=True)
+    results = {}
+
+    with create_robust_session() as session:
+        for url, filename in urls_filenames.items():
+            file_path = download_dir / filename
+
+            # Skip if file already exists and is valid
+            if file_path.exists() and file_path.stat().st_size > 0:
+                logger.info(f"File already exists: {filename}")
+                results[filename] = True
+                continue
+
+            # Attempt download with exponential backoff
+            success = False
+            for attempt in range(1, NetworkConfig.MAX_RETRIES + 1):
+                if attempt > 1:
+                    wait_time = NetworkConfig.BACKOFF_FACTOR * (
+                        2 ** (attempt - 1)
+                    )
+                    logger.info(
+                        f"Retrying in {wait_time:.1f}s... "
+                        f"(attempt {attempt})"
+                    )
+                    time.sleep(wait_time)
+
+                success = download_file_with_progress(session, url, file_path)
+                if success:
+                    break
+
+            results[filename] = success
+            if not success:
+                logger.error(
+                    f"Failed to download after "
+                    f"{NetworkConfig.MAX_RETRIES} attempts: {url}"
+                )
+
+    return results
+
+
+def create_zip_file_safe(
+    files: dict,
+    download_dir: Path,
+    zip_name: str,
+    download_results: dict[str, bool],
+) -> Optional[Path]:
+    """
+    Create a zip file containing only successfully downloaded files.
+
+    Args:
+        files: Dict mapping URLs to filenames
+        download_dir: Directory containing files
+        zip_name: Name of zip file to create
+        download_results: Results from download attempt
+
+    Returns:
+        Optional[Path]: Path to zip file if created successfully,
+                       None otherwise
+    """
+    zip_path = download_dir / zip_name
+    successful_files = []
+
+    # Check which files were successfully downloaded
+    for filename in files.values():
+        if download_results.get(filename, False):
+            file_path = download_dir / filename
+            if file_path.exists() and file_path.stat().st_size > 0:
+                successful_files.append(filename)
+
+    if not successful_files:
+        logger.error("No files available to create zip")
+        return None
+
+    try:
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for filename in successful_files:
+                file_path = download_dir / filename
+                zipf.write(file_path, arcname=filename)
+                logger.info(f"Added to zip: {filename}")
+
+        logger.info(f"Successfully created zip: {zip_path}")
+        return zip_path
+
+    except zipfile.BadZipFile as e:
+        logger.error(f"Zip file error: {e}")
+        if zip_path.exists():
+            zip_path.unlink()
+        return None
+    except OSError as e:
+        logger.error(f"File system error creating zip: {e}")
+        if zip_path.exists():
+            zip_path.unlink()
+        return None
+
+
+def handle_agent_request_safely(
+    agent: ChatAgent, request: str, max_retries: int = 2
+) -> str:
+    """
+    Handle agent requests with retry logic for network-related failures.
+
+    Args:
+        agent: ChatAgent instance
+        request: Request string
+        max_retries: Maximum number of retries
+
+    Returns:
+        str: Agent response or error message
+    """
+    for attempt in range(max_retries + 1):
+        try:
+            response = agent.step(request)
+            content = response.msgs[0].content
+
+            # Handle potential None content
+            if content is None:
+                logger.warning(
+                    f"Agent returned None content (attempt {attempt + 1})"
+                )
+                if attempt == max_retries:
+                    return "Agent returned empty response after all attempts"
+                continue
+
+            return content
+
+        except IndexError:
+            logger.warning(
+                f"Agent response has no messages (attempt {attempt + 1})"
+            )
+            if attempt == max_retries:
+                return "Agent response contained no messages"
+
+        except Exception as e:
+            logger.warning(
+                f"Agent request failed (attempt {attempt + 1}): {e}"
+            )
+            if attempt == max_retries:
+                return (
+                    f"Agent request failed after {max_retries + 1} "
+                    f"attempts: {e!s}"
+                )
+
+        # Brief pause before retry
+        if attempt < max_retries:
+            time.sleep(1)
+
+    # This should never be reached, but included for completeness
+    return "Unexpected error: no response after all attempts"
+
+
+def main():
+    """Main function with comprehensive error handling."""
+    try:
+        # Use temporary directory for cross-platform compatibility
+        with tempfile.TemporaryDirectory() as temp_dir:
+            download_dir = Path(temp_dir) / "test"
+            logger.info(f"Using temporary directory: {download_dir}")
+            print(f"\nTEMPORARY DIRECTORY: {download_dir}")
+            print(f"PDFs will be downloaded to: {download_dir}")
+            print(
+                f"example.txt will be created at: "
+                f"{download_dir / 'example.txt'}"
+            )
+            print(
+                f"test.zip will be created at: "
+                f"{download_dir / 'test.zip'}\n"
+            )
+
+            # Files to download
+            files = {
+                "https://arxiv.org/pdf/1512.03385.pdf": "1512.03385.pdf",
+                "https://arxiv.org/pdf/1706.03762.pdf": "1706.03762.pdf",
+            }
+
+            # Download files with robust handling
+            logger.info("Starting file downloads...")
+            download_results = download_files_robust(files, download_dir)
+
+            # Report download results
+            successful_downloads = sum(download_results.values())
+            total_downloads = len(download_results)
+            logger.info(
+                f"Download summary: {successful_downloads}/"
+                f"{total_downloads} successful"
+            )
+
+            if successful_downloads == 0:
+                logger.error("No files downloaded successfully. Exiting.")
+                return
+
+            # Create zip file with only successful downloads
+            zip_path = create_zip_file_safe(
+                files, download_dir, "test.zip", download_results
+            )
+            if not zip_path:
+                logger.error("Failed to create zip file. Exiting.")
+                return
+
+            try:
+                # Initialize agent & toolkit
+                logger.info("Initializing AI agent...")
+                doc_toolkit = DocumentToolkit()
+
+                model = ModelFactory.create(
+                    model_platform=ModelPlatformType.OPENAI,
+                    model_type=ModelType.GPT_4O_MINI,
+                    model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
+                )
+
+                agent = ChatAgent(
+                    system_message=(
+                        "You are a helpful assistant that can read "
+                        "arbitrary documents. Use the provided "
+                        "DocumentToolkit to extract text."
+                    ),
+                    model=model,
+                    tools=[*doc_toolkit.get_tools()],
+                )
+
+                # Extract content from zip file
+                logger.info("Processing documents with AI agent...")
+                response = handle_agent_request_safely(
+                    agent,
+                    f"Extract content in the document located at "
+                    f"{zip_path}, return the abstract of them.",
+                )
+
+                print("\n" + "=" * 50)
+                print("DOCUMENT ANALYSIS RESULTS")
+                print("=" * 50)
+                print(response)
+
+                # Demonstrate file operations
+                example_file = download_dir / "example.txt"
+
+                logger.info("Demonstrating file operations...")
+
+                # Create file
+                response = handle_agent_request_safely(
+                    agent,
+                    f"Create a new file named {example_file} and add "
+                    f"content about camel-ai.",
+                )
+                print("\n" + "-" * 30)
+                print("FILE CREATION:")
+                print(response)
+
+                if example_file.exists():
+                    # File operations
+                    operations = [
+                        (
+                            f"Insert the line 'Inserted by agent' at line 1 "
+                            f"in the file {example_file}.",
+                            "LINE INSERTION:",
+                        ),
+                        (
+                            f"Replace the line 'Inserted by agent' with "
+                            f"'Replaced by agent' in the file "
+                            f"{example_file}.",
+                            "LINE REPLACEMENT:",
+                        ),
+                        (
+                            f"Read lines 1 to 3 from the file "
+                            f"{example_file}.",
+                            "FILE READING:",
+                        ),
+                    ]
+
+                    for request, title in operations:
+                        response = handle_agent_request_safely(agent, request)
+                        print(f"\n{'-' * 30}")
+                        print(f"{title}")
+                        print(response)
+
+            except Exception as e:
+                logger.error(f"Error during AI processing: {e}")
+                print(f"AI processing failed: {e}")
+
+    except Exception as e:
+        logger.error(f"Unexpected error in main: {e}")
+        print(f"Application failed: {e}")
+
+
+if __name__ == "__main__":
+    main()
