@@ -17,6 +17,7 @@ from .function_tool import (
     get_openai_function_schema,
     get_openai_tool_schema,
     generate_docstring,
+    tool,
 )
 from .open_api_specs.security_config import openapi_security_config
 
@@ -92,6 +93,7 @@ from .notion_mcp_toolkit import NotionMCPToolkit
 __all__ = [
     'BaseToolkit',
     'FunctionTool',
+    'tool',
     'get_openai_function_schema',
     'get_openai_tool_schema',
     "generate_docstring",
