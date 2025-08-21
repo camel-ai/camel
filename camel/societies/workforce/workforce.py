@@ -1497,6 +1497,9 @@ class Workforce(BaseNode):
                         start_coroutine, self._loop
                     )
                 self._child_listening_tasks.append(child_task)
+            else:
+                # Close the coroutine to prevent RuntimeWarning
+                start_coroutine.close()
         else:
             # Close the coroutine to prevent RuntimeWarning
             start_coroutine.close()

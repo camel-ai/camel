@@ -26,7 +26,7 @@ from camel.tasks.task import Task, TaskState
 from camel.types import ModelPlatformType, ModelType
 
 
-class TestTimeoutWorkforce(Workforce):
+class TimeoutWorkforce(Workforce):
     r"""A test workforce class for testing timeout handling"""
 
     def __init__(self):
@@ -63,7 +63,7 @@ async def test_with_timeout_function():
 @pytest.mark.asyncio
 async def test_post_task_timeout():
     r"""Test timeout handling in _post_task method"""
-    workforce = TestTimeoutWorkforce()
+    workforce = TimeoutWorkforce()
 
     # Mock TaskChannel that times out
     mock_channel = AsyncMock(spec=TaskChannel)
@@ -88,7 +88,7 @@ async def test_post_task_timeout():
 async def test_listen_to_channel_recovers_from_timeout():
     r"""Test that _listen_to_channel method recovers from timeouts when
     getting returned tasks"""
-    workforce = TestTimeoutWorkforce()
+    workforce = TimeoutWorkforce()
 
     # Mock TaskChannel with first call timing out, second call succeeding
     mock_channel = AsyncMock(spec=TaskChannel)
@@ -165,7 +165,7 @@ async def test_listen_to_channel_recovers_from_timeout():
 @pytest.mark.asyncio
 async def test_workforce_with_timeout_integration():
     r"""Test the integration of with_timeout across Workforce methods"""
-    workforce = TestTimeoutWorkforce()
+    workforce = TimeoutWorkforce()
 
     # Mock TaskChannel
     mock_channel = AsyncMock(spec=TaskChannel)
@@ -216,7 +216,7 @@ async def test_workforce_with_timeout_integration():
 @pytest.mark.asyncio
 async def test_multiple_timeout_points():
     r"""Test handling timeouts at different points in the workforce process"""
-    workforce = TestTimeoutWorkforce()
+    workforce = TimeoutWorkforce()
 
     # Mock TaskChannel that times out during get_returned_task
     mock_channel = AsyncMock(spec=TaskChannel)
