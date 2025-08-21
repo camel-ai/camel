@@ -1161,6 +1161,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_MISTRAL_7B,
             ModelType.NOVITA_LLAMA_3_2_11B_VISION,
             ModelType.NOVITA_LLAMA_3_2_3B,
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
+            ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
         }:
             return 32_768
         elif self in {
@@ -1250,6 +1253,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
             ModelType.MOONSHOT_KIMI_K2,
+            ModelType.NEBIUS_GLM_4_5,
+            ModelType.NEBIUS_DEEPSEEK_V3,
+            ModelType.NEBIUS_DEEPSEEK_R1,
         }:
             return 128_000
         elif self in {
@@ -1284,6 +1290,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_4_SCOUT_17B,
             ModelType.NOVITA_LLAMA_3_3_70B,
             ModelType.NOVITA_MISTRAL_NEMO,
+            ModelType.NEBIUS_LLAMA_3_1_70B,
         }:
             return 131_072
         elif self in {
