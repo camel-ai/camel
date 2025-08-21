@@ -73,6 +73,13 @@
             ]
           },
           {
+            "group": "Awesome Toolkits",
+            "pages": [
+              "key_modules/browsertoolkit",
+              "key_modules/terminaltoolkit"
+            ]
+          },
+          {
             "group": "CAMEL with MCP",
             "pages": [
               "mcp/overview",
@@ -227,6 +234,7 @@
               "reference/camel.configs.mistral_config",
               "reference/camel.configs.modelscope_config",
               "reference/camel.configs.moonshot_config",
+              "reference/camel.configs.nebius_config",
               "reference/camel.configs.netmind_config",
               "reference/camel.configs.novita_config",
               "reference/camel.configs.nvidia_config",
@@ -310,6 +318,7 @@
               "reference/camel.models.model_manager",
               "reference/camel.models.modelscope_model",
               "reference/camel.models.moonshot_model",
+              "reference/camel.models.nebius_model",
               "reference/camel.models.nemotron_model",
               "reference/camel.models.netmind_model",
               "reference/camel.models.novita_model",

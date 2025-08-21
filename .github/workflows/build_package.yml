@@ -140,6 +140,7 @@ jobs:
           ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
           BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
           CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
+          NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         run: |
           source test_venv/bin/activate
           pytest --fast-test-mode -m "not heavy_dependency" \
