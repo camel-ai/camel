@@ -1161,8 +1161,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_MISTRAL_7B,
             ModelType.NOVITA_LLAMA_3_2_11B_VISION,
             ModelType.NOVITA_LLAMA_3_2_3B,
-            ModelType.NEBIUS_GPT_OSS_120B,
-            ModelType.NEBIUS_GPT_OSS_20B,
             ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
         }:
             return 32_768
@@ -1256,6 +1254,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NEBIUS_GLM_4_5,
             ModelType.NEBIUS_DEEPSEEK_V3,
             ModelType.NEBIUS_DEEPSEEK_R1,
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
         }:
             return 128_000
         elif self in {
