@@ -15,7 +15,7 @@
 import base64
 import os
 from io import BytesIO
-from typing import List, Literal, Optional, Union
+from typing import ClassVar, List, Literal, Optional, Union
 
 from openai import OpenAI
 from PIL import Image
@@ -27,19 +27,28 @@ from camel.utils import MCPServer, api_keys_required
 
 logger = get_logger(__name__)
 
+
 @MCPServer()
 class ImageGenToolkit(BaseToolkit):
     r"""A class toolkit for image generation using OpenAI's
     Image Generation API.
     """
-    GROK_MODELS: ClassVar[List[str]] = \
-        ["grok-2-image", "grok-2-image-latest", "grok-2-image-1212"]
-    OPENAI_MODELS: ClassVar[List[str]] = ["gpt-image-1", "dall-e-3", "dall-e-2"]
+
+    GROK_MODELS: ClassVar[List[str]] = [
+        "grok-2-image",
+        "grok-2-image-latest",
+        "grok-2-image-1212",
+    ]
+    OPENAI_MODELS: ClassVar[List[str]] = [
+        "gpt-image-1",
+        "dall-e-3",
+        "dall-e-2",
+    ]
 
     def __init__(
         self,
         model: Optional[
-            Literal["gpt-image-1", "dall-e-3", "dall-e-2"] 
+            Literal["gpt-image-1", "dall-e-3", "dall-e-2"]
         ] = "gpt-image-1",
         timeout: Optional[float] = None,
         api_key: Optional[str] = None,
@@ -106,11 +115,13 @@ class ImageGenToolkit(BaseToolkit):
                 f"Unsupported model: {model}. "
                 f"Supported models are: {available_models}"
             )
-        
-        api_key, base_url = (api_key, url) or \
-            self.get_openai_credentials() if model in self.OPENAI_MODELS else \
-            self.get_grok_credentials()
-        
+
+        api_key, base_url = (
+            (api_key, url) or self.get_openai_credentials()
+            if model in self.OPENAI_MODELS
+            else self.get_grok_credentials()
+        )
+
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.model = model
         self.size = size
@@ -159,10 +170,10 @@ class ImageGenToolkit(BaseToolkit):
         # basic parameters supported by all models
         if n is not None:
             params["n"] = n  # type: ignore[assignment]
-        
+
         if self.model in self.GROK_MODELS:
             return params
-        
+
         if self.size is not None:
             params["size"] = self.size
 
@@ -328,7 +339,7 @@ class ImageGenToolkit(BaseToolkit):
     @api_keys_required([("api_key", "XAI_API_KEY")])
     def get_grok_credentials(self) -> tuple[str | None, str | None]:
         """Get API credentials for the specified Grok model.
-        
+
         Returns:
             tuple: (api_key, base_url) - base_url may be None
         """
@@ -337,11 +348,11 @@ class ImageGenToolkit(BaseToolkit):
         api_key = os.getenv("XAI_API_KEY")
         base_url = os.getenv("XAI_API_BASE_URL")
         return api_key, base_url
-    
+
     @api_keys_required([("api_key", "OPENAI_API_KEY")])
     def get_openai_credentials(self) -> tuple[str | None, str | None]:
         """Get API credentials for the specified OpenAI model.
-        
+
         Returns:
             tuple: (api_key, base_url) - base_url may be None
         """
