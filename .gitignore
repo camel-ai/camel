@@ -463,3 +463,6 @@ yarn-error.log*
 
 # Yarn Integrity file
 .yarn-integrity
+
+# Node dependencies
+node_modules/
