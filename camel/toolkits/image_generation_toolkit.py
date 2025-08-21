@@ -27,22 +27,18 @@ from camel.utils import MCPServer, api_keys_required
 
 logger = get_logger(__name__)
 
-
 @MCPServer()
-class OpenAIImageToolkit(BaseToolkit):
+class ImageGenToolkit(BaseToolkit):
     r"""A class toolkit for image generation using OpenAI's
     Image Generation API.
     """
+    GROK_MODELS = ["grok-2-image", "grok-2-image-latest", "grok-2-image-1212"]
+    OPENAI_MODELS = ["gpt-image-1", "dall-e-3", "dall-e-2"]
 
-    @api_keys_required(
-        [
-            ("api_key", "OPENAI_API_KEY"),
-        ]
-    )
     def __init__(
         self,
         model: Optional[
-            Literal["gpt-image-1", "dall-e-3", "dall-e-2"]
+            Literal["gpt-image-1", "dall-e-3", "dall-e-2"] 
         ] = "gpt-image-1",
         timeout: Optional[float] = None,
         api_key: Optional[str] = None,
@@ -103,9 +99,17 @@ class OpenAIImageToolkit(BaseToolkit):
                 image.(default: :obj:`"image_save"`)
         """
         super().__init__(timeout=timeout)
-        api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        url = url or os.environ.get("OPENAI_API_BASE_URL")
-        self.client = OpenAI(api_key=api_key, base_url=url)
+        if model not in self.GROK_MODELS + self.OPENAI_MODELS:
+            raise ValueError(
+                f"Unsupported model: {model}. "
+                f"Supported models are: {sorted(self.OPENAI_MODELS + self.GROK_MODELS)}"
+            )
+        
+        api_key, base_url = (api_key, url) or \
+            self.get_openai_credentials() if model in self.OPENAI_MODELS else \
+            self.get_grok_credentials()
+        
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.model = model
         self.size = size
         self.quality = quality
@@ -153,6 +157,10 @@ class OpenAIImageToolkit(BaseToolkit):
         # basic parameters supported by all models
         if n is not None:
             params["n"] = n  # type: ignore[assignment]
+        
+        if self.model in self.GROK_MODELS:
+            return params
+        
         if self.size is not None:
             params["size"] = self.size
 
@@ -179,7 +187,6 @@ class OpenAIImageToolkit(BaseToolkit):
                 params["quality"] = self.quality
             if self.background is not None:
                 params["background"] = self.background
-
         return params
 
     def _handle_api_response(
@@ -204,6 +211,7 @@ class OpenAIImageToolkit(BaseToolkit):
         Returns:
             str: Success message with image path/URL or error message.
         """
+        source = "Grok" if self.model in self.GROK_MODELS else "OpenAI"
         if response.data is None or len(response.data) == 0:
             error_msg = f"No image data returned from {source} API."
             logger.error(error_msg)
@@ -315,15 +323,39 @@ class OpenAIImageToolkit(BaseToolkit):
             logger.error(error_msg)
             return error_msg
 
+    @api_keys_required([("api_key", "XAI_API_KEY")])
+    def get_grok_credentials(self) -> tuple[str | None, str | None]:
+        """Get API credentials for the specified Grok model.
+        
+        Returns:
+            tuple: (api_key, base_url) - base_url may be None
+        """
+
+        # Get credentials based on model type
+        api_key = os.getenv("XAI_API_KEY")
+        base_url = os.getenv("XAI_API_BASE_URL")
+        return api_key, base_url
+    
+    @api_keys_required([("api_key", "OPENAI_API_KEY")])
+    def get_openai_credentials(self) -> tuple[str | None, str | None]:
+        """Get API credentials for the specified OpenAI model.
+        
+        Returns:
+            tuple: (api_key, base_url) - base_url may be None
+        """
+
+        api_key = os.getenv("OPENAI_API_KEY")
+        base_url = os.getenv("OPENAI_API_BASE_URL")
+        return api_key, base_url
+
     def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
+        r"""Returns a list of FunctionTool objects representing the functions
+            in the toolkit.
 
         Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
+            List[FunctionTool]: A list of FunctionTool objects representing the
+                functions in the toolkit.
         """
         return [
             FunctionTool(self.generate_image),
-            # could add edit_image function later
         ]
