@@ -83,6 +83,24 @@ def create_mock_ws_wrapper():
             "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
         }
     )
+    mock_ws_wrapper.mouse_control = AsyncMock(
+        return_value={
+            "result": "Action mouse_control executed successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.mouse_drag = AsyncMock(
+        return_value={
+            "result": "Action mouse_drag executed successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+    mock_ws_wrapper.press_key = AsyncMock(
+        return_value={
+            "result": "Action press_key executed successfully",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
     mock_ws_wrapper.switch_tab = AsyncMock(
         return_value={
             "result": "Switched to tab",
@@ -111,6 +129,16 @@ def create_mock_ws_wrapper():
             }
         ]
     )
+    mock_ws_wrapper.console_view = AsyncMock(
+        return_value=[{"type": "log", "text": "Example Log"}]
+    )
+    mock_ws_wrapper.console_exec = AsyncMock(
+        return_value={
+            "result": "Console execution result: 100",
+            "snapshot": "- Page snapshot\n```yaml\n<test content>\n```",
+        }
+    )
+
     return mock_ws_wrapper
 
 
@@ -458,6 +486,88 @@ class TestHybridBrowserToolkit:
                 "timeout" in result["result"].lower()
                 or "auto-resumed" in result["result"].lower()
             )
+
+    @pytest.mark.asyncio
+    async def test_mouse_control_valid(self, browser_toolkit_fixture):
+        """Test mouse_control with valid control action"""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_mouse_control(
+            control="click", x=500, y=500
+        )
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert (
+            "mouse_control" in result["result"].lower()
+            or "successfully" in result["result"].lower()
+        )
+
+    @pytest.mark.asyncio
+    async def test_mouse_control_invalid(self, browser_toolkit_fixture):
+        """Test mouse_control with invalid control action"""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_mouse_control(
+            control="invalid", x=500, y=500
+        )
+        # WebSocket wrapper should handle validation gracefully
+        assert "result" in result
+        assert isinstance(result["result"], str)
+
+    @pytest.mark.asyncio
+    async def test_mouse_drag(self, browser_toolkit_fixture):
+        """Test mouse_drag with element references"""
+        toolkit = browser_toolkit_fixture
+        # Mock elements with ref IDs
+        result = await toolkit.browser_mouse_drag(
+            from_ref="ref1", to_ref="ref2"
+        )
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        # Mock returns success message
+        assert (
+            "mouse_drag" in result["result"].lower()
+            or "successfully" in result["result"].lower()
+        )
+
+    @pytest.mark.asyncio
+    async def test_press_key(self, browser_toolkit_fixture):
+        """Test press_key with key combination"""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_press_key(keys=["Meta", "A"])
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert (
+            "press_key" in result["result"].lower()
+            or "successfully" in result["result"].lower()
+        )
+
+    @pytest.mark.asyncio
+    async def test_console_view(self, browser_toolkit_fixture):
+        """Test console_view to return format"""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_console_view()
+
+        assert "console_messages" in result
+        assert isinstance(result["console_messages"], list)
+        assert all(
+            isinstance(item, dict) for item in result["console_messages"]
+        )
+
+    @pytest.mark.asyncio
+    async def test_console_exec(self, browser_toolkit_fixture):
+        """Test console_exec to return result"""
+        toolkit = browser_toolkit_fixture
+        result = await toolkit.browser_console_exec(code="Math.sqrt(64);")
+
+        assert "result" in result
+        assert "snapshot" in result
+        assert "tabs" in result
+        assert "result" in result["result"].lower()
 
     def test_get_tools(self, sync_browser_toolkit):
         """Test getting available tools with default configuration."""

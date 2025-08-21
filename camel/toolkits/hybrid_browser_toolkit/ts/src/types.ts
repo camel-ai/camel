@@ -81,8 +81,9 @@ export interface ClickAction {
 
 export interface TypeAction {
   type: 'type';
-  ref: string;
-  text: string;
+  ref?: string;  // Optional for backward compatibility
+  text?: string; // Optional for backward compatibility
+  inputs?: Array<{ ref: string; text: string }>; // New field for multiple inputs
 }
 
 export interface SelectAction {
@@ -101,7 +102,25 @@ export interface EnterAction {
   type: 'enter';
 }
 
-export type BrowserAction = ClickAction | TypeAction | SelectAction | ScrollAction | EnterAction;
+export interface MouseAction {
+  type: 'mouse_control';
+  control: 'click' | 'right_click' | 'dblclick';
+  x: number; 
+  y: number; 
+}
+
+export interface MouseDragAction {
+  type: 'mouse_drag';
+  from_ref: string;
+  to_ref: string;
+}
+
+export interface PressKeyAction {
+  type: 'press_key';
+  keys: string[];
+}
+
+export type BrowserAction = ClickAction | TypeAction | SelectAction | ScrollAction | EnterAction | MouseAction | MouseDragAction | PressKeyAction;
 
 export interface VisualMarkResult {
   text: string;

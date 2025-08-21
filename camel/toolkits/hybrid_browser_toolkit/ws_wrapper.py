@@ -396,6 +396,9 @@ class WebSocketBrowserWrapper:
         """Send a command to the WebSocket server and get response."""
         await self._ensure_connection()
 
+        # Process params to ensure refs have 'e' prefix
+        params = self._process_refs_in_params(params)
+
         message_id = str(uuid.uuid4())
         message = {'id': message_id, 'command': command, 'params': params}
 
@@ -503,6 +506,55 @@ class WebSocketBrowserWrapper:
 
         return ToolResult(text=response['text'], images=response['images'])
 
+    def _ensure_ref_prefix(self, ref: str) -> str:
+        """Ensure ref has proper prefix"""
+        if not ref:
+            return ref
+
+        # If ref is purely numeric, add 'e' prefix for main frame
+        if ref.isdigit():
+            return f'e{ref}'
+
+        return ref
+
+    def _process_refs_in_params(
+        self, params: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Process parameters to ensure all refs have 'e' prefix."""
+        if not params:
+            return params
+
+        # Create a copy to avoid modifying the original
+        processed = params.copy()
+
+        # Handle direct ref parameters
+        if 'ref' in processed:
+            processed['ref'] = self._ensure_ref_prefix(processed['ref'])
+
+        # Handle from_ref and to_ref for drag operations
+        if 'from_ref' in processed:
+            processed['from_ref'] = self._ensure_ref_prefix(
+                processed['from_ref']
+            )
+        if 'to_ref' in processed:
+            processed['to_ref'] = self._ensure_ref_prefix(processed['to_ref'])
+
+        # Handle inputs array for type_multiple
+        if 'inputs' in processed and isinstance(processed['inputs'], list):
+            processed_inputs = []
+            for input_item in processed['inputs']:
+                if isinstance(input_item, dict) and 'ref' in input_item:
+                    processed_input = input_item.copy()
+                    processed_input['ref'] = self._ensure_ref_prefix(
+                        input_item['ref']
+                    )
+                    processed_inputs.append(processed_input)
+                else:
+                    processed_inputs.append(input_item)
+            processed['inputs'] = processed_inputs
+
+        return processed
+
     @action_logger
     async def click(self, ref: str) -> Dict[str, Any]:
         """Click an element."""
@@ -513,6 +565,14 @@ class WebSocketBrowserWrapper:
     async def type(self, ref: str, text: str) -> Dict[str, Any]:
         """Type text into an element."""
         response = await self._send_command('type', {'ref': ref, 'text': text})
+        return response
+
+    @action_logger
+    async def type_multiple(
+        self, inputs: List[Dict[str, str]]
+    ) -> Dict[str, Any]:
+        """Type text into multiple elements."""
+        response = await self._send_command('type', {'inputs': inputs})
         return response
 
     @action_logger
@@ -535,6 +595,31 @@ class WebSocketBrowserWrapper:
     async def enter(self) -> Dict[str, Any]:
         """Press enter."""
         response = await self._send_command('enter', {})
+        return response
+
+    @action_logger
+    async def mouse_control(
+        self, control: str, x: float, y: float
+    ) -> Dict[str, Any]:
+        """Control the mouse to interact with browser with x, y coordinates."""
+        response = await self._send_command(
+            'mouse_control', {'control': control, 'x': x, 'y': y}
+        )
+        return response
+
+    @action_logger
+    async def mouse_drag(self, from_ref: str, to_ref: str) -> Dict[str, Any]:
+        """Control the mouse to drag and drop in the browser using ref IDs."""
+        response = await self._send_command(
+            'mouse_drag',
+            {'from_ref': from_ref, 'to_ref': to_ref},
+        )
+        return response
+
+    @action_logger
+    async def press_key(self, keys: List[str]) -> Dict[str, Any]:
+        """Press key and key combinations."""
+        response = await self._send_command('press_key', {'keys': keys})
         return response
 
     @action_logger
@@ -570,6 +655,22 @@ class WebSocketBrowserWrapper:
             return response
         # Fallback if wrapped in an object
         return response.get('tabs', [])
+
+    @action_logger
+    async def console_view(self) -> List[Dict[str, Any]]:
+        """Get current page console view"""
+        response = await self._send_command('console_view', {})
+
+        if isinstance(response, list):
+            return response
+
+        return response.get('logs', [])
+
+    @action_logger
+    async def console_exec(self, code: str) -> Dict[str, Any]:
+        """Execute javascript code and get result."""
+        response = await self._send_command('console_exec', {'code': code})
+        return response
 
     @action_logger
     async def wait_user(

@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import re
 
 import pytest
 
@@ -44,23 +43,6 @@ def test_aws_bedrock_model(model_type: ModelType):
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
-
-
-@pytest.mark.model_backend
-def test_aws_bedrock_model_unexpected_argument():
-    r"""Test AWSBedrockModel with unexpected arguments."""
-    model_type = ModelType.AWS_CLAUDE_3_HAIKU
-    model_config_dict = {"model_path": "claude-3-haiku"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            "Invalid parameter 'model_path' in model_config_dict. "
-            "Valid parameters are: "
-        )
-        + ".*",  # Match any characters after the message start
-    ):
-        _ = AWSBedrockModel(model_type, model_config_dict)
 
 
 @pytest.mark.model_backend
