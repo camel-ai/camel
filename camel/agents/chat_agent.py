@@ -14,9 +14,11 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import json
 import logging
 import queue
+import random
 import textwrap
 import threading
 import time
@@ -40,6 +42,7 @@ from typing import (
 
 from openai import (
     AsyncStream,
+    RateLimitError,
     Stream,
 )
 from pydantic import BaseModel, ValidationError
@@ -386,6 +389,13 @@ class ChatAgent(BaseAgent):
             usage. When enabled, removes FUNCTION/TOOL role messages and
             ASSISTANT messages with tool_calls after each step.
             (default: :obj:`False`)
+        retry_attempts (int, optional): Maximum number of retry attempts for
+            rate limit errors. (default: :obj:`3`)
+        retry_delay (float, optional): Initial delay in seconds between
+            retries. Uses exponential backoff. (default: :obj:`1.0`)
+        step_timeout (Optional[float], optional): Timeout in seconds for the
+            entire step operation. If None, no timeout is applied.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -426,6 +436,9 @@ class ChatAgent(BaseAgent):
         mask_tool_output: bool = False,
         pause_event: Optional[asyncio.Event] = None,
         prune_tool_calls_from_memory: bool = False,
+        retry_attempts: int = 3,
+        retry_delay: float = 1.0,
+        step_timeout: Optional[float] = None,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -511,6 +524,9 @@ class ChatAgent(BaseAgent):
         self._secure_result_store: Dict[str, Any] = {}
         self.pause_event = pause_event
         self.prune_tool_calls_from_memory = prune_tool_calls_from_memory
+        self.retry_attempts = max(1, retry_attempts)
+        self.retry_delay = max(0.0, retry_delay)
+        self.step_timeout = step_timeout
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -1365,6 +1381,9 @@ class ChatAgent(BaseAgent):
                 a StreamingChatAgentResponse that behaves like
                 ChatAgentResponse but can also be iterated for
                 streaming updates.
+
+        Raises:
+            TimeoutError: If the step operation exceeds the configured timeout.
         """
 
         stream = self.model_backend.model_config_dict.get("stream", False)
@@ -1374,6 +1393,30 @@ class ChatAgent(BaseAgent):
             generator = self._stream(input_message, response_format)
             return StreamingChatAgentResponse(generator)
 
+        # Execute with timeout if configured
+        if self.step_timeout is not None:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=1
+            ) as executor:
+                future = executor.submit(
+                    self._step_impl, input_message, response_format
+                )
+                try:
+                    return future.result(timeout=self.step_timeout)
+                except concurrent.futures.TimeoutError:
+                    future.cancel()
+                    raise TimeoutError(
+                        f"Step timed out after {self.step_timeout}s"
+                    )
+        else:
+            return self._step_impl(input_message, response_format)
+
+    def _step_impl(
+        self,
+        input_message: Union[BaseMessage, str],
+        response_format: Optional[Type[BaseModel]] = None,
+    ) -> ChatAgentResponse:
+        r"""Implementation of non-streaming step logic."""
         # Set Langfuse session_id using agent_id for trace grouping
         try:
             from camel.utils.langfuse import set_current_agent_session_id
@@ -1544,6 +1587,10 @@ class ChatAgent(BaseAgent):
                 True, returns an AsyncStreamingChatAgentResponse that can be
                 awaited for the final result or async iterated for streaming
                 updates.
+
+        Raises:
+            asyncio.TimeoutError: If the step operation exceeds the configured
+                timeout.
         """
 
         try:
@@ -1559,9 +1606,22 @@ class ChatAgent(BaseAgent):
             async_generator = self._astream(input_message, response_format)
             return AsyncStreamingChatAgentResponse(async_generator)
         else:
-            return await self._astep_non_streaming_task(
-                input_message, response_format
-            )
+            if self.step_timeout is not None:
+                try:
+                    return await asyncio.wait_for(
+                        self._astep_non_streaming_task(
+                            input_message, response_format
+                        ),
+                        timeout=self.step_timeout,
+                    )
+                except asyncio.TimeoutError:
+                    raise asyncio.TimeoutError(
+                        f"Async step timed out after {self.step_timeout}s"
+                    )
+            else:
+                return await self._astep_non_streaming_task(
+                    input_message, response_format
+                )
 
     async def _astep_non_streaming_task(
         self,
@@ -1776,64 +1836,61 @@ class ChatAgent(BaseAgent):
         tool_schemas: Optional[List[Dict[str, Any]]] = None,
         prev_num_openai_messages: int = 0,
     ) -> ModelResponse:
-        r"""Internal function for agent step model response.
-        Args:
-            openai_messages (List[OpenAIMessage]): The OpenAI
-                messages to process.
-            num_tokens (int): The number of tokens in the context.
-            current_iteration (int): The current iteration of the step.
-            response_format (Optional[Type[BaseModel]]): The response
-                format to use.
-            tool_schemas (Optional[List[Dict[str, Any]]]): The tool
-                schemas to use.
-            prev_num_openai_messages (int): The number of openai messages
-                logged in the previous iteration.
+        r"""Internal function for agent step model response."""
+        last_error = None
 
-        Returns:
-            ModelResponse: The model response.
-        """
-
-        response = None
-        try:
-            response = self.model_backend.run(
-                openai_messages, response_format, tool_schemas or None
-            )
-        except Exception as exc:
-            logger.error(
-                f"An error occurred while running model "
-                f"{self.model_backend.model_type}, "
-                f"index: {self.model_backend.current_model_index}",
-                exc_info=exc,
-            )
-            error_info = str(exc)
-
-        if not response and self.model_backend.num_models > 1:
+        for attempt in range(self.retry_attempts):
+            try:
+                response = self.model_backend.run(
+                    openai_messages, response_format, tool_schemas or None
+                )
+                if response:
+                    break
+            except RateLimitError as e:
+                last_error = e
+                if attempt < self.retry_attempts - 1:
+                    delay = min(self.retry_delay * (2**attempt), 60.0)
+                    delay = random.uniform(0, delay)  # Add jitter
+                    logger.warning(
+                        f"Rate limit hit (attempt {attempt + 1}"
+                        f"/{self.retry_attempts}). Retrying in {delay:.1f}s"
+                    )
+                    time.sleep(delay)
+                else:
+                    logger.error(
+                        f"Rate limit exhausted after "
+                        f"{self.retry_attempts} attempts"
+                    )
+            except Exception:
+                logger.error(
+                    f"Model error: {self.model_backend.model_type}",
+                    exc_info=True,
+                )
+                raise
+        else:
+            # Loop completed without success
             raise ModelProcessingError(
-                "Unable to process messages: none of the provided models "
-                "run successfully."
-            )
-        elif not response:
-            raise ModelProcessingError(
-                f"Unable to process messages: the only provided model "
-                f"did not run successfully. Error: {error_info}"
+                f"Unable to process messages: "
+                f"{str(last_error) if last_error else 'Unknown error'}"
             )
 
-        sanitized_messages = self._sanitize_messages_for_logging(
+        # Log success
+        sanitized = self._sanitize_messages_for_logging(
             openai_messages, prev_num_openai_messages
         )
         logger.info(
-            f"Model {self.model_backend.model_type}, "
-            f"index {self.model_backend.current_model_index}, "
-            f"iteration {current_iteration}, "
-            f"processed these messages: {sanitized_messages}"
+            f"Model {self.model_backend.model_type} "
+            f"[{current_iteration}]: {sanitized}"
         )
+
         if not isinstance(response, ChatCompletion):
             raise TypeError(
-                f"Expected response to be a `ChatCompletion` object, but "
-                f"got {type(response).__name__} instead."
+                f"Expected ChatCompletion, got {type(response).__name__}"
             )
+
         return self._handle_batch_response(response)
 
+    @observe()
     async def _aget_model_response(
         self,
         openai_messages: List[OpenAIMessage],
@@ -1843,62 +1900,59 @@ class ChatAgent(BaseAgent):
         tool_schemas: Optional[List[Dict[str, Any]]] = None,
         prev_num_openai_messages: int = 0,
     ) -> ModelResponse:
-        r"""Internal function for agent async step model response.
-        Args:
-            openai_messages (List[OpenAIMessage]): The OpenAI messages
-                to process.
-            num_tokens (int): The number of tokens in the context.
-            current_iteration (int): The current iteration of the step.
-            response_format (Optional[Type[BaseModel]]): The response
-                format to use.
-            tool_schemas (Optional[List[Dict[str, Any]]]): The tool schemas
-                to use.
-            prev_num_openai_messages (int): The number of openai messages
-                logged in the previous iteration.
+        r"""Internal function for agent async step model response."""
+        last_error = None
 
-        Returns:
-            ModelResponse: The model response.
-        """
-
-        response = None
-        try:
-            response = await self.model_backend.arun(
-                openai_messages, response_format, tool_schemas or None
-            )
-        except Exception as exc:
-            logger.error(
-                f"An error occurred while running model "
-                f"{self.model_backend.model_type}, "
-                f"index: {self.model_backend.current_model_index}",
-                exc_info=exc,
-            )
-            error_info = str(exc)
-
-        if not response and self.model_backend.num_models > 1:
+        for attempt in range(self.retry_attempts):
+            try:
+                response = await self.model_backend.arun(
+                    openai_messages, response_format, tool_schemas or None
+                )
+                if response:
+                    break
+            except RateLimitError as e:
+                last_error = e
+                if attempt < self.retry_attempts - 1:
+                    delay = min(self.retry_delay * (2**attempt), 60.0)
+                    delay = random.uniform(0, delay)  # Add jitter
+                    logger.warning(
+                        f"Rate limit hit (attempt {attempt + 1}"
+                        f"/{self.retry_attempts}). "
+                        f"Retrying in {delay:.1f}s"
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(
+                        f"Rate limit exhausted after "
+                        f"{self.retry_attempts} attempts"
+                    )
+            except Exception:
+                logger.error(
+                    f"Model error: {self.model_backend.model_type}",
+                    exc_info=True,
+                )
+                raise
+        else:
+            # Loop completed without success
             raise ModelProcessingError(
-                "Unable to process messages: none of the provided models "
-                "run successfully."
-            )
-        elif not response:
-            raise ModelProcessingError(
-                f"Unable to process messages: the only provided model "
-                f"did not run successfully. Error: {error_info}"
+                f"Unable to process messages: "
+                f"{str(last_error) if last_error else 'Unknown error'}"
             )
 
-        sanitized_messages = self._sanitize_messages_for_logging(
+        # Log success
+        sanitized = self._sanitize_messages_for_logging(
             openai_messages, prev_num_openai_messages
         )
         logger.info(
-            f"Model {self.model_backend.model_type}, "
-            f"index {self.model_backend.current_model_index}, "
-            f"iteration {current_iteration}, "
-            f"processed these messages: {sanitized_messages}"
+            f"Model {self.model_backend.model_type} "
+            f"[{current_iteration}]: {sanitized}"
         )
+
         if not isinstance(response, ChatCompletion):
             raise TypeError(
-                f"Expected response to be a `ChatCompletion` object, but "
-                f"got {type(response).__name__} instead."
+                f"Expected ChatCompletion, got {type(response).__name__}"
             )
+
         return self._handle_batch_response(response)
 
     def _sanitize_messages_for_logging(
