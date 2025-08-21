@@ -80,7 +80,7 @@ class TestNebiusModel:
         model = NebiusModel(ModelType.NEBIUS_GPT_OSS_120B)
         # Should use the default OpenAI token counter
         assert model.token_counter is not None
-        assert hasattr(model.token_counter, "count_tokens")
+        assert hasattr(model.token_counter, "count_tokens_from_messages")
 
     @pytest.mark.parametrize(
         "model_type",
