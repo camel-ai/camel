@@ -87,6 +87,15 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
+    # Nebius AI Studio platform models
+    NEBIUS_GPT_OSS_120B = "gpt-oss-120b"
+    NEBIUS_GPT_OSS_20B = "gpt-oss-20b"
+    NEBIUS_GLM_4_5 = "GLM-4.5"
+    NEBIUS_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
+    NEBIUS_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
+    NEBIUS_LLAMA_3_1_70B = "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    NEBIUS_MISTRAL_7B_INSTRUCT = "mistralai/Mistral-7B-Instruct-v0.3"
+
     # OpenRouter models
     OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.1-405b-instruct"
     OPENROUTER_LLAMA_3_1_70B = "meta-llama/llama-3.1-70b-instruct"
@@ -601,6 +610,20 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_LLAMA_3_70B,
             ModelType.GROQ_MIXTRAL_8_7B,
             ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
+    def is_nebius(self) -> bool:
+        r"""Returns whether this type of models is served by Nebius AI
+        Studio."""
+        return self in {
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
+            ModelType.NEBIUS_GLM_4_5,
+            ModelType.NEBIUS_DEEPSEEK_V3,
+            ModelType.NEBIUS_DEEPSEEK_R1,
+            ModelType.NEBIUS_LLAMA_3_1_70B,
+            ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
         }
 
     @property
@@ -1138,6 +1161,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_MISTRAL_7B,
             ModelType.NOVITA_LLAMA_3_2_11B_VISION,
             ModelType.NOVITA_LLAMA_3_2_3B,
+            ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
         }:
             return 32_768
         elif self in {
@@ -1227,6 +1251,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
             ModelType.MOONSHOT_KIMI_K2,
+            ModelType.NEBIUS_GLM_4_5,
+            ModelType.NEBIUS_DEEPSEEK_V3,
+            ModelType.NEBIUS_DEEPSEEK_R1,
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
         }:
             return 128_000
         elif self in {
@@ -1261,6 +1290,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_4_SCOUT_17B,
             ModelType.NOVITA_LLAMA_3_3_70B,
             ModelType.NOVITA_MISTRAL_NEMO,
+            ModelType.NEBIUS_LLAMA_3_1_70B,
         }:
             return 131_072
         elif self in {
@@ -1532,6 +1562,7 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
+    NEBIUS = "nebius"
     OPENROUTER = "openrouter"
     OLLAMA = "ollama"
     LITELLM = "litellm"

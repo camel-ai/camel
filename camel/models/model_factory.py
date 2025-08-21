@@ -31,6 +31,7 @@ from camel.models.lmstudio_model import LMStudioModel
 from camel.models.mistral_model import MistralModel
 from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
+from camel.models.nebius_model import NebiusModel
 from camel.models.netmind_model import NetmindModel
 from camel.models.novita_model import NovitaModel
 from camel.models.nvidia_model import NvidiaModel
@@ -83,6 +84,7 @@ class ModelFactory:
         ModelPlatformType.AZURE: AzureOpenAIModel,
         ModelPlatformType.ANTHROPIC: AnthropicModel,
         ModelPlatformType.GROQ: GroqModel,
+        ModelPlatformType.NEBIUS: NebiusModel,
         ModelPlatformType.LMSTUDIO: LMStudioModel,
         ModelPlatformType.OPENROUTER: OpenRouterModel,
         ModelPlatformType.ZHIPU: ZhipuAIModel,
