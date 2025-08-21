@@ -32,8 +32,9 @@ class ImageGenToolkit(BaseToolkit):
     r"""A class toolkit for image generation using OpenAI's
     Image Generation API.
     """
-    GROK_MODELS = ["grok-2-image", "grok-2-image-latest", "grok-2-image-1212"]
-    OPENAI_MODELS = ["gpt-image-1", "dall-e-3", "dall-e-2"]
+    GROK_MODELS: ClassVar[List[str]] = \
+        ["grok-2-image", "grok-2-image-latest", "grok-2-image-1212"]
+    OPENAI_MODELS: ClassVar[List[str]] = ["gpt-image-1", "dall-e-3", "dall-e-2"]
 
     def __init__(
         self,
@@ -100,9 +101,10 @@ class ImageGenToolkit(BaseToolkit):
         """
         super().__init__(timeout=timeout)
         if model not in self.GROK_MODELS + self.OPENAI_MODELS:
+            available_models = sorted(self.OPENAI_MODELS + self.GROK_MODELS)
             raise ValueError(
                 f"Unsupported model: {model}. "
-                f"Supported models are: {sorted(self.OPENAI_MODELS + self.GROK_MODELS)}"
+                f"Supported models are: {available_models}"
             )
         
         api_key, base_url = (api_key, url) or \

@@ -554,3 +554,20 @@ class OpenAIModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
+
+    def _support_response_format(self) -> bool:
+        r"""Returns whether the model is in stream mode, which sends partial
+        results each time.
+
+        Returns:
+            bool: Whether the model is in stream mode.
+        """
+
+        unsupported_models = [ 
+            ModelType.GPT_3_5_TURBO,
+            ModelType.GPT_4,
+            ModelType.GPT_4_TURBO
+        ]
+
+        return False if self.model_type in unsupported_models else True
+
