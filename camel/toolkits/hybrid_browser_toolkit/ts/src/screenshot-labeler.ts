@@ -180,17 +180,32 @@ export class ScreenshotLabeler {
       } else {
         // Multiple small elements - create a group label
         const groupBounds = this.getGroupBounds(group);
-        const groupLabel = this.createGroupLabel(group, groupBounds, occupiedPositions, screenshotWidth, screenshotHeight);
+        const groupLabels = this.createGroupLabel(group, groupBounds, occupiedPositions, screenshotWidth, screenshotHeight);
         
-        if (groupLabel) {
-          labels.push(...groupLabel);
-          groupLabel.forEach(label => {
-            occupiedPositions.push({
+        if (groupLabels && groupLabels.length > 0) {
+          // Only add labels that don't overlap with occupied positions
+          groupLabels.forEach(label => {
+            // Clamp Y position to screen bounds
+            const clampedY = Math.max(this.LABEL_HEIGHT, Math.min(screenshotHeight, label.y));
+            label.y = clampedY;
+            
+            // Update line coordinates if clamped
+            if (label.lineToElement) {
+              label.lineToElement.y1 = clampedY - this.LABEL_HEIGHT / 2;
+            }
+            
+            const labelBounds = {
               x: label.x,
               y: label.y - this.LABEL_HEIGHT,
               width: this.LABEL_MIN_WIDTH,
               height: this.LABEL_HEIGHT
-            });
+            };
+            
+            // Check for overlaps before adding
+            if (!this.overlapsWithExisting(labelBounds, occupiedPositions)) {
+              labels.push(label);
+              occupiedPositions.push(labelBounds);
+            }
           });
         }
       }
@@ -272,44 +287,95 @@ export class ScreenshotLabeler {
   ): LabelPosition[] {
     const labels: LabelPosition[] = [];
     
-    // Find position for group indicator
-    const groupCenter = {
-      x: groupBounds.x + groupBounds.width / 2,
-      y: groupBounds.y + groupBounds.height / 2
-    };
-    
     // Try to place labels in a column to the side of the group
-    const labelX = groupBounds.x + groupBounds.width + 20;
-    let labelY = groupBounds.y;
+    let labelX = groupBounds.x + groupBounds.width + 20;
+    let useLeftSide = false;
     
+    // Check if right side placement would go off-screen
     if (labelX + this.LABEL_MIN_WIDTH > screenshotWidth) {
-      // Place on the left side instead
+      // Try left side instead
       const leftX = groupBounds.x - this.LABEL_MIN_WIDTH - 20;
       if (leftX >= 0) {
-        group.forEach((element, index) => {
-          labels.push({
-            ref: element.ref,
-            x: leftX,
-            y: labelY + (index * this.MIN_LABEL_SPACING),
-            lineToElement: {
-              x1: leftX + this.LABEL_MIN_WIDTH,
-              y1: labelY + (index * this.MIN_LABEL_SPACING) - this.LABEL_HEIGHT / 2,
-              x2: element.x,
-              y2: element.y + element.height / 2
-            }
-          });
+        labelX = leftX;
+        useLeftSide = true;
+      } else {
+        // Can't place on either side
+        return labels;
+      }
+    }
+    
+    // Calculate initial Y position and clamp to screen bounds
+    let labelY = Math.max(this.LABEL_HEIGHT, groupBounds.y);
+    
+    // Try to find a non-overlapping position for the column
+    let columnShift = 0;
+    const maxShiftAttempts = 10;
+    let foundValidPosition = false;
+    
+    for (let attempt = 0; attempt < maxShiftAttempts; attempt++) {
+      const testLabels: LabelPosition[] = [];
+      let allFit = true;
+      
+      // Test all labels in this column position
+      for (let i = 0; i < group.length; i++) {
+        const currentY = labelY + columnShift + (i * this.MIN_LABEL_SPACING);
+        
+        // Clamp Y to screen bounds
+        if (currentY > screenshotHeight || currentY < this.LABEL_HEIGHT) {
+          allFit = false;
+          break;
+        }
+        
+        const labelBounds = {
+          x: labelX,
+          y: currentY - this.LABEL_HEIGHT,
+          width: this.LABEL_MIN_WIDTH,
+          height: this.LABEL_HEIGHT
+        };
+        
+        // Check for overlaps
+        if (this.overlapsWithExisting(labelBounds, occupiedPositions)) {
+          allFit = false;
+          break;
+        }
+        
+        testLabels.push({
+          ref: group[i].ref,
+          x: labelX,
+          y: currentY,
+          lineToElement: {
+            x1: useLeftSide ? labelX + this.LABEL_MIN_WIDTH : labelX,
+            y1: currentY - this.LABEL_HEIGHT / 2,
+            x2: useLeftSide ? group[i].x : group[i].x + group[i].width,
+            y2: group[i].y + group[i].height / 2
+          }
         });
       }
-    } else {
+      
+      if (allFit) {
+        labels.push(...testLabels);
+        foundValidPosition = true;
+        break;
+      }
+      
+      // Try shifting up or down
+      columnShift = attempt % 2 === 0 ? -(attempt + 1) * 10 : (attempt + 1) * 10;
+    }
+    
+    // If no valid position found, place what we can with clamping
+    if (!foundValidPosition) {
       group.forEach((element, index) => {
+        const currentY = Math.max(this.LABEL_HEIGHT, 
+          Math.min(screenshotHeight, labelY + (index * this.MIN_LABEL_SPACING)));
+        
         labels.push({
           ref: element.ref,
           x: labelX,
-          y: labelY + (index * this.MIN_LABEL_SPACING),
+          y: currentY,
           lineToElement: {
-            x1: labelX,
-            y1: labelY + (index * this.MIN_LABEL_SPACING) - this.LABEL_HEIGHT / 2,
-            x2: element.x + element.width,
+            x1: useLeftSide ? labelX + this.LABEL_MIN_WIDTH : labelX,
+            y1: currentY - this.LABEL_HEIGHT / 2,
+            x2: useLeftSide ? element.x : element.x + element.width,
             y2: element.y + element.height / 2
           }
         });
@@ -389,6 +455,27 @@ export class ScreenshotLabeler {
   }
 
   /**
+   * Escape XML entities to prevent injection
+   */
+  private escapeXML(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+
+  /**
+   * Estimate text width for dynamic sizing
+   */
+  private estimateTextWidth(text: string, fontSize: number, fontFamily: string): number {
+    // Rough estimation: average character width is about 0.6 * fontSize for Arial
+    const avgCharWidth = fontSize * 0.6;
+    return text.length * avgCharWidth;
+  }
+
+  /**
    * Generate final SVG with all elements and labels
    */
   private generateSVG(
@@ -413,6 +500,17 @@ export class ScreenshotLabeler {
     const labelsSVG = labels.map(label => {
       // All labels use blue color for clickable elements
       const textColor = '#0096FF';
+      const fontSize = 11;
+      const fontFamily = 'Arial, sans-serif';
+      const padding = 4;
+      
+      // Escape the label text to prevent XML injection
+      const escapedRef = this.escapeXML(label.ref);
+      
+      // Calculate dynamic width based on text content
+      const textWidth = this.estimateTextWidth(label.ref, fontSize, fontFamily);
+      const labelWidth = Math.max(this.LABEL_MIN_WIDTH, textWidth + padding * 2);
+      
       let svg = '';
       
       // Add leader line if present
@@ -424,13 +522,13 @@ export class ScreenshotLabeler {
         `;
       }
       
-      // Add label background for better readability
+      // Add label background with dynamic width
       svg += `
-        <rect x="${label.x - 2}" y="${label.y - this.LABEL_HEIGHT - 2}" 
-              width="${this.LABEL_MIN_WIDTH + 4}" height="${this.LABEL_HEIGHT + 4}"
+        <rect x="${label.x - padding}" y="${label.y - this.LABEL_HEIGHT - 2}" 
+              width="${labelWidth}" height="${this.LABEL_HEIGHT + 4}"
               fill="white" opacity="0.9" rx="2"/>
-        <text x="${label.x}" y="${label.y}" font-family="Arial, sans-serif"
-              font-size="11" fill="${textColor}" font-weight="bold">${label.ref}</text>
+        <text x="${label.x}" y="${label.y}" font-family="${fontFamily}"
+              font-size="${fontSize}" fill="${textColor}" font-weight="bold">${escapedRef}</text>
       `;
       
       return svg;
