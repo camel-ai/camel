@@ -301,8 +301,8 @@ export class HybridBrowserToolkit {
     const lines = snapshotText.split('\n');
     
     for (const line of lines) {
-      // Look for lines containing [cursor=pointer] and extract ref
-      if (line.includes('[cursor=pointer]')) {
+      // Look for lines containing [cursor=pointer] or [active] and extract ref
+      if (line.includes('[cursor=pointer]') || line.includes('[active]')) {
         const refMatch = line.match(/\[ref=([^\]]+)\]/);
         if (refMatch) {
           clickableElements.add(refMatch[1]);
