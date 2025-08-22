@@ -44,11 +44,6 @@ def _is_pydantic_serializable(type_annotation: Any) -> tuple[bool, str]:
     if type_annotation is type(None):
         return True, ""
 
-    # Handle basic types that are always serializable
-    basic_types = (int, float, str, bool, bytes, type(None))
-    if type_annotation in basic_types:
-        return True, ""
-
     # Handle generic types (List, Dict, Optional, etc.)
     origin = get_origin(type_annotation)
     if origin is not None:
