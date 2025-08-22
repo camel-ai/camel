@@ -501,61 +501,6 @@ CAMEL-AI makes it easy to integrate local open-source models as part of your age
   Explore the full <b>CAMEL-AI Examples</b> library for advanced workflows, tool integrations, and multi-agent demos.
 </Card>
 
-
-## Model Speed and Performance
-
-<CardGroup cols={2}>
-  <Card
-    title="Why Model Speed Matters"
-    icon="gauge-simple-max"
-  >
-    For interactive AI applications, response speed can make or break the user experience. CAMEL-AI benchmarks tokens processed per second (TPS) across a range of supported models—helping you choose the right balance of power and performance.
-  </Card>
-  <Card
-    title="Benchmark Insights"
-    icon="ranking-star"
-  >
-    We ran side-by-side tests in <a href="../cookbooks/model_speed_comparison.ipynb" target="_blank"><b>this notebook</b></a> comparing top models from OpenAI (GPT-4o Mini, GPT-4o, O1 Preview) and SambaNova (Llama series), measuring output speed in tokens per second.
-  </Card>
-</CardGroup>
-
-<Note type="info">
-<b>Key Findings:</b>
-<ul>
-  <li>
-    <b>Small models = blazing speed:</b> SambaNova’s Llama 8B and OpenAI GPT-4o Mini deliver the fastest responses.
-  </li>
-  <li>
-    <b>Bigger models = higher quality, slower output:</b> Llama 405B (SambaNova) and similar large models trade off speed for more nuanced reasoning.
-  </li>
-  <li>
-    <b>OpenAI models = consistent speed:</b> Most OpenAI models maintain stable throughput across use cases.
-  </li>
-  <li>
-    <b>Llama 8B (SambaNova) = top performer:</b> Outpaces others in raw tokens/sec.
-  </li>
-</ul>
-</Note>
-
-<div align="center" style={{ margin: "1.5em 0" }}>
-  <img
-    src="https://i.postimg.cc/4xByytyZ/model-speed.png"
-    alt="Model Speed Comparison: Tokens per second for various AI models"
-    style={{ maxWidth: 520, borderRadius: 16, boxShadow: "0 2px 8px #0002" }}
-  />
-  <div style={{ fontSize: 13, color: "#666", marginTop: 8 }}>
-    <i>Model Speed Comparison &mdash; tokens per second across CAMEL-supported models</i>
-  </div>
-</div>
-
-<Card title="Local Inference: vLLM vs. SGLang" icon="terminal">
-  We compared local inference speeds between <b>vLLM</b> and <b>SGLang</b> on the same hardware. SGLang (meta-llama/Llama-3.2-1B-Instruct) hit <b>220.98 tokens/sec</b>, while vLLM peaked at <b>107.2 tokens/sec</b>.<br/>
-  <br/>
-  <b>Bottom line:</b> For maximum speed in local environments, SGLang currently leads.
-</Card>
-
----
-
 ## Next Steps
 
 You’ve now seen how to connect, configure, and optimize models with CAMEL-AI.
