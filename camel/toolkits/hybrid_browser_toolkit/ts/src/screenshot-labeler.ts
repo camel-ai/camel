@@ -318,17 +318,17 @@ export class ScreenshotLabeler {
       
       // Test all labels in this column position
       for (let i = 0; i < group.length; i++) {
-        const currentY = labelY + columnShift + (i * this.MIN_LABEL_SPACING);
+        const labelYPosition = labelY + columnShift + (i * this.MIN_LABEL_SPACING);
         
         // Clamp Y to screen bounds
-        if (currentY > screenshotHeight || currentY < this.LABEL_HEIGHT) {
+        if (labelYPosition > screenshotHeight || labelYPosition < this.LABEL_HEIGHT) {
           allFit = false;
           break;
         }
         
         const labelBounds = {
           x: labelX,
-          y: currentY - this.LABEL_HEIGHT,
+          y: labelYPosition - this.LABEL_HEIGHT,
           width: this.LABEL_MIN_WIDTH,
           height: this.LABEL_HEIGHT
         };
@@ -342,10 +342,10 @@ export class ScreenshotLabeler {
         testLabels.push({
           ref: group[i].ref,
           x: labelX,
-          y: currentY,
+          y: labelYPosition,
           lineToElement: {
             x1: useLeftSide ? labelX + this.LABEL_MIN_WIDTH : labelX,
-            y1: currentY - this.LABEL_HEIGHT / 2,
+            y1: labelYPosition - this.LABEL_HEIGHT / 2,
             x2: useLeftSide ? group[i].x : group[i].x + group[i].width,
             y2: group[i].y + group[i].height / 2
           }
@@ -365,16 +365,16 @@ export class ScreenshotLabeler {
     // If no valid position found, place what we can with clamping
     if (!foundValidPosition) {
       group.forEach((element, index) => {
-        const currentY = Math.max(this.LABEL_HEIGHT, 
+        const labelYPosition = Math.max(this.LABEL_HEIGHT, 
           Math.min(screenshotHeight, labelY + (index * this.MIN_LABEL_SPACING)));
         
         labels.push({
           ref: element.ref,
           x: labelX,
-          y: currentY,
+          y: labelYPosition,
           lineToElement: {
             x1: useLeftSide ? labelX + this.LABEL_MIN_WIDTH : labelX,
-            y1: currentY - this.LABEL_HEIGHT / 2,
+            y1: labelYPosition - this.LABEL_HEIGHT / 2,
             x2: useLeftSide ? element.x : element.x + element.width,
             y2: element.y + element.height / 2
           }
