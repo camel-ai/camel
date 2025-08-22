@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 # Define system message
 sys_msg = "You are a helpful assistant that can generate images."
 
-# Create Grok Image Toolkit with DALL-G(
+# Create Image Generation Toolkit with Grok-2 model and base64 response format
 tools = [
     *ImageGenToolkit(
         model="grok-2-image-1212",

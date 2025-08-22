@@ -117,9 +117,9 @@ class ImageGenToolkit(BaseToolkit):
             )
 
         api_key, base_url = (
-            (api_key, url) or self.get_openai_credentials()
+            self.get_openai_credentials(url, api_key)
             if model in self.OPENAI_MODELS
-            else self.get_grok_credentials()
+            else self.get_grok_credentials(url, api_key)
         )
 
         self.client = OpenAI(api_key=api_key, base_url=base_url)
@@ -207,7 +207,6 @@ class ImageGenToolkit(BaseToolkit):
         response,
         image_name: Union[str, List[str]],
         operation: str,
-        source: str = "OpenAI",
     ) -> str:
         r"""Handle API response from OpenAI image operations.
 
@@ -218,8 +217,6 @@ class ImageGenToolkit(BaseToolkit):
                 cause error for multiple images). If list, must have exactly
                 the same length as the number of images generated.
             operation (str): Operation type for success message ("generated").
-            source (str): The source of the API call.
-                (default: :obj:`"OpenAI"`)
 
         Returns:
             str: Success message with image path/URL or error message.
@@ -337,28 +334,40 @@ class ImageGenToolkit(BaseToolkit):
             return error_msg
 
     @api_keys_required([("api_key", "XAI_API_KEY")])
-    def get_grok_credentials(self) -> tuple[str | None, str | None]:
+    def get_grok_credentials(
+        self, url, api_key
+    ) -> tuple[str | None, str | None]:
         """Get API credentials for the specified Grok model.
+
+        Args:
+            url (str): The base URL for the Grok API.
+            api_key (str): The API key for the Grok API.
 
         Returns:
             tuple: (api_key, base_url) - base_url may be None
         """
 
         # Get credentials based on model type
-        api_key = os.getenv("XAI_API_KEY")
-        base_url = os.getenv("XAI_API_BASE_URL")
+        api_key = api_key or os.getenv("XAI_API_KEY")
+        base_url = url or os.getenv("XAI_API_BASE_URL")
         return api_key, base_url
 
     @api_keys_required([("api_key", "OPENAI_API_KEY")])
-    def get_openai_credentials(self) -> tuple[str | None, str | None]:
+    def get_openai_credentials(
+        self, url, api_key
+    ) -> tuple[str | None, str | None]:
         """Get API credentials for the specified OpenAI model.
+
+        Args:
+            url (str): The base URL for the OpenAI API.
+            api_key (str): The API key for the OpenAI API.
 
         Returns:
             tuple: (api_key, base_url) - base_url may be None
         """
 
-        api_key = os.getenv("OPENAI_API_KEY")
-        base_url = os.getenv("OPENAI_API_BASE_URL")
+        api_key = api_key or os.getenv("OPENAI_API_KEY")
+        base_url = url or os.getenv("OPENAI_API_BASE_URL")
         return api_key, base_url
 
     def get_tools(self) -> List[FunctionTool]:

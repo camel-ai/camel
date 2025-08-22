@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 # Define system message
 sys_msg = "You are a helpful assistant that can generate images."
 
-# Create OpenAI Image Toolkit with DALL-E 3 model and base64 response format
+# Create Image Generation Toolkit with DALL-E 3 model and base64 response
 tools = [
     *ImageGenToolkit(
         model="dall-e-3",
