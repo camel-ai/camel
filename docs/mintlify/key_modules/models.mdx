@@ -1,6 +1,6 @@
 ---
 title: "Models"
-description: "CAMEL-AI: Flexible integration and deployment of top LLMs and multimodal models like [OpenAI](https://openai.com/), [Mistral](https://mistral.ai/), [Gemini](https://ai.google.dev/gemini-api/docs/models), [Llama](https://www.llama.com/), and more."
+description: "CAMEL-AI: Flexible integration and deployment of top LLMs and multimodal models like [OpenAI](https://openai.com/), [Mistral](https://mistral.ai/), [Gemini](https://ai.google.dev/gemini-api/docs/models), [Llama](https://www.llama.com/), [Nebius](https://nebius.com/), and more."
 icon: gear-code
 ---
 
@@ -16,7 +16,7 @@ Play with different models in our [interactive Colab Notebook](https://colab.res
   </Card>
 
   <Card title="Flexible Model Integration" icon="plug">
-    CAMEL allows quick integration and swapping of leading LLMs from providers like OpenAI, Gemini, Llama, and Anthropic, helping you match the best model to your task.
+    CAMEL allows quick integration and swapping of leading LLMs from providers like OpenAI, Gemini, Llama, Anthropic, Nebius, and more, helping you match the best model to your task.
   </Card>
 
   <Card title="Optimized for Customization" icon="sliders">
@@ -45,6 +45,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **Lingyiwanwu**  | yi-lightning, yi-large, yi-medium<br/>yi-large-turbo, yi-vision, yi-medium-200k<br/>yi-spark, yi-large-rag, yi-large-fc |
 | **Qwen**         | qwen3-coder-plus,qwq-32b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long<br/>qwen-vl-max, qwen-vl-plus, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo<br/>qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
 | **DeepSeek**     | deepseek-chat<br/>deepseek-reasoner |
+| **Nebius**       | **All models available on [Nebius AI Studio](https://studio.nebius.com/)**<br/>Including: gpt-oss-120b, gpt-oss-20b, GLM-4.5<br/>DeepSeek V3 & R1, LLaMA, Mistral, and more |
 | **ZhipuAI**      | glm-4, glm-4v, glm-4v-flash<br/>glm-4v-plus-0111, glm-4-plus, glm-4-air<br/>glm-4-air-0111, glm-4-airx, glm-4-long<br/>glm-4-flashx, glm-zero-preview, glm-4-flash, glm-3-turbo |
 | **InternLM**     | internlm3-latest, internlm3-8b-instruct<br/>internlm2.5-latest, internlm2-pro-chat |
 | **Reka**         | reka-core, reka-flash, reka-edge |
@@ -190,6 +191,61 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
 
   response = agent.step("Say hi to CAMEL AI community.")
   print(response.msgs[0].content)
+  ```
+
+  </Tab>
+
+  <Tab title="Nebius">
+    
+  Leverage [Nebius AI Studio](https://nebius.com/)'s high-performance GPU cloud with OpenAI-compatible models:
+
+ - **Nebius AI Studio** ([Platform](https://studio.nebius.com/)): Access powerful models through their cloud infrastructure.
+ - **API Key Setup** ([Generate Key](https://studio.nebius.ai/settings/api-keys)): Obtain your Nebius API key to start integration.
+ - **Nebius Docs** ([Documentation](https://nebius.com/docs/)): Explore detailed Nebius API capabilities.
+
+  ```python
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType, ModelType
+  from camel.configs import NebiusConfig
+  from camel.agents import ChatAgent
+
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.NEBIUS,
+      model_type=ModelType.NEBIUS_GPT_OSS_120B,
+      model_config_dict=NebiusConfig(temperature=0.2).as_dict(),
+  )
+
+  agent = ChatAgent(
+      system_message="You are a helpful assistant.",
+      model=model
+  )
+
+  response = agent.step("Say hi to CAMEL AI community.")
+  print(response.msgs[0].content)
+  ```
+
+  <Note type="info">
+    **Flexible Model Access:** You can use any model available on Nebius by passing the model name as a string to `model_type`, even if it's not in the predefined enums.
+  </Note>
+
+  **Environment Variables:**
+  ```bash
+  export NEBIUS_API_KEY="your_nebius_api_key"
+  export NEBIUS_API_BASE_URL="https://api.studio.nebius.com/v1"  # Optional
+  ```
+
+  **Model Support:**
+  - **Complete Access:** All models available on [Nebius AI Studio](https://studio.nebius.com/) are supported
+  - **Predefined Enums:** Common models like `NEBIUS_GPT_OSS_120B`, `NEBIUS_DEEPSEEK_V3`, etc.
+  - **String-based Access:** Use any model name directly as a string for maximum flexibility
+  
+  **Example with any model:**
+  ```python
+  # Use any model available on Nebius
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.NEBIUS,
+      model_type="your-custom-model-name"  # Any Nebius model
+  )
   ```
 
   </Tab>

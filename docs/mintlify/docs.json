@@ -73,6 +73,13 @@
             ]
           },
           {
+            "group": "Awesome Toolkits",
+            "pages": [
+              "key_modules/browsertoolkit",
+              "key_modules/terminaltoolkit"
+            ]
+          },
+          {
             "group": "CAMEL with MCP",
             "pages": [
               "mcp/overview",
@@ -88,9 +95,9 @@
               {
                 "group": "Basic Concepts",
                 "pages": [
-                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/agents_message",
                   "cookbooks/basic_concepts/agents_prompting",
+                  "cookbooks/basic_concepts/create_your_first_agent",
                   "cookbooks/basic_concepts/create_your_first_agents_society",
                   "cookbooks/basic_concepts/model_speed_comparison"
                 ]
@@ -98,6 +105,7 @@
               {
                 "group": "Advanced Features",
                 "pages": [
+                  "cookbooks/advanced_features/agent_generate_structured_output",
                   "cookbooks/advanced_features/agents_tracking",
                   "cookbooks/advanced_features/agents_with_MCP",
                   "cookbooks/advanced_features/agents_with_dkg",
@@ -121,6 +129,7 @@
                   "cookbooks/applications/customer_service_Discord_bot_with_agentic_RAG",
                   "cookbooks/applications/dynamic_travel_planner",
                   "cookbooks/applications/finance_discord_bot",
+                  "cookbooks/applications/pptx_toolkit",
                   "cookbooks/applications/roleplaying_scraper"
                 ]
               },
@@ -225,6 +234,7 @@
               "reference/camel.configs.mistral_config",
               "reference/camel.configs.modelscope_config",
               "reference/camel.configs.moonshot_config",
+              "reference/camel.configs.nebius_config",
               "reference/camel.configs.netmind_config",
               "reference/camel.configs.novita_config",
               "reference/camel.configs.nvidia_config",
@@ -308,6 +318,7 @@
               "reference/camel.models.model_manager",
               "reference/camel.models.modelscope_model",
               "reference/camel.models.moonshot_model",
+              "reference/camel.models.nebius_model",
               "reference/camel.models.nemotron_model",
               "reference/camel.models.netmind_model",
               "reference/camel.models.novita_model",
