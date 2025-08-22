@@ -2,6 +2,7 @@ import {HybridBrowserSession} from './browser-session';
 import {ActionResult, BrowserAction, BrowserToolkitConfig, SnapshotResult, TabInfo, VisualMarkResult} from './types';
 import {ConfigLoader} from './config-loader';
 import {ConsoleMessage} from 'playwright';
+import {ScreenshotLabeler} from './screenshot-labeler';
 
 export class HybridBrowserToolkit {
   private session: HybridBrowserSession;
@@ -243,47 +244,33 @@ export class HybridBrowserToolkit {
       // Remove overlapped elements (only keep topmost)
       const nonOverlappedElements = this.removeOverlappedElements(visibleElements);
       
-      // Create SVG overlay with all the marks
-      const marks = nonOverlappedElements.map(([ref, element]) => {
+      // Filter to only include clickable/interactive elements
+      const interactiveElements = nonOverlappedElements.filter(([ref, element]) => 
+        clickableElements.has(ref)
+      );
+      
+      // Use the improved labeling system
+      const labeler = new ScreenshotLabeler();
+      
+      // Convert elements to the format needed by the labeler
+      const elements = interactiveElements.map(([ref, element]) => {
         const coords = element.coordinates!;
-        const isClickable = clickableElements.has(ref);
-        
-        // Scale coordinates from CSS pixels to screenshot pixels
-        const x = Math.max(0, coords.x * scaleX);
-        const y = Math.max(0, coords.y * scaleY);
-        const width = coords.width * scaleX;
-        const height = coords.height * scaleY;
-        
-        // Clamp to screenshot bounds
-        const clampedWidth = Math.min(width, screenshotWidth - x);
-        const clampedHeight = Math.min(height, screenshotHeight - y);
-        
-        // Position text to be visible even if element is partially cut off
-        const textX = Math.max(2, Math.min(x + 2, screenshotWidth - 40));
-        const textY = Math.max(14, Math.min(y + 14, screenshotHeight - 4));
-        
-        // Different colors for clickable vs non-clickable elements
-        const colors = isClickable ? {
-          fill: 'rgba(0, 150, 255, 0.15)',  // Blue for clickable
-          stroke: '#0096FF',
-          textFill: '#0096FF'
-        } : {
-          fill: 'rgba(255, 107, 107, 0.1)',  // Red for non-clickable
-          stroke: '#FF6B6B', 
-          textFill: '#FF6B6B'
+        return {
+          ref,
+          x: Math.max(0, coords.x * scaleX),
+          y: Math.max(0, coords.y * scaleY),
+          width: Math.min(coords.width * scaleX, screenshotWidth - Math.max(0, coords.x * scaleX)),
+          height: Math.min(coords.height * scaleY, screenshotHeight - Math.max(0, coords.y * scaleY)),
+          isClickable: true  // All filtered elements are clickable
         };
-        
-        return `
-          <rect x="${x}" y="${y}" width="${clampedWidth}" height="${clampedHeight}" 
-                fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="2" rx="2"/>
-          <text x="${textX}" y="${textY}" font-family="Arial, sans-serif" 
-                font-size="12" fill="${colors.textFill}" font-weight="bold">${ref}</text>
-        `;
-      }).join('');
+      });
+      
+      // Generate improved labels
+      const svgContent = labeler.createImprovedLabels(elements, screenshotWidth, screenshotHeight);
       
       const svgOverlay = `
         <svg width="${screenshotWidth}" height="${screenshotHeight}" xmlns="http://www.w3.org/2000/svg">
-          ${marks}
+          ${svgContent}
         </svg>
       `;
       
