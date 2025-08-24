@@ -97,7 +97,6 @@ rediraffe_redirects = {
     "cookbooks/embodied_agents": "cookbooks/advanced_features/embodied_agents",
     "cookbooks/critic_agents_and_tree_search": "cookbooks/advanced_features/critic_agents_and_tree_search",
     "cookbooks/agents_society": "cookbooks/basic_concepts/create_your_first_agents_society",
-    "cookbooks/model_speed_comparison": "cookbooks/basic_concepts/model_speed_comparison",
     "cookbooks/agents_message": "cookbooks/basic_concepts/agents_message",
     "cookbooks/agents_with_tools": "cookbooks/advanced_features/agents_with_tools",
     "cookbooks/agents_with_memory": "cookbooks/advanced_features/agents_with_memory",
