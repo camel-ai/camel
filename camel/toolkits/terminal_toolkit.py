@@ -500,7 +500,7 @@ class TerminalToolkit(BaseToolkit):
             return f"Error killing process in session '{id}': {e}"
 
 
-    def ask_user_for_help(self, id: str, prompt: str) -> str:
+    def shell_ask_user_for_help(self, id: str, prompt: str) -> str:
         """
         This function pauses execution and asks a human for help with an interactive session.
         It displays the last screen output and the LLM's prompt to the user,
@@ -561,5 +561,5 @@ class TerminalToolkit(BaseToolkit):
             FunctionTool(self.shell_wait),
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
-            FunctionTool(self.ask_user_for_help),
+            FunctionTool(self.shell_ask_user_for_help),
         ]
