@@ -42,7 +42,7 @@ except ImportError:
     Container = None
 
 @MCPServer()
-class TerminalToolkitDocker(BaseToolkit):
+class TerminalToolkit(BaseToolkit):
     """
     A toolkit for LLM agents to execute and interact with terminal commands
     in either a local or a sandboxed Docker environment.
