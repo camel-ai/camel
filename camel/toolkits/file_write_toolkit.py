@@ -1062,6 +1062,379 @@ class FileWriteToolkit(BaseToolkit):
             logger.error(error_msg)
             return error_msg
 
+    # ----------------------------------------------------------------
+    # File Reading Method
+    # ----------------------------------------------------------------
+
+    def _read_docx_file(self, file_path: Path) -> str:
+        r"""Read the content of a DOCX file."""
+        try:
+            import docx
+
+            doc = docx.Document(str(file_path))
+            return "\n".join([paragraph.text for paragraph in doc.paragraphs])
+        except ImportError as e:
+            return f"Failed to import docx module: {e}"
+
+    def _read_pdf_file(self, file_path: Path) -> str:
+        r"""Read the content of a PDF file."""
+        try:
+            import PyPDF2
+
+            with open(file_path, 'rb') as file:
+                pdf_reader = PyPDF2.PdfReader(file)  # type: ignore[assignment]
+                text = ""
+                for page in pdf_reader.pages:
+                    text += page.extract_text() + "\n"
+                return text
+        except ImportError:
+            try:
+                import pypdf
+
+                with open(file_path, 'rb') as file:
+                    pdf_reader = pypdf.PdfReader(file)  # type: ignore[assignment]
+                    text = ""
+                    for page in pdf_reader.pages:
+                        text += page.extract_text() + "\n"
+                    return text
+            except ImportError as e:
+                return (
+                    f"Failed to import PDF modules (PyPDF2 or pypdf): {e}. "
+                    "Please install with: pip install PyPDF2 or "
+                    "pip install pypdf"
+                )
+        except Exception as e:
+            return f"Error reading PDF file: {e}"
+
+    def _read_json_file(self, file_path: Path) -> str:
+        r"""Read and format JSON file content."""
+        import json
+
+        try:
+            with file_path.open("r", encoding=self.default_encoding) as f:
+                data = json.load(f)
+                return json.dumps(data, indent=2, ensure_ascii=False)
+        except json.JSONDecodeError as e:
+            return f"Error reading JSON file: Invalid JSON format - {e}"
+        except Exception as e:
+            return f"Error reading JSON file: {e}"
+
+    def _read_yaml_file(self, file_path: Path) -> str:
+        r"""Read and format YAML file content."""
+        try:
+            import yaml
+
+            with file_path.open("r", encoding=self.default_encoding) as f:
+                data = yaml.safe_load(f)
+                return yaml.dump(
+                    data, default_flow_style=False, allow_unicode=True
+                )
+        except ImportError:
+            return (
+                "Error reading YAML file: PyYAML package not installed. "
+                "Please install with: pip install PyYAML"
+            )
+        except Exception as e:
+            return f"Error reading YAML file: {e}"
+
+    def _read_text_file(self, file_path: Path) -> str:
+        r"""Read plain text file content."""
+        with file_path.open("r", encoding=self.default_encoding) as f:
+            return f.read()
+
+    def read_file(self, file_path: str) -> str:
+        r"""Read the content of a file.
+
+        Args:
+            file_path (str): The path to the file to read.
+
+        Returns:
+            str: The file content.
+        """
+        resolved_path = self._resolve_filepath(file_path)
+        extension = resolved_path.suffix.lower()
+
+        if extension in [".doc", ".docx"]:
+            return self._read_docx_file(resolved_path)
+        elif extension == ".pdf":
+            return self._read_pdf_file(resolved_path)
+        elif extension == ".json":
+            return self._read_json_file(resolved_path)
+        elif extension in [".yaml", ".yml"]:
+            return self._read_yaml_file(resolved_path)
+        else:
+            return self._read_text_file(resolved_path)
+
+    # ----------------------------------------------------------------
+    # File Editing Method
+    # ----------------------------------------------------------------
+
+    def _perform_text_replacement(
+        self, file_path: Path, old_content: str, new_content: str
+    ) -> str:
+        r"""Replace specified string in a text file."""
+        try:
+            file_text = file_path.read_text(encoding=self.default_encoding)
+            old_content = old_content.expandtabs()
+            new_content = new_content.expandtabs()
+
+            occurrences = file_text.count(old_content)
+            if occurrences == 0:
+                return (
+                    f"No replacement performed: '{old_content}' not found in "
+                    f"{file_path}."
+                )
+            elif occurrences > 1:
+                return (
+                    f"Multiple occurrences of '{old_content}' found in "
+                    f"{file_path} "
+                )
+
+            new_file_content = file_text.replace(old_content, new_content)
+            file_path.write_text(
+                new_file_content, encoding=self.default_encoding
+            )
+            return "Success"
+        except Exception as e:
+            return f"Error replacing content in {file_path}: {e}"
+
+    def _perform_line_insertion(
+        self, file_path: Path, content: str, index: int = 0
+    ) -> None:
+        r"""Insert content at a specific line in a text file."""
+        with file_path.open("r", encoding=self.default_encoding) as f:
+            lines = f.readlines()
+
+        # Handle negative indices
+        if index < 0:
+            index = len(lines) + index + 1
+
+        # Validate line number
+        if index < 0 or index > len(lines):
+            raise ValueError(
+                f"Invalid line number: {index}. The file has "
+                f"{len(lines)} lines."
+            )
+
+        lines.insert(index, content + "\n")
+
+        with file_path.open("w", encoding=self.default_encoding) as f:
+            f.writelines(lines)
+
+    @dependencies_required('docx')
+    def _edit_docx_file(
+        self, file_path: Path, old_content: str, new_content: str
+    ) -> None:
+        r"""Edit DOCX file content."""
+        try:
+            import docx
+
+            doc = docx.Document(str(file_path))
+            current_content = "\n".join(
+                [paragraph.text for paragraph in doc.paragraphs]
+            )
+
+            if old_content.strip() == current_content.strip():
+                # Replace entire document content
+                for paragraph in doc.paragraphs[:]:
+                    p = paragraph._element
+                    p.getparent().remove(p)
+
+                for line in new_content.split('\n'):
+                    if line.strip():
+                        doc.add_paragraph(line.strip())
+            else:
+                # Replace content within paragraphs
+                for paragraph in doc.paragraphs:
+                    if old_content in paragraph.text:
+                        paragraph.text = paragraph.text.replace(
+                            old_content, new_content
+                        )
+
+            doc.save(str(file_path))
+        except ImportError as e:
+            raise ImportError(
+                "The python-docx package is required for DOCX file operations."
+                "Please install it with: pip install camel-ai[document_tools]"
+            ) from e
+
+    def _edit_json_file(
+        self, file_path: Path, old_content: str, new_content: str
+    ) -> str:
+        r"""Edit JSON file content."""
+        import json
+
+        try:
+            with file_path.open("r", encoding=self.default_encoding) as f:
+                data = json.load(f)
+
+            if old_content.startswith("$.") or "." in old_content:
+                # Handle JSON path-like replacement
+                keys = old_content.replace("$.", "").split(".")
+                current = data
+                for key in keys[:-1]:
+                    if isinstance(current, dict) and key in current:
+                        current = current[key]
+                    else:
+                        raise ValueError(
+                            f"Path {old_content} not found in JSON"
+                        )
+
+                try:
+                    new_data = json.loads(new_content)
+                except json.JSONDecodeError:
+                    new_data = new_content
+
+                current[keys[-1]] = new_data
+            else:
+                # Simple string replacement
+                json_str = json.dumps(data, ensure_ascii=False)
+                if old_content in json_str:
+                    updated_str = json_str.replace(old_content, new_content)
+                    data = json.loads(updated_str)
+                else:
+                    try:
+                        new_data = json.loads(new_content)
+                        if isinstance(data, dict):
+                            data.update(new_data)
+                        else:
+                            data = new_data
+                    except json.JSONDecodeError:
+                        if isinstance(data, dict):
+                            data["new_content"] = new_content
+
+            with file_path.open("w", encoding=self.default_encoding) as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+
+            return f"Successfully edited JSON file: {file_path}"
+        except Exception as e:
+            return f"Error editing JSON file: {e}"
+
+    def _edit_yaml_file(
+        self, file_path: Path, old_content: str, new_content: str
+    ) -> None:
+        r"""Edit YAML file content."""
+        try:
+            import yaml
+
+            with file_path.open("r", encoding=self.default_encoding) as f:
+                data = yaml.safe_load(f)
+
+            if "." in old_content:
+                # Handle YAML path-like replacement
+                keys = old_content.split(".")
+                current = data
+                for key in keys[:-1]:
+                    if isinstance(current, dict) and key in current:
+                        current = current[key]
+                    else:
+                        raise ValueError(
+                            f"Path {old_content} not found in YAML"
+                        )
+
+                try:
+                    new_data = yaml.safe_load(new_content)
+                except yaml.YAMLError:
+                    new_data = new_content
+
+                current[keys[-1]] = new_data
+            else:
+                # Simple string replacement
+                yaml_str = yaml.dump(
+                    data, default_flow_style=False, allow_unicode=True
+                )
+                if old_content in yaml_str:
+                    updated_str = yaml_str.replace(old_content, new_content)
+                    data = yaml.safe_load(updated_str)
+                else:
+                    try:
+                        new_data = yaml.safe_load(new_content)
+                        if isinstance(data, dict):
+                            data.update(new_data)
+                        else:
+                            data = new_data
+                    except yaml.YAMLError:
+                        if isinstance(data, dict):
+                            data["new_content"] = new_content
+
+            with file_path.open("w", encoding=self.default_encoding) as f:
+                yaml.dump(
+                    data, f, default_flow_style=False, allow_unicode=True
+                )
+
+        except ImportError:
+            raise ImportError(
+                "PyYAML package is required for YAML file operations. "
+                "Please install it with: pip install PyYAML"
+            )
+
+    def edit_file(
+        self,
+        file_path: str,
+        old_content: str,
+        new_content: str,
+    ) -> str:
+        r"""Edit content in a file by replacing old content with new content.
+
+        Args:
+            file_path (str): The path to the file to edit.
+            old_content (str): The content to replace.
+            new_content (str): The new content to insert.
+
+        Returns:
+            str: A message indicating success or error details.
+        """
+        resolved_path = self._resolve_filepath(file_path)
+        extension = resolved_path.suffix.lower()
+
+        try:
+            if extension in [".doc", ".docx"]:
+                self._edit_docx_file(resolved_path, old_content, new_content)
+            elif extension == ".json":
+                self._edit_json_file(resolved_path, old_content, new_content)
+            elif extension in [".yaml", ".yml"]:
+                self._edit_yaml_file(resolved_path, old_content, new_content)
+            else:
+                # For text files, use simple text replacement
+                return self._perform_text_replacement(
+                    resolved_path, old_content, new_content
+                )
+            return f"Successfully edited file: {resolved_path}"
+        except Exception as e:
+            error_msg = f"Error editing file {resolved_path}: {e}"
+            logger.error(error_msg)
+            return error_msg
+
+    def insert_at_line(
+        self,
+        file_path: str,
+        content: str,
+        line_number: int = 0,
+    ) -> str:
+        r"""Insert content at a specific line in a text file.
+
+        Args:
+            file_path (str): The path to the file to edit.
+            content (str): The content to insert.
+            line_number (int): The line number where to insert content.
+                Use 0 for the beginning, negative numbers for counting from the
+                end. (default: :obj:`0`)
+
+        Returns:
+            str: A message indicating success or error details.
+        """
+        resolved_path = self._resolve_filepath(file_path)
+        try:
+            self._perform_line_insertion(resolved_path, content, line_number)
+            return (
+                f"Successfully inserted content at line {line_number} in "
+                f"{resolved_path}"
+            )
+        except Exception as e:
+            error_msg = f"Error inserting content in file {resolved_path}: {e}"
+            logger.error(error_msg)
+            return error_msg
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Return a list of FunctionTool objects representing the functions
         in the toolkit.
@@ -1072,4 +1445,7 @@ class FileWriteToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.write_to_file),
+            FunctionTool(self.read_file),
+            FunctionTool(self.edit_file),
+            FunctionTool(self.insert_at_line),
         ]
