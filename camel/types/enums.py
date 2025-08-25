@@ -1311,6 +1311,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_LONG,
             ModelType.TOGETHER_LLAMA_4_MAVERICK,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK,
+            ModelType.AMD_GPT4,
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
