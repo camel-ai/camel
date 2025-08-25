@@ -30,9 +30,7 @@ logger = get_logger(__name__)
 
 @MCPServer()
 class ImageGenToolkit(BaseToolkit):
-    r"""A class toolkit for image generation using OpenAI's
-    Image Generation API.
-    """
+    r"""A class toolkit for image generation using Grok and OpenAI models."""
 
     GROK_MODELS: ClassVar[List[str]] = [
         "grok-2-image",
@@ -48,7 +46,14 @@ class ImageGenToolkit(BaseToolkit):
     def __init__(
         self,
         model: Optional[
-            Literal["gpt-image-1", "dall-e-3", "dall-e-2"]
+            Literal[
+                "gpt-image-1",
+                "dall-e-3",
+                "dall-e-2",
+                "grok-2-image",
+                "grok-2-image-latest",
+                "grok-2-image-1212",
+            ]
         ] = "gpt-image-1",
         timeout: Optional[float] = None,
         api_key: Optional[str] = None,
@@ -78,15 +83,15 @@ class ImageGenToolkit(BaseToolkit):
         # NOTE: Some arguments are set in the constructor to prevent the agent
         # from making invalid API calls with model-specific parameters. For
         # example, the 'style' argument is only supported by 'dall-e-3'.
-        r"""Initializes a new instance of the OpenAIImageToolkit class.
+        r"""Initializes a new instance of the ImageGenToolkit class.
 
         Args:
             api_key (Optional[str]): The API key for authenticating
-                with the OpenAI service. (default: :obj:`None`)
-            url (Optional[str]): The url to the OpenAI service.
+                with the image model service. (default: :obj:`None`)
+            url (Optional[str]): The url to the image model service.
                 (default: :obj:`None`)
             model (Optional[str]): The model to use.
-                (default: :obj:`"dall-e-3"`)
+                (default: :obj:`"gpt-image-1"`)
             timeout (Optional[float]): The timeout value for API requests
                 in seconds. If None, no timeout is applied.
                 (default: :obj:`None`)
@@ -156,7 +161,7 @@ class ImageGenToolkit(BaseToolkit):
             return None
 
     def _build_base_params(self, prompt: str, n: Optional[int] = None) -> dict:
-        r"""Build base parameters dict for OpenAI API calls.
+        r"""Build base parameters dict for Image Model API calls.
 
         Args:
             prompt (str): The text prompt for the image operation.
@@ -208,10 +213,10 @@ class ImageGenToolkit(BaseToolkit):
         image_name: Union[str, List[str]],
         operation: str,
     ) -> str:
-        r"""Handle API response from OpenAI image operations.
+        r"""Handle API response from image operations.
 
         Args:
-            response: The response object from OpenAI API.
+            response: The response object from image model API.
             image_name (Union[str, List[str]]): Name(s) for the saved image
                 file(s). If str, the same name is used for all images (will
                 cause error for multiple images). If list, must have exactly
@@ -307,7 +312,7 @@ class ImageGenToolkit(BaseToolkit):
         image_name: Union[str, List[str]] = "image.png",
         n: int = 1,
     ) -> str:
-        r"""Generate an image using OpenAI's Image Generation models.
+        r"""Generate an image using image models.
         The generated image will be saved locally (for ``b64_json`` response
         formats) or an image URL will be returned (for ``url`` response
         formats).
