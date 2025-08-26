@@ -47,13 +47,18 @@ tasks which need multi-step browser interaction.
 OBSERVE_PROMPT_TEMPLATE = """
 Please act as a web agent to help me complete the following high-level task:
 <task>{task_prompt}</task>
-Now, I have made screenshot (only the current viewport, not the full webpage)
+
+Now, I have made screenshots (only the current viewport, not the full webpage)
 based on the current browser state, and marked interactive elements in the
-webpage.
+webpages.
 Please carefully examine the requirements of the task, and current state of
 the browser, and provide the next appropriate action to take.
 
 {detailed_plan_prompt}
+
+Current browser state:
+- Open tabs: {tab_summary}
+- Current active tab: {current_tab_id}
 
 Here are the current available browser functions you can use:
 {AVAILABLE_ACTIONS_PROMPT}
@@ -74,19 +79,54 @@ check the history actions to avoid the same mistakes.
 - `action_code`: The action code you want to take. It is only one step action
 code, without any other texts (such as annotation)
 
-Here is two example of the output:
-```json
-{{
-    "observation": [IMAGE_DESCRIPTION],
-    "reasoning": [YOUR_REASONING],
-    "action_code": "fill_input_id([ID], [TEXT])"
-}}
+**IMPORTANT: Action Code Format Guidelines**
 
-{{
-    "observation":  "The current page is a CAPTCHA verification page on Amazon. It asks the user to ..",
-    "reasoning": "To proceed with the task of searching for products, I need to complete..",
-    "action_code": "fill_input_id(3, 'AUXPMR')"
-}}
+The action_code can now support multi-tab operations. Use the following formats:
+
+**Single Tab Actions (Default - current tab):**
+```json
+{
+    "observation": "The current page shows a login form with username and password fields",
+    "reasoning": "I need to fill in the username field to proceed with login",
+    "action_code": "fill_input_id('username', 'myuser')"
+}
+```
+
+**Single Tab Actions (Specific tab):**
+```json
+{
+    "observation": "Tab 2 shows a search page with a search box",
+    "reasoning": "I need to search for products on tab 2",
+    "action_code": "fill_input_id('search', 'laptop', 2)"
+}
+```
+
+**Multiple Tabs - Same Action:**
+```json
+{
+    "observation": "I need to scroll down on multiple tabs to see more content",
+    "reasoning": "Scrolling down on tabs 1, 2, and 3 to find relevant information",
+    "action_code": "scroll_down([1,2,3])"
+}
+```
+
+**Multiple Tabs - Different Actions:**
+```json
+{
+    "observation": "Tab 1 has a login button, tab 2 has a search box",
+    "reasoning": "I need to click login on tab 1 and search on tab 2",
+    "action_code": "click_id({1: 'login', 2: 'search'}, [1,2])"
+}
+```
+
+**Complex Multi-tab Actions:**
+```json
+{
+    "observation": "I need to fill different forms on different tabs",
+    "reasoning": "Filling username on tab 1 and email on tab 2",
+    "action_code": "fill_input_id({1: 'username', 2: 'email'}, {1: 'user123', 2: 'user@example.com'}, [1,2])"
+}
+```
 
 Here are some tips for you:
 - Never forget the overall question: **{task_prompt}**
@@ -122,11 +162,15 @@ find_text_on_page function. This is extremely useful which can quickly locate
 the text you want to find and skip massive amount of useless information.
 - Flexibly use interactive elements like slide down selection bar to filter
 out the information you need. Sometimes they are extremely useful.
-```
+- **Multi-tab considerations**: When working with multiple tabs, consider which
+tabs are relevant to your task and use appropriate tab_id parameters. For
+different actions on different tabs, use the dictionary format with tab IDs as
+keys and action codes as values.
 """  # noqa: E501
 
 GET_FINAL_ANSWER_PROMPT_TEMPLATE = """
 We are solving a complex web task which needs multi-step browser interaction. After the multi-step observation, reasoning and acting with web browser, we think that the task is currently solved.
+
 Here are all trajectory we have taken:
 <history>{history}</history>
 Please find the final answer, or give valuable insights and founds (e.g. if previous actions contain downloading files, your output should include the path of the downloaded file) about the overall task: <task>{task_prompt}</task>
@@ -160,39 +204,62 @@ Your output should be in json format, including the following fields:
 """  # noqa: E501
 
 AVAILABLE_ACTIONS_PROMPT = """
-1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
-field (e.g. search box) with the given text and press Enter.
-2. `click_id(identifier: Union[str, int])`: Click an element with the given ID.
-3. `hover_id(identifier: Union[str, int])`: Hover over an element with the
-given ID.
-4. `download_file_id(identifier: Union[str, int])`: Download a file with the
-given ID. It returns the path to the downloaded file. If the file is
-successfully downloaded, you can stop the simulation and report the path to
-the downloaded file for further processing.
-5. `scroll_to_bottom()`: Scroll to the bottom of the page.
-6. `scroll_to_top()`: Scroll to the top of the page.
-7. `scroll_up()`: Scroll up the page. It is suitable when you want to see the
-elements above the current viewport.
-8. `scroll_down()`: Scroll down the page. It is suitable when you want to see
-the elements below the current viewport. If the webpage does not change, It
-means that the webpage has scrolled to the bottom.
-9. `back()`: Navigate back to the previous page. This is useful when you want
-to go back to the previous page, as current page is not useful.
+1. `fill_input_id(identifier: Union[str, int, Dict[int, Union[str, int]]], 
+   text: Union[str, Dict[int, str]], tab_id: Optional[Union[int, List[int]]] = None)`: 
+   Fill an input field (e.g. search box) with the given text and press Enter. 
+   Supports single tab, multiple tabs with same action, or different actions per tab 
+   using dictionaries.
+2. `click_id(identifier: Union[str, int, Dict[int, Union[str, int]]], 
+   tab_id: Optional[Union[int, List[int]]] = None)`: Click an element with the given ID. 
+   Supports single tab, multiple tabs with same action, or different actions per tab 
+   using dictionaries.
+3. `hover_id(identifier: Union[str, int, Dict[int, Union[str, int]]], 
+   tab_id: Optional[Union[int, List[int]]] = None)`: Hover over an element with the
+   given ID. Supports single tab, multiple tabs with same action, or different actions 
+   per tab using dictionaries.
+4. `download_file_id(identifier: Union[str, int, Dict[int, Union[str, int]]], 
+   tab_id: Optional[Union[int, List[int]]] = None)`: Download a file with the
+   given ID. It returns the path to the downloaded file. If the file is
+   successfully downloaded, you can stop the simulation and report the path to
+   the downloaded file for further processing. Supports single tab, multiple tabs 
+   with same action, or different actions per tab using dictionaries.
+5. `scroll_to_bottom(tab_id: Optional[Union[int, List[int]]] = None)`: Scroll to the 
+   bottom of the page. Supports single tab or multiple tabs simultaneously.
+6. `scroll_to_top(tab_id: Optional[Union[int, List[int]]] = None)`: Scroll to the top 
+   of the page. Supports single tab or multiple tabs simultaneously.
+7. `scroll_up(tab_id: Optional[Union[int, List[int]]] = None)`: Scroll up the page. 
+   It is suitable when you want to see the elements above the current viewport. 
+   Supports single tab or multiple tabs simultaneously.
+8. `scroll_down(tab_id: Optional[Union[int, List[int]]] = None)`: Scroll down the page. 
+   It is suitable when you want to see the elements below the current viewport. 
+   If the webpage does not change, It means that the webpage has scrolled to the 
+   bottom. Supports single tab or multiple tabs simultaneously.
+9. `back(tab_id: Optional[Union[int, List[int]]] = None)`: Navigate back to the 
+   previous page. This is useful when you want to go back to the previous page, 
+   as current page is not useful. Supports single tab or multiple tabs simultaneously.
 10. `stop()`: Stop the action process, because the task is completed or failed
-(impossible to find the answer). In this situation, you should provide your
-answer in your output.
-11. `get_url()`: Get the current URL of the current page.
-12. `find_text_on_page(search_text: str)`: Find the next given text on the
-current whole page, and scroll the page to the targeted text. It is equivalent
-to pressing Ctrl + F and searching for the text, and is powerful when you want
-to fast-check whether the current page contains some specific text.
+    (impossible to find the answer). In this situation, you should provide your
+    answer in your output.
+11. `get_url(tab_id: Optional[Union[int, List[int]]] = None)`: Get the current URL 
+    of the current page. Supports single tab or multiple tabs simultaneously.
+12. `find_text_on_page(search_text: Union[str, Dict[int, str]], 
+    tab_id: Optional[Union[int, List[int]]] = None)`: Find the next given text on the
+    current whole page, and scroll the page to the targeted text. It is equivalent
+    to pressing Ctrl + F and searching for the text, and is powerful when you want
+    to fast-check whether the current page contains some specific text. Supports 
+    single tab or multiple tabs with same or different search text.
 13. `visit_page(url: str)`: Go to the specific url page.
 14. `click_blank_area()`: Click a blank area of the page to unfocus the
-current element. It is useful when you have clicked an element but it cannot
-unfocus itself (e.g. Menu bar) to automatically render the updated webpage.
+    current element. It is useful when you have clicked an element but it cannot
+    unfocus itself (e.g. Menu bar) to automatically render the updated webpage.
 15. `ask_question_about_video(question: str)`: Ask a question about the
-current webpage which contains video, e.g. youtube websites.
-"""
+    current webpage which contains video, e.g. youtube websites.
+16. `open_tab(url: Union[str, List[str]])`: Open a new tab and navigate to the 
+    specified URL(s). Returns the tab ID(s).
+17. `switch_tab(tab_id: int)`: Switch to the tab with the specified ID.
+18. `close_tab(tab_id: Union[int, List[int]])`: Close the tab(s) with the specified 
+    ID(s).
+"""  # noqa: E501
 
 ACTION_WITH_FEEDBACK_LIST = [
     'ask_question_about_video',
