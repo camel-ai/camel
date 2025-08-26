@@ -56,14 +56,18 @@ class AgentPool:
         initial_size: int = 1,
         max_size: int = 10,
         auto_scale: bool = True,
-        idle_timeout: float = 180.0,  # 3 minutes
+        idle_timeout: float = 180.0,
         max_tasks_per_agent: int = 10,
+        min_cleanup_interval: float = 15.0,
+        max_cleanup_interval: float = 120.0,
     ):
         self.base_agent = base_agent
         self.max_size = max_size
         self.auto_scale = auto_scale
         self.idle_timeout = idle_timeout
         self._max_tasks_per_agent = max_tasks_per_agent
+        self.min_cleanup_interval = min_cleanup_interval
+        self.max_cleanup_interval = max_cleanup_interval
         self._agent_metadata_pool: Dict[int, Dict[str, Any]] = {}
 
         # Pool management
@@ -114,7 +118,7 @@ class AgentPool:
 
         freshness = 1.0 - (metadata['task_count'] / self._max_tasks_per_agent)
 
-        return (0.7 * success_rate) + (0.3 * freshness)
+        return (0.7 * success_rate) + (0.3 * max(freshness, 0.0))
 
     async def get_agent(self) -> ChatAgent:
         r"""Get an agent from the pool, creating one if necessary."""
@@ -139,7 +143,13 @@ class AgentPool:
                 while not self._available_agents:
                     await asyncio.sleep(0.1)
                 self._total_wait_time += time.time() - wait_start
-                best_agent = self._available_agents.popleft()
+
+                best_agent = max(
+                    self._available_agents,
+                    key=self._calculate_affinity_score,
+                )
+                self._available_agents.remove(best_agent)
+                self._pool_hits += 1
 
             best_agent.reset()
             self._in_use_agents.add(id(best_agent))
@@ -525,7 +535,24 @@ class SingleAgentWorker(Worker):
         r"""Periodically clean up idle agents from the pool."""
         while True:
             try:
-                await asyncio.sleep(60)  # Cleanup every minute
+                idle_ratio = (
+                    len(self.agent_pool.get_stats()["available_agents"])
+                    / self.agent_pool.max_size
+                    if self.agent_pool.max_size > 0
+                    else 0.0
+                )
+
+                sleep_duration = (
+                    self.agent_pool.min_cleanup_interval
+                    + (
+                        self.agent_pool.max_cleanup_interval
+                        - self.agent_pool.min_cleanup_interval
+                    )
+                    * idle_ratio
+                )
+
+                await asyncio.sleep(sleep_duration)
+
                 if self.agent_pool:
                     await self.agent_pool.cleanup_idle_agents()
             except asyncio.CancelledError:
