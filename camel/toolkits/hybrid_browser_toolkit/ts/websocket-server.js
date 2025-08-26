@@ -143,7 +143,10 @@ class WebSocketBrowserServer {
 
       case 'get_snapshot_for_ai':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
-        return await this.toolkit.getSnapshotForAI();
+        // Support includeCoordinates and viewportLimit parameters
+        const includeCoordinates = params.includeCoordinates || false;
+        const viewportLimit = params.viewportLimit || false;
+        return await this.toolkit.session.getSnapshotForAI(includeCoordinates, viewportLimit);
 
       case 'get_som_screenshot': {
         if (!this.toolkit) throw new Error('Toolkit not initialized');

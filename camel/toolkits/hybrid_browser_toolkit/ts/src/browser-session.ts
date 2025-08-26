@@ -383,12 +383,24 @@ export class HybridBrowserSession {
         href !== browserConfig.javascriptVoidEmpty && // Not empty javascript
         href !== browserConfig.anchorOnly; // Not just #
       
-      const shouldOpenNewTab = naturallyOpensNewTab || isNavigableLink;
+      // For any clickable element, always try to detect popup windows
+      // since they might open popups via JavaScript event handlers
+      // This includes buttons, divs, spans, images, etc. with onclick handlers
+      // or elements that might have event listeners attached via addEventListener
+      const isClickableElement = onclick || (await element.evaluate(el => {
+        // Check if element has cursor:pointer style (indicates it's clickable)
+        const style = window.getComputedStyle(el);
+        return style.cursor === 'pointer';
+      }));
+      
+      // Always attempt popup detection for non-link clickable elements
+      const shouldAttemptPopupDetection = !isNavigableLink && isClickableElement;
+      
+      const shouldOpenNewTab = naturallyOpensNewTab || isNavigableLink || shouldAttemptPopupDetection;
       
       
       if (shouldOpenNewTab) {
         //  Handle new tab opening
-        
         // If it's a link that doesn't naturally open in new tab, force it
         if (isNavigableLink && !naturallyOpensNewTab) {
           await element.evaluate((el, blankTarget) => {
@@ -422,8 +434,34 @@ export class HybridBrowserSession {
           this.currentTabId = newTabId;
           await newPage.bringToFront();
           
-          // Wait for new page to be ready
-          await newPage.waitForLoadState('domcontentloaded', { timeout: browserConfig.popupTimeout }).catch(() => {});
+          // Wait for new page to be ready - smart waiting for popup windows
+          try {
+            // First ensure DOM is loaded
+            await newPage.waitForLoadState('domcontentloaded', { timeout: browserConfig.popupTimeout });
+            
+            // Then use smart wait that adapts to page content
+            // This waits for EITHER network idle OR content to appear
+            await Promise.race([
+              // Wait for network to be idle (no new requests)
+              newPage.waitForLoadState('networkidle', { timeout: browserConfig.popupTimeout }),
+              
+              // OR wait for any substantial content to appear
+              newPage.waitForFunction(() => {
+                // Check if page has meaningful content
+                const bodyText = document.body?.innerText || '';
+                const hasContent = bodyText.length > 50;
+                const hasInteractiveElements = document.querySelectorAll('button, a, input, [onclick]').length > 0;
+                return hasContent || hasInteractiveElements;
+              }, { timeout: browserConfig.popupTimeout })
+            ]);
+            
+            // Brief stability check - wait for DOM to stop changing
+            await this.waitForDOMStability(newPage, 300);
+            
+          } catch (error) {
+            // Continue even if wait fails, the page might still be usable
+            console.debug('[performClick] Popup page smart wait completed with warning:', error);
+          }
           
           return { success: true, method: 'playwright-aria-ref-newtab', newTabId };
         } catch (popupError) {
@@ -800,6 +838,63 @@ export class HybridBrowserSession {
           stability_wait_time_ms: stabilityWaitTime,
         },
       };
+    }
+  }
+
+  /**
+   * Wait for DOM to stop changing for a specified duration
+   */
+  private async waitForDOMStability(page: Page, maxWaitTime: number = 500): Promise<void> {
+    const startTime = Date.now();
+    const stabilityThreshold = 100; // Consider stable if no changes for 100ms
+    let lastChangeTime = Date.now();
+    
+    try {
+      // Monitor DOM changes
+      await page.evaluateHandle(() => {
+        let changeCount = 0;
+        (window as any).__domStabilityCheck = { changeCount: 0, lastChange: Date.now() };
+        
+        const observer = new MutationObserver(() => {
+          (window as any).__domStabilityCheck.changeCount++;
+          (window as any).__domStabilityCheck.lastChange = Date.now();
+        });
+        
+        observer.observe(document.body, { 
+          childList: true, 
+          subtree: true,
+          attributes: true,
+          characterData: true
+        });
+        
+        (window as any).__domStabilityObserver = observer;
+      });
+      
+      // Check for stability
+      while (Date.now() - startTime < maxWaitTime) {
+        const status = await page.evaluate(() => {
+          const check = (window as any).__domStabilityCheck;
+          return {
+            changeCount: check.changeCount,
+            timeSinceLastChange: Date.now() - check.lastChange
+          };
+        });
+        
+        if (status.timeSinceLastChange > stabilityThreshold) {
+          // DOM has been stable
+          break;
+        }
+        
+        await page.waitForTimeout(50);
+      }
+    } finally {
+      // Cleanup
+      await page.evaluate(() => {
+        const observer = (window as any).__domStabilityObserver;
+        if (observer) observer.disconnect();
+        delete (window as any).__domStabilityObserver;
+        delete (window as any).__domStabilityCheck;
+      }).catch(() => {});
     }
   }
 

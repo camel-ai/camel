@@ -648,22 +648,29 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
             # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
-            result.update(
-                {
-                    "tabs": tab_info,
-                    "current_tab": next(
-                        (
-                            i
-                            for i, tab in enumerate(tab_info)
-                            if tab.get("is_current")
-                        ),
-                        0,
-                    ),
-                    "total_tabs": len(tab_info),
-                }
-            )
 
-            return result
+            response = {
+                "result": result.get("result", ""),
+                "snapshot": result.get("snapshot", ""),
+                "tabs": tab_info,
+                "current_tab": next(
+                    (
+                        i
+                        for i, tab in enumerate(tab_info)
+                        if tab.get("is_current")
+                    ),
+                    0,
+                ),
+                "total_tabs": len(tab_info),
+            }
+
+            if "newTabId" in result:
+                response["newTabId"] = result["newTabId"]
+
+            if "timing" in result:
+                response["timing"] = result["timing"]
+
+            return response
         except Exception as e:
             logger.error(f"Failed to click element: {e}")
             return {
