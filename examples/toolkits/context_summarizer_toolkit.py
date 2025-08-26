@@ -18,8 +18,9 @@ from camel.toolkits.context_summarizer_toolkit import ContextSummarizerToolkit
 from camel.types import ModelPlatformType, ModelType
 
 """
-This example demonstrates the ContextSummarizerToolkit, which provides intelligent
-context summarization and memory management capabilities for ChatAgent. The toolkit
+This example demonstrates the ContextSummarizerToolkit, which provides
+intelligent context summarization and memory management capabilities for
+ChatAgent. The toolkit
 enables agents to:
 1. Manually save conversation memory when context becomes cluttered
 2. Load previous context summaries 
@@ -42,18 +43,8 @@ model = ModelFactory.create(
 # Create agent without auto-compression - we'll use the toolkit for manual
 # control
 agent = ChatAgent(
-    system_message="""You are a helpful AI assistant providing travel advice. 
-    
-    You have access to context management tools that allow you to:
-    - Save conversation memory when context becomes cluttered: 
-      summarize_context_and_save_memory()
-    - Load previous context: load_memory_context()  
-    - Search conversation history: search_conversation_history()
-    - Check memory status: get_memory_info()
-    - Check if compression is needed: should_compress_context()
-    
-    Use these tools strategically when conversations become complex or 
-    unfocused.""",
+    system_message="""You are a helpful AI assistant providing travel """
+    """advice.""",
     model=model,
     agent_id="context_toolkit_agent_001",
 )

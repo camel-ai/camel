@@ -31,12 +31,14 @@ logger = get_logger(__name__)
 
 
 class ContextSummarizerToolkit(BaseToolkit):
-    r"""A toolkit that provides intelligent context summarization and management for agents.
-    
-    This toolkit enables agents to compress conversation context through intelligent
-    summarization, save conversation history to markdown files, and search through
-    past conversations. It handles all context management needs in a single toolkit.
-    
+    r"""A toolkit that provides intelligent context summarization and
+    management for agents.
+
+    This toolkit enables agents to compress conversation context through
+    intelligent summarization, save conversation history to markdown files,
+    and search through past conversations. It handles all context management
+    needs in a single toolkit.
+
     Key features:
     - Intelligent context compression with over-compression prevention
     - Markdown file storage with session management
@@ -55,22 +57,22 @@ class ContextSummarizerToolkit(BaseToolkit):
         r"""Initialize the ContextSummarizerToolkit.
 
         Args:
-            agent (ChatAgent): The agent to use for the toolkit.
+            agent (ChatAgent): The agent that is using the toolkit.
                 This is required to access the agent's memory.
             working_directory (str, optional): The directory path where notes
                 will be stored. If not provided, a default directory will be
                 used.
             timeout (Optional[float]): The timeout for the toolkit.
-            summary_prompt_template (Optional[str]): Custom prompt template for
-                summarization. If None, a default task-focused template is used.
-                Users can customize this for different use cases.
+            summary_prompt_template (Optional[str]): Custom prompt template
+                for summarization. If None, a default task-focused template
+                is used. Users can customize this for different use cases.
         """
         super().__init__(timeout=timeout)
 
         self.agent = agent
         self.working_directory_param = working_directory
         self.summary_prompt_template = summary_prompt_template
-        
+
         # compression tracking to prevent over-compression
         self.compressed_message_ids: set = set()
         self.compression_count = 0
@@ -146,12 +148,15 @@ class ContextSummarizerToolkit(BaseToolkit):
 
         # check for over-compression prevention
         record_ids = {id(record) for record in memory_records}
-        already_compressed = record_ids.intersection(self.compressed_message_ids)
-        
+        already_compressed = record_ids.intersection(
+            self.compressed_message_ids
+        )
+
         if already_compressed:
             logger.warning(
-                f"Preventing over-compression: {len(already_compressed)} records "
-                f"have already been compressed. Returning existing summary."
+                f"Preventing over-compression: {len(already_compressed)} "
+                f"records have already been compressed. Returning existing "
+                f"summary."
             )
             return self.existing_summary or ""
 
@@ -171,7 +176,7 @@ class ContextSummarizerToolkit(BaseToolkit):
             # 5. extract the summary from response and store
             summary_content = response.msgs[-1].content.strip()
             self.existing_summary = summary_content
-            
+
             # 6. mark these records as compressed to prevent re-compression
             record_ids = {id(record) for record in memory_records}
             self.compressed_message_ids.update(record_ids)
@@ -205,9 +210,7 @@ class ContextSummarizerToolkit(BaseToolkit):
             summary_content += f"- Session ID: {self.session_id}\n\n"
             summary_content += f"## Summary\n\n{summary}\n"
 
-            self._create_or_update_note(
-                self.summary_filename, summary_content
-            )
+            self._create_or_update_note(self.summary_filename, summary_content)
             logger.info(
                 f"Summary saved to "
                 f"{self.working_directory / f'{self.summary_filename}.md'}"
@@ -248,15 +251,13 @@ class ContextSummarizerToolkit(BaseToolkit):
                     else str(record.role_at_backend)
                 )
 
-                history_content += f"### Message {i+1} - {role}\n"
+                history_content += f"### Message {i + 1} - {role}\n"
                 history_content += f"**Agent ID:** {agent_id}  \n"
                 history_content += f"**Backend Role:** {role_at_backend}  \n"
                 history_content += f"**Content:**\n```\n{content}\n```\n\n"
                 history_content += "---\n\n"
 
-            self._create_or_update_note(
-                self.history_filename, history_content
-            )
+            self._create_or_update_note(self.history_filename, history_content)
             logger.info(
                 f"History saved to "
                 f"{self.working_directory / f'{self.history_filename}.md'}"
@@ -307,26 +308,26 @@ class ContextSummarizerToolkit(BaseToolkit):
 
     def _create_or_update_note(self, note_name: str, content: str) -> str:
         r"""Create a new note or update existing one.
-        
+
         Args:
             note_name (str): Name of the note (without .md extension).
             content (str): Content to write to the note.
-            
+
         Returns:
             str: Success message.
         """
         try:
             note_path = self.working_directory / f"{note_name}.md"
-            
+
             # always overwrite if it exists (for compression use case)
             note_path.write_text(content, encoding="utf-8")
-            
+
             # register note if it's new
-            if note_name not in [note['name'] for note in self._note_toolkit.note_registry]:
+            if note_name not in self._note_toolkit.registry:
                 self._note_toolkit._register_note(note_name)
-                
+
             return f"Note '{note_name}.md' created/updated successfully."
-            
+
         except Exception as e:
             return f"Error creating/updating note: {e}"
 
@@ -337,7 +338,13 @@ class ContextSummarizerToolkit(BaseToolkit):
             str: The summary content, or empty string if not found.
         """
         try:
-            return self._note_toolkit.read_note(self.summary_filename)
+            summary_path = (
+                self.working_directory / f"{self.summary_filename}.md"
+            )
+            if summary_path.exists():
+                return summary_path.read_text(encoding="utf-8")
+            else:
+                return ""
         except Exception as e:
             logger.error(f"Error loading summary: {e}")
             return ""
@@ -349,7 +356,13 @@ class ContextSummarizerToolkit(BaseToolkit):
             str: The history content, or empty string if not found.
         """
         try:
-            return self._note_toolkit.read_note(self.history_filename)
+            history_path = (
+                self.working_directory / f"{self.history_filename}.md"
+            )
+            if history_path.exists():
+                return history_path.read_text(encoding="utf-8")
+            else:
+                return ""
         except Exception as e:
             logger.error(f"Error loading history: {e}")
             return ""
@@ -399,12 +412,11 @@ class ContextSummarizerToolkit(BaseToolkit):
         if self.summary_prompt_template:
             base_prompt = self.summary_prompt_template
         else:
-            base_prompt = """The following is a conversation history of a large \
-language model agent.
+            base_prompt = """The following is a conversation history of a \
+large language model agent.
 Analyze it and extract the key information from it. The information will be
 passed on to a new agent that will use it to understand the problem and \
-continue
-working on it without having to start from scratch. Focus on:
+continue working on it without having to start from scratch. Focus on:
 - User's main goal (e.g. "The user wants my help with data analysis of \
 customer sales data.")
 - Key information about the user and their preferences (e.g. "The user is a \
@@ -441,81 +453,83 @@ Summary:"""
 
     # ========= SEARCH METHODS =========
 
-    def _simple_text_search(
-        self, query: str, file_paths: List[str], top_k: int = 5
-    ) -> str:
-        r"""Perform simple text-based search through markdown files.
-        
+    def _simple_text_search(self, keywords: List[str], top_k: int = 4) -> str:
+        r"""Perform simple keyword-based search through current session
+        history.
+
         Args:
-            query (str): The search query.
-            file_paths (List[str]): List of file paths to search.
+            keywords (List[str]): List of keywords to search for.
             top_k (int): Maximum number of results to return.
-            
+
         Returns:
             str: Formatted search results.
         """
         results = []
-        query_terms = query.lower().split()
-        
-        for file_path in file_paths:
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                    
-                # Split content into paragraphs/sections
-                sections = content.split('\n\n')
-                
-                for i, section in enumerate(sections):
-                    if not section.strip():
-                        continue
-                        
-                    section_lower = section.lower()
-                    
-                    # count how many query terms appear in this section
-                    term_matches = sum(1 for term in query_terms if term in section_lower)
-                    
-                    if term_matches > 0:
-                        # calculate simple relevance score
-                        relevance = term_matches / len(query_terms)
-                        results.append({
-                            'content': section.strip(),
-                            'file': file_path,
-                            'relevance': relevance,
-                            'section_num': i
-                        })
-                        
-            except Exception as e:
-                logger.warning(f"Error reading file {file_path}: {e}")
-                continue
-                
-        # sort by relevance and limit results
-        results.sort(key=lambda x: x['relevance'], reverse=True)
+        keyword_terms = [keyword.lower() for keyword in keywords]
+
+        # Read current session history file
+        history_file = self.working_directory / "history.md"
+        try:
+            with open(history_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Split content into message sections
+            # (each message starts with "### Message")
+            sections = content.split('### Message')[1:]  # Skip the header part
+
+            for i, section in enumerate(sections):
+                if not section.strip():
+                    continue
+
+                section_lower = section.lower()
+
+                # count how many keywords appear in this section
+                keyword_matches = sum(
+                    1 for keyword in keyword_terms if keyword in section_lower
+                )
+
+                if keyword_matches > 0:
+                    results.append(
+                        {
+                            'content': f"### Message{section.strip()}",
+                            'keyword_count': keyword_matches,
+                            'message_num': i + 1,
+                        }
+                    )
+
+        except Exception as e:
+            logger.warning(f"Error reading history file: {e}")
+            return ""
+
+        # sort by keyword count and limit results
+        results.sort(key=lambda x: x['keyword_count'], reverse=True)  # type: ignore[arg-type,return-value]
         results = results[:top_k]
-        
+
         if not results:
             return ""
-            
+
         # format results
         formatted_sections = []
         for result in results:
-            file_name = Path(result['file']).name
             formatted_sections.append(
-                f"From {file_name} (relevance: {result['relevance']:.2f}):\n"
+                f"Message {result['message_num']} "
+                f"(keyword matches: {result['keyword_count']}):\n"
                 f"{result['content']}\n"
             )
-            
+
         return "\n---\n".join(formatted_sections)
 
     # ========= PUBLIC TOOL INTERFACE METHODS =========
 
-    def summarize_context_and_save_memory(self) -> str:
+    def summarize_full_conversation_history(self) -> str:
         r"""Save the conversation history and generate an intelligent summary.
 
         This function should be used when the memory becomes cluttered with too
         many unrelated conversations or information that might be irrelevant to
         the core task. It will generate a summary and save both the summary
         and full conversation history to markdown files. Then it clears the
-        memory and replaces it with the summary for a context refresh.
+        memory and replaces it with the summary for a context refresh. The
+        conversation must flow naturally from the summary.
 
         Returns:
             str: Success message with brief summary, or error message.
@@ -542,19 +556,10 @@ Summary:"""
                 f"messages processed"
             )
 
-            # Use the summary we just generated for the success message
-            summary_preview = (
-                summary[:100] + "..." if len(summary) > 100 else summary
+            return (
+                "Full context summarized, summary added as system message, "
+                "and full history removed."
             )
-
-            success_msg = (
-                f"Memory saved and refreshed successfully!\n"
-                f"Session directory: {self.working_directory.name}\n"
-                f"Messages processed: {message_count}\n"
-                f"Summary: {summary_preview}"
-            )
-
-            return success_msg
 
         except Exception as e:
             error_msg = f"Failed to save conversation memory: {e}"
@@ -580,12 +585,14 @@ Summary:"""
             if summary and summary.strip():
                 from camel.messages import BaseMessage
                 from camel.types import OpenAIBackendRole
-                
-                summary_message = BaseMessage.make_user_message(
-                    role_name="System",
+
+                summary_message = BaseMessage.make_assistant_message(
+                    role_name="Assistant",
                     content=f"[Context Summary]\n\n{summary}",
                 )
-                self.agent.update_memory(summary_message, OpenAIBackendRole.USER)
+                self.agent.update_memory(
+                    summary_message, OpenAIBackendRole.SYSTEM
+                )
                 return True
             return False
 
@@ -595,31 +602,13 @@ Summary:"""
             )
             return False
 
-    def load_memory_context(self) -> str:
-        r"""Load the saved summary to restore previous context.
-
-        This function loads the previously saved summary file to help the agent
-        understand the prior conversation context without loading the full
-        history.
-
-        Returns:
-            str: The loaded summary content, or message if no summary found.
-        """
-        try:
-            summary_content = self._load_summary()
-
-            if summary_content.strip():
-                return f"Previous context loaded:\n\n{summary_content}"
-            else:
-                return "No previous summary found to load."
-
-        except Exception as e:
-            error_msg = f"Failed to load memory context: {e}"
-            logger.error(error_msg)
-            return error_msg
-
-    def get_memory_info(self) -> str:
-        r"""Get information about the current memory state and saved files.
+    def get_conversation_memory_info(self) -> str:
+        r"""Get information about the current conversation memory state
+        and saved files. The information includes:
+        - Number of messages in memory
+        - Save directory
+        - If summary and history files exist and how many
+        characters they have
 
         Returns:
             str: Information about current memory and saved files.
@@ -656,7 +645,7 @@ Summary:"""
             except Exception:
                 info_msg += "Saved files: Unable to check\n"
 
-            # Add search capability status  
+            # Add search capability status
             info_msg += "Text search: Enabled (lightweight file-based)\n"
 
             # Count available session histories
@@ -672,75 +661,62 @@ Summary:"""
             logger.error(error_msg)
             return error_msg
 
-    def search_conversation_history(
+    def search_full_conversation_history(
         self,
-        query: str,
-        top_k: int = 5,
-        search_current_session: bool = True,
-        search_all_sessions: bool = False,
+        keywords: List[str],
+        top_k: int = 4,
     ) -> str:
-        r"""Search the conversation history using text search.
+        r"""Search the conversation history using keyword matching. This is
+        used when information is missing from the summary and the current
+        conversation, and can potentially be found in the full conversation
+        history before it was summarized.
 
-        Searches through the history.md files to find relevant past
-        conversations based on the query.
+        Searches through the current session's history.md file to find the
+        top messages that contain the most keywords.
 
         Args:
-            query (str): The query to search for.
-            top_k (int): The number of results to return.
-            search_current_session (bool): Whether to search the current
-                session.
-            search_all_sessions (bool): Whether to search all sessions.
+            keywords (List[str]): List of keywords to search for. The
+                keywords must be explicitly related to the information
+                the user is looking for, and not general terms that
+                might be found about any topic. For example, if the user
+                is searching for the price of the flight to "Paris"
+                which was discussed previously, the keywords should be
+                ["Paris", "price", "flight", "$", "costs"].
+            top_k (int): The number of results to return (default 4).
 
         Returns:
             str: The search results or error message.
         """
         try:
-            history_files = []
-            base_dir = self.working_directory.parent
+            # Only search current session history
+            current_history = self.working_directory / "history.md"
+            if not current_history.exists():
+                return "No history file found in current session."
 
-            if search_current_session:
-                # Add current session history
-                current_history = self.working_directory / "history.md"
-                if current_history.exists():
-                    history_files.append(str(current_history))
+            logger.info("Searching through current session history")
 
-            if search_all_sessions:
-                # Add all session histories
-                session_pattern = str(base_dir / "session_*" / "history.md")
-                session_histories = glob.glob(session_pattern)
-                history_files.extend(session_histories)
-
-            if not history_files:
-                return "No history files found to search."
-
-            # remove duplicates and preserving order
-            history_files = list(dict.fromkeys(history_files))
-
-            logger.info(
-                f"Searching through {len(history_files)} history file(s)"
-            )
-
-            # Perform simple text-based search
+            # Perform keyword-based search
             search_results = self._simple_text_search(
-                query=query,
-                file_paths=history_files,
+                keywords=keywords,
                 top_k=top_k,
             )
 
             if search_results and search_results.strip():
+                keywords_str = ", ".join(keywords)
                 formatted_results = (
-                    f"Found relevant conversation excerpts for query: "
-                    f"'{query}'\n\n"
+                    f"Found relevant conversation excerpts for keywords: "
+                    f"'{keywords_str}'\n\n"
                     f"--- Search Results ---\n"
                     f"{search_results}\n"
                     f"--- End Results ---\n\n"
-                    f"Note: Results are ordered by relevance to "
-                    f"your query."
+                    f"Note: Results are ordered by keyword match count."
                 )
                 return formatted_results
             else:
+                keywords_str = ", ".join(keywords)
                 return (
-                    f"No relevant conversations found for query: '{query}'. "
+                    f"No relevant conversations found for keywords: "
+                    f"'{keywords_str}'. "
                     f"Try different keywords."
                 )
 
@@ -750,116 +726,38 @@ Summary:"""
             return error_msg
 
     def should_compress_context(
-        self, 
-        message_limit: int = 40, 
-        token_limit: Optional[int] = None
+        self, message_limit: int = 40, token_limit: Optional[int] = None
     ) -> bool:
         r"""Check if context should be compressed based on limits.
-        
+
         Args:
             message_limit (int): Maximum number of messages before compression.
-            token_limit (Optional[int]): Maximum number of tokens before compression.
-            
+            token_limit (Optional[int]): Maximum number of tokens before
+                compression.
+
         Returns:
             bool: True if context should be compressed.
         """
         try:
             conversation_message_count = len(self.agent.memory.retrieve())
-            
+
             # check token limit first (more efficient)
             if token_limit:
                 _, token_count = self.agent.memory.get_context()
                 if token_count > token_limit:
                     return True
-                    
+
             # check message limit
             if conversation_message_count > message_limit:
                 return True
-                
-            return False
-            
-        except Exception as e:
-            logger.error(f"Error checking if context should be compressed: {e}")
+
             return False
 
-    def load_context_from_file(self, file_path: Optional[str] = None) -> str:
-        r"""Load context from a markdown file.
-        
-        Args:
-            file_path (Optional[str]): Path to the markdown file. If None,
-                loads from the default summary file.
-                
-        Returns:
-            str: The loaded context or error message.
-        """
-        try:
-            if file_path is None:
-                # load from default summary file
-                summary_path = self.working_directory / "summary.md"
-                if not summary_path.exists():
-                    return "No saved context summary found."
-                file_path = str(summary_path)
-                
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                
-            if content.strip():
-                # add loaded context to agent memory as system context
-                from camel.messages import BaseMessage
-                from camel.types import OpenAIBackendRole
-                
-                context_message = BaseMessage.make_user_message(
-                    role_name="System",
-                    content=f"[Previous Context]\n\n{content}",
-                )
-                self.agent.update_memory(context_message, OpenAIBackendRole.USER)
-                
-                return f"Successfully loaded context from {Path(file_path).name}"
-            else:
-                return "Context file is empty."
-                
         except Exception as e:
-            error_msg = f"Failed to load context from file: {e}"
-            logger.error(error_msg)
-            return error_msg
-
-    def save_context_to_file(
-        self, 
-        file_path: Optional[str] = None,
-        include_summary: bool = True
-    ) -> str:
-        r"""Save current context to a markdown file.
-        
-        Args:
-            file_path (Optional[str]): Path to save the file. If None,
-                saves to default location.
-            include_summary (bool): Whether to include a summary.
-                
-        Returns:
-            str: Success or error message.
-        """
-        try:
-            if include_summary:
-                # generate and save summary
-                summary = self.summarize_context_and_save_memory()
-                return f"Context saved with summary: {summary}"
-            else:
-                # just save the raw conversation history
-                records = [cr.memory_record for cr in self.agent.memory.retrieve()]
-                history_content = self._format_conversation(records)
-                
-                if file_path is None:
-                    file_path = str(self.working_directory / "raw_history.md")
-                    
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(history_content)
-                    
-                return f"Raw context saved to {Path(file_path).name}"
-                
-        except Exception as e:
-            error_msg = f"Failed to save context: {e}"
-            logger.error(error_msg)
-            return error_msg
+            logger.error(
+                f"Error checking if context should be compressed: {e}"
+            )
+            return False
 
     # ========= UTILITY METHODS =========
 
@@ -897,11 +795,7 @@ Summary:"""
             List[FunctionTool]: The list of tools.
         """
         return [
-            FunctionTool(self.summarize_context_and_save_memory),
-            FunctionTool(self.load_memory_context),
-            FunctionTool(self.get_memory_info),
-            FunctionTool(self.search_conversation_history),
-            FunctionTool(self.should_compress_context),
-            FunctionTool(self.load_context_from_file),
-            FunctionTool(self.save_context_to_file),
+            FunctionTool(self.summarize_full_conversation_history),
+            FunctionTool(self.search_full_conversation_history),
+            FunctionTool(self.get_conversation_memory_info),
         ]
