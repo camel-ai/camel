@@ -204,43 +204,62 @@ Your output should be in json format, including the following fields:
 """  # noqa: E501
 
 AVAILABLE_ACTIONS_PROMPT = """
-1. `fill_input_id(identifier: Union[str, int], text: str)`: Fill an input
-field (e.g. search box) with the given text and press Enter.
-2. `click_id(identifier: Union[str, int])`: Click an element with the given ID.
-3. `hover_id(identifier: Union[str, int])`: Hover over an element with the
-given ID.
-4. `download_file_id(identifier: Union[str, int])`: Download a file with the
-given ID. It returns the path to the downloaded file. If the file is
-successfully downloaded, you can stop the simulation and report the path to
-the downloaded file for further processing.
-5. `scroll_to_bottom()`: Scroll to the bottom of the page.
-6. `scroll_to_top()`: Scroll to the top of the page.
-7. `scroll_up()`: Scroll up the page. It is suitable when you want to see the
-elements above the current viewport.
-8. `scroll_down()`: Scroll down the page. It is suitable when you want to see
-the elements below the current viewport. If the webpage does not change, It
-means that the webpage has scrolled to the bottom.
-9. `back()`: Navigate back to the previous page. This is useful when you want
-to go back to the previous page, as current page is not useful.
+1. `fill_input_id(identifier: Union[str, int, Dict[int, Union[str, int]]], 
+   text: Union[str, Dict[int, str]], tab_id: Optional[Union[int, List[int]]] = None)`: 
+   Fill an input field (e.g. search box) with the given text and press Enter. 
+   Supports single tab, multiple tabs with same action, or different actions per tab 
+   using dictionaries.
+2. `click_id(identifier: Union[str, int, Dict[int, Union[str, int]]], 
+   tab_id: Optional[Union[int, List[int]]] = None)`: Click an element with the given ID. 
+   Supports single tab, multiple tabs with same action, or different actions per tab 
+   using dictionaries.
+3. `hover_id(identifier: Union[str, int, Dict[int, Union[str, int]]], 
+   tab_id: Optional[Union[int, List[int]]] = None)`: Hover over an element with the
+   given ID. Supports single tab, multiple tabs with same action, or different actions 
+   per tab using dictionaries.
+4. `download_file_id(identifier: Union[str, int, Dict[int, Union[str, int]]], 
+   tab_id: Optional[Union[int, List[int]]] = None)`: Download a file with the
+   given ID. It returns the path to the downloaded file. If the file is
+   successfully downloaded, you can stop the simulation and report the path to
+   the downloaded file for further processing. Supports single tab, multiple tabs 
+   with same action, or different actions per tab using dictionaries.
+5. `scroll_to_bottom(tab_id: Optional[Union[int, List[int]]] = None)`: Scroll to the 
+   bottom of the page. Supports single tab or multiple tabs simultaneously.
+6. `scroll_to_top(tab_id: Optional[Union[int, List[int]]] = None)`: Scroll to the top 
+   of the page. Supports single tab or multiple tabs simultaneously.
+7. `scroll_up(tab_id: Optional[Union[int, List[int]]] = None)`: Scroll up the page. 
+   It is suitable when you want to see the elements above the current viewport. 
+   Supports single tab or multiple tabs simultaneously.
+8. `scroll_down(tab_id: Optional[Union[int, List[int]]] = None)`: Scroll down the page. 
+   It is suitable when you want to see the elements below the current viewport. 
+   If the webpage does not change, It means that the webpage has scrolled to the 
+   bottom. Supports single tab or multiple tabs simultaneously.
+9. `back(tab_id: Optional[Union[int, List[int]]] = None)`: Navigate back to the 
+   previous page. This is useful when you want to go back to the previous page, 
+   as current page is not useful. Supports single tab or multiple tabs simultaneously.
 10. `stop()`: Stop the action process, because the task is completed or failed
-(impossible to find the answer). In this situation, you should provide your
-answer in your output.
-11. `get_url()`: Get the current URL of the current page.
-12. `find_text_on_page(search_text: str)`: Find the next given text on the
-current whole page, and scroll the page to the targeted text. It is equivalent
-to pressing Ctrl + F and searching for the text, and is powerful when you want
-to fast-check whether the current page contains some specific text.
+    (impossible to find the answer). In this situation, you should provide your
+    answer in your output.
+11. `get_url(tab_id: Optional[Union[int, List[int]]] = None)`: Get the current URL 
+    of the current page. Supports single tab or multiple tabs simultaneously.
+12. `find_text_on_page(search_text: Union[str, Dict[int, str]], 
+    tab_id: Optional[Union[int, List[int]]] = None)`: Find the next given text on the
+    current whole page, and scroll the page to the targeted text. It is equivalent
+    to pressing Ctrl + F and searching for the text, and is powerful when you want
+    to fast-check whether the current page contains some specific text. Supports 
+    single tab or multiple tabs with same or different search text.
 13. `visit_page(url: str)`: Go to the specific url page.
 14. `click_blank_area()`: Click a blank area of the page to unfocus the
-current element. It is useful when you have clicked an element but it cannot
-unfocus itself (e.g. Menu bar) to automatically render the updated webpage.
+    current element. It is useful when you have clicked an element but it cannot
+    unfocus itself (e.g. Menu bar) to automatically render the updated webpage.
 15. `ask_question_about_video(question: str)`: Ask a question about the
-current webpage which contains video, e.g. youtube websites.
-16. `open_tab(url: str)`: Open a new tab and navigate to the specified URL.
-Returns the tab ID.
+    current webpage which contains video, e.g. youtube websites.
+16. `open_tab(url: Union[str, List[str]])`: Open a new tab and navigate to the 
+    specified URL(s). Returns the tab ID(s).
 17. `switch_tab(tab_id: int)`: Switch to the tab with the specified ID.
-18. `close_tab(tab_id: int)`: Close the tab with the specified ID.
-"""
+18. `close_tab(tab_id: Union[int, List[int]])`: Close the tab(s) with the specified 
+    ID(s).
+"""  # noqa: E501
 
 ACTION_WITH_FEEDBACK_LIST = [
     'ask_question_about_video',

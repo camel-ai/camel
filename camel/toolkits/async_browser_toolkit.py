@@ -22,9 +22,11 @@ import os
 import re
 import shutil
 import urllib.parse
+from collections.abc import Coroutine
+from copy import deepcopy
 from typing import (
+    TYPE_CHECKING,
     Any,
-    Coroutine,
     Dict,
     List,
     Literal,
@@ -34,9 +36,11 @@ from typing import (
     cast,
 )
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 
-from camel.agents import ChatAgent
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
+
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
@@ -62,9 +66,8 @@ from .browser_toolkit_commons import (
     WEB_AGENT_SYSTEM_PROMPT,
     InteractiveRegion,
     VisualViewport,
-    _add_set_of_mark,
     _parse_json_output,
-    _reload_image,
+    add_set_of_mark,
     interactive_region_from_dict,
     visual_viewport_from_dict,
 )
@@ -85,17 +88,45 @@ ASYNC_ACTIONS = [
     "find_text_on_page",
     "visit_page",
     "click_blank_area",
+    "open_tab",
+    "close_tab",
 ]
+
+
+def extract_function_name(s: str) -> str:
+    r"""Extract the pure function name from a string (without parameters or
+    parentheses)
+
+    Args:
+        s (str): Input string, e.g., `1.`**`click_id(14)`**, `scroll_up()`,
+        `\'visit_page(url)\'`, etc.
+
+    Returns:
+        str: Pure function name (e.g., `click_id`, `scroll_up`, `visit_page`)
+    """
+    # 1. Strip leading/trailing whitespace and enclosing backticks or quotes
+    s = s.strip().strip('`"\'')
+
+    # Strip any leading numeric prefix like " 12. " or "3.   "
+    s = re.sub(r"^\s*\d+\.\s*", "", s)
+
+    # 3. Match a Python-valid identifier followed by an opening parenthesis
+    match = re.match(r"^([A-Za-z_]\w*)\s*\(", s)
+    if match:
+        return match.group(1)
+
+    # 4. Fallback: take everything before the first space or '('
+    return re.split(r"[ (\n]", s, maxsplit=1)[0]
 
 
 class AsyncBaseBrowser:
     def __init__(
         self,
         headless=True,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
         channel: Literal["chrome", "msedge", "chromium"] = "chromium",
-        cookie_json_path: Optional[str] = None,
-        user_data_dir: Optional[str] = None,
+        cookie_json_path: str | None = None,
+        user_data_dir: str | None = None,
     ):
         r"""Initialize the WebBrowser instance.
 
@@ -118,21 +149,26 @@ class AsyncBaseBrowser:
             None
         """
         from playwright.async_api import (
-            Browser,
-            BrowserContext,
             Page,
             async_playwright,
         )
 
-        self.history: List[Any] = []
+        self.history: list[Any] = []
         self.headless = headless
         self.channel = channel
         self.playwright = async_playwright()
-        self.page_history: List[
-            str
-        ] = []  # stores the history of visited pages
+        self.page_history: list[Any] = []
         self.cookie_json_path = cookie_json_path
         self.user_data_dir = user_data_dir
+        self.playwright_server: Any = None
+        self.playwright_started: bool = False
+        self.browser: Any = None
+        self.context: Any = None
+        self.page: Any = None
+        self.page_url: str = ""
+        self.web_agent_model: BaseModelBackend | None = None
+        self.tabs: dict[int, Page] = {}
+        self.current_tab_id: int | None = 0
 
         # Set the cache directory
         self.cache_dir = "tmp/" if cache_dir is None else cache_dir
@@ -147,30 +183,19 @@ class AsyncBaseBrowser:
         page_script_path = os.path.join(abs_dir_path, "page_script.js")
 
         try:
-            with open(page_script_path, "r", encoding='utf-8') as f:
+            with open(page_script_path, encoding="utf-8") as f:
                 self.page_script = f.read()
             f.close()
         except FileNotFoundError:
             raise FileNotFoundError(
-                f"Page script file not found at path: {page_script_path}"
+                f"Page script file not found at path: {page_script_path}",
             )
-        self.browser: Optional[Browser] = None
-        self.context: Optional[BrowserContext] = None
-        self.page: Optional[Page] = None
-        self.page_url: Optional[str] = None
-        self.web_agent_model: Optional[BaseModelBackend] = (
-            None  # Added for type hinting
-        )
-        self.tabs: Dict[int, Page] = {}
-        self.current_tab_id: Optional[int] = 0
 
     async def async_init(self) -> None:
-        r"""Initialize the browser."""
-        assert self.playwright is not None
-
-        # Start Playwright asynchronously
+        r"""Asynchronously initialize the browser."""
         if not getattr(self, "playwright_started", False):
-            await self.async_ensure_browser_installed()
+            await self._ensure_browser_installed()
+            self.playwright_server = await self.playwright.start()
             self.playwright_started = True
 
         browser_launch_args = [
@@ -183,9 +208,9 @@ class AsyncBaseBrowser:
             "Chrome/91.0.4472.124 Safari/537.36"
         )
 
-        async with self.playwright as p:
-            if self.user_data_dir:
-                self.context = await p.chromium.launch_persistent_context(
+        if self.user_data_dir:
+            self.context = await (
+                self.playwright_server.chromium.launch_persistent_context(
                     user_data_dir=self.user_data_dir,
                     headless=self.headless,
                     channel=self.channel,
@@ -194,40 +219,36 @@ class AsyncBaseBrowser:
                     java_script_enabled=True,
                     args=browser_launch_args,
                 )
-                self.browser = None  # Not using a separate browser instance
-                if (
-                    len(self.context.pages) > 0
-                ):  # Persistent context might reopen pages
-                    self.page = self.context.pages[0]
-                else:
-                    self.page = await self.context.new_page()
-                    self.tabs[0] = self.page
-                    self.current_tab_id = 0
+            )
+
+            self.browser = None  # Not using a separate browser instance
+            if len(self.context.pages) > 0:
+                self.page = self.context.pages[0]
             else:
-                # Launch a fresh browser instance
-                self.browser = await p.chromium.launch(
-                    headless=self.headless,
-                    channel=self.channel,
-                    args=browser_launch_args,
-                )
-
-                new_context_kwargs: Dict[str, Any] = {
-                    "accept_downloads": True,
-                    "user_agent": user_agent_string,
-                    "java_script_enabled": True,
-                }
-                if self.cookie_json_path and os.path.exists(
-                    self.cookie_json_path
-                ):
-                    new_context_kwargs["storage_state"] = self.cookie_json_path
-
-                self.context = await self.browser.new_context(
-                    **new_context_kwargs
-                )
                 self.page = await self.context.new_page()
-
                 self.tabs[0] = self.page
                 self.current_tab_id = 0
+        else:
+            # Launch a fresh browser instance
+            self.browser = await self.playwright_server.chromium.launch(
+                headless=self.headless,
+                channel=self.channel,
+                args=browser_launch_args,
+            )
+
+            new_context_kwargs: dict[str, Any] = {
+                "accept_downloads": True,
+                "user_agent": user_agent_string,
+                "java_script_enabled": True,
+            }
+            if self.cookie_json_path and os.path.exists(self.cookie_json_path):
+                new_context_kwargs["storage_state"] = self.cookie_json_path
+
+            self.context = await self.browser.new_context(**new_context_kwargs)
+            self.page = await self.context.new_page()
+
+            self.tabs[0] = self.page
+            self.current_tab_id = 0
 
         assert self.context is not None
         assert self.page is not None
@@ -242,8 +263,9 @@ class AsyncBaseBrowser:
             shutil.rmtree(self.cache_dir)
 
     async def async_open_tab(
-        self, url: Union[str, List[str]]
-    ) -> Union[int, List[int]]:
+        self,
+        url: str | list[str],
+    ) -> int | list[int]:
         r"""Open one or multiple tabs and navigate to URL(s); return tab_id(s).
 
         Args:
@@ -271,13 +293,13 @@ class AsyncBaseBrowser:
             return new_id
 
         # Handle multiple URLs case
-        elif isinstance(url, list):
+        if isinstance(url, list):
             if not url:
                 return []
 
             # Create all pages first in parallel
             pages = await asyncio.gather(
-                *[self.context.new_page() for _ in url]
+                *[self.context.new_page() for _ in url],
             )
 
             # Prepare results list
@@ -294,8 +316,10 @@ class AsyncBaseBrowser:
 
             # Navigate to URLs in parallel using asyncio
             async def navigate_page(
-                page: Any, url: str, tab_id: int
-            ) -> Tuple[int, bool, str]:
+                page: Any,
+                url: str,
+                tab_id: int,
+            ) -> tuple[int, bool, str]:
                 """Navigate a single page to its URL."""
                 try:
                     await page.goto(url)
@@ -310,7 +334,9 @@ class AsyncBaseBrowser:
 
             # Create tasks for parallel navigation
             tasks = []
-            for page, url_str, tab_id in zip(pages, url, tab_ids):
+            for page, url_str, tab_id in zip(
+                pages, url, tab_ids, strict=False
+            ):
                 tasks.append(navigate_page(page, url_str, tab_id))
 
             # Execute all navigation tasks concurrently
@@ -330,12 +356,12 @@ class AsyncBaseBrowser:
 
             return successful_tab_ids
 
-        else:
-            raise TypeError("URL must be a string or list of strings")
+        raise TypeError("URL must be a string or list of strings")
 
     def open_tab(
-        self, url: Union[str, List[str]]
-    ) -> Coroutine[Any, Any, Union[int, List[int]]]:
+        self,
+        url: str | list[str],
+    ) -> Coroutine[Any, Any, int | list[int]]:
         r"""Open one or multiple tabs and navigate to URL(s); return tab_id(s)."""
         return self.async_open_tab(url)
 
@@ -353,15 +379,16 @@ class AsyncBaseBrowser:
         self.current_tab_id = tab_id
 
     async def async_close_tab(
-        self, tab_id: Union[int, List[int]]
-    ) -> Union[None, List[Tuple[int, bool, str]]]:
+        self,
+        tab_id: int | list[int],
+    ) -> str | list[tuple[int, bool, str]]:
         r"""Close one or multiple tabs and adjust active tab.
 
         Args:
             tab_id (Union[int, List[int]]): Single tab ID or list of tab IDs to close.
 
         Returns:
-            Union[None, List[Tuple[int, bool, str]]]: None for single tab, or list of
+            Union[str, List[Tuple[int, bool, str]]]: String result for single tab, or list of
             (tab_id, success, message) tuples for multiple tabs.
 
         Raises:
@@ -386,15 +413,15 @@ class AsyncBaseBrowser:
                     self.page = None
                     self.current_tab_id = None
 
-            return None
+            return f"Successfully closed tab {tab_id}."
 
         # Handle multiple tabs case
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return []
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Check if current tab is in the list to be closed
             current_tab_closed = (
@@ -405,15 +432,14 @@ class AsyncBaseBrowser:
             # Define inline function for parallel execution
             async def close_single_tab_operation(
                 tid: int,
-            ) -> Tuple[int, bool, str]:
+            ) -> tuple[int, bool, str]:
                 """Close a single tab and return result."""
                 try:
                     if tid in self.tabs:
                         await self.tabs[tid].close()
                         # Note: We don't delete from self.tabs here to avoid race conditions
                         return tid, True, f"Successfully closed tab {tid}"
-                    else:
-                        return tid, False, f"Tab {tid} was already closed"
+                    return tid, False, f"Tab {tid} was already closed"
                 except Exception as e:
                     return tid, False, f"Error closing tab {tid}: {e!s}"
 
@@ -431,7 +457,7 @@ class AsyncBaseBrowser:
                 tid = valid_tabs[i]
                 if isinstance(result, Exception):
                     results.append(
-                        (tid, False, f"Error closing tab {tid}: {result!s}")
+                        (tid, False, f"Error closing tab {tid}: {result!s}"),
                     )
                 elif isinstance(result, tuple):
                     success, message = result[1], result[2]
@@ -452,19 +478,18 @@ class AsyncBaseBrowser:
 
             return results
 
-        else:
-            raise TypeError("tab_id must be an integer or list of integers")
+        raise TypeError("tab_id must be an integer or list of integers")
 
     def close_tab(
-        self, tab_id: Union[int, List[int]]
-    ) -> Coroutine[Any, Any, Union[None, List[Tuple[int, bool, str]]]]:
+        self,
+        tab_id: int | list[int],
+    ) -> Coroutine[Any, Any, str | list[tuple[int, bool, str]]]:
         r"""Close one or multiple tabs and adjust active tab."""
         return self.async_close_tab(tab_id)
 
     async def async_wait_for_load(self, timeout: int = 20) -> None:
         r"""Wait for a certain amount of time for the page to load."""
         timeout_ms = timeout * 1000
-        assert self.page is not None
         await self.page.wait_for_load_state("load", timeout=timeout_ms)
 
         # TODO: check if this is needed
@@ -476,7 +501,6 @@ class AsyncBaseBrowser:
 
     async def async_click_blank_area(self) -> None:
         r"""Click a blank area of the page to unfocus the current element."""
-        assert self.page is not None
         await self.page.mouse.click(0, 0)
         await self.async_wait_for_load()
 
@@ -484,14 +508,13 @@ class AsyncBaseBrowser:
         r"""Click a blank area of the page to unfocus the current element."""
         return self.async_click_blank_area()
 
-    @retry_on_error()
     async def async_visit_page(self, url: str) -> None:
         r"""Visit a page with the given URL."""
-        assert self.page is not None
         await self.page.goto(url)
         await self.async_wait_for_load()
         self.page_url = url
 
+    @retry_on_error()
     def visit_page(self, url: str) -> Coroutine[Any, Any, None]:
         r"""Visit a page with the given URL."""
         return self.async_visit_page(url)
@@ -506,80 +529,38 @@ class AsyncBaseBrowser:
         Returns:
             str: The answer to the question.
         """
-        url_data = self.get_url()
+        current_url = self.get_url()
 
-        # Handle multi-tab scenario
-        if isinstance(url_data, dict):
-            # Multi-tab: analyze videos from all tabs
-            results = {}
-            for tab_id, url in url_data.items():
-                try:
-                    # Confirm with user before proceeding due to potential slow
-                    # processing time
-                    confirmation_message = (
-                        f"Do you want to analyze the video on tab {tab_id} "
-                        f"({url})? This operation may take a long time.(y/n): "
-                    )
-                    user_confirmation = input(confirmation_message)
+        # Ensure current_url is a string
+        if isinstance(current_url, dict):
+            # If it's a dict, we need to handle multiple tabs
+            # For now, just use the first tab or raise an error
+            if not current_url:
+                return "No tabs available for video analysis."
+            # Use the first tab's URL
+            current_url = next(iter(current_url.values()))
 
-                    if user_confirmation.lower() not in ['y', 'yes']:
-                        results[tab_id] = "User cancelled the video analysis."
-                        continue
+        # Confirm with user before proceeding due to potential slow
+        # processing time
+        confirmation_message = (
+            f"Do you want to analyze the video on the current "
+            f"page({current_url})? This operation may take a long time.(y/n): "
+        )
+        user_confirmation = input(confirmation_message)
 
-                    model = None
-                    if (
-                        hasattr(self, 'web_agent_model')
-                        and self.web_agent_model is not None
-                    ):
-                        model = self.web_agent_model
+        if user_confirmation.lower() not in ["y", "yes"]:
+            return "User cancelled the video analysis."
 
-                    video_analyzer = VideoAnalysisToolkit(model=model)
-                    result = video_analyzer.ask_question_about_video(
-                        url, question
-                    )
-                    results[tab_id] = result
-                except Exception as e:
-                    results[tab_id] = f"Error analyzing video: {e!s}"
+        model = None
+        if (
+            hasattr(self, "web_agent_model")
+            and self.web_agent_model is not None
+        ):
+            model = self.web_agent_model
 
-            # Return combined results
-            if len(results) == 1:
-                return next(iter(results.values()))
-            else:
-                combined_result = "Multi-tab video analysis results:\n\n"
-                for tab_id, result in results.items():
-                    combined_result += f"Tab {tab_id}:\n{result}\n\n"
-                return combined_result.rstrip()
-
-        elif isinstance(url_data, str):
-            # Single tab - existing behavior
-            current_url = url_data
-
-            # Confirm with user before proceeding due to potential slow
-            # processing time
-            confirmation_message = (
-                f"Do you want to analyze the video on the current "
-                f"page({current_url})? This operation may take a long time.(y/n): "
-            )
-            user_confirmation = input(confirmation_message)
-
-            if user_confirmation.lower() not in ['y', 'yes']:
-                return "User cancelled the video analysis."
-
-            model = None
-            if (
-                hasattr(self, 'web_agent_model')
-                and self.web_agent_model is not None
-            ):
-                model = self.web_agent_model
-
-            video_analyzer = VideoAnalysisToolkit(model=model)
-            result = video_analyzer.ask_question_about_video(
-                current_url, question
-            )
-            return result
-
-        else:
-            raise ValueError(f"Unexpected URL data type: {type(url_data)}")
+        video_analyzer = VideoAnalysisToolkit(model=model)
+        result = video_analyzer.ask_question_about_video(current_url, question)
+        return result
 
     @retry_on_error()
     async def async_get_screenshot(
@@ -620,7 +601,8 @@ class AsyncBaseBrowser:
                 target_url = target_page.url
                 parsed_url = urllib.parse.urlparse(target_url)
                 url_name = sanitize_filename(
-                    str(parsed_url.path), max_length=241
+                    str(parsed_url.path),
+                    max_length=241,
                 )
                 timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
 
@@ -631,7 +613,8 @@ class AsyncBaseBrowser:
                     )
                 else:
                     file_path = os.path.join(
-                        self.cache_dir, f"{url_name}_{timestamp}.png"
+                        self.cache_dir,
+                        f"{url_name}_{timestamp}.png",
                     )
 
                 with open(file_path, "wb") as f:
@@ -640,17 +623,17 @@ class AsyncBaseBrowser:
             return image, file_path
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the async screenshot operation function
             async def capture_single_tab_screenshot(
                 tid: int,
-            ) -> Tuple[int, Tuple[Image.Image, Union[str, None]]]:
+            ) -> tuple[int, tuple[Image.Image, str | None]]:
                 """Capture screenshot for a single tab.
 
                 This function is designed to always return a valid Image.Image object,
@@ -679,10 +662,11 @@ class AsyncBaseBrowser:
                         target_url = page.url
                         parsed_url = urllib.parse.urlparse(target_url)
                         url_name = sanitize_filename(
-                            str(parsed_url.path), max_length=241
+                            str(parsed_url.path),
+                            max_length=241,
                         )
                         timestamp = datetime.datetime.now().strftime(
-                            "%m%d%H%M%S"
+                            "%m%d%H%M%S",
                         )
                         file_path = os.path.join(
                             self.cache_dir,
@@ -699,45 +683,15 @@ class AsyncBaseBrowser:
                 except Exception as e:
                     # Log the error for debugging
                     logger.error(
-                        f"Error capturing screenshot for tab {tid}: {e}"
+                        f"Error capturing screenshot for tab {tid}: {e}",
                     )
 
-                    # Create a fallback image instead of returning None
-                    # This maintains type safety while providing meaningful error indication
+                    # Create a simple fallback image
                     fallback_image = Image.new(
-                        'RGB',
+                        "RGB",
                         (800, 600),
-                        color='lightgray',  # Use light gray to indicate error
+                        color="white",
                     )
-
-                    # Optionally add error text to the image
-                    try:
-                        draw = ImageDraw.Draw(fallback_image)
-                        # Try to use a default font, fallback to basic if not available
-                        try:
-                            font = ImageFont.load_default()
-                        except OSError:  # More specific exception
-                            font = None
-
-                        error_text = f"Error: Tab {tid}"
-                        # Calculate text position (center of image)
-                        bbox = (
-                            draw.textbbox((0, 0), error_text, font=font)
-                            if font
-                            else (0, 0, 100, 20)
-                        )
-                        text_width = bbox[2] - bbox[0]
-                        text_height = bbox[3] - bbox[1]
-
-                        x = (800 - text_width) // 2
-                        y = (600 - text_height) // 2
-
-                        draw.text((x, y), error_text, fill='red', font=font)
-                    except Exception as draw_error:
-                        # If we can't add text, just log it and continue with plain image
-                        logger.debug(
-                            f"Could not add error text to fallback image: {draw_error}"
-                        )
 
                     # Return the fallback image with no file path
                     return tid, (fallback_image, None)
@@ -756,7 +710,7 @@ class AsyncBaseBrowser:
                 tid = valid_tabs[i]
                 if isinstance(result, Exception):
                     logger.error(
-                        f"Error capturing screenshot for tab {tid}: {result}"
+                        f"Error capturing screenshot for tab {tid}: {result}",
                     )
                 elif isinstance(result, tuple):
                     screenshot_result = result[1]
@@ -766,37 +720,34 @@ class AsyncBaseBrowser:
                         final_results[tid] = screenshot_result
                     else:
                         logger.warning(
-                            f"Failed to capture screenshot for tab {tid}"
+                            f"Failed to capture screenshot for tab {tid}",
                         )
 
             return final_results
 
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
 
+    @retry_on_error()
     def get_screenshot(
         self,
         save_image: bool = False,
-        tab_id: Optional[Union[int, List[int]]] = None,
+        tab_id: int | list[int] | None = None,
     ) -> Coroutine[
         Any,
         Any,
-        Union[
-            Tuple[Image.Image, Union[str, None]],
-            Dict[int, Tuple[Image.Image, Union[str, None]]],
-        ],
+        tuple[Image.Image, str | None]
+        | dict[int, tuple[Image.Image, str | None]],
     ]:
         r"""Get a screenshot of the current page, a specific tab, or multiple tabs simultaneously."""
         return self.async_get_screenshot(save_image, tab_id)
 
-    @retry_on_error()
     async def async_capture_full_page_screenshots(
         self,
         scroll_ratio: float = 0.8,
-        tab_id: Optional[Union[int, List[int]]] = None,
-    ) -> Union[List[str], Dict[int, List[str]]]:
+        tab_id: int | list[int] | None = None,
+    ) -> list[str] | dict[int, list[str]]:
         r"""Capture full page screenshots by scrolling the page with a buffer
         zone for one or multiple tabs.
 
@@ -823,64 +774,37 @@ class AsyncBaseBrowser:
             if target_page.viewport_size is None:
                 raise RuntimeError("Page viewport size not available")
 
-            screenshots: List[str] = []
-            scroll_height_eval = await target_page.evaluate(
-                "document.body.scrollHeight"
+            screenshots = []
+            scroll_height = await target_page.evaluate(
+                "document.body.scrollHeight",
             )
-            scroll_height = cast(float, scroll_height_eval)
-
+            assert target_page.viewport_size is not None
             viewport_height = target_page.viewport_size["height"]
-            current_scroll_eval = await target_page.evaluate("window.scrollY")
-            current_scroll = cast(float, current_scroll_eval)
+            current_scroll = 0
 
             max_height = scroll_height - viewport_height
             scroll_step = int(viewport_height * scroll_ratio)
 
-            last_height = 0.0
+            last_height = 0
 
             while True:
                 logger.debug(
                     f"Current scroll: {current_scroll}, max_height: "
-                    f"{max_height}, step: {scroll_step}"
+                    f"{max_height}, step: {scroll_step}",
                 )
 
                 # Take screenshot of current viewport
-                image_data = await target_page.screenshot(timeout=60000)
-                image = Image.open(io.BytesIO(image_data))
-
-                # Save screenshot with appropriate naming
-                parsed_url = urllib.parse.urlparse(target_page.url)
-                url_name = sanitize_filename(
-                    str(parsed_url.path), max_length=241
-                )
-                timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
-
-                # Include tab_id in filename if capture is from specific tab
-                if single_tab_id is not None:
-                    file_path = os.path.join(
-                        self.cache_dir,
-                        f"fullpage_tab_{single_tab_id}_{url_name}_{timestamp}.png",
-                    )
-                else:
-                    file_path = os.path.join(
-                        self.cache_dir, f"fullpage_{url_name}_{timestamp}.png"
-                    )
-
-                with open(file_path, "wb") as f:
-                    image.save(f, "PNG")
-
-                screenshots.append(file_path)
+                _, file_path = await self.async_get_screenshot(save_image=True)
+                if file_path is not None:
+                    screenshots.append(file_path)
 
                 await target_page.evaluate(
-                    f"window.scrollBy(0, {scroll_step})"
+                    f"window.scrollBy(0, {scroll_step})",
                 )
                 # Allow time for content to load
                 await asyncio.sleep(0.5)
 
-                current_scroll_eval = await target_page.evaluate(
-                    "window.scrollY"
-                )
-                current_scroll = cast(float, current_scroll_eval)
+                current_scroll = await target_page.evaluate("window.scrollY")
                 # Break if there is no significant scroll
                 if abs(current_scroll - last_height) < viewport_height * 0.1:
                     break
@@ -890,17 +814,17 @@ class AsyncBaseBrowser:
             return screenshots
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the async screenshot operation function
             async def capture_single_tab_full_page_screenshots(
                 tid: int,
-            ) -> Tuple[int, List[str]]:
+            ) -> tuple[int, list[str]]:
                 """Capture full page screenshots for a single tab."""
                 try:
                     page = self.tabs[tid]
@@ -908,63 +832,43 @@ class AsyncBaseBrowser:
                     # Validate viewport size
                     if page.viewport_size is None:
                         logger.error(
-                            f"Tab {tid}: Page viewport size not available"
+                            f"Tab {tid}: Page viewport size not available",
                         )
                         return tid, []
 
-                    screenshots: List[str] = []
-                    scroll_height_eval = await page.evaluate(
-                        "document.body.scrollHeight"
+                    screenshots: list[str] = []
+                    scroll_height = await page.evaluate(
+                        "document.body.scrollHeight",
                     )
-                    scroll_height = cast(float, scroll_height_eval)
-
                     viewport_height = page.viewport_size["height"]
-                    current_scroll_eval = await page.evaluate("window.scrollY")
-                    current_scroll = cast(float, current_scroll_eval)
+                    current_scroll = 0
 
                     max_height = scroll_height - viewport_height
                     scroll_step = int(viewport_height * scroll_ratio)
 
-                    last_height = 0.0
+                    last_height = 0
 
                     while True:
                         logger.debug(
                             f"Tab {tid} - Current scroll: {current_scroll}, max_height: "
-                            f"{max_height}, step: {scroll_step}"
+                            f"{max_height}, step: {scroll_step}",
                         )
 
-                        # Take screenshot of current viewport
-                        image_data = await page.screenshot(timeout=60000)
-                        image = Image.open(io.BytesIO(image_data))
-
-                        # Save screenshot with tab-specific naming
-                        parsed_url = urllib.parse.urlparse(page.url)
-                        url_name = sanitize_filename(
-                            str(parsed_url.path), max_length=241
+                        # Take screenshot of current viewport using the same method as single-tab case
+                        _, file_path = await self.async_get_screenshot(
+                            save_image=True,
+                            tab_id=tid,
                         )
-                        timestamp = datetime.datetime.now().strftime(
-                            "%m%d%H%M%S"
-                        )
-                        file_path = os.path.join(
-                            self.cache_dir,
-                            f"fullpage_tab_{tid}_{url_name}_{timestamp}.png",
-                        )
-
-                        with open(file_path, "wb") as f:
-                            image.save(f, "PNG")
-
-                        screenshots.append(file_path)
+                        if file_path is not None:
+                            screenshots.append(file_path)
 
                         await page.evaluate(
-                            f"window.scrollBy(0, {scroll_step})"
+                            f"window.scrollBy(0, {scroll_step})",
                         )
                         # Allow time for content to load
                         await asyncio.sleep(0.5)
 
-                        current_scroll_eval = await page.evaluate(
-                            "window.scrollY"
-                        )
-                        current_scroll = cast(float, current_scroll_eval)
+                        current_scroll = await page.evaluate("window.scrollY")
                         # Break if there is no significant scroll
                         if (
                             abs(current_scroll - last_height)
@@ -977,7 +881,7 @@ class AsyncBaseBrowser:
                     return tid, screenshots
                 except Exception as e:
                     logger.error(
-                        f"Error capturing full page screenshots for tab {tid}: {e}"
+                        f"Error capturing full page screenshots for tab {tid}: {e}",
                     )
                     return tid, []
 
@@ -995,7 +899,7 @@ class AsyncBaseBrowser:
                 tid = valid_tabs[i]
                 if isinstance(result, Exception):
                     logger.error(
-                        f"Error capturing full page screenshots for tab {tid}: {result}"
+                        f"Error capturing full page screenshots for tab {tid}: {result}",
                     )
                 elif isinstance(result, tuple):
                     screenshots_result = result[1]
@@ -1005,28 +909,29 @@ class AsyncBaseBrowser:
                         final_results[tid] = screenshots_result
                     else:
                         logger.warning(
-                            f"Failed to capture full page screenshots for tab {tid}"
+                            f"Failed to capture full page screenshots for tab {tid}",
                         )
 
             return final_results
 
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
 
     def capture_full_page_screenshots(
         self,
         scroll_ratio: float = 0.8,
-        tab_id: Optional[Union[int, List[int]]] = None,
-    ) -> Coroutine[Any, Any, Union[List[str], Dict[int, List[str]]]]:
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, list[str] | dict[int, list[str]]]:
         r"""Capture full page screenshots by scrolling the page with a buffer
-        zone for one or multiple tabs."""
+        zone for one or multiple tabs.
+        """
         return self.async_capture_full_page_screenshots(scroll_ratio, tab_id)
 
     async def async_get_visual_viewport(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[VisualViewport, Dict[int, VisualViewport]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> VisualViewport | dict[int, VisualViewport]:
         r"""Get the visual viewport of the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -1051,25 +956,24 @@ class AsyncBaseBrowser:
             except Exception as e:
                 logger.warning(f"Error evaluating page script: {e}")
 
-            visual_viewport_eval = await target_page.evaluate(
-                "MultimodalWebSurfer.getVisualViewport();"
-            )
             return visual_viewport_from_dict(
-                cast(Dict[str, Any], visual_viewport_eval)
+                await target_page.evaluate(
+                    "MultimodalWebSurfer.getVisualViewport();",
+                ),
             )
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the async viewport operation function
             async def get_single_tab_viewport(
                 tid: int,
-            ) -> Tuple[int, VisualViewport]:
+            ) -> tuple[int, VisualViewport]:
                 """Get viewport information for a single tab.
 
                 This function always returns a valid VisualViewport object, even in error cases,
@@ -1085,10 +989,17 @@ class AsyncBaseBrowser:
                     # Get the page for this tab
                     page = self.tabs[tid]
 
-                    # Evaluate JavaScript to get viewport information
-                    viewport_data = cast(
-                        Dict[str, Any],
-                        await page.evaluate("() => window.visualViewport"),
+                    # Evaluate the page script first (matching single-tab logic)
+                    try:
+                        await page.evaluate(self.page_script)
+                    except Exception as e:
+                        logger.warning(
+                            f"Error evaluating page script for tab {tid}: {e}",
+                        )
+
+                    # Get viewport data using the same method as single-tab logic
+                    viewport_data = await page.evaluate(
+                        "MultimodalWebSurfer.getVisualViewport();",
                     )
 
                     # Convert the raw data to our TypedDict format
@@ -1102,23 +1013,23 @@ class AsyncBaseBrowser:
 
                     # Create a default viewport as fallback
                     # This provides reasonable defaults that won't break the UI
-                    default_viewport: VisualViewport = {
-                        "width": 1920,  # Standard desktop width
-                        "height": 1080,  # Standard desktop height
-                        "scale": 1.0,  # No scaling
-                        "offsetLeft": 0,  # No horizontal offset
-                        "offsetTop": 0,  # No vertical offset
-                        "pageLeft": 0,  # No page offset
-                        "pageTop": 0,  # No page offset
-                        "clientWidth": 1920,  # Same as width
-                        "clientHeight": 1080,  # Same as height
-                        "scrollWidth": 1920,  # No horizontal scroll
-                        "scrollHeight": 1080,  # No vertical scroll
-                    }
+                    default_viewport = VisualViewport(
+                        height=600,
+                        width=800,
+                        offsetLeft=0,
+                        offsetTop=0,
+                        pageLeft=0,
+                        pageTop=0,
+                        scale=1,
+                        clientWidth=800,
+                        clientHeight=600,
+                        scrollWidth=800,
+                        scrollHeight=600,
+                    )
 
                     # Log that we're using fallback values
                     logger.info(
-                        f"Using fallback viewport values for tab {tid} due to error: {e}"
+                        f"Using fallback viewport values for tab {tid} due to error: {e}",
                     )
 
                     return tid, default_viewport
@@ -1132,12 +1043,12 @@ class AsyncBaseBrowser:
             results_list = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Process results and filter out failed captures
-            final_results: Dict[int, VisualViewport] = {}
+            final_results: dict[int, VisualViewport] = {}
             for i, result in enumerate(results_list):
                 tid = valid_tabs[i]
                 if isinstance(result, Exception):
                     logger.error(
-                        f"Error getting viewport for tab {tid}: {result}"
+                        f"Error getting viewport for tab {tid}: {result}",
                     )
                 elif isinstance(result, tuple):
                     viewport_result = result[1]
@@ -1150,22 +1061,23 @@ class AsyncBaseBrowser:
 
             return final_results
 
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
 
     def get_visual_viewport(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Coroutine[Any, Any, Union[VisualViewport, Dict[int, VisualViewport]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, VisualViewport | dict[int, VisualViewport]]:
         r"""Get the visual viewport of the current page, a specific tab, or multiple tabs simultaneously."""
         return self.async_get_visual_viewport(tab_id)
 
     async def async_get_interactive_elements(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[
-        Dict[str, InteractiveRegion], Dict[int, Dict[str, InteractiveRegion]]
-    ]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> (
+        dict[str, InteractiveRegion] | dict[int, dict[str, InteractiveRegion]]
+    ):
         r"""Get the interactive elements of the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -1191,53 +1103,53 @@ class AsyncBaseBrowser:
                 logger.warning(f"Error evaluating page script: {e}")
 
             result = cast(
-                Dict[str, Dict[str, Any]],
+                dict[str, dict[str, Any]],
                 await target_page.evaluate(
-                    "MultimodalWebSurfer.getInteractiveRects();"
+                    "MultimodalWebSurfer.getInteractiveRects();",
                 ),
             )
 
-            typed_results: Dict[str, InteractiveRegion] = {}
+            typed_results: dict[str, InteractiveRegion] = {}
             for k in result:
                 typed_results[k] = interactive_region_from_dict(result[k])
 
             return typed_results
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the async interactive elements operation function
             async def get_single_tab_interactive_elements(
                 tid: int,
-            ) -> Tuple[int, Dict[str, InteractiveRegion]]:
+            ) -> tuple[int, dict[str, InteractiveRegion]]:
                 """Get interactive elements for a single tab."""
                 try:
                     page = self.tabs[tid]
                     await page.evaluate(self.page_script)
                     result = cast(
-                        Dict[str, Dict[str, Any]],
+                        dict[str, dict[str, Any]],
                         await page.evaluate(
-                            "MultimodalWebSurfer.getInteractiveRects();"
+                            "MultimodalWebSurfer.getInteractiveRects();",
                         ),
                     )
 
-                    typed_results: Dict[str, InteractiveRegion] = {}
+                    typed_results: dict[str, InteractiveRegion] = {}
                     for k in result:
                         typed_results[k] = interactive_region_from_dict(
-                            result[k]
+                            result[k],
                         )
 
                     return tid, typed_results
                 except Exception as e:
                     logger.error(
-                        f"Error getting interactive elements for tab {tid}: {e}"
+                        f"Error getting interactive elements for tab {tid}: {e}",
                     )
-                    return tid, {}
+                    return tid, cast(dict[str, InteractiveRegion], {})
 
             # Use asyncio.gather for parallel execution
             tasks = []
@@ -1245,127 +1157,80 @@ class AsyncBaseBrowser:
                 tasks.append(get_single_tab_interactive_elements(tid))
 
             # Execute all interactive elements operations concurrently
-            results_list = await asyncio.gather(*tasks, return_exceptions=True)
+            results_list: list[
+                tuple[int, dict[str, InteractiveRegion]] | BaseException
+            ] = await asyncio.gather(
+                *tasks,
+                return_exceptions=True,  # Changed from False to True
+            )
 
             # Process results and filter out failed captures
-            final_results: Dict[int, Dict[str, InteractiveRegion]] = {}  # type: ignore[assignment]
+            final_results: dict[int, dict[str, InteractiveRegion]] = {}
             for i, result in enumerate(results_list):  # type: ignore[assignment]
                 tid = valid_tabs[i]
 
-                # First, check if this result is an exception
+                # Handle exceptions from individual tasks
                 if isinstance(result, Exception):
                     logger.error(
                         f"Error getting interactive elements for tab {tid}: {result}"
                     )
-                    # Skip this result entirely - don't add to final_results
                     continue
 
-                # Now we know result is not an exception, check if it's the expected tuple
+                # Extract and validate interactive elements
+                # Add type guard to ensure result is not an exception
                 if not isinstance(result, tuple):
                     logger.warning(
-                        f"Unexpected result type for tab {tid}: {type(result)}. "
-                        f"Expected tuple, got {type(result)}"
+                        f"Unexpected result type for tab {tid}: {type(result)}",
                     )
                     continue
 
-                # Check if the tuple has the expected structure
-                if len(result) != 2:
-                    logger.warning(
-                        f"Invalid tuple structure for tab {tid}: {result}. "
-                        f"Expected (tab_id, elements), got tuple of length {len(result)}"
-                    )
-                    continue
-
-                # Extract the components - use type assertion to help mypy
-                # At this point, result is guaranteed to be a tuple due to the checks above
+                # After type guards, result is guaranteed to be a tuple
                 result_tuple = cast(
-                    Tuple[int, Dict[str, InteractiveRegion]], result
+                    tuple[int, dict[str, InteractiveRegion]], result
                 )
-                tab_id, interactive_elements_result = result_tuple
+                result_tab_id, interactive_elements_result = result_tuple
 
-                # Validate the interactive elements result
+                # Type check to ensure interactive_elements_result is the correct type
                 if not isinstance(interactive_elements_result, dict):
                     logger.warning(
-                        f"Invalid interactive elements type for tab {tid}: {type(interactive_elements_result)}. "
-                        f"Expected dict, got {type(interactive_elements_result)}"
+                        f"Invalid interactive elements result type for tab {tid}: "
+                        f"{type(interactive_elements_result)}",
                     )
                     continue
 
-                # Check if the dictionary contains valid InteractiveRegion objects
-                valid_elements = True
-                for key, value in interactive_elements_result.items():
-                    if not isinstance(key, str):
-                        logger.warning(
-                            f"Invalid key type in interactive elements for tab {tid}: {type(key)}"
-                        )
-                        valid_elements = False
-                        break
-
-                    if not isinstance(value, dict):
-                        logger.warning(
-                            f"Invalid value type in interactive elements for tab {tid}: {type(value)}"
-                        )
-                        valid_elements = False
-                        break
-
-                    # Check if it has the required fields for InteractiveRegion
-                    required_fields = {
-                        'tag_name',
-                        'role',
-                        'aria_name',
-                        'v_scrollable',
-                        'rects',
-                    }
-                    if not all(field in value for field in required_fields):
-                        logger.warning(
-                            f"Missing required fields in interactive elements for tab {tid}"
-                        )
-                        valid_elements = False
-                        break
-
-                # Only add to final_results if everything is valid
-                if valid_elements and interactive_elements_result:
-                    # Type assertion to help mypy understand the type
-                    interactive_elements_result = cast(
-                        Dict[str, InteractiveRegion],
-                        interactive_elements_result,
-                    )
-                    # At this point, we've validated that result is a valid tuple and not an exception
-                    final_results[tid] = interactive_elements_result  # type: ignore[assignment]
+                # Since interactive_region_from_dict() ensures proper typing, we can trust the result
+                if interactive_elements_result:  # Just check if it's not empty
+                    final_results[tid] = interactive_elements_result
                 else:
                     logger.warning(
-                        f"Failed to get valid interactive elements for tab {tid}"
+                        f"No interactive elements found for tab {tid}",
                     )
 
             return final_results
 
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
 
     def get_interactive_elements(
-        self, tab_id: Optional[Union[int, List[int]]] = None
+        self,
+        tab_id: int | list[int] | None = None,
     ) -> Coroutine[
         Any,
         Any,
-        Union[
-            Dict[str, InteractiveRegion],
-            Dict[int, Dict[str, InteractiveRegion]],
-        ],
+        dict[str, InteractiveRegion] | dict[int, dict[str, InteractiveRegion]],
     ]:
         r"""Get the interactive elements of the current page, a specific tab, or multiple tabs simultaneously."""
         return self.async_get_interactive_elements(tab_id)
 
-    @retry_on_error()
     async def async_get_som_screenshot(
         self,
         save_image: bool = False,
-        tab_id: Optional[Union[int, List[int]]] = None,
-    ) -> Union[
-        Tuple[Image.Image, Union[str, None]],
-        Dict[int, Tuple[Image.Image, Union[str, None]]],
-    ]:
+        tab_id: int | list[int] | None = None,
+    ) -> (
+        tuple[Image.Image, str | None]
+        | dict[int, tuple[Image.Image, str | None]]
+    ):
         r"""Get a screenshot of the current viewport with interactive elements
         marked for one or multiple tabs.
 
@@ -1390,30 +1255,25 @@ class AsyncBaseBrowser:
 
             await self.async_wait_for_load()
             screenshot, _ = await self.async_get_screenshot(
-                save_image=False, tab_id=single_tab_id
+                save_image=False,
+                tab_id=single_tab_id,
             )
             rects = await self.async_get_interactive_elements(
-                tab_id=single_tab_id
+                tab_id=single_tab_id,
             )
 
             file_path: str | None = None
 
-            # Type checking and casting for single tab case
-            if isinstance(rects, dict) and all(
-                isinstance(k, str) for k in rects.keys()
-            ):
-                rects = cast(Dict[str, InteractiveRegion], rects)
-                comp, _, _, _ = _add_set_of_mark(screenshot, rects)
-            else:
-                # Handle error case
-                logger.error("Unexpected rects format for single tab")
-                # Create fallback image
-                comp = Image.new('RGB', (800, 600), color='lightgray')
+            comp, _, _, _ = add_set_of_mark(
+                screenshot,
+                cast(dict[str, InteractiveRegion], rects),
+            )
             if save_image:
                 target_url = target_page.url
                 parsed_url = urllib.parse.urlparse(target_url)
                 url_name = sanitize_filename(
-                    str(parsed_url.path), max_length=241
+                    str(parsed_url.path),
+                    max_length=241,
                 )
                 timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
 
@@ -1425,7 +1285,8 @@ class AsyncBaseBrowser:
                     )
                 else:
                     file_path = os.path.join(
-                        self.cache_dir, f"som_{url_name}_{timestamp}.png"
+                        self.cache_dir,
+                        f"som_{url_name}_{timestamp}.png",
                     )
 
                 with open(file_path, "wb") as f:
@@ -1434,17 +1295,17 @@ class AsyncBaseBrowser:
             return comp, file_path
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the async SOM screenshot operation function
             async def capture_single_tab_som_screenshot(
                 tid: int,
-            ) -> Tuple[int, Tuple[Image.Image, Union[str, None]]]:
+            ) -> tuple[int, tuple[Image.Image, str | None]]:
                 """Capture SOM screenshot for a single tab.
 
                 This function always returns a valid Image.Image object, even in error cases,
@@ -1461,33 +1322,29 @@ class AsyncBaseBrowser:
                     page = self.tabs[tid]
                     await self.async_wait_for_load()
                     screenshot, _ = await self.async_get_screenshot(
-                        save_image=False, tab_id=tid
+                        save_image=False,
+                        tab_id=tid,
                     )
                     rects = await self.async_get_interactive_elements(
-                        tab_id=tid
+                        tab_id=tid,
                     )
 
-                    # For single tab case (around line 1397)
-                    if isinstance(rects, dict) and all(
-                        isinstance(k, str) for k in rects.keys()
-                    ):
-                        rects = cast(Dict[str, InteractiveRegion], rects)
-                        comp, _, _, _ = _add_set_of_mark(screenshot, rects)
-                    else:
-                        # Handle error case
-                        logger.error("Unexpected rects format for single tab")
-                        # Create fallback image
-                        comp = Image.new('RGB', (800, 600), color='lightgray')
+                    # Match the logic from single tab case
+                    comp, _, _, _ = add_set_of_mark(
+                        screenshot,
+                        cast(dict[str, InteractiveRegion], rects),
+                    )
 
                     file_path = None
                     if save_image:
                         target_url = page.url
                         parsed_url = urllib.parse.urlparse(target_url)
                         url_name = sanitize_filename(
-                            str(parsed_url.path), max_length=241
+                            str(parsed_url.path),
+                            max_length=241,
                         )
                         timestamp = datetime.datetime.now().strftime(
-                            "%m%d%H%M%S"
+                            "%m%d%H%M%S",
                         )
                         file_path = os.path.join(
                             self.cache_dir,
@@ -1500,45 +1357,15 @@ class AsyncBaseBrowser:
                 except Exception as e:
                     # Log the error for debugging
                     logger.error(
-                        f"Error capturing SOM screenshot for tab {tid}: {e}"
+                        f"Error capturing SOM screenshot for tab {tid}: {e}",
                     )
 
-                    # Create a fallback image instead of returning None
-                    # This maintains type safety while providing meaningful error indication
+                    # Create a simple fallback image
                     fallback_image = Image.new(
-                        'RGB',
+                        "RGB",
                         (800, 600),
-                        color='lightgray',  # Use light gray to indicate error
+                        color="white",
                     )
-
-                    # Optionally add error text to the image
-                    try:
-                        draw = ImageDraw.Draw(fallback_image)
-                        # Try to use a default font, fallback to basic if not available
-                        try:
-                            font = ImageFont.load_default()
-                        except OSError:  # More specific exception
-                            font = None
-
-                        error_text = f"SOM Error: Tab {tid}"
-                        # Calculate text position (center of image)
-                        bbox = (
-                            draw.textbbox((0, 0), error_text, font=font)
-                            if font
-                            else (0, 0, 100, 20)
-                        )
-                        text_width = bbox[2] - bbox[0]
-                        text_height = bbox[3] - bbox[1]
-
-                        x = (800 - text_width) // 2
-                        y = (600 - text_height) // 2
-
-                        draw.text((x, y), error_text, fill='red', font=font)
-                    except Exception as draw_error:
-                        # If we can't add text, just log it and continue with plain image
-                        logger.debug(
-                            f"Could not add error text to fallback SOM image: {draw_error}"
-                        )
 
                     # Return the fallback image with no file path
                     return tid, (fallback_image, None)
@@ -1557,7 +1384,7 @@ class AsyncBaseBrowser:
                 tid = valid_tabs[i]
                 if isinstance(result, Exception):
                     logger.error(
-                        f"Error capturing SOM screenshot for tab {tid}: {result}"
+                        f"Error capturing SOM screenshot for tab {tid}: {result}",
                     )
                 elif isinstance(result, tuple):
                     som_screenshot_result = result[1]
@@ -1567,35 +1394,34 @@ class AsyncBaseBrowser:
                         final_results[tid] = som_screenshot_result
                     else:
                         logger.warning(
-                            f"Failed to capture SOM screenshot for tab {tid}"
+                            f"Failed to capture SOM screenshot for tab {tid}",
                         )
 
             return final_results
 
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
 
     def get_som_screenshot(
         self,
         save_image: bool = False,
-        tab_id: Optional[Union[int, List[int]]] = None,
+        tab_id: int | list[int] | None = None,
     ) -> Coroutine[
         Any,
         Any,
-        Union[
-            Tuple[Image.Image, Union[str, None]],
-            Dict[int, Tuple[Image.Image, Union[str, None]]],
-        ],
+        tuple[Image.Image, str | None]
+        | dict[int, tuple[Image.Image, str | None]],
     ]:
         r"""Get a screenshot of the current viewport with interactive elements
-        marked for one or multiple tabs."""
+        marked for one or multiple tabs.
+        """
         return self.async_get_som_screenshot(save_image, tab_id)
 
     async def async_scroll_up(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[None, Dict[int, Tuple[bool, str]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, tuple[bool, str]]:
         r"""Scroll up the page for the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -1604,7 +1430,7 @@ class AsyncBaseBrowser:
                 If List[int], scrolls up multiple tabs simultaneously.
 
         Returns:
-            Union[None, Dict[int, Tuple[bool, str]]]: For single tab: None.
+            Union[str, Dict[int, Tuple[bool, str]]]: For single tab: string result of the scroll action.
                 For multiple tabs: dictionary mapping tab IDs to (success, message) tuples.
 
         Raises:
@@ -1616,20 +1442,20 @@ class AsyncBaseBrowser:
             target_page, _ = self._get_target_page(single_tab_id)
 
             await target_page.keyboard.press("PageUp")
-            return None
+            return "Successfully scrolled up the page."
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the scroll up operation function
             async def scroll_single_tab_up(
                 tid: int,
-            ) -> Tuple[int, Tuple[bool, str]]:
+            ) -> tuple[int, tuple[bool, str]]:
                 """Scroll up a single tab."""
                 try:
                     page = self.tabs[tid]
@@ -1644,41 +1470,39 @@ class AsyncBaseBrowser:
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Process results and filter out failed operations
-            final_results: Dict[int, Tuple[bool, str]] = {}
+            final_results: dict[int, tuple[bool, str]] = {}
             for result in results:
-                # First, check if this result is an exception
                 if isinstance(result, Exception):
                     logger.error(f"Exception in scroll up operation: {result}")
                     continue
 
-                # Now we know result is not an exception, check if it's the expected tuple
-                if not isinstance(result, tuple):
-                    logger.warning(f"Unexpected result type: {type(result)}")
-                    continue
-
-                # Extract the components
-                tid, (success, message) = result
-                if success:
-                    final_results[tid] = (success, message)
+                # Verify result is a valid tuple before unpacking
+                if isinstance(result, tuple) and len(result) == 2:
+                    tid, (success, message) = result
+                    if success:
+                        final_results[tid] = (success, message)
+                    else:
+                        logger.warning(f"Failed to scroll up tab {tid}")
                 else:
-                    logger.warning(f"Failed to scroll up tab {tid}")
+                    logger.warning(f"Unexpected result format: {result}")
 
             return final_results
 
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
 
     def scroll_up(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Coroutine[Any, Any, Union[None, Dict[int, Tuple[bool, str]]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, str | dict[int, tuple[bool, str]]]:
         r"""Scroll up the page for the current page, a specific tab, or multiple tabs simultaneously."""
         return self.async_scroll_up(tab_id)
 
     async def async_scroll_down(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[None, Dict[int, Tuple[bool, str]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, tuple[bool, str]]:
         r"""Scroll down the page for the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -1687,7 +1511,7 @@ class AsyncBaseBrowser:
                 If List[int], scrolls down multiple tabs simultaneously.
 
         Returns:
-            Union[None, Dict[int, Tuple[bool, str]]]: For single tab: None.
+            Union[str, Dict[int, Tuple[bool, str]]]: For single tab: string result of the scroll action.
                 For multiple tabs: dictionary mapping tab IDs to (success, message) tuples.
 
         Raises:
@@ -1699,20 +1523,20 @@ class AsyncBaseBrowser:
             target_page, _ = self._get_target_page(single_tab_id)
 
             await target_page.keyboard.press("PageDown")
-            return None
+            return "Successfully scrolled down the page."
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the scroll down operation function
             async def scroll_single_tab_down(
                 tid: int,
-            ) -> Tuple[int, Tuple[bool, str]]:
+            ) -> tuple[int, tuple[bool, str]]:
                 """Scroll down a single tab."""
                 try:
                     page = self.tabs[tid]
@@ -1730,43 +1554,654 @@ class AsyncBaseBrowser:
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Process results and filter out failed operations
-            final_results: Dict[int, Tuple[bool, str]] = {}
+            final_results: dict[int, tuple[bool, str]] = {}
             for result in results:
-                # First, check if this result is an exception
                 if isinstance(result, Exception):
                     logger.error(
-                        f"Exception in scroll down operation: {result}"
+                        f"Exception in scroll down operation: {result}",
                     )
                     continue
 
-                # Now we know result is not an exception, check if it's the expected tuple
-                if not isinstance(result, tuple):
-                    logger.warning(f"Unexpected result type: {type(result)}")
+                # Verify result is a valid tuple before unpacking
+                if isinstance(result, tuple) and len(result) == 2:
+                    tid, (success, message) = result
+                    if success:
+                        final_results[tid] = (success, message)
+                    else:
+                        logger.warning(f"Failed to scroll down tab {tid}")
+                else:
+                    logger.warning(f"Unexpected result format: {result}")
+
+            return final_results
+
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
+
+    def scroll_down(
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, str | dict[int, tuple[bool, str]]]:
+        r"""Scroll down the page for the current page, a specific tab, or multiple tabs simultaneously."""
+        return self.async_scroll_down(tab_id)
+
+    def get_url(
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, str]:
+        """Get the URL of the current page or specified tab(s)."""
+        if tab_id is None:
+            if self.page is None:
+                return ""
+            return self.page.url
+        if isinstance(tab_id, int):
+            if tab_id not in self.tabs:
+                raise ValueError(f"Tab {tab_id} does not exist")
+            return self.tabs[tab_id].url
+        if isinstance(tab_id, list):
+            result = {}
+            for tid in tab_id:
+                if tid not in self.tabs:
+                    raise ValueError(f"Tab {tid} does not exist")
+                result[tid] = self.tabs[tid].url
+            return result
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
+
+    async def async_click_id(
+        self,
+        identifier: str | int | dict[int, str | int],
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, tuple[bool, str]]:
+        r"""Click an element with the given identifier on the current page, a specific tab, or multiple tabs simultaneously.
+
+        Supports clicking on different elements on different tabs by providing a dictionary mapping tab IDs to identifiers.
+
+        Args:
+            identifier (Union[str, int, Dict[int, Union[str, int]]]): The identifier of the element to click.
+                Can be a single identifier (str/int) for all tabs, or a dictionary mapping tab IDs to specific identifiers.
+            tab_id (Optional[Union[int, List[int]]]): The ID(s) of the tab(s) to click on.
+                If None, uses the current active page. If int, clicks on single tab.
+                If List[int], clicks on multiple tabs simultaneously.
+
+        Returns:
+            Union[str, Dict[int, Tuple[bool, str]]]: For single tab: string result of the click action.
+                For multiple tabs: dictionary mapping tab IDs to (success, message) tuples.
+
+        Raises:
+            ValueError: If any of the specified tab_ids do not exist or refer to closed tabs.
+        """
+        # Handle single tab or current page click
+        if tab_id is None or isinstance(tab_id, int):
+            single_tab_id = tab_id
+            target_page, _ = self._get_target_page(single_tab_id)
+
+            # Get the identifier for this specific tab
+            if isinstance(identifier, dict):
+                if single_tab_id is None:
+                    raise ValueError(
+                        "When identifier is a dictionary, tab_id must be specified",
+                    )
+                if single_tab_id not in identifier:
+                    raise ValueError(
+                        f"Tab {single_tab_id} not found in identifier dictionary",
+                    )
+                element_id = identifier[single_tab_id]
+            else:
+                element_id = identifier
+
+            if isinstance(element_id, int):
+                element_id = str(element_id)
+
+            target = target_page.locator(f"[__elementId='{element_id}']")
+
+            try:
+                await target.wait_for(timeout=5000)
+            except Exception as e:
+                logger.debug(f"Error during click operation: {e}")
+                raise ValueError("No such element.") from None
+
+            await target.scroll_into_view_if_needed()
+
+            new_page = None
+            try:
+                async with target_page.expect_event(
+                    "popup",
+                    timeout=1000,
+                ) as page_info:
+                    box = cast(
+                        dict[str, int | float],
+                        await target.bounding_box(),
+                    )
+                    await target_page.mouse.click(
+                        box["x"] + box["width"] / 2,
+                        box["y"] + box["height"] / 2,
+                    )
+                new_page = await page_info.value
+
+                # If a new page is opened, switch to it
+                if new_page:
+                    self.page_history.append(deepcopy(target_page.url))
+                    target_page = new_page
+
+            except (TimeoutError, Exception) as e:  # type: ignore[misc]
+                logger.debug(f"Error during click operation: {e}")
+
+            await self.async_wait_for_load()
+            return f"Successfully clicked element '{element_id}'."
+
+        # Handle multiple tabs simultaneously
+        if isinstance(tab_id, list):
+            if not tab_id:
+                raise ValueError("tab_id must be a list of integers")
+
+            # Use _validate_tab_ids for validation
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
+
+            # Validate identifier dictionary if provided
+            if isinstance(identifier, dict):
+                missing_tabs = [tid for tid in tab_id if tid not in identifier]
+                if missing_tabs:
+                    raise ValueError(
+                        f"Tabs {missing_tabs} not found in identifier dictionary",
+                    )
+
+            # Define the click operation function
+            async def click_single_tab(
+                tid: int,
+            ) -> tuple[int, tuple[bool, str]]:
+                """Click on an element in a single tab."""
+                try:
+                    page = self.tabs[tid]
+
+                    # Get the identifier for this specific tab
+                    if isinstance(identifier, dict):
+                        element_id = identifier[tid]
+                    else:
+                        element_id = identifier
+
+                    if isinstance(element_id, int):
+                        element_id = str(element_id)
+
+                    target = page.locator(f"[__elementId='{element_id}']")
+
+                    try:
+                        await target.wait_for(timeout=5000)
+                    except Exception as e:
+                        logger.debug(f"Error during click operation: {e}")
+                        return (tid, (False, f"No such element: {e}"))
+
+                    await target.scroll_into_view_if_needed()
+
+                    new_page = None
+                    try:
+                        async with page.expect_event(
+                            "popup",
+                            timeout=1000,
+                        ) as page_info:
+                            box = cast(
+                                dict[str, int | float],
+                                await target.bounding_box(),
+                            )
+                            await page.mouse.click(
+                                box["x"] + box["width"] / 2,
+                                box["y"] + box["height"] / 2,
+                            )
+                        new_page = page_info.value
+
+                        # If a new page is opened, update the tabs dict
+                        if new_page:
+                            self.page_history.append(deepcopy(self.page.url))
+                            self.page = new_page
+
+                    except (TimeoutError, Exception) as e:  # type: ignore[misc]
+                        logger.debug(f"Error during click operation: {e}")
+
+                    await self.async_wait_for_load()
+
+                    return tid, (
+                        True,
+                        f"Successfully clicked element '{element_id}' on tab {tid}",
+                    )
+
+                except Exception as e:
+                    logger.error(f"Error clicking on tab {tid}: {e}")
+                    return tid, (
+                        False,
+                        f"Error clicking on tab {tid}: {e!s}",
+                    )
+
+            # Execute all click tasks concurrently
+            tasks = [click_single_tab(tid) for tid in valid_tabs]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # Process results and collect successful operations
+            final_results: dict[int, tuple[bool, str]] = {}
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.error(f"Exception in click operation: {result}")
                     continue
 
-                # Extract the components
-                tid, (success, message) = result
-                if success:
-                    final_results[tid] = (success, message)
+                # Verify result is a valid tuple before unpacking
+                if isinstance(result, tuple) and len(result) == 2:
+                    tid, (success, message) = result
+                    if success:
+                        final_results[tid] = (success, message)
                 else:
-                    logger.warning(f"Failed to scroll down tab {tid}")
+                    logger.warning(f"Unexpected result format: {result}")
+
+            return final_results
+
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
+
+    def click_id(
+        self,
+        identifier: str | int | dict[int, str | int],
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, str | dict[int, tuple[bool, str]]]:
+        r"""Click an element with the given identifier."""
+        return self.async_click_id(identifier, tab_id)
+
+    async def async_extract_url_content(self) -> str:
+        r"""Asynchronously extract the content of the current page."""
+        content = await self.page.content()
+        return content
+
+    def extract_url_content(self) -> Coroutine[Any, Any, str]:
+        r"""Extract the content of the current page."""
+        return self.async_extract_url_content()
+
+    async def async_download_file_id(
+        self,
+        identifier: str | int | dict[int, str | int],
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, tuple[bool, str]]:
+        r"""Asynchronously download a file with the given identifier on the current page, a specific tab, or multiple tabs simultaneously.
+
+        Supports downloading different files on different tabs by providing a dictionary mapping tab IDs to identifiers.
+
+        Args:
+            identifier (Union[str, int, Dict[int, Union[str, int]]]): The identifier of the file to download.
+                Can be a single identifier (str/int) for all tabs, or a dictionary mapping tab IDs to specific identifiers.
+            tab_id (Optional[Union[int, List[int]]]): The ID(s) of the tab(s) to download from.
+                If None, uses the current active page. If int, downloads from single tab.
+                If List[int], downloads from multiple tabs simultaneously.
+
+        Returns:
+            Union[str, Dict[int, Tuple[bool, str]]]: For single tab: string result of the download action.
+                For multiple tabs: dictionary mapping tab IDs to (success, message) tuples.
+
+        Raises:
+            ValueError: If any of the specified tab_ids do not exist or refer to closed tabs.
+        """
+        # Handle single tab or current page download
+        if tab_id is None or isinstance(tab_id, int):
+            single_tab_id = tab_id
+            target_page, _ = self._get_target_page(single_tab_id)
+
+            # Get the identifier for this specific tab
+            if isinstance(identifier, dict):
+                if single_tab_id is None:
+                    raise ValueError(
+                        "When identifier is a dictionary, tab_id must be specified",
+                    )
+                if single_tab_id not in identifier:
+                    raise ValueError(
+                        f"Tab {single_tab_id} not found in identifier dictionary",
+                    )
+                element_id = identifier[single_tab_id]
+            else:
+                element_id = identifier
+
+            if isinstance(element_id, int):
+                element_id = str(element_id)
+
+            try:
+                target = target_page.locator(f"[__elementId='{element_id}']")
+            except Exception as e:
+                logger.debug(f"Error during download operation: {e}")
+                return f"Element with identifier '{element_id}' not found."
+
+            await target.scroll_into_view_if_needed()
+
+            file_path = os.path.join(self.cache_dir)
+            await self.async_wait_for_load()
+
+            try:
+                async with target_page.expect_download(
+                    timeout=5000,
+                ) as download_info:
+                    await target.click()
+                    download = await download_info.value
+                    file_name = download.suggested_filename
+
+                    file_path = os.path.join(file_path, file_name)
+                    await download.save_as(file_path)
+
+                return f"Downloaded file to path '{file_path}'."
+
+            except Exception as e:
+                logger.debug(f"Error during download operation: {e}")
+                return (
+                    f"Failed to download file with identifier '{element_id}'."
+                )
+
+        # Handle multiple tabs simultaneously
+        elif isinstance(tab_id, list):
+            if not tab_id:
+                return {}
+
+            # Use _validate_tab_ids for validation
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
+
+            # Validate identifier dictionary if provided
+            if isinstance(identifier, dict):
+                missing_tabs = [tid for tid in tab_id if tid not in identifier]
+                if missing_tabs:
+                    raise ValueError(
+                        f"Tabs {missing_tabs} not found in identifier dictionary",
+                    )
+
+            # Define the download operation function
+            async def download_single_tab_file(
+                tid: int,
+            ) -> tuple[int, tuple[bool, str]]:
+                """Download file from a single tab."""
+                try:
+                    page = self.tabs[tid]
+
+                    # Get the identifier for this specific tab
+                    if isinstance(identifier, dict):
+                        element_id = identifier[tid]
+                    else:
+                        element_id = identifier
+
+                    if isinstance(element_id, int):
+                        element_id = str(element_id)
+
+                    try:
+                        target = page.locator(f"[__elementId='{element_id}']")
+                    except Exception as e:
+                        logger.debug(
+                            f"Error during download operation on tab {tid}: {e}",
+                        )
+                        return tid, (
+                            False,
+                            f"Element '{element_id}' not found on tab {tid}",
+                        )
+
+                    await target.scroll_into_view_if_needed()
+
+                    file_path = os.path.join(self.cache_dir)
+                    await page.wait_for_load_state("load", timeout=20000)
+
+                    try:
+                        async with page.expect_download(
+                            timeout=5000,
+                        ) as download_info:
+                            await target.click()
+                            download = await download_info.value
+                            file_name = download.suggested_filename
+
+                            file_path = os.path.join(file_path, file_name)
+                            await download.save_as(file_path)
+
+                        return tid, (
+                            True,
+                            f"Downloaded file to path '{file_path}' on tab {tid}",
+                        )
+
+                    except Exception as e:
+                        logger.debug(
+                            f"Error during download operation on tab {tid}: {e}",
+                        )
+                        return tid, (
+                            False,
+                            f"Failed to download file with identifier '{element_id}' on tab {tid}",
+                        )
+
+                except Exception as e:
+                    logger.error(f"Error downloading file from tab {tid}: {e}")
+                    return tid, (
+                        False,
+                        f"Error downloading file from tab {tid}: {e!s}",
+                    )
+
+            # Execute all download tasks concurrently
+            tasks = [download_single_tab_file(tid) for tid in valid_tabs]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # Process results and filter out failed downloads
+            final_results: dict[int, tuple[bool, str]] = {}
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.error(f"Exception in download operation: {result}")
+                    continue
+
+                # Verify result is a valid tuple before unpacking
+                if isinstance(result, tuple) and len(result) == 2:
+                    tid, (success, message) = result
+                    if success:
+                        final_results[tid] = (success, message)
+                    else:
+                        logger.warning(
+                            f"Failed to download file from tab {tid}: {message}",
+                        )
+                else:
+                    logger.warning(f"Unexpected result format: {result}")
 
             return final_results
 
         else:
             raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
+                "tab_id must be None, an integer, or a list of integers",
             )
 
-    def scroll_down(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Coroutine[Any, Any, Union[None, Dict[int, Tuple[bool, str]]]]:
-        r"""Scroll down the page for the current page, a specific tab, or multiple tabs simultaneously."""
-        return self.async_scroll_down(tab_id)
+    def download_file_id(
+        self,
+        identifier: str | int | dict[int, str | int],
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, str | dict[int, tuple[bool, str]]]:
+        r"""Download a file with the given identifier."""
+        return self.async_download_file_id(identifier, tab_id)
+
+    async def async_fill_input_id(
+        self,
+        identifier: str | int | dict[int, str | int],
+        text: str | dict[int, str],
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, tuple[bool, str]]:
+        r"""Asynchronously fill an input field with the given text, and then press Enter for the current page, a specific tab, or multiple tabs simultaneously.
+
+        Supports filling different input fields on different tabs by providing dictionaries mapping tab IDs to identifiers and texts.
+
+        Args:
+            identifier (Union[str, int, Dict[int, Union[str, int]]]): The identifier of the input field to fill.
+                Can be a single identifier (str/int) for all tabs, or a dictionary mapping tab IDs to specific identifiers.
+            text (Union[str, Dict[int, str]]): The text to fill in the input field.
+                Can be a single text string for all tabs, or a dictionary mapping tab IDs to specific texts.
+            tab_id (Optional[Union[int, List[int]]]): The ID(s) of the tab(s) to fill input on.
+                If None, uses the current active page. If int, fills input on single tab.
+                If List[int], fills input on multiple tabs simultaneously.
+
+        Returns:
+            Union[str, Dict[int, Tuple[bool, str]]]: For single tab: string result of the fill action.
+                For multiple tabs: dictionary mapping tab IDs to (success, message) tuples.
+
+        Raises:
+            ValueError: If any of the specified tab_ids do not exist or refer to closed tabs.
+            ValueError: If identifier/text is a dict but tab_id is not provided or doesn't match dict keys.
+        """
+        if tab_id is None or isinstance(tab_id, int):
+            single_tab_id = tab_id
+            target_page, _ = self._get_target_page(single_tab_id)
+
+            # Get the identifier and text for this specific tab
+            if isinstance(identifier, dict):
+                if single_tab_id is None:
+                    raise ValueError(
+                        "When identifier is a dictionary, tab_id must be specified",
+                    )
+                if single_tab_id not in identifier:
+                    raise ValueError(
+                        f"Tab {single_tab_id} not found in identifier dictionary",
+                    )
+                element_id = identifier[single_tab_id]
+            else:
+                element_id = identifier
+
+            if isinstance(text, dict):
+                if single_tab_id is None:
+                    raise ValueError(
+                        "When text is a dictionary, tab_id must be specified",
+                    )
+                if single_tab_id not in text:
+                    raise ValueError(
+                        f"Tab {single_tab_id} not found in text dictionary",
+                    )
+                fill_text = text[single_tab_id]
+            else:
+                fill_text = text
+
+            # Convert identifier to string if it's an integer
+            if isinstance(element_id, int):
+                element_id = str(element_id)
+
+            try:
+                target = target_page.locator(f"[__elementId='{element_id}']")
+            except (TimeoutError, Exception) as e:  # type: ignore[misc]
+                logger.debug(f"Error during fill operation: {e}")
+                logger.warning(
+                    f"Element with identifier '{element_id}' not found.",
+                )
+                return f"Element with identifier '{element_id}' not found."
+
+            await target.scroll_into_view_if_needed()
+            await target.focus()
+            try:
+                await target.fill(fill_text)
+            except Exception as e:
+                logger.debug(f"Error during fill operation: {e}")
+                await target.press_sequentially(fill_text)
+
+            await target.press("Enter")
+            await self.async_wait_for_load()
+            return (
+                f"Filled input field '{element_id}' with text '{fill_text}' "
+                f"and pressed Enter."
+            )
+
+        # Handle multiple tabs simultaneously
+        if isinstance(tab_id, list):
+            if not tab_id:
+                return {}
+
+            # Use _validate_tab_ids for validation
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
+
+            # Validate identifier and text dictionaries if provided
+            if isinstance(identifier, dict):
+                missing_tabs = [tid for tid in tab_id if tid not in identifier]
+                if missing_tabs:
+                    raise ValueError(
+                        f"Tabs {missing_tabs} not found in identifier dictionary",
+                    )
+
+            if isinstance(text, dict):
+                missing_tabs = [tid for tid in tab_id if tid not in text]
+                if missing_tabs:
+                    raise ValueError(
+                        f"Tabs {missing_tabs} not found in text dictionary",
+                    )
+
+            async def fill_single_tab_input(
+                tab_id: int,
+            ) -> tuple[int, tuple[bool, str]]:
+                """Fill input on a single tab"""
+                try:
+                    page = self.tabs[tab_id]
+
+                    if isinstance(identifier, dict):
+                        element_id = identifier[tab_id]
+                    else:
+                        element_id = identifier
+
+                    if isinstance(text, dict):
+                        fill_text = text[tab_id]
+                    else:
+                        fill_text = text
+
+                    # Convert identifier to string if it's an integer
+                    if isinstance(element_id, int):
+                        element_id = str(element_id)
+
+                    try:
+                        target = page.locator(f"[__elementId='{element_id}']")
+                    except (TimeoutError, Exception) as e:  # type: ignore[misc]
+                        logger.debug(f"Error during fill operation: {e}")
+                        logger.warning(
+                            f"Element with identifier '{element_id}' not found.",
+                        )
+                        return tab_id, (
+                            False,
+                            f"Element with identifier '{element_id}' not found.",
+                        )
+
+                    await target.scroll_into_view_if_needed()
+                    await target.focus()
+                    try:
+                        await target.fill(fill_text)
+                    except Exception as e:
+                        logger.debug(f"Error during fill operation: {e}")
+                        await target.press_sequentially(fill_text)
+
+                    await target.press("Enter")
+                    await page.wait_for_load_state("load", timeout=20000)
+                    await asyncio.sleep(2)
+
+                    return tab_id, (
+                        True,
+                        f"Filled input field '{element_id}' with text '{fill_text}' and pressed Enter on tab {tab_id}",
+                    )
+
+                except Exception as e:
+                    logger.error(f"Error filling input on tab {tab_id}: {e}")
+                    return tab_id, (
+                        False,
+                        f"Error filling input on tab {tab_id}: {e!s}",
+                    )
+
+            # Parallel processing logic for async fill input on multiple tabs
+            results = await asyncio.gather(
+                *(fill_single_tab_input(tid) for tid in valid_tabs),
+                return_exceptions=False,
+            )
+            final_results = {}
+            for tid, result in results:
+                if result[0]:  # success
+                    final_results[tid] = result
+                else:
+                    logger.warning(
+                        f"Failed to fill input on tab {tid}: {result[1]}",
+                    )
+            return final_results
+
+    def fill_input_id(
+        self,
+        identifier: str | int | dict[int, str | int],
+        text: str | dict[int, str],
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, str | dict[int, tuple[bool, str]]]:
+        r"""Fill an input field with the given text, and then press Enter for the current page, a specific tab, or multiple tabs simultaneously."""
+        return self.async_fill_input_id(identifier, text, tab_id)
 
     async def async_scroll_to_bottom(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[str, Dict[int, Tuple[bool, str]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, tuple[bool, str]]:
         r"""Scroll to the bottom of the page for the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -1787,28 +2222,28 @@ class AsyncBaseBrowser:
             target_page, _ = self._get_target_page(single_tab_id)
 
             await target_page.evaluate(
-                "window.scrollTo(0, document.body.scrollHeight);"
+                "window.scrollTo(0, document.body.scrollHeight);",
             )
             await self.async_wait_for_load()
             return "Scrolled to the bottom of the page."
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the scroll to bottom operation function
             async def scroll_single_tab_to_bottom(
                 tab_id: int,
-            ) -> Tuple[int, Tuple[bool, str]]:
+            ) -> tuple[int, tuple[bool, str]]:
                 """Scroll to bottom for a single tab."""
                 try:
                     page = self.tabs[tab_id]
                     await page.evaluate(
-                        "window.scrollTo(0, document.body.scrollHeight);"
+                        "window.scrollTo(0, document.body.scrollHeight);",
                     )
                     await page.wait_for_load_state("load", timeout=20000)
                     await asyncio.sleep(2)  # Additional wait for stability
@@ -1818,7 +2253,7 @@ class AsyncBaseBrowser:
                     )
                 except Exception as e:
                     logger.error(
-                        f"Error scrolling to bottom of tab {tab_id}: {e}"
+                        f"Error scrolling to bottom of tab {tab_id}: {e}",
                     )
                     return tab_id, (
                         False,
@@ -1830,43 +2265,44 @@ class AsyncBaseBrowser:
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Process results and filter out failed operations
-            final_results: Dict[int, Tuple[bool, str]] = {}
+            final_results: dict[int, tuple[bool, str]] = {}
             for result in results:
                 # First, check if this result is an exception
                 if isinstance(result, Exception):
                     logger.error(
-                        f"Exception in scroll to bottom operation: {result}"
+                        f"Exception in scroll to bottom operation: {result}",
                     )
                     continue
 
-                # Now we know result is not an exception, check if it's the expected tuple
-                if not isinstance(result, tuple):
-                    logger.warning(f"Unexpected result type: {type(result)}")
-                    continue
-
-                # Extract the components
-                tid, (success, message) = result
-                if success:
-                    final_results[tid] = (success, message)
+                # Verify result is a valid tuple before unpacking
+                if isinstance(result, tuple) and len(result) == 2:
+                    tid, (success, message) = result
+                    if success:
+                        final_results[tid] = (success, message)
+                    else:
+                        logger.warning(
+                            f"Failed to scroll to bottom of tab {tid}"
+                        )
                 else:
-                    logger.warning(f"Failed to scroll to bottom of tab {tid}")
+                    logger.warning(f"Unexpected result format: {result}")
 
             return final_results
 
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
 
     def scroll_to_bottom(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Coroutine[Any, Any, Union[str, Dict[int, Tuple[bool, str]]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, str | dict[int, tuple[bool, str]]]:
         r"""Scroll to the bottom of the page for the current page, a specific tab, or multiple tabs simultaneously."""
         return self.async_scroll_to_bottom(tab_id)
 
     async def async_scroll_to_top(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[str, Dict[int, Tuple[bool, str]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, tuple[bool, str]]:
         r"""Scroll to the top of the page for the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -1891,17 +2327,17 @@ class AsyncBaseBrowser:
             return "Scrolled to the top of the page."
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the scroll to top operation function
             async def scroll_single_tab_to_top(
                 tab_id: int,
-            ) -> Tuple[int, Tuple[bool, str]]:
+            ) -> tuple[int, tuple[bool, str]]:
                 """Scroll to top for a single tab."""
                 try:
                     page = self.tabs[tab_id]
@@ -1914,7 +2350,7 @@ class AsyncBaseBrowser:
                     )
                 except Exception as e:
                     logger.error(
-                        f"Error scrolling to top of tab {tab_id}: {e}"
+                        f"Error scrolling to top of tab {tab_id}: {e}",
                     )
                     return tab_id, (
                         False,
@@ -1926,45 +2362,43 @@ class AsyncBaseBrowser:
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Process results and filter out failed operations
-            final_results: Dict[int, Tuple[bool, str]] = {}
+            final_results: dict[int, tuple[bool, str]] = {}
             for result in results:
                 # First, check if this result is an exception
                 if isinstance(result, Exception):
                     logger.error(
-                        f"Exception in scroll to top operation: {result}"
+                        f"Exception in scroll to top operation: {result}",
                     )
                     continue
 
-                # Now we know result is not an exception, check if it's the expected tuple
-                if not isinstance(result, tuple):
-                    logger.warning(f"Unexpected result type: {type(result)}")
-                    continue
-
-                # Extract the components
-                tid, (success, message) = result
-                if success:
-                    final_results[tid] = (success, message)
+                # Verify result is a valid tuple before unpacking
+                if isinstance(result, tuple) and len(result) == 2:
+                    tid, (success, message) = result
+                    if success:
+                        final_results[tid] = (success, message)
+                    else:
+                        logger.warning(f"Failed to scroll to top of tab {tid}")
                 else:
-                    logger.warning(f"Failed to scroll to top of tab {tid}")
+                    logger.warning(f"Unexpected result format: {result}")
 
             return final_results
 
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
 
     def scroll_to_top(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Coroutine[Any, Any, Union[str, Dict[int, Tuple[bool, str]]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, str | dict[int, tuple[bool, str]]]:
         r"""Scroll to the top of the page for the current page, a specific tab, or multiple tabs simultaneously."""
         return self.async_scroll_to_top(tab_id)
 
     async def async_hover_id(
         self,
-        identifier: Union[str, int, Dict[int, Union[str, int]]],
-        tab_id: Optional[Union[int, List[int]]] = None,
-    ) -> Union[str, Dict[int, Tuple[bool, str]]]:
+        identifier: str | int | dict[int, str | int],
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, tuple[bool, str]]:
         r"""Hover over an element with the given identifier on the current page, a specific tab, or multiple tabs simultaneously.
 
         Supports hovering over different elements on different tabs by providing a dictionary mapping tab IDs to identifiers.
@@ -1993,11 +2427,11 @@ class AsyncBaseBrowser:
             if isinstance(identifier, dict):
                 if single_tab_id is None:
                     raise ValueError(
-                        "When identifier is a dictionary, tab_id must be specified"
+                        "When identifier is a dictionary, tab_id must be specified",
                     )
                 if single_tab_id not in identifier:
                     raise ValueError(
-                        f"Tab {single_tab_id} not found in identifier dictionary"
+                        f"Tab {single_tab_id} not found in identifier dictionary",
                     )
                 element_id = identifier[single_tab_id]
             else:
@@ -2012,7 +2446,7 @@ class AsyncBaseBrowser:
             except Exception as e:
                 logger.debug(f"Error during hover operation: {e}")
                 logger.warning(
-                    f"Element with identifier '{element_id}' not found."
+                    f"Element with identifier '{element_id}' not found.",
                 )
                 return f"Element with identifier '{element_id}' not found."
 
@@ -2022,25 +2456,25 @@ class AsyncBaseBrowser:
             return f"Hovered over element with identifier '{element_id}'."
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Validate identifier dictionary if provided
             if isinstance(identifier, dict):
                 missing_tabs = [tid for tid in tab_id if tid not in identifier]
                 if missing_tabs:
                     raise ValueError(
-                        f"Tabs {missing_tabs} not found in identifier dictionary"
+                        f"Tabs {missing_tabs} not found in identifier dictionary",
                     )
 
             # Define the hover operation function
             async def hover_single_tab(
                 tab_id: int,
-            ) -> Tuple[int, Tuple[bool, str]]:
+            ) -> tuple[int, tuple[bool, str]]:
                 """Hover over an element in a single tab."""
                 try:
                     page = self.tabs[tab_id]
@@ -2059,7 +2493,7 @@ class AsyncBaseBrowser:
                         target = page.locator(f"[__elementId='{element_id}']")
                     except Exception as e:
                         logger.debug(
-                            f"Error during hover operation on tab {tab_id}: {e}"
+                            f"Error during hover operation on tab {tab_id}: {e}",
                         )
                         return tab_id, (
                             False,
@@ -2074,7 +2508,7 @@ class AsyncBaseBrowser:
                     await asyncio.sleep(2)  # Additional wait for stability
 
                     return tab_id, (
-                        True,
+                        True,  # Changed from bool(True)
                         f"Hovered over element with identifier '{element_id}' on tab {tab_id}",
                     )
 
@@ -2090,39 +2524,40 @@ class AsyncBaseBrowser:
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Process results and filter out failed operations
-            final_results = {}
+            final_results: dict[int, tuple[bool, str]] = {}
             for result in results:
                 if isinstance(result, Exception):
                     logger.error(f"Exception in hover operation: {result}")
                     continue
-                # Use type assertion to help mypy understand the type
-                result_tuple = cast(Tuple[int, Tuple[bool, str]], result)
-                tid, (success, message) = result_tuple
-                if success:
-                    final_results[tid] = (cast(bool, success), message)
+                # Verify result is a valid tuple before unpacking
+                if isinstance(result, tuple) and len(result) == 2:
+                    tid, (success, message) = result
+                    if success:
+                        final_results[tid] = (bool(success), message)
+                    else:
+                        logger.warning(f"Failed to hover on tab {tid}")
                 else:
-                    logger.warning(f"Failed to hover on tab {tid}")
+                    logger.warning(f"Unexpected result format: {result}")
 
             return final_results
 
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
 
     def hover_id(
         self,
-        identifier: Union[str, int, Dict[int, Union[str, int]]],
-        tab_id: Optional[Union[int, List[int]]] = None,
-    ) -> Coroutine[Any, Any, Union[str, Dict[int, Tuple[bool, str]]]]:
+        identifier: str | int | dict[int, str | int],
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, str | dict[int, tuple[bool, str]]]:
         r"""Hover over an element with the given identifier on the current page, a specific tab, or multiple tabs simultaneously."""
         return self.async_hover_id(identifier, tab_id)
 
     async def async_find_text_on_page(
         self,
-        search_text: Union[str, Dict[int, str]],
-        tab_id: Optional[Union[int, List[int]]] = None,
-    ) -> Union[str, Dict[int, str]]:
+        search_text: str | dict[int, str],
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, str]:
         r"""Find the next given text on the page, and scroll the page to the
         targeted text. It is equivalent to pressing Ctrl + F and searching for
         the text.
@@ -2151,11 +2586,11 @@ class AsyncBaseBrowser:
             if isinstance(search_text, dict):
                 if single_tab_id is None:
                     raise ValueError(
-                        "search_text cannot be a dict when tab_id is None (current page)"
+                        "search_text cannot be a dict when tab_id is None (current page)",
                     )
                 if single_tab_id not in search_text:
                     raise ValueError(
-                        f"search_text dict must contain key for tab {single_tab_id}"
+                        f"search_text dict must contain key for tab {single_tab_id}",
                     )
                 actual_search_text = search_text[single_tab_id]
             else:
@@ -2188,16 +2623,15 @@ class AsyncBaseBrowser:
             await self.async_wait_for_load()
             if found:
                 return f"Found text '{actual_search_text}' on the page."
-            else:
-                return f"Text '{actual_search_text}' not found on the page."
+            return f"Text '{actual_search_text}' not found on the page."
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Prepare search text mapping for multiple tabs
             if isinstance(search_text, dict):
@@ -2207,7 +2641,7 @@ class AsyncBaseBrowser:
                 ]
                 if missing_tabs:
                     raise ValueError(
-                        f"search_text dict missing keys for tabs: {missing_tabs}"
+                        f"search_text dict missing keys for tabs: {missing_tabs}",
                     )
                 search_text_mapping = search_text
             else:
@@ -2215,7 +2649,7 @@ class AsyncBaseBrowser:
                 search_text_mapping = {tid: search_text for tid in tab_id}
 
             # Define the search text operation function
-            async def find_text_single_tab(tab_id: int) -> Tuple[int, str]:
+            async def find_text_single_tab(tab_id: int) -> tuple[int, str]:
                 """Search text in a single tab."""
                 try:
                     page = self.tabs[tab_id]
@@ -2247,11 +2681,10 @@ class AsyncBaseBrowser:
                             tab_id,
                             f"Found text '{tab_search_text}' on the page.",
                         )
-                    else:
-                        return (
-                            tab_id,
-                            f"Text '{tab_search_text}' not found on the page.",
-                        )
+                    return (
+                        tab_id,
+                        f"Text '{tab_search_text}' not found on the page.",
+                    )
                 except Exception as e:
                     logger.error(f"Error searching text in tab {tab_id}: {e}")
                     return tab_id, f"Error searching text: {e!s}"
@@ -2267,10 +2700,10 @@ class AsyncBaseBrowser:
                     logger.error(f"Exception in find text operation: {result}")
                     continue
                 # Use type assertion to help mypy understand the type
-                result_tuple = cast(Tuple[int, str], result)
+                result_tuple = cast(tuple[int, str], result)
                 tid, message = result_tuple
                 if not message.startswith(
-                    "Error searching text"
+                    "Error searching text",
                 ):  # Check if search was successful
                     final_results[tid] = message
                 else:
@@ -2278,22 +2711,22 @@ class AsyncBaseBrowser:
 
             return final_results
 
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
 
     def find_text_on_page(
         self,
-        search_text: Union[str, Dict[int, str]],
-        tab_id: Optional[Union[int, List[int]]] = None,
-    ) -> Coroutine[Any, Any, Union[str, Dict[int, str]]]:
+        search_text: str | dict[int, str],
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, str | dict[int, str]]:
         r"""Find the next given text on the page, and scroll the page to the targeted text."""
         return self.async_find_text_on_page(search_text, tab_id)
 
     async def async_back(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[None, Dict[int, Tuple[bool, str]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, tuple[bool, str]]:
         r"""Navigate back to the previous page for the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -2302,7 +2735,7 @@ class AsyncBaseBrowser:
                 If List[int], navigates back in multiple tabs simultaneously.
 
         Returns:
-            Union[None, Dict[int, Tuple[bool, str]]]: For single tab: None if successful.
+            Union[str, Dict[int, Tuple[bool, str]]]: For single tab: string result of the navigation action.
                 For multiple tabs: dictionary mapping tab IDs to (success, message) tuples.
 
         Raises:
@@ -2328,20 +2761,20 @@ class AsyncBaseBrowser:
 
             await asyncio.sleep(1)
             await self.async_wait_for_load()
-            return None
+            return "Successfully navigated back to the previous page."
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the navigate back operation function
             async def navigate_single_tab_back(
                 tab_id: int,
-            ) -> Tuple[int, Tuple[bool, str]]:
+            ) -> tuple[int, tuple[bool, str]]:
                 try:
                     target_page = self.tabs[tab_id]
                     page_url_before = target_page.url
@@ -2356,12 +2789,15 @@ class AsyncBaseBrowser:
                         # If the page is not changed, try to use the history
                         if len(self.page_history) > 0:
                             await self.async_visit_page(
-                                self.page_history.pop()
+                                self.page_history.pop(),
                             )
 
                     await asyncio.sleep(1)
                     await self.async_wait_for_load()
-                    return tab_id, (True, "Successfully navigated back")
+                    return tab_id, (
+                        True,
+                        "Successfully navigated back",
+                    )  # Changed from bool(True)
                 except Exception as e:
                     return tab_id, (False, f"Error navigating back: {e!s}")
 
@@ -2370,31 +2806,33 @@ class AsyncBaseBrowser:
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Process results and filter out failed navigations
-            final_results = {}
+            final_results: dict[int, tuple[bool, str]] = {}
             for result in results:
                 if isinstance(result, Exception):
                     logger.error(
-                        f"Exception in back navigation operation: {result}"
+                        f"Exception in back navigation operation: {result}",
                     )
                     continue
-                # Use type assertion to help mypy understand the type
-                result_tuple = cast(Tuple[int, Tuple[bool, str]], result)
-                tid, (success, message) = result_tuple
-                if success:
-                    final_results[tid] = (cast(bool, success), message)
+                # Verify result is a valid tuple before unpacking
+                if isinstance(result, tuple) and len(result) == 2:
+                    tid, (success, message) = result
+                    if success:
+                        final_results[tid] = (bool(success), message)
+                    else:
+                        logger.warning(f"Failed to navigate back in tab {tid}")
                 else:
-                    logger.warning(f"Failed to navigate back in tab {tid}")
+                    logger.warning(f"Unexpected result format: {result}")
 
             return final_results
 
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
 
     def back(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Coroutine[Any, Any, Union[None, Dict[int, Tuple[bool, str]]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, str | dict[int, tuple[bool, str]]]:
         r"""Navigate back to the previous page for the current page, a specific tab, or multiple tabs simultaneously."""
         return self.async_back(tab_id)
 
@@ -2406,6 +2844,9 @@ class AsyncBaseBrowser:
             self.browser is not None
         ):  # Only close browser if it was launched separately
             await self.browser.close()
+        if self.playwright_server and self.playwright_started:
+            await self.playwright_server.stop()
+            self.playwright_started = False
 
     def close(self) -> Coroutine[Any, Any, None]:
         r"""Close the browser context, browser, and playwright instance."""
@@ -2413,8 +2854,9 @@ class AsyncBaseBrowser:
 
     # ruff: noqa: E501
     async def async_show_interactive_elements(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[None, Dict[int, Tuple[bool, str]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, tuple[bool, str]]:
         r"""Show simple interactive elements on the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -2423,7 +2865,7 @@ class AsyncBaseBrowser:
                 If List[int], shows elements for multiple tabs simultaneously.
 
         Returns:
-            Union[None, Dict[int, Tuple[bool, str]]]: For single tab: None.
+            Union[str, Dict[int, Tuple[bool, str]]]: For single tab: string result of the operation.
                 For multiple tabs: dictionary mapping tab IDs to (success, message) tuples.
 
         Raises:
@@ -2460,35 +2902,23 @@ class AsyncBaseBrowser:
                     });
                 }
                 """)
+                return "Successfully highlighted interactive elements on the page."
             except Exception as e:
                 logger.warning(f"Error showing interactive elements: {e}")
-
-            return None
+                return f"Error showing interactive elements: {e}"
 
         # Handle multiple tabs simultaneously
         elif isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
-            # Validate all tab IDs first
-            invalid_tabs = [tid for tid in tab_id if tid not in self.tabs]
-            if invalid_tabs:
-                raise ValueError(f"Tabs {invalid_tabs} do not exist")
-
-            # Check for closed tabs
-            closed_tabs = []
-            for tid in tab_id:
-                if self.tabs[tid].is_closed():
-                    closed_tabs.append(tid)
-                    del self.tabs[tid]
-
-            if closed_tabs:
-                raise ValueError(f"Tabs {closed_tabs} have been closed")
+            # Use _validate_tab_ids for validation
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Function to show interactive elements for a single tab
             async def show_single_tab_interactive_elements(
                 tab_id: int,
-            ) -> Tuple[int, Tuple[bool, str]]:
+            ) -> tuple[int, tuple[bool, str]]:
                 """Show interactive elements for a single tab."""
                 try:
                     page = self.tabs[tab_id]
@@ -2503,12 +2933,12 @@ class AsyncBaseBrowser:
                     }
                     """)
                     return tab_id, (
-                        True,
+                        True,  # Changed from bool(True)
                         "Interactive elements highlighted successfully",
                     )
                 except Exception as e:
                     logger.error(
-                        f"Error showing interactive elements for tab {tab_id}: {e}"
+                        f"Error showing interactive elements for tab {tab_id}: {e}",
                     )
                     return tab_id, (
                         False,
@@ -2517,45 +2947,48 @@ class AsyncBaseBrowser:
 
             # Execute all interactive elements tasks concurrently
             tasks = [
-                show_single_tab_interactive_elements(tid) for tid in tab_id
+                show_single_tab_interactive_elements(tid) for tid in valid_tabs
             ]
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Process results and filter out failed operations
-            final_results = {}
+            final_results: dict[int, tuple[bool, str]] = {}
             for result in results:
                 if isinstance(result, Exception):
                     logger.error(
-                        f"Exception in show interactive elements operation: {result}"
+                        f"Exception in show interactive elements operation: {result}",
                     )
                     continue
-                # Use type assertion to help mypy understand the type
-                result_tuple = cast(Tuple[int, Tuple[bool, str]], result)
-                tid, (success, message) = result_tuple
-                if success:
-                    final_results[tid] = (cast(bool, success), message)
+                # Verify result is a valid tuple before unpacking
+                if isinstance(result, tuple) and len(result) == 2:
+                    tid, (success, message) = result
+                    if success:
+                        final_results[tid] = (bool(success), message)
+                    else:
+                        logger.warning(
+                            f"Failed to show interactive elements for tab {tid}",
+                        )
                 else:
-                    logger.warning(
-                        f"Failed to show interactive elements for tab {tid}"
-                    )
+                    logger.warning(f"Unexpected result format: {result}")
 
             return final_results
 
         else:
             raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
+                "tab_id must be None, an integer, or a list of integers",
             )
 
     def show_interactive_elements(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Coroutine[Any, Any, Union[None, Dict[int, Tuple[bool, str]]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, str | dict[int, tuple[bool, str]]]:
         r"""Show simple interactive elements on the current page, a specific tab, or multiple tabs simultaneously."""
         return self.async_show_interactive_elements(tab_id)
 
-    @retry_on_error()
     async def async_get_webpage_content(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[str, Dict[int, str]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> str | dict[int, str]:
         r"""Get the webpage content as markdown for the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -2570,25 +3003,7 @@ class AsyncBaseBrowser:
         Raises:
             ValueError: If any of the specified tab_ids do not exist or refer to closed tabs.
         """
-        try:
-            from html2text import html2text  # type: ignore[import-not-found]
-        except ImportError:
-            # Fallback if html2text is not available
-            def html2text(
-                html: str, baseurl: str = "", bodywidth: Optional[int] = None
-            ) -> str:
-                """Simple fallback HTML to text converter."""
-                import re
-
-                # Remove HTML tags
-                text = re.sub(r'<[^>]+>', '', html)
-                # Decode HTML entities
-                import html as html_module
-
-                text = html_module.unescape(text)
-                # Remove extra whitespace
-                text = re.sub(r'\s+', ' ', text).strip()
-                return text
+        from html2text import html2text  # type: ignore[import-not-found]
 
         # Handle single tab or current page content extraction
         if tab_id is None or isinstance(tab_id, int):
@@ -2616,15 +3031,15 @@ class AsyncBaseBrowser:
             return markdown_content
 
         # Handle multiple tabs simultaneously
-        elif isinstance(tab_id, list):
+        if isinstance(tab_id, list):
             if not tab_id:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the content extraction operation function
-            async def get_single_tab_content(tid: int) -> Tuple[int, str]:
+            async def get_single_tab_content(tid: int) -> tuple[int, str]:
                 """Get webpage content for a single tab."""
                 try:
                     page = self.tabs[tid]
@@ -2634,7 +3049,7 @@ class AsyncBaseBrowser:
                     return tid, markdown_content
                 except Exception as e:
                     logger.error(
-                        f"Error getting webpage content for tab {tid}: {e}"
+                        f"Error getting webpage content for tab {tid}: {e}",
                     )
                     return tid, f"Error getting webpage content: {e!s}"
 
@@ -2652,37 +3067,36 @@ class AsyncBaseBrowser:
                 tid = valid_tabs[i]
                 if isinstance(result, Exception):
                     logger.error(
-                        f"Error getting webpage content for tab {tid}: {result}"
+                        f"Error getting webpage content for tab {tid}: {result}",
                     )
                 elif isinstance(result, tuple):
                     content_result = result[1]
                     if not content_result.startswith(
-                        "Error getting webpage content"
+                        "Error getting webpage content",
                     ):  # Check if content was extracted successfully
                         final_results[tid] = content_result
                     else:
                         logger.warning(
-                            f"Failed to get webpage content for tab {tid}"
+                            f"Failed to get webpage content for tab {tid}",
                         )
 
             return final_results
 
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
+        raise TypeError(
+            "tab_id must be None, an integer, or a list of integers",
+        )
 
     @retry_on_error()
     def get_webpage_content(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Coroutine[Any, Any, Union[str, Dict[int, str]]]:
+        self,
+        tab_id: int | list[int] | None = None,
+    ) -> Coroutine[Any, Any, str | dict[int, str]]:
         r"""Get the webpage content as markdown for the current page, a specific tab, or multiple tabs simultaneously."""
         return self.async_get_webpage_content(tab_id)
 
     async def async_ensure_browser_installed(self) -> None:
         r"""Ensure the browser is installed."""
         import platform
-        import subprocess
         import sys
 
         try:
@@ -2694,53 +3108,50 @@ class AsyncBaseBrowser:
         except Exception:
             logger.info("Installing Chromium browser...")
             try:
-                subprocess.run(
-                    [
+                proc1 = await asyncio.create_subprocess_exec(
+                    sys.executable,
+                    "-m",
+                    "playwright",
+                    "install",
+                    self.channel,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await proc1.communicate()
+                if proc1.returncode != 0:
+                    raise RuntimeError(
+                        f"Failed to install browser: {stderr.decode()}",
+                    )
+
+                if platform.system().lower() == "linux":
+                    proc2 = await asyncio.create_subprocess_exec(
                         sys.executable,
                         "-m",
                         "playwright",
-                        "install",
+                        "install-deps",
                         self.channel,
-                    ],
-                    check=True,
-                    capture_output=True,
-                )
-                if platform.system().lower() == "linux":
-                    subprocess.run(
-                        [
-                            sys.executable,
-                            "-m",
-                            "playwright",
-                            "install-deps",
-                            self.channel,
-                        ],
-                        check=True,
-                        capture_output=True,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
                     )
+                    stdout2, stderr2 = await proc2.communicate()
+                    if proc2.returncode != 0:
+                        error_message = stderr2.decode()
+                        raise RuntimeError(
+                            f"Failed to install dependencies: {error_message}",
+                        )
+
                 logger.info("Chromium browser installation completed")
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(f"Failed to install browser: {e.stderr}")
+            except Exception as e:
+                raise RuntimeError(f"Failed to install browser: {e}")
 
-    def _ensure_browser_installed(self) -> None:
+    def _ensure_browser_installed(self) -> Coroutine[Any, Any, None]:
         r"""Ensure the browser is installed."""
-        # For backward compatibility, we'll run the async version synchronously
-        import asyncio
-
-        try:
-            asyncio.run(self.async_ensure_browser_installed())
-        except RuntimeError:
-            # If there's already a running event loop, create a new one
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                loop.run_until_complete(self.async_ensure_browser_installed())
-            finally:
-                loop.close()
-        return None
+        return self.async_ensure_browser_installed()
 
     def _validate_tab_ids(
-        self, tab_ids: Union[int, List[int], None]
-    ) -> Tuple[List[int], List[int]]:
+        self,
+        tab_ids: int | list[int] | None,
+    ) -> tuple[list[int], list[int]]:
         """Validate tab IDs and return valid tabs and closed tabs."""
         if tab_ids is None:
             return [], []
@@ -2768,33 +3179,10 @@ class AsyncBaseBrowser:
 
         return valid_tabs, closed_tabs
 
-    def get_url(
-        self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[str, Dict[int, str]]:
-        """Get the URL of the current page or specified tab(s)."""
-        if tab_id is None:
-            if self.page is None:
-                return ""
-            return self.page.url
-        elif isinstance(tab_id, int):
-            if tab_id not in self.tabs:
-                raise ValueError(f"Tab {tab_id} does not exist")
-            return self.tabs[tab_id].url
-        elif isinstance(tab_id, list):
-            result = {}
-            for tid in tab_id:
-                if tid not in self.tabs:
-                    raise ValueError(f"Tab {tid} does not exist")
-                result[tid] = self.tabs[tid].url
-            return result
-        else:
-            raise TypeError(
-                "tab_id must be None, an integer, or a list of integers"
-            )
-
     def _get_target_page(
-        self, tab_id: Optional[int] = None
-    ) -> Tuple[Any, Optional[int]]:
+        self,
+        tab_id: int | None = None,
+    ) -> tuple[Any, int | None]:
         """Get target page and tab ID for single tab operations."""
         if tab_id is not None:
             if tab_id not in self.tabs:
@@ -2822,14 +3210,14 @@ class AsyncBrowserToolkit(BaseToolkit):
     def __init__(
         self,
         headless: bool = False,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
         channel: Literal["chrome", "msedge", "chromium"] = "chromium",
         history_window: int = 5,
-        web_agent_model: Optional[BaseModelBackend] = None,
-        planning_agent_model: Optional[BaseModelBackend] = None,
+        web_agent_model: BaseModelBackend | None = None,
+        planning_agent_model: BaseModelBackend | None = None,
         output_language: str = "en",
-        cookie_json_path: Optional[str] = None,
-        user_data_dir: Optional[str] = None,
+        cookie_json_path: str | None = None,
+        user_data_dir: str | None = None,
     ):
         r"""Initialize the BrowserToolkit instance.
 
@@ -2873,16 +3261,16 @@ class AsyncBrowserToolkit(BaseToolkit):
         self.planning_agent_model = planning_agent_model
         self.output_language = output_language
 
-        self.history: List[Dict[str, Any]] = []  # Typed history list
+        self.history: list[Any] = []  # Typed history list
         self.web_agent: ChatAgent
         self.planning_agent: ChatAgent
         self.web_agent, self.planning_agent = self._initialize_agent(
-            web_agent_model, planning_agent_model
+            web_agent_model,
+            planning_agent_model,
         )
 
     def _reset(self):
         r"""Reset the internal state of the browser toolkit."""
-
         # Reset agents
         self.web_agent.reset()
         self.planning_agent.reset()
@@ -2890,7 +3278,7 @@ class AsyncBrowserToolkit(BaseToolkit):
 
         os.makedirs(self.browser.cache_dir, exist_ok=True)
 
-        if hasattr(self.browser, 'tabs'):
+        if hasattr(self.browser, "tabs"):
             for tab_id, page in list(self.browser.tabs.items()):
                 if page is not None and not page.is_closed():
                     logger.debug(f"Closing tab {tab_id}")
@@ -2904,9 +3292,9 @@ class AsyncBrowserToolkit(BaseToolkit):
 
     def _initialize_agent(
         self,
-        web_agent_model_backend: Optional[BaseModelBackend],
-        planning_agent_model_backend: Optional[BaseModelBackend],
-    ) -> Tuple[ChatAgent, ChatAgent]:
+        web_agent_model_backend: BaseModelBackend | None,
+        planning_agent_model_backend: BaseModelBackend | None,
+    ) -> tuple[ChatAgent, ChatAgent]:
         r"""Initialize the agent."""
         from camel.agents import ChatAgent
 
@@ -2946,11 +3334,13 @@ class AsyncBrowserToolkit(BaseToolkit):
         return web_agent, planning_agent
 
     async def async_observe(
-        self, task_prompt: str, detailed_plan: Optional[str] = None
-    ) -> Tuple[str, str, str]:
+        self,
+        task_prompt: str,
+        detailed_plan: str | None = None,
+    ) -> tuple[str, str, str]:
         r"""Let agent observe the current environment, and get the next
-        action."""
-
+        action.
+        """
         detailed_plan_prompt_str = ""
 
         if detailed_plan is not None:
@@ -2978,47 +3368,49 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         # get current state
         # Take screenshots of all open tabs
         all_tab_ids = list(self.browser.tabs.keys())
+        image_list = []
+
         if all_tab_ids:
-            # Get screenshots for all tabs
-            som_screenshots = await self.browser.async_get_som_screenshot(
-                save_image=True, tab_id=all_tab_ids
-            )
-
-            # Create a dictionary mapping tab IDs to their screenshots
-            tab_screenshots = {}
-            for tab_id in all_tab_ids:
-                if tab_id in som_screenshots:
-                    screenshot, _ = som_screenshots[tab_id]
-                    if screenshot is not None:
-                        img = _reload_image(screenshot)
-                        tab_screenshots[tab_id] = img
-
-            # Convert to list while maintaining tab ID order
-            image_list = []
-            for tab_id in all_tab_ids:
-                if tab_id in tab_screenshots:
-                    image_list.append(tab_screenshots[tab_id])
-
-            # If no screenshots were captured successfully, fall back to current tab
-            if not image_list:
-                (
-                    som_screenshot,
-                    _,
-                ) = await self.browser.async_get_som_screenshot(
-                    save_image=True
+            try:
+                som_screenshots = await self.browser.async_get_som_screenshot(
+                    save_image=True,
+                    tab_id=all_tab_ids,
                 )
-                img = _reload_image(som_screenshot)
-                image_list = [img]
-        else:
-            # Fall back to current tab if no tabs are open
-            som_screenshot, _ = await self.browser.async_get_som_screenshot(
-                save_image=True
-            )
-            img = _reload_image(som_screenshot)
-            image_list = [img]
+
+                # Process screenshots in tab order
+                for tab_id in all_tab_ids:
+                    if tab_id in som_screenshots:
+                        screenshot_result = som_screenshots[tab_id]
+                        if (
+                            isinstance(screenshot_result, tuple)
+                            and len(screenshot_result) >= 2
+                            and screenshot_result[0] is not None
+                        ):
+                            image_list.append(screenshot_result[0])
+            except Exception as e:
+                logger.warning(f"Failed to capture multi-tab screenshots: {e}")
+
+        # Fallback to current tab if no screenshots captured
+        if not image_list:
+            try:
+                som_screenshot_result = (
+                    await self.browser.async_get_som_screenshot(
+                        save_image=True,
+                    )
+                )
+                if (
+                    isinstance(som_screenshot_result, tuple)
+                    and len(som_screenshot_result) >= 2
+                    and som_screenshot_result[0] is not None
+                ):
+                    image_list = [som_screenshot_result[0]]
+            except Exception as e:
+                logger.error(f"Failed to capture fallback screenshot: {e}")
 
         message = BaseMessage.make_user_message(
-            role_name='user', content=observe_prompt, image_list=image_list
+            role_name="user",
+            content=observe_prompt,
+            image_list=image_list,
         )
         # Reset the history message of web_agent.
         self.web_agent.reset()
@@ -3034,13 +3426,14 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         if action_code and "(" in action_code and ")" not in action_code:
             action_match = re.search(
-                r'"action_code"\s*:\s*[`"]([^`"]*\([^)]*\))[`"]', resp_content
+                r'"action_code"\s*:\s*[`"]([^`"]*\([^)]*\))[`"]',
+                resp_content,
             )
             if action_match:
                 action_code = action_match.group(1)
             else:
                 logger.warning(
-                    f"Incomplete action_code detected: {action_code}"
+                    f"Incomplete action_code detected: {action_code}",
                 )
                 if action_code.startswith("fill_input_id("):
                     parts = action_code.split(",", 1)
@@ -3058,8 +3451,9 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         return observation_result, reasoning_result, action_code
 
     async def async_act(
-        self, action_code: str
-    ) -> Union[Tuple[bool, str], Dict[int, Tuple[bool, str]]]:
+        self,
+        action_code: str,
+    ) -> tuple[bool, str] | dict[int, tuple[bool, str]]:
         r"""Let agent act based on the given action code.
 
         Supports multi-tab operations by embedding tab information in the action code.
@@ -3079,7 +3473,6 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         def _check_if_with_feedback(action_code: str) -> bool:
             r"""Check if the action code needs feedback."""
-
             for action_with_feedback in ACTION_WITH_FEEDBACK_LIST:
                 if action_with_feedback in action_code:
                     return True
@@ -3088,11 +3481,10 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         def _fix_action_code(action_code: str) -> str:
             r"""Fix potential missing quotes in action code for multi-tab operations"""
-
             # Handle dictionary format for multi-tab actions (e.g., {1: 'login', 2: 'search'})
             if action_code.strip().startswith(
-                '{'
-            ) and action_code.strip().endswith('}'):
+                "{",
+            ) and action_code.strip().endswith("}"):
                 try:
                     # Parse the dictionary
                     actions_dict = eval(action_code)
@@ -3115,7 +3507,7 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                         else:
                             # If it's an action code, fix it
                             fixed_actions[tab_id] = _fix_single_action(
-                                str(action)
+                                str(action),
                             )
 
                     return str(fixed_actions)
@@ -3127,17 +3519,19 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         def _fix_single_action(action_code: str) -> str:
             r"""Fix a single action code by adding missing quotes and handling tab_id"""
-
             # Handle tab_id as named parameter (legacy format)
             tab_id_match = re.search(
-                r'tab_id\s*=\s*(\[[^\]]+\]|\d+)', action_code
+                r"tab_id\s*=\s*(\[[^\]]+\]|\d+)",
+                action_code,
             )
             if tab_id_match:
                 # Extract and preserve tab_id parameter
                 tab_id_str = tab_id_match.group(1)
                 # Remove tab_id parameter temporarily for processing
                 action_without_tab_id = re.sub(
-                    r',\s*tab_id\s*=\s*(\[[^\]]+\]|\d+)', '', action_code
+                    r",\s*tab_id\s*=\s*(\[[^\]]+\]|\d+)",
+                    "",
+                    action_code,
                 )
 
                 # Fix the action without tab_id
@@ -3150,8 +3544,7 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         def _fix_action_arguments(action_code: str) -> str:
             r"""Fix arguments in a single action code with proper handling of complex data structures"""
-
-            match = re.match(r'(\w+)\((.*)\)', action_code)
+            match = re.match(r"(\w+)\((.*)\)", action_code)
             if not match:
                 return action_code
 
@@ -3167,9 +3560,8 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
             return f"{func_name}({', '.join(fixed_args)})"
 
-        def _parse_arguments(args_str: str) -> List[str]:
+        def _parse_arguments(args_str: str) -> list[str]:
             r"""Parse arguments string, properly handling nested structures like lists and dicts"""
-
             args = []
             current_arg = ""
             in_quotes = False
@@ -3189,24 +3581,24 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                         current_arg += char
                     else:
                         current_arg += char
-                elif char == '{':
+                elif char == "{":
                     if not in_quotes:
                         brace_level += 1
                     current_arg += char
-                elif char == '}':
+                elif char == "}":
                     if not in_quotes:
                         brace_level -= 1
                     current_arg += char
-                elif char == '[':
+                elif char == "[":
                     if not in_quotes:
                         bracket_level += 1
                     current_arg += char
-                elif char == ']':
+                elif char == "]":
                     if not in_quotes:
                         bracket_level -= 1
                     current_arg += char
                 elif (
-                    char == ','
+                    char == ","
                     and not in_quotes
                     and brace_level == 0
                     and bracket_level == 0
@@ -3223,7 +3615,6 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         def _fix_single_argument(arg: str) -> str:
             r"""Fix a single argument, preserving complex data structures"""
-
             arg = arg.strip()
 
             # Already quoted strings
@@ -3234,22 +3625,22 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
             # Numbers (integers, floats, scientific notation, hex)
             if (
-                re.match(r'^-?\d+(\.\d+)?$', arg)
-                or re.match(r'^-?\d+\.?\d*[eE][-+]?\d+$', arg)
-                or re.match(r'^0[xX][0-9a-fA-F]+$', arg)
+                re.match(r"^-?\d+(\.\d+)?$", arg)
+                or re.match(r"^-?\d+\.?\d*[eE][-+]?\d+$", arg)
+                or re.match(r"^0[xX][0-9a-fA-F]+$", arg)
             ):
                 return arg
 
             # Lists (e.g., [1,2,3])
-            if arg.startswith('[') and arg.endswith(']'):
+            if arg.startswith("[") and arg.endswith("]"):
                 return arg
 
             # Dictionaries (e.g., {1: 'login', 2: 'search'})
-            if arg.startswith('{') and arg.endswith('}'):
+            if arg.startswith("{") and arg.endswith("}"):
                 return arg
 
             # Boolean values
-            if arg.lower() in ['true', 'false', 'none']:
+            if arg.lower() in ["true", "false", "none"]:
                 return arg
 
             # Default: quote the argument
@@ -3266,10 +3657,9 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                 await asyncio.sleep(1)
                 return True, result
 
-            else:
-                exec(code)
-                await asyncio.sleep(1)
-                return True, "Action was successful."
+            exec(code)
+            await asyncio.sleep(1)
+            return True, "Action was successful."
 
         except Exception as e:
             await asyncio.sleep(1)
@@ -3288,37 +3678,36 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         current viewport.
         """
         # tab information is present in history no need to pass into prompt
-        prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
-            history=self.history, task_prompt=task_prompt
+        final_answer_prompt = GET_FINAL_ANSWER_PROMPT_TEMPLATE.format(
+            history=self.history,
+            task_prompt=task_prompt,
         )
-
-        message = BaseMessage.make_user_message(
-            role_name='user',
-            content=prompt,
-        )
-        self.web_agent.reset()  # Reset before step
-        resp = await self.web_agent.astep(message)
-        return resp.msgs[0].content
+        response = await self.planning_agent.astep(final_answer_prompt)
+        if response.msgs is None or len(response.msgs) == 0:
+            raise RuntimeError("Got empty final answer from planning agent.")
+        return response.msgs[0].content
 
     async def async_task_planning(
-        self, task_prompt: str, start_url: str
+        self,
+        task_prompt: str,
+        start_url: str,
     ) -> str:
         r"""Plan the task based on the given task prompt."""
-
         planning_prompt = TASK_PLANNING_PROMPT_TEMPLATE.format(
-            task_prompt=task_prompt, start_url=start_url
+            task_prompt=task_prompt,
+            start_url=start_url,
         )
 
-        message = BaseMessage.make_user_message(
-            role_name='user', content=planning_prompt
-        )
-        self.planning_agent.reset()  # Reset before step
-        resp = await self.planning_agent.astep(message)
-        return resp.msgs[0].content
+        response = await self.planning_agent.astep(planning_prompt)
+        if response.msgs is None or len(response.msgs) == 0:
+            raise RuntimeError("Got empty plan from planning agent.")
+        return response.msgs[0].content
 
     async def async_task_replanning(
-        self, task_prompt: str, detailed_plan: str
-    ) -> Tuple[bool, str]:
+        self,
+        task_prompt: str,
+        detailed_plan: str,
+    ) -> tuple[bool, str]:
         r"""Replan the task based on the given task prompt.
 
         Args:
@@ -3329,7 +3718,6 @@ Here is a plan about how to solve the task step-by-step which you must follow:
             Tuple[bool, str]: A tuple containing a boolean indicating
             whether the task needs to be replanned, and the replanned schema.
         """
-
         replanning_prompt = TASK_REPLANNING_PROMPT_TEMPLATE.format(
             task_prompt=task_prompt,
             detailed_plan=detailed_plan,
@@ -3340,7 +3728,8 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         self.planning_agent.reset()
         resp = await self.planning_agent.astep(replanning_prompt)
         resp_dict = _parse_json_output(
-            resp.msgs[0].content, logger
+            resp.msgs[0].content,
+            logger,
         )  # Pass logger
 
         if_need_replan_eval = resp_dict.get("if_need_replan", False)
@@ -3349,12 +3738,14 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         if if_need_replan:
             return True, replanned_schema
-        else:
-            return False, replanned_schema
+        return False, replanned_schema
 
     @dependencies_required("playwright")
     async def browse_url(
-        self, task_prompt: str, start_url: str, round_limit: int = 12
+        self,
+        task_prompt: str,
+        start_url: str,
+        round_limit: int = 12,
     ) -> str:
         r"""A powerful toolkit which can simulate the browser interaction to
         solve the task which needs multi-step actions.
@@ -3368,7 +3759,6 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         Returns:
             str: The simulation result to the task.
         """
-
         await self._reset()
         task_completed = False
         detailed_plan = await self.async_task_planning(task_prompt, start_url)
@@ -3379,12 +3769,13 @@ Here is a plan about how to solve the task step-by-step which you must follow:
 
         for i in range(round_limit):
             observation, reasoning, action_code = await self.async_observe(
-                task_prompt, detailed_plan
+                task_prompt,
+                detailed_plan,
             )
             logger.debug(f"Observation: {observation}")
             logger.debug(f"Reasoning: {reasoning}")
             logger.debug(f"Action code: {action_code}")
-            trajectory_info: Dict[str, Any]
+            trajectory_info: dict[str, Any]
             if "stop" in action_code:
                 task_completed = True
                 trajectory_info = {  # Typed trajectory_info
@@ -3397,7 +3788,7 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                     "current_url": self.browser.get_url(),
                     "current_tab_id": self.browser.current_tab_id,
                     "all_tab_urls": self.browser.get_url(
-                        list(self.browser.tabs.keys())
+                        list(self.browser.tabs.keys()),
                     )
                     if self.browser.tabs
                     else {},
@@ -3406,41 +3797,40 @@ Here is a plan about how to solve the task step-by-step which you must follow:
                 self.history.append(trajectory_info)
                 break
 
-            else:
-                success, info = await self.async_act(action_code)
-                if not success:
-                    logger.warning(f"Error while executing the action: {info}")
+            success, info = await self.async_act(action_code)
+            if not success:
+                logger.warning(f"Error while executing the action: {info}")
 
-                trajectory_info = {  # Typed trajectory_info
-                    "round": i,
-                    "observation": observation,
-                    "thought": reasoning,
-                    "action": action_code,
-                    "action_if_success": success,
-                    "info": info,
-                    "current_url": self.browser.get_url(),
-                    "current_tab_id": self.browser.current_tab_id,
-                    "all_tab_urls": self.browser.get_url(
-                        list(self.browser.tabs.keys())
-                    )
-                    if self.browser.tabs
-                    else {},
-                    "total_tabs": len(self.browser.tabs),
-                }
-                self.history.append(trajectory_info)
-
-                # Replan the task if necessary
-                (
-                    if_need_replan,
-                    replanned_schema,
-                ) = await self.async_task_replanning(
-                    task_prompt, detailed_plan
+            trajectory_info = {  # Typed trajectory_info
+                "round": i,
+                "observation": observation,
+                "thought": reasoning,
+                "action": action_code,
+                "action_if_success": success,
+                "info": info,
+                "current_url": self.browser.get_url(),
+                "current_tab_id": self.browser.current_tab_id,
+                "all_tab_urls": self.browser.get_url(
+                    list(self.browser.tabs.keys()),
                 )
-                if if_need_replan:
-                    detailed_plan = replanned_schema
-                    logger.debug(f"Replanned schema: {replanned_schema}")
+                if self.browser.tabs
+                else {},
+                "total_tabs": len(self.browser.tabs),
+            }
+            self.history.append(trajectory_info)
 
-        simulation_result: str
+            # Replan the task if necessary
+            (
+                if_need_replan,
+                replanned_schema,
+            ) = await self.async_task_replanning(
+                task_prompt,
+                detailed_plan,
+            )
+            if if_need_replan:
+                detailed_plan = replanned_schema
+                logger.debug(f"Replanned schema: {replanned_schema}")
+
         if not task_completed:
             simulation_result = f"""
                 The task is not completed within the round limit. Please 
@@ -3458,6 +3848,6 @@ Here is a plan about how to solve the task step-by-step which you must follow:
         # reached
         return simulation_result
 
-    def get_tools(self) -> List[FunctionTool]:
+    def get_tools(self) -> list[FunctionTool]:
         tools = [FunctionTool(self.browse_url)]
         return tools

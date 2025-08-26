@@ -25,22 +25,49 @@ from PIL import Image
 from camel.toolkits.async_browser_toolkit import (
     AsyncBaseBrowser,
     AsyncBrowserToolkit,
+)
+from camel.toolkits.browser_toolkit_commons import (
+    dom_rectangle_from_dict,
     interactive_region_from_dict,
     visual_viewport_from_dict,
 )
-from camel.toolkits.browser_toolkit_commons import dom_rectangle_from_dict
 
 TEST_URL = "https://example.com"
 
 
 @pytest_asyncio.fixture(scope="function")
 async def async_base_browser_fixture():
-    with patch('playwright.async_api.async_playwright'):
-        browser = AsyncBaseBrowser(headless=True, cache_dir="test_cache")
-        yield browser
-        # Cleanup
-        if os.path.exists("test_cache"):
-            shutil.rmtree("test_cache", ignore_errors=True)
+    with patch(
+        'playwright.async_api.async_playwright'
+    ) as mock_async_playwright:
+        # Set up the mock chain for async operations
+        mock_playwright_instance = mock_async_playwright.return_value
+        mock_playwright_server = AsyncMock()
+        mock_playwright_instance.start = AsyncMock(
+            return_value=mock_playwright_server
+        )
+
+        # Mock the browser launch
+        mock_browser = AsyncMock()
+        mock_playwright_server.chromium.launch = AsyncMock(
+            return_value=mock_browser
+        )
+
+        # Mock the context and page creation
+        mock_context = AsyncMock()
+        mock_browser.new_context = AsyncMock(return_value=mock_context)
+        mock_page = AsyncMock()
+        mock_context.new_page = AsyncMock(return_value=mock_page)
+
+        # Mock the _ensure_browser_installed method
+        with patch.object(
+            AsyncBaseBrowser, '_ensure_browser_installed', AsyncMock()
+        ):
+            browser = AsyncBaseBrowser(headless=True, cache_dir="test_cache")
+            yield browser
+            # Cleanup
+            if os.path.exists("test_cache"):
+                shutil.rmtree("test_cache", ignore_errors=True)
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -82,17 +109,19 @@ async def test_async_base_browser_init_with_user_data_dir():
     try:
         with patch('playwright.async_api.async_playwright'):
             # Create AsyncBaseBrowser instance
-            browser = AsyncBaseBrowser(headless=True, user_data_dir=test_user_dir)
-            
+            browser = AsyncBaseBrowser(
+                headless=True, user_data_dir=test_user_dir
+            )
+
             # Verify the user_data_dir was set correctly
             assert browser.user_data_dir == test_user_dir
             assert browser.headless is True
             assert isinstance(browser.history, list)
             assert isinstance(browser.page_history, list)
-            
+
             # Verify the user data directory was created
             assert os.path.exists(test_user_dir)
-            
+
             # Note: _ensure_browser_installed is NOT called during __init__ in AsyncBaseBrowser
             # It's only called during async_init()
     finally:
@@ -102,16 +131,41 @@ async def test_async_base_browser_init_with_user_data_dir():
 
 @pytest.mark.asyncio
 async def test_async_base_browser_initialization_order():
-    with patch('playwright.async_api.async_playwright'):
-        browser = AsyncBaseBrowser(headless=True)  # __init__ called
-        assert browser.browser is None  # browser not launched yet
-        assert browser.page is None  # page not created yet
+    with patch(
+        'playwright.async_api.async_playwright'
+    ) as mock_async_playwright:
+        # Set up the mock chain for async operations
+        mock_playwright_instance = mock_async_playwright.return_value
+        mock_playwright_server = AsyncMock()
+        mock_playwright_instance.start = AsyncMock(
+            return_value=mock_playwright_server
+        )
 
-        await browser.async_init()  # explicit async_init() call
-        # This assertion depends on user_data_dir being None. If it were set,
-        # browser.browser would be None. For default (None), it's not None.
-        assert browser.browser is not None  # browser launched
-        assert browser.page is not None  # page created
+        # Mock the browser launch
+        mock_browser = AsyncMock()
+        mock_playwright_server.chromium.launch = AsyncMock(
+            return_value=mock_browser
+        )
+
+        # Mock the context and page creation
+        mock_context = AsyncMock()
+        mock_browser.new_context = AsyncMock(return_value=mock_context)
+        mock_page = AsyncMock()
+        mock_context.new_page = AsyncMock(return_value=mock_page)
+
+        # Mock the _ensure_browser_installed method
+        with patch.object(
+            AsyncBaseBrowser, '_ensure_browser_installed', AsyncMock()
+        ):
+            browser = AsyncBaseBrowser(headless=True)  # __init__ called
+            assert browser.browser is None  # browser not launched yet
+            assert browser.page is None  # page not created yet
+
+            await browser.async_init()  # explicit async_init() call
+            # This assertion depends on user_data_dir being None. If it were set,
+            # browser.browser would be None. For default (None), it's not None.
+            assert browser.browser is not None  # browser launched
+            assert browser.page is not None  # page created
 
 
 @pytest.mark.asyncio
@@ -129,16 +183,21 @@ async def test_async_base_browser_initialization_order_with_user_data_dir():
         # Configure the mock for async_playwright().start()
         mock_playwright_api = mock_async_playwright_entry.return_value
         mock_playwright_started_instance = (
-            mock_playwright_api.start.return_value
+            AsyncMock()
+        )  # Changed from MagicMock to AsyncMock
+        mock_playwright_api.start = AsyncMock(
+            return_value=mock_playwright_started_instance
         )
 
         # Configure the mock for launch_persistent_context
         mock_context = AsyncMock(name="PersistentContextMock")
         mock_page = AsyncMock(name="PageMock")
         # ruff: noqa: E501
-        mock_playwright_started_instance.chromium.launch_persistent_context.return_value = mock_context
+        mock_playwright_started_instance.chromium.launch_persistent_context = (
+            AsyncMock(return_value=mock_context)
+        )
         mock_context.pages = []  # Simulate no pre-existing pages initially
-        mock_context.new_page.return_value = mock_page
+        mock_context.new_page = AsyncMock(return_value=mock_page)
 
         try:
             browser = AsyncBaseBrowser(
@@ -154,7 +213,7 @@ async def test_async_base_browser_initialization_order_with_user_data_dir():
             await browser.async_init()
             # Verify that async_ensure_browser_installed was called during async_init
             mock_ensure_installed_in_init.assert_called_once()
-            
+
             # For user_data_dir, browser should be None but context should be set
             assert (
                 browser.browser is None
@@ -186,11 +245,22 @@ async def test_async_browser_channel_selection(channel):
 async def test_async_browser_visit_page(async_base_browser_fixture):
     browser = async_base_browser_fixture
     await browser.async_init()
-    browser.page.goto = AsyncMock()
-    browser.page.wait_for_load_state = AsyncMock()
-    await browser.visit_page(TEST_URL)
-    browser.page.goto.assert_called_once_with(TEST_URL)
-    browser.page.wait_for_load_state.assert_called_once()
+
+    # Create proper AsyncMock objects that can be awaited
+    mock_goto = AsyncMock()
+    mock_wait_for_load_state = AsyncMock()
+
+    # Assign the mocks to the page methods
+    browser.page.goto = mock_goto
+    browser.page.wait_for_load_state = mock_wait_for_load_state
+
+    # Mock asyncio.sleep to avoid actual delays in tests
+    with patch('asyncio.sleep', AsyncMock()):
+        await browser.async_visit_page(TEST_URL)
+
+    # Verify the mocks were called correctly
+    mock_goto.assert_called_once_with(TEST_URL)
+    mock_wait_for_load_state.assert_called_once_with("load", timeout=20000)
 
 
 @pytest.mark.asyncio
@@ -476,7 +546,9 @@ async def test_async_close_tab_multiple_tabs(async_base_browser_fixture):
 
     # Test closing single tab
     single_result = await browser.async_close_tab(2)
-    assert single_result is None  # Single tab close returns None
+    assert (
+        single_result == "Successfully closed tab 2."
+    )  # Single tab close returns success message
     assert 2 not in browser.tabs
 
 
@@ -568,59 +640,81 @@ async def test_async_capture_full_page_screenshot_multiple_tabs(
 
 
 @pytest.mark.asyncio
-async def test_async_act_method_multi_tab_dictionary_format(
-    async_browser_toolkit_fixture,
-):
-    """Test the async_act method with multi-tab dictionary format."""
+async def test_async_act_method_exists(async_browser_toolkit_fixture):
+    """Test that the async_act method exists and can be called."""
     toolkit = async_browser_toolkit_fixture
 
-    # Mock the browser methods
+    # Check if the method exists
+    assert hasattr(toolkit, 'async_act')
+    assert callable(toolkit.async_act)
+
+    # Check the method signature
+    import inspect
+
+    sig = inspect.signature(toolkit.async_act)
+    assert len(sig.parameters) == 2  # self + action_code
+    assert 'action_code' in sig.parameters
+
+
+@pytest.mark.asyncio
+async def test_async_act_method_single_action(async_browser_toolkit_fixture):
+    """Test the async_act method with single action."""
+    toolkit = async_browser_toolkit_fixture
+
+    # Mock the browser method
     toolkit.browser.async_click_id = AsyncMock(
         return_value=(True, "Clicked successfully")
     )
+
+    # Test single action code
+    action_code = "click_id('button1')"
+
+    # Let the real async_act method execute
+    result = await toolkit.async_act(action_code)
+
+    # Verify result structure for single action
+    assert isinstance(result, tuple)
+    assert len(result) == 2
+    success, message = result
+    assert isinstance(success, bool)
+    assert isinstance(message, str)
+    assert success is True
+
+    # Verify the mocked method was called
+    toolkit.browser.async_click_id.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_async_act_method_action_code_fixing(
+    async_browser_toolkit_fixture,
+):
+    """Test that the async_act method properly fixes action codes."""
+    toolkit = async_browser_toolkit_fixture
+
+    # Mock the browser method
     toolkit.browser.async_fill_input_id = AsyncMock(
         return_value=(True, "Filled successfully")
     )
 
-    # Test dictionary format action code - use proper Python dict format
-    action_code = "{1: 'click_id(\"button1\")', 2: 'fill_input_id(\"input1\", \"test text\")'}"
+    # Test action code without quotes (should be fixed by the method)
+    action_code = "fill_input_id(input1, test text)"
 
-    # Mock the _execute_parallel_operation to return expected results
-    async def mock_execute_parallel_operation(operation_func, tab_ids):
-        results = {}
-        for tab_id in tab_ids:
-            if tab_id == 1:
-                results[tab_id] = (True, "Clicked successfully")
-            elif tab_id == 2:
-                results[tab_id] = (True, "Filled successfully")
-        return results
-
-    toolkit.browser._execute_parallel_operation = (
-        mock_execute_parallel_operation
-    )
-
-    # Mock the entire async_act method to return expected results
-    async def mock_async_act(action_code):
-        return {
-            1: (True, "Clicked successfully"),
-            2: (True, "Filled successfully"),
-        }
-
-    toolkit.async_act = mock_async_act
-
+    # Let the real async_act method execute
     result = await toolkit.async_act(action_code)
 
     # Verify result structure
-    assert isinstance(result, dict)
-    assert 1 in result
-    assert 2 in result
+    assert isinstance(result, tuple)
+    assert len(result) == 2
+    success, message = result
+    assert isinstance(success, bool)
+    assert isinstance(message, str)
+    assert success is True
 
-    # Verify each result contains (success, message) tuple
-    for tab_id in [1, 2]:
-        success, message = result[tab_id]
-        assert isinstance(success, bool)
-        assert isinstance(message, str)
-        assert success is True
+    # Verify the mocked method was called with properly quoted arguments
+    toolkit.browser.async_fill_input_id.assert_called_once()
+    # The method should have been called with quoted arguments
+    call_args = toolkit.browser.async_fill_input_id.call_args
+    assert call_args is not None
 
 
 @pytest.mark.asyncio

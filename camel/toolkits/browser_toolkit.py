@@ -383,14 +383,14 @@ class BaseBrowser:
 
     def close_tab(
         self, tab_id: Union[int, List[int]]
-    ) -> Union[None, List[Tuple[int, bool, str]]]:
+    ) -> Union[str, List[Tuple[int, bool, str]]]:
         r"""Close one or multiple tabs and adjust active tab.
 
         Args:
             tab_id (Union[int, List[int]]): Single tab ID or list of tab IDs to close.
 
         Returns:
-            Union[None, List[Tuple[int, bool, str]]]: None for single tab, or list of
+            Union[str, List[Tuple[int, bool, str]]]: String result for single tab, or list of
             (tab_id, success, message) tuples for multiple tabs.
 
         Raises:
@@ -415,7 +415,7 @@ class BaseBrowser:
                     self.page = None
                     self.current_tab_id = None
 
-            return None
+            return f"Successfully closed tab {tab_id}."
 
         # Handle multiple tabs case
         elif isinstance(tab_id, list):
@@ -423,7 +423,7 @@ class BaseBrowser:
                 return []
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Check if current tab is in the list to be closed
             current_tab_closed = (
@@ -608,7 +608,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the screenshot operation function
             def capture_single_tab_screenshot(
@@ -698,10 +698,7 @@ class BaseBrowser:
         if tab_id is None or isinstance(tab_id, int):
             single_tab_id = tab_id
             target_page, _ = self._get_target_page(single_tab_id)
-
-            # Validate viewport size
-            if target_page.viewport_size is None:
-                raise RuntimeError("Page viewport size not available")
+            assert target_page.viewport_size is not None
 
             screenshots: List[str] = []
             scroll_height_eval = target_page.evaluate(
@@ -771,7 +768,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the screenshot operation function
             def capture_single_tab_full_page_screenshots(
@@ -781,12 +778,7 @@ class BaseBrowser:
                 try:
                     page = self.tabs[tid]
 
-                    # Validate viewport size
-                    if page.viewport_size is None:
-                        logger.error(
-                            f"Tab {tid}: Page viewport size not available"
-                        )
-                        return tid, []
+                    assert page.viewport_size is not None
 
                     screenshots: List[str] = []
                     scroll_height_eval = page.evaluate(
@@ -919,7 +911,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the viewport operation function
             def get_single_tab_viewport(
@@ -949,6 +941,10 @@ class BaseBrowser:
                         clientHeight=600,
                         scrollWidth=800,
                         scrollHeight=600,
+                    )
+
+                    logger.info(
+                        f"Using fallback viewport values for tab {tid} due to error: {e}"
                     )
                     return tid, default_viewport
 
@@ -1024,7 +1020,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the interactive elements operation function
             def get_single_tab_interactive_elements(
@@ -1063,9 +1059,16 @@ class BaseBrowser:
             final_results: Dict[int, Dict[str, InteractiveRegion]] = {}
             for tid in tab_id:
                 if tid in results_dict:
-                    result = results_dict[tid]
-                    if isinstance(result, tuple) and len(result) >= 2:
-                        interactive_elements = result[1]
+                    result_tuple = results_dict[
+                        tid
+                    ]  # This is Tuple[int, Dict[str, InteractiveRegion]]
+                    if (
+                        isinstance(result_tuple, tuple)
+                        and len(result_tuple) >= 2
+                    ):
+                        interactive_elements = result_tuple[
+                            1
+                        ]  # Extract the Dict[str, InteractiveRegion]
                         if interactive_elements:  # Check if interactive elements were captured successfully
                             # Ensure proper type casting and validation
                             if isinstance(interactive_elements, dict):
@@ -1190,7 +1193,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the SOM screenshot operation function
             def capture_single_tab_som_screenshot(
@@ -1199,7 +1202,9 @@ class BaseBrowser:
                 """Capture SOM screenshot for a single tab."""
                 try:
                     page = self.tabs[tid]
-                    # ... existing code ...
+                    page.wait_for_load_state("load", timeout=20000)
+                    time.sleep(2)  # Additional wait for stability
+
                     screenshot, _ = self.get_screenshot(
                         save_image=False, tab_id=tid
                     )
@@ -1305,7 +1310,7 @@ class BaseBrowser:
 
     def scroll_up(
         self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[None, Dict[int, Tuple[bool, str]]]:
+    ) -> Union[str, Dict[int, Tuple[bool, str]]]:
         r"""Scroll up the page for the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -1314,7 +1319,7 @@ class BaseBrowser:
                 If List[int], scrolls up multiple tabs simultaneously.
 
         Returns:
-            Union[None, Dict[int, Tuple[bool, str]]]: For single tab: None.
+            Union[str, Dict[int, Tuple[bool, str]]]: For single tab: string result of the scroll action.
                 For multiple tabs: dictionary mapping tab IDs to (success, message) tuples.
 
         Raises:
@@ -1326,7 +1331,7 @@ class BaseBrowser:
             target_page, _ = self._get_target_page(single_tab_id)
 
             target_page.keyboard.press("PageUp")
-            return None
+            return "Successfully scrolled up the page."
 
         # Handle multiple tabs simultaneously
         elif isinstance(tab_id, list):
@@ -1334,7 +1339,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the scroll up operation function
             def scroll_single_tab_up(tid: int) -> Tuple[int, Tuple[bool, str]]:
@@ -1371,7 +1376,7 @@ class BaseBrowser:
 
     def scroll_down(
         self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[None, Dict[int, Tuple[bool, str]]]:
+    ) -> Union[str, Dict[int, Tuple[bool, str]]]:
         r"""Scroll down the page for the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -1380,7 +1385,7 @@ class BaseBrowser:
                 If List[int], scrolls down multiple tabs simultaneously.
 
         Returns:
-            Union[None, Dict[int, Tuple[bool, str]]]: For single tab: None.
+            Union[str, Dict[int, Tuple[bool, str]]]: For single tab: string result of the scroll action.
                 For multiple tabs: dictionary mapping tab IDs to (success, message) tuples.
 
         Raises:
@@ -1392,7 +1397,7 @@ class BaseBrowser:
             target_page, _ = self._get_target_page(single_tab_id)
 
             target_page.keyboard.press("PageDown")
-            return None
+            return "Successfully scrolled down the page."
 
         # Handle multiple tabs simultaneously
         elif isinstance(tab_id, list):
@@ -1400,7 +1405,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the scroll down operation function
             def scroll_single_tab_down(
@@ -1516,7 +1521,7 @@ class BaseBrowser:
         self,
         identifier: Union[str, int, Dict[int, Union[str, int]]],
         tab_id: Optional[Union[int, List[int]]] = None,
-    ) -> Union[None, Dict[int, Tuple[bool, str]]]:
+    ) -> Union[str, Dict[int, Tuple[bool, str]]]:
         r"""Click an element with the given identifier on the current page, a specific tab, or multiple tabs simultaneously.
 
         Supports clicking on different elements on different tabs by providing a dictionary mapping tab IDs to identifiers.
@@ -1529,7 +1534,7 @@ class BaseBrowser:
                 If List[int], clicks on multiple tabs simultaneously.
 
         Returns:
-            Union[None, Dict[int, Tuple[bool, str]]]: For single tab: None.
+            Union[str, Dict[int, Tuple[bool, str]]]: For single tab: string result of the click action.
                 For multiple tabs: dictionary mapping tab IDs to (success, message) tuples.
 
         Raises:
@@ -1580,7 +1585,7 @@ class BaseBrowser:
                             f"Bounding box not found for element '{element_id}'. "
                             f"Cannot click."
                         )
-                        return None
+                        return f"Bounding box not found for element '{element_id}'. Cannot click."
                     target_page.mouse.click(
                         box["x"] + box["width"] / 2,
                         box["y"] + box["height"] / 2,
@@ -1601,7 +1606,7 @@ class BaseBrowser:
                 pass
 
             self._wait_for_load()
-            return None
+            return f"Successfully clicked element '{element_id}'."
 
         # Handle multiple tabs simultaneously
         elif isinstance(tab_id, list):
@@ -1609,7 +1614,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Validate identifier dictionary if provided
             if isinstance(identifier, dict):
@@ -1751,7 +1756,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the content extraction operation function
             def extract_single_tab_content(tid: int) -> Tuple[int, str]:
@@ -1876,7 +1881,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Validate identifier dictionary if provided
             if isinstance(identifier, dict):
@@ -2072,7 +2077,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Validate identifier and text dictionaries if provided
             if isinstance(identifier, dict):
@@ -2182,7 +2187,7 @@ class BaseBrowser:
 
     def scroll_to_bottom(
         self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[None, Dict[int, Tuple[bool, str]]]:
+    ) -> Union[str, Dict[int, Tuple[bool, str]]]:
         r"""Scroll to the bottom of the page for the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -2206,7 +2211,7 @@ class BaseBrowser:
                 "window.scrollTo(0, document.body.scrollHeight);"
             )
             self._wait_for_load()
-            return None
+            return "Successfully scrolled to the bottom of the page."
 
         # Handle multiple tabs simultaneously
         elif isinstance(tab_id, list):
@@ -2214,7 +2219,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the scroll to bottom operation function
             def scroll_single_tab_to_bottom(
@@ -2267,7 +2272,7 @@ class BaseBrowser:
 
     def scroll_to_top(
         self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[None, Dict[int, Tuple[bool, str]]]:
+    ) -> Union[str, Dict[int, Tuple[bool, str]]]:
         r"""Scroll to the top of the page for the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -2289,7 +2294,7 @@ class BaseBrowser:
 
             target_page.evaluate("window.scrollTo(0, 0);")
             self._wait_for_load()
-            return None
+            return "Successfully scrolled to the top of the page."
 
         # Handle multiple tabs simultaneously
         elif isinstance(tab_id, list):
@@ -2297,7 +2302,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the scroll to top operation function
             def scroll_single_tab_to_top(
@@ -2411,7 +2416,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Validate identifier dictionary if provided
             if isinstance(identifier, dict):
@@ -2570,7 +2575,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Prepare search text mapping for multiple tabs
             if isinstance(search_text, dict):
@@ -2655,7 +2660,7 @@ class BaseBrowser:
 
     def back(
         self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[None, Dict[int, Tuple[bool, str]]]:
+    ) -> Union[str, Dict[int, Tuple[bool, str]]]:
         r"""Navigate back to the previous page for the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -2664,7 +2669,7 @@ class BaseBrowser:
                 If List[int], navigates back in multiple tabs simultaneously.
 
         Returns:
-            Union[None, Dict[int, Tuple[bool, str]]]: For single tab: None if successful.
+            Union[str, Dict[int, Tuple[bool, str]]]: For single tab: string result of the navigation action.
                 For multiple tabs: dictionary mapping tab IDs to (success, message) tuples.
 
         Raises:
@@ -2680,9 +2685,6 @@ class BaseBrowser:
 
             page_url_after = target_page.url
 
-            if page_url_after == "about:blank":
-                self.visit_page(page_url_before)
-
             if page_url_before == page_url_after:
                 # If the page is not changed, try to use the history
                 if len(self.page_history) > 0:
@@ -2690,7 +2692,7 @@ class BaseBrowser:
 
             time.sleep(1)
             self._wait_for_load()
-            return None
+            return "Successfully navigated back to the previous page."
 
         # Handle multiple tabs simultaneously
         elif isinstance(tab_id, list):
@@ -2698,7 +2700,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the navigate back operation function
             def navigate_single_tab_back(
@@ -2762,7 +2764,7 @@ class BaseBrowser:
     # ruff: noqa: E501
     def show_interactive_elements(
         self, tab_id: Optional[Union[int, List[int]]] = None
-    ) -> Union[None, Dict[int, Tuple[bool, str]]]:
+    ) -> Union[str, Dict[int, Tuple[bool, str]]]:
         r"""Show simple interactive elements on the current page, a specific tab, or multiple tabs simultaneously.
 
         Args:
@@ -2771,7 +2773,7 @@ class BaseBrowser:
                 If List[int], shows elements for multiple tabs simultaneously.
 
         Returns:
-            Union[None, Dict[int, Tuple[bool, str]]]: For single tab: None.
+            Union[str, Dict[int, Tuple[bool, str]]]: For single tab: string result of the operation.
                 For multiple tabs: dictionary mapping tab IDs to (success, message) tuples.
 
         Raises:
@@ -2808,10 +2810,10 @@ class BaseBrowser:
                     });
                 }
                 """)
+                return "Successfully highlighted interactive elements on the page."
             except Exception as e:
                 logger.warning(f"Error showing interactive elements: {e}")
-
-            return None
+                return f"Error showing interactive elements: {e}"
 
         # Handle multiple tabs simultaneously
         elif isinstance(tab_id, list):
@@ -2819,7 +2821,7 @@ class BaseBrowser:
                 return {}
 
             # Use the existing validation helper method
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Function to show interactive elements for a single tab
             def show_single_tab_interactive_elements(
@@ -2944,7 +2946,7 @@ class BaseBrowser:
                 return {}
 
             # Use _validate_tab_ids for validation
-            valid_tabs, closed_tabs = self._validate_tab_ids(tab_id)
+            valid_tabs, _ = self._validate_tab_ids(tab_id)
 
             # Define the content extraction operation function
             def get_single_tab_content(tid: int) -> Tuple[int, str]:
