@@ -51,53 +51,59 @@ def mock_files():
 
 def test_convert_file_success(mock_files):
     converter = MarkItDownLoader()
-    source_key = converter.get_source_key(mock_files["demo_html"])
-    markdown_text = converter.load(mock_files["demo_html"])[source_key]
+    markdown_text = converter.convert_file(mock_files["demo_html"])
     assert markdown_text is not None
     assert isinstance(markdown_text, str)
 
 
 def test_convert_file_not_found():
     converter = MarkItDownLoader()
-    source_key = converter.get_source_key("nonexistent.txt")
     with pytest.raises(
         FileNotFoundError, match="File not found: nonexistent.txt"
     ):
-        converter.load("nonexistent.txt")[source_key]
+        converter.convert_file("nonexistent.txt")
 
 
 def test_convert_file_unsupported_format(mock_files):
     converter = MarkItDownLoader()
-    source_key = converter.get_source_key(mock_files["unsupported_xxx"])
     with pytest.raises(ValueError, match="Unsupported file format"):
-        converter.load(mock_files["unsupported_xxx"])[source_key]
+        converter.convert_file(mock_files["unsupported_xxx"])
 
 
 def test_convert_file_conversion_error(mock_files):
     converter = MarkItDownLoader()
-
     with patch.object(
         converter.converter,
         "convert",
         side_effect=Exception("Mock conversion error"),
     ):
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(Exception, match="Mock conversion error"):
             converter.convert_file(mock_files["demo_html"])
-
-        assert "Mock conversion error" in str(exc_info.value)
 
 
 def test_convert_files_success(mock_files):
     converter = MarkItDownLoader()
     file_paths = [mock_files["demo_html"], mock_files["report_pdf"]]
     results = converter.convert_files(file_paths)
-    html_key = converter.get_source_key(mock_files["demo_html"])
-    pdf_key = converter.get_source_key(mock_files["report_pdf"])
-
-    assert html_key in results
-    assert pdf_key in results
+    assert mock_files["demo_html"] in results
+    assert mock_files["report_pdf"] in results
     assert all(isinstance(result, str) for result in results.values())
     assert len(results) == 2
+
+
+def test_convert_files_with_errors(mock_files):
+    converter = MarkItDownLoader()
+    file_paths = [
+        mock_files["demo_html"],
+        mock_files["report_pdf"],
+        "nonexistent.txt",
+    ]
+    results = converter.convert_files(file_paths)
+    assert mock_files["demo_html"] in results
+    assert mock_files["report_pdf"] in results
+    assert "nonexistent.txt" in results
+    assert results["nonexistent.txt"].startswith("Error:")
+    assert len(results) == 3
 
 
 def test_convert_files_skip_failed(mock_files):
@@ -107,13 +113,9 @@ def test_convert_files_skip_failed(mock_files):
         mock_files["report_pdf"],
         "nonexistent.txt",
     ]
-
     results = converter.convert_files(file_paths, skip_failed=True)
-    demo_key = converter.get_source_key(mock_files["demo_html"])
-    pdf_key = converter.get_source_key(mock_files["report_pdf"])
-
-    assert demo_key in results
-    assert pdf_key in results
+    assert mock_files["demo_html"] in results
+    assert mock_files["report_pdf"] in results
     assert "nonexistent.txt" not in results
     assert all(isinstance(result, str) for result in results.values())
     assert len(results) == 2
@@ -122,11 +124,8 @@ def test_convert_files_skip_failed(mock_files):
 def test_convert_files_parallel(mock_files):
     converter = MarkItDownLoader()
     file_paths = [mock_files["demo_html"], mock_files["report_pdf"]]
-    demo_key = converter.get_source_key(mock_files["demo_html"])
-    pdf_key = converter.get_source_key(mock_files["report_pdf"])
-
     results = converter.convert_files(file_paths, parallel=True)
-    assert demo_key in results
-    assert pdf_key in results
+    assert mock_files["demo_html"] in results
+    assert mock_files["report_pdf"] in results
     assert all(isinstance(result, str) for result in results.values())
     assert len(results) == 2

@@ -37,7 +37,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
 
     # Convert a single file
     try:
-        markdown_text = converter.load(file_paths["demo.html"])[0]
+        markdown_text = converter.load(file_paths["demo.html"])["demo.html"]
         print(markdown_text)
     except Exception as e:
         print(f"An error occurred: {e}")

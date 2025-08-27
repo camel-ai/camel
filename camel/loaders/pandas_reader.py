@@ -20,7 +20,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Tuple,
     Union,
 )
 
@@ -28,6 +27,7 @@ from .base_loader import BaseLoader
 
 if TYPE_CHECKING:
     from pandas import DataFrame
+    from pandasai import SmartDataframe
 
 
 def check_suffix(valid_suffixs: List[str]) -> Callable:
@@ -88,7 +88,7 @@ class PandasLoader(BaseLoader):
 
     def _load_single(
         self, source: Union[str, Path, "DataFrame"], **kwargs: Any
-    ) -> Tuple[str, Any]:
+    ) -> Union["DataFrame", "SmartDataframe"]:
         r"""Load data from a single source.
 
         Args:
@@ -98,7 +98,7 @@ class PandasLoader(BaseLoader):
             **kwargs: Additional keyword arguments for loading data.
 
         Returns:
-            The loaded data as a pandas DataFrame.
+            The loaded data as a pandas DataFrame or SmartDataframe.
 
         Raises:
             FileNotFoundError: If the file does not exist.
@@ -106,10 +106,8 @@ class PandasLoader(BaseLoader):
         """
         from pandas import DataFrame
 
-        key = self.get_source_key(source)
-
         if isinstance(source, DataFrame):
-            return key, source
+            return source
 
         file_path = str(source)
         path = Path(file_path)
@@ -125,13 +123,13 @@ class PandasLoader(BaseLoader):
         if not loader_method:
             raise ValueError(f"No loader method found for {path.suffix} files")
 
-        return key, loader_method(file_path, **kwargs)
+        return loader_method(file_path, **kwargs)
 
     def load(
         self,
         source: Union["DataFrame", str, List[Union[str, "DataFrame"]]],
         **kwargs: Dict[str, Any],
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, Union["DataFrame", "SmartDataframe"]]:
         r"""Load data from one or multiple sources.
 
         Args:
@@ -140,7 +138,6 @@ class PandasLoader(BaseLoader):
                 - A single path/URL (str or Path)
                 - A list of paths/DataFrames
                 (de)
-            *args: Additional positional arguments.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -152,21 +149,21 @@ class PandasLoader(BaseLoader):
 
         # Handle single source
         if not isinstance(source, (list, set, tuple)):
-            key, df = self._load_single(source, **kwargs)
+            df = self._load_single(source, **kwargs)
             if hasattr(self, 'config') and 'llm' in self.config:
                 from pandasai import SmartDataframe
 
-                return {key: SmartDataframe(df, config=self.config)}
-            return {key: df}
+                return {str(source): SmartDataframe(df, config=self.config)}
+            return {str(source): df}
 
         results = {}
         for item in source:
-            key, df = self._load_single(item, **kwargs)
+            df = self._load_single(item, **kwargs)
             if hasattr(self, 'config') and 'llm' in self.config:
                 from pandasai import SmartDataframe
 
                 df = SmartDataframe(df, config=self.config)
-            results[key] = df
+            results[str(item)] = df
 
         return results
 

@@ -52,8 +52,7 @@ def test_read_content_success(mock_get: Mock):
     mock_get.return_value.status_code = 200
     reader = JinaURLLoader()
     test_url = "https://en.wikipedia.org/wiki/Hollow_Knight"
-    source_key = reader.get_source_key(test_url)
-    content = reader.load(test_url)[source_key]
+    content = reader.load(test_url)[test_url]
     assert "Title: Hollow Knight" in content
 
 
@@ -68,6 +67,5 @@ def test_read_content_fail(mock_get: Mock):
 
     reader = JinaURLLoader()
     test_url = "bad_url"
-    source_key = reader.get_source_key(test_url)
     with pytest.raises(ValueError):
-        reader.load(test_url)[source_key]
+        reader.load(test_url)[test_url]

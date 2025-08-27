@@ -13,23 +13,21 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Union
 
 
 class BaseLoader(ABC):
     r"""Abstract base class for all data loaders in CAMEL."""
 
     @abstractmethod
-    def _load_single(self, source: Union[str, Path]) -> Tuple[str, Any]:
+    def _load_single(self, source: Union[str, Path]) -> Any:
         r"""Load data from a single source.
 
         Args:
             source (Union[str, Path]): The data source to load from.
 
         Returns:
-            Dict[str, Any]: A dictionary containing the loaded data. It is
-                recommended that the dictionary includes a "content" key with
-                the primary data and optional metadata keys.
+            Any: Loaded data by the source.
         """
         pass
 
@@ -63,8 +61,8 @@ class BaseLoader(ABC):
         results = {}
         for i, src in enumerate(sources, 1):
             try:
-                source_key, content = self._load_single(src)
-                results[source_key] = content
+                content = self._load_single(src)
+                results[str(src)] = content
             except Exception as e:
                 raise RuntimeError(
                     f"Error loading source {i}/{len(sources)}: {src}"
@@ -82,39 +80,3 @@ class BaseLoader(ABC):
             sources.
         """
         pass
-
-    def get_source_key(self, obj: Any) -> str:
-        """Generate a consistent hash key for any source.
-
-        Args:
-            obj: The source to generate key for (file path, URL, dict, etc.)
-
-        Returns:
-            str: A SHA-256 hash string
-        """
-        if obj is None:
-            raise ValueError("Cannot generate key for None")
-
-        import hashlib
-        import json
-        from pathlib import Path
-
-        if isinstance(obj, (str, Path)):
-            # For files, include modification time in the hash
-            path = Path(obj)
-            if path.is_file():
-                mtime = path.stat().st_mtime_ns
-                key_str = f"file:{obj}:{mtime}"
-            else:
-                key_str = f"str:{obj}"
-        elif isinstance(obj, dict):
-            # For dictionaries, sort keys and convert to JSON string
-            key_str = json.dumps(obj, sort_keys=True)
-        elif isinstance(obj, (list, tuple, set)):
-            # For sequences, convert to list and then to JSON string
-            key_str = json.dumps(list(obj), sort_keys=True)
-        else:
-            # For other types, use string representation
-            key_str = f"{type(obj).__name__}:{obj!s}"
-
-        return hashlib.sha256(key_str.encode()).hexdigest()

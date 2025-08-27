@@ -14,7 +14,7 @@
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
+from typing import ClassVar, Dict, List, Optional, Union
 
 from camel.loaders.base_loader import BaseLoader
 from camel.logger import get_logger
@@ -177,9 +177,8 @@ class MarkItDownLoader(BaseLoader):
                     desc="Converting files (parallel)",
                 ):
                     path = future_to_path[future]
-                    source_key = self.get_source_key(path)
                     try:
-                        converted_files[source_key] = future.result()
+                        converted_files[path] = future.result()
                     except Exception as e:
                         if skip_failed:
                             logger.warning(
@@ -189,13 +188,12 @@ class MarkItDownLoader(BaseLoader):
                             logger.error(
                                 f"Error processing file '{path}': {e}"
                             )
-                            converted_files[source_key] = f"Error: {e}"
+                            converted_files[path] = f"Error: {e}"
         else:
             for path in tqdm(file_paths, desc="Converting files (sequential)"):
                 try:
                     logger.info(f"Processing file: {path}")
-                    source_key = self.get_source_key(path)
-                    converted_files[source_key] = self.convert_file(path)
+                    converted_files[path] = self.convert_file(path)
                 except Exception as e:
                     if skip_failed:
                         logger.warning(
@@ -203,28 +201,26 @@ class MarkItDownLoader(BaseLoader):
                         )
                     else:
                         logger.error(f"Error processing file '{path}': {e}")
-                        converted_files[source_key] = f"Error: {e}"
+                        converted_files[path] = f"Error: {e}"
 
         return converted_files
 
-    def _load_single(self, source: Union[str, Path]) -> Tuple[str, Any]:
+    def _load_single(self, source: Union[str, Path]) -> str:
         """Load and convert a single file to Markdown.
 
         Args:
             source: Path to the input file.
 
         Returns:
-            Tuple[str, Any]: Tuple of source key and converted Markdown
-            content.
+            str: converted Markdown content.
         """
-        source_key = self.get_source_key(source)
-        return source_key, self.convert_file(str(source))
+        return self.convert_file(str(source))
 
     def load(
         self,
         source: Union[str, Path, List[Union[str, Path]]],
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, str]:
         """Load and convert one or more files to Markdown.
 
         This is a wrapper around convert_files to maintain consistent
@@ -235,14 +231,12 @@ class MarkItDownLoader(BaseLoader):
             **kwargs: Additional keyword arguments for loading data.
 
         Returns:
-            Dict[str, Any]: A list of loaded data. If a single source
+            Any: A list of loaded data. If a single source
                 is provided, the list will contain a single item.
         """
 
-        source_key = self.get_source_key(source)
         if isinstance(source, (str, Path)):
-            source_key, content = self._load_single(source)
-            return {source_key: content}
+            return {str(source): self._load_single(source)}
 
         # At this point, type checker knows source is List[Union[str, Path]]
         file_paths = [str(path) for path in source]
