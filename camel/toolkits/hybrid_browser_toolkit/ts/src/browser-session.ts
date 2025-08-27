@@ -235,6 +235,20 @@ export class HybridBrowserSession {
     return this.getSnapshotForAINative(includeCoordinates, viewportLimit);
   }
 
+  private parseElementFromSnapshot(snapshotText: string, ref: string): { role?: string; text?: string } {
+    const lines = snapshotText.split('\n');
+    for (const line of lines) {
+      if (line.includes(`[ref=${ref}]`)) {
+        const typeMatch = line.match(/^\s*-?\s*(\w+)/);
+        const role = typeMatch ? typeMatch[1] : undefined;
+        const textMatch = line.match(/"([^"]*)"/);
+        const text = textMatch ? textMatch[1] : undefined;
+        return { role, text };
+      }
+    }
+    return {};
+  }
+
   private async getSnapshotForAINative(includeCoordinates = false, viewportLimit = false): Promise<SnapshotResult & { timing: DetailedTiming }> {
     const startTime = Date.now();
     const page = await this.getCurrentPage();
@@ -257,6 +271,16 @@ export class HybridBrowserSession {
       const mappingStart = Date.now();
       const playwrightMapping: Record<string, any> = {};
       
+      // Always parse element info from snapshot
+      for (const ref of refs) {
+        const elementInfo = this.parseElementFromSnapshot(snapshotText, ref);
+        playwrightMapping[ref] = {
+          ref,
+          role: elementInfo.role || 'unknown',
+          text: elementInfo.text || '',
+        };
+      }
+      
       if (includeCoordinates) {
         // Get coordinates for each ref using aria-ref selector
         for (const ref of refs) {
@@ -270,8 +294,9 @@ export class HybridBrowserSession {
               const boundingBox = await element.boundingBox();
               
               if (boundingBox) {
+                // Add coordinates to existing element info
                 playwrightMapping[ref] = {
-                  ref,
+                  ...playwrightMapping[ref],
                   coordinates: {
                     x: Math.round(boundingBox.x),
                     y: Math.round(boundingBox.y),

@@ -35,7 +35,11 @@ export class SomScreenshotInjected {
         const debugInfo: any[] = [];
         
         // Helper function to check element visibility based on coordinates
-        function checkElementVisibilityByCoords(coords: { x: number, y: number, width: number, height: number }, ref: string): 'visible' | 'partial' | 'hidden' {
+        function checkElementVisibilityByCoords(
+          coords: { x: number, y: number, width: number, height: number }, 
+          ref: string,
+          elementInfo: any
+        ): 'visible' | 'partial' | 'hidden' {
           // Skip if element is outside viewport
           if (coords.y + coords.height < 0 || coords.y > window.innerHeight ||
               coords.x + coords.width < 0 || coords.x > window.innerWidth) {
@@ -88,23 +92,51 @@ export class SomScreenshotInjected {
             
             // If we didn't find our target element at all
             if (!targetFound) {
-              // Special handling for composite widgets (like combobox)
-              // Check if the top element is a form control
+              // Special handling for composite widgets
               const topElement = elementsAtCenter[0];
               const tagName = topElement.tagName.toUpperCase();
               
-              // If top element is a form control, this might be a composite widget
-              // where the actual interactive element (SELECT/INPUT) is what matters
+              // Get element role/type for better decision making
+              const elementRole = elementInfo?.role || '';
+              const elementTagName = elementInfo?.tagName || '';
+              
+              // Only apply special handling for form controls that are part of composite widgets
               if (['SELECT', 'INPUT', 'TEXTAREA', 'BUTTON'].includes(tagName)) {
+                const isFormRelatedElement = ['combobox', 'select', 'textbox', 'searchbox', 'spinbutton'].includes(elementRole) ||
+                                           ['SELECT', 'INPUT', 'TEXTAREA', 'BUTTON', 'OPTION'].includes(elementTagName.toUpperCase());
+                
                 // Check if the form control approximately matches our area
                 const rect = topElement.getBoundingClientRect();
                 const overlap = Math.min(rect.right, coords.x + coords.width) - Math.max(rect.left, coords.x) > 0 &&
                                Math.min(rect.bottom, coords.y + coords.height) - Math.max(rect.top, coords.y) > 0;
                 
-                if (overlap) {
-                  // The form control overlaps with our target area
-                  // Consider this as visible since the user can interact with it
-                  return 'visible';
+                if (overlap && isFormRelatedElement) {
+                  // Check for specific composite widget patterns
+                  // For combobox with search input (like Amazon search)
+                  if (elementRole === 'combobox' && tagName === 'INPUT') {
+                    // This is likely a search box with category selector - mark as visible
+                    return 'visible';
+                  }
+                  
+                  // For button/generic elements covered by INPUT with exact same bounds
+                  // This usually indicates the INPUT is the actual interactive element for the button
+                  if ((elementRole === 'button' || elementRole === 'generic') && tagName === 'INPUT') {
+                    const rectMatch = Math.abs(rect.left - coords.x) < 2 && 
+                                      Math.abs(rect.top - coords.y) < 2 &&
+                                      Math.abs(rect.width - coords.width) < 2 &&
+                                      Math.abs(rect.height - coords.height) < 2;
+                    if (rectMatch) {
+                      // The INPUT is the actual interactive element for this button
+                      return 'visible';
+                    }
+                  }
+                  
+                  // For other form-related elements, only mark as visible if they share similar positioning
+                  // (i.e., they're likely part of the same widget)
+                  const sizeDiff = Math.abs(rect.width - coords.width) + Math.abs(rect.height - coords.height);
+                  if (sizeDiff < 50) {  // Tolerance for size difference
+                    return 'visible';
+                  }
                 }
               }
               
@@ -146,7 +178,7 @@ export class SomScreenshotInjected {
         
         Object.entries(elements).forEach(([ref, element]: [string, any]) => {
           if (element.coordinates && clickable.includes(ref)) {
-            const visibility = checkElementVisibilityByCoords(element.coordinates, ref);
+            const visibility = checkElementVisibilityByCoords(element.coordinates, ref, element);
             elementStates.set(ref, visibility);
             
             // Add debug info
@@ -162,6 +194,8 @@ export class SomScreenshotInjected {
                 coords: element.coordinates,
                 centerPoint: { x: centerX, y: centerY },
                 visibilityResult: visibility,
+                elementRole: element.role || 'unknown',
+                elementTagName: element.tagName || '',
                 topmostElement: topmostElement ? {
                   tagName: topmostElement.tagName,
                   className: topmostElement.className,
@@ -174,6 +208,8 @@ export class SomScreenshotInjected {
                 ref,
                 coords: element.coordinates,
                 visibilityResult: visibility,
+                elementRole: element.role || 'unknown',
+                elementTagName: element.tagName || '',
                 error: 'Failed to get elements at center'
               });
             }
