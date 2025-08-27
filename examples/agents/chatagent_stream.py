@@ -37,9 +37,12 @@ chat_agent_logger.setLevel(logging.INFO)
 # Create a streaming model
 streaming_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
+    model_type=ModelType.GPT_4_1_MINI,
     model_config_dict={
         "stream": True,
+        "stream_options": {
+            "include_usage": True,
+        },
     },
 )
 
@@ -103,6 +106,7 @@ def test_content_accumulation():
 
             previous_content = current_content
 
+    print(response.info)
     print("\n✅ Content accumulation test passed!")
     print("\n" + "=" * 50)
     return True
@@ -146,7 +150,7 @@ async def test_async_tool_execution():
                 print(new_content, end="", flush=True)
 
             previous_content = current_content
-
+    print(streaming_response.info)
     print("\n" + "=" * 50)
     return True
 
@@ -189,6 +193,8 @@ def test_sync_tool_execution():
 
             previous_content = current_content
 
+    print(response.info)
+
     print("\n" + "=" * 50)
     return True
 
@@ -224,6 +230,8 @@ def test_sync_structured_output():
                 print(new_content, end="", flush=True)
 
             previous_content = current_content
+
+    print(response.info)
 
     print("\n" + "=" * 50)
     return True

@@ -443,6 +443,8 @@ class OpenAIModel(BaseModelBackend):
         # Remove stream from request config since OpenAI does not support it
         # with structured response
         request_config.pop("stream", None)
+        # Also remove stream_options which is only valid when stream=True
+        request_config.pop("stream_options", None)
         if tools is not None:
             request_config["tools"] = tools
 
@@ -468,6 +470,8 @@ class OpenAIModel(BaseModelBackend):
         # Remove stream from request config since OpenAI does not support it
         # with structured response
         request_config.pop("stream", None)
+        # Also remove stream_options which is only valid when stream=True
+        request_config.pop("stream_options", None)
         if tools is not None:
             request_config["tools"] = tools
 

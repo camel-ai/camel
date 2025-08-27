@@ -216,7 +216,7 @@ class StreamingChatAgentResponse:
     @property
     def info(self) -> Dict[str, Any]:
         r"""Get info from the latest response."""
-        self._ensure_latest_response()
+        # Do not await in a synchronous property; return last known info
         if self._current_response:
             return self._current_response.info
         return {}
@@ -289,6 +289,13 @@ class AsyncStreamingChatAgentResponse:
             return self._current_response
         # Return a default response if nothing was consumed
         return ChatAgentResponse(msgs=[], terminated=False, info={})
+
+    @property
+    def info(self) -> Dict[str, Any]:
+        r"""Get info from the latest response."""
+        if self._current_response:
+            return self._current_response.info
+        return {}
 
     def __await__(self):
         r"""Make this object awaitable - returns the final response."""
@@ -2670,6 +2677,14 @@ class ChatAgent(BaseAgent):
                 self._update_token_usage_tracker(
                     step_token_usage, safe_model_dump(chunk.usage)
                 )
+                # Emit a partial update to propagate latest usage
+                yield self._create_streaming_response_with_accumulator(
+                    content_accumulator,
+                    "",
+                    step_token_usage,
+                    getattr(chunk, 'id', ''),
+                    tool_call_records.copy(),
+                )
 
             # Process chunk delta
             if chunk.choices and len(chunk.choices) > 0:
@@ -2741,7 +2756,6 @@ class ChatAgent(BaseAgent):
                             )
 
                         self.record_message(final_message)
-                    break
 
         return stream_completed, tool_calls_complete
 
@@ -3376,9 +3390,18 @@ class ChatAgent(BaseAgent):
 
         async for chunk in stream:
             # Update token usage if available
-            if chunk.usage:
+
+            if chunk.usage is not None:
                 self._update_token_usage_tracker(
                     step_token_usage, safe_model_dump(chunk.usage)
+                )
+
+                yield self._create_streaming_response_with_accumulator(
+                    content_accumulator,
+                    "",  # no content, just usage
+                    step_token_usage,
+                    getattr(chunk, "id", ""),
+                    tool_call_records.copy(),
                 )
 
             # Process chunk delta
@@ -3454,7 +3477,6 @@ class ChatAgent(BaseAgent):
                             )
 
                         self.record_message(final_message)
-                    break
 
         # Yield the final status as a tuple
         yield (stream_completed, tool_calls_complete)
