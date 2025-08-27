@@ -112,7 +112,7 @@ __all__ = [
     'SILICONFLOW_API_PARAMS',
     'AIMLConfig',
     'AIML_API_PARAMS',
-    'AMDConfigs',
+    'AMDConfig',
     'AMD_API_PARAMS',
     'OpenRouterConfig',
     'OPENROUTER_API_PARAMS',

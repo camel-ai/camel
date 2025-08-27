@@ -71,9 +71,7 @@ class AMDModel(OpenAICompatibleModel):
         url = url or os.environ.get(
             "AMD_API_BASE_URL", "https://llm-api.amd.com"
         )
-        headers = {
-            'Ocp-Apim-Subscription-Key': api_key 
-        }
+        headers = {'Ocp-Apim-Subscription-Key': api_key}
         kwargs["default_headers"] = headers
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
