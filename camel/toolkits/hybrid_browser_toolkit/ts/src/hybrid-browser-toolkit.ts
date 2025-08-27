@@ -3,6 +3,7 @@ import {ActionResult, BrowserAction, BrowserToolkitConfig, SnapshotResult, TabIn
 import {ConfigLoader} from './config-loader';
 import {ConsoleMessage} from 'playwright';
 import {SomScreenshotInjected} from './som-screenshot-injected';
+import {filterClickableByHierarchy} from './snapshot-parser';
 
 export class HybridBrowserToolkit {
   private session: HybridBrowserSession;
@@ -144,6 +145,9 @@ export class HybridBrowserToolkit {
       // Parse clickable elements from snapshot text
       const clickableElements = this.parseClickableElements(snapshotResult.snapshot);
       
+      // Apply hierarchy-based filtering
+      const filteredElements = filterClickableByHierarchy(snapshotResult.snapshot, clickableElements);
+
       // Generate export path based on current page URL and timestamp
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
       const pageUrl = page.url();
@@ -154,7 +158,7 @@ export class HybridBrowserToolkit {
       const result = await SomScreenshotInjected.captureOptimized(
         page,
         snapshotResult,
-        clickableElements,
+        filteredElements,
         exportPath
       );
       

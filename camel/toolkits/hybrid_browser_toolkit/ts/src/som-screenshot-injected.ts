@@ -6,6 +6,7 @@
 import { Page } from 'playwright';
 import { SnapshotResult, VisualMarkResult } from './types';
 import { writeFile } from 'fs/promises';
+import { filterParentChildElements } from './parent-child-filter';
 
 export class SomScreenshotInjected {
   /**
@@ -21,6 +22,15 @@ export class SomScreenshotInjected {
     const startTime = Date.now();
     
     try {
+      // Apply parent-child filtering
+      const filterStartTime = Date.now();
+      const { filteredElements, debugInfo: filterDebugInfo } = filterParentChildElements(
+        snapshotResult.elements,
+        clickableElements
+      );
+      const filterTime = Date.now() - filterStartTime;
+      console.log(`Parent-child filtering took ${filterTime}ms`);
+      
       // Prepare element geometry data for export
       const elementGeometry: any[] = [];
       // Inject and capture in one go
@@ -28,11 +38,11 @@ export class SomScreenshotInjected {
       const visibilityDebugInfo: any[] = [];
       
       const result = await page.evaluate(async (data) => {
-        const { elements, clickable } = data;
+        const { elements, clickable, filterDebugInfo } = data;
         const markedElements: any[] = [];
         
-        // Debug info collector
-        const debugInfo: any[] = [];
+        // Debug info collector - include filter debug info
+        const debugInfo: any[] = [...filterDebugInfo];
         
         // Helper function to check element visibility based on coordinates
         function checkElementVisibilityByCoords(
@@ -216,7 +226,7 @@ export class SomScreenshotInjected {
           }
         });
         
-        // Add labels and collect geometry data
+        // Add labels and collect geometry data (only for filtered elements)
         Object.entries(elements).forEach(([ref, element]: [string, any]) => {
           if (element.coordinates && clickable.includes(ref)) {
             const state = elementStates.get(ref);
@@ -272,7 +282,9 @@ export class SomScreenshotInjected {
               area: width * height,
               type: element.role || 'unknown',
               text: element.text || '',
-              attributes: element.attributes || {}
+              attributes: element.attributes || {},
+              tagName: element.tagName || '',
+              isFiltered: false
             });
           }
         });
@@ -290,7 +302,8 @@ export class SomScreenshotInjected {
         };
       }, {
         elements: snapshotResult.elements,
-        clickable: Array.from(clickableElements)
+        clickable: Array.from(filteredElements),
+        filterDebugInfo: filterDebugInfo
       });
       
       // Take screenshot
@@ -347,7 +360,7 @@ export class SomScreenshotInjected {
               summary: {
                 visible: result.debugInfo.filter((d: any) => d.visibilityResult === 'visible').length,
                 partial: result.debugInfo.filter((d: any) => d.visibilityResult === 'partial').length,
-                hidden: result.debugInfo.filter((d: any) => d.visibilityResult === 'hidden').length,
+                hidden: result.debugInfo.filter((d: any) => d.visibilityResult === 'hidden').length
               },
               elements: result.debugInfo.sort((a: any, b: any) => {
                 // Sort by visibility status: hidden first, then partial, then visible
@@ -378,7 +391,9 @@ export class SomScreenshotInjected {
           visual_marking_time_ms: 1100, // Injection, rendering and 1s display time
           injection_method: 'optimized',
           elements_count: result.elementCount,
-          display_duration_ms: 1000 // Time the overlay is kept visible
+          display_duration_ms: 1000, // Time the overlay is kept visible
+          parent_child_filter_time_ms: filterTime,
+          filtered_count: clickableElements.size - filteredElements.size
         }
       };
       
