@@ -28,10 +28,10 @@ class E2BInterpreter(BaseInterpreter):
     Args:
         require_confirm (bool, optional): If True, prompt user before running
             code strings for security. (default: :obj:`True`)
-            
+
     Environment Variables:
         E2B_API_KEY: The API key for authenticating with the E2B service.
-        E2B_DOMAIN: The base URL for the E2B API. If not provided, 
+        E2B_DOMAIN: The base URL for the E2B API. If not provided,
             will use the default E2B endpoint.
     """
 
@@ -60,17 +60,18 @@ class E2BInterpreter(BaseInterpreter):
         from e2b_code_interpreter import Sandbox
 
         self.require_confirm = require_confirm
-        
+
         # Get API key from environment variable
         api_key = os.environ.get("E2B_API_KEY")
-        
+
         # Get domain from environment variable
         domain = os.environ.get("E2B_DOMAIN")
-        
+
         # Create sandbox with appropriate parameters
         sandbox_kwargs = {"api_key": api_key}
-        
-        # Only add domain if it's provided (to maintain compatibility with standard E2B)
+
+        # Only add domain if it's provided
+        # (to maintain compatibility with standard E2B)
         if domain:
             sandbox_kwargs["domain"] = domain
             logger.info(f"Using custom E2B endpoint: {domain}")
@@ -80,7 +81,8 @@ class E2BInterpreter(BaseInterpreter):
         except TypeError as e:
             if domain and "domain" in str(e):
                 logger.warning(
-                    f"The e2b_code_interpreter library doesn't support custom domain. "
+                    f"The e2b_code_interpreter library doesn't support "
+                    f"custom domain. "
                     f"Using default E2B endpoint. Error: {e}"
                 )
                 # Fallback to default configuration without domain

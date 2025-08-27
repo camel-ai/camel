@@ -30,6 +30,7 @@ export interface BrowserConfig {
   // Tab management
   tabIdPrefix: string;
   tabCounterPadding: number;
+  consoleLogLimit: number;
   
   // Scroll and positioning
   scrollPositionScale: number;
@@ -113,9 +114,10 @@ function getDefaultBrowserConfig(): BrowserConfig {
     clickTimeout: 3000,
     tabIdPrefix: 'tab-',
     tabCounterPadding: 3,
+    consoleLogLimit: 1000,
     scrollPositionScale: 0.1,
     navigationDelay: 100,
-    blankPageUrls: ['about:blank', ''],
+    blankPageUrls: [],
     dataUrlPrefix: 'data:',
     domContentLoadedState: 'domcontentloaded',
     networkIdleState: 'networkidle',

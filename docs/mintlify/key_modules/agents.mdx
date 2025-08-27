@@ -139,18 +139,69 @@ response = agent.step("What is 5 + 3?")
 
 ### Structured Output
 
+CAMEL's `ChatAgent` can produce structured output by leveraging Pydantic models. This feature is especially useful when you need the agent to return data in a specific format, such as JSON. By defining a Pydantic model, you can ensure that the agent's output is predictable and easy to parse.
+
+<Tabs>
+<Tab title="Simple Object">
+
+Here's how you can get a structured response from a `ChatAgent`. First, define a `BaseModel` that specifies the desired output fields. You can add descriptions to each field to guide the model.
+
+```python
+from pydantic import BaseModel, Field
+from typing import List
+
+class JokeResponse(BaseModel):
+    joke: str = Field(description="A joke")
+    funny_level: int = Field(description="Funny level, from 1 to 10")
+
+# Create agent with structured output
+agent = ChatAgent(model="gpt-4o-mini")
+response = agent.step("Tell me a joke.", response_format=JokeResponse)
+
+# The response content is a JSON string
+print(response.msgs[0].content)
+# '{"joke": "Why don't scientists trust atoms? Because they make up everything!", "funny_level": 8}'
+
+# Access the parsed Pydantic object
+parsed_response = response.msgs[0].parsed
+print(parsed_response.joke)
+# "Why don't scientists trust atoms? Because they make up everything!"
+print(parsed_response.funny_level)
+# 8
+```
+</Tab>
+<Tab title="Nested Objects and Lists">
+
+You can also use nested Pydantic models and lists to define more complex structures. In this example, we define a `StudentList` that contains a list of `Student` objects.
+
 ```python
 from pydantic import BaseModel
 from typing import List
 
-class ResponseFormat(BaseModel):
-    points: List[str]
-    summary: str
+class Student(BaseModel):
+    name: str
+    age: str
+    email: str
+
+class StudentList(BaseModel):
+    students: List[Student]
 
 # Create agent with structured output
-agent = ChatAgent()
-response = agent.step("List benefits of exercise", response_format=ResponseFormat)
+agent = ChatAgent(model="gpt-4o-mini")
+response = agent.step(
+    "Create a list of two students with their names, ages, and email addresses.",
+    response_format=StudentList,
+)
+
+# Access the parsed Pydantic object
+parsed_response = response.msgs[0].parsed
+for student in parsed_response.students:
+    print(f"Name: {student.name}, Age: {student.age}, Email: {student.email}")
+# Name: Alex, Age: 22, Email: alex@example.com
+# Name: Beth, Age: 25, Email: beth@example.com
 ```
+</Tab>
+</Tabs>
 
 ## Best Practices
 

@@ -462,6 +462,3 @@ class OpenAICompatibleModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
-
-    def check_model_config(self):
-        pass

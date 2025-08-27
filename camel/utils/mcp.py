@@ -106,11 +106,11 @@ class MCPServer:
         """
         from mcp.server.fastmcp import FastMCP
 
-        from camel.toolkits.base import BaseToolkit
-
         original_init = cls.__init__
 
         def new_init(instance, *args, **kwargs):
+            from camel.toolkits.base import BaseToolkit
+
             original_init(instance, *args, **kwargs)
             self.server_name = self.server_name or cls.__name__
             instance.mcp = FastMCP(self.server_name)

@@ -160,7 +160,14 @@ class WebSocketBrowserServer {
 
       case 'type':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
-        return await this.toolkit.type(params.ref, params.text);
+        // Handle both single input and multiple inputs
+        if (params.inputs) {
+          // Multiple inputs mode - pass inputs array directly
+          return await this.toolkit.type(params.inputs);
+        } else {
+          // Single input mode - pass ref and text
+          return await this.toolkit.type(params.ref, params.text);
+        }
 
       case 'select':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
@@ -173,6 +180,18 @@ class WebSocketBrowserServer {
       case 'enter':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.enter();
+      
+      case 'mouse_control':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.mouseControl(params.control, params.x, params.y);
+
+      case 'mouse_drag':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.mouseDrag(params.from_ref, params.to_ref);
+
+      case 'press_key':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.pressKeys(params.keys);
 
       case 'back':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
@@ -193,6 +212,14 @@ class WebSocketBrowserServer {
       case 'get_tab_info':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.getTabInfo();
+
+      case 'console_view':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.getConsoleView();
+
+      case 'console_exec':
+        if (!this.toolkit) throw new Error('Toolkit not initialized');
+        return await this.toolkit.consoleExecute(params.code);
 
       case 'wait_user':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
