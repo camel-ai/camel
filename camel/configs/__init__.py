@@ -26,6 +26,7 @@ from .lmstudio_config import LMSTUDIO_API_PARAMS, LMStudioConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .modelscope_config import MODELSCOPE_API_PARAMS, ModelScopeConfig
 from .moonshot_config import MOONSHOT_API_PARAMS, MoonshotConfig
+from .nebius_config import NEBIUS_API_PARAMS, NebiusConfig
 from .netmind_config import NETMIND_API_PARAMS, NetmindConfig
 from .novita_config import NOVITA_API_PARAMS, NovitaConfig
 from .nvidia_config import NVIDIA_API_PARAMS, NvidiaConfig
@@ -58,6 +59,8 @@ __all__ = [
     'ANTHROPIC_API_PARAMS',
     'GROQ_API_PARAMS',
     'GroqConfig',
+    'NEBIUS_API_PARAMS',
+    'NebiusConfig',
     'LiteLLMConfig',
     'LITELLM_API_PARAMS',
     'NetmindConfig',
