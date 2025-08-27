@@ -19,7 +19,8 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import unicodedata
-
+from dotenv import load_dotenv
+load_dotenv()
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.toolkits import HybridBrowserToolkit
