@@ -17,11 +17,11 @@ from .base_io import File, create_file, create_file_from_raw_bytes
 from .chunkr_reader import ChunkrReader, ChunkrReaderConfig
 from .crawl4ai_reader import Crawl4AI
 from .firecrawl_reader import Firecrawl
-from .jina_url_loader import JinaURLLoader
-from .markitdown_loader import MarkItDownLoader
+from .jina_url_reader import JinaURLLoader
+from .markitdown import MarkItDownLoader
 from .mineru_extractor import MinerU
 from .mistral_reader import MistralReader
-from .pandas_loader import PandasLoader
+from .pandas_reader import PandasLoader
 from .scrapegraph_reader import ScrapeGraphAI
 from .unstructured_io import UnstructuredIO
 
