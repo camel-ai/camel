@@ -144,16 +144,24 @@ export class HybridBrowserToolkit {
       // Parse clickable elements from snapshot text
       const clickableElements = this.parseClickableElements(snapshotResult.snapshot);
       
-      // Use injected SOM-screenshot method
+      // Generate export path based on current page URL and timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const pageUrl = page.url();
+      const sanitizedUrl = pageUrl.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
+      const exportPath = `som_geometry_${sanitizedUrl}_${timestamp}.json`;
+      
+      // Use injected SOM-screenshot method with export path
       const result = await SomScreenshotInjected.captureOptimized(
         page,
         snapshotResult,
-        clickableElements
+        clickableElements,
+        exportPath
       );
       
       // Add snapshot timing info to result
       result.timing.snapshot_time_ms = snapshotResult.timing.snapshot_time_ms;
       result.timing.coordinate_enrichment_time_ms = snapshotResult.timing.coordinate_enrichment_time_ms;
+      result.timing.geometry_export_path = exportPath;
       
       return result;
     } catch (error) {

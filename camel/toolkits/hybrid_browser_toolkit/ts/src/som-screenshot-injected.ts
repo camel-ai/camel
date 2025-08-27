@@ -5,6 +5,7 @@
 
 import { Page } from 'playwright';
 import { SnapshotResult, VisualMarkResult } from './types';
+import { writeFile } from 'fs/promises';
 
 export class SomScreenshotInjected {
   /**
@@ -14,14 +15,119 @@ export class SomScreenshotInjected {
   static async captureOptimized(
     page: Page,
     snapshotResult: SnapshotResult,
-    clickableElements: Set<string>
+    clickableElements: Set<string>,
+    exportPath?: string
   ): Promise<VisualMarkResult & { timing: any }> {
     const startTime = Date.now();
     
     try {
+      // Prepare element geometry data for export
+      const elementGeometry: any[] = [];
       // Inject and capture in one go
+      // Collect visibility debug info
+      const visibilityDebugInfo: any[] = [];
+      
       const result = await page.evaluate(async (data) => {
         const { elements, clickable } = data;
+        const markedElements: any[] = [];
+        
+        // Debug info collector
+        const debugInfo: any[] = [];
+        
+        // Helper function to check element visibility based on coordinates
+        function checkElementVisibilityByCoords(coords: { x: number, y: number, width: number, height: number }, ref: string): 'visible' | 'partial' | 'hidden' {
+          // Skip if element is outside viewport
+          if (coords.y + coords.height < 0 || coords.y > window.innerHeight ||
+              coords.x + coords.width < 0 || coords.x > window.innerWidth) {
+            return 'hidden';
+          }
+          
+          // Simple approach: just check the center point
+          // If center is visible and shows our element (or its child), consider it visible
+          const centerX = coords.x + coords.width * 0.5;
+          const centerY = coords.y + coords.height * 0.5;
+          
+          try {
+            const elementsAtCenter = document.elementsFromPoint(centerX, centerY);
+            if (!elementsAtCenter || elementsAtCenter.length === 0) {
+              return 'hidden';
+            }
+            
+            // Find our target element in the stack
+            let targetFound = false;
+            let targetIsTopmost = false;
+            
+            for (let i = 0; i < elementsAtCenter.length; i++) {
+              const elem = elementsAtCenter[i];
+              const rect = elem.getBoundingClientRect();
+              
+              // Check if this element matches our expected bounds (within tolerance)
+              if (Math.abs(rect.left - coords.x) < 5 && 
+                  Math.abs(rect.top - coords.y) < 5 &&
+                  Math.abs(rect.width - coords.width) < 10 &&
+                  Math.abs(rect.height - coords.height) < 10) {
+                targetFound = true;
+                targetIsTopmost = (i === 0);
+                
+                // If target is topmost, it's definitely visible
+                if (targetIsTopmost) {
+                  return 'visible';
+                }
+                
+                // If not topmost, check if the topmost element is a child of our target
+                const topmostElem = elementsAtCenter[0];
+                if (elem.contains(topmostElem)) {
+                  // Topmost is our child - element is visible
+                  return 'visible';
+                }
+                
+                // Otherwise, we're obscured
+                return 'hidden';
+              }
+            }
+            
+            // If we didn't find our target element at all
+            if (!targetFound) {
+              // Special handling for composite widgets (like combobox)
+              // Check if the top element is a form control
+              const topElement = elementsAtCenter[0];
+              const tagName = topElement.tagName.toUpperCase();
+              
+              // If top element is a form control, this might be a composite widget
+              // where the actual interactive element (SELECT/INPUT) is what matters
+              if (['SELECT', 'INPUT', 'TEXTAREA', 'BUTTON'].includes(tagName)) {
+                // Check if the form control approximately matches our area
+                const rect = topElement.getBoundingClientRect();
+                const overlap = Math.min(rect.right, coords.x + coords.width) - Math.max(rect.left, coords.x) > 0 &&
+                               Math.min(rect.bottom, coords.y + coords.height) - Math.max(rect.top, coords.y) > 0;
+                
+                if (overlap) {
+                  // The form control overlaps with our target area
+                  // Consider this as visible since the user can interact with it
+                  return 'visible';
+                }
+              }
+              
+              return 'hidden';
+            }
+            
+            return 'partial';
+            
+          } catch (e) {
+            // Fallback: use simple elementFromPoint check
+            const elem = document.elementFromPoint(centerX, centerY);
+            if (!elem) return 'hidden';
+            
+            const rect = elem.getBoundingClientRect();
+            // Check if the element at center matches our bounds
+            if (Math.abs(rect.left - coords.x) < 5 && 
+                Math.abs(rect.top - coords.y) < 5) {
+              return 'visible';
+            }
+            return 'partial';
+          }
+        }
+        
         
         // Create overlay
         const overlay = document.createElement('div');
@@ -35,9 +141,52 @@ export class SomScreenshotInjected {
           z-index: 2147483647;
         `;
         
-        // Add labels
+        // Check visibility for each element using coordinates
+        const elementStates = new Map<string, 'visible' | 'partial' | 'hidden'>();
+        
         Object.entries(elements).forEach(([ref, element]: [string, any]) => {
           if (element.coordinates && clickable.includes(ref)) {
+            const visibility = checkElementVisibilityByCoords(element.coordinates, ref);
+            elementStates.set(ref, visibility);
+            
+            // Add debug info
+            const centerX = element.coordinates.x + element.coordinates.width * 0.5;
+            const centerY = element.coordinates.y + element.coordinates.height * 0.5;
+            
+            try {
+              const elementsAtCenter = document.elementsFromPoint(centerX, centerY);
+              const topmostElement = elementsAtCenter[0];
+              
+              debugInfo.push({
+                ref,
+                coords: element.coordinates,
+                centerPoint: { x: centerX, y: centerY },
+                visibilityResult: visibility,
+                topmostElement: topmostElement ? {
+                  tagName: topmostElement.tagName,
+                  className: topmostElement.className,
+                  id: topmostElement.id
+                } : null,
+                elementsAtCenterCount: elementsAtCenter.length
+              });
+            } catch (e) {
+              debugInfo.push({
+                ref,
+                coords: element.coordinates,
+                visibilityResult: visibility,
+                error: 'Failed to get elements at center'
+              });
+            }
+          }
+        });
+        
+        // Add labels and collect geometry data
+        Object.entries(elements).forEach(([ref, element]: [string, any]) => {
+          if (element.coordinates && clickable.includes(ref)) {
+            const state = elementStates.get(ref);
+            
+            // Skip completely hidden elements
+            if (state === 'hidden') return;
             const label = document.createElement('div');
             const { x, y, width, height } = element.coordinates;
             
@@ -47,7 +196,7 @@ export class SomScreenshotInjected {
               top: ${y}px;
               width: ${width}px;
               height: ${height}px;
-              border: 3px solid #FF0066;
+              border: 3px ${state === 'partial' ? 'dashed' : 'solid'} #FF0066;
               border-radius: 4px;
               box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             `;
@@ -67,10 +216,28 @@ export class SomScreenshotInjected {
               min-width: 20px;
               text-align: center;
               box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+              opacity: ${state === 'partial' ? '0.8' : '1'};
             `;
             
             label.appendChild(refLabel);
             overlay.appendChild(label);
+            
+            // Collect geometry data
+            markedElements.push({
+              ref,
+              x,
+              y,
+              width,
+              height,
+              center: {
+                x: x + width / 2,
+                y: y + height / 2
+              },
+              area: width * height,
+              type: element.role || 'unknown',
+              text: element.text || '',
+              attributes: element.attributes || {}
+            });
           }
         });
         
@@ -81,7 +248,9 @@ export class SomScreenshotInjected {
         
         return { 
           overlayId: overlay.id = 'camel-som-overlay-temp',
-          elementCount: overlay.children.length
+          elementCount: overlay.children.length,
+          markedElements,
+          debugInfo
         };
       }, {
         elements: snapshotResult.elements,
@@ -102,6 +271,62 @@ export class SomScreenshotInjected {
         const overlay = document.getElementById(overlayId);
         if (overlay) overlay.remove();
       }, result.overlayId);
+      
+      // Export element geometry if path is provided
+      if (exportPath && result.markedElements) {
+        try {
+          const pageUrl = page.url();
+          const timestamp = new Date().toISOString();
+          const exportData = {
+            timestamp,
+            url: pageUrl,
+            viewport: await page.viewportSize(),
+            elements: result.markedElements,
+            summary: {
+              totalElements: result.markedElements.length,
+              byType: result.markedElements.reduce((acc: any, el: any) => {
+                acc[el.type] = (acc[el.type] || 0) + 1;
+                return acc;
+              }, {}),
+              averageSize: {
+                width: result.markedElements.reduce((sum: number, el: any) => sum + el.width, 0) / result.markedElements.length,
+                height: result.markedElements.reduce((sum: number, el: any) => sum + el.height, 0) / result.markedElements.length
+              }
+            }
+          };
+          
+          await writeFile(exportPath, JSON.stringify(exportData, null, 2));
+          console.log(`Element geometry exported to: ${exportPath}`);
+          
+          // Also save visibility debug info
+          if (result.debugInfo) {
+            const fs = require('fs').promises;
+            const path = require('path');
+            const debugPath = exportPath.replace('.json', '-visibility-debug.json');
+            
+            const debugData = {
+              timestamp,
+              url: pageUrl,
+              totalElements: result.debugInfo.length,
+              summary: {
+                visible: result.debugInfo.filter((d: any) => d.visibilityResult === 'visible').length,
+                partial: result.debugInfo.filter((d: any) => d.visibilityResult === 'partial').length,
+                hidden: result.debugInfo.filter((d: any) => d.visibilityResult === 'hidden').length,
+              },
+              elements: result.debugInfo.sort((a: any, b: any) => {
+                // Sort by visibility status: hidden first, then partial, then visible
+                const order: any = { hidden: 0, partial: 1, visible: 2 };
+                return order[a.visibilityResult] - order[b.visibilityResult];
+              })
+            };
+            
+            await fs.writeFile(debugPath, JSON.stringify(debugData, null, 2));
+            console.log(`Visibility debug info exported to: ${debugPath}`);
+          }
+        } catch (error) {
+          console.error('Failed to export element geometry:', error);
+        }
+      }
       
       const base64Image = screenshotBuffer.toString('base64');
       const dataUrl = `data:image/png;base64,${base64Image}`;
