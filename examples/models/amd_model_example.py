@@ -141,7 +141,4 @@ if __name__ == "__main__":
 - Test with a demo/sandbox account or very small amounts first.
 - You can expand this bot with strategies, stop-loss, take-profit, etc.
 - For real trading, always understand the risks and comply with local regulations.
-
-
-
-"""
+"""  # noqa: E501, RUF001

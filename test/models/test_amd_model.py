@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import re
 
 import pytest
 
@@ -24,9 +23,7 @@ from camel.types import ModelType
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "model_type",
-    [
-        ModelType.AMD_GPT4
-    ],
+    [ModelType.AMD_GPT4],
 )
 def test_amd_model(model_type: ModelType):
     model = AMDModel(model_type)
