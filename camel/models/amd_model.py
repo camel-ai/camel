@@ -11,37 +11,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 import os
-import subprocess
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import OllamaConfig
-from camel.logger import get_logger
+from camel.configs import AMD_API_PARAMS, AMDConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
-from camel.utils import BaseTokenCounter
-
-logger = get_logger(__name__)
+from camel.utils import BaseTokenCounter, api_keys_required
 
 
-class OllamaModel(OpenAICompatibleModel):
-    r"""Ollama service interface.
+class AMDModel(OpenAICompatibleModel):
+    r"""AMD API in a unified OpenAICompatibleModel interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
-            created.
+            created, one of AMD series.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
-            that will be fed into:obj:`openai.ChatCompletion.create()`.
-            If:obj:`None`, :obj:`OllamaConfig().as_dict()` will be used.
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`AMDConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
-            the model service. Required for Ollama cloud services. If not
-            provided, defaults to "Not_Provided". (default: :obj:`None`)
-        url (Optional[str], optional): The url to the model service.
+            the AMD service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the AMD service.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
-            ModelType.GPT_4O_MINI)` will be used.
+            ModelType.GPT_4)` will be used.
             (default: :obj:`None`)
         timeout (Optional[float], optional): The timeout value in seconds for
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
@@ -51,11 +47,13 @@ class OllamaModel(OpenAICompatibleModel):
             (default: :obj:`3`)
         **kwargs (Any): Additional arguments to pass to the client
             initialization.
-
-    References:
-        https://github.com/ollama/ollama/blob/main/docs/openai.md
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "AMD_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -68,37 +66,36 @@ class OllamaModel(OpenAICompatibleModel):
         **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
-            model_config_dict = OllamaConfig().as_dict()
-        self._url = url or os.environ.get("OLLAMA_BASE_URL")
+            model_config_dict = AMDConfig().as_dict()
+        api_key = api_key or os.environ.get("AMD_API_KEY")
+        url = url or os.environ.get(
+            "AMD_API_BASE_URL", "https://llm-api.amd.com"
+        )
+        headers = {'Ocp-Apim-Subscription-Key': api_key}
+        kwargs["default_headers"] = headers
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
-        self._model_type = model_type
-
-        if not self._url:
-            self._start_server()
-
         super().__init__(
-            model_type=self._model_type,
+            model_type=model_type,
             model_config_dict=model_config_dict,
-            api_key=api_key or "Not_Provided",
-            url=self._url,
+            api_key=api_key,
+            url=url,
             token_counter=token_counter,
             timeout=timeout,
             max_retries=max_retries,
             **kwargs,
         )
 
-    def _start_server(self) -> None:
-        r"""Starts the Ollama server in a subprocess."""
-        try:
-            subprocess.Popen(
-                ["ollama", "server", "--port", "11434"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            self._url = "http://localhost:11434/v1"
-            logger.info(
-                f"Ollama server started on {self._url} "
-                f"for {self._model_type} model."
-            )
-        except Exception as e:
-            logger.error(f"Failed to start Ollama server: {e}.")
+    def check_model_config(self):
+        r"""Check whether the model configuration contains any
+        unexpected arguments to AMD API.
+
+        Raises:
+            ValueError: If the model configuration dictionary contains any
+                unexpected arguments to AMD API.
+        """
+        for param in self.model_config_dict:
+            if param not in AMD_API_PARAMS:
+                raise ValueError(
+                    f"Unexpected argument `{param}` is "
+                    "input into AMD model backend."
+                )

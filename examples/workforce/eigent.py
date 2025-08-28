@@ -1098,7 +1098,7 @@ MUST use this as the current date.
     human_task = Task(
         content=(
             """
-search 50 different papers related to llm agent and write a html report about 
+search 10 different papers related to llm agent and write a html report about 
 them.
             """
         ),
