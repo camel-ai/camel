@@ -15,7 +15,7 @@
 import base64
 import os
 from io import BytesIO
-from typing import ClassVar, List, Literal, Optional, Union
+from typing import ClassVar, List, Literal, Optional, Tuple, Union
 
 from openai import OpenAI
 from PIL import Image
@@ -54,7 +54,7 @@ class ImageGenToolkit(BaseToolkit):
                 "grok-2-image-latest",
                 "grok-2-image-1212",
             ]
-        ] = "gpt-image-1",
+        ] = "dall-e-3",
         timeout: Optional[float] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -91,7 +91,7 @@ class ImageGenToolkit(BaseToolkit):
             url (Optional[str]): The url to the image model service.
                 (default: :obj:`None`)
             model (Optional[str]): The model to use.
-                (default: :obj:`"gpt-image-1"`)
+                (default: :obj:`"dall-e-3"`)
             timeout (Optional[float]): The timeout value for API requests
                 in seconds. If None, no timeout is applied.
                 (default: :obj:`None`)
@@ -120,6 +120,9 @@ class ImageGenToolkit(BaseToolkit):
                 f"Unsupported model: {model}. "
                 f"Supported models are: {available_models}"
             )
+
+        # Set default url for Grok models
+        url = "https://api.x.ai/v1" if model in self.GROK_MODELS else url
 
         api_key, base_url = (
             self.get_openai_credentials(url, api_key)
@@ -339,17 +342,15 @@ class ImageGenToolkit(BaseToolkit):
             return error_msg
 
     @api_keys_required([("api_key", "XAI_API_KEY")])
-    def get_grok_credentials(
-        self, url, api_key
-    ) -> tuple[str | None, str | None]:
-        """Get API credentials for the specified Grok model.
+    def get_grok_credentials(self, url, api_key) -> Tuple[str, str]:
+        r"""Get API credentials for the specified Grok model.
 
         Args:
             url (str): The base URL for the Grok API.
             api_key (str): The API key for the Grok API.
 
         Returns:
-            tuple: (api_key, base_url) - base_url may be None
+            tuple: (api_key, base_url)
         """
 
         # Get credentials based on model type
@@ -358,17 +359,15 @@ class ImageGenToolkit(BaseToolkit):
         return api_key, base_url
 
     @api_keys_required([("api_key", "OPENAI_API_KEY")])
-    def get_openai_credentials(
-        self, url, api_key
-    ) -> tuple[str | None, str | None]:
-        """Get API credentials for the specified OpenAI model.
+    def get_openai_credentials(self, url, api_key) -> Tuple[str, str]:
+        r"""Get API credentials for the specified OpenAI model.
 
         Args:
             url (str): The base URL for the OpenAI API.
             api_key (str): The API key for the OpenAI API.
 
         Returns:
-            tuple: (api_key, base_url) - base_url may be None
+            tuple: (api_key, base_url)
         """
 
         api_key = api_key or os.getenv("OPENAI_API_KEY")
