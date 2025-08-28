@@ -316,20 +316,9 @@ class ContextSummarizerToolkit(BaseToolkit):
         Returns:
             str: Success message.
         """
-        try:
-            note_path = self.working_directory / f"{note_name}.md"
-
-            # always overwrite if it exists (for compression use case)
-            note_path.write_text(content, encoding="utf-8")
-
-            # register note if it's new
-            if note_name not in self._note_toolkit.registry:
-                self._note_toolkit._register_note(note_name)
-
-            return f"Note '{note_name}.md' created/updated successfully."
-
-        except Exception as e:
-            return f"Error creating/updating note: {e}"
+        return self._note_toolkit.create_note(
+            note_name, content, overwrite=True
+        )
 
     def _load_summary(self) -> str:
         r"""Load the summary from the markdown file.
