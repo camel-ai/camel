@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10, <3.13"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -767,7 +767,7 @@ all = [
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "python-pptx" },
-    { name = "pytidb-experimental" },
+    { name = "pytidb" },
     { name = "qdrant-client" },
     { name = "rank-bm25" },
     { name = "redis" },
@@ -1011,7 +1011,7 @@ rag = [
     { name = "protobuf" },
     { name = "pymilvus" },
     { name = "pyobvector" },
-    { name = "pytidb-experimental" },
+    { name = "pytidb" },
     { name = "qdrant-client" },
     { name = "rank-bm25" },
     { name = "unstructured" },
@@ -1036,7 +1036,7 @@ storage = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pymilvus" },
     { name = "pyobvector" },
-    { name = "pytidb-experimental" },
+    { name = "pytidb" },
     { name = "qdrant-client" },
     { name = "redis" },
     { name = "surrealdb" },
@@ -1319,9 +1319,9 @@ requires-dist = [
     { name = "python-pptx", marker = "extra == 'document-tools'", specifier = ">=1.0.2" },
     { name = "python-pptx", marker = "extra == 'eigent'", specifier = ">=1.0.2" },
     { name = "python-pptx", marker = "extra == 'owl'", specifier = ">=1.0.2" },
-    { name = "pytidb-experimental", marker = "extra == 'all'", specifier = "==0.0.1.dev4" },
-    { name = "pytidb-experimental", marker = "extra == 'rag'", specifier = "==0.0.1.dev4" },
-    { name = "pytidb-experimental", marker = "extra == 'storage'", specifier = "==0.0.1.dev4" },
+    { name = "pytidb", marker = "extra == 'all'", specifier = ">=0.0.13.dev1" },
+    { name = "pytidb", marker = "extra == 'rag'", specifier = ">=0.0.13.dev1" },
+    { name = "pytidb", marker = "extra == 'storage'", specifier = ">=0.0.13.dev1" },
     { name = "qdrant-client", marker = "extra == 'all'", specifier = ">=1.9.0,<2" },
     { name = "qdrant-client", marker = "extra == 'rag'", specifier = ">=1.9.0,<2" },
     { name = "qdrant-client", marker = "extra == 'storage'", specifier = ">=1.9.0,<2" },
@@ -6015,6 +6015,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/90/35/031556dfc0d332d8e
 wheels = [
     { url = "https://files.pythonhosted.org/packages/27/ae/3be722886cc7be2093585cd94f466db1199133ab005645a7a567b249560f/pymupdf-1.26.4-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:cb95562a0a63ce906fd788bdad5239063b63068cf4a991684f43acb09052cb99", size = 23061974, upload-time = "2025-08-25T14:16:58.811Z" },
     { url = "https://files.pythonhosted.org/packages/fc/b0/9a451d837e1fe18ecdbfbc34a6499f153c8a008763229cc634725383a93f/pymupdf-1.26.4-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:67e9e6b45832c33726651c2a031e9a20108fd9e759140b9e843f934de813a7ff", size = 22410112, upload-time = "2025-08-25T14:17:24.511Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/13/0916e8e02cb5453161fb9d9167c747d0a20d58633e30728645374153f815/pymupdf-1.26.4-cp39-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:2604f687dd02b6a1b98c81bd8becfc0024899a2d2085adfe3f9e91607721fd22", size = 23454948, upload-time = "2025-08-25T21:20:07.71Z" },
     { url = "https://files.pythonhosted.org/packages/4e/c6/d3cfafc75d383603884edeabe4821a549345df954a88d79e6764e2c87601/pymupdf-1.26.4-cp39-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:973a6dda61ebd34040e4df3753bf004b669017663fbbfdaa294d44eceba98de0", size = 24060686, upload-time = "2025-08-25T14:17:56.536Z" },
     { url = "https://files.pythonhosted.org/packages/72/08/035e9d22c801e801bba50c6745bc90ba8696a042fe2c68793e28bf0c3b07/pymupdf-1.26.4-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:299a49797df5b558e695647fa791329ba3911cbbb31ed65f24a6266c118ef1a7", size = 24265046, upload-time = "2025-08-25T14:18:21.238Z" },
     { url = "https://files.pythonhosted.org/packages/28/8c/c201e4846ec0fb6ae5d52aa3a5d66f9355f0c69fb94230265714df0de65e/pymupdf-1.26.4-cp39-abi3-win32.whl", hash = "sha256:51b38379aad8c71bd7a8dd24d93fbe7580c2a5d9d7e1f9cd29ebbba315aa1bd1", size = 17127332, upload-time = "2025-08-25T14:18:39.132Z" },
@@ -6370,17 +6371,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ef/c6/2c5999de3bb1533521f1101e8fe56fd9c266732f4d48011c7c69b29d12ae/python3-xlib-0.15.tar.gz", hash = "sha256:dc4245f3ae4aa5949c1d112ee4723901ade37a96721ba9645f2bfa56e5b383f8", size = 132828, upload-time = "2014-05-31T12:28:59.603Z" }
 
 [[package]]
-name = "pytidb-experimental"
-version = "0.0.1.dev4"
+name = "pytidb"
+version = "0.0.13.dev1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "numpy" },
     { name = "pymysql" },
+    { name = "sqlalchemy" },
     { name = "sqlmodel" },
-    { name = "tidb-vector" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/32/b9/11fdb74a0cf645cb02ccff7a1f163333eedd461e364425caede13dba5d6b/pytidb_experimental-0.0.1.dev4.tar.gz", hash = "sha256:0161b77758af363a6d3f0c16df010effae2cea3b0f98ca08b6d0b9eb07760923", size = 15079, upload-time = "2025-03-21T03:11:07.625Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6a/e1/ce4220f068bfa8a9956766bc63ea7bc83cba35220fd8dc3f63a9ff44469b/pytidb-0.0.13.dev1.tar.gz", hash = "sha256:e70e38ddaeb71da5a0ae731b0ba06de61b0ec20fd822f2954c37e6b7fbcf8629", size = 46657, upload-time = "2025-08-28T06:26:59.642Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/71/a531e6648455fd8a936530c67c619a33726f55331bacdac74aa6742d0baf/pytidb_experimental-0.0.1.dev4-py3-none-any.whl", hash = "sha256:5ba3f5bb533927b0f82421df4c6f379dafd4f2afe8cfaf15ec0f00833794f1d0", size = 17824, upload-time = "2025-03-21T03:11:06.299Z" },
+    { url = "https://files.pythonhosted.org/packages/32/1f/a05965121b26c0b598aefb846894df69fd3b0efbdb2d2e575939af6f9199/pytidb-0.0.13.dev1-py3-none-any.whl", hash = "sha256:be607831d2661165fdd4f2adcafbd9cbc102f36a2d52e67fbaf702d7b8b0b9f8", size = 57260, upload-time = "2025-08-28T06:26:58.532Z" },
 ]
 
 [[package]]
@@ -7730,18 +7732,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b7/4d/08c89e34946fce2aec4fbb45c9016efd5f4d7f24af8e5d93296e935631d8/threadpoolctl-3.6.0.tar.gz", hash = "sha256:8ab8b4aa3491d812b623328249fab5302a68d2d71745c8a4c719a2fcaba9f44e", size = 21274, upload-time = "2025-03-13T13:49:23.031Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/32/d5/f9a850d79b0851d1d4ef6456097579a9005b31fea68726a4ae5f2d82ddd9/threadpoolctl-3.6.0-py3-none-any.whl", hash = "sha256:43a0b8fd5a2928500110039e43a5eed8480b918967083ea48dc3ab9f13c4a7fb", size = 18638, upload-time = "2025-03-13T13:49:21.846Z" },
-]
-
-[[package]]
-name = "tidb-vector"
-version = "0.0.15"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b1/55/6247b3b8dd0c0ec05a7b0dd7d4f016d03337d6f089db9cc221a31de1308c/tidb_vector-0.0.15.tar.gz", hash = "sha256:dfd16b31b06f025737f5c7432a08e04265dde8a7c9c67d037e6e694c8125f6f5", size = 20702, upload-time = "2025-07-15T09:48:07.423Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/27/5a4aeeae058f75c1925646ff82215551903688ec33acc64ca46135eac631/tidb_vector-0.0.15-py3-none-any.whl", hash = "sha256:2bc7d02f5508ba153c8d67d049ab1e661c850e09e3a29286dc8b19945e512ad8", size = 21924, upload-time = "2025-07-15T09:48:05.834Z" },
 ]
 
 [[package]]
