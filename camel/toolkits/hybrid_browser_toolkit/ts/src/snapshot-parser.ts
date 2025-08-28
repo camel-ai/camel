@@ -29,19 +29,22 @@ export function parseSnapshotHierarchy(snapshotText: string): Map<string, Snapsh
     // Also support quoted lines like - 'button "text" [ref=...]'
     // Also support escaped quotes in text
     // Also support attributes before [ref=...]
-    const elementMatch = line.match(/^\s*-\s*'?(\w+)(?:\s+"((?:[^"\\]|\\.)*)"\s*)?(?:\s*\[([^\]]+)\])?\s*\[ref=([^\]]+)\](?:\s*\[([^\]]+)\])?'?:?/);
+    const elementMatch = line.match(/^\s*(?:-\s*)?'?([a-z0-9_-]+)(?:\s+"((?:[^"\\]|\\.)*)"\s*)?(?:\s*\[([^\]]+)\])?\s*\[ref=([^\]]+)\](?:\s*\[([^\]]+)\])?'?:?/i);
     if (!elementMatch) continue;
     
-    const [, type, label, attrsBefore, ref, attrsAfter] = elementMatch;
+    const [, typeRaw, label, attrsBefore, ref, attrsAfter] = elementMatch;
+    const type = typeRaw || 'unknown';
     
     // Parse attributes (can be before or after ref)
     const attrs: Record<string, string> = {};
     const allAttributes = (attrsBefore || '') + ' ' + (attrsAfter || '');
     if (allAttributes.trim()) {
       // Handle attributes like [cursor=pointer] [active] or disabled
-      const attrMatches = allAttributes.matchAll(/(\w+)(?:=(\w+))?/g);
-      for (const match of attrMatches) {
-        attrs[match[1]] = match[2] || 'true';
+      const attrMatches = allAttributes.matchAll(/([a-z0-9_-]+)(?:=(?:"([^"]*)"|'([^']*)'|([^\s\]]+)))?/gi);
+      for (const m of attrMatches) {
+        const key = m[1].toLowerCase();
+        const val = m[2] ?? m[3] ?? m[4] ?? 'true';
+        attrs[key] = val;
       }
     }
     
@@ -53,7 +56,7 @@ export function parseSnapshotHierarchy(snapshotText: string): Map<string, Snapsh
     // Create node
     const node: SnapshotNode = {
       ref,
-      type,
+      type: type.toLowerCase(),
       text: label || '',
       attributes: attrs,
       children: [],

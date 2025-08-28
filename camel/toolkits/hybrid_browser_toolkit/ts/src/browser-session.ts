@@ -64,9 +64,14 @@ export class HybridBrowserSession {
           viewport: browserConfig.viewport
         };
         
-        // Apply stealth headers if configured
-        if (stealthConfig.enabled && stealthConfig.extraHTTPHeaders) {
-          contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+        // Apply stealth headers and UA if configured
+        if (stealthConfig.enabled) {
+          if (stealthConfig.extraHTTPHeaders) {
+            contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+          }
+          if (stealthConfig.userAgent) {
+            contextOptions.userAgent = stealthConfig.userAgent;
+          }
         }
         
         this.context = await this.browser.newContext(contextOptions);
@@ -129,9 +134,14 @@ export class HybridBrowserSession {
           viewport: browserConfig.viewport
         };
         
-        // Apply stealth headers if configured
-        if (stealthConfig.enabled && stealthConfig.extraHTTPHeaders) {
-          contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+        // Apply stealth headers and UA if configured
+        if (stealthConfig.enabled) {
+          if (stealthConfig.extraHTTPHeaders) {
+            contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+          }
+          if (stealthConfig.userAgent) {
+            contextOptions.userAgent = stealthConfig.userAgent;
+          }
         }
         
         this.context = await this.browser.newContext(contextOptions);
@@ -437,7 +447,8 @@ export class HybridBrowserSession {
         }
         
         // Set up popup listener before clicking
-        const popupPromise = page.context().waitForEvent('page', { timeout: browserConfig.popupTimeout });
+        // Correlate the popup to this page to avoid race with other tabs
+        const popupPromise = page.waitForEvent('popup', { timeout: browserConfig.popupTimeout });
         
         // Click with force to avoid scrolling issues
         await element.click({ force: browserConfig.forceClick });
@@ -1255,9 +1266,12 @@ export class HybridBrowserSession {
     
     // Apply viewport filtering with scroll position adjustment
     const browserConfig = this.configLoader.getBrowserConfig();
+    const scale = Number.isFinite(browserConfig.scrollPositionScale)
+      ? browserConfig.scrollPositionScale
+      : 1;
     const adjustedScrollPos = {
-      x: scrollPos.x * browserConfig.scrollPositionScale,
-      y: scrollPos.y * browserConfig.scrollPositionScale
+      x: scrollPos.x * scale,
+      y: scrollPos.y * scale
     };
     
     for (const [ref, element] of Object.entries(elements)) {

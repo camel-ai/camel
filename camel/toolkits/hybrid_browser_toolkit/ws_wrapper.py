@@ -304,10 +304,11 @@ class WebSocketBrowserWrapper:
                 with contextlib.suppress(asyncio.CancelledError):
                     await task
 
-        # Close log file if open
-        if self.ts_log_file:
+        # Close TS log file if open
+        if getattr(self, 'ts_log_file', None):
             with contextlib.suppress(Exception):
                 self.ts_log_file.close()
+            self.ts_log_file = None
 
         # Terminate the process
         if self.process:
@@ -717,15 +718,16 @@ class WebSocketBrowserWrapper:
             return
 
         try:
-            log_file = None
             if self.ts_log_file_path:
-                log_file = open(self.ts_log_file_path, 'w', encoding='utf-8')
-                log_file.write(
+                self.ts_log_file = open(
+                    self.ts_log_file_path, 'w', encoding='utf-8'
+                )
+                self.ts_log_file.write(
                     f"TypeScript Console Log - Started at "
                     f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
                 )
-                log_file.write("=" * 80 + "\n")
-                log_file.flush()
+                self.ts_log_file.write("=" * 80 + "\n")
+                self.ts_log_file.flush()
 
             while self.process and self.process.poll() is None:
                 try:
@@ -738,7 +740,9 @@ class WebSocketBrowserWrapper:
                     # Check for SERVER_READY message
                     if line.startswith('SERVER_READY:'):
                         try:
-                            self.server_port = int(line.split(':')[1].strip())
+                            self.server_port = int(
+                                line.split(':', 1)[1].strip()
+                            )
                             logger.info(
                                 f"WebSocket server ready on port "
                                 f"{self.server_port}"
@@ -753,10 +757,10 @@ class WebSocketBrowserWrapper:
                             logger.error(f"Failed to parse SERVER_READY: {e}")
 
                     # Write all output to log file
-                    if log_file:
+                    if self.ts_log_file:
                         timestamp = time.strftime('%H:%M:%S')
-                        log_file.write(f"[{timestamp}] {line}")
-                        log_file.flush()
+                        self.ts_log_file.write(f"[{timestamp}] {line}")
+                        self.ts_log_file.flush()
 
                 except Exception as e:
                     logger.warning(f"Error reading stdout: {e}")
@@ -765,10 +769,11 @@ class WebSocketBrowserWrapper:
         except Exception as e:
             logger.warning(f"Error in _read_and_log_output: {e}")
         finally:
-            if log_file:
-                log_file.write("\n" + "=" * 80 + "\n")
-                log_file.write(
+            if self.ts_log_file:
+                self.ts_log_file.write("\n" + "=" * 80 + "\n")
+                self.ts_log_file.write(
                     f"TypeScript Console Log - Ended at "
                     f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
                 )
-                log_file.close()
+                self.ts_log_file.close()
+                self.ts_log_file = None
