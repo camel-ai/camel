@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import datetime
 import json
 import logging
 import queue
@@ -60,6 +61,7 @@ from camel.logger import get_logger
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
+    ContextRecord,
     MemoryRecord,
     ScoreBasedContextCreator,
 )
@@ -133,6 +135,26 @@ SIMPLE_FORMAT_PROMPT = TextPrompt(
         """
     )
 )
+
+DEFAULT_SUMMARIZE_PROMPT = """
+Please provide a comprehensive summary of this conversation history. Include:
+
+1. **Conversation Overview**: Main topics discussed and key themes
+2. **Important Decisions**: Key decisions made or conclusions reached  
+3. **Action Items**: Tasks completed or planned actions
+4. **Tool Usage**: Summary of tools used and their outcomes (if any)
+5. **Context for Future**: Key information that would be helpful for 
+continuing this conversation
+
+Format the summary in clear sections with bullet points where appropriate.
+Make it concise but comprehensive enough to understand the conversation flow 
+and outcomes.
+
+Conversation History:
+{conversation_history}
+
+{tool_calls_section}
+"""
 
 
 class StreamContentAccumulator:
@@ -3883,3 +3905,401 @@ class ChatAgent(BaseAgent):
         mcp_server.tool()(get_available_tools)
 
         return mcp_server
+
+    def summarize(
+        self,
+        custom_prompt: Optional[str] = None,
+        working_directory: str = ".",
+        include_tool_calls: bool = True,
+        include_system_message: bool = False,
+        max_context_messages: Optional[int] = None,
+    ) -> str:
+        r"""Generate a summary of the agent's conversation history and context.
+        Always saves the summary to .camel/<agent_id>.md file.
+
+        Args:
+            custom_prompt (Optional[str]): Custom prompt for summarization.
+                If None, uses default prompt.
+            working_directory (str): Base directory for saving files
+            include_tool_calls (bool): Whether to include tool call information
+            include_system_message (bool): Whether to include system message
+            max_context_messages (Optional[int]): Limit number of messages to
+                include in the summary.
+
+        Returns:
+            str: The generated summary
+
+        Raises:
+            Exception: If summarization fails or file cannot be saved
+        """
+
+        # 1. Collect conversation history
+        conversation_history = self._collect_conversation_history(
+            max_messages=max_context_messages,
+            include_system=include_system_message,
+        )
+
+        # 2. Collect tool call information
+        tool_calls_info = []
+        if include_tool_calls:
+            tool_calls_info = self._collect_tool_calls_history()
+
+        # 3. Format context for summarization
+        formatted_history = self._format_conversation_for_summary(
+            conversation_history
+        )
+        formatted_tools = (
+            self._format_tool_calls_for_summary(tool_calls_info)
+            if tool_calls_info
+            else ""
+        )
+
+        # 4. Prepare summarization prompt
+        prompt = custom_prompt or DEFAULT_SUMMARIZE_PROMPT
+        summarization_input = prompt.format(
+            conversation_history=formatted_history,
+            tool_calls_section=f"\n## Tool Calls History:\n{formatted_tools}"
+            if formatted_tools
+            else "",
+        )
+
+        # 5. Generate summary using the agent
+        summary_response = self.step(summarization_input)
+        summary = summary_response.msgs[0].content
+
+        # 6. Always save to file
+        file_path = self._save_summary_to_file(summary, working_directory)
+
+        # Add metadata to summary
+        metadata = f"""# Agent Summary - {self.agent_id}
+    Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    Saved to: {file_path}
+
+    ---
+
+    """
+        summary = metadata + summary
+
+        return summary
+
+    def retrieve_summary(
+        self,
+        path: Optional[str] = None,
+        working_directory: str = ".",
+        append_to_system: bool = True,
+    ) -> str:
+        r"""Retrieve saved summary and optionally append to system message.
+
+        Args:
+            path (Optional[str]): Path to summary file. If None, uses default
+                .camel/<agent_id>.md path.
+            working_directory (str): Base directory for default path
+            append_to_system (bool): Whether to append summary to system
+                message.
+
+        Returns:
+            str: Content of the summary file
+
+        Raises:
+            FileNotFoundError: If summary file doesn't exist
+            Exception: If file cannot be read
+        """
+
+        # Determine file path
+        if path is None:
+            camel_dir = Path(working_directory) / ".camel"
+            file_path = camel_dir / f"{self.agent_id}.md"
+        else:
+            file_path = Path(path)
+
+        # Check if file exists
+        if not file_path.exists():
+            raise FileNotFoundError(f"Summary file not found: {file_path}")
+
+        # Read summary content
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                summary_content = f.read()
+
+            print(f"Summary retrieved from: {file_path}")
+
+            # Append to system message if requested
+            if append_to_system:
+                self._append_summary_to_system_message(summary_content)
+
+            return summary_content
+
+        except Exception as e:
+            raise Exception(f"Failed to read summary from {file_path}: {e}")
+
+    def _append_summary_to_system_message(self, summary_content: str) -> None:
+        """
+        Append summary content to the agent's system message.
+
+        Args:
+            summary_content (str): Content to append to system message
+        """
+
+        # Extract the main summary content (skip metadata header)
+        lines = summary_content.split('\n')
+        summary_start = 0
+
+        # Find where the actual summary starts (after metadata)
+        for i, line in enumerate(lines):
+            if line.strip() == '---' and i > 0:
+                summary_start = i + 1
+                break
+
+        # Extract clean summary content
+        clean_summary = '\n'.join(lines[summary_start:]).strip()
+
+        # Remove the footer if exists
+        if '*Generated by CAMEL ChatAgent.summarize()*' in clean_summary:
+            clean_summary = clean_summary.replace(
+                '\n---\n*Generated by CAMEL ChatAgent.summarize()*',
+                '',
+            ).strip()
+
+        # Create new system message with appended summary
+        current_system_content = ""
+        if (
+            self._original_system_message
+            and self._original_system_message.content
+        ):
+            current_system_content = self._original_system_message.content
+
+        # Prepare summary section
+        summary_section = f"""
+
+    ## Previous Conversation Summary
+    {clean_summary}
+
+    ---
+
+    """
+
+        # Create new system message
+        new_system_content = current_system_content + summary_section
+
+        # Update the system message
+        self._original_system_message = BaseMessage.make_assistant_message(
+            role_name=getattr(
+                self._original_system_message, 'role_name', 'Assistant'
+            ),
+            content=new_system_content,
+        )
+
+        # Regenerate system message for output language
+        self._system_message = (
+            self._generate_system_message_for_output_language()
+        )
+
+        # Reinitialize messages to apply new system message
+        self.init_messages()
+
+        print(
+            f"Summary appended to system message ({len(clean_summary)} "
+            "characters)"
+        )
+
+    def _collect_conversation_history(
+        self, max_messages: Optional[int] = None, include_system: bool = False
+    ) -> List[ContextRecord]:
+        r"""Collect conversation history from agent memory."""
+
+        # Get records from memory
+        records = self._memory.retrieve()
+
+        # Filter out system messages if not requested
+        if not include_system:
+            records = [
+                r
+                for r in records
+                if not (
+                    hasattr(r, 'record')
+                    and hasattr(r.record, 'role_type')
+                    and r.record.role_type in ['system', 'developer']
+                )
+            ]
+
+        # Limit number of messages if specified
+        if max_messages and len(records) > max_messages:
+            records = records[-max_messages:]
+
+        return records
+
+    def _collect_tool_calls_history(self) -> List[dict]:
+        r"""Collect tool calls history from memory records.
+
+        Extracts both tool call requests (assistant messages with tool_calls)
+        and tool call results (FunctionCallingMessage instances).
+        """
+        tool_calls_history = []
+
+        try:
+            records = self._memory.retrieve()
+            for record in records:
+                if hasattr(record, 'memory_record') and hasattr(
+                    record.memory_record, 'message'
+                ):
+                    message = record.memory_record.message
+                    timestamp = getattr(
+                        record.memory_record, 'timestamp', None
+                    )
+
+                    # Check for FunctionCallingMessage (tool results)
+                    if isinstance(message, FunctionCallingMessage):
+                        tool_calls_history.append(
+                            {
+                                'type': 'tool_result',
+                                'timestamp': timestamp,
+                                'tool_name': message.func_name,
+                                'args': message.args,
+                                'result': message.result,
+                                'tool_call_id': getattr(
+                                    message, 'tool_call_id', None
+                                ),
+                                'role': getattr(
+                                    message, 'role_name', 'unknown'
+                                ),
+                            }
+                        )
+
+                    # Check for assistant messages with tool_calls
+                    elif (
+                        hasattr(message, 'content')
+                        and hasattr(message, 'role_name')
+                        and message.role_name.lower() == 'assistant'
+                    ):
+                        # Check if message has tool calls in meta_dict
+                        if hasattr(message, 'meta_dict') and message.meta_dict:
+                            tool_calls = message.meta_dict.get(
+                                'tool_calls', []
+                            )
+                            if tool_calls:
+                                for tool_call in tool_calls:
+                                    tool_calls_history.append(
+                                        {
+                                            'type': 'tool_request',
+                                            'timestamp': timestamp,
+                                            'tool_name': tool_call.get(
+                                                'function', {}
+                                            ).get('name'),
+                                            'args': tool_call.get(
+                                                'function', {}
+                                            ).get('arguments'),
+                                            'tool_call_id': tool_call.get(
+                                                'id'
+                                            ),
+                                            'role': message.role_name,
+                                        }
+                                    )
+
+                        # Also check content for tool call patterns (fallback)
+                        content_str = str(message.content).lower()
+                        keywords = [
+                            'shell_exec',
+                            'terminal',
+                            'command',
+                            'tool_call',
+                        ]
+                        if any(keyword in content_str for keyword in keywords):
+                            tool_calls_history.append(
+                                {
+                                    'type': 'tool_mention',
+                                    'timestamp': timestamp,
+                                    'content': message.content,
+                                    'role': message.role_name,
+                                }
+                            )
+
+        except Exception as e:
+            logger.warning(f"Could not extract tool calls history: {e}")
+
+        logger.info(
+            f"Tool calls history collected: {len(tool_calls_history)} entries"
+        )
+        return tool_calls_history
+
+    def _format_conversation_for_summary(
+        self, records: List[ContextRecord]
+    ) -> str:
+        r"""Format conversation records for summary generation."""
+        formatted_messages = []
+
+        for i, record in enumerate(records):
+            try:
+                if hasattr(record, 'record') and hasattr(
+                    record.record, 'content'
+                ):
+                    role = getattr(record.record, 'role_name', 'Unknown')
+                    content = record.record.content
+                    timestamp = getattr(record, 'timestamp', f'Message {i+1}')
+
+                    formatted_messages.append(
+                        f"**{role}** ({timestamp}):\n{content}\n"
+                    )
+            except Exception as e:
+                formatted_messages.append(
+                    f"[Error formatting message {i+1}: {e}]\n"
+                )
+
+        return (
+            "\n".join(formatted_messages)
+            if formatted_messages
+            else "No conversation history available."
+        )
+
+    def _format_tool_calls_for_summary(self, tool_calls: List[dict]) -> str:
+        r"""Format tool calls information for summary."""
+        if not tool_calls:
+            return "No tool calls recorded."
+
+        formatted_calls = []
+        for i, call in enumerate(tool_calls):
+            formatted_calls.append(
+                f"**Tool Call {i+1}** "
+                f"({call.get('timestamp', 'Unknown time')}):\n"
+                f"Role: {call.get('role', 'Unknown')}\n"
+                f"Details: {call.get('content', 'No details available')}\n"
+            )
+
+        return "\n".join(formatted_calls)
+
+    def _save_summary_to_file(
+        self, summary: str, working_directory: str
+    ) -> str:
+        r"""Save summary to .camel/<agent_id>.md file."""
+
+        # Create .camel directory
+        camel_dir = Path(working_directory) / ".camel"
+        camel_dir.mkdir(exist_ok=True, parents=True)
+
+        # Create filename with agent_id
+        filename = f"{self.agent_id}.md"
+        file_path = camel_dir / filename
+
+        # Add timestamp and metadata header
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        full_content = f"""# Agent Conversation Summary
+
+    **Agent ID:** {self.agent_id}
+    **Generated:** {timestamp}
+    **Agent Type:** {self.__class__.__name__}
+
+    ---
+
+    {summary}
+
+    ---
+    *Generated by CAMEL ChatAgent.summarize()*
+    """
+
+        # Save to file
+        try:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(full_content)
+            print(f"Summary saved to: {file_path}")
+            return str(file_path)
+        except Exception as e:
+            raise Exception(f"Failed to save summary to {file_path}: {e}")
