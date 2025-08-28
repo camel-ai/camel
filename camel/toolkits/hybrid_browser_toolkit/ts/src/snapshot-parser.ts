@@ -26,7 +26,8 @@ export function parseSnapshotHierarchy(snapshotText: string): Map<string, Snapsh
     
     // Extract element info using regex
     // Support both lines with : (have children) and without : (leaf nodes)
-    const elementMatch = line.match(/^\s*-\s*(\w+)(?:\s+"([^"]*)")?\s*\[ref=([^\]]+)\](?:\s*\[([^\]]+)\])?:?/);
+    // Also support quoted lines like - 'button "text" [ref=...]'
+    const elementMatch = line.match(/^\s*-\s*'?(\w+)(?:\s+"([^"]*)")?\s*\[ref=([^\]]+)\](?:\s*\[([^\]]+)\])?'?:?/);
     if (!elementMatch) continue;
     
     const [, type, label, ref, attributes] = elementMatch;
@@ -120,11 +121,13 @@ export function filterClickableByHierarchy(
     // 3. generic > button: filter generic (keep button)
     // 4. link > generic: filter generic (keep link)
     // 5. generic > generic: filter child (keep parent)
+    // 6. generic > unknown: filter child (keep parent)
     
     if ((parentType === 'link' && childType === 'img') ||
         (parentType === 'button' && childType === 'generic') ||
         (parentType === 'link' && childType === 'generic') ||
-        (parentType === 'generic' && childType === 'generic')) {
+        (parentType === 'generic' && childType === 'generic') ||
+        (parentType === 'generic' && childType === 'unknown')) {
       // Filter child
       filtered.delete(child);
       console.log(`[Hierarchy Filter] Filtered ${child} (${childType}) - keeping parent ${parent} (${parentType})`);
