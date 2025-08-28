@@ -12,13 +12,29 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.logger import disable_logging, enable_logging, set_log_level
 
-__version__ = '0.2.75'
+import pytest
 
-__all__ = [
-    '__version__',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+from camel.configs import AMDConfig
+from camel.models import AMDModel
+from camel.types import ModelType
+
+
+@pytest.mark.model_backend
+@pytest.mark.parametrize(
+    "model_type",
+    [ModelType.AMD_GPT4],
+)
+def test_amd_model(model_type: ModelType):
+    model = AMDModel(model_type)
+    assert model.model_type == model_type
+    assert model.model_config_dict == AMDConfig().as_dict()
+    assert isinstance(model.model_type.value_for_tiktoken, str)
+    assert isinstance(model.model_type.token_limit, int)
+
+
+@pytest.mark.model_backend
+def test_amd_model_unexpected_argument():
+    model_type = ModelType.AMD_GPT4
+
+    _ = AMDModel(model_type)
