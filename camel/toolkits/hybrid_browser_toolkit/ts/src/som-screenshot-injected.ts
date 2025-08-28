@@ -6,7 +6,6 @@
 import { Page } from 'playwright';
 import { SnapshotResult, VisualMarkResult } from './types';
 import { writeFile } from 'fs/promises';
-import { filterParentChildElements } from './parent-child-filter';
 
 export class SomScreenshotInjected {
   /**
@@ -22,14 +21,10 @@ export class SomScreenshotInjected {
     const startTime = Date.now();
     
     try {
-      // Apply parent-child filtering
+      // Use the already filtered clickableElements directly
       const filterStartTime = Date.now();
-      const { filteredElements, debugInfo: filterDebugInfo } = filterParentChildElements(
-        snapshotResult.elements,
-        clickableElements
-      );
       const filterTime = Date.now() - filterStartTime;
-      console.log(`Parent-child filtering took ${filterTime}ms`);
+      console.log(`Using pre-filtered clickable elements: ${clickableElements.size} elements`);
       
       // Prepare element geometry data for export
       const elementGeometry: any[] = [];
@@ -226,6 +221,112 @@ export class SomScreenshotInjected {
           }
         });
         
+        // Track label positions to avoid overlap
+        const labelPositions: Array<{x: number, y: number, width: number, height: number, ref: string}> = [];
+        
+        // Helper to check if two rectangles overlap
+        function rectsOverlap(r1: any, r2: any): boolean {
+          return !(r1.x + r1.width < r2.x || 
+                   r2.x + r2.width < r1.x || 
+                   r1.y + r1.height < r2.y || 
+                   r2.y + r2.height < r1.y);
+        }
+        
+        // Helper to find non-overlapping position for label
+        function findLabelPosition(element: any, labelWidth: number, labelHeight: number): {x: number, y: number} {
+          const { x, y, width, height } = element.coordinates;
+          const isSmallElement = height < 70;
+          const margin = 2; // Space between label and element
+          
+          // Try different positions in order of preference
+          const positions = [];
+          
+          if (isSmallElement) {
+            // For small elements, try outside positions
+            // 1. Above element
+            positions.push({ x: x - 2, y: y - labelHeight - margin });
+            // 2. Below element
+            positions.push({ x: x - 2, y: y + height + margin });
+            // 3. Left of element
+            positions.push({ x: x - labelWidth - margin, y: y });
+            // 4. Right of element
+            positions.push({ x: x + width + margin, y: y });
+          } else {
+            // For large elements, inside top-left
+            positions.push({ x: x + 4, y: y + 4 });
+          }
+          
+          // Check each position
+          for (const pos of positions) {
+            // Adjust for viewport boundaries
+            const adjustedPos = { ...pos };
+            
+            // Keep within viewport
+            adjustedPos.x = Math.max(0, Math.min(adjustedPos.x, window.innerWidth - labelWidth));
+            adjustedPos.y = Math.max(0, Math.min(adjustedPos.y, window.innerHeight - labelHeight));
+            
+            // Check for overlaps with existing labels
+            const testRect = { x: adjustedPos.x, y: adjustedPos.y, width: labelWidth, height: labelHeight };
+            let hasOverlap = false;
+            
+            for (const existing of labelPositions) {
+              if (rectsOverlap(testRect, existing)) {
+                hasOverlap = true;
+                break;
+              }
+            }
+            
+            if (!hasOverlap) {
+              return adjustedPos;
+            }
+          }
+          
+          // If all positions overlap, try to find space by offsetting
+          // Try positions around the element in a spiral pattern
+          const offsets = [
+            { dx: 0, dy: -labelHeight - margin - 20 },    // Further above
+            { dx: 0, dy: height + margin + 20 },          // Further below
+            { dx: -labelWidth - margin - 20, dy: 0 },     // Further left
+            { dx: width + margin + 20, dy: 0 },           // Further right
+            { dx: -labelWidth - margin, dy: -labelHeight - margin }, // Top-left
+            { dx: width + margin, dy: -labelHeight - margin },       // Top-right
+            { dx: -labelWidth - margin, dy: height + margin },       // Bottom-left
+            { dx: width + margin, dy: height + margin },             // Bottom-right
+          ];
+          
+          for (const offset of offsets) {
+            const pos = {
+              x: Math.max(0, Math.min(x + offset.dx, window.innerWidth - labelWidth)),
+              y: Math.max(0, Math.min(y + offset.dy, window.innerHeight - labelHeight))
+            };
+            
+            const testRect = { x: pos.x, y: pos.y, width: labelWidth, height: labelHeight };
+            let hasOverlap = false;
+            
+            for (const existing of labelPositions) {
+              if (rectsOverlap(testRect, existing)) {
+                hasOverlap = true;
+                break;
+              }
+            }
+            
+            if (!hasOverlap) {
+              return pos;
+            }
+          }
+          
+          // Fallback: use original logic but ensure within viewport
+          if (isSmallElement) {
+            const fallbackY = y >= 25 ? y - 25 : y + height + 2;
+            return {
+              x: Math.max(0, Math.min(x - 2, window.innerWidth - labelWidth)),
+              y: Math.max(0, Math.min(fallbackY, window.innerHeight - labelHeight))
+            };
+          } else {
+            return { x: x + 4, y: y + 4 };
+          }
+        }
+        
         // Add labels and collect geometry data (only for filtered elements)
         Object.entries(elements).forEach(([ref, element]: [string, any]) => {
           if (element.coordinates && clickable.includes(ref)) {
@@ -242,18 +343,41 @@ export class SomScreenshotInjected {
               top: ${y}px;
               width: ${width}px;
               height: ${height}px;
-              border: 3px ${state === 'partial' ? 'dashed' : 'solid'} #FF0066;
+              border: 2px ${state === 'partial' ? 'dashed' : 'solid'} #FF0066;
               border-radius: 4px;
               box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             `;
             
-            // Add ref number
+            // Add ref number with smart positioning
             const refLabel = document.createElement('div');
             refLabel.textContent = ref;
+            
+            // Create temporary label to measure its size
             refLabel.style.cssText = `
               position: absolute;
-              top: 4px;
-              left: 4px;
+              visibility: hidden;
+              background: #FF0066;
+              color: white;
+              font: bold 12px Arial, sans-serif;
+              padding: 2px 6px;
+              border-radius: 2px;
+              min-width: 20px;
+              text-align: center;
+              white-space: nowrap;
+            `;
+            document.body.appendChild(refLabel);
+            const labelWidth = refLabel.offsetWidth;
+            const labelHeight = refLabel.offsetHeight;
+            document.body.removeChild(refLabel);
+            
+            // Find non-overlapping position
+            const labelPos = findLabelPosition(element, labelWidth, labelHeight);
+            
+            // Apply final position
+            refLabel.style.cssText = `
+              position: absolute;
+              left: ${labelPos.x - x}px;
+              top: ${labelPos.y - y}px;
               background: #FF0066;
               color: white;
               font: bold 12px Arial, sans-serif;
@@ -263,7 +387,18 @@ export class SomScreenshotInjected {
               text-align: center;
               box-shadow: 0 2px 4px rgba(0,0,0,0.2);
               opacity: ${state === 'partial' ? '0.8' : '1'};
+              z-index: 1;
+              white-space: nowrap;
             `;
+            
+            // Track this label position
+            labelPositions.push({
+              x: labelPos.x,
+              y: labelPos.y,
+              width: labelWidth,
+              height: labelHeight,
+              ref: ref
+            });
             
             label.appendChild(refLabel);
             overlay.appendChild(label);
@@ -302,8 +437,8 @@ export class SomScreenshotInjected {
         };
       }, {
         elements: snapshotResult.elements,
-        clickable: Array.from(filteredElements),
-        filterDebugInfo: filterDebugInfo
+        clickable: Array.from(clickableElements),
+        filterDebugInfo: []
       });
       
       // Take screenshot
@@ -393,7 +528,7 @@ export class SomScreenshotInjected {
           elements_count: result.elementCount,
           display_duration_ms: 1000, // Time the overlay is kept visible
           parent_child_filter_time_ms: filterTime,
-          filtered_count: clickableElements.size - filteredElements.size
+          filtered_count: 0 // Filtering is done before this method is called
         }
       };
       
