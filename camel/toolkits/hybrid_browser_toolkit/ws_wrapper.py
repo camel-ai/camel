@@ -228,13 +228,13 @@ class WebSocketBrowserWrapper:
 
         if self.browser_log_to_file and self.ts_log_file_path:
             logger.info(
-                f"TypeScript console logs will be written to: {self.ts_log_file_path}"
+                f"TypeScript console logs will be written to: "
+                f"{self.ts_log_file_path}"
             )
 
         # Wait for server to output the port
         server_ready = False
         timeout = 10  # 10 seconds timeout
-        start_time = time.time()
 
         # Create a future to wait for server ready
         self._server_ready_future = asyncio.Future()
@@ -281,7 +281,7 @@ class WebSocketBrowserWrapper:
             ('_log_reader_task', self._log_reader_task),
         ]
 
-        for task_name, task in tasks_to_cancel:
+        for _, task in tasks_to_cancel:
             if task and not task.done():
                 task.cancel()
                 try:
@@ -718,7 +718,7 @@ class WebSocketBrowserWrapper:
         return response
 
     async def _read_and_log_output(self):
-        """Read stdout from the Node.js process and handle SERVER_READY + logging."""
+        """Read stdout from Node.js process & handle SERVER_READY + logging."""
         if not self.process:
             return
 
@@ -727,7 +727,8 @@ class WebSocketBrowserWrapper:
             if self.ts_log_file_path:
                 log_file = open(self.ts_log_file_path, 'w', encoding='utf-8')
                 log_file.write(
-                    f"TypeScript Console Log - Started at {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    f"TypeScript Console Log - Started at "
+                    f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
                 )
                 log_file.write("=" * 80 + "\n")
                 log_file.flush()
@@ -745,7 +746,8 @@ class WebSocketBrowserWrapper:
                         try:
                             self.server_port = int(line.split(':')[1].strip())
                             logger.info(
-                                f"WebSocket server ready on port {self.server_port}"
+                                f"WebSocket server ready on port "
+                                f"{self.server_port}"
                             )
                             if (
                                 hasattr(self, '_server_ready_future')
@@ -771,6 +773,7 @@ class WebSocketBrowserWrapper:
             if log_file:
                 log_file.write("\n" + "=" * 80 + "\n")
                 log_file.write(
-                    f"TypeScript Console Log - Ended at {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    f"TypeScript Console Log - Ended at "
+                    f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
                 )
                 log_file.close()

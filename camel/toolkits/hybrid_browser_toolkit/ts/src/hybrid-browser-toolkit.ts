@@ -10,12 +10,14 @@ export class HybridBrowserToolkit {
   private config: BrowserToolkitConfig;
   private configLoader: ConfigLoader;
   private viewportLimit: boolean;
+  private fullVisualMode: boolean;
 
   constructor(config: BrowserToolkitConfig = {}) {
     this.configLoader = ConfigLoader.fromPythonConfig(config);
     this.config = config; // Store original config for backward compatibility
     this.session = new HybridBrowserSession(this.configLoader.getBrowserConfig()); // Pass processed config
     this.viewportLimit = this.configLoader.getWebSocketConfig().viewport_limit;
+    this.fullVisualMode = this.configLoader.getWebSocketConfig().fullVisualMode || false;
   }
 
   async openBrowser(startUrl?: string): Promise<ActionResult> {
@@ -28,7 +30,7 @@ export class HybridBrowserToolkit {
       const result = await this.session.visitPage(url);
       
       const snapshotStart = Date.now();
-      const snapshot = await this.getPageSnapshot(this.viewportLimit);
+      const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       
       const totalTime = Date.now() - startTime;
@@ -85,7 +87,7 @@ export class HybridBrowserToolkit {
       
       if (result.success) {
         const snapshotStart = Date.now();
-        response.snapshot = await this.getPageSnapshot(this.viewportLimit);
+        response.snapshot = await this.getSnapshotForAction(this.viewportLimit);
         const snapshotTime = Date.now() - snapshotStart;
         
         if (result.timing) {
@@ -121,12 +123,21 @@ export class HybridBrowserToolkit {
 
   async getPageSnapshot(viewportLimit: boolean = false): Promise<string> {
     try {
+      // Always return real snapshot when explicitly called
       // If viewport limiting is enabled, we need coordinates for filtering
       const snapshotResult = await this.session.getSnapshotForAI(viewportLimit, viewportLimit);
       return snapshotResult.snapshot;
     } catch (error) {
       return `Error capturing snapshot: ${error}`;
     }
+  }
+  
+  // Internal method for getting snapshot in actions (respects fullVisualMode)
+  private async getSnapshotForAction(viewportLimit: boolean = false): Promise<string> {
+    if (this.fullVisualMode) {
+      return 'full visual mode';
+    }
+    return this.getPageSnapshot(viewportLimit);
   }
 
 
@@ -151,24 +162,17 @@ export class HybridBrowserToolkit {
       const filteredElements = filterClickableByHierarchy(snapshotResult.snapshot, clickableElements);
       console.log(`[HybridBrowserToolkit] After filtering: ${filteredElements.size} elements remain`);
 
-      // Generate export path based on current page URL and timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-      const pageUrl = page.url();
-      const sanitizedUrl = pageUrl.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
-      const exportPath = `som_geometry_${sanitizedUrl}_${timestamp}.json`;
-      
-      // Use injected SOM-screenshot method with export path
+      // Use injected SOM-screenshot method without export path
       const result = await SomScreenshotInjected.captureOptimized(
         page,
         snapshotResult,
         filteredElements,
-        exportPath
+        undefined  // No export path - don't generate files
       );
       
       // Add snapshot timing info to result
       result.timing.snapshot_time_ms = snapshotResult.timing.snapshot_time_ms;
       result.timing.coordinate_enrichment_time_ms = snapshotResult.timing.coordinate_enrichment_time_ms;
-      result.timing.geometry_export_path = exportPath;
       
       return result;
     } catch (error) {
@@ -304,7 +308,7 @@ export class HybridBrowserToolkit {
       const navigationTime = Date.now() - navigationStart;
       
       const snapshotStart = Date.now();
-      const snapshot = await this.getPageSnapshot(this.viewportLimit);
+      const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       
       const totalTime = Date.now() - startTime;
@@ -344,7 +348,7 @@ export class HybridBrowserToolkit {
       const navigationTime = Date.now() - navigationStart;
       
       const snapshotStart = Date.now();
-      const snapshot = await this.getPageSnapshot(this.viewportLimit);
+      const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       
       const totalTime = Date.now() - startTime;
@@ -416,7 +420,7 @@ export class HybridBrowserToolkit {
       return {
         success: true,
         message: `Closed tab ${tabId}`,
-        snapshot: await this.getPageSnapshot(this.viewportLimit),
+        snapshot: await this.getSnapshotForAction(this.viewportLimit),
       };
     } else {
       return {
@@ -481,7 +485,7 @@ export class HybridBrowserToolkit {
       const { result, logs } = evalResult;
 
       const snapshotStart = Date.now();
-      const snapshot = await this.getPageSnapshot(this.viewportLimit);
+      const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       const totalTime = Date.now() - startTime;
 

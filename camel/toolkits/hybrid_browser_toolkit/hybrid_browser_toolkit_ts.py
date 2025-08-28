@@ -98,6 +98,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         viewport_limit: bool = False,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
+        full_visual_mode: bool = False,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -143,6 +144,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
             connection (e.g., 'ws://localhost:9222/devtools/browser/...').
             Required when connect_over_cdp is True. Defaults to None.
+            full_visual_mode (bool): When True, browser actions like click,
+            browser_open, visit_page, etc. will not return snapshots.
+            Defaults to False.
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -167,6 +171,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             enabled_tools=enabled_tools,
             connect_over_cdp=connect_over_cdp,
             cdp_url=cdp_url,
+            full_visual_mode=full_visual_mode,
         )
 
         # Legacy attribute access for backward compatibility
@@ -182,6 +187,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._default_start_url = browser_config.default_start_url
         self._session_id = toolkit_config.session_id or "default"
         self._viewport_limit = browser_config.viewport_limit
+        self._full_visual_mode = browser_config.full_visual_mode
 
         # Store timeout configuration for backward compatibility
         self._default_timeout = browser_config.default_timeout
@@ -1384,6 +1390,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             screenshot_timeout=self._screenshot_timeout,
             page_stability_timeout=self._page_stability_timeout,
             dom_content_loaded_timeout=self._dom_content_loaded_timeout,
+            viewport_limit=self._viewport_limit,
+            full_visual_mode=self._full_visual_mode,
         )
 
     def get_tools(self) -> List[FunctionTool]:
