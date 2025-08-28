@@ -342,7 +342,7 @@ class ImageGenToolkit(BaseToolkit):
             return error_msg
 
     @api_keys_required([("api_key", "XAI_API_KEY")])
-    def get_grok_credentials(self, url, api_key) -> Tuple[str, str]:
+    def get_grok_credentials(self, url, api_key) -> Tuple[str, str]: # type: ignore[return-value]
         r"""Get API credentials for the specified Grok model.
 
         Args:
@@ -355,11 +355,10 @@ class ImageGenToolkit(BaseToolkit):
 
         # Get credentials based on model type
         api_key = api_key or os.getenv("XAI_API_KEY")
-        base_url = url or os.getenv("XAI_API_BASE_URL")
-        return api_key, base_url
+        return api_key, url
 
     @api_keys_required([("api_key", "OPENAI_API_KEY")])
-    def get_openai_credentials(self, url, api_key) -> Tuple[str, str]:
+    def get_openai_credentials(self, url, api_key) -> Tuple[str, str | None]: # type: ignore[return-value]
         r"""Get API credentials for the specified OpenAI model.
 
         Args:
@@ -367,7 +366,7 @@ class ImageGenToolkit(BaseToolkit):
             api_key (str): The API key for the OpenAI API.
 
         Returns:
-            tuple: (api_key, base_url)
+            Tuple[str, str | None]: (api_key, base_url)
         """
 
         api_key = api_key or os.getenv("OPENAI_API_KEY")
