@@ -64,6 +64,8 @@ class ModelType(UnifiedModelType, Enum):
     AWS_CLAUDE_OPUS_4 = "anthropic.claude-opus-4-20250514-v1:0"
     AWS_CLAUDE_OPUS_4_1 = "anthropic.claude-opus-4-1-20250805-v1:0"
 
+    AMD_GPT4 = "dvue-aoai-001-gpt-4.1"
+
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
     GLM_4V_FLASH = "glm-4v-flash"
@@ -514,6 +516,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_5_NANO,
             ModelType.O4_MINI,
             ModelType.O3,
+        }
+
+    @property
+    def is_amd(self) -> bool:
+        r"""Returns whether this type of models is a AMD model."""
+        return self in {
+            ModelType.AMD_GPT4,
         }
 
     @property
@@ -1349,6 +1358,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_LONG,
             ModelType.TOGETHER_LLAMA_4_MAVERICK,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK,
+            ModelType.AMD_GPT4,
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
@@ -1579,6 +1589,7 @@ class ModelPlatformType(Enum):
     COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
+    AMD = "amd"
     NVIDIA = "nvidia"
     DEEPSEEK = "deepseek"
     PPIO = "ppio"
