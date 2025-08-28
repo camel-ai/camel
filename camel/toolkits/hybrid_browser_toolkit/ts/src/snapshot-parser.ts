@@ -27,16 +27,19 @@ export function parseSnapshotHierarchy(snapshotText: string): Map<string, Snapsh
     // Extract element info using regex
     // Support both lines with : (have children) and without : (leaf nodes)
     // Also support quoted lines like - 'button "text" [ref=...]'
-    const elementMatch = line.match(/^\s*-\s*'?(\w+)(?:\s+"([^"]*)")?\s*\[ref=([^\]]+)\](?:\s*\[([^\]]+)\])?'?:?/);
+    // Also support escaped quotes in text
+    // Also support attributes before [ref=...]
+    const elementMatch = line.match(/^\s*-\s*'?(\w+)(?:\s+"((?:[^"\\]|\\.)*)"\s*)?(?:\s*\[([^\]]+)\])?\s*\[ref=([^\]]+)\](?:\s*\[([^\]]+)\])?'?:?/);
     if (!elementMatch) continue;
     
-    const [, type, label, ref, attributes] = elementMatch;
+    const [, type, label, attrsBefore, ref, attrsAfter] = elementMatch;
     
-    // Parse attributes
+    // Parse attributes (can be before or after ref)
     const attrs: Record<string, string> = {};
-    if (attributes) {
-      // Handle attributes like [cursor=pointer] [active]
-      const attrMatches = attributes.matchAll(/(\w+)(?:=(\w+))?/g);
+    const allAttributes = (attrsBefore || '') + ' ' + (attrsAfter || '');
+    if (allAttributes.trim()) {
+      // Handle attributes like [cursor=pointer] [active] or disabled
+      const attrMatches = allAttributes.matchAll(/(\w+)(?:=(\w+))?/g);
       for (const match of attrMatches) {
         attrs[match[1]] = match[2] || 'true';
       }
@@ -83,6 +86,20 @@ export function filterClickableByHierarchy(
   const filtered = new Set<string>(clickableElements);
   const debugInfo: any[] = [];
   
+  // Debug: Check if specific problematic elements are in clickableElements
+  const problematicRefs = ['e303', 'e305', 'e344', 'e346', 'e348', 'e350', 'e374', 'e376', 'e378', 'e384', 'e386', 'e388'];
+  problematicRefs.forEach(ref => {
+    if (clickableElements.has(ref)) {
+      console.log(`[Debug] ${ref} is in clickableElements`);
+      const node = hierarchy.get(ref);
+      if (node) {
+        console.log(`[Debug] ${ref} type: ${node.type}, parent: ${node.parent || 'none'}`);
+      } else {
+        console.log(`[Debug] ${ref} NOT FOUND in hierarchy!`);
+      }
+    }
+  });
+  
   // First pass: identify parent-child relationships where both are clickable
   const parentChildPairs: Array<{parent: string, child: string, parentType: string, childType: string}> = [];
   
@@ -104,7 +121,9 @@ export function filterClickableByHierarchy(
         // Debug specific pairs
         if ((parentRef === 'e296' && childRef === 'e297') ||
             (parentRef === 'e361' && childRef === 'e363') ||
-            (parentRef === 'e371' && childRef === 'e373')) {
+            (parentRef === 'e371' && childRef === 'e373') ||
+            (parentRef === 'e344' && childRef === 'e346') ||
+            (parentRef === 'e348' && childRef === 'e350')) {
           console.log(`[Debug] Found pair: ${parentRef} (${parentNode.type}) -> ${childRef} (${childNode.type})`);
         }
       }
