@@ -237,10 +237,16 @@ class WebSocketBrowserServer {
             console.error('Error closing browser:', error);
           }
         }
+        // Return response immediately
+        const shutdownResponse = { message: 'Server shutting down' };
+        
+        // Schedule server shutdown after a short delay to ensure response is sent
         setTimeout(() => {
+          console.log('Exiting process...');
           process.exit(0);
-        }, 1000);
-        return { message: 'Server shutting down' };
+        }, 100);  // Reduced delay to 100ms
+        
+        return shutdownResponse;
 
       default:
         throw new Error(`Unknown command: ${command}`);

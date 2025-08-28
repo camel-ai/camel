@@ -115,6 +115,7 @@ class WebSocketBrowserWrapper:
         self._pending_responses: Dict[
             str, asyncio.Future[Dict[str, Any]]
         ] = {}  # Message ID -> Future
+        self._server_ready_future = None  # Future to track server ready state
 
         # Logging configuration
         self.browser_log_to_file = (config or {}).get(
@@ -123,8 +124,11 @@ class WebSocketBrowserWrapper:
         self.session_id = (config or {}).get('session_id', 'default')
         self.log_file_path: Optional[str] = None
         self.log_buffer: List[Dict[str, Any]] = []
+        self.ts_log_file_path: Optional[str] = None
+        self.ts_log_file = None  # File handle for TypeScript logs
+        self._log_reader_task = None  # Task for reading and logging stdout
 
-        # Set up log file if needed
+        # Set up log files if needed
         if self.browser_log_to_file:
             log_dir = "browser_log"
             os.makedirs(log_dir, exist_ok=True)
@@ -132,6 +136,11 @@ class WebSocketBrowserWrapper:
             self.log_file_path = os.path.join(
                 log_dir,
                 f"hybrid_browser_toolkit_ws_{timestamp}_{self.session_id}.log",
+            )
+            # Add TypeScript console log file
+            self.ts_log_file_path = os.path.join(
+                log_dir,
+                f"typescript_console_{timestamp}_{self.session_id}.log",
             )
 
     async def __aenter__(self):
@@ -207,33 +216,31 @@ class WebSocketBrowserWrapper:
             ['node', 'websocket-server.js'],
             cwd=self.ts_dir,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # Redirect stderr to stdout
             text=True,
+            bufsize=1,  # Line buffered
         )
+        
+        # Start log reader task immediately after process starts
+        self._log_reader_task = asyncio.create_task(self._read_and_log_output())
+        
+        if self.browser_log_to_file and self.ts_log_file_path:
+            logger.info(f"TypeScript console logs will be written to: {self.ts_log_file_path}")
 
         # Wait for server to output the port
         server_ready = False
         timeout = 10  # 10 seconds timeout
         start_time = time.time()
-
-        while not server_ready and time.time() - start_time < timeout:
-            if self.process.poll() is not None:
-                # Process died
-                stderr = self.process.stderr.read()
-                raise RuntimeError(
-                    f"WebSocket server failed to start: {stderr}"
-                )
-
-            try:
-                line = self.process.stdout.readline()
-                if line.startswith('SERVER_READY:'):
-                    self.server_port = int(line.split(':')[1].strip())
-                    server_ready = True
-                    logger.info(
-                        f"WebSocket server ready on port {self.server_port}"
-                    )
-            except (ValueError, IndexError):
-                continue
+        
+        # Create a future to wait for server ready
+        self._server_ready_future = asyncio.Future()
+        
+        # Wait for the server to be ready
+        try:
+            await asyncio.wait_for(self._server_ready_future, timeout=timeout)
+            server_ready = True
+        except asyncio.TimeoutError:
+            server_ready = False
 
         if not server_ready:
             self.process.kill()
@@ -264,20 +271,44 @@ class WebSocketBrowserWrapper:
 
     async def stop(self):
         """Stop the WebSocket connection and server."""
-        # Cancel the receiver task
-        if self._receive_task and not self._receive_task.done():
-            self._receive_task.cancel()
+        # Cancel all background tasks
+        tasks_to_cancel = [
+            ('_receive_task', self._receive_task),
+            ('_log_reader_task', self._log_reader_task),
+        ]
+        
+        for task_name, task in tasks_to_cancel:
+            if task and not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+        
+        # Close log file if open
+        if self.ts_log_file:
             try:
-                await self._receive_task
-            except asyncio.CancelledError:
+                self.ts_log_file.close()
+            except Exception:
                 pass
 
         if self.websocket:
             try:
-                await self._send_command('shutdown', {})
-                await self.websocket.close()
+                # Send shutdown command with a short timeout
+                await asyncio.wait_for(
+                    self._send_command('shutdown', {}),
+                    timeout=2.0  # 2 second timeout for shutdown
+                )
+            except asyncio.TimeoutError:
+                logger.warning("Shutdown command timed out (expected)")
             except Exception as e:
                 logger.warning(f"Error during websocket shutdown: {e}")
+            
+            # Close websocket connection
+            try:
+                await self.websocket.close()
+            except Exception:
+                pass
             finally:
                 self.websocket = None
 
@@ -681,3 +712,52 @@ class WebSocketBrowserWrapper:
             'wait_user', {'timeout': timeout_sec}
         )
         return response
+
+    async def _read_and_log_output(self):
+        """Read stdout from the Node.js process and handle SERVER_READY + logging."""
+        if not self.process:
+            return
+            
+        try:
+            log_file = None
+            if self.ts_log_file_path:
+                log_file = open(self.ts_log_file_path, 'w', encoding='utf-8')
+                log_file.write(f"TypeScript Console Log - Started at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                log_file.write("=" * 80 + "\n")
+                log_file.flush()
+                
+            while self.process and self.process.poll() is None:
+                try:
+                    line = await asyncio.get_event_loop().run_in_executor(
+                        None, self.process.stdout.readline
+                    )
+                    if not line:  # EOF
+                        break
+                        
+                    # Check for SERVER_READY message
+                    if line.startswith('SERVER_READY:'):
+                        try:
+                            self.server_port = int(line.split(':')[1].strip())
+                            logger.info(f"WebSocket server ready on port {self.server_port}")
+                            if hasattr(self, '_server_ready_future') and not self._server_ready_future.done():
+                                self._server_ready_future.set_result(True)
+                        except (ValueError, IndexError) as e:
+                            logger.error(f"Failed to parse SERVER_READY: {e}")
+                    
+                    # Write all output to log file
+                    if log_file:
+                        timestamp = time.strftime('%H:%M:%S')
+                        log_file.write(f"[{timestamp}] {line}")
+                        log_file.flush()
+                        
+                except Exception as e:
+                    logger.warning(f"Error reading stdout: {e}")
+                    break
+                    
+        except Exception as e:
+            logger.warning(f"Error in _read_and_log_output: {e}")
+        finally:
+            if log_file:
+                log_file.write("\n" + "=" * 80 + "\n")
+                log_file.write(f"TypeScript Console Log - Ended at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                log_file.close()

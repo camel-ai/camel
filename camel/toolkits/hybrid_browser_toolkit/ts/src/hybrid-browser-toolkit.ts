@@ -136,6 +136,7 @@ export class HybridBrowserToolkit {
 
   async getSomScreenshot(): Promise<VisualMarkResult & { timing: any }> {
     const startTime = Date.now();
+    console.log('[HybridBrowserToolkit] Starting getSomScreenshot...');
     
     try {
       // Get page and snapshot data
@@ -144,9 +145,11 @@ export class HybridBrowserToolkit {
       
       // Parse clickable elements from snapshot text
       const clickableElements = this.parseClickableElements(snapshotResult.snapshot);
+      console.log(`[HybridBrowserToolkit] Found ${clickableElements.size} clickable elements`);
       
       // Apply hierarchy-based filtering
       const filteredElements = filterClickableByHierarchy(snapshotResult.snapshot, clickableElements);
+      console.log(`[HybridBrowserToolkit] After filtering: ${filteredElements.size} elements remain`);
 
       // Generate export path based on current page URL and timestamp
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
