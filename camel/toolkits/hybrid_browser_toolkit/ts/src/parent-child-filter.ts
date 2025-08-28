@@ -177,9 +177,10 @@ export function filterParentChildElements(
       
       if (!childEl?.coordinates) continue;
       
-      // Debug specific elements
-      if ((parentRef === 'e79' && (childRef === 'e80' || childRef === 'e81')) ||
-          (childRef === 'e79' && (parentRef === 'e80' || parentRef === 'e81'))) {
+      // Debug parent-child relationships when enabled
+      const DEBUG_PARENT_CHILD = process.env.DEBUG_PARENT_CHILD === 'true';
+      if (DEBUG_PARENT_CHILD) {
+        const shouldFilter = shouldFilterChild(childEl, parentEl);
         console.log(`\n[Debug] Checking ${parentRef} -> ${childRef}:`);
         console.log(`Parent:`, {
           ref: parentRef, 
@@ -194,7 +195,6 @@ export function filterParentChildElements(
           role: childEl.role,
           coords: childEl.coordinates
         });
-        const shouldFilter = shouldFilterChild(childEl, parentEl);
         console.log(`Should filter? ${shouldFilter}`);
       }
       

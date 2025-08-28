@@ -168,6 +168,7 @@ export class SomScreenshotInjected {
         
         // Create overlay
         const overlay = document.createElement('div');
+        overlay.id = 'camel-som-overlay-temp';  // Set ID immediately for cleanup
         overlay.style.cssText = `
           position: fixed;
           top: 0;
@@ -430,7 +431,7 @@ export class SomScreenshotInjected {
         await new Promise(resolve => requestAnimationFrame(resolve));
         
         return { 
-          overlayId: overlay.id = 'camel-som-overlay-temp',
+          overlayId: overlay.id,  // Use the ID that was set earlier
           elementCount: overlay.children.length,
           markedElements,
           debugInfo
@@ -484,8 +485,6 @@ export class SomScreenshotInjected {
           
           // Also save visibility debug info
           if (result.debugInfo) {
-            const fs = require('fs').promises;
-            const path = require('path');
             const debugPath = exportPath.replace('.json', '-visibility-debug.json');
             
             const debugData = {
@@ -504,7 +503,7 @@ export class SomScreenshotInjected {
               })
             };
             
-            await fs.writeFile(debugPath, JSON.stringify(debugData, null, 2));
+            await writeFile(debugPath, JSON.stringify(debugData, null, 2));
             console.log(`Visibility debug info exported to: ${debugPath}`);
           }
         } catch (error) {

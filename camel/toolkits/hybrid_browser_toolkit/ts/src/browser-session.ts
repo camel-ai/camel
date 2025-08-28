@@ -239,7 +239,7 @@ export class HybridBrowserSession {
     const lines = snapshotText.split('\n');
     for (const line of lines) {
       if (line.includes(`[ref=${ref}]`)) {
-        const typeMatch = line.match(/^\s*-?\s*(\w+)/);
+        const typeMatch = line.match(/^\s*-?\s*([\w-]+)/);
         const role = typeMatch ? typeMatch[1] : undefined;
         const textMatch = line.match(/"([^"]*)"/);
         const text = textMatch ? textMatch[1] : undefined;
@@ -412,7 +412,8 @@ export class HybridBrowserSession {
       // since they might open popups via JavaScript event handlers
       // This includes buttons, divs, spans, images, etc. with onclick handlers
       // or elements that might have event listeners attached via addEventListener
-      const isClickableElement = onclick || (await element.evaluate(el => {
+      const hasOnclick = !!onclick;
+      const isClickableElement = hasOnclick || (await element.evaluate(el => {
         // Check if element has cursor:pointer style (indicates it's clickable)
         const style = window.getComputedStyle(el);
         return style.cursor === 'pointer';

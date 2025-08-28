@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+import contextlib
 import datetime
 import json
 import os
@@ -221,6 +222,9 @@ class WebSocketBrowserWrapper:
             bufsize=1,  # Line buffered
         )
 
+        # Create a future to wait for server ready (before starting log reader)
+        self._server_ready_future = asyncio.Future()
+
         # Start log reader task immediately after process starts
         self._log_reader_task = asyncio.create_task(
             self._read_and_log_output()
@@ -235,9 +239,6 @@ class WebSocketBrowserWrapper:
         # Wait for server to output the port
         server_ready = False
         timeout = 10  # 10 seconds timeout
-
-        # Create a future to wait for server ready
-        self._server_ready_future = asyncio.Future()
 
         # Wait for the server to be ready
         try:
@@ -275,7 +276,23 @@ class WebSocketBrowserWrapper:
 
     async def stop(self):
         """Stop the WebSocket connection and server."""
-        # Cancel all background tasks
+        # First, send shutdown command while receive task is still running
+        if self.websocket:
+            with contextlib.suppress(asyncio.TimeoutError, Exception):
+                # Send shutdown command with a short timeout
+                await asyncio.wait_for(
+                    self._send_command('shutdown', {}),
+                    timeout=2.0,  # 2 second timeout for shutdown
+                )
+                # Note: TimeoutError is expected as server may close
+                # before responding
+
+            # Close websocket connection
+            with contextlib.suppress(Exception):
+                await self.websocket.close()
+            self.websocket = None
+
+        # Now cancel background tasks after websocket is closed
         tasks_to_cancel = [
             ('_receive_task', self._receive_task),
             ('_log_reader_task', self._log_reader_task),
@@ -284,38 +301,15 @@ class WebSocketBrowserWrapper:
         for _, task in tasks_to_cancel:
             if task and not task.done():
                 task.cancel()
-                try:
+                with contextlib.suppress(asyncio.CancelledError):
                     await task
-                except asyncio.CancelledError:
-                    pass
 
         # Close log file if open
         if self.ts_log_file:
-            try:
+            with contextlib.suppress(Exception):
                 self.ts_log_file.close()
-            except Exception:
-                pass
 
-        if self.websocket:
-            try:
-                # Send shutdown command with a short timeout
-                await asyncio.wait_for(
-                    self._send_command('shutdown', {}),
-                    timeout=2.0,  # 2 second timeout for shutdown
-                )
-            except asyncio.TimeoutError:
-                logger.warning("Shutdown command timed out (expected)")
-            except Exception as e:
-                logger.warning(f"Error during websocket shutdown: {e}")
-
-            # Close websocket connection
-            try:
-                await self.websocket.close()
-            except Exception:
-                pass
-            finally:
-                self.websocket = None
-
+        # Terminate the process
         if self.process:
             try:
                 self.process.terminate()
@@ -751,6 +745,7 @@ class WebSocketBrowserWrapper:
                             )
                             if (
                                 hasattr(self, '_server_ready_future')
+                                and self._server_ready_future is not None
                                 and not self._server_ready_future.done()
                             ):
                                 self._server_ready_future.set_result(True)

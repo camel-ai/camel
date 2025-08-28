@@ -86,19 +86,18 @@ export function filterClickableByHierarchy(
   const filtered = new Set<string>(clickableElements);
   const debugInfo: any[] = [];
   
-  // Debug: Check if specific problematic elements are in clickableElements
-  const problematicRefs = ['e303', 'e305', 'e344', 'e346', 'e348', 'e350', 'e374', 'e376', 'e378', 'e384', 'e386', 'e388'];
-  problematicRefs.forEach(ref => {
-    if (clickableElements.has(ref)) {
-      console.log(`[Debug] ${ref} is in clickableElements`);
+  // Debug clickable elements when enabled
+  const DEBUG_SNAPSHOT_PARSER = process.env.DEBUG_SNAPSHOT_PARSER === 'true';
+  if (DEBUG_SNAPSHOT_PARSER) {
+    clickableElements.forEach(ref => {
       const node = hierarchy.get(ref);
       if (node) {
         console.log(`[Debug] ${ref} type: ${node.type}, parent: ${node.parent || 'none'}`);
       } else {
         console.log(`[Debug] ${ref} NOT FOUND in hierarchy!`);
       }
-    }
-  });
+    });
+  }
   
   // First pass: identify parent-child relationships where both are clickable
   const parentChildPairs: Array<{parent: string, child: string, parentType: string, childType: string}> = [];
