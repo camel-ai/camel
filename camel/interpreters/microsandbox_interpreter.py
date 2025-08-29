@@ -85,7 +85,10 @@ class MicrosandboxInterpreter(BaseInterpreter):
         timeout: int = 30,
     ) -> None:
         try:
-            from microsandbox import NodeSandbox, PythonSandbox
+            from microsandbox import (  # type: ignore[import-untyped]
+                NodeSandbox,
+                PythonSandbox,
+            )
         except ImportError as e:
             raise ImportError(
                 "Please install microsandbox to use MicrosandboxInterpreter: "
@@ -110,7 +113,6 @@ class MicrosandboxInterpreter(BaseInterpreter):
             "api_key": self.api_key,
         }
 
-        # Store sandbox classes for reuse
         self._PythonSandbox = PythonSandbox
         self._NodeSandbox = NodeSandbox
 
