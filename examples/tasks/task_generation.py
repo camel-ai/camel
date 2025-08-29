@@ -12,63 +12,72 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.agents import ChatAgent
-from camel.models import ModelFactory
-from camel.tasks import (
-    Task,
-    TaskManager,
-)
-from camel.types import (
-    ModelPlatformType,
-    ModelType,
-)
-
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.DEFAULT,
-    model_type=ModelType.DEFAULT,
-)
-
-# set up agent
-assistant_sys_msg = "You are a personal math tutor and programmer."
-agent = ChatAgent(assistant_sys_msg, model)
-agent.reset()
-
-task = Task(
-    content="Weng earns $12 an hour for babysitting. Yesterday, she just did 51 minutes of babysitting. How much did she earn?",
-    id="0",
-)
-print(task.to_string())
+from camel.tasks import Task, TaskState
 
 
-task_manager = TaskManager(task)
+def demonstrate_basic_task_usage():
+    """Demonstrate basic Task functionality after refactoring."""
 
-evolved_task = task_manager.evolve(task, agent=agent)
-if evolved_task is not None:
-    print(evolved_task.to_string())
-else:
-    print("Evolved task is None.")
+    # Create a simple task
+    task = Task(
+        content=(
+            "Weng earns $12 an hour for babysitting. "
+            "Yesterday, she just did 51 minutes of babysitting. "
+            "How much did she earn?"
+        ),
+        id="0",
+    )
+    print("=== Basic Task ===")
+    print(task.to_string())
+
+    # Create subtasks manually (since decompose method was removed)
+    sub_task_1 = Task(content="Convert 51 minutes to hours", id="0.1")
+    sub_task_2 = Task(
+        content="Calculate the proportion of 51 minutes to an hour", id="0.2"
+    )
+    sub_task_3 = Task(
+        content=(
+            "Multiply the proportion by Weng's hourly rate to find out "
+            "how much she earned for 51 minutes of babysitting"
+        ),
+        id="0.3",
+    )
+
+    # Add subtasks to the main task
+    task.add_subtask(sub_task_1)
+    task.add_subtask(sub_task_2)
+    task.add_subtask(sub_task_3)
+
+    print("\n=== Task with Subtasks ===")
+    print(task.to_string())
+
+    # Demonstrate task state management
+    print("\n=== Task State Management ===")
+    print(f"Initial state: {task.state}")
+
+    # Mark subtasks as done
+    sub_task_1.set_state(TaskState.DONE)
+    sub_task_1.update_result("51 minutes = 0.85 hours")
+
+    sub_task_2.set_state(TaskState.DONE)
+    sub_task_2.update_result("Proportion = 0.85/1 = 0.85")
+
+    sub_task_3.set_state(TaskState.DONE)
+    sub_task_3.update_result("Earnings = 0.85 * $12 = $10.20")
+
+    print(f"After completing subtasks: {task.state}")
+    print("\n=== Task Results ===")
+    print(task.get_result())
+
+    # Note: For advanced task management, decomposition, and composition,
+    # please use the Workforce system instead of the removed Task methods.
 
 
-new_tasks = task.decompose(agent=agent)
-for t in new_tasks:
-    print(t.to_string())
+if __name__ == "__main__":
+    demonstrate_basic_task_usage()
 
-# ruff: noqa: E501
-"""
-===============================================================================
-Task 0: Weng earns $12 an hour for babysitting. Yesterday, she just did 51 
-minutes of babysitting. How much did she earn?
-
-Task 0.0: Weng earns $12 an hour for babysitting. However, her hourly rate 
-increases by $2 for every additional hour worked beyond the first hour. 
-Yesterday, she babysat for a total of 3 hours and 45 minutes. How much did she 
-earn in total for her babysitting services?
-
-Task 0.0: Convert 51 minutes to hours.
-
-Task 0.1: Calculate the proportion of 51 minutes to an hour.
-
-Task 0.2: Multiply the proportion by Weng's hourly rate to find out how much 
-she earned for 51 minutes of babysitting.
-===============================================================================
-"""
+    print("\n" + "=" * 80)
+    print("NOTE: This example demonstrates basic Task functionality.")
+    print("For advanced features like task decomposition, composition,")
+    print("and management, please use the Workforce system.")
+    print("=" * 80)

@@ -17,22 +17,7 @@ import os
 
 from PIL import Image
 
-from camel.agents import ChatAgent
-from camel.models import ModelFactory
-from camel.tasks import (
-    Task,
-    TaskManager,
-)
-from camel.types import (
-    ModelPlatformType,
-    ModelType,
-)
-
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.QWEN,
-    model_type=ModelType.QWEN_VL_MAX,
-    model_config_dict={"temperature": 0.0},
-)
+from camel.tasks import Task
 
 
 def load_image(image_path: str) -> Image.Image:
@@ -58,78 +43,117 @@ def load_video(video_path: str) -> bytes:
         return f.read()
 
 
-# set up agent
-assistant_sys_msg = "You are a personal math tutor and programmer."
-agent = ChatAgent(assistant_sys_msg, model=model)
-agent.reset()
-
-
 def create_image_task(image_path: str, task_id: str = "0") -> Task:
+    """Create a task with image support."""
     image = load_image(image_path)
     return Task(
-        content="The task is in the image.", image_list=[image], id=task_id
+        content=(
+            "Analyze the image and "
+            "provide a detailed description of what you see."
+        ),
+        image_list=[image],
+        id=task_id,
     )
 
 
 def create_video_task(video_path: str, task_id: str = "1") -> Task:
+    """Create a task with video support."""
     video_bytes = load_video(video_path)
     return Task(
-        content="The task is in the video.",
+        content=("Analyze the video and " "provide a summary of the content."),
         video_bytes=video_bytes,
         id=task_id,
     )
 
 
-# Example usage
-img_path = "./examples/tasks/task_image.png"
-video_path = "./examples/tasks/task_video.mov"
+def demonstrate_multimodal_tasks():
+    """Demonstrate Task with multimodal support after refactoring."""
 
-tasks = []
-try:
-    image_task = create_image_task(img_path, task_id="0")
-    tasks.append(image_task)
-except FileNotFoundError as e:
-    print(f"Skipping image task: {e}")
+    # Example paths - adjust these to match your actual file locations
+    img_path = "./examples/tasks/task_image.png"
+    video_path = "./examples/tasks/task_video.mov"
 
-try:
-    video_task = create_video_task(video_path, task_id="1")
-    tasks.append(video_task)
-except FileNotFoundError as e:
-    print(f"Skipping video task: {e}")
+    tasks = []
 
-if not tasks:
-    print("No valid tasks found. Please ensure example files exist.")
-    exit(1)
+    # Try to create image task
+    try:
+        image_task = create_image_task(img_path, task_id="0")
+        tasks.append(image_task)
+        print("✓ Image task created successfully")
+        print(f"  - Content: {image_task.content}")
+        print(f"  - Image count: {len(image_task.image_list)}")
+        print(f"  - Image detail: {image_task.image_detail}")
+    except FileNotFoundError as e:
+        print(f"✗ Skipping image task: {e}")
 
-for task in tasks:
-    task_manager = TaskManager(task)
+    # Try to create video task
+    try:
+        video_task = create_video_task(video_path, task_id="1")
+        tasks.append(video_task)
+        print("✓ Video task created successfully")
+        print(f"  - Content: {video_task.content}")
+        print(f"  - Video size: {len(video_task.video_bytes)} bytes")
+        print(f"  - Video detail: {video_task.video_detail}")
+    except FileNotFoundError as e:
+        print(f"✗ Skipping video task: {e}")
 
-    evolved_task = task_manager.evolve(task, agent=agent)
-    if evolved_task is not None:
-        print(evolved_task.to_string())
-    else:
-        print("Evolved task is None.")
+    if not tasks:
+        print("No valid tasks found. Please ensure example files exist.")
+        print(
+            "You can create your own image/video files and update the paths."
+        )
+        return
 
-    new_tasks = task.decompose(agent=agent)
-    for t in new_tasks:
-        print(t.to_string())
+    print(f"\n=== Created {len(tasks)} multimodal tasks ===")
 
-# ruff: noqa: E501
-"""
-===============================================================================
-Task 0: Weng earns $12 an hour for babysitting. Yesterday, she just did 51 
-minutes of babysitting. How much did she earn?
+    # Demonstrate task hierarchy with multimodal content
+    for i, task in enumerate(tasks):
+        print(f"\n--- Task {i+1} ---")
+        print(task.to_string())
 
-Task 0.0: Weng earns $12 an hour for babysitting. However, her hourly rate 
-increases by $2 for every additional hour worked beyond the first hour. 
-Yesterday, she babysat for a total of 3 hours and 45 minutes. How much did she 
-earn in total for her babysitting services?
+        # Create some example subtasks
+        if task.image_list:
+            # Image analysis subtasks
+            sub_task_1 = Task(
+                content="Identify all objects visible in the image",
+                id=f"{task.id}.1",
+            )
+            sub_task_2 = Task(
+                content="Describe the overall scene and context",
+                id=f"{task.id}.2",
+            )
+            sub_task_3 = Task(
+                content="Analyze colors, lighting, and composition",
+                id=f"{task.id}.3",
+            )
+        else:
+            # Video analysis subtasks
+            sub_task_1 = Task(
+                content="Identify key events and actions in the video",
+                id=f"{task.id}.1",
+            )
+            sub_task_2 = Task(
+                content="Describe the audio content and dialogue",
+                id=f"{task.id}.2",
+            )
+            sub_task_3 = Task(
+                content="Summarize the overall narrative or purpose",
+                id=f"{task.id}.3",
+            )
 
-Task 0.0: Convert 51 minutes to hours.
+        task.add_subtask(sub_task_1)
+        task.add_subtask(sub_task_2)
+        task.add_subtask(sub_task_3)
 
-Task 0.1: Calculate the proportion of 51 minutes to an hour.
+        print(f"\nTask {task.id} now has {len(task.subtasks)} subtasks:")
+        print(task.to_string())
 
-Task 0.2: Multiply the proportion by Weng's hourly rate to find out how much 
-she earned for 51 minutes of babysitting.
-===============================================================================
-"""
+
+if __name__ == "__main__":
+    demonstrate_multimodal_tasks()
+
+    print("\n" + "=" * 80)
+    print("NOTE: This example demonstrates Task with multimodal support.")
+    print("For advanced features like task decomposition, composition,")
+    print("and management, please use the Workforce system.")
+    print("=" * 80)
