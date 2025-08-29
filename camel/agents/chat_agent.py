@@ -2697,12 +2697,6 @@ class ChatAgent(BaseAgent):
                     # If we have complete tool calls, execute them with
                     # sync status updates
                     if accumulated_tool_calls:
-                        # Record assistant message with tool calls first
-                        self._record_assistant_tool_calls_message(
-                            accumulated_tool_calls,
-                            content_accumulator.get_full_content(),
-                        )
-
                         # Execute tools synchronously with
                         # optimized status updates
                         for (
@@ -2942,10 +2936,19 @@ class ChatAgent(BaseAgent):
                 tool = self._internal_tools[function_name]
                 try:
                     result = tool(**args)
+                    # First, create and record the assistant message with tool
+                    # call
+                    assist_msg = FunctionCallingMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict=None,
+                        content="",
+                        func_name=function_name,
+                        args=args,
+                        tool_call_id=tool_call_id,
+                    )
 
-                    # Only record the tool response message, not the assistant
-                    # message assistant message with tool_calls was already
-                    # recorded in _record_assistant_tool_calls_message
+                    # Then create the tool response message
                     func_msg = FunctionCallingMessage(
                         role_name=self.role_name,
                         role_type=self.role_type,
@@ -2956,7 +2959,25 @@ class ChatAgent(BaseAgent):
                         tool_call_id=tool_call_id,
                     )
 
-                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+                    # Record both messages with precise timestamps to ensure
+                    # correct ordering
+                    import time
+
+                    current_time_ns = time.time_ns()
+                    base_timestamp = (
+                        current_time_ns / 1_000_000_000
+                    )  # Convert to seconds
+
+                    self.update_memory(
+                        assist_msg,
+                        OpenAIBackendRole.ASSISTANT,
+                        timestamp=base_timestamp,
+                    )
+                    self.update_memory(
+                        func_msg,
+                        OpenAIBackendRole.FUNCTION,
+                        timestamp=base_timestamp + 1e-6,
+                    )
 
                     return ToolCallingRecord(
                         tool_name=function_name,
@@ -3040,10 +3061,19 @@ class ChatAgent(BaseAgent):
                     else:
                         # Fallback: synchronous call
                         result = tool(**args)
+                    # First, create and record the assistant message with tool
+                    # call
+                    assist_msg = FunctionCallingMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict=None,
+                        content="",
+                        func_name=function_name,
+                        args=args,
+                        tool_call_id=tool_call_id,
+                    )
 
-                    # Only record the tool response message, not the assistant
-                    # message assistant message with tool_calls was already
-                    # recorded in _record_assistant_tool_calls_message
+                    # Then create the tool response message
                     func_msg = FunctionCallingMessage(
                         role_name=self.role_name,
                         role_type=self.role_type,
@@ -3054,7 +3084,25 @@ class ChatAgent(BaseAgent):
                         tool_call_id=tool_call_id,
                     )
 
-                    self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+                    # Record both messages with precise timestamps to ensure
+                    # correct ordering
+                    import time
+
+                    current_time_ns = time.time_ns()
+                    base_timestamp = (
+                        current_time_ns / 1_000_000_000
+                    )  # Convert to seconds
+
+                    self.update_memory(
+                        assist_msg,
+                        OpenAIBackendRole.ASSISTANT,
+                        timestamp=base_timestamp,
+                    )
+                    self.update_memory(
+                        func_msg,
+                        OpenAIBackendRole.FUNCTION,
+                        timestamp=base_timestamp + 1e-6,
+                    )
 
                     return ToolCallingRecord(
                         tool_name=function_name,
@@ -3444,13 +3492,6 @@ class ChatAgent(BaseAgent):
                     # If we have complete tool calls, execute them with
                     # async status updates
                     if accumulated_tool_calls:
-                        # Record assistant message with
-                        # tool calls first
-                        self._record_assistant_tool_calls_message(
-                            accumulated_tool_calls,
-                            content_accumulator.get_full_content(),
-                        )
-
                         # Execute tools asynchronously with real-time
                         # status updates
                         async for (
