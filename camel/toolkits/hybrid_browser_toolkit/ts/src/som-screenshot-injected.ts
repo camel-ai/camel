@@ -480,8 +480,10 @@ export class SomScreenshotInjected {
             }
           };
           
-          await writeFile(exportPath, JSON.stringify(exportData, null, 2));
-          console.log(`Element geometry exported to: ${exportPath}`);
+          if (typeof writeFile !== 'undefined') {
+            await writeFile(exportPath, JSON.stringify(exportData, null, 2));
+            console.log(`Element geometry exported to: ${exportPath}`);
+          }
           
           // Also save visibility debug info
           if (result.debugInfo) {
@@ -503,8 +505,10 @@ export class SomScreenshotInjected {
               })
             };
             
-            await writeFile(debugPath, JSON.stringify(debugData, null, 2));
-            console.log(`Visibility debug info exported to: ${debugPath}`);
+            if (typeof writeFile !== 'undefined') {
+              await writeFile(debugPath, JSON.stringify(debugData, null, 2));
+              console.log(`Visibility debug info exported to: ${debugPath}`);
+            }
           }
         } catch (error) {
           console.error('Failed to export element geometry:', error);
