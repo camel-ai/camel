@@ -121,13 +121,18 @@ export class HybridBrowserSession {
       if (stealthConfig.enabled) {
         launchOptions.args = stealthConfig.args || [];
         
-        // Apply stealth user agent if configured
+        // Apply stealth user agent/headers if configured
         if (stealthConfig.userAgent) {
           launchOptions.userAgent = stealthConfig.userAgent;
+        }
+        if (stealthConfig.extraHTTPHeaders) {
+          launchOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
         }
       }
 
       if (browserConfig.userDataDir) {
+        // Ensure viewport is honored in persistent context
+        launchOptions.viewport = browserConfig.viewport;
         this.context = await chromium.launchPersistentContext(
           browserConfig.userDataDir,
           launchOptions
@@ -194,26 +199,10 @@ export class HybridBrowserSession {
 
   async getCurrentPage(): Promise<Page> {
     if (!this.currentTabId || !this.pages.has(this.currentTabId)) {
-      // In CDP mode, try to create a new page if none exists
+      // In CDP mode, we cannot create new pages
       const browserConfig = this.configLoader.getBrowserConfig();
-      if (browserConfig.connectOverCdp && this.context) {
-        console.log('[CDP] No active page found, attempting to create new page...');
-        try {
-          const newPage = await this.context.newPage();
-          const newTabId = this.generateTabId();
-          this.registerNewPage(newTabId, newPage);
-          this.currentTabId = newTabId;
-          
-          // Set page timeouts
-          newPage.setDefaultNavigationTimeout(browserConfig.navigationTimeout);
-          newPage.setDefaultTimeout(browserConfig.navigationTimeout);
-          
-          console.log(`[CDP] Created new page with tab ID: ${newTabId}`);
-          return newPage;
-        } catch (error) {
-          console.error('[CDP] Failed to create new page:', error);
-          throw new Error('No active page available and failed to create new page in CDP mode');
-        }
+      if (browserConfig.connectOverCdp) {
+        throw new Error('No active page available in CDP mode; frontend must pre-create blank tabs.');
       }
       throw new Error('No active page available');
     }
@@ -875,7 +864,7 @@ export class HybridBrowserSession {
     
     try {
       // Monitor DOM changes
-      await page.evaluateHandle(() => {
+      await page.evaluate(() => {
         let changeCount = 0;
         (window as any).__domStabilityCheck = { changeCount: 0, lastChange: Date.now() };
         
@@ -894,23 +883,15 @@ export class HybridBrowserSession {
         (window as any).__domStabilityObserver = observer;
       });
       
-      // Check for stability
-      while (Date.now() - startTime < maxWaitTime) {
-        const status = await page.evaluate(() => {
+      // Wait until no changes for stabilityThreshold or timeout
+      await page.waitForFunction(
+        (threshold) => {
           const check = (window as any).__domStabilityCheck;
-          return {
-            changeCount: check.changeCount,
-            timeSinceLastChange: Date.now() - check.lastChange
-          };
-        });
-        
-        if (status.timeSinceLastChange > stabilityThreshold) {
-          // DOM has been stable
-          break;
-        }
-        
-        await page.waitForTimeout(50);
-      }
+          return check && (Date.now() - check.lastChange) > threshold;
+        },
+        stabilityThreshold,
+        { timeout: Math.max(0, maxWaitTime) }
+      ).catch(() => {});
     } finally {
       // Cleanup
       await page.evaluate(() => {
