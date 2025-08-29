@@ -21,6 +21,7 @@ from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.toolkits.base import BaseToolkit, RegisteredAgentToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import MCPServer
 from camel.utils.commons import dependencies_required
 
 from .config_loader import ConfigLoader
@@ -29,6 +30,7 @@ from .ws_wrapper import WebSocketBrowserWrapper
 logger = get_logger(__name__)
 
 
+@MCPServer()
 class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     r"""A hybrid browser toolkit that combines non-visual, DOM-based browser
     automation with visual, screenshot-based capabilities.
