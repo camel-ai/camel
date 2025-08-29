@@ -22,7 +22,18 @@ import time
 from queue import Empty, Queue
 from typing import Any, Dict, List, Optional
 
-from rich.text import Text
+try:
+    from rich.text import Text
+except ImportError:
+    # Fallback when rich is not available
+    class Text:
+        @staticmethod
+        def from_ansi(text: str):
+            # Simple fallback that just returns the text
+            class SimpleText:
+                def __init__(self, plain_text):
+                    self.plain = plain_text
+            return SimpleText(text)
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -115,7 +126,7 @@ class TerminalToolkit(BaseToolkit):
         self.blocking_log_file = os.path.join(
             self.log_dir, "blocking_commands.log"
         )
-        self.os_platform = platform.system()
+        self.os_type = platform.system()
 
         os.makedirs(self.log_dir, exist_ok=True)
 
@@ -183,7 +194,7 @@ class TerminalToolkit(BaseToolkit):
 
         if success:
             # Update python executable to use the cloned environment
-            if self.os_platform == 'Windows':
+            if self.os_type == 'Windows':
                 self.python_executable = os.path.join(
                     self.cloned_env_path, "Scripts", "python.exe"
                 )
@@ -224,7 +235,7 @@ class TerminalToolkit(BaseToolkit):
 
         if success:
             # Update python executable to use the initial environment
-            if self.os_platform == 'Windows':
+            if self.os_type == 'Windows':
                 self.python_executable = os.path.join(
                     self.initial_env_path, "Scripts", "python.exe"
                 )
@@ -364,7 +375,7 @@ class TerminalToolkit(BaseToolkit):
             return f"Error: No session found with ID '{id}'."
 
         output_parts = []
-        idle_time = 0
+        idle_time = 0.0
         start_time = time.time()
 
         while time.time() - start_time < max_wait:
@@ -386,7 +397,7 @@ class TerminalToolkit(BaseToolkit):
 
             if new_output:
                 output_parts.append(new_output)
-                idle_time = 0  # Reset idle timer
+                idle_time = 0.0  # Reset idle timer
             else:
                 idle_time += check_interval
                 if idle_time >= idle_duration:
