@@ -26,7 +26,7 @@ try:
     from rich.text import Text
 except ImportError:
     # Fallback when rich is not available
-    class Text:
+    class _TextFallback:
         @staticmethod
         def from_ansi(text: str):
             # Simple fallback that just returns the text
@@ -35,6 +35,8 @@ except ImportError:
                     self.plain = plain_text
 
             return SimpleText(text)
+
+    Text = _TextFallback
 
 
 from camel.logger import get_logger
