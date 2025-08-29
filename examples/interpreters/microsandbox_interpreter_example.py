@@ -12,7 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import textwrap
+
 from camel.interpreters import MicrosandboxInterpreter
+
 
 def test_python_example():
     """Test Python code execution."""
@@ -21,7 +23,7 @@ def test_python_example():
         require_confirm=False,
         server_url="http://192.168.122.56:5555",
         namespace="default",
-        sandbox_name="python-test"
+        sandbox_name="python-test",
     )
 
     code = textwrap.dedent("""
@@ -41,6 +43,7 @@ def test_python_example():
     print(result)
     print()
 
+
 def test_javascript_example():
     """Test JavaScript code execution."""
     print("=== JavaScript Example ===")
@@ -48,7 +51,7 @@ def test_javascript_example():
         require_confirm=False,
         server_url="http://192.168.122.56:5555",
         namespace="default",
-        sandbox_name="js-test"
+        sandbox_name="js-test",
     )
 
     code = textwrap.dedent("""
@@ -58,7 +61,8 @@ def test_javascript_example():
         {name: 'Charlie', age: 35}
     ];
     
-    const avgAge = users.reduce((sum, user) => sum + user.age, 0) / users.length;
+    const avgAge = users.reduce((sum, user) => sum + user.age, 0) / 
+                   users.length;
     console.log(`Average age: ${avgAge}`);
     console.log(`Users: ${users.map(u => u.name).join(', ')}`);
     """)
@@ -67,6 +71,7 @@ def test_javascript_example():
     print(result)
     print()
 
+
 def test_shell_example():
     """Test shell commands."""
     print("=== Shell Example ===")
@@ -74,19 +79,20 @@ def test_shell_example():
         require_confirm=False,
         server_url="http://192.168.122.56:5555",
         namespace="default",
-        sandbox_name="shell-test"
+        sandbox_name="shell-test",
     )
 
     # Test directory operations
     interpreter.run("mkdir -p /tmp/mydir", "bash")
     interpreter.run("echo 'Hello World' > /tmp/mydir/hello.txt", "bash")
-    
+
     result = interpreter.execute_command("ls -la /tmp/mydir")
     print("Directory listing:", result)
-    
+
     result = interpreter.execute_command("cat /tmp/mydir/hello.txt")
     print("File content:", result)
     print()
+
 
 def test_package_example():
     """Test what's available without pip installation."""
@@ -95,7 +101,7 @@ def test_package_example():
         require_confirm=False,
         server_url="http://192.168.122.56:5555",
         namespace="default",
-        sandbox_name="package-test"
+        sandbox_name="package-test",
     )
 
     # Just test what's already available
@@ -113,22 +119,24 @@ for pkg in packages:
     except ImportError:
         print(f'✗ {pkg} not available')
 """
-    
+
     result = interpreter.run(code, "python")
     print(result)
     print()
+
 
 def main():
     """Run example tests."""
     print("Microsandbox Interpreter Examples")
     print("=" * 40)
-    
+
     test_python_example()
-    test_javascript_example() 
+    test_javascript_example()
     test_shell_example()
     test_package_example()
-    
+
     print("All examples completed!")
+
 
 if __name__ == "__main__":
     main()

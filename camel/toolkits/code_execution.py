@@ -46,15 +46,21 @@ class CodeExecutionToolkit(BaseToolkit):
             executing code. (default: :obj:`False`)
         timeout (Optional[float]): General timeout for toolkit operations.
             (default: :obj:`None`)
-        microsandbox_config (Optional[dict]): Configuration for microsandbox interpreter.
-            Available keys: 'server_url', 'api_key', 'namespace', 'sandbox_name', 'timeout'.
+        microsandbox_config (Optional[dict]): Configuration for microsandbox
+            interpreter. Available keys: 'server_url', 'api_key',
+            'namespace', 'sandbox_name', 'timeout'.
             If None, uses default configuration. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         sandbox: Literal[
-            "internal_python", "jupyter", "docker", "subprocess", "e2b", "microsandbox"
+            "internal_python",
+            "jupyter",
+            "docker",
+            "subprocess",
+            "e2b",
+            "microsandbox",
         ] = "subprocess",
         verbose: bool = False,
         unsafe_mode: bool = False,
@@ -105,19 +111,17 @@ class CodeExecutionToolkit(BaseToolkit):
         elif sandbox == "e2b":
             self.interpreter = E2BInterpreter(require_confirm=require_confirm)
         elif sandbox == "microsandbox":
-            # Merge default config with user provided config
-            default_config = {
-                "require_confirm": require_confirm,
-                "server_url": None,
-                "api_key": None, 
-                "namespace": "default",
-                "sandbox_name": None,
-                "timeout": 30,
-            }
-            if microsandbox_config:
-                default_config.update(microsandbox_config)
-            
-            self.interpreter = MicrosandboxInterpreter(**default_config)
+            # Extract parameters with proper types for microsandbox
+            config = microsandbox_config or {}
+
+            self.interpreter = MicrosandboxInterpreter(
+                require_confirm=require_confirm,
+                server_url=config.get("server_url"),
+                api_key=config.get("api_key"),
+                namespace=config.get("namespace", "default"),
+                sandbox_name=config.get("sandbox_name"),
+                timeout=config.get("timeout", 30),
+            )
         else:
             raise RuntimeError(
                 f"The sandbox type `{sandbox}` is not supported."
