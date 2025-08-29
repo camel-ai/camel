@@ -14,8 +14,7 @@
 
 import pytest
 
-from camel.interpreters import MicrosandboxInterpreter, InterpreterError
-
+from camel.interpreters import InterpreterError, MicrosandboxInterpreter
 
 # Test server configuration
 MICROSANDBOX_SERVER = "http://192.168.122.56:5555"
@@ -40,7 +39,7 @@ def test_initialization():
         namespace="test-init",
         timeout=60,
     )
-    
+
     assert interpreter.require_confirm is False
     assert interpreter.server_url == MICROSANDBOX_SERVER
     assert interpreter.namespace == "test-init"
@@ -51,7 +50,7 @@ def test_supported_code_types():
     """Test supported code types."""
     interpreter = MicrosandboxInterpreter(require_confirm=False)
     supported_types = interpreter.supported_code_types()
-    
+
     # Check basic types are supported
     assert "python" in supported_types
     assert "javascript" in supported_types
@@ -62,7 +61,7 @@ def test_python_execution(interpreter):
     """Test Python code execution."""
     code = "print('Hello Python')"
     result = interpreter.run(code, "python")
-    
+
     assert "Hello Python" in result
 
 
@@ -73,7 +72,7 @@ x = 10 + 5
 print(f"Result: {x}")
 """
     result = interpreter.run(code, "python")
-    
+
     assert "Result: 15" in result
 
 
@@ -81,21 +80,21 @@ def test_javascript_execution(interpreter):
     """Test JavaScript code execution."""
     code = "console.log('Hello JavaScript');"
     result = interpreter.run(code, "javascript")
-    
+
     assert "Hello JavaScript" in result
 
 
 def test_shell_execution(interpreter):
     """Test shell command execution."""
     result = interpreter.run("echo 'Hello Shell'", "bash")
-    
+
     assert "Hello Shell" in result
 
 
 def test_execute_command(interpreter):
     """Test execute_command method."""
     result = interpreter.execute_command("echo test")
-    
+
     # Should return something (either output or success message)
     assert result is not None
     assert len(result) > 0
@@ -113,9 +112,13 @@ def test_python_error_handling(interpreter):
     """Test Python error handling."""
     code = "x = 1 / 0"  # Division by zero
     result = interpreter.run(code, "python")
-    
+
     # Should contain error information
-    assert any(keyword in result for keyword in ["Error", "Exception", "ZeroDivisionError"])
+    assert any(
+        keyword in result
+        for keyword in ["Error", "Exception", "ZeroDivisionError"]
+    )
+
 
 def test_variable_persistence(interpreter):
     """Test variables within single execution."""
@@ -131,17 +134,17 @@ print(f'x = {x}')
 if __name__ == "__main__":
     # Simple manual test
     print("Testing MicrosandboxInterpreter...")
-    
+
     interp = MicrosandboxInterpreter(
         require_confirm=False,
         server_url=MICROSANDBOX_SERVER,
-        namespace="manual-test"
+        namespace="manual-test",
     )
-    
+
     # Test Python
     result = interp.run("print('Manual test works!')", "python")
     print(f"Python test: {result}")
-    
+
     print("Manual test completed!")
 
 """
@@ -165,5 +168,4 @@ test/interpreters/test_microsandbox_interpreter.py::test_python_error_handling P
 test/interpreters/test_microsandbox_interpreter.py::test_variable_persistence PASSED [100%]
 
 ================================== 10 passed in 33.76s ===================================
-
-"""
+"""  # noqa: E501

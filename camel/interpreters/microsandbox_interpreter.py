@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import os
 import asyncio
 import shlex
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
@@ -19,9 +18,9 @@ from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
 from camel.logger import get_logger
-from camel.utils import api_keys_required
 
 logger = get_logger(__name__)
+
 
 class MicrosandboxInterpreter(BaseInterpreter):
     r"""Microsandbox Code Interpreter implementation.
@@ -29,7 +28,8 @@ class MicrosandboxInterpreter(BaseInterpreter):
     This interpreter provides secure code execution using microsandbox,
     a self-hosted platform for secure execution of untrusted user/AI code.
     It supports Python code execution via PythonSandbox, JavaScript/Node.js
-    code execution via NodeSandbox, and shell commands via the command interface.
+    code execution via NodeSandbox, and shell commands via the command
+    interface.
 
     Args:
         require_confirm (bool, optional): If True, prompt user before running
@@ -51,29 +51,27 @@ class MicrosandboxInterpreter(BaseInterpreter):
     Environment Variables:
         MSB_SERVER_URL: URL of the microsandbox server.
         MSB_API_KEY: API key for microsandbox authentication.
-        
+
     Note:
-        The SDK handles parameter priority as: user parameter > environment 
+        The SDK handles parameter priority as: user parameter > environment
         variable > default value.
     """
 
     _CODE_TYPE_MAPPING: ClassVar[Dict[str, str]] = {
         # Python code - uses PythonSandbox
         "python": "python_sandbox",
-        "py3": "python_sandbox", 
+        "py3": "python_sandbox",
         "python3": "python_sandbox",
         "py": "python_sandbox",
-        
         # JavaScript/Node.js code - uses NodeSandbox
         "javascript": "node_sandbox",
         "js": "node_sandbox",
         "node": "node_sandbox",
         "typescript": "node_sandbox",
         "ts": "node_sandbox",
-        
         # Shell commands - uses command.run()
         "bash": "shell_command",
-        "shell": "shell_command", 
+        "shell": "shell_command",
         "sh": "shell_command",
     }
 
@@ -87,7 +85,10 @@ class MicrosandboxInterpreter(BaseInterpreter):
         timeout: int = 30,
     ) -> None:
         try:
-            from microsandbox import PythonSandbox, NodeSandbox
+            from microsandbox import (  # type: ignore[import-untyped]
+                NodeSandbox,
+                PythonSandbox,
+            )
         except ImportError as e:
             raise ImportError(
                 "Please install microsandbox to use MicrosandboxInterpreter: "
@@ -96,12 +97,26 @@ class MicrosandboxInterpreter(BaseInterpreter):
 
         # Store parameters, let SDK handle defaults and environment variables
         self.require_confirm = require_confirm
-        self.server_url = server_url        # None means use SDK default logic
-        self.api_key = api_key              # None means use SDK default logic
+        self.server_url = server_url  # None means use SDK default logic
+        self.api_key = api_key  # None means use SDK default logic
         self.namespace = namespace
-        self.sandbox_name = sandbox_name    # None means SDK generates random name
+        self.sandbox_name = (
+            sandbox_name  # None means SDK generates random name
+        )
         self.timeout = timeout
-        
+
+        # Store sandbox configuration
+        self._sandbox_config = {
+            "server_url": self.server_url,
+            "namespace": self.namespace,
+            "name": self.sandbox_name,
+            "api_key": self.api_key,
+        }
+
+        # Store sandbox classes for reuse
+        self._PythonSandbox = PythonSandbox
+        self._NodeSandbox = NodeSandbox
+
         # Log initialization info
         logger.info("Initialized MicrosandboxInterpreter")
         logger.info(f"Namespace: {self.namespace}")
@@ -139,7 +154,8 @@ class MicrosandboxInterpreter(BaseInterpreter):
         # Print code for security checking
         if self.require_confirm:
             logger.info(
-                f"The following {code_type} code will run on microsandbox: {code}"
+                f"The following {code_type} code will run on "
+                f"microsandbox: {code}"
             )
             self._confirm_execution("code")
 
@@ -161,7 +177,7 @@ class MicrosandboxInterpreter(BaseInterpreter):
         """
         try:
             execution_method = self._CODE_TYPE_MAPPING[code_type]
-            
+
             if execution_method == "python_sandbox":
                 return await self._run_python_code(code)
             elif execution_method == "node_sandbox":
@@ -169,10 +185,14 @@ class MicrosandboxInterpreter(BaseInterpreter):
             elif execution_method == "shell_command":
                 return await self._run_shell_command(code)
             else:
-                raise InterpreterError(f"Unsupported execution method: {execution_method}")
-                
+                raise InterpreterError(
+                    f"Unsupported execution method: {execution_method}"
+                )
+
         except Exception as e:
-            raise InterpreterError(f"Error executing code in microsandbox: {e}")
+            raise InterpreterError(
+                f"Error executing code in microsandbox: {e}"
+            )
 
     async def _run_python_code(self, code: str) -> str:
         r"""Execute Python code using PythonSandbox.
@@ -183,11 +203,9 @@ class MicrosandboxInterpreter(BaseInterpreter):
         Returns:
             str: Execution output.
         """
-        from microsandbox import PythonSandbox
-        
-        sandbox_config = self._get_sandbox_config()
-        
-        async with PythonSandbox.create(**sandbox_config) as sandbox:
+        async with self._PythonSandbox.create(
+            **self._sandbox_config
+        ) as sandbox:
             execution = await sandbox.run(code)
             return await self._get_execution_output(execution)
 
@@ -200,11 +218,7 @@ class MicrosandboxInterpreter(BaseInterpreter):
         Returns:
             str: Execution output.
         """
-        from microsandbox import NodeSandbox
-        
-        sandbox_config = self._get_sandbox_config()
-        
-        async with NodeSandbox.create(**sandbox_config) as sandbox:
+        async with self._NodeSandbox.create(**self._sandbox_config) as sandbox:
             execution = await sandbox.run(code)
             return await self._get_execution_output(execution)
 
@@ -217,26 +231,12 @@ class MicrosandboxInterpreter(BaseInterpreter):
         Returns:
             str: Command execution output.
         """
-        from microsandbox import PythonSandbox  # Use any sandbox for shell commands
-        
-        sandbox_config = self._get_sandbox_config()
-        
-        async with PythonSandbox.create(**sandbox_config) as sandbox:
+        # Use any sandbox for shell commands
+        async with self._PythonSandbox.create(
+            **self._sandbox_config
+        ) as sandbox:
             execution = await sandbox.command.run("bash", ["-c", code])
             return await self._get_command_output(execution)
-
-    def _get_sandbox_config(self) -> dict:
-        r"""Get sandbox configuration.
-
-        Returns:
-            dict: Sandbox configuration dictionary.
-        """
-        return {
-            "server_url": self.server_url,
-            "namespace": self.namespace,
-            "name": self.sandbox_name,
-            "api_key": self.api_key,
-        }
 
     async def _get_execution_output(self, execution) -> str:
         r"""Get output from code execution.
@@ -249,14 +249,18 @@ class MicrosandboxInterpreter(BaseInterpreter):
         """
         output = await execution.output()
         error = await execution.error()
-        
+
         result_parts = []
         if output and output.strip():
             result_parts.append(output.strip())
         if error and error.strip():
             result_parts.append(f"STDERR: {error.strip()}")
-        
-        return "\n".join(result_parts) if result_parts else "Code executed successfully (no output)"
+
+        return (
+            "\n".join(result_parts)
+            if result_parts
+            else "Code executed successfully (no output)"
+        )
 
     async def _get_command_output(self, execution) -> str:
         r"""Get output from command execution.
@@ -269,7 +273,7 @@ class MicrosandboxInterpreter(BaseInterpreter):
         """
         output = await execution.output()
         error = await execution.error()
-        
+
         result_parts = []
         if output and output.strip():
             result_parts.append(output.strip())
@@ -277,15 +281,19 @@ class MicrosandboxInterpreter(BaseInterpreter):
             result_parts.append(f"STDERR: {error.strip()}")
         if hasattr(execution, 'exit_code') and execution.exit_code != 0:
             result_parts.append(f"Exit code: {execution.exit_code}")
-        
-        return "\n".join(result_parts) if result_parts else "Command executed successfully (no output)"
+
+        return (
+            "\n".join(result_parts)
+            if result_parts
+            else "Command executed successfully (no output)"
+        )
 
     def _confirm_execution(self, execution_type: str) -> None:
         r"""Prompt user for confirmation before executing code or commands.
-        
+
         Args:
             execution_type (str): Type of execution ('code' or 'command').
-            
+
         Raises:
             InterpreterError: If user declines to run the code/command.
         """
@@ -296,7 +304,8 @@ class MicrosandboxInterpreter(BaseInterpreter):
             elif choice not in ["no", "n"]:
                 continue
             raise InterpreterError(
-                f"Execution halted: User opted not to run the {execution_type}. "
+                f"Execution halted: User opted not to run the "
+                f"{execution_type}. "
                 f"This choice stops the current operation and any "
                 f"further {execution_type} execution."
             )
@@ -307,11 +316,16 @@ class MicrosandboxInterpreter(BaseInterpreter):
 
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for interpreter.
-        
+
+        Args:
+            action_space: Action space dictionary (unused in microsandbox).
+
         Note:
             Microsandbox doesn't support action space updates as it runs
             in isolated environments for each execution.
         """
+        # Explicitly acknowledge the parameter to avoid linting warnings
+        _ = action_space
         logger.warning(
             "Microsandbox doesn't support action space updates. "
             "Code runs in isolated environments for each execution."
@@ -320,13 +334,13 @@ class MicrosandboxInterpreter(BaseInterpreter):
     def execute_command(self, command: str) -> Union[str, Tuple[str, str]]:
         r"""Execute a shell command in the microsandbox.
 
-        This method is designed for package management and system administration
-        tasks. It executes shell commands directly using the microsandbox
-        command interface.
+        This method is designed for package management and system
+        administration tasks. It executes shell commands directly
+        using the microsandbox command interface.
 
         Args:
-            command (str): The shell command to execute (e.g., "pip install numpy",
-                "ls -la", "apt-get update").
+            command (str): The shell command to execute (e.g.,
+            "pip install numpy", "ls -la", "apt-get update").
 
         Returns:
             Union[str, Tuple[str, str]]: The output of the command.
@@ -339,7 +353,8 @@ class MicrosandboxInterpreter(BaseInterpreter):
         # Print command for security checking
         if self.require_confirm:
             logger.info(
-                f"The following shell command will run on microsandbox: {command}"
+                f"The following shell command will run on "
+                f"microsandbox: {command}"
             )
             self._confirm_execution("command")
 
@@ -358,37 +373,34 @@ class MicrosandboxInterpreter(BaseInterpreter):
             InterpreterError: If execution fails.
         """
         try:
-            from microsandbox import PythonSandbox
-
             # Parse the command string into command and arguments
             try:
                 command_parts = shlex.split(command)
                 if not command_parts:
                     raise InterpreterError("Empty command")
-                
+
                 cmd = command_parts[0]
                 args = command_parts[1:] if len(command_parts) > 1 else []
             except ValueError as e:
                 raise InterpreterError(f"Invalid command format: {e}")
 
-            # Get sandbox configuration
-            sandbox_config = self._get_sandbox_config()
-
             # Create and use sandbox with context manager
-            async with PythonSandbox.create(**sandbox_config) as sandbox:
+            async with self._PythonSandbox.create(
+                **self._sandbox_config
+            ) as sandbox:
                 # Use the command interface with proper command and args format
                 execution = await sandbox.command.run(cmd, args)
-                
+
                 return await self._get_command_output(execution)
-                
-        except ImportError as e:
-            raise InterpreterError(f"microsandbox package not installed: {e}")
+
         except Exception as e:
-            raise InterpreterError(f"Error executing command in microsandbox: {e}")
+            raise InterpreterError(
+                f"Error executing command in microsandbox: {e}"
+            )
 
     def __del__(self) -> None:
         r"""Destructor for the MicrosandboxInterpreter class.
-        
+
         Microsandbox uses context managers for resource management,
         so no explicit cleanup is needed.
         """

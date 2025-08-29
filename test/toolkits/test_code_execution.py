@@ -171,7 +171,7 @@ def test_microsandbox_execute_code(microsandbox_code_execution_toolkit):
     """Test executing Python code with microsandbox."""
     code = "x = 10 + 5\nprint(f'Result: {x}')"
     result = microsandbox_code_execution_toolkit.execute_code(code)
-    
+
     assert "Result: 15" in result
     assert "Executed the code below:" in result
 
@@ -179,8 +179,10 @@ def test_microsandbox_execute_code(microsandbox_code_execution_toolkit):
 def test_microsandbox_execute_javascript(microsandbox_code_execution_toolkit):
     """Test executing JavaScript code with microsandbox."""
     code = "console.log('Hello from JavaScript');"
-    result = microsandbox_code_execution_toolkit.execute_code(code, code_type="javascript")
-    
+    result = microsandbox_code_execution_toolkit.execute_code(
+        code, code_type="javascript"
+    )
+
     assert "Hello from JavaScript" in result
     assert "Executed the code below:" in result
 
@@ -188,7 +190,7 @@ def test_microsandbox_execute_javascript(microsandbox_code_execution_toolkit):
 def test_microsandbox_execute_command(microsandbox_code_execution_toolkit):
     """Test executing shell commands with microsandbox."""
     result = microsandbox_code_execution_toolkit.execute_command("echo test")
-    
+
     # Should contain either output or success message
     assert "test" in result or "executed successfully" in result.lower()
     assert "Executed the command below:" in result
@@ -198,10 +200,10 @@ def test_microsandbox_error_handling(microsandbox_code_execution_toolkit):
     """Test error handling with microsandbox."""
     code = "x = 1 / 0"  # Division by zero - more reliable error
     result = microsandbox_code_execution_toolkit.execute_code(code)
-    
+
     # Should contain error information or successfully execute (just verify it doesn't crash)
     assert result is not None
     assert len(result) > 0
     assert "Executed the code below:" in result
-    
+
     # The specific error format may vary, so just ensure execution completes
