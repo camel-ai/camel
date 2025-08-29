@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import platform
 import re
 import shlex
 import shutil
@@ -27,7 +28,8 @@ logger = get_logger(__name__)
 
 
 def contains_command_chaining(command: str) -> bool:
-    """Check if command contains chaining operators that could be used to bypass security."""
+    r"""Check if command contains chaining operators t
+    hat could be used to bypass security."""
     # Pattern to match command chaining operators: ;, &&, ||, |
     # But exclude cases where they are inside quotes or escaped
     chaining_pattern = r'''
@@ -54,27 +56,26 @@ def contains_command_chaining(command: str) -> bool:
             $        # End of string
         )
     '''
-    
+
     return bool(re.search(chaining_pattern, command, re.VERBOSE))
 
 
 def sanitize_command(
-    command: str, 
+    command: str,
     use_docker_backend: bool = False,
     safe_mode: bool = True,
     working_dir: Optional[str] = None,
-    allowed_commands: Optional[Set[str]] = None
+    allowed_commands: Optional[Set[str]] = None,
 ) -> Tuple[bool, str]:
-    """
-    A comprehensive command sanitizer for both local and Docker backends.
-    
+    r"""A comprehensive command sanitizer for both local and Docker backends.
+
     Args:
         command (str): The command to sanitize
         use_docker_backend (bool): Whether using Docker backend
         safe_mode (bool): Whether to apply security checks
         working_dir (Optional[str]): Working directory for path validation
-        allowed_commands (Optional[Set[str]]): Set of allowed commands (whitelist)
-    
+        allowed_commands (Optional[Set[str]]): Set of allowed commands
+
     Returns:
         Tuple[bool, str]: (is_safe, message_or_command)
     """
@@ -84,57 +85,124 @@ def sanitize_command(
 
     # First check for command chaining and pipes
     if contains_command_chaining(command):
-        return False, "Command chaining (;, &&, ||, |) is not allowed for security reasons."
+        return (
+            False,
+            "Command chaining (;, &&, ||, |) is not allowed "
+            "for security reasons.",
+        )
 
     parts = shlex.split(command)
     if not parts:
         return False, "Empty command is not allowed."
     base_cmd = parts[0].lower()
-    
+
     # If whitelist is defined, only allow whitelisted commands
     if allowed_commands is not None:
         if base_cmd not in allowed_commands:
-            return False, f"Command '{base_cmd}' is not in the allowed commands list."
+            return (
+                False,
+                f"Command '{base_cmd}' is not in the allowed commands list.",
+            )
         # If command is whitelisted, skip the dangerous commands check
         # but still apply other safety checks
     else:
         # Block dangerous commands (only when no whitelist is defined)
         dangerous_commands = [
             # System administration
-            'sudo', 'su', 'reboot', 'shutdown', 'halt', 'poweroff', 'init',
+            'sudo',
+            'su',
+            'reboot',
+            'shutdown',
+            'halt',
+            'poweroff',
+            'init',
             # File system manipulation
-            'rm', 'mv', 'chmod', 'chown', 'chgrp', 'umount', 'mount',
+            'rm',
+            'mv',
+            'chmod',
+            'chown',
+            'chgrp',
+            'umount',
+            'mount',
             # Disk operations
-            'dd', 'mkfs', 'fdisk', 'parted', 'fsck', 'mkswap', 'swapon', 'swapoff',
+            'dd',
+            'mkfs',
+            'fdisk',
+            'parted',
+            'fsck',
+            'mkswap',
+            'swapon',
+            'swapoff',
             # Process management
-            'kill', 'killall', 'pkill', 'service', 'systemctl', 'systemd',
+            'kill',
+            'killall',
+            'pkill',
+            'service',
+            'systemctl',
+            'systemd',
             # Network configuration
-            'iptables', 'ip6tables', 'ifconfig', 'route', 'iptables-save',
+            'iptables',
+            'ip6tables',
+            'ifconfig',
+            'route',
+            'iptables-save',
             # Cron and scheduling
-            'crontab', 'at', 'batch',
+            'crontab',
+            'at',
+            'batch',
             # User management
-            'useradd', 'userdel', 'usermod', 'passwd', 'chpasswd', 'newgrp',
+            'useradd',
+            'userdel',
+            'usermod',
+            'passwd',
+            'chpasswd',
+            'newgrp',
             # Kernel modules
-            'modprobe', 'rmmod', 'insmod', 'lsmod',
+            'modprobe',
+            'rmmod',
+            'insmod',
+            'lsmod',
             # System information that could leak sensitive data
-            'dmesg', 'last', 'lastlog', 'who', 'w',
+            'dmesg',
+            'last',
+            'lastlog',
+            'who',
+            'w',
         ]
         if base_cmd in dangerous_commands:
             # Special handling for rm command - use regex for precise checking
             if base_cmd == 'rm':
                 # Check for dangerous rm options using regex
-                dangerous_rm_pattern = r'\s-[^-\s]*[rf][^-\s]*\s|\s--force\s|\s--recursive\s|\s-rf\s|\s-fr\s'
+                dangerous_rm_pattern = (
+                    r'\s-[^-\s]*[rf][^-\s]*\s|\s--force\s|'
+                    r'\s--recursive\s|\s-rf\s|\s-fr\s'
+                )
                 if re.search(dangerous_rm_pattern, command, re.IGNORECASE):
-                    return False, f"Command '{base_cmd}' with forceful or recursive options is blocked for safety."
+                    return (
+                        False,
+                        f"Command '{base_cmd}' with forceful or "
+                        f"recursive options is blocked for safety.",
+                    )
                 # Also block rm without any target (could be dangerous)
                 if len(parts) < 2:
-                    return False, "rm command requires target file/directory specification."
+                    return (
+                        False,
+                        "rm command requires target "
+                        "file/directory specification.",
+                    )
             else:
                 return False, f"Command '{base_cmd}' is blocked for safety."
 
-    # For local backend only: prevent changing directory outside the workspace
-    # Docker containers are already sandboxed, so this check is not needed there
-    if not use_docker_backend and base_cmd == 'cd' and len(parts) > 1 and working_dir:
+    # For local backend only: prevent changing
+    # directory outside the workspace
+    # Docker containers are already sandboxed,
+    # so this check is not needed there
+    if (
+        not use_docker_backend
+        and base_cmd == 'cd'
+        and len(parts) > 1
+        and working_dir
+    ):
         target_dir = os.path.abspath(os.path.join(working_dir, parts[1]))
         if not target_dir.startswith(working_dir):
             return False, "Cannot 'cd' outside of the working directory."
@@ -144,8 +212,9 @@ def sanitize_command(
 
 # Environment management utilities
 
+
 def is_uv_environment() -> bool:
-    """Detect whether the current Python runtime is managed by uv."""
+    r"""Detect whether the current Python runtime is managed by uv."""
     return (
         "UV_CACHE_DIR" in os.environ
         or "uv" in sys.executable
@@ -154,11 +223,11 @@ def is_uv_environment() -> bool:
 
 
 def ensure_uv_available(update_callback=None) -> Tuple[bool, Optional[str]]:
-    """Ensure uv is available, installing it if necessary.
-    
+    r"""Ensure uv is available, installing it if necessary.
+
     Args:
         update_callback: Optional callback function to receive status updates
-        
+
     Returns:
         Tuple[bool, Optional[str]]: (success, uv_path)
     """
@@ -173,8 +242,8 @@ def ensure_uv_available(update_callback=None) -> Tuple[bool, Optional[str]]:
         if update_callback:
             update_callback("uv not found, installing...\n")
 
-        os_type = sys.platform
-        
+        os_type = platform.system()
+
         # Install uv using the official installer script
         if os_type in ['darwin', 'linux'] or os_type.startswith('linux'):
             # Use curl to download and execute the installer
@@ -199,10 +268,12 @@ def ensure_uv_available(update_callback=None) -> Tuple[bool, Optional[str]]:
 
             if os.path.exists(uv_executable):
                 if update_callback:
-                    update_callback(f"uv installed successfully at: {uv_executable}\n")
+                    update_callback(
+                        f"uv installed successfully at: {uv_executable}\n"
+                    )
                 return True, uv_executable
 
-        elif os_type == 'win32':
+        elif os_type == 'Windows':
             # Use PowerShell to install uv on Windows
             install_cmd = (
                 "powershell -ExecutionPolicy Bypass -c "
@@ -228,7 +299,9 @@ def ensure_uv_available(update_callback=None) -> Tuple[bool, Optional[str]]:
 
             if os.path.exists(uv_executable):
                 if update_callback:
-                    update_callback(f"uv installed successfully at: {uv_executable}\n")
+                    update_callback(
+                        f"uv installed successfully at: {uv_executable}\n"
+                    )
                 return True, uv_executable
 
         if update_callback:
@@ -242,9 +315,10 @@ def ensure_uv_available(update_callback=None) -> Tuple[bool, Optional[str]]:
         return False, None
 
 
-def setup_initial_env_with_uv(env_path: str, uv_path: str, working_dir: str, 
-                              update_callback=None) -> bool:
-    """Set up initial environment using uv."""
+def setup_initial_env_with_uv(
+    env_path: str, uv_path: str, working_dir: str, update_callback=None
+) -> bool:
+    r"""Set up initial environment using uv."""
     try:
         # Create virtual environment with Python 3.10 using uv
         subprocess.run(
@@ -256,17 +330,28 @@ def setup_initial_env_with_uv(env_path: str, uv_path: str, working_dir: str,
         )
 
         # Get the python path from the new environment
-        if sys.platform == 'win32':
+        if platform.system() == 'Windows':
             python_path = os.path.join(env_path, "Scripts", "python.exe")
         else:
             python_path = os.path.join(env_path, "bin", "python")
 
         # Install essential packages using uv
         essential_packages = [
-            "pip", "setuptools", "wheel", "pyautogui", "plotly"
+            "pip",
+            "setuptools",
+            "wheel",
+            "pyautogui",
+            "plotly",
         ]
         subprocess.run(
-            [uv_path, "pip", "install", "--python", python_path, *essential_packages],
+            [
+                uv_path,
+                "pip",
+                "install",
+                "--python",
+                python_path,
+                *essential_packages,
+            ],
             check=True,
             capture_output=True,
             cwd=working_dir,
@@ -274,7 +359,10 @@ def setup_initial_env_with_uv(env_path: str, uv_path: str, working_dir: str,
         )
 
         if update_callback:
-            update_callback("[UV] Initial environment created with Python 3.10 and essential packages\n")
+            update_callback(
+                "[UV] Initial environment created with Python 3.10 "
+                "and essential packages"
+            )
         return True
 
     except subprocess.CalledProcessError as e:
@@ -288,20 +376,30 @@ def setup_initial_env_with_uv(env_path: str, uv_path: str, working_dir: str,
         return False
 
 
-def setup_initial_env_with_venv(env_path: str, working_dir: str, update_callback=None) -> bool:
-    """Set up initial environment using standard venv."""
+def setup_initial_env_with_venv(
+    env_path: str, working_dir: str, update_callback=None
+) -> bool:
+    r"""Set up initial environment using standard venv."""
     try:
         # Create virtual environment with system Python
-        venv.create(env_path, with_pip=True, system_site_packages=False, symlinks=False)
+        venv.create(
+            env_path, with_pip=True, system_site_packages=False, symlinks=False
+        )
 
         # Get pip path
-        if sys.platform == 'win32':
+        if platform.system() == 'Windows':
             pip_path = os.path.join(env_path, "Scripts", "pip.exe")
         else:
             pip_path = os.path.join(env_path, "bin", "pip")
 
         # Upgrade pip and install essential packages
-        essential_packages = ["pip", "setuptools", "wheel", "pyautogui", "plotly"]
+        essential_packages = [
+            "pip",
+            "setuptools",
+            "wheel",
+            "pyautogui",
+            "plotly",
+        ]
         subprocess.run(
             [pip_path, "install", "--upgrade", *essential_packages],
             check=True,
@@ -311,7 +409,10 @@ def setup_initial_env_with_venv(env_path: str, working_dir: str, update_callback
         )
 
         if update_callback:
-            update_callback("Initial environment created with system Python and essential packages\n")
+            update_callback(
+                "Initial environment created with system Python "
+                "and essential packages"
+            )
         return True
 
     except subprocess.CalledProcessError as e:
@@ -325,8 +426,10 @@ def setup_initial_env_with_venv(env_path: str, working_dir: str, update_callback
         return False
 
 
-def clone_current_environment(env_path: str, working_dir: str, update_callback=None) -> bool:
-    """Create a new Python virtual environment, optionally using uv."""
+def clone_current_environment(
+    env_path: str, working_dir: str, update_callback=None
+) -> bool:
+    r"""Create a new Python virtual environment, optionally using uv."""
     try:
         if os.path.exists(env_path):
             if update_callback:
@@ -334,13 +437,17 @@ def clone_current_environment(env_path: str, working_dir: str, update_callback=N
             return True
 
         if update_callback:
-            update_callback(f"Creating new Python environment at: {env_path}\n")
+            update_callback(
+                f"Creating new Python environment at: {env_path}\n"
+            )
 
         # Try to use uv if available
         success, uv_path = ensure_uv_available(update_callback)
         if success and uv_path:
             # Get current Python version
-            current_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+            current_version = (
+                f"{sys.version_info.major}.{sys.version_info.minor}"
+            )
 
             subprocess.run(
                 [uv_path, "venv", "--python", current_version, env_path],
@@ -351,14 +458,23 @@ def clone_current_environment(env_path: str, working_dir: str, update_callback=N
             )
 
             # Get the python path from the new environment
-            if sys.platform == 'win32':
+            if platform.system() == 'Windows':
                 python_path = os.path.join(env_path, "Scripts", "python.exe")
             else:
                 python_path = os.path.join(env_path, "bin", "python")
 
             # Install pip and setuptools using uv
             subprocess.run(
-                [uv_path, "pip", "install", "--python", python_path, "pip", "setuptools", "wheel"],
+                [
+                    uv_path,
+                    "pip",
+                    "install",
+                    "--python",
+                    python_path,
+                    "pip",
+                    "setuptools",
+                    "wheel",
+                ],
                 check=True,
                 capture_output=True,
                 cwd=working_dir,
@@ -366,17 +482,21 @@ def clone_current_environment(env_path: str, working_dir: str, update_callback=N
             )
 
             if update_callback:
-                update_callback("[UV] Cloned Python environment created successfully!\n")
+                update_callback(
+                    "[UV] Cloned Python environment created successfully!\n"
+                )
             return True
         else:
             # Fallback to standard venv
             if update_callback:
-                update_callback("Falling back to standard venv for cloning environment\n")
+                update_callback(
+                    "Falling back to standard venv for cloning environment\n"
+                )
 
             venv.create(env_path, with_pip=True, symlinks=False)
 
             # Ensure pip is properly available
-            if sys.platform == 'win32':
+            if platform.system() == 'Windows':
                 python_path = os.path.join(env_path, "Scripts", "python.exe")
             else:
                 python_path = os.path.join(env_path, "bin", "python")
@@ -390,10 +510,15 @@ def clone_current_environment(env_path: str, working_dir: str, update_callback=N
                     timeout=60,
                 )
                 if update_callback:
-                    update_callback("New Python environment created successfully with pip!\n")
+                    update_callback(
+                        "New Python environment created successfully with pip!"
+                    )
             else:
                 if update_callback:
-                    update_callback(f"Warning: Python executable not found at {python_path}\n")
+                    update_callback(
+                        f"Warning: Python executable not found at "
+                        f"{python_path}"
+                    )
             return True
 
     except subprocess.CalledProcessError as e:
@@ -414,7 +539,7 @@ def clone_current_environment(env_path: str, working_dir: str, update_callback=N
 
 
 def check_nodejs_availability(update_callback=None) -> Tuple[bool, str]:
-    """Check if Node.js is available without modifying the system."""
+    r"""Check if Node.js is available without modifying the system."""
     try:
         # Check if Node.js is already available in the system
         node_result = subprocess.run(
@@ -434,7 +559,9 @@ def check_nodejs_availability(update_callback=None) -> Tuple[bool, str]:
         if node_result.returncode == 0 and npm_result.returncode == 0:
             node_version = node_result.stdout.decode().strip()
             npm_version = npm_result.stdout.decode().strip()
-            info = f"Node.js {node_version} and npm {npm_version} are available"
+            info = (
+                f"Node.js {node_version} and npm {npm_version} are available"
+            )
             if update_callback:
                 update_callback(f"{info}\n")
             return True, info
