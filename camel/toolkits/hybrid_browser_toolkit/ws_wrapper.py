@@ -223,7 +223,7 @@ class WebSocketBrowserWrapper:
         )
 
         # Create a future to wait for server ready (before starting log reader)
-        self._server_ready_future = asyncio.Future()
+        self._server_ready_future = asyncio.get_running_loop().create_future()
 
         # Start log reader task immediately after process starts
         self._log_reader_task = asyncio.create_task(
@@ -292,12 +292,28 @@ class WebSocketBrowserWrapper:
                 await self.websocket.close()
             self.websocket = None
 
-        # Now cancel background tasks after websocket is closed
+        # Gracefully stop the Node process before cancelling the log reader
+        if self.process:
+            try:
+                # give the process a short grace period to exit after shutdown
+                self.process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                try:
+                    self.process.terminate()
+                    self.process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    self.process.kill()
+                    self.process.wait()
+                except Exception as e:
+                    logger.warning(f"Error terminating process: {e}")
+            except Exception as e:
+                logger.warning(f"Error waiting for process: {e}")
+
+        # Now cancel background tasks (reader won't block on readline)
         tasks_to_cancel = [
             ('_receive_task', self._receive_task),
             ('_log_reader_task', self._log_reader_task),
         ]
-
         for _, task in tasks_to_cancel:
             if task and not task.done():
                 task.cancel()
@@ -310,18 +326,8 @@ class WebSocketBrowserWrapper:
                 self.ts_log_file.close()
             self.ts_log_file = None
 
-        # Terminate the process
-        if self.process:
-            try:
-                self.process.terminate()
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-                self.process.wait()
-            except Exception as e:
-                logger.warning(f"Error terminating process: {e}")
-            finally:
-                self.process = None
+        # Ensure process handle cleared
+        self.process = None
 
     async def _log_action(
         self,
@@ -433,7 +439,8 @@ class WebSocketBrowserWrapper:
         message = {'id': message_id, 'command': command, 'params': params}
 
         # Create a future for this message
-        future: asyncio.Future[Dict[str, Any]] = asyncio.Future()
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future[Dict[str, Any]] = loop.create_future()
         self._pending_responses[message_id] = future
 
         try:
@@ -731,7 +738,7 @@ class WebSocketBrowserWrapper:
 
             while self.process and self.process.poll() is None:
                 try:
-                    line = await asyncio.get_event_loop().run_in_executor(
+                    line = await asyncio.get_running_loop().run_in_executor(
                         None, self.process.stdout.readline
                     )
                     if not line:  # EOF
@@ -748,8 +755,7 @@ class WebSocketBrowserWrapper:
                                 f"{self.server_port}"
                             )
                             if (
-                                hasattr(self, '_server_ready_future')
-                                and self._server_ready_future is not None
+                                self._server_ready_future
                                 and not self._server_ready_future.done()
                             ):
                                 self._server_ready_future.set_result(True)

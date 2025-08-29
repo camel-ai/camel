@@ -29,18 +29,23 @@ export function parseSnapshotHierarchy(snapshotText: string): Map<string, Snapsh
     // Also support quoted lines like - 'button "text" [ref=...]'
     // Also support escaped quotes in text
     // Also support attributes before [ref=...]
-    const elementMatch = line.match(/^\s*(?:-\s*)?'?([a-z0-9_-]+)(?:\s+"((?:[^"\\]|\\.)*)"\s*)?(?:\s*\[([^\]]+)\])?\s*\[ref=([^\]]+)\](?:\s*\[([^\]]+)\])?'?:?/i);
-    if (!elementMatch) continue;
-    
-    const [, typeRaw, label, attrsBefore, ref, attrsAfter] = elementMatch;
-    const type = typeRaw || 'unknown';
-    
-    // Parse attributes (can be before or after ref)
+    // Extract type and optional label (before any [..] blocks)
+    const headerMatch = line.match(/^\s*(?:-\s*)?'?([a-z0-9_-]+)(?:\s+"((?:[^"\\]|\\.)*)")?/i);
+    if (!headerMatch) continue;
+    const [, typeRaw, label] = headerMatch;
+    const type = (typeRaw || 'unknown');
+
+    // Extract mandatory ref
+    const refMatch = line.match(/\[ref=([^\]]+)\]/i);
+    if (!refMatch) continue;
+    const ref = refMatch[1];
+
+    // Parse all bracketed attributes except the [ref=...] block
     const attrs: Record<string, string> = {};
-    const allAttributes = (attrsBefore || '') + ' ' + (attrsAfter || '');
-    if (allAttributes.trim()) {
-      // Handle attributes like [cursor=pointer] [active] or disabled
-      const attrMatches = allAttributes.matchAll(/([a-z0-9_-]+)(?:=(?:"([^"]*)"|'([^']*)'|([^\s\]]+)))?/gi);
+    for (const block of line.matchAll(/\[([^\]]+)\]/g)) {
+      const content = block[1];
+      if (/^ref=/i.test(content)) continue;
+      const attrMatches = content.matchAll(/([a-z0-9_-]+)(?:=(?:"([^"]*)"|'([^']*)'|([^\s\]]+)))?/gi);
       for (const m of attrMatches) {
         const key = m[1].toLowerCase();
         const val = m[2] ?? m[3] ?? m[4] ?? 'true';

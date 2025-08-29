@@ -259,6 +259,22 @@ export class HybridBrowserSession {
     return {};
   }
 
+  private buildSnapshotIndex(snapshotText: string): Map<string, { role?: string; text?: string }> {
+    const index = new Map<string, { role?: string; text?: string }>();
+    const refRe = /\[ref=([^\]]+)\]/i;
+    for (const line of snapshotText.split('\n')) {
+      const m = line.match(refRe);
+      if (!m) continue;
+      const ref = m[1];
+      const roleMatch = line.match(/^\s*-?\s*([a-z0-9_-]+)/i);
+      const role = roleMatch ? roleMatch[1].toLowerCase() : undefined;
+      const textMatch = line.match(/"([^"]*)"/);
+      const text = textMatch ? textMatch[1] : undefined;
+      index.set(ref, { role, text });
+    }
+    return index;
+  }
+
   private async getSnapshotForAINative(includeCoordinates = false, viewportLimit = false): Promise<SnapshotResult & { timing: DetailedTiming }> {
     const startTime = Date.now();
     const page = await this.getCurrentPage();
@@ -281,9 +297,10 @@ export class HybridBrowserSession {
       const mappingStart = Date.now();
       const playwrightMapping: Record<string, any> = {};
       
-      // Always parse element info from snapshot
+      // Parse element info in a single pass
+      const snapshotIndex = this.buildSnapshotIndex(snapshotText);
       for (const ref of refs) {
-        const elementInfo = this.parseElementFromSnapshot(snapshotText, ref);
+        const elementInfo = snapshotIndex.get(ref) || {};
         playwrightMapping[ref] = {
           ref,
           role: elementInfo.role || 'unknown',
@@ -418,21 +435,7 @@ export class HybridBrowserSession {
         href !== browserConfig.javascriptVoidEmpty && // Not empty javascript
         href !== browserConfig.anchorOnly; // Not just #
       
-      // For any clickable element, always try to detect popup windows
-      // since they might open popups via JavaScript event handlers
-      // This includes buttons, divs, spans, images, etc. with onclick handlers
-      // or elements that might have event listeners attached via addEventListener
-      const hasOnclick = !!onclick;
-      const isClickableElement = hasOnclick || (await element.evaluate(el => {
-        // Check if element has cursor:pointer style (indicates it's clickable)
-        const style = window.getComputedStyle(el);
-        return style.cursor === 'pointer';
-      }));
-      
-      // Always attempt popup detection for non-link clickable elements
-      const shouldAttemptPopupDetection = !isNavigableLink && isClickableElement;
-      
-      const shouldOpenNewTab = naturallyOpensNewTab || isNavigableLink || shouldAttemptPopupDetection;
+      const shouldOpenNewTab = naturallyOpensNewTab || isNavigableLink;
       
       
       if (shouldOpenNewTab) {
@@ -447,8 +450,7 @@ export class HybridBrowserSession {
         }
         
         // Set up popup listener before clicking
-        // Correlate the popup to this page to avoid race with other tabs
-        const popupPromise = page.waitForEvent('popup', { timeout: browserConfig.popupTimeout });
+        const popupPromise = page.context().waitForEvent('page', { timeout: browserConfig.popupTimeout });
         
         // Click with force to avoid scrolling issues
         await element.click({ force: browserConfig.forceClick });
@@ -471,34 +473,8 @@ export class HybridBrowserSession {
           this.currentTabId = newTabId;
           await newPage.bringToFront();
           
-          // Wait for new page to be ready - smart waiting for popup windows
-          try {
-            // First ensure DOM is loaded
-            await newPage.waitForLoadState('domcontentloaded', { timeout: browserConfig.popupTimeout });
-            
-            // Then use smart wait that adapts to page content
-            // This waits for EITHER network idle OR content to appear
-            await Promise.race([
-              // Wait for network to be idle (no new requests)
-              newPage.waitForLoadState('networkidle', { timeout: browserConfig.popupTimeout }),
-              
-              // OR wait for any substantial content to appear
-              newPage.waitForFunction(() => {
-                // Check if page has meaningful content
-                const bodyText = document.body?.innerText || '';
-                const hasContent = bodyText.length > 50;
-                const hasInteractiveElements = document.querySelectorAll('button, a, input, [onclick]').length > 0;
-                return hasContent || hasInteractiveElements;
-              }, { timeout: browserConfig.popupTimeout })
-            ]);
-            
-            // Brief stability check - wait for DOM to stop changing
-            await this.waitForDOMStability(newPage, 300);
-            
-          } catch (error) {
-            // Continue even if wait fails, the page might still be usable
-            console.debug('[performClick] Popup page smart wait completed with warning:', error);
-          }
+          // Wait for new page to be ready
+          await newPage.waitForLoadState('domcontentloaded', { timeout: browserConfig.popupTimeout }).catch(() => {});
           
           return { success: true, method: 'playwright-aria-ref-newtab', newTabId };
         } catch (popupError) {
