@@ -744,13 +744,9 @@ class Workforce(BaseNode):
         self.task_agent.reset()
 
         # Decompose the task
-        role_name = self.task_agent.role_name
-        content = decompose_prompt or TASK_DECOMPOSE_PROMPT.format(
-            role_name=role_name,
-            content=task.content,
-        )
         msg = BaseMessage.make_user_message(
-            role_name=role_name, content=content
+            role_name=self.task_agent.role_name,
+            content=decompose_prompt,
         )
         response = self.task_agent.step(msg)
 
