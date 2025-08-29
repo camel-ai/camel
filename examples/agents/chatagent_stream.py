@@ -154,7 +154,7 @@ async def test_async_tool_execution():
                 print(new_content, end="", flush=True)
 
             previous_content = current_content
-    
+
     final_response = await streaming_response
     usage = final_response.info.get("usage", {})
     print(
