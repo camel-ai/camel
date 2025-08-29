@@ -117,8 +117,8 @@ class ContextSummarizerToolkit(BaseToolkit):
         )
 
         # File names
-        self.summary_filename = "summary"
-        self.history_filename = "history"
+        self.summary_filename = "agent_memory_summary"
+        self.history_filename = "agent_memory_history"
 
     def _generate_session_id(self) -> str:
         r"""Generate a unique session ID for the current session."""
@@ -457,7 +457,7 @@ Summary:"""
         keyword_terms = [keyword.lower() for keyword in keywords]
 
         # Read current session history file
-        history_file = self.working_directory / "history.md"
+        history_file = self.working_directory / f"{self.history_filename}.md"
         try:
             with open(history_file, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -639,7 +639,9 @@ Summary:"""
 
             # Count available session histories
             base_dir = self.working_directory.parent
-            session_pattern = str(base_dir / "session_*" / "history.md")
+            session_pattern = str(
+                base_dir / "session_*" / f"{self.history_filename}.md"
+            )
             session_count = len(glob.glob(session_pattern))
             info_msg += f"Searchable sessions: {session_count}\n"
 
@@ -678,7 +680,9 @@ Summary:"""
         """
         try:
             # Only search current session history
-            current_history = self.working_directory / "history.md"
+            current_history = (
+                self.working_directory / f"{self.history_filename}.md"
+            )
             if not current_history.exists():
                 return "No history file found in current session."
 

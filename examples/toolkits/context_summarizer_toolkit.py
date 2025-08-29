@@ -35,8 +35,8 @@ when to save/refresh memory, rather than relying on automatic thresholds.
 memory_dir = "./agent_context_toolkit"
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
 )
 
 # Create agent without auto-compression - we'll use the toolkit for manual
