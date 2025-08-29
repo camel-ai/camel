@@ -154,7 +154,14 @@ async def test_async_tool_execution():
                 print(new_content, end="", flush=True)
 
             previous_content = current_content
-
+    
+    final_response = await streaming_response
+    usage = final_response.info.get("usage", {})
+    print(
+        f"\n\nUsage: prompt={usage.get('prompt_tokens')}, "
+        f"completion={usage.get('completion_tokens')}, "
+        f"total={usage.get('total_tokens')}"
+    )
     print("\n" + "=" * 50)
     return True
 
@@ -299,7 +306,6 @@ async def run_all_tests():
         return
 
     # Test async structured output
-
     if not await test_async_structured_output():
         print("❌ Async structured output test failed!")
         return
