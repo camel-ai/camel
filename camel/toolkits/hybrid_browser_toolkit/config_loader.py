@@ -44,6 +44,9 @@ class BrowserConfig:
     connect_over_cdp: bool = False
     cdp_url: Optional[str] = None
 
+    # Full visual mode configuration
+    full_visual_mode: bool = False
+
 
 @dataclass
 class ToolkitConfig:
@@ -116,6 +119,8 @@ class ConfigLoader:
                 toolkit_kwargs["session_id"] = value
             elif key == "enabledTools":
                 toolkit_kwargs["enabled_tools"] = value
+            elif key == "fullVisualMode":
+                browser_kwargs["full_visual_mode"] = value
 
         browser_config = BrowserConfig(**browser_kwargs)
         toolkit_config = ToolkitConfig(**toolkit_kwargs)
@@ -146,6 +151,7 @@ class ConfigLoader:
             "viewport_limit": self.browser_config.viewport_limit,
             "connectOverCdp": self.browser_config.connect_over_cdp,
             "cdpUrl": self.browser_config.cdp_url,
+            "fullVisualMode": self.browser_config.full_visual_mode,
         }
 
     def get_timeout_config(self) -> Dict[str, Optional[int]]:

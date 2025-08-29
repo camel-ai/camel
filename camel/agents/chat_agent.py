@@ -233,7 +233,7 @@ class StreamingChatAgentResponse:
         r"""Make this object iterable."""
         if self._consumed:
             # If already consumed, iterate over stored responses
-            return iter(self._responses)
+            yield from self._responses
         else:
             # If not consumed, consume and yield
             try:
