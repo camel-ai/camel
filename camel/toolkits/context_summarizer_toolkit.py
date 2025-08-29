@@ -16,7 +16,7 @@ import glob
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
@@ -74,7 +74,7 @@ class ContextSummarizerToolkit(BaseToolkit):
         self.summary_prompt_template = summary_prompt_template
 
         # compression tracking to prevent over-compression
-        self.compressed_message_ids: set = set()
+        self.compressed_message_uuids: set = set()
         self.compression_count = 0
         self.existing_summary: Optional[str] = ""
 
@@ -147,9 +147,9 @@ class ContextSummarizerToolkit(BaseToolkit):
             return self.existing_summary or ""
 
         # check for over-compression prevention
-        record_ids = {id(record) for record in memory_records}
-        already_compressed = record_ids.intersection(
-            self.compressed_message_ids
+        record_uuids = {record.uuid for record in memory_records}
+        already_compressed = record_uuids.intersection(
+            self.compressed_message_uuids
         )
 
         if already_compressed:
@@ -178,8 +178,8 @@ class ContextSummarizerToolkit(BaseToolkit):
             self.existing_summary = summary_content
 
             # 6. mark these records as compressed to prevent re-compression
-            record_ids = {id(record) for record in memory_records}
-            self.compressed_message_ids.update(record_ids)
+            record_uuids = {record.uuid for record in memory_records}
+            self.compressed_message_uuids.update(record_uuids)
             self.compression_count += 1
 
             logger.info(
@@ -453,7 +453,7 @@ Summary:"""
         Returns:
             str: Formatted search results.
         """
-        results = []
+        results: List[Dict[str, Any]] = []
         keyword_terms = [keyword.lower() for keyword in keywords]
 
         # Read current session history file
@@ -491,7 +491,7 @@ Summary:"""
             return ""
 
         # sort by keyword count and limit results
-        results.sort(key=lambda x: x['keyword_count'], reverse=True)  # type: ignore[arg-type,return-value]
+        results.sort(key=lambda x: x['keyword_count'], reverse=True)
         results = results[:top_k]
 
         if not results:
@@ -753,7 +753,7 @@ Summary:"""
     def reset(self) -> None:
         r"""Reset the service by clearing the stored summary."""
         self.existing_summary = None
-        self.compressed_message_ids.clear()
+        self.compressed_message_uuids.clear()
         self.compression_count = 0
         logger.info(
             "Context summarizer toolkit reset - previous summary and "
