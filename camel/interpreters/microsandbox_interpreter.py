@@ -141,17 +141,7 @@ class MicrosandboxInterpreter(BaseInterpreter):
             logger.info(
                 f"The following {code_type} code will run on microsandbox: {code}"
             )
-            while True:
-                choice = input("Running code? [Y/n]:").lower()
-                if choice in ["y", "yes", "ye"]:
-                    break
-                elif choice not in ["no", "n"]:
-                    continue
-                raise InterpreterError(
-                    "Execution halted: User opted not to run the code. "
-                    "This choice stops the current operation and any "
-                    "further code execution."
-                )
+            self._confirm_execution("code")
 
         # Run the code asynchronously
         return asyncio.run(self._run_async(code, code_type))
@@ -181,8 +171,6 @@ class MicrosandboxInterpreter(BaseInterpreter):
             else:
                 raise InterpreterError(f"Unsupported execution method: {execution_method}")
                 
-        except ImportError as e:
-            raise InterpreterError(f"microsandbox package not installed: {e}")
         except Exception as e:
             raise InterpreterError(f"Error executing code in microsandbox: {e}")
 
@@ -292,6 +280,27 @@ class MicrosandboxInterpreter(BaseInterpreter):
         
         return "\n".join(result_parts) if result_parts else "Command executed successfully (no output)"
 
+    def _confirm_execution(self, execution_type: str) -> None:
+        r"""Prompt user for confirmation before executing code or commands.
+        
+        Args:
+            execution_type (str): Type of execution ('code' or 'command').
+            
+        Raises:
+            InterpreterError: If user declines to run the code/command.
+        """
+        while True:
+            choice = input(f"Running {execution_type}? [Y/n]:").lower()
+            if choice in ["y", "yes", "ye"]:
+                break
+            elif choice not in ["no", "n"]:
+                continue
+            raise InterpreterError(
+                f"Execution halted: User opted not to run the {execution_type}. "
+                f"This choice stops the current operation and any "
+                f"further {execution_type} execution."
+            )
+
     def supported_code_types(self) -> List[str]:
         r"""Provides supported code types by the interpreter."""
         return list(self._CODE_TYPE_MAPPING.keys())
@@ -332,17 +341,7 @@ class MicrosandboxInterpreter(BaseInterpreter):
             logger.info(
                 f"The following shell command will run on microsandbox: {command}"
             )
-            while True:
-                choice = input("Running command? [Y/n]:").lower()
-                if choice in ["y", "yes", "ye"]:
-                    break
-                elif choice not in ["no", "n"]:
-                    continue
-                raise InterpreterError(
-                    "Execution halted: User opted not to run the command. "
-                    "This choice stops the current operation and any "
-                    "further command execution."
-                )
+            self._confirm_execution("command")
 
         return asyncio.run(self._execute_command_async(command))
 
