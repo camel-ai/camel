@@ -50,6 +50,7 @@ class HybridBrowserToolkit(BaseToolkit):
         viewport_limit: bool = False,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
+        full_visual_mode: bool = False,
         **kwargs: Any,
     ) -> Any:
         r"""Create a HybridBrowserToolkit instance with the specified mode.
@@ -98,6 +99,11 @@ class HybridBrowserToolkit(BaseToolkit):
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
                 connection. Required when connect_over_cdp is True.
                 Defaults to None. (Only supported in TypeScript mode)
+            full_visual_mode (bool): When True, browser actions like click,
+                browser_open, visit_page, etc. will return 'full visual mode'
+                as snapshot instead of actual page content. The
+                browser_get_page_snapshot method will still return the actual
+                snapshot. Defaults to False.
             **kwargs: Additional keyword arguments passed to the
                 implementation.
 
@@ -129,6 +135,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 viewport_limit=viewport_limit,
                 connect_over_cdp=connect_over_cdp,
                 cdp_url=cdp_url,
+                full_visual_mode=full_visual_mode,
                 **kwargs,
             )
         elif mode == "python":
