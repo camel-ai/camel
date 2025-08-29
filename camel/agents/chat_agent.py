@@ -2739,10 +2739,9 @@ class ChatAgent(BaseAgent):
                 # Handle final chunk with usage but empty choices
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
-                if chunk.usage:
-                    self._update_token_usage_tracker(
-                        step_token_usage, safe_model_dump(chunk.usage)
-                    )
+                self._update_token_usage_tracker(
+                    step_token_usage, safe_model_dump(chunk.usage)
+                )
 
                 # Create final response with final usage
                 final_content = content_accumulator.get_full_content()
@@ -3406,7 +3405,8 @@ class ChatAgent(BaseAgent):
         response_format: Optional[Type[BaseModel]] = None,
     ) -> AsyncGenerator[Union[ChatAgentResponse, Tuple[bool, bool]], None]:
         r"""Async version of process streaming chunks with
-        content accumulator."""
+        content accumulator.
+        """
 
         tool_calls_complete = False
         stream_completed = False
@@ -3489,10 +3489,9 @@ class ChatAgent(BaseAgent):
                 # Handle final chunk with usage but empty choices
                 # This happens when stream_options={"include_usage": True}
                 # Update the final usage from this chunk
-                if chunk.usage:
-                    self._update_token_usage_tracker(
-                        step_token_usage, safe_model_dump(chunk.usage)
-                    )
+                self._update_token_usage_tracker(
+                    step_token_usage, safe_model_dump(chunk.usage)
+                )
 
                 # Create final response with final usage
                 final_content = content_accumulator.get_full_content()
