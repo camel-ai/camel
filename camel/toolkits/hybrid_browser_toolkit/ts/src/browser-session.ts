@@ -1240,15 +1240,12 @@ export class HybridBrowserSession {
     const filtered: Record<string, SnapshotElement> = {};
     
     
-    // Apply viewport filtering with scroll position adjustment
-    const browserConfig = this.configLoader.getBrowserConfig();
-    const scale = Number.isFinite(browserConfig.scrollPositionScale)
-      ? browserConfig.scrollPositionScale
-      : 1;
-    const adjustedScrollPos = {
-      x: scrollPos.x * scale,
-      y: scrollPos.y * scale
-    };
+    // Apply viewport filtering
+    // boundingBox() returns viewport-relative coordinates, so we don't need to add scroll offsets
+    const viewportLeft = 0;
+    const viewportTop = 0;
+    const viewportRight = viewport.width;
+    const viewportBottom = viewport.height;
     
     for (const [ref, element] of Object.entries(elements)) {
       // If element has no coordinates, include it (fallback)
@@ -1259,14 +1256,9 @@ export class HybridBrowserSession {
       
       const { x, y, width, height } = element.coordinates;
       
-      // Calculate viewport bounds using adjusted scroll position
-      const viewportLeft = adjustedScrollPos.x;
-      const viewportTop = adjustedScrollPos.y;
-      const viewportRight = adjustedScrollPos.x + viewport.width;
-      const viewportBottom = adjustedScrollPos.y + viewport.height;
-      
       // Check if element is visible in current viewport
       // Element is visible if it overlaps with viewport bounds
+      // Since boundingBox() coords are viewport-relative, we compare directly
       const isVisible = (
         x < viewportRight &&              // Left edge is before viewport right
         y < viewportBottom &&             // Top edge is before viewport bottom  

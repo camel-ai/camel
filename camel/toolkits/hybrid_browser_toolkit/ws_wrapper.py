@@ -249,6 +249,20 @@ class WebSocketBrowserWrapper:
 
         if not server_ready:
             self.process.kill()
+            with contextlib.suppress(Exception):
+                # Ensure the process fully exits
+                self.process.wait(timeout=2)
+            # Cancel and await the log reader task
+            if self._log_reader_task and not self._log_reader_task.done():
+                self._log_reader_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await self._log_reader_task
+            # Close TS log file if open
+            if getattr(self, 'ts_log_file', None):
+                with contextlib.suppress(Exception):
+                    self.ts_log_file.close()
+                self.ts_log_file = None
+            self.process = None
             raise RuntimeError(
                 "WebSocket server failed to start within timeout"
             )
@@ -264,6 +278,17 @@ class WebSocketBrowserWrapper:
             logger.info("Connected to WebSocket server")
         except Exception as e:
             self.process.kill()
+            with contextlib.suppress(Exception):
+                self.process.wait(timeout=2)
+            if self._log_reader_task and not self._log_reader_task.done():
+                self._log_reader_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await self._log_reader_task
+            if getattr(self, 'ts_log_file', None):
+                with contextlib.suppress(Exception):
+                    self.ts_log_file.close()
+                self.ts_log_file = None
+            self.process = None
             raise RuntimeError(
                 f"Failed to connect to WebSocket server: {e}"
             ) from e
@@ -419,8 +444,8 @@ class WebSocketBrowserWrapper:
 
         # Check if connection is still alive
         try:
-            # Send a ping to check connection
-            await self.websocket.ping()
+            # Send a ping to check connection (bounded wait)
+            await asyncio.wait_for(self.websocket.ping(), timeout=5.0)
         except Exception as e:
             logger.warning(f"WebSocket ping failed: {e}")
             self.websocket = None
@@ -725,61 +750,66 @@ class WebSocketBrowserWrapper:
             return
 
         try:
-            if self.ts_log_file_path:
-                self.ts_log_file = open(
-                    self.ts_log_file_path, 'w', encoding='utf-8'
-                )
-                self.ts_log_file.write(
-                    f"TypeScript Console Log - Started at "
-                    f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                )
-                self.ts_log_file.write("=" * 80 + "\n")
-                self.ts_log_file.flush()
-
-            while self.process and self.process.poll() is None:
-                try:
-                    line = await asyncio.get_running_loop().run_in_executor(
-                        None, self.process.stdout.readline
+            with contextlib.ExitStack() as stack:
+                if self.ts_log_file_path:
+                    self.ts_log_file = stack.enter_context(
+                        open(self.ts_log_file_path, 'w', encoding='utf-8')
                     )
-                    if not line:  # EOF
+                    self.ts_log_file.write(
+                        f"TypeScript Console Log - Started at "
+                        f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    )
+                    self.ts_log_file.write("=" * 80 + "\n")
+                    self.ts_log_file.flush()
+
+                while self.process and self.process.poll() is None:
+                    try:
+                        line = (
+                            await asyncio.get_running_loop().run_in_executor(
+                                None, self.process.stdout.readline
+                            )
+                        )
+                        if not line:  # EOF
+                            break
+
+                        # Check for SERVER_READY message
+                        if line.startswith('SERVER_READY:'):
+                            try:
+                                self.server_port = int(
+                                    line.split(':', 1)[1].strip()
+                                )
+                                logger.info(
+                                    f"WebSocket server ready on port "
+                                    f"{self.server_port}"
+                                )
+                                if (
+                                    self._server_ready_future
+                                    and not self._server_ready_future.done()
+                                ):
+                                    self._server_ready_future.set_result(True)
+                            except (ValueError, IndexError) as e:
+                                logger.error(
+                                    f"Failed to parse SERVER_READY: {e}"
+                                )
+
+                        # Write all output to log file
+                        if self.ts_log_file:
+                            timestamp = time.strftime('%H:%M:%S')
+                            self.ts_log_file.write(f"[{timestamp}] {line}")
+                            self.ts_log_file.flush()
+
+                    except Exception as e:
+                        logger.warning(f"Error reading stdout: {e}")
                         break
 
-                    # Check for SERVER_READY message
-                    if line.startswith('SERVER_READY:'):
-                        try:
-                            self.server_port = int(
-                                line.split(':', 1)[1].strip()
-                            )
-                            logger.info(
-                                f"WebSocket server ready on port "
-                                f"{self.server_port}"
-                            )
-                            if (
-                                self._server_ready_future
-                                and not self._server_ready_future.done()
-                            ):
-                                self._server_ready_future.set_result(True)
-                        except (ValueError, IndexError) as e:
-                            logger.error(f"Failed to parse SERVER_READY: {e}")
-
-                    # Write all output to log file
-                    if self.ts_log_file:
-                        timestamp = time.strftime('%H:%M:%S')
-                        self.ts_log_file.write(f"[{timestamp}] {line}")
-                        self.ts_log_file.flush()
-
-                except Exception as e:
-                    logger.warning(f"Error reading stdout: {e}")
-                    break
-
+                # Footer if we had a file
+                if self.ts_log_file:
+                    self.ts_log_file.write("\n" + "=" * 80 + "\n")
+                    self.ts_log_file.write(
+                        f"TypeScript Console Log - Ended at "
+                        f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                    )
+                # ExitStack closes file; clear handle
+                self.ts_log_file = None
         except Exception as e:
             logger.warning(f"Error in _read_and_log_output: {e}")
-        finally:
-            if self.ts_log_file:
-                self.ts_log_file.write("\n" + "=" * 80 + "\n")
-                self.ts_log_file.write(
-                    f"TypeScript Console Log - Ended at "
-                    f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                )
-                self.ts_log_file.close()
-                self.ts_log_file = None
