@@ -43,7 +43,6 @@ class ChatHistoryMemory(AgentMemory):
         context_creator: BaseContextCreator,
         storage: Optional[BaseKeyValueStorage] = None,
         window_size: Optional[int] = None,
-        warn_on_empty: bool = True,
         agent_id: Optional[str] = None,
     ) -> None:
         if window_size is not None and not isinstance(window_size, int):
@@ -54,7 +53,6 @@ class ChatHistoryMemory(AgentMemory):
         self._window_size = window_size
         self._chat_history_block = ChatHistoryBlock(
             storage=storage,
-            warn_on_empty=warn_on_empty,
         )
         self._agent_id = agent_id
 

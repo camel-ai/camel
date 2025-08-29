@@ -153,8 +153,8 @@ def test_toolkit_initialization(
         == Path(temp_directory).resolve()
     )
     assert toolkit.session_id is not None
-    assert toolkit.summary_filename == "summary"
-    assert toolkit.history_filename == "history"
+    assert toolkit.summary_filename == "agent_memory_summary"
+    assert toolkit.history_filename == "agent_memory_history"
     assert toolkit.working_directory.exists()
 
 
@@ -186,8 +186,8 @@ def test_summary_saves_to_markdown_files(
         assert "Full context summarized" in result
 
         # Check that both files exist
-        summary_file = toolkit.working_directory / "summary.md"
-        history_file = toolkit.working_directory / "history.md"
+        summary_file = toolkit.working_directory / "agent_memory_summary.md"
+        history_file = toolkit.working_directory / "agent_memory_history.md"
 
         assert summary_file.exists(), "Summary file should be created"
         assert history_file.exists(), "History file should be created"
