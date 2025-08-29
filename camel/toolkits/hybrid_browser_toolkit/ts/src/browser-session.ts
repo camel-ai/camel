@@ -59,6 +59,17 @@ export class HybridBrowserSession {
       const contexts = this.browser.contexts();
       if (contexts.length > 0) {
         this.context = contexts[0];
+        
+        // Apply stealth headers to existing context if configured
+        // Note: userAgent cannot be changed on an existing context
+        if (stealthConfig.enabled) {
+          if (stealthConfig.extraHTTPHeaders) {
+            await this.context.setExtraHTTPHeaders(stealthConfig.extraHTTPHeaders);
+          }
+          if (stealthConfig.userAgent) {
+            console.warn('[HybridBrowserSession] Cannot apply userAgent to existing context. Consider creating a new context if userAgent customization is required.');
+          }
+        }
       } else {
         const contextOptions: any = {
           viewport: browserConfig.viewport

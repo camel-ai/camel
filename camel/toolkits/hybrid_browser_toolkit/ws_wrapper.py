@@ -248,7 +248,8 @@ class WebSocketBrowserWrapper:
             server_ready = False
 
         if not server_ready:
-            self.process.kill()
+            with contextlib.suppress(ProcessLookupError, Exception):
+                self.process.kill()
             with contextlib.suppress(Exception):
                 # Ensure the process fully exits
                 self.process.wait(timeout=2)
@@ -277,7 +278,8 @@ class WebSocketBrowserWrapper:
             )
             logger.info("Connected to WebSocket server")
         except Exception as e:
-            self.process.kill()
+            with contextlib.suppress(ProcessLookupError, Exception):
+                self.process.kill()
             with contextlib.suppress(Exception):
                 self.process.wait(timeout=2)
             if self._log_reader_task and not self._log_reader_task.done():
@@ -327,8 +329,9 @@ class WebSocketBrowserWrapper:
                     self.process.terminate()
                     self.process.wait(timeout=3)
                 except subprocess.TimeoutExpired:
-                    self.process.kill()
-                    self.process.wait()
+                    with contextlib.suppress(ProcessLookupError, Exception):
+                        self.process.kill()
+                        self.process.wait()
                 except Exception as e:
                     logger.warning(f"Error terminating process: {e}")
             except Exception as e:
@@ -444,8 +447,9 @@ class WebSocketBrowserWrapper:
 
         # Check if connection is still alive
         try:
-            # Send a ping to check connection (bounded wait)
-            await asyncio.wait_for(self.websocket.ping(), timeout=5.0)
+            # Send a ping and wait for the corresponding pong (bounded wait)
+            pong_waiter = await self.websocket.ping()
+            await asyncio.wait_for(pong_waiter, timeout=5.0)
         except Exception as e:
             logger.warning(f"WebSocket ping failed: {e}")
             self.websocket = None
