@@ -33,7 +33,9 @@ except ImportError:
             class SimpleText:
                 def __init__(self, plain_text):
                     self.plain = plain_text
+
             return SimpleText(text)
+
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit

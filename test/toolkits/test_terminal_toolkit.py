@@ -65,21 +65,23 @@ def test_shell_exec(terminal_toolkit, temp_dir):
     session_id = "persistent_session"
     terminal_toolkit.shell_exec(session_id, "echo 'test1'", block=False)
     assert session_id in terminal_toolkit.shell_sessions
-    # For non-blocking mode, check if session was created (output might be empty initially)
+    # For non-blocking mode, check if session was created
+    # (output might be empty initially)
     assert "output_stream" in terminal_toolkit.shell_sessions[session_id]
 
 
 def test_shell_exec_multiple_sessions(terminal_toolkit, temp_dir):
-    # Test multiple concurrent sessions - use non-blocking mode to create sessions
+    # Test multiple concurrent sessions - use non-blocking mode
+    # to create sessions
     session1 = "session1"
     session2 = "session2"
 
-    result1 = terminal_toolkit.shell_exec(
+    terminal_toolkit.shell_exec(
         session1,
         "echo 'Session 1'",
         block=False,
     )
-    result2 = terminal_toolkit.shell_exec(
+    terminal_toolkit.shell_exec(
         session2,
         "echo 'Session 2'",
         block=False,
