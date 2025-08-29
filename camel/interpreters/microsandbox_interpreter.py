@@ -85,7 +85,7 @@ class MicrosandboxInterpreter(BaseInterpreter):
         timeout: int = 30,
     ) -> None:
         try:
-            from microsandbox import (  # type: ignore[import-untyped]
+            from microsandbox import (  # type: ignore[import-not-found,import-untyped]
                 NodeSandbox,
                 PythonSandbox,
             )
