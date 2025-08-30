@@ -203,3 +203,54 @@ def test_function_func_message_to_openai_assistant_message(
         ),
     ):
         function_result_message.to_openai_assistant_message()
+
+
+def test_masking_in_openai_tool_message():
+    msg = FunctionCallingMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="",
+        func_name="get_user_data",
+        result={"user_id": "123", "secret": "abc"},
+        tool_call_id="tool123",
+        mask_output=True,
+    )
+
+    openai_msg = msg.to_openai_tool_message()
+    assert openai_msg["role"] == "tool"
+    assert openai_msg["tool_call_id"] == "tool123"
+    assert openai_msg["content"] == "[MASKED]"
+
+
+def test_masking_in_sharegpt():
+    msg = FunctionCallingMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="",
+        func_name="get_user_data",
+        result={"user_id": "123", "secret": "abc"},
+        tool_call_id="tool456",
+        mask_output=True,
+    )
+
+    sharegpt_msg = msg.to_sharegpt()
+    assert sharegpt_msg.value == "[MASKED]"
+
+
+def test_to_dict_includes_mask_output():
+    msg = FunctionCallingMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="Hello",
+        func_name="do_stuff",
+        result={"status": "ok"},
+        tool_call_id="tool789",
+        mask_output=True,
+    )
+
+    d = msg.to_dict()
+    assert d["mask_output"] is True
+    assert d["content"] == "Hello"

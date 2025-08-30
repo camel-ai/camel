@@ -14,6 +14,7 @@
 
 import logging
 import os
+import warnings
 from typing import Dict, List, Literal, Optional, Union
 
 from camel.toolkits import FunctionTool
@@ -80,7 +81,7 @@ class GithubToolkit(BaseToolkit):
             )
         return GITHUB_ACCESS_TOKEN
 
-    def create_pull_request(
+    def github_create_pull_request(
         self,
         repo_name: str,
         file_path: str,
@@ -150,7 +151,7 @@ class GithubToolkit(BaseToolkit):
         else:
             raise ValueError("PRs with multiple files aren't supported yet.")
 
-    def get_issue_list(
+    def github_get_issue_list(
         self, repo_name: str, state: Literal["open", "closed", "all"] = "all"
     ) -> List[Dict[str, object]]:
         r"""Retrieves all issues from the GitHub repository.
@@ -158,7 +159,7 @@ class GithubToolkit(BaseToolkit):
         Args:
             repo_name (str): The name of the GitHub repository.
             state (Literal["open", "closed", "all"]): The state of pull
-                requests to retrieve. (default: :obj: `all`)
+                requests to retrieve. (default: :obj:`all`)
                 Options are:
                 - "open": Retrieve only open pull requests.
                 - "closed": Retrieve only closed pull requests.
@@ -177,7 +178,9 @@ class GithubToolkit(BaseToolkit):
 
         return issues_info
 
-    def get_issue_content(self, repo_name: str, issue_number: int) -> str:
+    def github_get_issue_content(
+        self, repo_name: str, issue_number: int
+    ) -> str:
         r"""Retrieves the content of a specific issue by its number.
 
         Args:
@@ -194,7 +197,7 @@ class GithubToolkit(BaseToolkit):
         except Exception as e:
             return f"can't get Issue number {issue_number}: {e!s}"
 
-    def get_pull_request_list(
+    def github_get_pull_request_list(
         self, repo_name: str, state: Literal["open", "closed", "all"] = "all"
     ) -> List[Dict[str, object]]:
         r"""Retrieves all pull requests from the GitHub repository.
@@ -202,7 +205,7 @@ class GithubToolkit(BaseToolkit):
         Args:
             repo_name (str): The name of the GitHub repository.
             state (Literal["open", "closed", "all"]): The state of pull
-                requests to retrieve. (default: :obj: `all`)
+                requests to retrieve. (default: :obj:`all`)
                 Options are:
                 - "open": Retrieve only open pull requests.
                 - "closed": Retrieve only closed pull requests.
@@ -221,7 +224,7 @@ class GithubToolkit(BaseToolkit):
 
         return pull_requests_info
 
-    def get_pull_request_code(
+    def github_get_pull_request_code(
         self, repo_name: str, pr_number: int
     ) -> List[Dict[str, str]]:
         r"""Retrieves the code changes of a specific pull request.
@@ -253,7 +256,7 @@ class GithubToolkit(BaseToolkit):
 
         return files_changed
 
-    def get_pull_request_comments(
+    def github_get_pull_request_comments(
         self, repo_name: str, pr_number: int
     ) -> List[Dict[str, str]]:
         r"""Retrieves the comments from a specific pull request.
@@ -278,14 +281,16 @@ class GithubToolkit(BaseToolkit):
 
         return comments
 
-    def get_all_file_paths(self, repo_name: str, path: str = "") -> List[str]:
+    def github_get_all_file_paths(
+        self, repo_name: str, path: str = ""
+    ) -> List[str]:
         r"""Recursively retrieves all file paths in the GitHub repository.
 
         Args:
             repo_name (str): The name of the GitHub repository.
             path (str): The repository path to start the traversal from.
                 empty string means starts from the root directory.
-                (default: :obj: `""`)
+                (default: :obj:`""`)
 
         Returns:
             List[str]: A list of file paths within the specified directory
@@ -308,13 +313,15 @@ class GithubToolkit(BaseToolkit):
             for content in contents:
                 if content.type == "dir":
                     # If it's a directory, recursively retrieve its file paths
-                    files.extend(self.get_all_file_paths(content.path))
+                    files.extend(self.github_get_all_file_paths(content.path))
                 else:
                     # If it's a file, add its path to the list
                     files.append(content.path)
         return files
 
-    def retrieve_file_content(self, repo_name: str, file_path: str) -> str:
+    def github_retrieve_file_content(
+        self, repo_name: str, file_path: str
+    ) -> str:
         r"""Retrieves the content of a file from the GitHub repository.
 
         Args:
@@ -343,12 +350,92 @@ class GithubToolkit(BaseToolkit):
                 the functions in the toolkit.
         """
         return [
-            FunctionTool(self.create_pull_request),
-            FunctionTool(self.get_issue_list),
-            FunctionTool(self.get_issue_content),
-            FunctionTool(self.get_pull_request_list),
-            FunctionTool(self.get_pull_request_code),
-            FunctionTool(self.get_pull_request_comments),
-            FunctionTool(self.get_all_file_paths),
-            FunctionTool(self.retrieve_file_content),
+            FunctionTool(self.github_create_pull_request),
+            FunctionTool(self.github_get_issue_list),
+            FunctionTool(self.github_get_issue_content),
+            FunctionTool(self.github_get_pull_request_list),
+            FunctionTool(self.github_get_pull_request_code),
+            FunctionTool(self.github_get_pull_request_comments),
+            FunctionTool(self.github_get_all_file_paths),
+            FunctionTool(self.github_retrieve_file_content),
         ]
+
+    # Deprecated method aliases for backward compatibility
+    def create_pull_request(self, *args, **kwargs):
+        r"""Deprecated: Use github_create_pull_request instead."""
+        warnings.warn(
+            "create_pull_request is deprecated. Use "
+            "github_create_pull_request instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.github_create_pull_request(*args, **kwargs)
+
+    def get_issue_list(self, *args, **kwargs):
+        r"""Deprecated: Use github_get_issue_list instead."""
+        warnings.warn(
+            "get_issue_list is deprecated. Use github_get_issue_list instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.github_get_issue_list(*args, **kwargs)
+
+    def get_issue_content(self, *args, **kwargs):
+        r"""Deprecated: Use github_get_issue_content instead."""
+        warnings.warn(
+            "get_issue_content is deprecated. Use "
+            "github_get_issue_content instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.github_get_issue_content(*args, **kwargs)
+
+    def get_pull_request_list(self, *args, **kwargs):
+        r"""Deprecated: Use github_get_pull_request_list instead."""
+        warnings.warn(
+            "get_pull_request_list is deprecated. "
+            "Use github_get_pull_request_list instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.github_get_pull_request_list(*args, **kwargs)
+
+    def get_pull_request_code(self, *args, **kwargs):
+        r"""Deprecated: Use github_get_pull_request_code instead."""
+        warnings.warn(
+            "get_pull_request_code is deprecated. Use "
+            "github_get_pull_request_code instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.github_get_pull_request_code(*args, **kwargs)
+
+    def get_pull_request_comments(self, *args, **kwargs):
+        r"""Deprecated: Use github_get_pull_request_comments instead."""
+        warnings.warn(
+            "get_pull_request_comments is deprecated. "
+            "Use github_get_pull_request_comments instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.github_get_pull_request_comments(*args, **kwargs)
+
+    def get_all_file_paths(self, *args, **kwargs):
+        r"""Deprecated: Use github_get_all_file_paths instead."""
+        warnings.warn(
+            "get_all_file_paths is deprecated. Use "
+            "github_get_all_file_paths instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.github_get_all_file_paths(*args, **kwargs)
+
+    def retrieve_file_content(self, *args, **kwargs):
+        r"""Deprecated: Use github_retrieve_file_content instead."""
+        warnings.warn(
+            "retrieve_file_content is deprecated. "
+            "Use github_retrieve_file_content instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.github_retrieve_file_content(*args, **kwargs)

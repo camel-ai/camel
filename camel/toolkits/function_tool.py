@@ -156,7 +156,12 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
         if (name := param.arg_name) in parameters_dict["properties"] and (
             description := param.description
         ):
-            parameters_dict["properties"][name]["description"] = description
+            # OpenAI does not allow descriptions on properties that use $ref.
+            # To avoid schema errors, we only add the description if "$ref" is
+            # not present.
+            prop = parameters_dict["properties"][name]
+            if "$ref" not in prop:
+                prop["description"] = description
 
     short_description = docstring.short_description or ""
     long_description = docstring.long_description or ""
@@ -256,11 +261,24 @@ def sanitize_and_enforce_required(parameters_dict):
                 # This field is optional - add null to its type
                 current_type = field_schema.get('type')
                 has_ref = '$ref' in field_schema
+                has_any_of = 'anyOf' in field_schema
 
                 if has_ref:
                     # Fields with $ref shouldn't have additional type field
                     # The $ref itself defines the type structure
                     pass
+                elif has_any_of:
+                    # Field already has anyOf
+                    any_of_types = field_schema['anyOf']
+                    has_null_type = any(
+                        item.get('type') == 'null' for item in any_of_types
+                    )
+                    if not has_null_type:
+                        # Add null type to anyOf
+                        field_schema['anyOf'].append({'type': 'null'})
+                    # Remove conflicting type field if it exists
+                    if 'type' in field_schema:
+                        del field_schema['type']
                 elif current_type:
                     if isinstance(current_type, str):
                         # Single type - convert to array with null
@@ -531,9 +549,10 @@ class FunctionTool:
             param_dict = properties[param_name]
             if "description" not in param_dict:
                 warnings.warn(
-                    f"Parameter description is missing "
-                    f"for {param_dict}. This may affect the "
-                    f"quality of tool calling."
+                    f"Parameter description is missing for the "
+                    f"function '{openai_tool_schema['function']['name']}'. "
+                    f"The parameter definition is {param_dict}. "
+                    f"This may affect the quality of tool calling."
                 )
 
     def get_openai_tool_schema(self) -> Dict[str, Any]:

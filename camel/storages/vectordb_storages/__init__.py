@@ -19,10 +19,13 @@ from .base import (
     VectorDBStatus,
     VectorRecord,
 )
+from .chroma import ChromaStorage
 from .faiss import FaissStorage
 from .milvus import MilvusStorage
 from .oceanbase import OceanBaseStorage
+from .pgvector import PgVectorStorage
 from .qdrant import QdrantStorage
+from .surreal import SurrealStorage
 from .tidb import TiDBStorage
 from .weaviate import WeaviateStorage
 
@@ -30,6 +33,7 @@ __all__ = [
     'BaseVectorStorage',
     'VectorDBQuery',
     'VectorDBQueryResult',
+    'ChromaStorage',
     'QdrantStorage',
     'MilvusStorage',
     "TiDBStorage",
@@ -38,4 +42,6 @@ __all__ = [
     'WeaviateStorage',
     'VectorRecord',
     'VectorDBStatus',
+    'PgVectorStorage',
+    'SurrealStorage',
 ]

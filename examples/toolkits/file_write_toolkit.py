@@ -31,11 +31,11 @@ model = ModelFactory.create(
 sys_msg = "You are a helpful assistant that can create and modify files."
 
 # Set up output directory
-output_dir = "./file_write_outputs"
-os.makedirs(output_dir, exist_ok=True)
+working_directory = "./file_write_outputs"
+os.makedirs(working_directory, exist_ok=True)
 
 # Initialize the FileWriteToolkit with the output directory
-file_toolkit = FileWriteToolkit(output_dir=output_dir)
+file_toolkit = FileWriteToolkit(working_directory=working_directory)
 
 # Get the tools from the toolkit
 tools_list = file_toolkit.get_tools()

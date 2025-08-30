@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
-from camel.configs import Gemini_API_PARAMS, GeminiConfig
+from camel.configs import GeminiConfig
 from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
@@ -35,6 +35,11 @@ from camel.utils import (
 if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
     try:
         from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+    try:
+        from traceroot import trace as observe  # type: ignore[import]
     except ImportError:
         from camel.utils import observe
 else:
@@ -238,7 +243,7 @@ class GeminiModel(OpenAICompatibleModel):
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
 
-                # Process parameters to remove anyOf
+                # Process parameters to remove anyOf and handle enum/format
                 if 'parameters' in function_dict:
                     params = function_dict['parameters']
                     if 'properties' in params:
@@ -254,6 +259,20 @@ class GeminiModel(OpenAICompatibleModel):
                                     params['properties'][prop_name][
                                         'description'
                                     ] = prop_value['description']
+
+                            # Handle enum and format restrictions for Gemini
+                            # API enum: only allowed for string type
+                            if prop_value.get('type') != 'string':
+                                prop_value.pop('enum', None)
+
+                            # format: only allowed for string, integer, and
+                            # number types
+                            if prop_value.get('type') not in [
+                                'string',
+                                'integer',
+                                'number',
+                            ]:
+                                prop_value.pop('format', None)
 
             request_config["tools"] = tools
 
@@ -278,7 +297,7 @@ class GeminiModel(OpenAICompatibleModel):
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
 
-                # Process parameters to remove anyOf
+                # Process parameters to remove anyOf and handle enum/format
                 if 'parameters' in function_dict:
                     params = function_dict['parameters']
                     if 'properties' in params:
@@ -295,6 +314,20 @@ class GeminiModel(OpenAICompatibleModel):
                                         'description'
                                     ] = prop_value['description']
 
+                            # Handle enum and format restrictions for Gemini
+                            # API enum: only allowed for string type
+                            if prop_value.get('type') != 'string':
+                                prop_value.pop('enum', None)
+
+                            # format: only allowed for string, integer, and
+                            # number types
+                            if prop_value.get('type') not in [
+                                'string',
+                                'integer',
+                                'number',
+                            ]:
+                                prop_value.pop('format', None)
+
             request_config["tools"] = tools
 
         return await self._async_client.chat.completions.create(
@@ -302,18 +335,3 @@ class GeminiModel(OpenAICompatibleModel):
             model=self.model_type,
             **request_config,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Gemini API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Gemini API.
-        """
-        for param in self.model_config_dict:
-            if param not in Gemini_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Gemini model backend."
-                )

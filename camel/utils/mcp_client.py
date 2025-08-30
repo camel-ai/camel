@@ -113,7 +113,11 @@ class ServerConfig(BaseModel):
     # Advanced options
     sse_read_timeout: float = 300.0  # 5 minutes
     terminate_on_close: bool = True
-    # For HTTP URLs, prefer SSE over StreamableHTTP
+
+    # New transport type parameter
+    type: Optional[str] = None
+
+    # Legacy parameter for backward compatibility
     prefer_sse: bool = False
 
     @model_validator(mode='after')
@@ -128,11 +132,43 @@ class ServerConfig(BaseModel):
         if self.command and self.url:
             raise ValueError("Cannot specify both 'command' and 'url'")
 
+        # Validate type if provided
+        if self.type is not None:
+            valid_types = {"stdio", "sse", "streamable_http", "websocket"}
+            if self.type not in valid_types:
+                raise ValueError(
+                    f"Invalid type: "
+                    f"'{self.type}'. "
+                    f"Valid options: {valid_types}"
+                )
+
+        # Issue deprecation warning if prefer_sse is used
+        if self.prefer_sse and self.type is None:
+            import warnings
+
+            warnings.warn(
+                "The 'prefer_sse' parameter is deprecated. "
+                "Use 'type=\"sse\"' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         return self
 
     @property
     def transport_type(self) -> TransportType:
         r"""Automatically detect transport type based on configuration."""
+        # Use explicit transport type if provided
+        if self.type is not None:
+            transport_map = {
+                "stdio": TransportType.STDIO,
+                "sse": TransportType.SSE,
+                "streamable_http": TransportType.STREAMABLE_HTTP,
+                "websocket": TransportType.WEBSOCKET,
+            }
+            return transport_map[self.type]
+
+        # If no type is provided, fall back to automatic detection
         if self.command:
             return TransportType.STDIO
         elif self.url:
@@ -316,6 +352,14 @@ class MCPClient:
                     pass  # Ignore cleanup errors
                 finally:
                     self._connection_context = None
+
+            # Add a small delay to allow subprocess cleanup on Windows
+            # This prevents "Event loop is closed" errors during shutdown
+            import asyncio
+            import sys
+
+            if sys.platform == "win32":
+                await asyncio.sleep(0.01)
 
         finally:
             # Ensure state is reset

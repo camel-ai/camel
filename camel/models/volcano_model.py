@@ -15,7 +15,6 @@
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import OPENAI_API_PARAMS
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
@@ -86,19 +85,3 @@ class VolcanoModel(OpenAICompatibleModel):
             max_retries,
             **kwargs,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration is valid for Volcano
-        model backends.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Volcano API.
-        """
-        # Using OpenAI API params as Volcano Engine API is OpenAI-compatible
-        for param in self.model_config_dict:
-            if param not in OPENAI_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Volcano model backend."
-                )

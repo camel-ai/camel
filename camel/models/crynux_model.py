@@ -15,7 +15,7 @@
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import CRYNUX_API_PARAMS, CrynuxConfig
+from camel.configs import CrynuxConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
@@ -85,18 +85,3 @@ class CrynuxModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Crynux API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Crynux API.
-        """
-        for param in self.model_config_dict:
-            if param not in CRYNUX_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Crynux model backend."
-                )

@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import re
 
 import pytest
 
@@ -50,20 +49,3 @@ def test_modelscope_model(model_type: ModelType):
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
-
-
-@pytest.mark.model_backend
-def test_modelscope_model_unexpected_argument():
-    model_type = ModelType.MODELSCOPE_QWEN_2_5_32B_INSTRUCT
-    model_config_dict = {"model_path": "qwen-32b-instruct"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into ModelScope model backend."
-            )
-        ),
-    ):
-        _ = ModelScopeModel(model_type, model_config_dict)
