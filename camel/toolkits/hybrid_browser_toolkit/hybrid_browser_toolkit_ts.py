@@ -98,6 +98,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         viewport_limit: bool = False,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
+        full_visual_mode: bool = False,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -143,6 +144,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
             connection (e.g., 'ws://localhost:9222/devtools/browser/...').
             Required when connect_over_cdp is True. Defaults to None.
+            full_visual_mode (bool): When True, browser actions like click,
+            browser_open, visit_page, etc. will not return snapshots.
+            Defaults to False.
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -167,6 +171,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             enabled_tools=enabled_tools,
             connect_over_cdp=connect_over_cdp,
             cdp_url=cdp_url,
+            full_visual_mode=full_visual_mode,
         )
 
         # Legacy attribute access for backward compatibility
@@ -182,6 +187,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._default_start_url = browser_config.default_start_url
         self._session_id = toolkit_config.session_id or "default"
         self._viewport_limit = browser_config.viewport_limit
+        self._full_visual_mode = browser_config.full_visual_mode
 
         # Store timeout configuration for backward compatibility
         self._default_timeout = browser_config.default_timeout
@@ -648,22 +654,29 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
             # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
-            result.update(
-                {
-                    "tabs": tab_info,
-                    "current_tab": next(
-                        (
-                            i
-                            for i, tab in enumerate(tab_info)
-                            if tab.get("is_current")
-                        ),
-                        0,
-                    ),
-                    "total_tabs": len(tab_info),
-                }
-            )
 
-            return result
+            response = {
+                "result": result.get("result", ""),
+                "snapshot": result.get("snapshot", ""),
+                "tabs": tab_info,
+                "current_tab": next(
+                    (
+                        i
+                        for i, tab in enumerate(tab_info)
+                        if tab.get("is_current")
+                    ),
+                    0,
+                ),
+                "total_tabs": len(tab_info),
+            }
+
+            if "newTabId" in result:
+                response["newTabId"] = result["newTabId"]
+
+            if "timing" in result:
+                response["timing"] = result["timing"]
+
+            return response
         except Exception as e:
             logger.error(f"Failed to click element: {e}")
             return {
@@ -674,12 +687,29 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_type(self, *, ref: str, text: str) -> Dict[str, Any]:
-        r"""Types text into an input element on the page.
+    async def browser_type(
+        self,
+        *,
+        ref: Optional[str] = None,
+        text: Optional[str] = None,
+        inputs: Optional[List[Dict[str, str]]] = None,
+    ) -> Dict[str, Any]:
+        r"""Types text into one or more input elements on the page.
+
+        This method supports two modes:
+        1. Single input mode (backward compatible): Provide 'ref' and 'text'
+        2. Multiple inputs mode: Provide 'inputs' as a list of dictionaries
+           with 'ref' and 'text' keys
 
         Args:
-            ref (str): The `ref` ID of the input element, from a snapshot.
-            text (str): The text to type into the element.
+            ref (Optional[str]): The `ref` ID of the input element, from a
+                snapshot. Required when using single input mode.
+            text (Optional[str]): The text to type into the element. Required
+                when using single input mode.
+            inputs (Optional[List[Dict[str, str]]]): List of dictionaries,
+                each containing 'ref' and 'text' keys for typing into multiple
+                elements. Example: [{'ref': '1', 'text': 'username'},
+                {'ref': '2', 'text': 'password'}]
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -689,10 +719,23 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
+                - "details" (Dict[str, Any]): When using multiple inputs,
+                  contains success/error status for each ref.
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-            result = await ws_wrapper.type(ref, text)
+
+            # Handle single input mode (backward compatibility)
+            if ref is not None and text is not None:
+                result = await ws_wrapper.type(ref, text)
+            # Handle multiple inputs mode
+            elif inputs is not None:
+                result = await ws_wrapper.type_multiple(inputs)
+            else:
+                raise ValueError(
+                    "Either provide 'ref' and 'text' for single input, "
+                    "or 'inputs' for multiple inputs"
+                )
 
             # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
@@ -1347,6 +1390,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             screenshot_timeout=self._screenshot_timeout,
             page_stability_timeout=self._page_stability_timeout,
             dom_content_loaded_timeout=self._dom_content_loaded_timeout,
+            viewport_limit=self._viewport_limit,
+            full_visual_mode=self._full_visual_mode,
         )
 
     def get_tools(self) -> List[FunctionTool]:

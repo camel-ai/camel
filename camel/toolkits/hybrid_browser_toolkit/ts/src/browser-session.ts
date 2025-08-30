@@ -59,34 +59,48 @@ export class HybridBrowserSession {
       const contexts = this.browser.contexts();
       if (contexts.length > 0) {
         this.context = contexts[0];
+        
+        // Apply stealth headers to existing context if configured
+        // Note: userAgent cannot be changed on an existing context
+        if (stealthConfig.enabled) {
+          if (stealthConfig.extraHTTPHeaders) {
+            await this.context.setExtraHTTPHeaders(stealthConfig.extraHTTPHeaders);
+          }
+          if (stealthConfig.userAgent) {
+            console.warn('[HybridBrowserSession] Cannot apply userAgent to existing context. Consider creating a new context if userAgent customization is required.');
+          }
+        }
       } else {
         const contextOptions: any = {
           viewport: browserConfig.viewport
         };
         
-        // Apply stealth headers if configured
-        if (stealthConfig.enabled && stealthConfig.extraHTTPHeaders) {
-          contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+        // Apply stealth headers and UA if configured
+        if (stealthConfig.enabled) {
+          if (stealthConfig.extraHTTPHeaders) {
+            contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+          }
+          if (stealthConfig.userAgent) {
+            contextOptions.userAgent = stealthConfig.userAgent;
+          }
         }
         
         this.context = await this.browser.newContext(contextOptions);
       }
       
-      // Handle existing pages
       const pages = this.context.pages();
       if (pages.length > 0) {
-        // Map existing pages - for CDP, only use pages with about:blank URL
+        // Map existing pages - for CDP, find ONE available blank page
         let availablePageFound = false;
         for (const page of pages) {
           const pageUrl = page.url();
-          // In CDP mode, only consider pages with about:blank as available
-          if (pageUrl === 'about:blank') {
+          if (this.isBlankPageUrl(pageUrl)) {
             const tabId = this.generateTabId();
             this.registerNewPage(tabId, page);
-            if (!this.currentTabId) {
-              this.currentTabId = tabId;
-              availablePageFound = true;
-            }
+            this.currentTabId = tabId;
+            availablePageFound = true;
+            console.log(`[CDP] Registered blank page as initial tab: ${tabId}, URL: ${pageUrl}`);
+            break;  // Only register ONE page initially
           }
         }
         
@@ -107,13 +121,18 @@ export class HybridBrowserSession {
       if (stealthConfig.enabled) {
         launchOptions.args = stealthConfig.args || [];
         
-        // Apply stealth user agent if configured
+        // Apply stealth user agent/headers if configured
         if (stealthConfig.userAgent) {
           launchOptions.userAgent = stealthConfig.userAgent;
+        }
+        if (stealthConfig.extraHTTPHeaders) {
+          launchOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
         }
       }
 
       if (browserConfig.userDataDir) {
+        // Ensure viewport is honored in persistent context
+        launchOptions.viewport = browserConfig.viewport;
         this.context = await chromium.launchPersistentContext(
           browserConfig.userDataDir,
           launchOptions
@@ -131,9 +150,14 @@ export class HybridBrowserSession {
           viewport: browserConfig.viewport
         };
         
-        // Apply stealth headers if configured
-        if (stealthConfig.enabled && stealthConfig.extraHTTPHeaders) {
-          contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+        // Apply stealth headers and UA if configured
+        if (stealthConfig.enabled) {
+          if (stealthConfig.extraHTTPHeaders) {
+            contextOptions.extraHTTPHeaders = stealthConfig.extraHTTPHeaders;
+          }
+          if (stealthConfig.userAgent) {
+            contextOptions.userAgent = stealthConfig.userAgent;
+          }
         }
         
         this.context = await this.browser.newContext(contextOptions);
@@ -157,8 +181,29 @@ export class HybridBrowserSession {
     return `${browserConfig.tabIdPrefix}${String(++this.tabCounter).padStart(browserConfig.tabCounterPadding, '0')}`;
   }
 
+  private isBlankPageUrl(url: string): boolean {
+    // Unified blank page detection logic used across the codebase
+    const browserConfig = this.configLoader.getBrowserConfig();
+    return (
+      // Standard about:blank variations (prefix match for query params)
+      url === 'about:blank' || 
+      url.startsWith('about:blank?') ||
+      // Configured blank page URLs (exact match for compatibility)
+      browserConfig.blankPageUrls.includes(url) ||
+      // Empty URL
+      url === '' ||
+      // Data URLs (often used for blank pages)
+      url.startsWith(browserConfig.dataUrlPrefix || 'data:')
+    );
+  }
+
   async getCurrentPage(): Promise<Page> {
     if (!this.currentTabId || !this.pages.has(this.currentTabId)) {
+      // In CDP mode, we cannot create new pages
+      const browserConfig = this.configLoader.getBrowserConfig();
+      if (browserConfig.connectOverCdp) {
+        throw new Error('No active page available in CDP mode; frontend must pre-create blank tabs.');
+      }
       throw new Error('No active page available');
     }
     return this.pages.get(this.currentTabId)!;
@@ -200,6 +245,36 @@ export class HybridBrowserSession {
     return this.getSnapshotForAINative(includeCoordinates, viewportLimit);
   }
 
+  private parseElementFromSnapshot(snapshotText: string, ref: string): { role?: string; text?: string } {
+    const lines = snapshotText.split('\n');
+    for (const line of lines) {
+      if (line.includes(`[ref=${ref}]`)) {
+        const typeMatch = line.match(/^\s*-?\s*([\w-]+)/);
+        const role = typeMatch ? typeMatch[1] : undefined;
+        const textMatch = line.match(/"([^"]*)"/);
+        const text = textMatch ? textMatch[1] : undefined;
+        return { role, text };
+      }
+    }
+    return {};
+  }
+
+  private buildSnapshotIndex(snapshotText: string): Map<string, { role?: string; text?: string }> {
+    const index = new Map<string, { role?: string; text?: string }>();
+    const refRe = /\[ref=([^\]]+)\]/i;
+    for (const line of snapshotText.split('\n')) {
+      const m = line.match(refRe);
+      if (!m) continue;
+      const ref = m[1];
+      const roleMatch = line.match(/^\s*-?\s*([a-z0-9_-]+)/i);
+      const role = roleMatch ? roleMatch[1].toLowerCase() : undefined;
+      const textMatch = line.match(/"([^"]*)"/);
+      const text = textMatch ? textMatch[1] : undefined;
+      index.set(ref, { role, text });
+    }
+    return index;
+  }
+
   private async getSnapshotForAINative(includeCoordinates = false, viewportLimit = false): Promise<SnapshotResult & { timing: DetailedTiming }> {
     const startTime = Date.now();
     const page = await this.getCurrentPage();
@@ -222,6 +297,17 @@ export class HybridBrowserSession {
       const mappingStart = Date.now();
       const playwrightMapping: Record<string, any> = {};
       
+      // Parse element info in a single pass
+      const snapshotIndex = this.buildSnapshotIndex(snapshotText);
+      for (const ref of refs) {
+        const elementInfo = snapshotIndex.get(ref) || {};
+        playwrightMapping[ref] = {
+          ref,
+          role: elementInfo.role || 'unknown',
+          text: elementInfo.text || '',
+        };
+      }
+      
       if (includeCoordinates) {
         // Get coordinates for each ref using aria-ref selector
         for (const ref of refs) {
@@ -235,8 +321,9 @@ export class HybridBrowserSession {
               const boundingBox = await element.boundingBox();
               
               if (boundingBox) {
+                // Add coordinates to existing element info
                 playwrightMapping[ref] = {
-                  ref,
+                  ...playwrightMapping[ref],
                   coordinates: {
                     x: Math.round(boundingBox.x),
                     y: Math.round(boundingBox.y),
@@ -353,7 +440,6 @@ export class HybridBrowserSession {
       
       if (shouldOpenNewTab) {
         //  Handle new tab opening
-        
         // If it's a link that doesn't naturally open in new tab, force it
         if (isNavigableLink && !naturallyOpensNewTab) {
           await element.evaluate((el, blankTarget) => {
@@ -416,25 +502,67 @@ export class HybridBrowserSession {
 
   /**
    *  Simplified type implementation using Playwright's aria-ref selector
+   *  Supports both single and multiple input operations
    */
-  private async performType(page: Page, ref: string, text: string): Promise<{ success: boolean; error?: string }> {
+  private async performType(page: Page, ref: string | undefined, text: string | undefined, inputs?: Array<{ ref: string; text: string }>): Promise<{ success: boolean; error?: string; details?: Record<string, any> }> {
     try {
       // Ensure we have the latest snapshot
       await (page as any)._snapshotForAI();
       
-      // Use Playwright's aria-ref selector
-      const selector = `aria-ref=${ref}`;
-      const element = await page.locator(selector).first();
-      
-      const exists = await element.count() > 0;
-      if (!exists) {
-        return { success: false, error: `Element with ref ${ref} not found` };
+      // Handle multiple inputs if provided
+      if (inputs && inputs.length > 0) {
+        const results: Record<string, { success: boolean; error?: string }> = {};
+        
+        for (const input of inputs) {
+          const selector = `aria-ref=${input.ref}`;
+          const element = await page.locator(selector).first();
+          
+          const exists = await element.count() > 0;
+          if (!exists) {
+            results[input.ref] = { success: false, error: `Element with ref ${input.ref} not found` };
+            continue;
+          }
+          
+          try {
+            // Type text using Playwright's built-in fill method
+            await element.fill(input.text);
+            results[input.ref] = { success: true };
+          } catch (error) {
+            results[input.ref] = { success: false, error: `Type failed: ${error}` };
+          }
+        }
+        
+        // Check if all inputs were successful
+        const allSuccess = Object.values(results).every(r => r.success);
+        const errors = Object.entries(results)
+          .filter(([_, r]) => !r.success)
+          .map(([ref, r]) => `${ref}: ${r.error}`)
+          .join('; ');
+        
+        return {
+          success: allSuccess,
+          error: allSuccess ? undefined : `Some inputs failed: ${errors}`,
+          details: results
+        };
       }
       
-      // Type text using Playwright's built-in fill method
-      await element.fill(text);
+      // Handle single input (backward compatibility)
+      if (ref && text !== undefined) {
+        const selector = `aria-ref=${ref}`;
+        const element = await page.locator(selector).first();
+        
+        const exists = await element.count() > 0;
+        if (!exists) {
+          return { success: false, error: `Element with ref ${ref} not found` };
+        }
+        
+        // Type text using Playwright's built-in fill method
+        await element.fill(text);
+        
+        return { success: true };
+      }
       
-      return { success: true };
+      return { success: false, error: 'No valid input provided' };
     } catch (error) {
       return { success: false, error: `Type failed: ${error}` };
     }
@@ -572,6 +700,8 @@ export class HybridBrowserSession {
       //  No need to pre-fetch snapshot - each action method handles this
       
       let newTabId: string | undefined;
+      let customMessage: string | undefined;
+      let actionDetails: Record<string, any> | undefined;
       
       switch (action.type) {
         case 'click': {
@@ -596,10 +726,18 @@ export class HybridBrowserSession {
           elementSearchTime = Date.now() - elementSearchStart;
           const typeStart = Date.now();
 
-          const typeResult = await this.performType(page, action.ref, action.text);
+          const typeResult = await this.performType(page, action.ref, action.text, action.inputs);
           
           if (!typeResult.success) {
             throw new Error(`Type failed: ${typeResult.error}`);
+          }
+          
+          // Set custom message and details if multiple inputs were used
+          if (typeResult.details) {
+            const successCount = Object.values(typeResult.details).filter((r: any) => r.success).length;
+            const totalCount = Object.keys(typeResult.details).length;
+            customMessage = `Typed text into ${successCount}/${totalCount} elements`;
+            actionDetails = typeResult.details;
           }
           
           actionExecutionTime = Date.now() - typeStart;
@@ -689,7 +827,7 @@ export class HybridBrowserSession {
       
       return {
         success: true,
-        message: `Action ${action.type} executed successfully`,
+        message: customMessage || `Action ${action.type} executed successfully`,
         timing: {
           total_time_ms: totalTime,
           element_search_time_ms: elementSearchTime,
@@ -699,6 +837,7 @@ export class HybridBrowserSession {
           network_idle_time_ms: stabilityResult.networkIdleTime,
         },
         ...(newTabId && { newTabId }), //  Include new tab ID if present
+        ...(actionDetails && { details: actionDetails }), // Include action details if present
       };
     } catch (error) {
       const totalTime = Date.now() - startTime;
@@ -712,6 +851,55 @@ export class HybridBrowserSession {
           stability_wait_time_ms: stabilityWaitTime,
         },
       };
+    }
+  }
+
+  /**
+   * Wait for DOM to stop changing for a specified duration
+   */
+  private async waitForDOMStability(page: Page, maxWaitTime: number = 500): Promise<void> {
+    const startTime = Date.now();
+    const stabilityThreshold = 100; // Consider stable if no changes for 100ms
+    let lastChangeTime = Date.now();
+    
+    try {
+      // Monitor DOM changes
+      await page.evaluate(() => {
+        let changeCount = 0;
+        (window as any).__domStabilityCheck = { changeCount: 0, lastChange: Date.now() };
+        
+        const observer = new MutationObserver(() => {
+          (window as any).__domStabilityCheck.changeCount++;
+          (window as any).__domStabilityCheck.lastChange = Date.now();
+        });
+        
+        observer.observe(document.body, { 
+          childList: true, 
+          subtree: true,
+          attributes: true,
+          characterData: true
+        });
+        
+        (window as any).__domStabilityObserver = observer;
+      });
+      
+      // Wait until no changes for stabilityThreshold or timeout
+      await page.waitForFunction(
+        (threshold) => {
+          const check = (window as any).__domStabilityCheck;
+          return check && (Date.now() - check.lastChange) > threshold;
+        },
+        stabilityThreshold,
+        { timeout: Math.max(0, maxWaitTime) }
+      ).catch(() => {});
+    } finally {
+      // Cleanup
+      await page.evaluate(() => {
+        const observer = (window as any).__domStabilityObserver;
+        if (observer) observer.disconnect();
+        delete (window as any).__domStabilityObserver;
+        delete (window as any).__domStabilityCheck;
+      }).catch(() => {});
     }
   }
 
@@ -740,16 +928,23 @@ export class HybridBrowserSession {
     
     try {
       // Get current page to check if it's blank
-      const currentPage = await this.getCurrentPage();
-      const currentUrl = currentPage.url();
+      let currentPage: Page;
+      let currentUrl: string;
+      
+      try {
+        currentPage = await this.getCurrentPage();
+        currentUrl = currentPage.url();
+      } catch (error: any) {
+        // If no active page is available, getCurrentPage() will create one in CDP mode
+        console.log('[visitPage] Failed to get current page:', error);
+        throw new Error(`No active page available: ${error?.message || error}`);
+      }
       
       //  Check if current page is blank or if this is the first navigation
       const browserConfig = this.configLoader.getBrowserConfig();
-      const isBlankPage = (
-        browserConfig.blankPageUrls.includes(currentUrl) ||
-        currentUrl === browserConfig.defaultStartUrl ||
-        currentUrl.startsWith(browserConfig.dataUrlPrefix) // data URLs are often used for blank pages
-      );
+      
+      // Use unified blank page detection
+      const isBlankPage = this.isBlankPageUrl(currentUrl) || currentUrl === browserConfig.defaultStartUrl;
       
       const shouldUseCurrentTab = isBlankPage || !this.hasNavigatedBefore;
       
@@ -804,7 +999,7 @@ export class HybridBrowserSession {
             const pageUrl = page.url();
             // Check if this page is not already tracked and is blank
             const isTracked = Array.from(this.pages.values()).includes(page);
-            if (!isTracked && pageUrl === 'about:blank') {
+            if (!isTracked && this.isBlankPageUrl(pageUrl)) {
               newPage = page;
               newTabId = this.generateTabId();
               this.registerNewPage(newTabId, newPage);
@@ -1037,12 +1232,12 @@ export class HybridBrowserSession {
     const filtered: Record<string, SnapshotElement> = {};
     
     
-    // Apply viewport filtering with scroll position adjustment
-    const browserConfig = this.configLoader.getBrowserConfig();
-    const adjustedScrollPos = {
-      x: scrollPos.x * browserConfig.scrollPositionScale,
-      y: scrollPos.y * browserConfig.scrollPositionScale
-    };
+    // Apply viewport filtering
+    // boundingBox() returns viewport-relative coordinates, so we don't need to add scroll offsets
+    const viewportLeft = 0;
+    const viewportTop = 0;
+    const viewportRight = viewport.width;
+    const viewportBottom = viewport.height;
     
     for (const [ref, element] of Object.entries(elements)) {
       // If element has no coordinates, include it (fallback)
@@ -1053,14 +1248,9 @@ export class HybridBrowserSession {
       
       const { x, y, width, height } = element.coordinates;
       
-      // Calculate viewport bounds using adjusted scroll position
-      const viewportLeft = adjustedScrollPos.x;
-      const viewportTop = adjustedScrollPos.y;
-      const viewportRight = adjustedScrollPos.x + viewport.width;
-      const viewportBottom = adjustedScrollPos.y + viewport.height;
-      
       // Check if element is visible in current viewport
       // Element is visible if it overlaps with viewport bounds
+      // Since boundingBox() coords are viewport-relative, we compare directly
       const isVisible = (
         x < viewportRight &&              // Left edge is before viewport right
         y < viewportBottom &&             // Top edge is before viewport bottom  

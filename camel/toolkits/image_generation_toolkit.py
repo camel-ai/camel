@@ -14,9 +14,8 @@
 
 import base64
 import os
-import uuid
 from io import BytesIO
-from typing import List, Literal, Optional
+from typing import ClassVar, List, Literal, Optional, Tuple, Union
 
 from openai import OpenAI
 from PIL import Image
@@ -30,21 +29,32 @@ logger = get_logger(__name__)
 
 
 @MCPServer()
-class OpenAIImageToolkit(BaseToolkit):
-    r"""A class toolkit for image generation using OpenAI's
-    Image Generation API.
-    """
+class ImageGenToolkit(BaseToolkit):
+    r"""A class toolkit for image generation using Grok and OpenAI models."""
 
-    @api_keys_required(
-        [
-            ("api_key", "OPENAI_API_KEY"),
-        ]
-    )
+    GROK_MODELS: ClassVar[List[str]] = [
+        "grok-2-image",
+        "grok-2-image-latest",
+        "grok-2-image-1212",
+    ]
+    OPENAI_MODELS: ClassVar[List[str]] = [
+        "gpt-image-1",
+        "dall-e-3",
+        "dall-e-2",
+    ]
+
     def __init__(
         self,
         model: Optional[
-            Literal["gpt-image-1", "dall-e-3", "dall-e-2"]
-        ] = "gpt-image-1",
+            Literal[
+                "gpt-image-1",
+                "dall-e-3",
+                "dall-e-2",
+                "grok-2-image",
+                "grok-2-image-latest",
+                "grok-2-image-1212",
+            ]
+        ] = "dall-e-3",
         timeout: Optional[float] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -64,19 +74,21 @@ class OpenAIImageToolkit(BaseToolkit):
             Literal["auto", "low", "medium", "high", "standard", "hd"]
         ] = "standard",
         response_format: Optional[Literal["url", "b64_json"]] = "b64_json",
-        n: Optional[int] = 1,
         background: Optional[
             Literal["transparent", "opaque", "auto"]
         ] = "auto",
         style: Optional[Literal["vivid", "natural"]] = None,
         working_directory: Optional[str] = "image_save",
     ):
-        r"""Initializes a new instance of the OpenAIImageToolkit class.
+        # NOTE: Some arguments are set in the constructor to prevent the agent
+        # from making invalid API calls with model-specific parameters. For
+        # example, the 'style' argument is only supported by 'dall-e-3'.
+        r"""Initializes a new instance of the ImageGenToolkit class.
 
         Args:
             api_key (Optional[str]): The API key for authenticating
-                with the OpenAI service. (default: :obj:`None`)
-            url (Optional[str]): The url to the OpenAI service.
+                with the image model service. (default: :obj:`None`)
+            url (Optional[str]): The url to the image model service.
                 (default: :obj:`None`)
             model (Optional[str]): The model to use.
                 (default: :obj:`"dall-e-3"`)
@@ -94,8 +106,6 @@ class OpenAIImageToolkit(BaseToolkit):
                 (default: :obj:`"standard"`)
             response_format (Optional[Literal["url", "b64_json"]]):
                 The format of the response.(default: :obj:`"b64_json"`)
-            n (Optional[int]): The number of images to generate.
-                (default: :obj:`1`)
             background (Optional[Literal["transparent", "opaque", "auto"]]):
                 The background of the image.(default: :obj:`"auto"`)
             style (Optional[Literal["vivid", "natural"]]): The style of the
@@ -104,14 +114,27 @@ class OpenAIImageToolkit(BaseToolkit):
                 image.(default: :obj:`"image_save"`)
         """
         super().__init__(timeout=timeout)
-        api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        url = url or os.environ.get("OPENAI_API_BASE_URL")
-        self.client = OpenAI(api_key=api_key, base_url=url)
+        if model not in self.GROK_MODELS + self.OPENAI_MODELS:
+            available_models = sorted(self.OPENAI_MODELS + self.GROK_MODELS)
+            raise ValueError(
+                f"Unsupported model: {model}. "
+                f"Supported models are: {available_models}"
+            )
+
+        # Set default url for Grok models
+        url = "https://api.x.ai/v1" if model in self.GROK_MODELS else url
+
+        api_key, base_url = (
+            self.get_openai_credentials(url, api_key)
+            if model in self.OPENAI_MODELS
+            else self.get_grok_credentials(url, api_key)
+        )
+
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.model = model
         self.size = size
         self.quality = quality
         self.response_format = response_format
-        self.n = n
         self.background = background
         self.style = style
         self.working_directory: str = working_directory or "image_save"
@@ -140,11 +163,12 @@ class OpenAIImageToolkit(BaseToolkit):
             )
             return None
 
-    def _build_base_params(self, prompt: str) -> dict:
-        r"""Build base parameters dict for OpenAI API calls.
+    def _build_base_params(self, prompt: str, n: Optional[int] = None) -> dict:
+        r"""Build base parameters dict for Image Model API calls.
 
         Args:
             prompt (str): The text prompt for the image operation.
+            n (Optional[int]): The number of images to generate.
 
         Returns:
             dict: Parameters dictionary with non-None values.
@@ -152,8 +176,12 @@ class OpenAIImageToolkit(BaseToolkit):
         params = {"prompt": prompt, "model": self.model}
 
         # basic parameters supported by all models
-        if self.n is not None:
-            params["n"] = self.n  # type: ignore[assignment]
+        if n is not None:
+            params["n"] = n  # type: ignore[assignment]
+
+        if self.model in self.GROK_MODELS:
+            return params
+
         if self.size is not None:
             params["size"] = self.size
 
@@ -180,26 +208,47 @@ class OpenAIImageToolkit(BaseToolkit):
                 params["quality"] = self.quality
             if self.background is not None:
                 params["background"] = self.background
-
         return params
 
     def _handle_api_response(
-        self, response, image_name: str, operation: str
+        self,
+        response,
+        image_name: Union[str, List[str]],
+        operation: str,
     ) -> str:
-        r"""Handle API response from OpenAI image operations.
+        r"""Handle API response from image operations.
 
         Args:
-            response: The response object from OpenAI API.
-            image_name (str): Name for the saved image file.
+            response: The response object from image model API.
+            image_name (Union[str, List[str]]): Name(s) for the saved image
+                file(s). If str, the same name is used for all images (will
+                cause error for multiple images). If list, must have exactly
+                the same length as the number of images generated.
             operation (str): Operation type for success message ("generated").
 
         Returns:
             str: Success message with image path/URL or error message.
         """
+        source = "Grok" if self.model in self.GROK_MODELS else "OpenAI"
         if response.data is None or len(response.data) == 0:
-            error_msg = "No image data returned from OpenAI API."
+            error_msg = f"No image data returned from {source} API."
             logger.error(error_msg)
             return error_msg
+
+        # Validate image_name parameter
+        if isinstance(image_name, list):
+            if len(image_name) != len(response.data):
+                error_msg = (
+                    f"Error: Number of image names"
+                    f" ({len(image_name)}) does not match number of "
+                    f"images generated({len(response.data)})"
+                )
+                logger.error(error_msg)
+                return error_msg
+            image_names = image_name
+        else:
+            # If string, use same name for all images
+            image_names = [image_name] * len(response.data)
 
         results = []
 
@@ -215,18 +264,27 @@ class OpenAIImageToolkit(BaseToolkit):
                 image_bytes = base64.b64decode(image_b64)
                 os.makedirs(self.working_directory, exist_ok=True)
 
-                # Add index to filename when multiple images
-                if len(response.data) > 1:
-                    filename = f"{image_name}_{i+1}_{uuid.uuid4().hex}.png"
-                else:
-                    filename = f"{image_name}_{uuid.uuid4().hex}.png"
+                filename = f"{image_names[i]}"
 
                 image_path = os.path.join(self.working_directory, filename)
 
-                with open(image_path, "wb") as f:
-                    f.write(image_bytes)
+                # Check if file already exists
+                if os.path.exists(image_path):
+                    error_msg = (
+                        f"Error: File '{image_path}' already exists. "
+                        "Please use a different image_name."
+                    )
+                    logger.error(error_msg)
+                    return error_msg
 
-                results.append(f"Image saved to {image_path}")
+                try:
+                    with open(image_path, "wb") as f:
+                        f.write(image_bytes)
+                    results.append(f"Image saved to {image_path}")
+                except Exception as e:
+                    error_msg = f"Error saving image to '{image_path}': {e!s}"
+                    logger.error(error_msg)
+                    return error_msg
             else:
                 error_msg = (
                     f"No valid image data (URL or base64) found in image {i+1}"
@@ -254,23 +312,28 @@ class OpenAIImageToolkit(BaseToolkit):
     def generate_image(
         self,
         prompt: str,
-        image_name: str = "image",
+        image_name: Union[str, List[str]] = "image.png",
+        n: int = 1,
     ) -> str:
-        r"""Generate an image using OpenAI's Image Generation models.
+        r"""Generate an image using image models.
         The generated image will be saved locally (for ``b64_json`` response
         formats) or an image URL will be returned (for ``url`` response
         formats).
 
         Args:
             prompt (str): The text prompt to generate the image.
-            image_name (str): The name of the image to save.
-                (default: :obj:`"image"`)
+            image_name (Union[str, List[str]]): The name(s) of the image(s) to
+                save. The image name must end with `.png`. If str: same name
+                used for all images (causes error if n > 1). If list: must
+                match the number of images being generated (n parameter).
+                (default: :obj:`"image.png"`)
+            n (int): The number of images to generate. (default: :obj:`1`)
 
         Returns:
             str: the content of the model response or format of the response.
         """
         try:
-            params = self._build_base_params(prompt)
+            params = self._build_base_params(prompt, n)
             response = self.client.images.generate(**params)
             return self._handle_api_response(response, image_name, "generated")
         except Exception as e:
@@ -278,15 +341,50 @@ class OpenAIImageToolkit(BaseToolkit):
             logger.error(error_msg)
             return error_msg
 
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
+    @api_keys_required([("api_key", "XAI_API_KEY")])
+    def get_grok_credentials(self, url, api_key) -> Tuple[str, str]:  # type: ignore[return-value]
+        r"""Get API credentials for the specified Grok model.
+
+        Args:
+            url (str): The base URL for the Grok API.
+            api_key (str): The API key for the Grok API.
 
         Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
+            tuple: (api_key, base_url)
+        """
+
+        # Get credentials based on model type
+        api_key = api_key or os.getenv("XAI_API_KEY")
+        return api_key, url
+
+    @api_keys_required([("api_key", "OPENAI_API_KEY")])
+    def get_openai_credentials(self, url, api_key) -> Tuple[str, str | None]:  # type: ignore[return-value]
+        r"""Get API credentials for the specified OpenAI model.
+
+        Args:
+            url (str): The base URL for the OpenAI API.
+            api_key (str): The API key for the OpenAI API.
+
+        Returns:
+            Tuple[str, str | None]: (api_key, base_url)
+        """
+
+        api_key = api_key or os.getenv("OPENAI_API_KEY")
+        base_url = url or os.getenv("OPENAI_API_BASE_URL")
+        return api_key, base_url
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the functions
+            in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects representing the
+                functions in the toolkit.
         """
         return [
             FunctionTool(self.generate_image),
-            # could add edit_image function later
         ]
+
+
+# Backward compatibility alias
+OpenAIImageToolkit = ImageGenToolkit
