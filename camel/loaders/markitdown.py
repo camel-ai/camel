@@ -13,14 +13,16 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import ClassVar, Dict, List, Optional
+from pathlib import Path
+from typing import ClassVar, Dict, List, Optional, Union
 
+from camel.loaders.base_loader import BaseLoader
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class MarkItDownLoader:
+class MarkItDownLoader(BaseLoader):
     r"""MarkitDown convert various file types into Markdown format.
 
     Supported Input Formats:
@@ -202,3 +204,50 @@ class MarkItDownLoader:
                         converted_files[path] = f"Error: {e}"
 
         return converted_files
+
+    def _load_single(self, source: Union[str, Path]) -> str:
+        """Load and convert a single file to Markdown.
+
+        Args:
+            source: Path to the input file.
+
+        Returns:
+            str: converted Markdown content.
+        """
+        return self.convert_file(str(source))
+
+    def load(
+        self,
+        source: Union[str, Path, List[Union[str, Path]]],
+        **kwargs,
+    ) -> Dict[str, str]:
+        """Load and convert one or more files to Markdown.
+
+        This is a wrapper around convert_files to maintain consistent
+            interface.
+
+        Args:
+            source: A single file path or a list of file paths.
+            **kwargs: Additional keyword arguments for loading data.
+
+        Returns:
+            Any: A list of loaded data. If a single source
+                is provided, the list will contain a single item.
+        """
+
+        if isinstance(source, (str, Path)):
+            return {str(source): self._load_single(source)}
+
+        # At this point, type checker knows source is List[Union[str, Path]]
+        file_paths = [str(path) for path in source]
+        result = self.convert_files(file_paths, **kwargs)
+        return result
+
+    @property
+    def supported_formats(self) -> set[str]:
+        r"""Supported file formats.
+
+        Returns:
+            set[str]: Set of supported file formats.
+        """
+        return set(self.SUPPORTED_FORMATS)

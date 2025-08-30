@@ -13,7 +13,17 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from functools import wraps
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
+)
+
+from .base_loader import BaseLoader
 
 if TYPE_CHECKING:
     from pandas import DataFrame
@@ -47,7 +57,7 @@ def check_suffix(valid_suffixs: List[str]) -> Callable:
     return decorator
 
 
-class PandasReader:
+class PandasLoader(BaseLoader):
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         r"""Initializes the PandasReader class.
 
@@ -76,51 +86,95 @@ class PandasReader:
             ".orc": self.read_orc,
         }
 
-    def load(
-        self,
-        data: Union["DataFrame", str],
-        *args: Any,
-        **kwargs: Dict[str, Any],
+    def _load_single(
+        self, source: Union[str, Path, "DataFrame"], **kwargs: Any
     ) -> Union["DataFrame", "SmartDataframe"]:
-        r"""Loads a file or DataFrame and returns a DataFrame or
-        SmartDataframe object.
+        r"""Load data from a single source.
 
-        If an LLM is configured in the config dictionary, a SmartDataframe
-        will be returned, otherwise a regular pandas DataFrame will be
-        returned.
-
-        args:
-            data (Union[DataFrame, str]): The data to load.
-            *args (Any): Additional positional arguments.
-            **kwargs (Dict[str, Any]): Additional keyword arguments.
+        Args:
+            source: The data source to load from. Can be:
+                - A file path (str or Path)
+                - A pandas DataFrame
+            **kwargs: Additional keyword arguments for loading data.
 
         Returns:
-            Union[DataFrame, SmartDataframe]: The DataFrame or SmartDataframe
-                object.
+            The loaded data as a pandas DataFrame or SmartDataframe.
+
+        Raises:
+            FileNotFoundError: If the file does not exist.
+            ValueError: If the file format is not supported.
         """
         from pandas import DataFrame
 
-        # Load the data into a pandas DataFrame
-        if isinstance(data, DataFrame):
-            df = data
-        else:
-            file_path = str(data)
-            path = Path(file_path)
-            if not file_path.startswith("http") and not path.exists():
-                raise FileNotFoundError(f"File {file_path} not found")
-            if path.suffix in self.__LOADER:
-                df = self.__LOADER[path.suffix](file_path, *args, **kwargs)  # type: ignore[operator]
-            else:
-                raise ValueError(f"Unsupported file format: {path.suffix}")
+        if isinstance(source, DataFrame):
+            return source
 
-        # If an LLM is configured, return a SmartDataframe, otherwise return a
-        # regular DataFrame
-        if "llm" in self.config:
-            from pandasai import SmartDataframe
+        file_path = str(source)
+        path = Path(file_path)
 
-            return SmartDataframe(df, config=self.config)
-        else:
-            return df
+        if not file_path.startswith("http") and not path.exists():
+            raise FileNotFoundError(f"File {file_path} not found")
+
+        if path.suffix not in self.supported_formats:
+            raise ValueError(f"Unsupported file format: {path.suffix}")
+
+        # Get the appropriate loader method based on file extension
+        loader_method = getattr(self, f"read_{path.suffix[1:].lower()}", None)
+        if not loader_method:
+            raise ValueError(f"No loader method found for {path.suffix} files")
+
+        return loader_method(file_path, **kwargs)
+
+    def load(
+        self,
+        source: Union["DataFrame", str, List[Union[str, "DataFrame"]]],
+        **kwargs: Dict[str, Any],
+    ) -> Dict[str, Union["DataFrame", "SmartDataframe"]]:
+        r"""Load data from one or multiple sources.
+
+        Args:
+            data: The data source(s) to load from. Can be:
+                - A pandas DataFrame
+                - A single path/URL (str or Path)
+                - A list of paths/DataFrames
+                (de)
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            - If a single source is provided: returns a DataFrame or
+                SmartDataframe
+            - If multiple sources are provided: returns a list of
+                DataFrames/SmartDataframes
+        """
+
+        # Handle single source
+        if not isinstance(source, (list, set, tuple)):
+            df = self._load_single(source, **kwargs)
+            if hasattr(self, 'config') and 'llm' in self.config:
+                from pandasai import SmartDataframe
+
+                return {str(source): SmartDataframe(df, config=self.config)}
+            return {str(source): df}
+
+        results = {}
+        for item in source:
+            df = self._load_single(item, **kwargs)
+            if hasattr(self, 'config') and 'llm' in self.config:
+                from pandasai import SmartDataframe
+
+                df = SmartDataframe(df, config=self.config)
+            results[str(item)] = df
+
+        return results
+
+    @property
+    def supported_formats(self) -> set[str]:
+        r"""Get the set of supported file formats.
+
+        Returns:
+            A set of supported file extensions (e.g., {'.csv', '.xlsx'})
+        """
+        return set(self.__LOADER.keys())
 
     @check_suffix([".csv"])
     def read_csv(
