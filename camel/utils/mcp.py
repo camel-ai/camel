@@ -13,12 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import functools
 import inspect
-import logging
 import warnings
 from typing import (
     Any,
     Callable,
+    List,
     Optional,
+    Tuple,
     Union,
     get_args,
     get_origin,
@@ -28,20 +29,22 @@ from typing import (
 from pydantic import create_model
 from pydantic.errors import PydanticSchemaGenerationError
 
-logger = logging.getLogger(__name__)
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 
-def _is_pydantic_serializable(type_annotation: Any) -> tuple[bool, str]:
-    """Check if a type annotation is Pydantic serializable.
+def _is_pydantic_serializable(type_annotation: Any) -> Tuple[bool, str]:
+    r"""Check if a type annotation is Pydantic serializable.
 
     Args:
         type_annotation: The type annotation to check
 
     Returns:
-        tuple[bool, str]: (is_serializable, error_message)
+        Tuple[bool, str]: (is_serializable, error_message)
     """
     # Handle None type
-    if type_annotation is type(None):
+    if type_annotation is type(None) or type_annotation is None:
         return True, ""
 
     # Handle generic types (List, Dict, Optional, etc.)
@@ -87,14 +90,14 @@ def _is_pydantic_serializable(type_annotation: Any) -> tuple[bool, str]:
         return False, error_msg
 
 
-def _validate_function_types(func: Callable[..., Any]) -> list[str]:
-    """Validate function parameter and return types are Pydantic serializable.
+def _validate_function_types(func: Callable[..., Any]) -> List[str]:
+    r"""Validate function parameter and return types are Pydantic serializable.
 
     Args:
-        func: The function to validate
+        func (Callable[..., Any]): The function to validate.
 
     Returns:
-        list[str]: List of error messages for incompatible types
+        List[str]: List of error messages for incompatible types.
     """
     errors = []
 
@@ -166,7 +169,7 @@ class MCPServer:
 
     def __init__(
         self,
-        function_names: Optional[list[str]] = None,
+        function_names: Optional[List[str]] = None,
         server_name: Optional[str] = None,
     ):
         self.function_names = function_names
