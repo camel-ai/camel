@@ -464,6 +464,7 @@ class ChatAgent(BaseAgent):
             context_creator,
             window_size=message_window_size,
             agent_id=self.agent_id,
+            warn_on_empty=False,
         )
 
         # So we don't have to pass agent_id when we define memory
@@ -1035,6 +1036,7 @@ class ChatAgent(BaseAgent):
             None
         """
         self.memory.clear()
+
         if self.system_message is not None:
             self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
 
