@@ -384,3 +384,7 @@ class ImageGenToolkit(BaseToolkit):
         return [
             FunctionTool(self.generate_image),
         ]
+
+
+# Backward compatibility alias
+OpenAIImageToolkit = ImageGenToolkit
