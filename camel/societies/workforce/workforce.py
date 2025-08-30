@@ -3526,14 +3526,15 @@ class Workforce(BaseNode):
     async def add_a2a_agent_worker(
         self,
         base_url: str,
-        http_kwargs: dict,
+        http_kwargs: Optional[dict] = None,
     ) -> "Workforce":
         r"""Add an A2AAgent worker node to the workforce.
         Can be called when workforce is paused to dynamically add workers.
 
         Args:
             base_url (str): The base URL of the A2A compliant agent service.
-            http_kwargs (dict): HTTP client keyword arguments.
+            http_kwargs (Optional[dict]): HTTP client keyword arguments.
+                (default: :obj:`None`)
 
         Returns:
             Workforce: The workforce node itself.
