@@ -23,7 +23,7 @@ from .open_api_specs.security_config import openapi_security_config
 from .math_toolkit import MathToolkit
 from .search_toolkit import SearchToolkit
 from .weather_toolkit import WeatherToolkit
-from .openai_image_toolkit import OpenAIImageToolkit
+from .image_generation_toolkit import ImageGenToolkit, OpenAIImageToolkit
 from .ask_news_toolkit import AskNewsToolkit, AsyncAskNewsToolkit
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
@@ -102,7 +102,7 @@ __all__ = [
     'SearchToolkit',
     'SlackToolkit',
     'WhatsAppToolkit',
-    'OpenAIImageToolkit',
+    'ImageGenToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
     'RetrievalToolkit',
@@ -151,7 +151,7 @@ __all__ = [
     'PlaywrightMCPToolkit',
     'WolframAlphaToolkit',
     'BohriumToolkit',
-    'OpenAIImageToolkit',
+    'OpenAIImageToolkit',  # Backward compatibility
     'TaskPlanningToolkit',
     'HybridBrowserToolkit',
     'EdgeOnePagesMCPToolkit',
