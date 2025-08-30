@@ -19,13 +19,11 @@ from camel.types import ModelPlatformType, ModelType
 # Define system message
 sys_msg = "You are a helpful assistant that can generate images."
 
-# Create Image Generation Toolkit with DALL-E 3 model and base64 response
+# Create Image Generation Toolkit with Grok-2 model and base64 response format
 tools = [
     *ImageGenToolkit(
-        model="dall-e-3",
+        model="grok-2-image-1212",
         response_format="b64_json",
-        size="1024x1024",
-        quality="standard",
     ).get_tools()
 ]
 
@@ -42,7 +40,7 @@ camel_agent = ChatAgent(
 )
 
 # Define a user message
-usr_msg = "Generate 3 images of a camel working out in a gym."
+usr_msg = "Generate 1 image of a camel working out in a gym."
 
 # Get response information
 response = camel_agent.step(usr_msg)
