@@ -12,9 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import datetime
+import logging
 import traceback
 import uuid
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any, List, Optional
 
 if TYPE_CHECKING:
     from a2a.types import (
@@ -29,6 +30,8 @@ from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, is_task_result_insufficient
 
+logger = logging.getLogger(__name__)
+
 
 class A2AAgent(Worker):
     r"""A worker node that interfaces with an A2A (Agent-to-Agent) compliant
@@ -40,39 +43,51 @@ class A2AAgent(Worker):
 
     Args:
         base_url (str): The base URL of the A2A compliant agent service.
-        http_kwargs (dict): A dictionary of keyword arguments to be passed to
-            the underlying `httpx.AsyncClient`.
         agent_card (AgentCard): The pre-fetched agent card of the A2A service.
+        http_kwargs (Optional[dict]): A dictionary of keyword arguments to be
+            passed to the underlying `httpx.AsyncClient`. (default:
+            :obj:`None`)
     """
 
     def __init__(
         self,
         base_url: str,
-        http_kwargs: dict,
         agent_card: "AgentCard",
+        http_kwargs: Optional[dict] = None,
     ) -> None:
         from a2a.client import A2ACardResolver, A2AClient
 
         self.base_url = base_url.rstrip("/")
+        http_kwargs = http_kwargs or {}
         self.http_client = AsyncClient(**http_kwargs)
         self.resolver = A2ACardResolver(
             base_url=self.base_url, httpx_client=self.http_client
         )
         self.agent_card = agent_card
         description = self.agent_card.description
-        node_id = getattr(agent_card, 'id', f"a2a_{uuid.uuid4().hex[:8]}")
+        node_id = getattr(agent_card, 'id', f"a2a_{uuid.uuid4()}")
         super().__init__(description, node_id=node_id)
         self.client = A2AClient(
             httpx_client=self.http_client, agent_card=agent_card
         )
-        self.context_id: str | None = None
+        self.context_id: Optional[str] = None
 
     @classmethod
     async def create(
-        cls, base_url: str, http_kwargs: dict | None = None
+        cls, base_url: str, http_kwargs: Optional[dict] = None
     ) -> "A2AAgent":
         r"""Creates a new instance of the A2AAgent by fetching the agent
         card from the remote service.
+
+        Args:
+            base_url (str): The base URL of the A2A service.
+            http_kwargs (Optional[dict]): Optional HTTP client configuration
+                parameters to pass to the httpx AsyncClient. (default:
+                :obj:`None`)
+
+        Returns:
+            A2AAgent: A new instance of the A2AAgent with the fetched agent
+                card.
         """
         from a2a.client import A2ACardResolver
 
@@ -88,7 +103,7 @@ class A2AAgent(Worker):
             await temp_client.aclose()
 
         # Create the actual instance with its own HTTP client
-        return cls(base_url, http_kwargs, agent_card)
+        return cls(base_url, agent_card, http_kwargs)
 
     def reset(self) -> Any:
         r"""Resets the worker to its initial state."""
@@ -108,10 +123,11 @@ class A2AAgent(Worker):
     async def cleanup(self):
         r"""Explicit cleanup method for better resource management."""
         try:
-            if hasattr(self, 'http_client') and not self.http_client.is_closed:
-                await self.http_client.aclose()
+            if hasattr(self, 'http_client'):
+                if not self.http_client.is_closed:
+                    await self.http_client.aclose()
         except Exception as e:
-            print(f"Error during A2A agent cleanup: {e}")
+            logger.error(f"Error during A2A agent cleanup: {e}")
 
     def _extract_text_from_parts(self, parts) -> str:
         r"""Extract text content from parts list."""
