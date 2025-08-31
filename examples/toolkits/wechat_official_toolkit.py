@@ -67,7 +67,7 @@ def main():
 
     image_path = "/home/lyz/Camel/CAMEL_logo.jpg"
     if os.path.exists(image_path):
-        upload_result = wechat_toolkit.upload_permanent_media("image", image_path)
+        upload_result = wechat_toolkit.upload_wechat_media("image", image_path)
         pretty_print("Upload Result", upload_result)
 
     media_list = wechat_toolkit.get_media_list("image", 0, 5)

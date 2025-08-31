@@ -18,8 +18,6 @@ import pytest
 
 from camel.toolkits.wechat_official_toolkit import (
     WeChatOfficialToolkit,
-    send_wechat_customer_message,
-    get_wechat_user_info,
     _get_wechat_access_token,
 )
 
@@ -40,7 +38,7 @@ def test_get_tools():
     """Test getting available tools."""
     toolkit = WeChatOfficialToolkit()
     tools = toolkit.get_tools()
-    assert len(tools) == 6
+    assert len(tools) == 5
 
 
 @patch('camel.toolkits.wechat_official_toolkit.requests.get')
@@ -62,7 +60,8 @@ def test_send_message(mock_request):
     """Test sending customer message."""
     mock_request.return_value = {'errcode': 0}
     
-    result = send_wechat_customer_message('test_openid', 'Hello', 'text')
+    toolkit = WeChatOfficialToolkit()
+    result = toolkit.send_customer_message('test_openid', 'Hello', 'text')
     assert 'Message sent successfully' in result
 
 
@@ -72,7 +71,8 @@ def test_get_user_info(mock_request):
     expected_data = {'openid': 'test_openid', 'nickname': 'Test User'}
     mock_request.return_value = expected_data
     
-    result = get_wechat_user_info('test_openid')
+    toolkit = WeChatOfficialToolkit()
+    result = toolkit.get_user_info('test_openid')
     assert result == expected_data
 
 
@@ -84,15 +84,15 @@ def test_missing_credentials(monkeypatch):
         WeChatOfficialToolkit()
 
 """
-============================== test session starts ===============================
+=============================================== test session starts ================================================
 platform linux -- Python 3.11.7, pytest-8.4.1, pluggy-1.6.0
 rootdir: /home/lyz/Camel/camel
 configfile: pyproject.toml
 plugins: anyio-4.10.0
-collected 6 items                                                                
+collected 6 items                                                                                                  
 
-test_wechat_official_toolkit.py ......                                     [100%]
+test_wechat_official_toolkit.py ......                                                                       [100%]
 
-=============================== 6 passed in 0.37s ================================
+================================================ 6 passed in 0.39s =================================================
 
 """

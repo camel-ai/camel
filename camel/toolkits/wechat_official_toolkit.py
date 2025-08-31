@@ -14,7 +14,7 @@
 
 import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Literal
 
 import requests
 
@@ -70,7 +70,9 @@ def _get_wechat_access_token() -> str:
         logger.info("WeChat access token refreshed.")
         return _wechat_access_token
     else:
-        raise ValueError(f"Failed to get access token: {data.get('errmsg', 'Unknown error')}")
+        errcode = data.get("errcode")
+        errmsg = data.get("errmsg", "Unknown error")
+        raise ValueError(f"Failed to get access token {errcode}: {errmsg}")
 
 def _make_wechat_request(method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
     r"""Makes a request to WeChat API with proper error handling.
@@ -92,7 +94,10 @@ def _make_wechat_request(method: str, endpoint: str, **kwargs) -> Dict[str, Any]
     
     # Handle URL parameter concatenation
     separator = "&" if "?" in endpoint else "?"
-    url = f"https://api.weixin.qq.com{endpoint}{separator}access_token={access_token}"
+    url = (
+        f"https://api.weixin.qq.com{endpoint}{separator}"
+        f"access_token={access_token}"
+    )
     
     if method.upper() == "GET":
         response = requests.get(url, **kwargs)
@@ -103,159 +108,203 @@ def _make_wechat_request(method: str, endpoint: str, **kwargs) -> Dict[str, Any]
     data = response.json()
     
     if data.get("errcode") and data.get("errcode") != 0:
-        raise ValueError(f"WeChat API error: {data.get('errmsg', 'Unknown error')}")
+        errcode = data.get("errcode")
+        errmsg = data.get("errmsg", "Unknown error")
+        raise ValueError(f"WeChat API error {errcode}: {errmsg}")
     
     return data
 
-@api_keys_required([(None, "WECHAT_APP_ID"), (None, "WECHAT_APP_SECRET")])
-def send_wechat_customer_message(openid: str, content: str, msgtype: str = "text") -> str:
-    r"""Sends a customer service message to a WeChat user.
+@MCPServer()
+class WeChatOfficialToolkit(BaseToolkit):
+    @api_keys_required([
+        (None, "WECHAT_APP_ID"),
+        (None, "WECHAT_APP_SECRET"),
+    ])
+    def send_customer_message(
+        self,
+        openid: str,
+        content: str,
+        msgtype: Literal[
+            "text",
+            "image",
+            "voice",
+            "video",
+        ] = "text",
+    ) -> str:
+        r"""Sends a customer service message to a WeChat user.
 
-    Args:
-        openid (str): The user's OpenID.
-        content (str): Message content or media_id for non-text messages.
-        msgtype (str): Message type: "text", "image", "voice", "video". 
-                      (default: "text")
+        Args:
+            openid (str): The user's OpenID.
+            content (str): Message content or media_id for non-text messages.
+            msgtype (str): Message type: "text", "image", "voice", "video".
 
-    Returns:
-        str: Success or error message.
+        Returns:
+            str: Success or error message.
 
-    References:
-        https://developers.weixin.qq.com/doc/offiaccount/Message_Management/Service_Center_messages.html
-    """
-    payload: Dict[str, Any] = {"touser": openid, "msgtype": msgtype}
-    
-    if msgtype == "text":
-        payload["text"] = {"content": content}
-    elif msgtype in ["image", "voice"]:
-        payload[msgtype] = {"media_id": content}
-    elif msgtype == "video":
-        parts = content.split(",", 2)
-        payload["video"] = {
-            "media_id": parts[0],
-            "title": parts[1] if len(parts) > 1 else "",
-            "description": parts[2] if len(parts) > 2 else "",
-        }
-    else:
-        return f"Unsupported message type: {msgtype}"
+        References:
+            https://developers.weixin.qq.com/doc/offiaccount/Message_Management/Service_Center_messages.html
+        """
+        payload: Dict[str, Any] = {"touser": openid, "msgtype": msgtype}
+        if msgtype == "text":
+            payload["text"] = {"content": content}
+        elif msgtype in ["image", "voice"]:
+            payload[msgtype] = {"media_id": content}
+        elif msgtype == "video":
+            parts = content.split(",", 2)
+            payload["video"] = {
+                "media_id": parts[0],
+                "title": parts[1] if len(parts) > 1 else "",
+                "description": parts[2] if len(parts) > 2 else "",
+            }
+        else:
+            return f"Unsupported message type: {msgtype}"
 
-    try:
-        _make_wechat_request("POST", "/cgi-bin/message/custom/send", 
-                           headers={"Content-Type": "application/json"}, json=payload)
+        _make_wechat_request(
+            "POST",
+            "/cgi-bin/message/custom/send",
+            headers={"Content-Type": "application/json"},
+            json=payload,
+        )
         return f"Message sent successfully to {openid}."
-    except Exception as e:
-        return f"Failed to send message: {e!s}"
 
-@api_keys_required([(None, "WECHAT_APP_ID"), (None, "WECHAT_APP_SECRET")])
-def get_wechat_user_info(openid: str, lang: str = "zh_CN") -> str:
-    r"""Retrieves WeChat user information.
+    @api_keys_required([
+        (None, "WECHAT_APP_ID"),
+        (None, "WECHAT_APP_SECRET"),
+    ])
+    def get_user_info(
+        self,
+        openid: str,
+        lang: str = "zh_CN",
+    ) -> str:
+        r"""Retrieves WeChat user information.
 
-    Args:
-        openid (str): The user's OpenID.
-        lang (str): Response language: "zh_CN", "zh_TW", "en". (default: "zh_CN")
+        Args:
+            openid (str): The user's OpenID.
+            lang (str): Response language: "zh_CN", "zh_TW", "en". (default: "zh_CN")
 
-    Returns:
-        str: User information as JSON string or error message.
-        
-    References:
-        https://developers.weixin.qq.com/doc/offiaccount/User_Management/Getting_user_basic_information.html
-    """
-    try:
-        data = _make_wechat_request("GET", f"/cgi-bin/user/info?openid={openid}&lang={lang}")
+        Returns:
+            str: User information as JSON string or error message.
+
+        References:
+            https://developers.weixin.qq.com/doc/offiaccount/User_Management/Getting_user_basic_information.html
+        """
+        data = _make_wechat_request(
+            "GET", f"/cgi-bin/user/info?openid={openid}&lang={lang}"
+        )
         return data
-    except Exception as e:
-        return f"Failed to get user info for {openid}: {e!s}"
 
-@api_keys_required([(None, "WECHAT_APP_ID"), (None, "WECHAT_APP_SECRET")])
-def get_wechat_followers_list(next_openid: str = "") -> str:
-    r"""Retrieves list of followers' OpenIDs.
+    @api_keys_required([
+        (None, "WECHAT_APP_ID"),
+        (None, "WECHAT_APP_SECRET"),
+    ])
+    def get_followers_list(
+        self,
+        next_openid: str = "",
+    ) -> str:
+        r"""Retrieves list of followers' OpenIDs.
 
-    Args:
-        next_openid (str): Starting OpenID for pagination. (default: "")
+        Args:
+            next_openid (str): Starting OpenID for pagination. (default: "")
 
-    Returns:
-        str: Followers list as JSON string or error message.
-        
-    References:
-        https://developers.weixin.qq.com/doc/offiaccount/User_Management/Getting_a_list_of_followers.html
-    """
-    try:
+        Returns:
+            str: Followers list as JSON string or error message.
+
+        References:
+            https://developers.weixin.qq.com/doc/offiaccount/User_Management/Getting_a_list_of_followers.html
+        """
         endpoint = "/cgi-bin/user/get"
         if next_openid:
             endpoint += f"?next_openid={next_openid}"
         data = _make_wechat_request("GET", endpoint)
         return data
-    except Exception as e:
-        return f"Failed to get followers list: {e!s}"
 
-@api_keys_required([(None, "WECHAT_APP_ID"), (None, "WECHAT_APP_SECRET")])
-def upload_wechat_media(media_type: str, file_path: str, permanent: bool = False, 
-                       description: Optional[str] = None) -> str:
-    r"""Uploads media file to WeChat.
+    @api_keys_required([
+        (None, "WECHAT_APP_ID"),
+        (None, "WECHAT_APP_SECRET"),
+    ])
+    def upload_wechat_media(
+        self,
+        media_type: Literal[
+            "image",
+            "voice",
+            "video",
+            "thumb",
+        ],
+        file_path: str,
+        permanent: bool = False,
+        description: Optional[str] = None,
+    ) -> str:
+        r"""Uploads media file to WeChat.
 
-    Args:
-        media_type (str): Media type: "image", "voice", "video", "thumb".
-        file_path (str): Local file path.
-        permanent (bool): Whether to upload as permanent media. (default: False)
-        description (Optional[str]): Video description in JSON format for permanent upload.
+        Args:
+            media_type (str): Media type: "image", "voice", "video", "thumb".
+            file_path (str): Local file path.
+            permanent (bool): Whether to upload as permanent media. (default: False)
+            description (Optional[str]): Video description in JSON format for permanent upload.
 
-    Returns:
-        str: Upload result with media_id or error message.
-        
-    References:
-        - Temporary: https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Adding_Temporary_Assets.html
-        - Permanent: https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Adding_Permanent_Assets.html
-    """
-    try:
+        Returns:
+            str: Upload result with media_id or error message.
+
+        References:
+            - Temporary: https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Adding_Temporary_Assets.html
+            - Permanent: https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Adding_Permanent_Assets.html
+        """
         if permanent:
             endpoint = f"/cgi-bin/material/add_material?type={media_type}"
-            files = {"media": open(file_path, "rb")}
             data_payload = {}
-            
             if media_type == "video" and description:
                 data_payload["description"] = description
-                files["description"] = (None, description)
-                
-            data = _make_wechat_request("POST", endpoint, files=files, data=data_payload)
-            files["media"].close()
+            with open(file_path, "rb") as media_file:
+                files = {"media": media_file}
+                if media_type == "video" and description:
+                    files["description"] = (None, description)
+                data = _make_wechat_request(
+                    "POST", endpoint, files=files, data=data_payload
+                )
         else:
             endpoint = f"/cgi-bin/media/upload?type={media_type}"
             with open(file_path, "rb") as f:
                 files = {"media": f}
                 data = _make_wechat_request("POST", endpoint, files=files)
-        
-        return str(data)
-    except FileNotFoundError:
-        return f"File not found: {file_path}"
-    except Exception as e:
-        return f"Failed to upload media: {e!s}"
 
+        return data
 
-@api_keys_required([(None, "WECHAT_APP_ID"), (None, "WECHAT_APP_SECRET")])
-def get_wechat_media_list(media_type: str, offset: int = 0, count: int = 20) -> str:
-    r"""Gets list of permanent media files.
+    @api_keys_required([
+        (None, "WECHAT_APP_ID"),
+        (None, "WECHAT_APP_SECRET"),
+    ])
+    def get_media_list(
+        self,
+        media_type: Literal[
+            "image",
+            "voice",
+            "video",
+            "news",
+        ],
+        offset: int = 0,
+        count: int = 20,
+    ) -> str:
+        r"""Gets list of permanent media files.
 
-    Args:
-        media_type (str): Media type: "image", "voice", "video", "news".
-        offset (int): Starting position. (default: 0)
-        count (int): Number of items (1-20). (default: 20)
+        Args:
+            media_type (str): Media type: "image", "voice", "video", "news".
+            offset (int): Starting position. (default: 0)
+            count (int): Number of items (1-20). (default: 20)
 
-    Returns:
-        str: Media list as JSON string or error message.
-        
-    References:
-        https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Get_the_list_of_all_materials.html
-    """
-    try:
+        Returns:
+            str: Media list as JSON string or error message.
+
+        References:
+            https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Get_the_list_of_all_materials.html
+        """
         payload = {"type": media_type, "offset": offset, "count": count}
-        data = _make_wechat_request("POST", "/cgi-bin/material/batchget_material",
-                                  headers={"Content-Type": "application/json"}, json=payload)
-        return str(data)
-    except Exception as e:
-        return f"Failed to get media list: {e!s}"
-
-@MCPServer()
-class WeChatOfficialToolkit(BaseToolkit):
+        data = _make_wechat_request(
+            "POST",
+            "/cgi-bin/material/batchget_material",
+            headers={"Content-Type": "application/json"},
+            json=payload,
+        )
+        return data
     r"""A toolkit for WeChat Official Account operations.
 
     This toolkit provides methods to interact with the WeChat Official Account API,
@@ -283,30 +332,7 @@ class WeChatOfficialToolkit(BaseToolkit):
                 "WeChat credentials missing. Set WECHAT_APP_ID and WECHAT_APP_SECRET."
             )
 
-    def send_customer_message(self, openid: str, content: str, msgtype: str = "text") -> str:
-        r"""Sends a customer service message."""
-        return send_wechat_customer_message(openid, content, msgtype)
-
-    def get_user_info(self, openid: str, lang: str = "zh_CN") -> str:
-        r"""Gets user information."""
-        return get_wechat_user_info(openid, lang)
-
-    def get_followers_list(self, next_openid: str = "") -> str:
-        r"""Gets followers list."""
-        return get_wechat_followers_list(next_openid)
-
-    def upload_temporary_media(self, media_type: str, file_path: str) -> str:
-        r"""Uploads temporary media."""
-        return upload_wechat_media(media_type, file_path, permanent=False)
-
-    def upload_permanent_media(self, media_type: str, file_path: str, 
-                             description: Optional[str] = None) -> str:
-        r"""Uploads permanent media."""
-        return upload_wechat_media(media_type, file_path, permanent=True, description=description)
-
-    def get_media_list(self, media_type: str, offset: int = 0, count: int = 20) -> str:
-        r"""Gets media list."""
-        return get_wechat_media_list(media_type, offset, count)
+        # Define full logic as class methods; top-level functions delegate here
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns toolkit functions as tools."""
@@ -314,7 +340,6 @@ class WeChatOfficialToolkit(BaseToolkit):
             FunctionTool(self.send_customer_message),
             FunctionTool(self.get_user_info),
             FunctionTool(self.get_followers_list),
-            FunctionTool(self.upload_temporary_media),
-            FunctionTool(self.upload_permanent_media),
+            FunctionTool(self.upload_wechat_media),
             FunctionTool(self.get_media_list),
         ]
