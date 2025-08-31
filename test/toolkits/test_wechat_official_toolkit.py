@@ -38,7 +38,7 @@ def test_get_tools():
     """Test getting available tools."""
     toolkit = WeChatOfficialToolkit()
     tools = toolkit.get_tools()
-    assert len(tools) == 5
+    assert len(tools) == 6
 
 
 @patch('camel.toolkits.wechat_official_toolkit.requests.get')

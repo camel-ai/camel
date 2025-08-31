@@ -67,8 +67,15 @@ def main():
 
     image_path = "/home/lyz/Camel/CAMEL_logo.jpg"
     if os.path.exists(image_path):
-        upload_result = wechat_toolkit.upload_wechat_media("image", image_path)
+        # Upload as a permanent asset to obtain media_id
+        upload_result = wechat_toolkit.upload_wechat_media(
+            media_type="image",
+            file_path=image_path,
+            permanent=True,
+        )
         pretty_print("Upload Result", upload_result)
+
+        # Mass send removed from example to avoid unauthorized errors on test accounts
 
     media_list = wechat_toolkit.get_media_list("image", 0, 5)
     pretty_print("Media List", media_list)
