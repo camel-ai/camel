@@ -514,6 +514,7 @@
               "reference/camel.toolkits.message_agent_toolkit",
               "reference/camel.toolkits.message_integration",
               "reference/camel.toolkits.mineru_toolkit",
+              "reference/camel.toolkits.minimax_mcp_toolkit",
               "reference/camel.toolkits.networkx_toolkit",
               "reference/camel.toolkits.note_taking_toolkit",
               "reference/camel.toolkits.notion_mcp_toolkit",
