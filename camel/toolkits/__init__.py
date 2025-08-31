@@ -88,6 +88,7 @@ from .web_deploy_toolkit import WebDeployToolkit
 from .screenshot_toolkit import ScreenshotToolkit
 from .message_integration import ToolkitMessageIntegration
 from .notion_mcp_toolkit import NotionMCPToolkit
+from .artifact_toolkit import ArtifactToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -162,6 +163,7 @@ __all__ = [
     'AgentCommunicationToolkit',
     'WebDeployToolkit',
     'ScreenshotToolkit',
+    'ArtifactToolkit',
     'RegisteredAgentToolkit',
     'ToolkitMessageIntegration',
     'NotionMCPToolkit',
