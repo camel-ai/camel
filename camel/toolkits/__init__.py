@@ -23,7 +23,7 @@ from .open_api_specs.security_config import openapi_security_config
 from .math_toolkit import MathToolkit
 from .search_toolkit import SearchToolkit
 from .weather_toolkit import WeatherToolkit
-from .openai_image_toolkit import OpenAIImageToolkit
+from .image_generation_toolkit import ImageGenToolkit, OpenAIImageToolkit
 from .ask_news_toolkit import AskNewsToolkit, AsyncAskNewsToolkit
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
@@ -91,17 +91,37 @@ from .notion_mcp_toolkit import NotionMCPToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
 
 __all__ = [
-    'ACIToolkit',
-    'AgentCommunicationToolkit',
-    'ArxivToolkit',
+    'BaseToolkit',
+    'FunctionTool',
+    'get_openai_function_schema',
+    'get_openai_tool_schema',
+    "generate_docstring",
+    'openapi_security_config',
+    'GithubToolkit',
+    'MathToolkit',
+    'GoogleMapsToolkit',
+    'SearchToolkit',
+    'SlackToolkit',
+    'WhatsAppToolkit',
+    'ImageGenToolkit',
+    'TwitterToolkit',
+    'WeatherToolkit',
+    'RetrievalToolkit',
+    'OpenAPIToolkit',
+    'LinkedInToolkit',
+    'RedditToolkit',
+    'CodeExecutionToolkit',
     'AskNewsToolkit',
     'AsyncAskNewsToolkit',
     'AsyncBrowserToolkit',
     'AudioAnalysisToolkit',
     'BaseToolkit',
     'BohriumToolkit',
-    'BrowserToolkit',
-    'CodeExecutionToolkit',
+    'OpenAIImageToolkit',  # Backward compatibility
+    'TaskPlanningToolkit',
+    'HybridBrowserToolkit',
+    'EdgeOnePagesMCPToolkit',
+    'GoogleDriveMCPToolkit',
     'Crawl4AIToolkit',
     'DappierToolkit',
     'DataCommonsToolkit',

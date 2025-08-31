@@ -45,6 +45,7 @@ Initialize the HybridBrowserToolkit.
 - **viewport_limit** (bool): Whether to filter page snapshot elements to only those visible in the current viewport. When True, only elements within the current viewport bounds will be included in snapshots. When False (default), all elements on the page are included. Defaults to False.
 - **connect_over_cdp** (bool): Whether to connect to an existing browser via Chrome DevTools Protocol. Defaults to False.
 - **cdp_url** (Optional[str]): WebSocket endpoint URL for CDP connection (e.g., 'ws://localhost:9222/devtools/browser/...'). Required when connect_over_cdp is True. Defaults to None.
+- **full_visual_mode** (bool): When True, browser actions like click, browser_open, visit_page, etc. will not return snapshots. Defaults to False.
 
 <a id="camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts.HybridBrowserToolkit.__del__"></a>
 

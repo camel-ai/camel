@@ -79,6 +79,7 @@ export interface WebSocketConfig {
   browser_log_to_file: boolean;
   session_id?: string;
   viewport_limit: boolean;
+  fullVisualMode?: boolean;
 }
 
 // Default stealth configuration
@@ -212,6 +213,7 @@ export class ConfigLoader {
     if (config.browser_log_to_file !== undefined) wsConfig.browser_log_to_file = config.browser_log_to_file;
     if (config.session_id !== undefined) wsConfig.session_id = config.session_id;
     if (config.viewport_limit !== undefined) wsConfig.viewport_limit = config.viewport_limit;
+    if (config.fullVisualMode !== undefined) wsConfig.fullVisualMode = config.fullVisualMode;
     
     // CDP connection options
     if (config.connectOverCdp !== undefined) browserConfig.connectOverCdp = config.connectOverCdp;
