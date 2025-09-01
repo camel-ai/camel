@@ -91,8 +91,7 @@ class MicrosandboxInterpreter(BaseInterpreter):
             )
         except ImportError as e:
             raise ImportError(
-                "Please install microsandbox to use MicrosandboxInterpreter: "
-                "`pip install microsandbox`"
+                "Please install microsandbox to use MicrosandboxInterpreter"
             ) from e
 
         # Store parameters, let SDK handle defaults and environment variables

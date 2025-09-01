@@ -21,7 +21,7 @@ def test_python_example():
     print("=== Python Example ===")
     interpreter = MicrosandboxInterpreter(
         require_confirm=False,
-        server_url="http://192.168.122.56:5555",
+        server_url="http://127.0.0.1:5555",
         namespace="default",
         sandbox_name="python-test",
     )
@@ -49,7 +49,7 @@ def test_javascript_example():
     print("=== JavaScript Example ===")
     interpreter = MicrosandboxInterpreter(
         require_confirm=False,
-        server_url="http://192.168.122.56:5555",
+        server_url="http://127.0.0.1:5555",
         namespace="default",
         sandbox_name="js-test",
     )
@@ -77,7 +77,7 @@ def test_shell_example():
     print("=== Shell Example ===")
     interpreter = MicrosandboxInterpreter(
         require_confirm=False,
-        server_url="http://192.168.122.56:5555",
+        server_url="http://127.0.0.1:5555",
         namespace="default",
         sandbox_name="shell-test",
     )
@@ -99,7 +99,7 @@ def test_package_example():
     print("=== Available Packages Test ===")
     interpreter = MicrosandboxInterpreter(
         require_confirm=False,
-        server_url="http://192.168.122.56:5555",
+        server_url="http://127.0.0.1:5555",
         namespace="default",
         sandbox_name="package-test",
     )
