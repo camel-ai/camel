@@ -19,7 +19,13 @@ from camel.tasks.task import Task
 
 async def main():
     base_url = "http://localhost:10000"
-    http_kwargs = {}
+    # Extra keyword arguments passed into httpx.AsyncClient
+    http_kwargs = {
+        "timeout": 30.0,
+        "headers": {
+            "User-Agent": "workforce-a2a-client/0.1",
+        },
+    }
 
     workforce = Workforce("A2A Example Workforce")
     await workforce.add_a2a_agent_worker(
