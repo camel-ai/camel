@@ -466,7 +466,19 @@ class WebSocketBrowserWrapper:
     async def _ensure_connection(self) -> None:
         """Ensure WebSocket connection is alive."""
         if not self.websocket:
-            raise RuntimeError("WebSocket not connected")
+            error_msg = "WebSocket not connected"
+            import psutil
+
+            mem = psutil.virtual_memory()
+            if mem.available < 1024**3:  # Less than 1GB available
+                error_msg = (
+                    f"WebSocket not connected "
+                    f"(likely due to insufficient memory). "
+                    f"Available memory: {mem.available / 1024**3:.2f}GB "
+                    f"({mem.percent}% used)"
+                )
+
+            raise RuntimeError(error_msg)
 
         # Check if connection is still alive
         try:
@@ -476,7 +488,20 @@ class WebSocketBrowserWrapper:
         except Exception as e:
             logger.warning(f"WebSocket ping failed: {e}")
             self.websocket = None
-            raise RuntimeError("WebSocket connection lost")
+
+            error_msg = "WebSocket connection lost"
+            import psutil
+
+            mem = psutil.virtual_memory()
+            if mem.available < 1024**3:  # Less than 1GB available
+                error_msg = (
+                    f"WebSocket connection lost "
+                    f"(likely due to insufficient memory). "
+                    f"Available memory: {mem.available / 1024**3:.2f}GB "
+                    f"({mem.percent}% used)"
+                )
+
+            raise RuntimeError(error_msg)
 
     async def _send_command(
         self, command: str, params: Dict[str, Any]
