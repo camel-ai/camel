@@ -157,6 +157,7 @@ class FileWriteToolkit(BaseToolkit):
                 return new_path
             counter += 1
 
+    @dependencies_required('docx')
     def _write_docx_file(self, file_path: Path, content: str) -> None:
         r"""Write text content to a DOCX file with default formatting.
 
@@ -498,7 +499,6 @@ class FileWriteToolkit(BaseToolkit):
         Returns:
             str: The font name to use for Chinese text.
         """
-        import os
         import platform
 
         from reportlab.lib.fonts import addMapping
@@ -617,8 +617,6 @@ class FileWriteToolkit(BaseToolkit):
         Returns:
             bool: True if the line is a table separator.
         """
-        import re
-
         # More precise check for separator lines
         # Must contain only spaces, pipes, dashes, and colons
         # and have at least one dash to be a separator
@@ -1066,43 +1064,27 @@ class FileWriteToolkit(BaseToolkit):
     # File Reading Method
     # ----------------------------------------------------------------
 
+    @dependencies_required('docx')
     def _read_docx_file(self, file_path: Path) -> str:
         r"""Read the content of a DOCX file."""
-        try:
-            import docx
+        import docx
 
-            doc = docx.Document(str(file_path))
-            return "\n".join([paragraph.text for paragraph in doc.paragraphs])
-        except ImportError as e:
-            return f"Failed to import docx module: {e}"
+        doc = docx.Document(str(file_path))
+        return "\n".join([paragraph.text for paragraph in doc.paragraphs])
 
+    @dependencies_required('PyPDF2')
     def _read_pdf_file(self, file_path: Path) -> str:
         r"""Read the content of a PDF file."""
         try:
             import PyPDF2
 
             with open(file_path, 'rb') as file:
-                pdf_reader = PyPDF2.PdfReader(file)  # type: ignore[assignment]
+                pdf_reader = PyPDF2.PdfReader(file)
                 text = ""
                 for page in pdf_reader.pages:
                     text += page.extract_text() + "\n"
                 return text
-        except ImportError:
-            try:
-                import pypdf
 
-                with open(file_path, 'rb') as file:
-                    pdf_reader = pypdf.PdfReader(file)  # type: ignore[assignment]
-                    text = ""
-                    for page in pdf_reader.pages:
-                        text += page.extract_text() + "\n"
-                    return text
-            except ImportError as e:
-                return (
-                    f"Failed to import PDF modules (PyPDF2 or pypdf): {e}. "
-                    "Please install with: pip install PyPDF2 or "
-                    "pip install pypdf"
-                )
         except Exception as e:
             return f"Error reading PDF file: {e}"
 
@@ -1119,21 +1101,17 @@ class FileWriteToolkit(BaseToolkit):
         except Exception as e:
             return f"Error reading JSON file: {e}"
 
+    @dependencies_required('yaml')
     def _read_yaml_file(self, file_path: Path) -> str:
         r"""Read and format YAML file content."""
-        try:
-            import yaml
+        import yaml
 
+        try:
             with file_path.open("r", encoding=self.default_encoding) as f:
                 data = yaml.safe_load(f)
                 return yaml.dump(
                     data, default_flow_style=False, allow_unicode=True
                 )
-        except ImportError:
-            return (
-                "Error reading YAML file: PyYAML package not installed. "
-                "Please install with: pip install PyYAML"
-            )
         except Exception as e:
             return f"Error reading YAML file: {e}"
 
@@ -1226,37 +1204,31 @@ class FileWriteToolkit(BaseToolkit):
         self, file_path: Path, old_content: str, new_content: str
     ) -> None:
         r"""Edit DOCX file content."""
-        try:
-            import docx
+        import docx
 
-            doc = docx.Document(str(file_path))
-            current_content = "\n".join(
-                [paragraph.text for paragraph in doc.paragraphs]
-            )
+        doc = docx.Document(str(file_path))
+        current_content = "\n".join(
+            [paragraph.text for paragraph in doc.paragraphs]
+        )
 
-            if old_content.strip() == current_content.strip():
-                # Replace entire document content
-                for paragraph in doc.paragraphs[:]:
-                    p = paragraph._element
-                    p.getparent().remove(p)
+        if old_content.strip() == current_content.strip():
+            # Replace entire document content
+            for paragraph in doc.paragraphs[:]:
+                p = paragraph._element
+                p.getparent().remove(p)
 
-                for line in new_content.split('\n'):
-                    if line.strip():
-                        doc.add_paragraph(line.strip())
-            else:
-                # Replace content within paragraphs
-                for paragraph in doc.paragraphs:
-                    if old_content in paragraph.text:
-                        paragraph.text = paragraph.text.replace(
-                            old_content, new_content
-                        )
+            for line in new_content.split('\n'):
+                if line.strip():
+                    doc.add_paragraph(line.strip())
+        else:
+            # Replace content within paragraphs
+            for paragraph in doc.paragraphs:
+                if old_content in paragraph.text:
+                    paragraph.text = paragraph.text.replace(
+                        old_content, new_content
+                    )
 
-            doc.save(str(file_path))
-        except ImportError as e:
-            raise ImportError(
-                "The python-docx package is required for DOCX file operations."
-                "Please install it with: pip install camel-ai[document_tools]"
-            ) from e
+        doc.save(str(file_path))
 
     def _edit_json_file(
         self, file_path: Path, old_content: str, new_content: str
@@ -1310,13 +1282,14 @@ class FileWriteToolkit(BaseToolkit):
         except Exception as e:
             return f"Error editing JSON file: {e}"
 
+    @dependencies_required('yaml')
     def _edit_yaml_file(
         self, file_path: Path, old_content: str, new_content: str
     ) -> None:
         r"""Edit YAML file content."""
-        try:
-            import yaml
+        import yaml
 
+        try:
             with file_path.open("r", encoding=self.default_encoding) as f:
                 data = yaml.safe_load(f)
 
@@ -1362,11 +1335,8 @@ class FileWriteToolkit(BaseToolkit):
                     data, f, default_flow_style=False, allow_unicode=True
                 )
 
-        except ImportError:
-            raise ImportError(
-                "PyYAML package is required for YAML file operations. "
-                "Please install it with: pip install PyYAML"
-            )
+        except Exception as e:
+            raise Exception(f"Error editing YAML file: {e}") from e
 
     def edit_file(
         self,
