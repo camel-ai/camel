@@ -1319,9 +1319,9 @@ requires-dist = [
     { name = "python-pptx", marker = "extra == 'document-tools'", specifier = ">=1.0.2" },
     { name = "python-pptx", marker = "extra == 'eigent'", specifier = ">=1.0.2" },
     { name = "python-pptx", marker = "extra == 'owl'", specifier = ">=1.0.2" },
-    { name = "pytidb", marker = "extra == 'all'", specifier = ">=0.0.13.dev1" },
-    { name = "pytidb", marker = "extra == 'rag'", specifier = ">=0.0.13.dev1" },
-    { name = "pytidb", marker = "extra == 'storage'", specifier = ">=0.0.13.dev1" },
+    { name = "pytidb", marker = "extra == 'all'", specifier = ">=0.0.13" },
+    { name = "pytidb", marker = "extra == 'rag'", specifier = ">=0.0.13" },
+    { name = "pytidb", marker = "extra == 'storage'", specifier = ">=0.0.13" },
     { name = "qdrant-client", marker = "extra == 'all'", specifier = ">=1.9.0,<2" },
     { name = "qdrant-client", marker = "extra == 'rag'", specifier = ">=1.9.0,<2" },
     { name = "qdrant-client", marker = "extra == 'storage'", specifier = ">=1.9.0,<2" },
@@ -6372,7 +6372,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/ef/c6/2c5999de3bb153352
 
 [[package]]
 name = "pytidb"
-version = "0.0.13.dev1"
+version = "0.0.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
@@ -6380,9 +6380,9 @@ dependencies = [
     { name = "sqlalchemy" },
     { name = "sqlmodel" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6a/e1/ce4220f068bfa8a9956766bc63ea7bc83cba35220fd8dc3f63a9ff44469b/pytidb-0.0.13.dev1.tar.gz", hash = "sha256:e70e38ddaeb71da5a0ae731b0ba06de61b0ec20fd822f2954c37e6b7fbcf8629", size = 46657, upload-time = "2025-08-28T06:26:59.642Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a5/c1/511c5f7e6660b4929f730db68a45c183ce919064189f1c8718ccd67a9418/pytidb-0.0.13.tar.gz", hash = "sha256:0c5da2f84f97a7dce6552e3369bfd181af83e7cfbfaf9bc1e878a10686807030", size = 46666, upload-time = "2025-08-29T02:42:38.22Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/32/1f/a05965121b26c0b598aefb846894df69fd3b0efbdb2d2e575939af6f9199/pytidb-0.0.13.dev1-py3-none-any.whl", hash = "sha256:be607831d2661165fdd4f2adcafbd9cbc102f36a2d52e67fbaf702d7b8b0b9f8", size = 57260, upload-time = "2025-08-28T06:26:58.532Z" },
+    { url = "https://files.pythonhosted.org/packages/47/93/e33501ceeb48a0cffe45c4a2816a2136b9c49461d1977facf81a9689cf3f/pytidb-0.0.13-py3-none-any.whl", hash = "sha256:85f9eefa21714c7e0d5ed5c24c710b07d4453fbfb0062774d03354941b35e180", size = 57598, upload-time = "2025-08-29T02:42:33.523Z" },
 ]
 
 [[package]]
