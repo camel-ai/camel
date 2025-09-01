@@ -13,10 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.models import ModelFactory
 from camel.toolkits import SlackToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.logger import get_logger
+
+# Initialize logger
+logger = get_logger(__name__)
 
 # Define system message
 sys_msg = """You are a helpful Slack messaging assistant that can create 
@@ -45,7 +48,7 @@ usr_msg_1 = "Create a feedback form with a text input field, radio buttons for r
 response_1 = camel_agent.step(usr_msg_1)
 logger.info("=== Block Kit Creation Response ===")
 logger.info(response_1.info['tool_calls'])
-logger.info("="*50)
+logger.info("=" * 50)
 
 # ruff: noqa: E501
 """
@@ -301,4 +304,3 @@ The Slack message has been successfully sent to the #general channel with
 the interactive feedback form containing text input, radio buttons, checkboxes, and a submit button.
 ===============================================================================
 """
-
