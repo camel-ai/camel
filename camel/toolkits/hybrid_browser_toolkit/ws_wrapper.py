@@ -264,9 +264,20 @@ class WebSocketBrowserWrapper:
                     self.ts_log_file.close()
                 self.ts_log_file = None
             self.process = None
-            raise RuntimeError(
-                "WebSocket server failed to start within timeout"
-            )
+
+            error_msg = "WebSocket server failed to start within timeout"
+            import psutil
+
+            mem = psutil.virtual_memory()
+            if mem.available < 1024**3:  # Less than 1GB available
+                error_msg = (
+                    f"WebSocket server failed to start"
+                    f"(likely due to insufficient memory). "
+                    f"Available memory: {mem.available / 1024**3:.2f}GB "
+                    f"({mem.percent}% used)"
+                )
+
+            raise RuntimeError(error_msg)
 
         # Connect to the WebSocket server
         try:
@@ -291,9 +302,21 @@ class WebSocketBrowserWrapper:
                     self.ts_log_file.close()
                 self.ts_log_file = None
             self.process = None
-            raise RuntimeError(
-                f"Failed to connect to WebSocket server: {e}"
-            ) from e
+
+            error_msg = f"Failed to connect to WebSocket server: {e}"
+            import psutil
+
+            mem = psutil.virtual_memory()
+            if mem.available < 1024**3:  # Less than 1GB available
+                error_msg = (
+                    f"Failed to connect to WebSocket server"
+                    f"(likely due to insufficient memory). "
+                    f"Available memory: {mem.available / 1024**3:.2f}GB"
+                    f"({mem.percent}% used). "
+                    f"Original error: {e}"
+                )
+
+            raise RuntimeError(error_msg) from e
 
         # Start the background receiver task
         self._receive_task = asyncio.create_task(self._receive_loop())
