@@ -14,12 +14,12 @@
 
 from typing import List, Optional
 
-from camel.toolkits import BaseToolkit, FunctionTool
+from camel.toolkits import FunctionTool
 
 from .mcp_toolkit import MCPToolkit
 
 
-class PlaywrightMCPToolkit(BaseToolkit):
+class PlaywrightMCPToolkit(MCPToolkit):
     r"""PlaywrightMCPToolkit provides an interface for interacting with web
     browsers using the Playwright automation library through the Model Context
     Protocol (MCP).
@@ -51,33 +51,18 @@ class PlaywrightMCPToolkit(BaseToolkit):
                 `["--cdp-endpoint=http://localhost:9222"]`.
                 (default: :obj:`None`)
         """
-        super().__init__(timeout=timeout)
-
-        self._mcp_toolkit = MCPToolkit(
-            config_dict={
-                "mcpServers": {
-                    "playwright": {
-                        "command": "npx",
-                        "args": ["@playwright/mcp@latest"]
-                        + (additional_args or []),
-                    }
+        # Create config for Playwright MCP server
+        config_dict = {
+            "mcpServers": {
+                "playwright": {
+                    "command": "npx",
+                    "args": ["@playwright/mcp@latest"]
+                    + (additional_args or []),
                 }
-            },
-            timeout=timeout,
-        )
+            }
+        }
+        
+        # Initialize parent MCPToolkit with Playwright configuration
+        super().__init__(config_dict=config_dict, timeout=timeout)
 
-    async def connect(self):
-        r"""Explicitly connect to the Playwright MCP server."""
-        await self._mcp_toolkit.connect()
 
-    async def disconnect(self):
-        r"""Explicitly disconnect from the Playwright MCP server."""
-        await self._mcp_toolkit.disconnect()
-
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of tools provided by the PlaywrightMCPToolkit.
-
-        Returns:
-            List[FunctionTool]: List of available tools.
-        """
-        return self._mcp_toolkit.get_tools()

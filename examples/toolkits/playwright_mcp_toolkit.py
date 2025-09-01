@@ -22,24 +22,32 @@ from camel.types import ModelPlatformType, ModelType
 
 
 async def main():
+    # Create PlaywrightMCPToolkit (now inherits directly from MCPToolkit)
     playwright_mcp_toolkit = PlaywrightMCPToolkit()
 
-    # connect to playwright mcp
+    # Connect to playwright mcp (inherited method from MCPToolkit)
     await playwright_mcp_toolkit.connect()
 
+    # model = ModelFactory.create(
+    #     model_platform=ModelPlatformType.DEFAULT,
+    #     model_type=ModelType.DEFAULT,
+    # )
+
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.DEFAULT,
-        model_type=ModelType.DEFAULT,
+        model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+        model_type='ZhipuAI/GLM-4.5',
+        url='https://api-inference.modelscope.cn/v1/',
+        api_key='ms-7efa520e-9982-4e09-a15c-6409ea55d324'
     )
 
-    # pydantic basemodel as input params format
+    # Pydantic basemodel as input params format
     class AgentResponse(BaseModel):
         url: str = Field(description="Url of the repository")
         stars: int = Field(description="Stars of the repository")
 
     chat_agent = ChatAgent(
         model=model,
-        tools=playwright_mcp_toolkit.get_tools(),
+        tools=playwright_mcp_toolkit.get_tools(),  # Inherited method
     )
 
     response = await chat_agent.astep(
@@ -48,7 +56,7 @@ async def main():
     )
     print(response.msg.content)
 
-    # disconnect from playwright mcp
+    # Disconnect from playwright mcp (inherited method from MCPToolkit)
     await playwright_mcp_toolkit.disconnect()
 
 
