@@ -28,16 +28,9 @@ async def main():
     # Connect to playwright mcp (inherited method from MCPToolkit)
     await playwright_mcp_toolkit.connect()
 
-    # model = ModelFactory.create(
-    #     model_platform=ModelPlatformType.DEFAULT,
-    #     model_type=ModelType.DEFAULT,
-    # )
-
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-        model_type='ZhipuAI/GLM-4.5',
-        url='https://api-inference.modelscope.cn/v1/',
-        api_key='ms-7efa520e-9982-4e09-a15c-6409ea55d324'
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
 
     # Pydantic basemodel as input params format
@@ -49,11 +42,13 @@ async def main():
         model=model,
         tools=playwright_mcp_toolkit.get_tools(),  # Inherited method
     )
-
+    
     response = await chat_agent.astep(
-        "search for camel-ai using google search, how many stars does it has?",
+        "Navigate to https://github.com/camel-ai/camel and get the star count.",
         response_format=AgentResponse,
     )
+
+    print("=== 模型响应 ===")
     print(response.msg.content)
 
     # Disconnect from playwright mcp (inherited method from MCPToolkit)
@@ -66,6 +61,9 @@ if __name__ == "__main__":
 
 """
 ==============================================================================
-{"url":"https://github.com/camel-ai/camel","stars":12900}
+{
+  "url": "https://github.com/camel-ai/camel",
+  "stars": 14040
+}
 ==============================================================================
 """
