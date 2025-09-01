@@ -128,16 +128,23 @@ class AgentPool:
             metric_weights[1] * max(freshness, 0.0)
         )
 
-    async def get_agent(self) -> ChatAgent:
+    async def get_agent(
+        self,
+        metric_weights: Optional[List[float]] = None,
+        default_fresh_agent_score: float = 0.75,
+    ) -> ChatAgent:
         r"""Get an agent from the pool, creating one if necessary."""
         async with self._lock:
             self._total_borrows += 1
             best_agent: Optional[ChatAgent] = None
+            metric_weights = metric_weights or [0.7, 0.3]
 
             if self._available_agents:
                 best_agent = max(
                     self._available_agents,
-                    key=self._calculate_affinity_score,
+                    key=lambda agent: self._calculate_affinity_score(
+                        agent, metric_weights, default_fresh_agent_score
+                    ),
                 )
                 self._available_agents.remove(best_agent)
                 self._pool_hits += 1
@@ -154,7 +161,9 @@ class AgentPool:
 
                 best_agent = max(
                     self._available_agents,
-                    key=self._calculate_affinity_score,
+                    key=lambda agent: self._calculate_affinity_score(
+                        agent, metric_weights, default_fresh_agent_score
+                    ),
                 )
                 self._available_agents.remove(best_agent)
                 self._pool_hits += 1
