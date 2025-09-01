@@ -104,7 +104,7 @@ __all__ = [
     'SlackToolkit',
     'WhatsAppToolkit',
     'WeChatOfficialToolkit',
-    'OpenAIImageToolkit',
+    'ImageGenToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
     'RetrievalToolkit',

@@ -50,11 +50,6 @@ def _get_wechat_access_token() -> str:
 
     app_id = os.environ.get("WECHAT_APP_ID", "")
     app_secret = os.environ.get("WECHAT_APP_SECRET", "")
-    
-    if not app_id or not app_secret:
-        raise ValueError(
-            "WeChat credentials missing. Set WECHAT_APP_ID and WECHAT_APP_SECRET."
-        )
 
     url = (
         "https://api.weixin.qq.com/cgi-bin/token?"
@@ -74,11 +69,11 @@ def _get_wechat_access_token() -> str:
         errmsg = data.get("errmsg", "Unknown error")
         raise ValueError(f"Failed to get access token {errcode}: {errmsg}")
 
-def _make_wechat_request(method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
+def _make_wechat_request(method: Literal["GET", "POST"], endpoint: str, **kwargs) -> Dict[str, Any]:
     r"""Makes a request to WeChat API with proper error handling.
     
     Args:
-        method (str): HTTP method ('GET' or 'POST').
+        method (Literal["GET", "POST"]): HTTP method ('GET' or 'POST').
         endpoint (str): API endpoint path.
         **kwargs: Additional arguments for requests.
         
@@ -203,15 +198,15 @@ class WeChatOfficialToolkit(BaseToolkit):
         self,
         openid: str,
         lang: str = "zh_CN",
-    ) -> str:
+    ) -> Dict[str, Any]:
         r"""Retrieves WeChat user information.
 
         Args:
             openid (str): The user's OpenID.
-            lang (str): Response language: "zh_CN", "zh_TW", "en". (default: "zh_CN")
+            lang (str): Response language. Common values: "zh_CN", "zh_TW", "en". (default: "zh_CN")
 
         Returns:
-            str: User information as JSON string or error message.
+            Dict[str, Any]: User information as dictionary or error information.
 
         References:
             https://developers.weixin.qq.com/doc/offiaccount/User_Management/Getting_user_basic_information.html
@@ -228,14 +223,14 @@ class WeChatOfficialToolkit(BaseToolkit):
     def get_followers_list(
         self,
         next_openid: str = "",
-    ) -> str:
+    ) -> Dict[str, Any]:
         r"""Retrieves list of followers' OpenIDs.
 
         Args:
             next_openid (str): Starting OpenID for pagination. (default: "")
 
         Returns:
-            str: Followers list as JSON string or error message.
+            Dict[str, Any]: Followers list as dictionary or error information.
 
         References:
             https://developers.weixin.qq.com/doc/offiaccount/User_Management/Getting_a_list_of_followers.html
@@ -261,7 +256,7 @@ class WeChatOfficialToolkit(BaseToolkit):
         file_path: str,
         permanent: bool = False,
         description: Optional[str] = None,
-    ) -> str:
+    ) -> Dict[str, Any]:
         r"""Uploads media file to WeChat.
 
         Args:
@@ -271,7 +266,7 @@ class WeChatOfficialToolkit(BaseToolkit):
             description (Optional[str]): Video description in JSON format for permanent upload.
 
         Returns:
-            str: Upload result with media_id or error message.
+            Dict[str, Any]: Upload result with media_id or error information.
 
         References:
             - Temporary: https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Adding_Temporary_Assets.html
@@ -311,7 +306,7 @@ class WeChatOfficialToolkit(BaseToolkit):
         ],
         offset: int = 0,
         count: int = 20,
-    ) -> str:
+    ) -> Dict[str, Any]:
         r"""Gets list of permanent media files.
 
         Args:
@@ -320,7 +315,7 @@ class WeChatOfficialToolkit(BaseToolkit):
             count (int): Number of items (1-20). (default: 20)
 
         Returns:
-            str: Media list as JSON string or error message.
+            Dict[str, Any]: Media list as dictionary or error information.
 
         References:
             https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Get_the_list_of_all_materials.html
