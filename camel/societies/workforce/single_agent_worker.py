@@ -105,20 +105,28 @@ class AgentPool:
         self._total_clones_created += 1
         return agent
 
-    def _calculate_affinity_score(self, agent: ChatAgent) -> float:
+    def _calculate_affinity_score(
+        self,
+        agent: ChatAgent,
+        metric_weights: Optional[List[float]] = None,
+        default_fresh_agent_score: float = 0.75,
+    ) -> float:
         r"""Calculate the affinity score of a task based on its metadata."""
+        if metric_weights is None:
+            metric_weights = [0.7, 0.3]
         metadata = self._agent_metadata_pool.get(id(agent), {})
 
         success_rate = (
             1 - (metadata['error_count'] / metadata['task_count'])
             if metadata['task_count'] > 0
-            else 0.75
+            else default_fresh_agent_score
         )
-        # Optimistic default value 0.75 for fresh agents
 
         freshness = 1.0 - (metadata['task_count'] / self._max_tasks_per_agent)
 
-        return (0.7 * success_rate) + (0.3 * max(freshness, 0.0))
+        return (metric_weights[0] * success_rate) + (
+            metric_weights[1] * max(freshness, 0.0)
+        )
 
     async def get_agent(self) -> ChatAgent:
         r"""Get an agent from the pool, creating one if necessary."""
@@ -193,7 +201,7 @@ class AgentPool:
                 agent_id = id(agent)
                 last_used = self._agent_last_used.get(agent_id, current_time)
 
-                agent_metadata = self._agent_metadata_pool.get(agent, {})
+                agent_metadata = self._agent_metadata_pool.get(agent_id, {})
                 agent_token_limit = (
                     agent.memory.get_context_creator().token_limit
                 )
