@@ -20,6 +20,9 @@
 
 <a href="https://trendshift.io/repositories/649" target="_blank"><img src="https://trendshift.io/api/badge/repositories/649" alt="camel-ai/camel | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
+[English](README.md) |
+[简体中文](README.zh.md)
+
 </div>
 
 
@@ -38,7 +41,7 @@
 
 </h4>
 
-<p style="line-height: 1.5; text-align: center;"> 🐫 CAMEL 是一个开源社区，致力于探索智能体的**规模化规律**。我们相信，在大规模条件下研究这些智能体，可以为其行为、能力以及潜在风险提供宝贵的洞见。为了推动该领域的研究，我们实现并支持多种类型的智能体、任务、提示词、模型和模拟环境。</p>
+<p style="line-height: 1.5; text-align: center;"> 🐫 CAMEL 是一个开源社区，致力于探索智能体的规模化规律。我们相信，在大规模条件下研究这些智能体，可以为其行为、能力以及潜在风险提供宝贵的洞见。为了推动该领域的研究，我们实现并支持多种类型的智能体、任务、提示词、模型和模拟环境。</p>
 
 
 <br>
