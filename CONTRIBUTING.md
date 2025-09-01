@@ -183,6 +183,8 @@ Args:
 
 ### Principles 🛡️
 
+
+
 #### Naming Principle: Avoid Abbreviations in Naming
 
 - Abbreviations can lead to ambiguity, especially since variable names and code in CAMEL are directly used by agents.
