@@ -21,8 +21,7 @@ from camel.types import ModelPlatformType, ModelType
 
 async def main():
     google_drive_mcp_toolkit = GoogleDriveMCPToolkit(
-        # credentials_path="path/to/credentials.json"
-        credentials_path="/home/lyz/Camel/servers-archived/.gdrive-server-credentials.json"
+        credentials_path="path/to/credentials.json"
     )
 
     # connect to google drive mcp
