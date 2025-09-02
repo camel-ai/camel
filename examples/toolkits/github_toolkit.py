@@ -71,6 +71,5 @@ from typing import (
 )
 
 from openai.types.chat import ChatCompletionMessageFunctionToolCall
-
 ===============================================================================
 """
