@@ -21,7 +21,8 @@ from camel.types import ModelPlatformType, ModelType
 
 async def main():
     google_drive_mcp_toolkit = GoogleDriveMCPToolkit(
-        credentials_path="path/to/credentials.json"
+        # credentials_path="path/to/credentials.json"
+        credentials_path="/home/lyz/Camel/servers-archived/.gdrive-server-credentials.json"
     )
 
     # connect to google drive mcp
@@ -40,6 +41,8 @@ async def main():
     response = await chat_agent.astep(
         "what is the name of the file in the root of my drive?",
     )
+
+    print("=== Model Response ===")
     print(response.msg.content)
 
     # disconnect from google drive mcp

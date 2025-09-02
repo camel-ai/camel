@@ -12,14 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List, Optional
-
-from camel.toolkits import BaseToolkit, FunctionTool
+from typing import Optional
 
 from .mcp_toolkit import MCPToolkit
 
 
-class GoogleDriveMCPToolkit(BaseToolkit):
+class GoogleDriveMCPToolkit(MCPToolkit):
     r"""GoogleDriveMCPToolkit provides an interface for interacting with
     Google Drive using the Google Drive MCP server.
 
@@ -41,33 +39,16 @@ class GoogleDriveMCPToolkit(BaseToolkit):
             credentials_path (Optional[str]): Path to the Google Drive
                 credentials file. (default: :obj:`None`)
         """
-        super().__init__(timeout=timeout)
 
-        self._mcp_toolkit = MCPToolkit(
-            config_dict={
-                "mcpServers": {
-                    "gdrive": {
-                        "command": "npx",
-                        "args": ["-y", "@modelcontextprotocol/server-gdrive"],
-                        "env": {"GDRIVE_CREDENTIALS_PATH": credentials_path},
-                    }
+        config_dict = {
+            "mcpServers": {
+                "gdrive": {
+                    "command": "npx",
+                    "args": ["-y", "@modelcontextprotocol/server-gdrive"],
+                    "env": {"GDRIVE_CREDENTIALS_PATH": credentials_path},
                 }
-            },
-            timeout=timeout,
-        )
+            }
+        }
 
-    async def connect(self):
-        r"""Explicitly connect to the Google Drive MCP server."""
-        await self._mcp_toolkit.connect()
-
-    async def disconnect(self):
-        r"""Explicitly disconnect from the Google Drive MCP server."""
-        await self._mcp_toolkit.disconnect()
-
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of tools provided by the GoogleDriveMCPToolkit.
-
-        Returns:
-            List[FunctionTool]: List of available tools.
-        """
-        return self._mcp_toolkit.get_tools()
+        # Initialize parent MCPToolkit with Playwright configuration
+        super().__init__(config_dict=config_dict, timeout=timeout)

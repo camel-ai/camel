@@ -20,7 +20,6 @@ from camel.models import ModelFactory
 from camel.toolkits import PlaywrightMCPToolkit
 from camel.types import ModelPlatformType, ModelType
 
-
 async def main():
     # Create PlaywrightMCPToolkit (now inherits directly from MCPToolkit)
     playwright_mcp_toolkit = PlaywrightMCPToolkit()
@@ -48,7 +47,7 @@ async def main():
         response_format=AgentResponse,
     )
 
-    print("=== 模型响应 ===")
+    print("=== Model Response ===")
     print(response.msg.content)
 
     # Disconnect from playwright mcp (inherited method from MCPToolkit)
