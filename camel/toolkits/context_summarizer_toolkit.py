@@ -18,7 +18,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
-from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
