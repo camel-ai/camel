@@ -88,6 +88,7 @@ from .web_deploy_toolkit import WebDeployToolkit
 from .screenshot_toolkit import ScreenshotToolkit
 from .message_integration import ToolkitMessageIntegration
 from .notion_mcp_toolkit import NotionMCPToolkit
+from .minimax_mcp_toolkit import MinimaxMCPToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -165,4 +166,5 @@ __all__ = [
     'RegisteredAgentToolkit',
     'ToolkitMessageIntegration',
     'NotionMCPToolkit',
+    'MinimaxMCPToolkit',
 ]

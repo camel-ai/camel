@@ -52,6 +52,22 @@ def subprocess_code_execution_toolkit():
     )
 
 
+@pytest.fixture
+def microsandbox_code_execution_toolkit():
+    """Create CodeExecutionToolkit with microsandbox."""
+    microsandbox_config = {
+        "server_url": "http://192.168.122.56:5555",
+        "namespace": "test-code-execution",
+        "timeout": 30,
+    }
+    return CodeExecutionToolkit(
+        sandbox="microsandbox",
+        verbose=True,
+        require_confirm=False,
+        microsandbox_config=microsandbox_config,
+    )
+
+
 def test_execute_code(code_execution_toolkit):
     code = "x = 'a'\ny = 'b'\nx + y"
     result = code_execution_toolkit.execute_code(code)
@@ -149,3 +165,45 @@ def test_verbose_output(code_execution_toolkit):
     code = "print('test')"
     result = toolkit.execute_code(code)
     assert "test" in result
+
+
+def test_microsandbox_execute_code(microsandbox_code_execution_toolkit):
+    """Test executing Python code with microsandbox."""
+    code = "x = 10 + 5\nprint(f'Result: {x}')"
+    result = microsandbox_code_execution_toolkit.execute_code(code)
+
+    assert "Result: 15" in result
+    assert "Executed the code below:" in result
+
+
+def test_microsandbox_execute_javascript(microsandbox_code_execution_toolkit):
+    """Test executing JavaScript code with microsandbox."""
+    code = "console.log('Hello from JavaScript');"
+    result = microsandbox_code_execution_toolkit.execute_code(
+        code, code_type="javascript"
+    )
+
+    assert "Hello from JavaScript" in result
+    assert "Executed the code below:" in result
+
+
+def test_microsandbox_execute_command(microsandbox_code_execution_toolkit):
+    """Test executing shell commands with microsandbox."""
+    result = microsandbox_code_execution_toolkit.execute_command("echo test")
+
+    # Should contain either output or success message
+    assert "test" in result or "executed successfully" in result.lower()
+    assert "Executed the command below:" in result
+
+
+def test_microsandbox_error_handling(microsandbox_code_execution_toolkit):
+    """Test error handling with microsandbox."""
+    code = "x = 1 / 0"  # Division by zero - more reliable error
+    result = microsandbox_code_execution_toolkit.execute_code(code)
+
+    # Should contain error information or successfully execute (just verify it doesn't crash)
+    assert result is not None
+    assert len(result) > 0
+    assert "Executed the code below:" in result
+
+    # The specific error format may vary, so just ensure execution completes

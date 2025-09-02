@@ -357,6 +357,7 @@
               "reference/camel.interpreters.e2b_interpreter",
               "reference/camel.interpreters.internal_python_interpreter",
               "reference/camel.interpreters.ipython_interpreter",
+              "reference/camel.interpreters.microsandbox_interpreter",
               "reference/camel.interpreters.subprocess_interpreter"
             ]
           },
@@ -514,6 +515,7 @@
               "reference/camel.toolkits.message_agent_toolkit",
               "reference/camel.toolkits.message_integration",
               "reference/camel.toolkits.mineru_toolkit",
+              "reference/camel.toolkits.minimax_mcp_toolkit",
               "reference/camel.toolkits.networkx_toolkit",
               "reference/camel.toolkits.note_taking_toolkit",
               "reference/camel.toolkits.notion_mcp_toolkit",
