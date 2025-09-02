@@ -25,9 +25,16 @@ async def main():
     # connect to edgeone pages mcp
     await edgeone_pages_mcp_toolkit.connect()
 
+    # model = ModelFactory.create(
+    #     model_platform=ModelPlatformType.DEFAULT,
+    #     model_type=ModelType.DEFAULT,
+    # )
+
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.DEFAULT,
-        model_type=ModelType.DEFAULT,
+        model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+        model_type="ZhipuAI/GLM-4.5",
+        url='https://api-inference.modelscope.cn/v1/',
+        api_key='ms-7efa520e-9982-4e09-a15c-6409ea55d324'
     )
 
     chat_agent = ChatAgent(
@@ -38,6 +45,8 @@ async def main():
     response = await chat_agent.astep(
         "write a hello world page",
     )
+
+    print("=== Model Response ===")
     print(response.msg.content)
 
     # disconnect from edgeone pages mcp
@@ -50,7 +59,14 @@ if __name__ == "__main__":
 
 """
 ==============================================================================
-I have created a "Hello, World!" web page for you. You can view it here: 
-https://mcp.edgeone.site/share/7D8SNj2ftY9SRtPrWZ5rW
+I've created a Hello World page for you! The page has been deployed and is now live at:
+
+**https://mcp.edgeone.site/share/M-MXzJzHJ3mGc013OQNIM**
+
+The page features:
+- A modern, gradient background
+- Centered "Hello World!" heading
+- Clean, responsive design
+- A welcome message below the main heading
 ==============================================================================
 """
