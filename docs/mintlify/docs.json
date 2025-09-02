@@ -357,6 +357,7 @@
               "reference/camel.interpreters.e2b_interpreter",
               "reference/camel.interpreters.internal_python_interpreter",
               "reference/camel.interpreters.ipython_interpreter",
+              "reference/camel.interpreters.microsandbox_interpreter",
               "reference/camel.interpreters.subprocess_interpreter"
             ]
           },
