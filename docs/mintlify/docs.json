@@ -357,6 +357,7 @@
               "reference/camel.interpreters.e2b_interpreter",
               "reference/camel.interpreters.internal_python_interpreter",
               "reference/camel.interpreters.ipython_interpreter",
+              "reference/camel.interpreters.microsandbox_interpreter",
               "reference/camel.interpreters.subprocess_interpreter"
             ]
           },
@@ -502,6 +503,7 @@
               "reference/camel.toolkits.google_scholar_toolkit",
               "reference/camel.toolkits.human_toolkit",
               "reference/camel.toolkits.image_analysis_toolkit",
+              "reference/camel.toolkits.image_generation_toolkit",
               "reference/camel.toolkits.jina_reranker_toolkit",
               "reference/camel.toolkits.klavis_toolkit",
               "reference/camel.toolkits.linkedin_toolkit",
@@ -513,6 +515,7 @@
               "reference/camel.toolkits.message_agent_toolkit",
               "reference/camel.toolkits.message_integration",
               "reference/camel.toolkits.mineru_toolkit",
+              "reference/camel.toolkits.minimax_mcp_toolkit",
               "reference/camel.toolkits.networkx_toolkit",
               "reference/camel.toolkits.note_taking_toolkit",
               "reference/camel.toolkits.notion_mcp_toolkit",

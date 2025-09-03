@@ -14,12 +14,12 @@
 import pytest
 from PIL import Image
 
-from camel.toolkits import OpenAIImageToolkit
+from camel.toolkits import ImageGenToolkit
 
 
 @pytest.fixture
 def image_toolkit():
-    return OpenAIImageToolkit()
+    return ImageGenToolkit()
 
 
 def test_base64_to_image_valid(image_toolkit):
