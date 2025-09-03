@@ -25,16 +25,9 @@ async def main():
     # connect to edgeone pages mcp
     await edgeone_pages_mcp_toolkit.connect()
 
-    # model = ModelFactory.create(
-    #     model_platform=ModelPlatformType.DEFAULT,
-    #     model_type=ModelType.DEFAULT,
-    # )
-
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-        model_type="ZhipuAI/GLM-4.5",
-        url='https://api-inference.modelscope.cn/v1/',
-        api_key='ms-7efa520e-9982-4e09-a15c-6409ea55d324'
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
 
     chat_agent = ChatAgent(
