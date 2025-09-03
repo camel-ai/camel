@@ -82,17 +82,3 @@ def test_missing_credentials(monkeypatch):
     
     with pytest.raises(ValueError, match="WeChat credentials missing"):
         WeChatOfficialToolkit()
-
-"""
-=============================================== test session starts ================================================
-platform linux -- Python 3.11.7, pytest-8.4.1, pluggy-1.6.0
-rootdir: /home/lyz/Camel/camel
-configfile: pyproject.toml
-plugins: anyio-4.10.0
-collected 6 items                                                                                                  
-
-test_wechat_official_toolkit.py ......                                                                       [100%]
-
-================================================ 6 passed in 0.39s =================================================
-
-"""
