@@ -137,9 +137,7 @@ export class HybridBrowserSession {
           browserConfig.userDataDir,
           launchOptions
         );
-        
         this.browser = this.context.browser();
-        
         const pages = this.context.pages();
         if (pages.length > 0) {
           const initialTabId = this.generateTabId();
