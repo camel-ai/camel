@@ -18,7 +18,6 @@ from camel.models import ModelFactory
 from camel.toolkits import ResendMCPToolkit
 from camel.types import ModelPlatformType, ModelType
 
-from camel.configs import GeminiConfig
 
 async def main():
     resend_mcp_toolkit = ResendMCPToolkit(
