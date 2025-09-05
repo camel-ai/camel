@@ -56,7 +56,7 @@ class QueryResponse(BaseModel):
     exact_answer: str = Field(description="""your succinct, final answer.""")
     confidence: str = Field(
         description="""
-your confidence score between 0% and 100% for your answer.
+your confidence score between 0|\%| and 100|\%| for your answer.
 """
     )
 
