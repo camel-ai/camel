@@ -30,9 +30,7 @@ if TYPE_CHECKING:
     from camel.models import BaseModelBackend
 
 from camel.logger import get_logger
-from camel.models import ModelFactory
 from camel.toolkits import FunctionTool
-from camel.types import ModelPlatformType, ModelType
 
 logger = get_logger(__name__)
 
@@ -47,20 +45,15 @@ class SlackToolkit(BaseToolkit):
 
     def __init__(
         self,
-        agent: Optional["ChatAgent"] = None,
         model: Optional["BaseModelBackend"] = None,
         timeout: Optional[float] = None,
     ):
         r"""Initializes a new instance of the SlackToolkit class.
 
         Args:
-            agent (Optional[ChatAgent]): A pre-configured ChatAgent instance
-                for Block Kit generation. If provided, takes precedence over
-                the model parameter. (default: :obj:`None`)
             model (Optional[BaseModelBackend]): The model backend to use for
-                Block Kit generation. Only used if agent is not provided.
-                If neither agent nor model is provided, a default model will
-                be created. (default: :obj:`None`)
+                Block Kit generation. If provided, enables the advanced
+                create_slack_block_kit method. (default: :obj:`None`)
             timeout (Optional[float]): The timeout value for API requests
                 in seconds. If None, no timeout is applied.
                 (default: :obj:`None`)
@@ -68,9 +61,9 @@ class SlackToolkit(BaseToolkit):
         super().__init__(timeout=timeout)
 
         # Initialize the agent for Block Kit generation
-        if agent:
-            self.camel_agent = agent
-        elif model:
+        # only if model is provided
+        self.camel_agent: Optional["ChatAgent"]
+        if model:
             from camel.agents import ChatAgent
 
             self.camel_agent = ChatAgent(
@@ -78,21 +71,7 @@ class SlackToolkit(BaseToolkit):
                 model=model,
             )
         else:
-            # Fallback to default model
-            from camel.agents import ChatAgent
-
-            default_model = ModelFactory.create(
-                model_platform=ModelPlatformType.DEFAULT,
-                model_type=ModelType.DEFAULT,
-            )
-            self.camel_agent = ChatAgent(
-                system_message=self._get_system_message(),
-                model=default_model,
-            )
-            logger.warning(
-                "No agent or model provided for SlackToolkit. "
-                "Using default model for Block Kit generation."
-            )
+            self.camel_agent = None
 
     def _get_system_message(self) -> str:
         r"""Get the system message for the Block Kit generation agent."""
@@ -558,8 +537,10 @@ class SlackToolkit(BaseToolkit):
         r"""Create a Slack Block Kit JSON message based on the user's request.
 
         This method generates properly formatted Block Kit JSON and validates
-        it.
-        If validation fails, it retries up to max_retries times.
+        it. If validation fails, it retries up to max_retries times.
+
+        Note: This method requires a model to be configured
+        during initialization.
 
         Args:
             message (str): The user's request for creating a Block Kit
@@ -571,6 +552,13 @@ class SlackToolkit(BaseToolkit):
             str: A JSON string containing the validated Block Kit blocks
                 array, or an error message.
         """
+
+        if self.camel_agent is None:
+            return (
+                "Error: Block Kit generation requires a model to be "
+                "configured. Please initialize SlackToolkit with a model "
+                "parameter."
+            )
 
         def validate_block_kit_json(blocks_array):
             r"""Validate Block Kit JSON format using the same logic as the test
@@ -981,7 +969,7 @@ class SlackToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [
+        tools = [
             FunctionTool(self.create_slack_channel),
             FunctionTool(self.join_slack_channel),
             FunctionTool(self.leave_slack_channel),
@@ -989,5 +977,10 @@ class SlackToolkit(BaseToolkit):
             FunctionTool(self.get_slack_channel_message),
             FunctionTool(self.send_slack_message),
             FunctionTool(self.delete_slack_message),
-            FunctionTool(self.create_slack_block_kit),
         ]
+
+        # Only include create_slack_block_kit if model is configured
+        if self.camel_agent is not None:
+            tools.append(FunctionTool(self.create_slack_block_kit))
+
+        return tools
