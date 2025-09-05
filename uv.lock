@@ -8,6 +8,22 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "a2a-sdk"
+version = "0.3.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core" },
+    { name = "httpx" },
+    { name = "httpx-sse" },
+    { name = "protobuf" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/94/a3/62e9bff37a4cb55c6d6fc59a732a9f07e95e66e13cdb4f0c53707d8ad8da/a2a_sdk-0.3.1.tar.gz", hash = "sha256:962099062279073a1b5ecd91666f2b0a1db90eb971436fba804af82173d2e305", size = 216716, upload-time = "2025-08-13T15:30:53.683Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/84/1d/6c25a110fbb558ee5c527a9477fbcf4656d7265e6bda62b45c19e9ff27a3/a2a_sdk-0.3.1-py3-none-any.whl", hash = "sha256:904bb1b58d8ace6382a9c4c279d102267c5cda393f4ab42583fdb63551e1cd3b", size = 133165, upload-time = "2025-08-13T15:30:52.079Z" },
+]
+
+[[package]]
 name = "accessible-pygments"
 version = "0.0.5"
 source = { registry = "https://pypi.org/simple" }
@@ -680,6 +696,7 @@ dependencies = [
 
 [package.optional-dependencies]
 all = [
+    { name = "a2a-sdk" },
     { name = "aci-sdk" },
     { name = "agentops" },
     { name = "aiosqlite" },
@@ -1069,6 +1086,7 @@ web-tools = [
 
 [package.metadata]
 requires-dist = [
+    { name = "a2a-sdk", marker = "extra == 'all'", specifier = ">=0.3.1" },
     { name = "aci-sdk", marker = "extra == 'all'", specifier = ">=1.0.0b1" },
     { name = "aci-sdk", marker = "extra == 'dev-tools'", specifier = ">=1.0.0b1" },
     { name = "aci-sdk", marker = "extra == 'owl'", specifier = ">=1.0.0b1" },
