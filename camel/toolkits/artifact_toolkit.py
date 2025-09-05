@@ -38,7 +38,9 @@ class ArtifactToolkit(BaseToolkit):
 
     def _generate_artifact_id(self, artifact_type: str) -> str:
         """Generate a unique artifact ID with microsecond precision."""
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-3]  # Include milliseconds
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')[
+            :-3
+        ]  # Include milliseconds
         return f"{artifact_type}_{timestamp}"
 
     def create_html_artifact(
@@ -52,9 +54,11 @@ class ArtifactToolkit(BaseToolkit):
 
         Args:
             content (str): The HTML content to be displayed.
-            title (str, optional): Title for the artifact. Defaults to "HTML Artifact".
-            include_css (bool, optional): Whether to include basic CSS styling. Defaults to True.
+            title (str, optional): Title for the artifact. (default: :obj:`"HTML Artifact"`)
+            include_css (bool, optional): Whether to include basic CSS styling.
+                (default: :obj:`True`)
             css_styles (str, optional): Additional CSS styles to include.
+                (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: A dictionary containing the artifact data with metadata.
@@ -63,10 +67,9 @@ class ArtifactToolkit(BaseToolkit):
         if content.strip().lower().startswith(('<html', '<!doctype')):
             html_content = content
         else:
-            # Wrap partial content in full HTML document
-            html_content = self._wrap_html_content(
-                content, title, include_css, css_styles
-            )
+            # Use shared template for consistent styling
+            extra_head = css_styles or ""
+            html_content = self._render_html(title, content, extra_head)
 
         return {
             "type": "html",
@@ -80,50 +83,107 @@ class ArtifactToolkit(BaseToolkit):
             },
         }
 
-    def _wrap_html_content(
-        self,
-        content: str,
-        title: str,
-        include_css: bool,
-        css_styles: Optional[str],
-    ) -> str:
-        """Wrap content in a complete HTML document with optional styling."""
-        head_content = ""
-        if include_css:
-            head_content += self._get_base_styles()
-        if css_styles:
-            head_content += css_styles
-
-        body_content = (
-            f"<div class='container'>{content}</div>"
-            if include_css
-            else content
-        )
-        return self._create_html_document(title, body_content, head_content)
-
-    def _create_html_document(
+    def _render_html(
         self,
         title: str,
-        body_content: str,
-        head_content: str = "",
+        body: str,
+        extra_head: str = "",
         body_class: str = "",
     ) -> str:
-        """Create a complete HTML document with consistent structure."""
+        r"""Render a complete HTML document with shared template and styling.
+
+        Args:
+            title (str): The page title and main heading.
+            body (str): The main content to display.
+            extra_head (str, optional): Additional content for the <head> section.
+            body_class (str, optional): CSS class for the body element.
+
+        Returns:
+            str: Complete HTML document.
+        """
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
-    {head_content}
+    <style>
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }}
+        h1, h2, h3, h4, h5, h6 {{ 
+            color: #2c3e50; 
+            margin-top: 0;
+        }}
+        .container {{
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }}
+        pre {{ 
+            background: #f8f9fa; 
+            padding: 1em; 
+            border-radius: 6px; 
+            overflow-x: auto; 
+            border: 1px solid #e1e8ed;
+        }}
+        code {{ 
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: #f1f2f6;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }}
+        pre code {{
+            background: transparent;
+            padding: 0;
+        }}
+        .mermaid {{ 
+            text-align: center; 
+        }}
+        blockquote {{
+            border-left: 4px solid #3498db;
+            margin: 1em 0;
+            padding-left: 1em;
+            color: #555;
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border-radius: 0 4px 4px 0;
+        }}
+        table {{
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }}
+        th, td {{
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }}
+        th {{
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }}
+    </style>
+    {extra_head}
 </head>
 <body{f' class="{body_class}"' if body_class else ""}>
-    {body_content}
+    <div class="container">
+        <h1>{title}</h1>
+        {body}
+    </div>
 </body>
 </html>"""
 
     def _get_base_styles(self) -> str:
-        """Get base CSS styles used across all artifacts."""
+        r"""Get base CSS styles used across all artifacts."""
         return """
         <style>
             body {
@@ -156,10 +216,13 @@ class ArtifactToolkit(BaseToolkit):
         r"""Create an SVG artifact for vector graphics.
 
         Args:
-            svg_content (str): The SVG content (can be just the inner elements or complete SVG).
-            title (str, optional): Title for the artifact. Defaults to "SVG Graphic".
-            width (int, optional): Width of the SVG. If not provided, uses SVG's viewBox or defaults.
-            height (int, optional): Height of the SVG. If not provided, uses SVG's viewBox or defaults.
+            svg_content (str): The SVG content (can be just the inner elements
+                or complete SVG).
+            title (str, optional): Title for the artifact. (default: :obj:`"SVG Graphic"`)
+            width (int, optional): Width of the SVG. If not provided, uses SVG's
+                viewBox or defaults. (default: :obj:`None`)
+            height (int, optional): Height of the SVG. If not provided, uses SVG's
+                viewBox or defaults. (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: A dictionary containing the SVG artifact data.
@@ -175,16 +238,20 @@ class ArtifactToolkit(BaseToolkit):
         else:
             svg_full = svg_content
 
+        # Use shared template for consistent styling
+        html_content = self._render_html(title, svg_full)
+
         return {
             "type": "svg",
             "title": title,
-            "content": svg_full,
+            "content": html_content,
+            "svg_content": svg_full,
             "metadata": {
                 "created_at": datetime.now().isoformat(),
                 "artifact_id": self._generate_artifact_id("svg"),
                 "width": width,
                 "height": height,
-                "size": len(svg_full),
+                "size": len(html_content),
             },
         }
 
@@ -198,8 +265,9 @@ class ArtifactToolkit(BaseToolkit):
 
         Args:
             flowchart_definition (str): The Mermaid flowchart definition.
-            title (str, optional): Title for the flowchart. Defaults to "Flowchart".
-            direction (str, optional): Flow direction (TD, LR, BT, RL). Defaults to "TD".
+            title (str, optional): Title for the flowchart. (default: :obj:`"Flowchart"`)
+            direction (str, optional): Flow direction (TD, LR, BT, RL).
+                (default: :obj:`"TD"`)
 
         Returns:
             Dict[str, Any]: A dictionary containing the Mermaid flowchart data.
@@ -212,28 +280,13 @@ class ArtifactToolkit(BaseToolkit):
         else:
             mermaid_content = flowchart_definition
 
-        # Create compact HTML using shared template
-        head_content = f"""
+        # Use shared template with Mermaid-specific extras
+        extra_head = """
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
-    {self._get_base_styles()}
-    <style>
-        .mermaid-container {{
-            text-align: center;
-        }}
-    </style>"""
+    <script>mermaid.initialize({ startOnLoad: true });</script>"""
 
-        body_content = f"""
-    <div class="container">
-        <h1>{title}</h1>
-        <div class="mermaid-container">
-            <div class="mermaid">{mermaid_content}</div>
-        </div>
-    </div>
-    <script>mermaid.initialize({{ startOnLoad: true }});</script>"""
-
-        html_content = self._create_html_document(
-            title, body_content, head_content
-        )
+        body_content = f'<div class="mermaid">{mermaid_content}</div>'
+        html_content = self._render_html(title, body_content, extra_head)
 
         return {
             "type": "mermaid",
@@ -261,40 +314,24 @@ class ArtifactToolkit(BaseToolkit):
 
         Args:
             code (str): The source code content.
-            language (str, optional): Programming language for syntax highlighting. Defaults to "python".
-            title (str, optional): Title for the code artifact. Defaults to "Code Snippet".
-            show_line_numbers (bool, optional): Whether to show line numbers. Defaults to True.
-            theme (str, optional): Syntax highlighting theme. Defaults to "github".
+            language (str, optional): Programming language for syntax highlighting.
+                (default: :obj:`"python"`)
+            title (str, optional): Title for the code artifact. (default: :obj:`"Code Snippet"`)
+            show_line_numbers (bool, optional): Whether to show line numbers.
+                (default: :obj:`True`)
+            theme (str, optional): Syntax highlighting theme. (default: :obj:`"github"`)
 
         Returns:
             Dict[str, Any]: A dictionary containing the code artifact data.
         """
-        # Create HTML wrapper with Prism.js for syntax highlighting
-        html_content = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title}</title>
+        # Use shared template with Prism.js for syntax highlighting
+        extra_head = f"""
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    {"<script src='https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js'></script>" if show_line_numbers else ""}
     <style>
-        body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 20px;
-            background-color: #f9f9f9;
-        }}
-        .code-container {{
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }}
-        h1 {{
-            color: #2c3e50;
-            margin-top: 0;
-            margin-bottom: 20px;
-        }}
         .language-label {{
             background: #3498db;
             color: white;
@@ -304,27 +341,13 @@ class ArtifactToolkit(BaseToolkit):
             margin-bottom: 10px;
             display: inline-block;
         }}
-        pre {{
-            margin: 0;
-            border-radius: 6px;
-            overflow-x: auto;
-        }}
-        code {{
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-        }}
-    </style>
-</head>
-<body>
-    <div class="code-container">
-        <h1>{title}</h1>
+    </style>"""
+
+        body_content = f"""
         <div class="language-label">{language.upper()}</div>
-        <pre{"" if not show_line_numbers else ' class="line-numbers"'}><code class="language-{language}">{code}</code></pre>
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-    {"<script src='https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js'></script>" if show_line_numbers else ""}
-</body>
-</html>"""
+        <pre{"" if not show_line_numbers else ' class="line-numbers"'}><code class="language-{language}">{code}</code></pre>"""
+
+        html_content = self._render_html(title, body_content, extra_head)
 
         return {
             "type": "code",
@@ -354,14 +377,15 @@ class ArtifactToolkit(BaseToolkit):
 
         Args:
             markdown_content (str): The Markdown content.
-            title (str, optional): Title for the document. Defaults to "Document".
-            include_toc (bool, optional): Whether to include a table of contents. Defaults to False.
-            theme (str, optional): Styling theme for the document. Defaults to "github".
+            title (str, optional): Title for the document. (default: :obj:`"Document"`)
+            include_toc (bool, optional): Whether to include a table of contents.
+                (default: :obj:`False`)
+            theme (str, optional): Styling theme for the document. (default: :obj:`"github"`)
 
         Returns:
             Dict[str, Any]: A dictionary containing the Markdown artifact data.
         """
-        # Create HTML wrapper with Marked.js for Markdown rendering
+        # Use shared template with Marked.js for Markdown rendering
         toc_script = (
             """
         <script>
@@ -411,34 +435,13 @@ class ArtifactToolkit(BaseToolkit):
             else ""
         )
 
-        html_content = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title}</title>
+        extra_head = f"""
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <style>
-        body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f9f9f9;
-        }}
-        .markdown-container {{
-            background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }}
         h1, h2, h3, h4, h5, h6 {{
-            color: #2c3e50;
             margin-top: 2em;
             margin-bottom: 0.5em;
         }}
@@ -449,46 +452,6 @@ class ArtifactToolkit(BaseToolkit):
         h2 {{
             border-bottom: 1px solid #ecf0f1;
             padding-bottom: 0.2em;
-        }}
-        blockquote {{
-            border-left: 4px solid #3498db;
-            margin: 1em 0;
-            padding-left: 1em;
-            color: #555;
-            background: #f8f9fa;
-            padding: 10px 20px;
-            border-radius: 0 4px 4px 0;
-        }}
-        code {{
-            background: #f1f2f6;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-        }}
-        pre {{
-            background: #f8f9fa;
-            padding: 1em;
-            border-radius: 6px;
-            overflow-x: auto;
-            border: 1px solid #e1e8ed;
-        }}
-        pre code {{
-            background: transparent;
-            padding: 0;
-        }}
-        table {{
-            border-collapse: collapse;
-            width: 100%;
-            margin: 1em 0;
-        }}
-        th, td {{
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }}
-        th {{
-            background-color: #f2f2f2;
-            font-weight: bold;
         }}
         .toc-list {{
             list-style: none;
@@ -524,35 +487,32 @@ class ArtifactToolkit(BaseToolkit):
             padding: 0;
         }}
     </style>
-</head>
-<body>
-    <div class="markdown-container">
+    {toc_script}"""
+
+        body_content = f"""
         {toc_html}
         <div id="markdown-content"></div>
-    </div>
-    
-    <script>
-        // Configure marked options
-        marked.setOptions({{
-            highlight: function(code, lang) {{
-                if (Prism.languages[lang]) {{
-                    return Prism.highlight(code, Prism.languages[lang], lang);
-                }}
-                return code;
-            }},
-            breaks: true,
-            gfm: true
-        }});
-        
-        // Render markdown
-        const markdownContent = `{markdown_content}`;
-        document.getElementById('markdown-content').innerHTML = marked.parse(markdownContent);
-        
-        {toc_script}
-        {"generateTOC();" if include_toc else ""}
-    </script>
-</body>
-</html>"""
+        <script>
+            // Configure marked options
+            marked.setOptions({{
+                highlight: function(code, lang) {{
+                    if (Prism.languages[lang]) {{
+                        return Prism.highlight(code, Prism.languages[lang], lang);
+                    }}
+                    return code;
+                }},
+                breaks: true,
+                gfm: true
+            }});
+            
+            // Render markdown
+            const markdownContent = `{markdown_content}`;
+            document.getElementById('markdown-content').innerHTML = marked.parse(markdownContent);
+            
+            {"generateTOC();" if include_toc else ""}
+        </script>"""
+
+        html_content = self._render_html(title, body_content, extra_head)
 
         return {
             "type": "markdown",
@@ -581,9 +541,12 @@ class ArtifactToolkit(BaseToolkit):
 
         Args:
             latex_expression (str): The LaTeX mathematical expression.
-            title (str, optional): Title for the math artifact. Defaults to "Mathematical Expression".
-            display_mode (str, optional): Display mode - "block" for centered equations, "inline" for text-style. Defaults to "block".
-            show_source (bool, optional): Whether to show the LaTeX source code. Defaults to False.
+            title (str, optional): Title for the math artifact.
+                (default: :obj:`"Mathematical Expression"`)
+            display_mode (str, optional): Display mode - "block" for centered equations,
+                "inline" for text-style. (default: :obj:`"block"`)
+            show_source (bool, optional): Whether to show the LaTeX source code.
+                (default: :obj:`False`)
 
         Returns:
             Dict[str, Any]: A dictionary containing the LaTeX math artifact data.
@@ -636,12 +599,8 @@ class ArtifactToolkit(BaseToolkit):
             else ""
         )
 
-        html_content = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title}</title>
+        # Use shared template with MathJax for LaTeX rendering
+        extra_head = f"""
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>
@@ -660,27 +619,6 @@ class ArtifactToolkit(BaseToolkit):
         }};
     </script>
     <style>
-        body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f9f9f9;
-        }}
-        .math-container {{
-            background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            text-align: center;
-        }}
-        h1 {{
-            color: #2c3e50;
-            margin-bottom: 30px;
-            text-align: center;
-        }}
         .math-expression {{
             font-size: 1.2em;
             margin: 30px 0;
@@ -733,21 +671,18 @@ class ArtifactToolkit(BaseToolkit):
             color: #1976d2;
         }}
     </style>
-</head>
-<body>
-    <div class="math-container">
-        <h1>{title}</h1>
+    {copy_script}"""
+
+        body_content = f"""
         <div class="math-expression">
             {math_content}
         </div>
         {source_section}
         <div class="math-info">
             <strong>💡 Tip:</strong> This mathematical expression is rendered using MathJax with LaTeX syntax.
-        </div>
-    </div>
-    {copy_script}
-</body>
-</html>"""
+        </div>"""
+
+        html_content = self._render_html(title, body_content, extra_head)
 
         return {
             "type": "latex",
@@ -766,66 +701,6 @@ class ArtifactToolkit(BaseToolkit):
             },
         }
 
-    def get_artifact_info(self, artifact: Dict[str, Any]) -> str:
-        r"""Get formatted information about an artifact.
-
-        Args:
-            artifact (Dict[str, Any]): The artifact dictionary.
-
-        Returns:
-            str: Formatted information about the artifact.
-        """
-        artifact_type = artifact.get("type", "unknown")
-        title = artifact.get("title", "Untitled")
-        metadata = artifact.get("metadata", {})
-        created_at = metadata.get("created_at", "Unknown")
-        size = metadata.get("size", 0)
-
-        info = f"""Artifact Information:
-- Type: {artifact_type.upper()}
-- Title: {title}
-- Created: {created_at}
-- Size: {size} characters"""
-
-        if artifact_type == "mermaid":
-            subtype = artifact.get("subtype", "diagram")
-            direction = metadata.get("direction", "N/A")
-            info += f"""
-- Subtype: {subtype}
-- Direction: {direction}"""
-        elif artifact_type == "svg":
-            width = metadata.get("width")
-            height = metadata.get("height")
-            if width and height:
-                info += f"""
-- Dimensions: {width} x {height}"""
-        elif artifact_type == "code":
-            language = metadata.get("language", "unknown")
-            line_count = metadata.get("line_count", 0)
-            has_line_numbers = metadata.get("has_line_numbers", False)
-            info += f"""
-- Language: {language}
-- Lines: {line_count}
-- Line Numbers: {'Yes' if has_line_numbers else 'No'}"""
-        elif artifact_type == "markdown":
-            word_count = metadata.get("word_count", 0)
-            line_count = metadata.get("line_count", 0)
-            has_toc = metadata.get("has_toc", False)
-            info += f"""
-- Words: {word_count}
-- Lines: {line_count}
-- Table of Contents: {'Yes' if has_toc else 'No'}"""
-        elif artifact_type == "latex":
-            display_mode = metadata.get("display_mode", "block")
-            show_source = metadata.get("show_source", False)
-            expression_length = metadata.get("expression_length", 0)
-            info += f"""
-- Display Mode: {display_mode}
-- Expression Length: {expression_length} characters
-- Show Source: {'Yes' if show_source else 'No'}"""
-
-        return info
-
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -841,5 +716,4 @@ class ArtifactToolkit(BaseToolkit):
             FunctionTool(self.create_code_artifact),
             FunctionTool(self.create_markdown_artifact),
             FunctionTool(self.create_latex_math),
-            FunctionTool(self.get_artifact_info),
         ]
