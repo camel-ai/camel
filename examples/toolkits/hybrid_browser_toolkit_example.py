@@ -67,7 +67,7 @@ custom_tools = [
     "browser_type",
     "browser_switch_tab",
     "browser_enter",
-    # "browser_get_som_screenshot", # remove it to achieve faster operation
+    "browser_get_som_screenshot", # remove it to achieve faster operation
     # "browser_press_key",
     # "browser_console_view",
     # "browser_console_exec",
@@ -96,7 +96,7 @@ agent = ChatAgent(
 )
 
 TASK_PROMPT = r"""
-open browser，在页面上搜索toys
+open browser，在页面上搜索toys，然后用browser_get_som_screenshot查看截图，告诉我谷歌logo是啥颜色的
 """
 
 

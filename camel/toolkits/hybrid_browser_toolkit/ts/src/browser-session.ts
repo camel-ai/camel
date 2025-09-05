@@ -222,9 +222,43 @@ export class HybridBrowserSession {
   async getCurrentPage(): Promise<Page> {
     if (!this.currentTabId || !this.pages.has(this.currentTabId)) {
       const browserConfig = this.configLoader.getBrowserConfig();
-      if (browserConfig.cdpNoPage && browserConfig.connectOverCdp) {
+      
+      // In CDP no-page mode, try to find an existing page from context
+      if (browserConfig.cdpNoPage && browserConfig.connectOverCdp && this.context) {
+        const allPages = this.context.pages();
+        console.log(`[getCurrentPage] cdpNoPage mode: Looking for existing page, found ${allPages.length} pages`);
+        
+        if (allPages.length > 0) {
+          // Try to find a page that's not already tracked
+          for (const page of allPages) {
+            const isTracked = Array.from(this.pages.values()).includes(page);
+            if (!isTracked && !page.isClosed()) {
+              const tabId = this.generateTabId();
+              this.registerNewPage(tabId, page);
+              this.currentTabId = tabId;
+              console.log(`[getCurrentPage] cdpNoPage mode: Found and registered untracked page: ${tabId}`);
+              return page;
+            }
+          }
+          
+          // If all pages are tracked, use the first available one
+          const firstPage = allPages[0];
+          if (!firstPage.isClosed()) {
+            // Find the tab ID for this page
+            for (const [tabId, page] of this.pages.entries()) {
+              if (page === firstPage) {
+                this.currentTabId = tabId;
+                console.log(`[getCurrentPage] cdpNoPage mode: Using existing tracked page: ${tabId}`);
+                return page;
+              }
+            }
+          }
+        }
+        
         throw new Error('No active page available in CDP mode with cdpNoPage=true');
       }
+      
+      // Normal mode: create new page
       if (this.context) {
         console.log('[getCurrentPage] No active page, creating new page');
         const newPage = await this.context.newPage();
