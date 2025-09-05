@@ -86,6 +86,7 @@ export class HybridBrowserSession {
         }
         
         this.context = await this.browser.newContext(contextOptions);
+        this.browser = this.context.browser();
       }
       
       const pages = this.context.pages();
@@ -104,13 +105,19 @@ export class HybridBrowserSession {
           }
         }
         
-        // If no available blank pages found in CDP mode, we cannot create new ones
         if (!availablePageFound) {
-          throw new Error('No available blank tabs found in CDP mode. The frontend should have pre-created blank tabs.');
+          console.log('[CDP] No blank pages found, creating new page');
+          const newPage = await this.context.newPage();
+          const tabId = this.generateTabId();
+          this.registerNewPage(tabId, newPage);
+          this.currentTabId = tabId;
         }
       } else {
-        // In CDP mode, newPage is not supported
-        throw new Error('No pages available in CDP mode and newPage() is not supported. Ensure the frontend has pre-created blank tabs.');
+        console.log('[CDP] No existing pages, creating initial page');
+        const newPage = await this.context.newPage();
+        const tabId = this.generateTabId();
+        this.registerNewPage(tabId, newPage);
+        this.currentTabId = tabId;
       }
     } else {
       // Original launch logic
@@ -199,12 +206,20 @@ export class HybridBrowserSession {
 
   async getCurrentPage(): Promise<Page> {
     if (!this.currentTabId || !this.pages.has(this.currentTabId)) {
-      // In CDP mode, we cannot create new pages
       const browserConfig = this.configLoader.getBrowserConfig();
-      if (browserConfig.connectOverCdp) {
-        throw new Error('No active page available in CDP mode; frontend must pre-create blank tabs.');
+      if (this.context) {
+        console.log('[getCurrentPage] No active page, creating new page');
+        const newPage = await this.context.newPage();
+        const tabId = this.generateTabId();
+        this.registerNewPage(tabId, newPage);
+        this.currentTabId = tabId;
+        
+        newPage.setDefaultNavigationTimeout(browserConfig.navigationTimeout);
+        newPage.setDefaultTimeout(browserConfig.navigationTimeout);
+        
+        return newPage;
       }
-      throw new Error('No active page available');
+      throw new Error('No browser context available');
     }
     return this.pages.get(this.currentTabId)!;
   }
@@ -1008,7 +1023,10 @@ export class HybridBrowserSession {
           }
           
           if (!newPage || !newTabId) {
-            throw new Error('No available blank tabs in CDP mode. Frontend should create more blank tabs when half are used.');
+            console.log('[CDP] No available blank tabs, creating new page');
+            newPage = await this.context.newPage();
+            newTabId = this.generateTabId();
+            this.registerNewPage(newTabId, newPage);
           }
         } else {
           // Non-CDP mode: create new page as usual

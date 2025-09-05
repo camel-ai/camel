@@ -118,7 +118,7 @@ function getDefaultBrowserConfig(): BrowserConfig {
     consoleLogLimit: 1000,
     scrollPositionScale: 0.1,
     navigationDelay: 100,
-    blankPageUrls: [],
+    blankPageUrls: ['chrome://newtab/', 'edge://newtab/', 'chrome://new-tab-page/'],
     dataUrlPrefix: 'data:',
     domContentLoadedState: 'domcontentloaded',
     networkIdleState: 'networkidle',
