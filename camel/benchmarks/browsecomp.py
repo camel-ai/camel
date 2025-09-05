@@ -92,8 +92,8 @@ inconsistency, ambiguity, non-equivalency, or if the extracted answer is
 incorrect."""
     )
     confidence: str = Field(
-        description="""The extracted confidence score between 0% 
-and 100% from [response]. Put 100 if there is no confidence score available.
+        description="""The extracted confidence score between 0|\%| 
+and 100|\%| from [response]. Put 100 if there is no confidence score available.
 """
     )
 
@@ -190,7 +190,7 @@ inconsistency, ambiguity, non-equivalency, or if the extracted answer is
 incorrect.
 
 
-confidence: The extracted confidence score between 0% and 100% 
+confidence: The extracted confidence score between 0|\%| and 100|\%| 
 from [response]. Put 100 if there is no confidence score available.
 """.strip()
 
