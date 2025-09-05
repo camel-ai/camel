@@ -15,15 +15,17 @@
 # Enables postponed evaluation of annotations (for string-based type hints)
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import asdict
 from typing import Any, ClassVar, Dict
+from enum import Enum
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
-from camel.types import OpenAIBackendRole
+from camel.types import OpenAIBackendRole, RoleType
 
 
 class MemoryRecord(BaseModel):
@@ -73,31 +75,56 @@ class MemoryRecord(BaseModel):
         message_cls = cls._MESSAGE_TYPES[record_dict["message"]["__class__"]]
         kwargs: Dict = record_dict["message"].copy()
         kwargs.pop("__class__")
+        # Restore enums expected by BaseMessage
+        if "role_type" in kwargs and isinstance(kwargs["role_type"], str):
+            try:
+                kwargs["role_type"] = RoleType(kwargs["role_type"])
+            except Exception as e:
+                logging.info(f"Failed to restore enum {kwargs['role_type']} for {message_cls.__name__}, {e}")
+                pass
         reconstructed_message = message_cls(**kwargs)
         return cls(
             uuid=UUID(record_dict["uuid"]),
             message=reconstructed_message,
-            role_at_backend=record_dict["role_at_backend"],
+            role_at_backend=(
+                OpenAIBackendRole(record_dict["role_at_backend"]) if isinstance(record_dict["role_at_backend"], str)
+                else record_dict["role_at_backend"]
+            ),
             extra_info=record_dict["extra_info"],
             timestamp=record_dict["timestamp"],
             agent_id=record_dict["agent_id"],
         )
 
     def to_dict(self) -> Dict[str, Any]:
-        r"""Convert the :obj:`MemoryRecord` to a dict for serialization
-        purposes.
-        """
-        return {
+        r"""Convert the :obj:`MemoryRecord` to a JSON-serializable dict."""
+        message_dict: Dict[str, Any] = {
+            "__class__": self.message.__class__.__name__,
+            **asdict(self.message),
+        }
+
+        def _enum_to_value(obj: Any) -> Any:
+            if isinstance(obj, Enum):
+                return obj.value
+            if isinstance(obj, dict):
+                return {k: _enum_to_value(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [_enum_to_value(v) for v in obj]
+            return obj
+
+        # Normalize enums inside message payload (e.g., role_type)
+        message_dict = _enum_to_value(message_dict)
+
+        out: Dict[str, Any] = {
             "uuid": str(self.uuid),
-            "message": {
-                "__class__": self.message.__class__.__name__,
-                **asdict(self.message),
-            },
-            "role_at_backend": self.role_at_backend,
-            "extra_info": self.extra_info,
+            "message": message_dict,
+            "role_at_backend": self.role_at_backend.value
+            if isinstance(self.role_at_backend, Enum)
+            else self.role_at_backend,
+            "extra_info": _enum_to_value(self.extra_info),
             "timestamp": self.timestamp,
             "agent_id": self.agent_id,
         }
+        return out
 
     def to_openai_message(self) -> OpenAIMessage:
         r"""Converts the record to an :obj:`OpenAIMessage` object."""
