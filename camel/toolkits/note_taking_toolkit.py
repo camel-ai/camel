@@ -138,33 +138,43 @@ class NoteTakingToolkit(BaseToolkit):
             self.registry.append(note_name)
             self._save_registry()
 
-    def create_note(self, note_name: str, content: str) -> str:
+    def create_note(
+        self, note_name: str, content: str, overwrite: bool = False
+    ) -> str:
         r"""Creates a new note with a unique name.
 
         This function will create a new file for your note.
-        You must provide a `note_name` that does not already exist. If you want
-        to add content to an existing note, use the `append_note` function
-        instead.
+        By default, you must provide a `note_name` that does not already exist.
+        If you want to add content to an existing note, use the `append_note`
+        function instead. If you want to overwrite an existing note, set
+        `overwrite=True`.
 
         Args:
             note_name (str): The name for your new note (without the .md
-                extension). This name must be unique.
+                extension). This name must be unique unless overwrite is True.
             content (str): The initial content to write in the note.
+            overwrite (bool): Whether to overwrite an existing note.
+                Defaults to False.
 
         Returns:
             str: A message confirming the creation of the note or an error if
-                the note name is not valid or already exists.
+                the note name is not valid or already exists
+                (when overwrite=False).
         """
         try:
             note_path = self.working_directory / f"{note_name}.md"
+            existed_before = note_path.exists()
 
-            if note_path.exists():
+            if existed_before and not overwrite:
                 return f"Error: Note '{note_name}.md' already exists."
 
             note_path.write_text(content, encoding="utf-8")
             self._register_note(note_name)
 
-            return f"Note '{note_name}.md' successfully created."
+            if existed_before and overwrite:
+                return f"Note '{note_name}.md' successfully overwritten."
+            else:
+                return f"Note '{note_name}.md' successfully created."
         except Exception as e:
             return f"Error creating note: {e}"
 
