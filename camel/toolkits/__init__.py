@@ -89,6 +89,7 @@ from .screenshot_toolkit import ScreenshotToolkit
 from .message_integration import ToolkitMessageIntegration
 from .notion_mcp_toolkit import NotionMCPToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
+from .terminal_toolkit_docker import TerminalToolkitDocker
 
 __all__ = [
     'BaseToolkit',
@@ -167,4 +168,5 @@ __all__ = [
     'ToolkitMessageIntegration',
     'NotionMCPToolkit',
     'MinimaxMCPToolkit',
+    'TerminalToolkitDocker',
 ]
