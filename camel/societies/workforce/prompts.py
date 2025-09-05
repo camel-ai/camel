@@ -348,3 +348,79 @@ You must return a valid JSON object with these fields:
 **CRITICAL**: Return ONLY the JSON object. No explanations or text outside the JSON structure.
 """
 )
+
+WORKFLOW_SUMMARIZATION_PROMPT = TextPrompt(
+    """Please provide a workflow summary that will help future agents learn from this experience.
+
+**TASK DETAILS:**
+Task Content: {task_content}
+Task Result: {task_result}
+Task Status: {task_status}
+Your Role: {agent_role}
+
+**INSTRUCTIONS:**
+Please analyze your work and provide:
+
+1. **Workflow Name**: A concise, descriptive name for this workflow (e.g., "XYZ Company Customer Data Analysis Pipeline", "OpenAI API Integration Setup")
+
+2. **General Description**: A brief paragraph describing what this workflow accomplishes and when it should be used.
+
+3. **Trajectory**: Focus ONLY on steps that were essential for completing the task successfully. Exclude:
+   - Failed attempts that were abandoned
+   - Redundant or inefficient approaches  
+   - Steps that didn't contribute to the final outcome
+   
+   For each essential step, provide:
+   - **Step Name**: What you did in this step. (e.g. "Set up uv environment in MacOs")
+   - **Environment**: What you observed or what the situation was. (e.g. "User asked me to start a new RAG pipeline.")
+   - **Actions**: The specific actions you performed. (e.g. "I run `uv venv` to create a new virtual environment and then [more information]")
+   - **Reasoning**: Why this step was necessary for success. If you tried other approaches first, briefly mention what didn't work and why this approach was better. (e.g. "It's cleaner and more maintainable to use uv to manage dependencies rather than using pip.")
+
+4. **Key Findings**: 
+   - What were the critical success factors?
+   - What common pitfalls should be avoided?
+   - Other important insights or lessons learned.
+
+**IMPORTANT**: This workflow summary should serve as a learning guide for future agents. Only include steps and insights that would help someone else complete a similar task more efficiently. 
+
+**RESPONSE FORMAT:**
+You must return a valid JSON object with this structure:
+{{
+    "workflow_name": "string",
+    "description": "string", 
+    "steps": [
+        {{
+            "name": "string",
+            "observation": "string",
+            "actions": "string",
+            "reasoning": "string"
+        }}
+    ],
+    "key_findings": "string"
+}}
+
+**CRITICAL**: Return ONLY the JSON object. No explanations or text outside the JSON structure.
+"""
+)
+
+WORKFLOW_SELECTION_PROMPT = TextPrompt(
+    """You are about to work on the following task:
+"{task_description}"
+
+Here is a list of available workflows that may or may not be relevant to provide some context and insight:
+
+{workflows_tree}
+
+Please analyze the task and the available workflows or their execution steps to determine if any of them contain relevant experience that could help with the current task.
+
+If you find a workflow that seems relevant and could provide helpful guidance, return ONLY the filename (without .md extension) of the most relevant workflow.
+
+If none of the workflows are relevant to the current task, return "none".
+
+Examples:
+- If relevant: workflow_data_analysis_pipeline
+- If not relevant: none
+
+**CRITICAL**: Return ONLY the filename or "none". No explanations or additional text.
+"""
+)
