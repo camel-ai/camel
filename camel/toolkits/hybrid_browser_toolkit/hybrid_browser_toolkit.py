@@ -50,6 +50,7 @@ class HybridBrowserToolkit(BaseToolkit):
         viewport_limit: bool = False,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
+        cdp_no_page: bool = False,
         full_visual_mode: bool = False,
         **kwargs: Any,
     ) -> Any:
@@ -99,6 +100,9 @@ class HybridBrowserToolkit(BaseToolkit):
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
                 connection. Required when connect_over_cdp is True.
                 Defaults to None. (Only supported in TypeScript mode)
+            cdp_no_page (bool): When True and using CDP mode, won't create
+                new pages but use the existing one. Defaults to False.
+                (Only supported in TypeScript mode)
             full_visual_mode (bool): When True, browser actions like click,
                 browser_open, visit_page, etc. will return 'full visual mode'
                 as snapshot instead of actual page content. The
@@ -135,6 +139,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 viewport_limit=viewport_limit,
                 connect_over_cdp=connect_over_cdp,
                 cdp_url=cdp_url,
+                cdp_no_page=cdp_no_page,
                 full_visual_mode=full_visual_mode,
                 **kwargs,
             )

@@ -98,6 +98,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         viewport_limit: bool = False,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
+        cdp_no_page: bool = False,
         full_visual_mode: bool = False,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
@@ -144,6 +145,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
             connection (e.g., 'ws://localhost:9222/devtools/browser/...').
             Required when connect_over_cdp is True. Defaults to None.
+            cdp_no_page (bool): When True and using CDP mode, won't create
+            new pages but use the existing one. Defaults to False.
             full_visual_mode (bool): When True, browser actions like click,
             browser_open, visit_page, etc. will not return snapshots.
             Defaults to False.
@@ -171,6 +174,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             enabled_tools=enabled_tools,
             connect_over_cdp=connect_over_cdp,
             cdp_url=cdp_url,
+            cdp_no_page=cdp_no_page,
             full_visual_mode=full_visual_mode,
         )
 
