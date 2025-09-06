@@ -38,6 +38,7 @@ class HybridBrowserToolkit(BaseToolkit):
         cache_dir: str = "tmp/",
         enabled_tools: Optional[List[str]] = None,
         browser_log_to_file: bool = False,
+        log_dir: Optional[str] = None,
         session_id: Optional[str] = None,
         default_start_url: str = "https://google.com/",
         default_timeout: Optional[int] = None,
@@ -50,6 +51,7 @@ class HybridBrowserToolkit(BaseToolkit):
         viewport_limit: bool = False,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
+        full_visual_mode: bool = False,
         **kwargs: Any,
     ) -> Any:
         r"""Create a HybridBrowserToolkit instance with the specified mode.
@@ -72,6 +74,8 @@ class HybridBrowserToolkit(BaseToolkit):
                 Defaults to None.
             browser_log_to_file (bool): Whether to log browser actions to
                 file. Defaults to False.
+            log_dir (Optional[str]): Custom directory path for log files.
+                If None, defaults to "browser_log". Defaults to None.
             session_id (Optional[str]): Session identifier. Defaults to None.
             default_start_url (str): Default URL to start with. Defaults
                 to "https://google.com/".
@@ -98,6 +102,11 @@ class HybridBrowserToolkit(BaseToolkit):
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
                 connection. Required when connect_over_cdp is True.
                 Defaults to None. (Only supported in TypeScript mode)
+            full_visual_mode (bool): When True, browser actions like click,
+                browser_open, visit_page, etc. will return 'full visual mode'
+                as snapshot instead of actual page content. The
+                browser_get_page_snapshot method will still return the actual
+                snapshot. Defaults to False.
             **kwargs: Additional keyword arguments passed to the
                 implementation.
 
@@ -117,6 +126,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 cache_dir=cache_dir,
                 enabled_tools=enabled_tools,
                 browser_log_to_file=browser_log_to_file,
+                log_dir=log_dir,
                 session_id=session_id,
                 default_start_url=default_start_url,
                 default_timeout=default_timeout,
@@ -129,6 +139,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 viewport_limit=viewport_limit,
                 connect_over_cdp=connect_over_cdp,
                 cdp_url=cdp_url,
+                full_visual_mode=full_visual_mode,
                 **kwargs,
             )
         elif mode == "python":
@@ -160,6 +171,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 cache_dir=cache_dir,
                 enabled_tools=enabled_tools,
                 browser_log_to_file=browser_log_to_file,
+                log_dir=log_dir,
                 session_id=session_id,
                 default_start_url=default_start_url,
                 default_timeout=default_timeout,
