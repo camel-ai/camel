@@ -23,7 +23,7 @@ from .open_api_specs.security_config import openapi_security_config
 from .math_toolkit import MathToolkit
 from .search_toolkit import SearchToolkit
 from .weather_toolkit import WeatherToolkit
-from .openai_image_toolkit import OpenAIImageToolkit
+from .image_generation_toolkit import ImageGenToolkit, OpenAIImageToolkit
 from .ask_news_toolkit import AskNewsToolkit, AsyncAskNewsToolkit
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
@@ -40,6 +40,7 @@ from .google_calendar_toolkit import GoogleCalendarToolkit
 from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
 from .whatsapp_toolkit import WhatsAppToolkit
+from .wechat_official_toolkit import WeChatOfficialToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
@@ -89,6 +90,7 @@ from .screenshot_toolkit import ScreenshotToolkit
 from .message_integration import ToolkitMessageIntegration
 from .notion_mcp_toolkit import NotionMCPToolkit
 from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
+from .minimax_mcp_toolkit import MinimaxMCPToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -103,7 +105,8 @@ __all__ = [
     'SearchToolkit',
     'SlackToolkit',
     'WhatsAppToolkit',
-    'OpenAIImageToolkit',
+    'WeChatOfficialToolkit',
+    'ImageGenToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
     'RetrievalToolkit',
@@ -152,7 +155,7 @@ __all__ = [
     'PlaywrightMCPToolkit',
     'WolframAlphaToolkit',
     'BohriumToolkit',
-    'OpenAIImageToolkit',
+    'OpenAIImageToolkit',  # Backward compatibility
     'TaskPlanningToolkit',
     'HybridBrowserToolkit',
     'EdgeOnePagesMCPToolkit',
@@ -167,4 +170,5 @@ __all__ = [
     'ToolkitMessageIntegration',
     'NotionMCPToolkit',
     'VertexAIVeoToolkit',
+    'MinimaxMCPToolkit',
 ]

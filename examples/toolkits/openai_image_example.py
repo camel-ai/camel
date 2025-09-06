@@ -13,15 +13,15 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.toolkits import OpenAIImageToolkit
+from camel.toolkits import ImageGenToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
 sys_msg = "You are a helpful assistant that can generate images."
 
-# Create OpenAI Image Toolkit with DALL-E 3 model and base64 response format
+# Create Image Generation Toolkit with DALL-E 3 model and base64 response
 tools = [
-    *OpenAIImageToolkit(
+    *ImageGenToolkit(
         model="dall-e-3",
         response_format="b64_json",
         size="1024x1024",
