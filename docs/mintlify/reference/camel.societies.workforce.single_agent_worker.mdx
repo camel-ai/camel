@@ -32,7 +32,10 @@ def __init__(
     initial_size: int = 1,
     max_size: int = 10,
     auto_scale: bool = True,
-    idle_timeout: float = 180.0
+    idle_timeout: float = 180.0,
+    max_tasks_per_agent: int = 10,
+    min_cleanup_interval: float = 15.0,
+    max_cleanup_interval: float = 120.0
 ):
 ```
 
@@ -55,6 +58,21 @@ def _create_fresh_agent(self):
 ```
 
 Create a fresh agent instance.
+
+<a id="camel.societies.workforce.single_agent_worker.AgentPool._calculate_affinity_score"></a>
+
+### _calculate_affinity_score
+
+```python
+def _calculate_affinity_score(
+    self,
+    agent: ChatAgent,
+    metric_weights: Optional[List[float]] = None,
+    default_fresh_agent_score: float = 0.75
+):
+```
+
+Calculate the affinity score of a task based on its metadata.
 
 <a id="camel.societies.workforce.single_agent_worker.AgentPool.get_stats"></a>
 
