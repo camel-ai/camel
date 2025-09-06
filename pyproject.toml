@@ -647,7 +647,6 @@ module = [
     "langfuse.*",
     "outlines.*",
     "torch.*",
-    "sentence_transformers.*",
     "cv2",
     "rlcard.*",
     "pytesseract",

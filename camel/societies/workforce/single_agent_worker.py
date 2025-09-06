@@ -17,7 +17,7 @@ import asyncio
 import datetime
 import time
 from collections import deque
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from colorama import Fore
 
@@ -56,12 +56,19 @@ class AgentPool:
         initial_size: int = 1,
         max_size: int = 10,
         auto_scale: bool = True,
-        idle_timeout: float = 180.0,  # 3 minutes
+        idle_timeout: float = 180.0,
+        max_tasks_per_agent: int = 10,
+        min_cleanup_interval: float = 15.0,
+        max_cleanup_interval: float = 120.0,
     ):
         self.base_agent = base_agent
         self.max_size = max_size
         self.auto_scale = auto_scale
         self.idle_timeout = idle_timeout
+        self._max_tasks_per_agent = max_tasks_per_agent
+        self.min_cleanup_interval = min_cleanup_interval
+        self.max_cleanup_interval = max_cleanup_interval
+        self._agent_metadata_pool: Dict[int, Dict[str, Any]] = {}
 
         # Pool management
         self._available_agents: deque = deque()
@@ -73,6 +80,9 @@ class AgentPool:
         self._total_borrows = 0
         self._total_clones_created = 0
         self._pool_hits = 0
+        self._agents_cleaned = 0
+        self._tasks_waited = 0
+        self._total_wait_time = 0.0
 
         # Initialize pool
         self._initialize_pool(initial_size)
@@ -86,61 +96,108 @@ class AgentPool:
     def _create_fresh_agent(self) -> ChatAgent:
         r"""Create a fresh agent instance."""
         agent = self.base_agent.clone(with_memory=False)
+        self._agent_metadata_pool[id(agent)] = {
+            'task_count': 0,
+            'error_count': 0,
+            'total_tokens_used': 0,
+            'average_tokens_per_task': 0,
+        }
         self._total_clones_created += 1
         return agent
 
-    async def get_agent(self) -> ChatAgent:
+    def _calculate_affinity_score(
+        self,
+        agent: ChatAgent,
+        metric_weights: Optional[List[float]] = None,
+        default_fresh_agent_score: float = 0.75,
+    ) -> float:
+        r"""Calculate the affinity score of a task based on its metadata."""
+        if metric_weights is None:
+            metric_weights = [0.7, 0.3]
+        metadata = self._agent_metadata_pool.get(id(agent), {})
+
+        success_rate = (
+            1 - (metadata['error_count'] / metadata['task_count'])
+            if metadata['task_count'] > 0
+            else default_fresh_agent_score
+        )
+
+        freshness = 1.0 - (metadata['task_count'] / self._max_tasks_per_agent)
+
+        return (metric_weights[0] * success_rate) + (
+            metric_weights[1] * max(freshness, 0.0)
+        )
+
+    async def get_agent(
+        self,
+        metric_weights: Optional[List[float]] = None,
+        default_fresh_agent_score: float = 0.75,
+    ) -> ChatAgent:
         r"""Get an agent from the pool, creating one if necessary."""
         async with self._lock:
             self._total_borrows += 1
+            best_agent: Optional[ChatAgent] = None
+            metric_weights = metric_weights or [0.7, 0.3]
 
-            # Try to get from available agents first
             if self._available_agents:
-                agent = self._available_agents.popleft()
-                self._in_use_agents.add(id(agent))
+                best_agent = max(
+                    self._available_agents,
+                    key=lambda agent: self._calculate_affinity_score(
+                        agent, metric_weights, default_fresh_agent_score
+                    ),
+                )
+                self._available_agents.remove(best_agent)
                 self._pool_hits += 1
 
-                # Reset the agent state
-                agent.reset()
-                return agent
+            elif len(self._in_use_agents) < self.max_size or self.auto_scale:
+                best_agent = self._create_fresh_agent()
 
-            # Check if we can create new agents
-            total_agents = len(self._available_agents) + len(
-                self._in_use_agents
-            )
-            if total_agents < self.max_size:
-                agent = self._create_fresh_agent()
-                self._in_use_agents.add(id(agent))
-                return agent
-
-            # Pool exhausted, wait and retry or create temporary agent
-            if self.auto_scale:
-                # Create a temporary agent that won't be returned to pool
-                return self._create_fresh_agent()
             else:
-                # Wait for an agent to become available
+                wait_start = time.time()
+                self._tasks_waited += 1
                 while not self._available_agents:
                     await asyncio.sleep(0.1)
+                self._total_wait_time += time.time() - wait_start
 
-                agent = self._available_agents.popleft()
-                self._in_use_agents.add(id(agent))
-                agent.reset()
-                return agent
+                best_agent = max(
+                    self._available_agents,
+                    key=lambda agent: self._calculate_affinity_score(
+                        agent, metric_weights, default_fresh_agent_score
+                    ),
+                )
+                self._available_agents.remove(best_agent)
+                self._pool_hits += 1
 
-    async def return_agent(self, agent: ChatAgent) -> None:
+            best_agent.reset()
+            self._in_use_agents.add(id(best_agent))
+            return best_agent
+
+    async def return_agent(
+        self, agent: ChatAgent, task_status: Optional[str] = None
+    ) -> None:
         r"""Return an agent to the pool."""
         async with self._lock:
             agent_id = id(agent)
+            if agent_id not in self._in_use_agents:
+                return
 
-            if agent_id in self._in_use_agents:
-                self._in_use_agents.remove(agent_id)
+            if agent_id in self._agent_metadata_pool:
+                metadata = self._agent_metadata_pool.get(agent_id, {})
+                metadata['task_count'] += 1
+                if task_status == 'FAILED':
+                    metadata['error_count'] += 1
 
-                # Only return to pool if we're under max size
-                if len(self._available_agents) < self.max_size:
-                    # Reset agent state before returning to pool
-                    agent.reset()
-                    self._available_agents.append(agent)
-                    self._agent_last_used[agent_id] = time.time()
+                _, final_token_count = agent.memory.get_context()
+                metadata['total_tokens_used'] += final_token_count
+                metadata['average_tokens_per_task'] = (
+                    metadata['total_tokens_used'] / metadata['task_count']
+                )
+
+                self._agent_last_used[agent_id] = time.time()
+
+            self._in_use_agents.remove(agent_id)
+            if len(self._available_agents) < self.max_size:
+                self._available_agents.append(agent)
 
     async def cleanup_idle_agents(self) -> None:
         r"""Remove idle agents from the pool to free memory."""
@@ -155,23 +212,41 @@ class AgentPool:
                 agent_id = id(agent)
                 last_used = self._agent_last_used.get(agent_id, current_time)
 
-                if current_time - last_used > self.idle_timeout:
+                agent_metadata = self._agent_metadata_pool.get(agent_id, {})
+                agent_token_limit = (
+                    agent.memory.get_context_creator().token_limit
+                )
+
+                if (
+                    current_time - last_used > self.idle_timeout
+                    or agent_metadata['task_count']
+                    >= self._max_tasks_per_agent
+                    or agent_metadata['total_tokens_used']
+                    >= agent_token_limit * 0.8
+                ):
                     agents_to_remove.append(agent)
+
+            self._agents_cleaned += len(agents_to_remove)
 
             for agent in agents_to_remove:
                 self._available_agents.remove(agent)
-                agent_id = id(agent)
-                self._agent_last_used.pop(agent_id, None)
+                self._agent_last_used.pop(id(agent), None)
+                self._agent_metadata_pool.pop(id(agent), None)
 
     def get_stats(self) -> dict:
         r"""Get pool statistics."""
         return {
             "available_agents": len(self._available_agents),
             "in_use_agents": len(self._in_use_agents),
+            "pool_size": len(self._agent_metadata_pool),
             "total_borrows": self._total_borrows,
             "total_clones_created": self._total_clones_created,
             "pool_hits": self._pool_hits,
             "hit_rate": self._pool_hits / max(self._total_borrows, 1),
+            "agents_cleaned_up": self._agents_cleaned,
+            "tasks_had_to_wait": self._tasks_waited,
+            "average_wait_time": self._total_wait_time
+            / max(self._tasks_waited, 1),
         }
 
 
@@ -258,10 +333,12 @@ class SingleAgentWorker(Worker):
             # Fallback to original cloning approach
             return self.worker.clone(with_memory=False)
 
-    async def _return_worker_agent(self, agent: ChatAgent) -> None:
+    async def _return_worker_agent(
+        self, agent: ChatAgent, task_stat: str
+    ) -> None:
         r"""Return a worker agent to the pool if pooling is enabled."""
         if self.use_agent_pool and self.agent_pool:
-            await self.agent_pool.return_agent(agent)
+            await self.agent_pool.return_agent(agent, task_stat)
         # If not using pool, agent will be garbage collected
 
     async def _process_task(
@@ -391,7 +468,7 @@ class SingleAgentWorker(Worker):
             return TaskState.FAILED
         finally:
             # Return agent to pool or let it be garbage collected
-            await self._return_worker_agent(worker_agent)
+            await self._return_worker_agent(worker_agent, task.state.value)
 
         # Populate additional_info with worker attempt details
         if task.additional_info is None:
@@ -477,7 +554,24 @@ class SingleAgentWorker(Worker):
         r"""Periodically clean up idle agents from the pool."""
         while True:
             try:
-                await asyncio.sleep(60)  # Cleanup every minute
+                idle_ratio = (
+                    len(self.agent_pool.get_stats()["available_agents"])
+                    / self.agent_pool.max_size
+                    if self.agent_pool.max_size > 0
+                    else 0.0
+                )
+
+                sleep_duration = (
+                    self.agent_pool.min_cleanup_interval
+                    + (
+                        self.agent_pool.max_cleanup_interval
+                        - self.agent_pool.min_cleanup_interval
+                    )
+                    * idle_ratio
+                )
+
+                await asyncio.sleep(sleep_duration)
+
                 if self.agent_pool:
                     await self.agent_pool.cleanup_idle_agents()
             except asyncio.CancelledError:
