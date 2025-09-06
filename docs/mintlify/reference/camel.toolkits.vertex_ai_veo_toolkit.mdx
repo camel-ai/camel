@@ -1,0 +1,192 @@
+<a id="camel.toolkits.vertex_ai_veo_toolkit"></a>
+
+<a id="camel.toolkits.vertex_ai_veo_toolkit.VertexAIVeoToolkit"></a>
+
+## VertexAIVeoToolkit
+
+```python
+class VertexAIVeoToolkit(BaseToolkit):
+```
+
+A toolkit for interacting with Google Vertex AI Veo video generation.
+
+This toolkit provides methods for generating videos using Google's Veo,
+supporting both text-to-video and image-to-video generation with various
+customization options.
+
+<a id="camel.toolkits.vertex_ai_veo_toolkit.VertexAIVeoToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    project_id: Optional[str] = None,
+    location: str = 'us-central1',
+    model_id: str = 'veo-2.0-generate-001',
+    output_storage_uri: Optional[str] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Initialize the Vertex AI Veo toolkit.
+
+**Parameters:**
+
+- **project_id** (Optional[str]): Google Cloud project ID. If not provided, will use the default project from environment. (default: :obj:`None`)
+- **location** (str): Google Cloud location for the API calls. (default: :obj:`"us-central1"`)
+- **model_id** (str): The Veo model ID to use. Options include "veo-2.0-generate-001" or "veo-3.0-generate-preview". (default: :obj:`"veo-2.0-generate-001"`)
+- **output_storage_uri** (Optional[str]): Cloud Storage URI to save output videos. If not provided, returns video bytes. (default: :obj:`None`)
+- **timeout** (Optional[float]): Request timeout in seconds. (default: :obj:`None`)
+
+<a id="camel.toolkits.vertex_ai_veo_toolkit.VertexAIVeoToolkit.generate_video_from_text"></a>
+
+### generate_video_from_text
+
+```python
+def generate_video_from_text(
+    self,
+    text_prompt: str,
+    response_count: int = 1,
+    duration: int = 5,
+    aspect_ratio: str = '16:9',
+    negative_prompt: Optional[str] = None,
+    person_generation: str = 'allow_adult'
+):
+```
+
+Generate video from text prompt using Vertex AI Veo.
+
+**Parameters:**
+
+- **text_prompt** (str): The text prompt to guide video generation.
+- **response_count** (int): Number of videos to generate (1-4). (default: :obj:`1`)
+- **duration** (int): Video duration in seconds (5-8). (default: :obj:`5`)
+- **aspect_ratio** (str): Video aspect ratio. Options: "16:9", "9:16". (default: :obj:`"16:9"`)
+- **negative_prompt** (Optional[str]): What to avoid in the video. (default: :obj:`None`)
+- **person_generation** (str): Person safety setting. Options: "allow_adult", "dont_allow". (default: :obj:`"allow_adult"`)
+
+**Returns:**
+
+  Dict[str, Any]:
+A dictionary containing:
+- 'success' (bool): Whether the operation was successful
+- 'videos' (List[Dict]): List of generated video data
+- 'metadata' (Dict): Additional metadata from the response
+- 'error' (str): Error message if operation failed
+
+<a id="camel.toolkits.vertex_ai_veo_toolkit.VertexAIVeoToolkit.generate_video_from_image"></a>
+
+### generate_video_from_image
+
+```python
+def generate_video_from_image(
+    self,
+    image_path: str,
+    text_prompt: str,
+    response_count: int = 1,
+    duration: int = 5,
+    aspect_ratio: str = '16:9',
+    negative_prompt: Optional[str] = None,
+    person_generation: str = 'allow_adult'
+):
+```
+
+Generate video from image and text prompt using Vertex AI Veo.
+
+**Parameters:**
+
+- **image_path** (str): Path to the input image file (local or GCS URI).
+- **text_prompt** (str): The text prompt to guide video generation.
+- **response_count** (int): Number of videos to generate (1-4). (default: :obj:`1`)
+- **duration** (int): Video duration in seconds (5-8). (default: :obj:`5`)
+- **aspect_ratio** (str): Video aspect ratio. Options: "16:9", "9:16". (default: :obj:`"16:9"`)
+- **negative_prompt** (Optional[str]): What to avoid in the video. (default: :obj:`None`)
+- **person_generation** (str): Person safety setting. (default: :obj:`"allow_adult"`)
+
+**Returns:**
+
+  Dict[str, Any]:
+A dictionary containing:
+- 'success' (bool): Whether the operation was successful
+- 'videos' (List[Dict]): List of generated video data
+- 'metadata' (Dict): Additional metadata from the response
+- 'error' (str): Error message if operation failed
+
+<a id="camel.toolkits.vertex_ai_veo_toolkit.VertexAIVeoToolkit.extend_video"></a>
+
+### extend_video
+
+```python
+def extend_video(
+    self,
+    video_uri: str,
+    text_prompt: str,
+    duration: int = 5,
+    aspect_ratio: str = '16:9',
+    negative_prompt: Optional[str] = None
+):
+```
+
+Extend an existing video using Vertex AI Veo.
+
+**Parameters:**
+
+- **video_uri** (str): Cloud Storage URI of the video to extend.
+- **text_prompt** (str): The text prompt to guide video extension.
+- **duration** (int): Duration to extend in seconds (5-8). (default: :obj:`5`)
+- **aspect_ratio** (str): Video aspect ratio. (default: :obj:`"16:9"`)
+- **negative_prompt** (Optional[str]): What to avoid in the extension. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]:
+A dictionary containing:
+- 'success' (bool): Whether the operation was successful
+- 'videos' (List[Dict]): List of extended video data
+- 'metadata' (Dict): Additional metadata from the response
+- 'error' (str): Error message if operation failed
+
+<a id="camel.toolkits.vertex_ai_veo_toolkit.VertexAIVeoToolkit._process_image"></a>
+
+### _process_image
+
+```python
+def _process_image(self, image_path: str):
+```
+
+Process image file and return base64 encoded data and MIME type.
+
+<a id="camel.toolkits.vertex_ai_veo_toolkit.VertexAIVeoToolkit._parse_video_response"></a>
+
+### _parse_video_response
+
+```python
+def _parse_video_response(self, response: Any):
+```
+
+Parse the video generation response.
+
+<a id="camel.toolkits.vertex_ai_veo_toolkit.VertexAIVeoToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: List of available function tools.
+
+<a id="camel.toolkits.vertex_ai_veo_toolkit.VertexAIVeoToolkit.get_async_tools"></a>
+
+### get_async_tools
+
+```python
+def get_async_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: List of available async function tools.
