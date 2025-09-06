@@ -33,7 +33,7 @@ logging.getLogger('camel.models').setLevel(logging.INFO)
 logging.getLogger('camel.toolkits.hybrid_browser_toolkit').setLevel(
     logging.DEBUG
 )
-USER_DATA_DIR = "User_Data"
+USER_DATA_DIR = "User_Data23"
 
 model_backend = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
@@ -67,7 +67,7 @@ custom_tools = [
     "browser_type",
     "browser_switch_tab",
     "browser_enter",
-    # "browser_get_som_screenshot", # remove it to achieve faster operation
+    "browser_get_som_screenshot", # remove it to achieve faster operation
     # "browser_press_key",
     # "browser_console_view",
     # "browser_console_exec",
@@ -81,6 +81,9 @@ web_toolkit_custom = HybridBrowserToolkit(
     browser_log_to_file=True,  # generate detailed log file in ./browser_log
     stealth=True,  # Using stealth mode during browser operation
     viewport_limit=True,
+    connect_over_cdp=True,
+    cdp_no_page=True,
+    cdp_url="http://localhost:9222/"
     # Limit snapshot to current viewport to reduce context
 )
 print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
@@ -93,14 +96,7 @@ agent = ChatAgent(
 )
 
 TASK_PROMPT = r"""
-Use Google Search to search for news in Munich today, and click on relevant 
-websites to get the news and write it in markdown.
-
-I mean you need to browse multiple websites. After visiting each website, 
-return to the Google search results page and click on other websites.
-
-Use enter to confirm search or input.
-If you see a cookie page, click accept all.
+open browser，在页面上搜索toys，然后用browser_get_som_screenshot查看截图，告诉我谷歌logo是啥颜色的
 """
 
 

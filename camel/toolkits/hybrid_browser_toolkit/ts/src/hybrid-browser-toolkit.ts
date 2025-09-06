@@ -15,7 +15,7 @@ export class HybridBrowserToolkit {
   constructor(config: BrowserToolkitConfig = {}) {
     this.configLoader = ConfigLoader.fromPythonConfig(config);
     this.config = config; // Store original config for backward compatibility
-    this.session = new HybridBrowserSession(this.configLoader.getBrowserConfig()); // Pass processed config
+    this.session = new HybridBrowserSession(config); // Pass original config
     this.viewportLimit = this.configLoader.getWebSocketConfig().viewport_limit;
     this.fullVisualMode = this.configLoader.getWebSocketConfig().fullVisualMode || false;
   }
@@ -26,9 +26,35 @@ export class HybridBrowserToolkit {
     try {
       await this.session.ensureBrowser();
       
+      // COMMENTED OUT: Skip all navigation
+      /*
+      // Check if we should skip navigation in CDP no-page mode
+      const browserConfig = this.configLoader.getBrowserConfig();
+      if (browserConfig.connectOverCdp && browserConfig.cdpNoPage && !startUrl) {
+        // In CDP no-page mode without explicit URL, just ensure browser and return current page
+        const snapshotStart = Date.now();
+        const snapshot = await this.getSnapshotForAction(this.viewportLimit);
+        const snapshotTime = Date.now() - snapshotStart;
+        
+        const totalTime = Date.now() - startTime;
+        
+        return {
+          success: true,
+          message: 'Browser connected to existing page',
+          snapshot,
+          timing: {
+            total_time_ms: totalTime,
+            snapshot_time_ms: snapshotTime,
+          },
+        };
+      }
+      
+      // Normal flow: navigate to URL
       const url = startUrl || this.config.defaultStartUrl || 'https://google.com/';
       const result = await this.session.visitPage(url);
+      */
       
+      // Just return current page snapshot without any navigation
       const snapshotStart = Date.now();
       const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
@@ -37,11 +63,10 @@ export class HybridBrowserToolkit {
       
       return {
         success: true,
-        message: `Browser opened and navigated to ${url}`,
+        message: `Browser opened without navigation`,
         snapshot,
         timing: {
           total_time_ms: totalTime,
-          ...result.timing,
           snapshot_time_ms: snapshotTime,
         },
       };
