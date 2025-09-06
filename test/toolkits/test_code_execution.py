@@ -12,10 +12,29 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import socket
+
 import pytest
 
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.utils import is_docker_running
+
+
+def is_microsandbox_available(
+    server_url: str = "http://192.168.122.56:5555",
+) -> bool:
+    """Check if microsandbox server is available with a quick timeout."""
+    try:
+        from urllib.parse import urlparse
+
+        parsed_url = urlparse(server_url)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(0.5)  # Quick timeout
+        result = sock.connect_ex((parsed_url.hostname, parsed_url.port))
+        sock.close()
+        return result == 0
+    except Exception:
+        return False
 
 
 @pytest.fixture
@@ -25,6 +44,20 @@ def code_execution_toolkit():
 
 @pytest.fixture
 def jupyter_code_execution_toolkit():
+    # Try to check if jupyter kernel is available
+    try:
+        from jupyter_client import kernelspec
+
+        # This will raise an exception if the kernel spec is not found
+        spec = kernelspec.get_kernel_spec('python3')
+        # Check if the python executable exists
+        import os
+
+        if not os.path.exists(spec.argv[0]):
+            pytest.skip(f"Jupyter kernel Python not found: {spec.argv[0]}")
+    except Exception as e:
+        pytest.skip(f"Jupyter kernel not available: {e}")
+
     return CodeExecutionToolkit(
         sandbox="jupyter",
         verbose=True,
@@ -60,6 +93,9 @@ def microsandbox_code_execution_toolkit():
         "namespace": "test-code-execution",
         "timeout": 30,
     }
+    # Check if microsandbox server is running
+    if not is_microsandbox_available(microsandbox_config["server_url"]):
+        pytest.skip("Microsandbox server is not running")
     return CodeExecutionToolkit(
         sandbox="microsandbox",
         verbose=True,
@@ -167,6 +203,10 @@ def test_verbose_output(code_execution_toolkit):
     assert "test" in result
 
 
+@pytest.mark.skipif(
+    not is_microsandbox_available("http://192.168.122.56:5555"),
+    reason="Microsandbox server is not running",
+)
 def test_microsandbox_execute_code(microsandbox_code_execution_toolkit):
     """Test executing Python code with microsandbox."""
     code = "x = 10 + 5\nprint(f'Result: {x}')"
@@ -176,6 +216,10 @@ def test_microsandbox_execute_code(microsandbox_code_execution_toolkit):
     assert "Executed the code below:" in result
 
 
+@pytest.mark.skipif(
+    not is_microsandbox_available("http://192.168.122.56:5555"),
+    reason="Microsandbox server is not running",
+)
 def test_microsandbox_execute_javascript(microsandbox_code_execution_toolkit):
     """Test executing JavaScript code with microsandbox."""
     code = "console.log('Hello from JavaScript');"
@@ -187,6 +231,10 @@ def test_microsandbox_execute_javascript(microsandbox_code_execution_toolkit):
     assert "Executed the code below:" in result
 
 
+@pytest.mark.skipif(
+    not is_microsandbox_available("http://192.168.122.56:5555"),
+    reason="Microsandbox server is not running",
+)
 def test_microsandbox_execute_command(microsandbox_code_execution_toolkit):
     """Test executing shell commands with microsandbox."""
     result = microsandbox_code_execution_toolkit.execute_command("echo test")
@@ -196,6 +244,10 @@ def test_microsandbox_execute_command(microsandbox_code_execution_toolkit):
     assert "Executed the command below:" in result
 
 
+@pytest.mark.skipif(
+    not is_microsandbox_available("http://192.168.122.56:5555"),
+    reason="Microsandbox server is not running",
+)
 def test_microsandbox_error_handling(microsandbox_code_execution_toolkit):
     """Test error handling with microsandbox."""
     code = "x = 1 / 0"  # Division by zero - more reliable error
@@ -205,5 +257,3 @@ def test_microsandbox_error_handling(microsandbox_code_execution_toolkit):
     assert result is not None
     assert len(result) > 0
     assert "Executed the code below:" in result
-
-    # The specific error format may vary, so just ensure execution completes
