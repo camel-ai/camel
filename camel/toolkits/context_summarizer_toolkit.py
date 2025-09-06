@@ -80,6 +80,8 @@ class ContextSummarizerToolkit(BaseToolkit):
 
         # Create a separate agent for summarization without tools to avoid
         # circular calls
+        from camel.agents import ChatAgent
+
         self.summary_agent = ChatAgent(
             system_message="You are a helpful assistant that creates concise "
             "summaries of conversations.",
