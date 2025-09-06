@@ -21,6 +21,7 @@ from camel.toolkits.wechat_official_toolkit import (
     _get_wechat_access_token,
 )
 
+
 @pytest.fixture(autouse=True)
 def set_env_vars(monkeypatch):
     """Set up environment variables for testing."""
@@ -47,7 +48,7 @@ def test_get_access_token(mock_get):
     mock_response = MagicMock()
     mock_response.json.return_value = {
         'access_token': 'test_token',
-        'expires_in': 7200
+        'expires_in': 7200,
     }
     mock_get.return_value = mock_response
 
@@ -59,7 +60,7 @@ def test_get_access_token(mock_get):
 def test_send_message(mock_request):
     """Test sending customer message."""
     mock_request.return_value = {'errcode': 0}
-    
+
     toolkit = WeChatOfficialToolkit()
     result = toolkit.send_customer_message('test_openid', 'Hello', 'text')
     assert 'Message sent successfully' in result
@@ -70,7 +71,7 @@ def test_get_user_info(mock_request):
     """Test getting user information."""
     expected_data = {'openid': 'test_openid', 'nickname': 'Test User'}
     mock_request.return_value = expected_data
-    
+
     toolkit = WeChatOfficialToolkit()
     result = toolkit.get_user_info('test_openid')
     assert result == expected_data
@@ -79,6 +80,6 @@ def test_get_user_info(mock_request):
 def test_missing_credentials(monkeypatch):
     """Test initialization with missing credentials."""
     monkeypatch.delenv("WECHAT_APP_ID", raising=False)
-    
+
     with pytest.raises(ValueError, match="WeChat credentials missing"):
         WeChatOfficialToolkit()

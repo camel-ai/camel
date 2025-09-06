@@ -14,7 +14,7 @@
 
 import os
 import time
-from typing import Any, Dict, List, Optional, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 import requests
 
@@ -36,15 +36,15 @@ def _get_wechat_access_token() -> str:
 
     Returns:
         str: The valid access token.
-    
+
     Raises:
         ValueError: If credentials are missing or token retrieval fails.
-    
+
     References:
         https://developers.weixin.qq.com/doc/offiaccount/Basic_Information/Get_access_token.html
     """
     global _wechat_access_token, _wechat_access_token_expires_at
-    
+
     if _wechat_access_token and _wechat_access_token_expires_at > time.time():
         return _wechat_access_token
 
@@ -61,7 +61,9 @@ def _get_wechat_access_token() -> str:
 
     if "access_token" in data:
         _wechat_access_token = data["access_token"]
-        _wechat_access_token_expires_at = time.time() + data.get("expires_in", 7200) - 60
+        _wechat_access_token_expires_at = (
+            time.time() + data.get("expires_in", 7200) - 60
+        )
         logger.info("WeChat access token refreshed.")
         return _wechat_access_token
     else:
@@ -69,45 +71,49 @@ def _get_wechat_access_token() -> str:
         errmsg = data.get("errmsg", "Unknown error")
         raise ValueError(f"Failed to get access token {errcode}: {errmsg}")
 
-def _make_wechat_request(method: Literal["GET", "POST"], endpoint: str, **kwargs) -> Dict[str, Any]:
+
+def _make_wechat_request(
+    method: Literal["GET", "POST"], endpoint: str, **kwargs
+) -> Dict[str, Any]:
     r"""Makes a request to WeChat API with proper error handling.
-    
+
     Args:
         method (Literal["GET", "POST"]): HTTP method ('GET' or 'POST').
         endpoint (str): API endpoint path.
         **kwargs: Additional arguments for requests.
-        
+
     Returns:
         Dict[str, Any]: API response data.
-        
+
     Raises:
         requests.exceptions.RequestException: If request fails.
         ValueError: If API returns an error.
     """
     global _wechat_access_token, _wechat_access_token_expires_at
     access_token = _get_wechat_access_token()
-    
+
     # Handle URL parameter concatenation
     separator = "&" if "?" in endpoint else "?"
     url = (
         f"https://api.weixin.qq.com{endpoint}{separator}"
         f"access_token={access_token}"
     )
-    
+
     if method.upper() == "GET":
         response = requests.get(url, **kwargs)
     else:
         response = requests.post(url, **kwargs)
-    
+
     response.raise_for_status()
     data = response.json()
-    
+
     if data.get("errcode") and data.get("errcode") != 0:
         errcode = data.get("errcode")
         errmsg = data.get("errmsg", "Unknown error")
         raise ValueError(f"WeChat API error {errcode}: {errmsg}")
-    
+
     return data
+
 
 @MCPServer()
 class WeChatOfficialToolkit(BaseToolkit):
@@ -128,21 +134,25 @@ class WeChatOfficialToolkit(BaseToolkit):
         r"""Initializes the WeChatOfficialToolkit."""
         super().__init__(timeout=timeout)
         self.base_url = "https://api.weixin.qq.com"
-        
+
         # Validate credentials
         app_id = os.environ.get("WECHAT_APP_ID", "")
         app_secret = os.environ.get("WECHAT_APP_SECRET", "")
-        
+
         if not all([app_id, app_secret]):
             raise ValueError(
-                "WeChat credentials missing. Set WECHAT_APP_ID and WECHAT_APP_SECRET."
+                "WeChat credentials missing. Set WECHAT_APP_ID and"
+                " WECHAT_APP_SECRET."
             )
-        
+
         # Define full logic as class methods; top-level functions delegate here
-    @api_keys_required([
-        (None, "WECHAT_APP_ID"),
-        (None, "WECHAT_APP_SECRET"),
-    ])
+
+    @api_keys_required(
+        [
+            (None, "WECHAT_APP_ID"),
+            (None, "WECHAT_APP_SECRET"),
+        ]
+    )
     def send_customer_message(
         self,
         openid: str,
@@ -190,10 +200,12 @@ class WeChatOfficialToolkit(BaseToolkit):
         )
         return f"Message sent successfully to {openid}."
 
-    @api_keys_required([
-        (None, "WECHAT_APP_ID"),
-        (None, "WECHAT_APP_SECRET"),
-    ])
+    @api_keys_required(
+        [
+            (None, "WECHAT_APP_ID"),
+            (None, "WECHAT_APP_SECRET"),
+        ]
+    )
     def get_user_info(
         self,
         openid: str,
@@ -203,23 +215,28 @@ class WeChatOfficialToolkit(BaseToolkit):
 
         Args:
             openid (str): The user's OpenID.
-            lang (str): Response language. Common values: "zh_CN", "zh_TW", "en". (default: "zh_CN")
+            lang (str): Response language. Common values: "zh_CN", "zh_TW",
+                "en". (default: "zh_CN")
 
         Returns:
-            Dict[str, Any]: User information as dictionary or error information.
+            Dict[str, Any]: User information as dictionary or error
+                information.
 
         References:
-            https://developers.weixin.qq.com/doc/offiaccount/User_Management/Getting_user_basic_information.html
+            https://developers.weixin.qq.com/doc/offiaccount/User_Management/
+            Getting_user_basic_information.html
         """
         data = _make_wechat_request(
             "GET", f"/cgi-bin/user/info?openid={openid}&lang={lang}"
         )
         return data
 
-    @api_keys_required([
-        (None, "WECHAT_APP_ID"),
-        (None, "WECHAT_APP_SECRET"),
-    ])
+    @api_keys_required(
+        [
+            (None, "WECHAT_APP_ID"),
+            (None, "WECHAT_APP_SECRET"),
+        ]
+    )
     def get_followers_list(
         self,
         next_openid: str = "",
@@ -233,7 +250,8 @@ class WeChatOfficialToolkit(BaseToolkit):
             Dict[str, Any]: Followers list as dictionary or error information.
 
         References:
-            https://developers.weixin.qq.com/doc/offiaccount/User_Management/Getting_a_list_of_followers.html
+            https://developers.weixin.qq.com/doc/offiaccount/User_Management/
+            Getting_a_list_of_followers.html
         """
         endpoint = "/cgi-bin/user/get"
         if next_openid:
@@ -241,10 +259,12 @@ class WeChatOfficialToolkit(BaseToolkit):
         data = _make_wechat_request("GET", endpoint)
         return data
 
-    @api_keys_required([
-        (None, "WECHAT_APP_ID"),
-        (None, "WECHAT_APP_SECRET"),
-    ])
+    @api_keys_required(
+        [
+            (None, "WECHAT_APP_ID"),
+            (None, "WECHAT_APP_SECRET"),
+        ]
+    )
     def upload_wechat_media(
         self,
         media_type: Literal[
@@ -262,15 +282,19 @@ class WeChatOfficialToolkit(BaseToolkit):
         Args:
             media_type (str): Media type: "image", "voice", "video", "thumb".
             file_path (str): Local file path.
-            permanent (bool): Whether to upload as permanent media. (default: False)
-            description (Optional[str]): Video description in JSON format for permanent upload.
+            permanent (bool): Whether to upload as permanent media.
+                (default: :obj:`False`)
+            description (Optional[str]): Video description in JSON format
+                for permanent upload. (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: Upload result with media_id or error information.
 
         References:
-            - Temporary: https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Adding_Temporary_Assets.html
-            - Permanent: https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Adding_Permanent_Assets.html
+            - Temporary: https://developers.weixin.qq.com/doc/offiaccount/
+            Asset_Management/Adding_Temporary_Assets.html
+            - Permanent: https://developers.weixin.qq.com/doc/offiaccount/
+            Asset_Management/Adding_Permanent_Assets.html
         """
         if permanent:
             endpoint = f"/cgi-bin/material/add_material?type={media_type}"
@@ -278,7 +302,7 @@ class WeChatOfficialToolkit(BaseToolkit):
             if media_type == "video" and description:
                 data_payload["description"] = description
             with open(file_path, "rb") as media_file:
-                files = {"media": media_file}
+                files: Dict[str, Any] = {"media": media_file}
                 if media_type == "video" and description:
                     files["description"] = (None, description)
                 data = _make_wechat_request(
@@ -292,10 +316,12 @@ class WeChatOfficialToolkit(BaseToolkit):
 
         return data
 
-    @api_keys_required([
-        (None, "WECHAT_APP_ID"),
-        (None, "WECHAT_APP_SECRET"),
-    ])
+    @api_keys_required(
+        [
+            (None, "WECHAT_APP_ID"),
+            (None, "WECHAT_APP_SECRET"),
+        ]
+    )
     def get_media_list(
         self,
         media_type: Literal[
@@ -311,14 +337,15 @@ class WeChatOfficialToolkit(BaseToolkit):
 
         Args:
             media_type (str): Media type: "image", "voice", "video", "news".
-            offset (int): Starting position. (default: 0)
-            count (int): Number of items (1-20). (default: 20)
+            offset (int): Starting position. (default: :obj:`0`)
+            count (int): Number of items (1-20). (default: :obj:`20`)
 
         Returns:
             Dict[str, Any]: Media list as dictionary or error information.
 
         References:
-            https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Get_the_list_of_all_materials.html
+            https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/
+            Get_the_list_of_all_materials.html
         """
         payload = {"type": media_type, "offset": offset, "count": count}
         data = _make_wechat_request(
@@ -329,10 +356,12 @@ class WeChatOfficialToolkit(BaseToolkit):
         )
         return data
 
-    @api_keys_required([
-        (None, "WECHAT_APP_ID"),
-        (None, "WECHAT_APP_SECRET"),
-    ])
+    @api_keys_required(
+        [
+            (None, "WECHAT_APP_ID"),
+            (None, "WECHAT_APP_SECRET"),
+        ]
+    )
     def send_mass_message_to_all(
         self,
         content: str,
@@ -371,7 +400,8 @@ class WeChatOfficialToolkit(BaseToolkit):
 
         References:
             - Mass send by OpenID list:
-              https://developers.weixin.qq.com/doc/service/api/notify/message/api_masssend.html
+              https://developers.weixin.qq.com/doc/service/api/notify/message/
+              api_masssend.html
         """
         # 1) Collect all follower OpenIDs
         all_openids: List[str] = []
@@ -382,10 +412,16 @@ class WeChatOfficialToolkit(BaseToolkit):
                 endpoint += f"?next_openid={next_openid}"
             page = _make_wechat_request("GET", endpoint)
             data_block = page.get("data", {}) if isinstance(page, dict) else {}
-            openids = data_block.get("openid", []) if isinstance(data_block, dict) else []
+            openids = (
+                data_block.get("openid", [])
+                if isinstance(data_block, dict)
+                else []
+            )
             if openids:
                 all_openids.extend(openids)
-            next_openid = page.get("next_openid", "") if isinstance(page, dict) else ""
+            next_openid = (
+                page.get("next_openid", "") if isinstance(page, dict) else ""
+            )
             if not next_openid:
                 break
 
@@ -434,6 +470,7 @@ class WeChatOfficialToolkit(BaseToolkit):
             "batches": (len(all_openids) + batch_size - 1) // batch_size,
             "results": results,
         }
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns toolkit functions as tools."""
         return [
