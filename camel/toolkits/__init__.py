@@ -90,7 +90,6 @@ from .screenshot_toolkit import ScreenshotToolkit
 from .message_integration import ToolkitMessageIntegration
 from .context_summarizer_toolkit import ContextSummarizerToolkit
 from .notion_mcp_toolkit import NotionMCPToolkit
-from .artifact_toolkit import ArtifactToolkit
 from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
 
@@ -169,7 +168,6 @@ __all__ = [
     'AgentCommunicationToolkit',
     'WebDeployToolkit',
     'ScreenshotToolkit',
-    'ArtifactToolkit',
     'RegisteredAgentToolkit',
     'ToolkitMessageIntegration',
     'ContextSummarizerToolkit',
