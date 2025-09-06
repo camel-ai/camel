@@ -10,8 +10,8 @@ class AgentPool:
 
 A pool of agent instances for efficient reuse.
 
-This pool manages a collection of pre-cloned agents. It supports
-auto-scaling based ondemand and intelligent reuse of existing agents.
+This pool manages a collection of pre-cloned agents with automatic
+scaling and idle timeout cleanup.
 
 **Parameters:**
 
@@ -20,6 +20,7 @@ auto-scaling based ondemand and intelligent reuse of existing agents.
 - **max_size** (int): Maximum number of agents in the pool. (default: :obj:`10`)
 - **auto_scale** (bool): Whether to automatically scale the pool size. (default: :obj:`True`)
 - **idle_timeout** (float): Time in seconds after which idle agents are removed. (default: :obj:`180.0`)
+- **cleanup_interval** (float): Fixed interval in seconds between cleanup checks. (default: :obj:`60.0`)
 
 <a id="camel.societies.workforce.single_agent_worker.AgentPool.__init__"></a>
 
@@ -33,9 +34,7 @@ def __init__(
     max_size: int = 10,
     auto_scale: bool = True,
     idle_timeout: float = 180.0,
-    max_tasks_per_agent: int = 10,
-    min_cleanup_interval: float = 15.0,
-    max_cleanup_interval: float = 120.0
+    cleanup_interval: float = 60.0
 ):
 ```
 
@@ -58,21 +57,6 @@ def _create_fresh_agent(self):
 ```
 
 Create a fresh agent instance.
-
-<a id="camel.societies.workforce.single_agent_worker.AgentPool._calculate_affinity_score"></a>
-
-### _calculate_affinity_score
-
-```python
-def _calculate_affinity_score(
-    self,
-    agent: ChatAgent,
-    metric_weights: Optional[List[float]] = None,
-    default_fresh_agent_score: float = 0.75
-):
-```
-
-Calculate the affinity score of a task based on its metadata.
 
 <a id="camel.societies.workforce.single_agent_worker.AgentPool.get_stats"></a>
 
