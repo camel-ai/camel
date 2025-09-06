@@ -46,7 +46,7 @@ class GoogleCloudStorage(BaseObjectStorage):
         create_if_not_exists: bool = True,
         anonymous: bool = False,
     ) -> None:
-        from google.cloud import storage
+        from google.cloud import storage  # type: ignore[attr-defined]
 
         self.create_if_not_exists = create_if_not_exists
 
