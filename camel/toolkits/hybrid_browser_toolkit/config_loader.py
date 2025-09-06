@@ -54,6 +54,7 @@ class ToolkitConfig:
 
     cache_dir: str = "tmp/"
     browser_log_to_file: bool = False
+    log_dir: Optional[str] = None
     session_id: Optional[str] = None
     enabled_tools: Optional[list] = None
 
@@ -147,6 +148,7 @@ class ConfigLoader:
             "screenshotTimeout": self.browser_config.screenshot_timeout,
             "pageStabilityTimeout": self.browser_config.page_stability_timeout,
             "browser_log_to_file": self.toolkit_config.browser_log_to_file,
+            "log_dir": self.toolkit_config.log_dir,
             "session_id": self.toolkit_config.session_id,
             "viewport_limit": self.browser_config.viewport_limit,
             "connectOverCdp": self.browser_config.connect_over_cdp,
