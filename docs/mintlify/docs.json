@@ -546,6 +546,7 @@
               "reference/camel.toolkits.video_download_toolkit",
               "reference/camel.toolkits.weather_toolkit",
               "reference/camel.toolkits.web_deploy_toolkit",
+              "reference/camel.toolkits.wechat_official_toolkit",
               "reference/camel.toolkits.whatsapp_toolkit",
               "reference/camel.toolkits.wolfram_alpha_toolkit",
               "reference/camel.toolkits.zapier_toolkit",
