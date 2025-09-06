@@ -488,6 +488,7 @@
               "reference/camel.toolkits.browser_toolkit",
               "reference/camel.toolkits.browser_toolkit_commons",
               "reference/camel.toolkits.code_execution",
+              "reference/camel.toolkits.context_summarizer_toolkit",
               "reference/camel.toolkits.craw4ai_toolkit",
               "reference/camel.toolkits.dalle_toolkit",
               "reference/camel.toolkits.dappier_toolkit",
@@ -608,6 +609,7 @@
             "pages": [
               "reference/camel.utils.async_func",
               "reference/camel.utils.commons",
+              "reference/camel.utils.context_utils",
               "reference/camel.utils.deduplication",
               "reference/camel.utils.filename",
               "reference/camel.utils.langfuse",
