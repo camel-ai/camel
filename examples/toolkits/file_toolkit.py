@@ -16,7 +16,7 @@ import os
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.toolkits import FileWriteToolkit
+from camel.toolkits import FileToolkit
 from camel.types import ModelPlatformType
 from camel.types.enums import ModelType
 
@@ -34,7 +34,7 @@ working_directory = "./file_write_outputs"
 os.makedirs(working_directory, exist_ok=True)
 
 # Initialize the FileWriteToolkit with the output directory
-file_toolkit = FileWriteToolkit(working_directory=working_directory)
+file_toolkit = FileToolkit(working_directory=working_directory)
 
 # Get the tools from the toolkit
 tools_list = file_toolkit.get_tools()
@@ -312,7 +312,7 @@ These agents can be software programs, robots, or any entities that can perceive
 '''
 
 # Example 9: Read file content
-read_query = """Please read the content of the simple_flask_server.py file that was created earlier."""
+read_query = """Please read the content of the web server python file that was created earlier."""
 
 camel_agent.reset()
 response = camel_agent.step(read_query)
