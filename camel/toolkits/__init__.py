@@ -62,7 +62,7 @@ from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
 from .browser_toolkit import BrowserToolkit
 from .async_browser_toolkit import AsyncBrowserToolkit
-from .file_write_toolkit import FileWriteToolkit
+from .file_toolkit import FileToolkit, FileWriteToolkit
 from .pptx_toolkit import PPTXToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
@@ -140,7 +140,8 @@ __all__ = [
     'ImageAnalysisToolkit',
     'BrowserToolkit',
     'AsyncBrowserToolkit',
-    'FileWriteToolkit',
+    'FileToolkit',
+    'FileWriteToolkit',  # Deprecated, use FileToolkit instead
     'PPTXToolkit',
     'TerminalToolkit',
     'PubMedToolkit',
