@@ -22,31 +22,28 @@ class TestVertexAIVeoToolkit:
     @pytest.fixture
     def mock_toolkit(self):
         r"""Create a mock VertexAIVeoToolkit for testing."""
-        with patch('google.cloud.aiplatform') as mock_aiplatform:
-            mock_aiplatform.init = MagicMock()
-            mock_aiplatform.gapic.PredictionServiceClient = MagicMock()
+        # Set required environment variables
+        os.environ['GOOGLE_CLOUD_PROJECT'] = 'test-project'
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/fake/path/creds.json'
 
-            # Set required environment variables
-            os.environ['GOOGLE_CLOUD_PROJECT'] = 'test-project'
-            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = (
-                '/fake/path/creds.json'
+        # Mock the Google Cloud AI Platform API calls
+        with (
+            patch('google.cloud.aiplatform.init'),
+            patch('google.cloud.aiplatform.gapic.PredictionServiceClient'),
+        ):
+            from camel.toolkits.vertex_ai_veo_toolkit import (
+                VertexAIVeoToolkit,
             )
 
-            try:
-                from camel.toolkits.vertex_ai_veo_toolkit import (
-                    VertexAIVeoToolkit,
-                )
+            toolkit = VertexAIVeoToolkit(
+                project_id='test-project', location='us-central1'
+            )
 
-                toolkit = VertexAIVeoToolkit(
-                    project_id='test-project', location='us-central1'
-                )
-                yield toolkit
-            finally:
-                # Clean up environment variables
-                if 'GOOGLE_CLOUD_PROJECT' in os.environ:
-                    del os.environ['GOOGLE_CLOUD_PROJECT']
-                if 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ:
-                    del os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+            yield toolkit
+
+        # Clean up environment variables
+        os.environ.pop('GOOGLE_CLOUD_PROJECT', None)
+        os.environ.pop('GOOGLE_APPLICATION_CREDENTIALS', None)
 
     def test_toolkit_initialization(self, mock_toolkit):
         r"""Test that the toolkit initializes correctly."""
@@ -105,8 +102,14 @@ class TestVertexAIVeoToolkit:
         assert mime_type == 'image/png'
         assert image_data == 'encoded_data'
 
-    def test_process_image_invalid_format(self, mock_toolkit):
+    @patch('builtins.open')
+    def test_process_image_invalid_format(self, mock_open, mock_toolkit):
         r"""Test that invalid image formats raise an error."""
+        # Mock file operations
+        mock_open.return_value.__enter__.return_value.read.return_value = (
+            b'fake_image_data'
+        )
+
         with pytest.raises(ValueError, match="Unsupported image format"):
             mock_toolkit._process_image('/path/to/image.bmp')
 

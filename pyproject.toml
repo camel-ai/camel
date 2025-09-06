@@ -426,6 +426,7 @@ all = [
     "chromadb>=0.6.0,<1.0.0",
     "reportlab>=4.4.2",
     "onnxruntime<=1.19.2",
+    "google-cloud-aiplatform>=1.111.0",
 ]
 
 [project.urls]
