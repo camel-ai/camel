@@ -502,6 +502,8 @@ known-first-party = ["camel"]
 
 [tool.ruff.lint.per-file-ignores]
 "camel/toolkits/search_toolkit.py" = ["E501"]
+"camel/toolkits/artifact_toolkit.py" = ["E501"]
+"examples/toolkits/artifact_toolkit.py" = ["E501"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
