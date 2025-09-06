@@ -63,6 +63,7 @@ from camel.memories import (
     MemoryRecord,
     ScoreBasedContextCreator,
 )
+from camel.memories.blocks.chat_history_block import EmptyMemoryWarning
 from camel.messages import (
     BaseMessage,
     FunctionCallingMessage,
@@ -841,7 +842,12 @@ class ChatAgent(BaseAgent):
             current_tokens = token_counter.count_tokens_from_messages(
                 [message.to_openai_message(role)]
             )
-            _, ctx_tokens = self.memory.get_context()
+            import warnings
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=EmptyMemoryWarning)
+                _, ctx_tokens = self.memory.get_context()
+
             remaining_budget = max(0, token_limit - ctx_tokens)
 
             if current_tokens <= remaining_budget:
@@ -1035,6 +1041,7 @@ class ChatAgent(BaseAgent):
             None
         """
         self.memory.clear()
+
         if self.system_message is not None:
             self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
 

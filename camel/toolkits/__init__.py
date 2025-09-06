@@ -40,6 +40,7 @@ from .google_calendar_toolkit import GoogleCalendarToolkit
 from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
 from .whatsapp_toolkit import WhatsAppToolkit
+from .wechat_official_toolkit import WeChatOfficialToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
@@ -87,7 +88,9 @@ from .message_agent_toolkit import AgentCommunicationToolkit
 from .web_deploy_toolkit import WebDeployToolkit
 from .screenshot_toolkit import ScreenshotToolkit
 from .message_integration import ToolkitMessageIntegration
+from .context_summarizer_toolkit import ContextSummarizerToolkit
 from .notion_mcp_toolkit import NotionMCPToolkit
+from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
 
 __all__ = [
@@ -103,6 +106,7 @@ __all__ = [
     'SearchToolkit',
     'SlackToolkit',
     'WhatsAppToolkit',
+    'WeChatOfficialToolkit',
     'ImageGenToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
@@ -165,6 +169,8 @@ __all__ = [
     'ScreenshotToolkit',
     'RegisteredAgentToolkit',
     'ToolkitMessageIntegration',
+    'ContextSummarizerToolkit',
     'NotionMCPToolkit',
+    'VertexAIVeoToolkit',
     'MinimaxMCPToolkit',
 ]
