@@ -114,14 +114,16 @@ Retrieves WeChat user information.
 **Parameters:**
 
 - **openid** (str): The user's OpenID.
-- **lang** (str): Response language. Common values: "zh_CN", "zh_TW", "en". (default: "zh_CN") (default: `"zh_CN"`)
+- **lang** (str): Response language. Common values: "zh_CN", "zh_TW", "en". (default: "zh_CN")
 
 **Returns:**
 
-  Dict[str, Any]: User information as dictionary or error information.
+  Dict[str, Any]: User information as dictionary or error
+information.
 
 References:
-https://developers.weixin.qq.com/doc/offiaccount/User_Management/Getting_user_basic_information.html
+https://developers.weixin.qq.com/doc/offiaccount/User_Management/
+Getting_user_basic_information.html
 
 <a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.get_followers_list"></a>
 
@@ -142,7 +144,8 @@ Retrieves list of followers' OpenIDs.
   Dict[str, Any]: Followers list as dictionary or error information.
 
 References:
-https://developers.weixin.qq.com/doc/offiaccount/User_Management/Getting_a_list_of_followers.html
+https://developers.weixin.qq.com/doc/offiaccount/User_Management/
+Getting_a_list_of_followers.html
 
 <a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.upload_wechat_media"></a>
 
@@ -164,16 +167,18 @@ Uploads media file to WeChat.
 
 - **media_type** (str): Media type: "image", "voice", "video", "thumb".
 - **file_path** (str): Local file path.
-- **permanent** (bool): Whether to upload as permanent media. (default: False) (default: False)
-- **description** (Optional[str]): Video description in JSON format for permanent upload.
+- **permanent** (bool): Whether to upload as permanent media. (default: :obj:`False`)
+- **description** (Optional[str]): Video description in JSON format for permanent upload. (default: :obj:`None`)
 
 **Returns:**
 
   Dict[str, Any]: Upload result with media_id or error information.
 
 References:
-- Temporary: https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Adding_Temporary_Assets.html
-- Permanent: https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Adding_Permanent_Assets.html
+- Temporary: https://developers.weixin.qq.com/doc/offiaccount/
+Asset_Management/Adding_Temporary_Assets.html
+- Permanent: https://developers.weixin.qq.com/doc/offiaccount/
+Asset_Management/Adding_Permanent_Assets.html
 
 <a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.get_media_list"></a>
 
@@ -193,15 +198,16 @@ Gets list of permanent media files.
 **Parameters:**
 
 - **media_type** (str): Media type: "image", "voice", "video", "news".
-- **offset** (int): Starting position. (default: 0) (default: 0)
-- **count** (int): Number of items (1-20). (default: 20) (default: 20)
+- **offset** (int): Starting position. (default: :obj:`0`) (default: 0)
+- **count** (int): Number of items (1-20). (default: :obj:`20`) (default: 20)
 
 **Returns:**
 
   Dict[str, Any]: Media list as dictionary or error information.
 
 References:
-https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/Get_the_list_of_all_materials.html
+https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/
+Get_the_list_of_all_materials.html
 
 <a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.send_mass_message_to_all"></a>
 
@@ -238,7 +244,8 @@ each batch response.
 
 References:
 - Mass send by OpenID list:
-https://developers.weixin.qq.com/doc/service/api/notify/message/api_masssend.html
+https://developers.weixin.qq.com/doc/service/api/notify/message/
+api_masssend.html
 
 <a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.get_tools"></a>
 
