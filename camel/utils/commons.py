@@ -354,6 +354,8 @@ def api_keys_required(
                 key_way = "https://www.zhipuai.cn/"
             elif env_var_name == 'KLAVIS_API_KEY':
                 key_way = "https://www.klavis.ai/docs"
+            elif env_var_name == 'XAI_API_KEY':
+                key_way = "https://api.x.ai/v1"
 
             if missing_keys:
                 raise ValueError(

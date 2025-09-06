@@ -156,7 +156,12 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
         if (name := param.arg_name) in parameters_dict["properties"] and (
             description := param.description
         ):
-            parameters_dict["properties"][name]["description"] = description
+            # OpenAI does not allow descriptions on properties that use $ref.
+            # To avoid schema errors, we only add the description if "$ref" is
+            # not present.
+            prop = parameters_dict["properties"][name]
+            if "$ref" not in prop:
+                prop["description"] = description
 
     short_description = docstring.short_description or ""
     long_description = docstring.long_description or ""

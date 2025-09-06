@@ -16,6 +16,7 @@ import os
 from typing import ClassVar, Dict, Optional, Type, Union
 
 from camel.models.aiml_model import AIMLModel
+from camel.models.amd_model import AMDModel
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
@@ -31,6 +32,7 @@ from camel.models.lmstudio_model import LMStudioModel
 from camel.models.mistral_model import MistralModel
 from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
+from camel.models.nebius_model import NebiusModel
 from camel.models.netmind_model import NetmindModel
 from camel.models.novita_model import NovitaModel
 from camel.models.nvidia_model import NvidiaModel
@@ -76,6 +78,7 @@ class ModelFactory:
         ModelPlatformType.AWS_BEDROCK: AWSBedrockModel,
         ModelPlatformType.NVIDIA: NvidiaModel,
         ModelPlatformType.SILICONFLOW: SiliconFlowModel,
+        ModelPlatformType.AMD: AMDModel,
         ModelPlatformType.AIML: AIMLModel,
         ModelPlatformType.VOLCANO: VolcanoModel,
         ModelPlatformType.NETMIND: NetmindModel,
@@ -83,6 +86,7 @@ class ModelFactory:
         ModelPlatformType.AZURE: AzureOpenAIModel,
         ModelPlatformType.ANTHROPIC: AnthropicModel,
         ModelPlatformType.GROQ: GroqModel,
+        ModelPlatformType.NEBIUS: NebiusModel,
         ModelPlatformType.LMSTUDIO: LMStudioModel,
         ModelPlatformType.OPENROUTER: OpenRouterModel,
         ModelPlatformType.ZHIPU: ZhipuAIModel,

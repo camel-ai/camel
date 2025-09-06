@@ -66,6 +66,9 @@ class TerminalToolkit(BaseToolkit):
             connecting them to the terminal's standard input. This is useful
             for commands that require user input, like `ssh`. Interactive mode
             is only supported on macOS and Linux. (default: :obj:`False`)
+        log_dir (Optional[str]): Custom directory path for log files.
+            If None, logs are saved to the current working directory.
+            (default: :obj:`None`)
 
     Note:
         Most functions are compatible with Unix-based systems (macOS, Linux).
@@ -83,6 +86,7 @@ class TerminalToolkit(BaseToolkit):
         clone_current_env: bool = False,
         safe_mode: bool = True,
         interactive: bool = False,
+        log_dir: Optional[str] = None,
     ):
         # Store timeout before calling super().__init__
         self._timeout = timeout
@@ -99,6 +103,7 @@ class TerminalToolkit(BaseToolkit):
         self.use_shell_mode = use_shell_mode
         self._human_takeover_active = False
         self.interactive = interactive
+        self.log_dir = log_dir
 
         self.python_executable = sys.executable
         self.is_macos = platform.system() == 'Darwin'
@@ -153,8 +158,13 @@ class TerminalToolkit(BaseToolkit):
         r"""Set up file output to replace GUI, using a fixed file to simulate
         terminal.
         """
-
-        self.log_file = os.path.join(os.getcwd(), "camel_terminal.txt")
+        # Use custom log directory if provided, otherwise use current directory
+        if self.log_dir:
+            # Create the log directory if it doesn't exist
+            os.makedirs(self.log_dir, exist_ok=True)
+            self.log_file = os.path.join(self.log_dir, "camel_terminal.txt")
+        else:
+            self.log_file = os.path.join(os.getcwd(), "camel_terminal.txt")
 
         # Inform the user
         logger.info(f"Terminal output will be redirected to: {self.log_file}")

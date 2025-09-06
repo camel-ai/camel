@@ -44,6 +44,9 @@ class BrowserConfig:
     connect_over_cdp: bool = False
     cdp_url: Optional[str] = None
 
+    # Full visual mode configuration
+    full_visual_mode: bool = False
+
 
 @dataclass
 class ToolkitConfig:
@@ -51,6 +54,7 @@ class ToolkitConfig:
 
     cache_dir: str = "tmp/"
     browser_log_to_file: bool = False
+    log_dir: Optional[str] = None
     session_id: Optional[str] = None
     enabled_tools: Optional[list] = None
 
@@ -116,6 +120,8 @@ class ConfigLoader:
                 toolkit_kwargs["session_id"] = value
             elif key == "enabledTools":
                 toolkit_kwargs["enabled_tools"] = value
+            elif key == "fullVisualMode":
+                browser_kwargs["full_visual_mode"] = value
 
         browser_config = BrowserConfig(**browser_kwargs)
         toolkit_config = ToolkitConfig(**toolkit_kwargs)
@@ -142,10 +148,12 @@ class ConfigLoader:
             "screenshotTimeout": self.browser_config.screenshot_timeout,
             "pageStabilityTimeout": self.browser_config.page_stability_timeout,
             "browser_log_to_file": self.toolkit_config.browser_log_to_file,
+            "log_dir": self.toolkit_config.log_dir,
             "session_id": self.toolkit_config.session_id,
             "viewport_limit": self.browser_config.viewport_limit,
             "connectOverCdp": self.browser_config.connect_over_cdp,
             "cdpUrl": self.browser_config.cdp_url,
+            "fullVisualMode": self.browser_config.full_visual_mode,
         }
 
     def get_timeout_config(self) -> Dict[str, Optional[int]]:

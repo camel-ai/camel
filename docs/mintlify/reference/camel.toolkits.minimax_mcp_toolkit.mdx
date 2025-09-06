@@ -1,0 +1,97 @@
+<a id="camel.toolkits.minimax_mcp_toolkit"></a>
+
+<a id="camel.toolkits.minimax_mcp_toolkit.MinimaxMCPToolkit"></a>
+
+## MinimaxMCPToolkit
+
+```python
+class MinimaxMCPToolkit(BaseToolkit):
+```
+
+MinimaxMCPToolkit provides an interface for interacting with
+MiniMax AI services using the MiniMax MCP server.
+
+This toolkit enables access to MiniMax's multimedia generation
+capabilities including text-to-audio, voice cloning, video generation,
+image generation, music generation, and voice design.
+
+This toolkit can be used as an async context manager for automatic
+connection management:
+
+# Using explicit API key
+async with MinimaxMCPToolkit(api_key="your-key") as toolkit:
+tools = toolkit.get_tools()
+# Toolkit is automatically disconnected when exiting
+
+# Using environment variables (recommended for security)
+# Set MINIMAX_API_KEY=your-key in environment
+async with MinimaxMCPToolkit() as toolkit:
+tools = toolkit.get_tools()
+
+Environment Variables:
+MINIMAX_API_KEY: MiniMax API key for authentication
+MINIMAX_API_HOST: API host URL (default: https://api.minimax.io)
+MINIMAX_MCP_BASE_PATH: Base path for output files
+
+**Parameters:**
+
+- **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
+
+<a id="camel.toolkits.minimax_mcp_toolkit.MinimaxMCPToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    api_key: Optional[str] = None,
+    api_host: str = 'https://api.minimax.io',
+    base_path: Optional[str] = None,
+    timeout: Optional[float] = None
+):
+```
+
+Initializes the MinimaxMCPToolkit.
+
+**Parameters:**
+
+- **api_key** (Optional[str]): MiniMax API key for authentication. If None, will attempt to read from MINIMAX_API_KEY environment variable. (default: :obj:`None`)
+- **api_host** (str): MiniMax API host URL. Can be either "https://api.minimax.io" (global) or "https://api.minimaxi.com" (mainland China). Can also be read from MINIMAX_API_HOST environment variable. (default: :obj:`"https://api.minimax.io"`)
+- **base_path** (Optional[str]): Base path for output files. If None, uses current working directory. Can also be read from MINIMAX_MCP_BASE_PATH environment variable. (default: :obj:`None`)
+- **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
+
+<a id="camel.toolkits.minimax_mcp_toolkit.MinimaxMCPToolkit.is_connected"></a>
+
+### is_connected
+
+```python
+def is_connected(self):
+```
+
+**Returns:**
+
+  bool: True if connected, False otherwise.
+
+<a id="camel.toolkits.minimax_mcp_toolkit.MinimaxMCPToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: List of available MiniMax AI tools.
+
+<a id="camel.toolkits.minimax_mcp_toolkit.MinimaxMCPToolkit.get_text_tools"></a>
+
+### get_text_tools
+
+```python
+def get_text_tools(self):
+```
+
+**Returns:**
+
+  str: A string containing the descriptions of all MiniMax tools.

@@ -2,18 +2,22 @@ import {HybridBrowserSession} from './browser-session';
 import {ActionResult, BrowserAction, BrowserToolkitConfig, SnapshotResult, TabInfo, VisualMarkResult} from './types';
 import {ConfigLoader} from './config-loader';
 import {ConsoleMessage} from 'playwright';
+import {SomScreenshotInjected} from './som-screenshot-injected';
+import {filterClickableByHierarchy} from './snapshot-parser';
 
 export class HybridBrowserToolkit {
   private session: HybridBrowserSession;
   private config: BrowserToolkitConfig;
   private configLoader: ConfigLoader;
   private viewportLimit: boolean;
+  private fullVisualMode: boolean;
 
   constructor(config: BrowserToolkitConfig = {}) {
     this.configLoader = ConfigLoader.fromPythonConfig(config);
     this.config = config; // Store original config for backward compatibility
     this.session = new HybridBrowserSession(this.configLoader.getBrowserConfig()); // Pass processed config
     this.viewportLimit = this.configLoader.getWebSocketConfig().viewport_limit;
+    this.fullVisualMode = this.configLoader.getWebSocketConfig().fullVisualMode || false;
   }
 
   async openBrowser(startUrl?: string): Promise<ActionResult> {
@@ -26,7 +30,7 @@ export class HybridBrowserToolkit {
       const result = await this.session.visitPage(url);
       
       const snapshotStart = Date.now();
-      const snapshot = await this.getPageSnapshot(this.viewportLimit);
+      const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       
       const totalTime = Date.now() - startTime;
@@ -83,7 +87,7 @@ export class HybridBrowserToolkit {
       
       if (result.success) {
         const snapshotStart = Date.now();
-        response.snapshot = await this.getPageSnapshot(this.viewportLimit);
+        response.snapshot = await this.getSnapshotForAction(this.viewportLimit);
         const snapshotTime = Date.now() - snapshotStart;
         
         if (result.timing) {
@@ -119,12 +123,21 @@ export class HybridBrowserToolkit {
 
   async getPageSnapshot(viewportLimit: boolean = false): Promise<string> {
     try {
+      // Always return real snapshot when explicitly called
       // If viewport limiting is enabled, we need coordinates for filtering
       const snapshotResult = await this.session.getSnapshotForAI(viewportLimit, viewportLimit);
       return snapshotResult.snapshot;
     } catch (error) {
       return `Error capturing snapshot: ${error}`;
     }
+  }
+  
+  // Internal method for getting snapshot in actions (respects fullVisualMode)
+  private async getSnapshotForAction(viewportLimit: boolean = false): Promise<string> {
+    if (this.fullVisualMode) {
+      return 'full visual mode';
+    }
+    return this.getPageSnapshot(viewportLimit);
   }
 
 
@@ -134,35 +147,34 @@ export class HybridBrowserToolkit {
 
   async getSomScreenshot(): Promise<VisualMarkResult & { timing: any }> {
     const startTime = Date.now();
+    console.log('[HybridBrowserToolkit] Starting getSomScreenshot...');
     
     try {
-      const screenshotResult = await this.session.takeScreenshot();
-      const snapshotResult = await this.session.getSnapshotForAI(true); // Include coordinates for SOM_mark
+      // Get page and snapshot data
+      const page = await this.session.getCurrentPage();
+      const snapshotResult = await this.session.getSnapshotForAI(true); // Include coordinates
       
-      // Add visual marks using improved method
-      const markingStart = Date.now();
-      const markedImageBuffer = await this.addVisualMarksOptimized(screenshotResult.buffer, snapshotResult);
-      const markingTime = Date.now() - markingStart;
+      // Parse clickable elements from snapshot text
+      const clickableElements = this.parseClickableElements(snapshotResult.snapshot);
+      console.log(`[HybridBrowserToolkit] Found ${clickableElements.size} clickable elements`);
       
-      const base64Image = markedImageBuffer.toString('base64');
-      const dataUrl = `data:image/png;base64,${base64Image}`;
+      // Apply hierarchy-based filtering
+      const filteredElements = filterClickableByHierarchy(snapshotResult.snapshot, clickableElements);
+      console.log(`[HybridBrowserToolkit] After filtering: ${filteredElements.size} elements remain`);
+
+      // Use injected SOM-screenshot method without export path
+      const result = await SomScreenshotInjected.captureOptimized(
+        page,
+        snapshotResult,
+        filteredElements,
+        undefined  // No export path - don't generate files
+      );
       
-      const totalTime = Date.now() - startTime;
+      // Add snapshot timing info to result
+      result.timing.snapshot_time_ms = snapshotResult.timing.snapshot_time_ms;
+      result.timing.coordinate_enrichment_time_ms = snapshotResult.timing.coordinate_enrichment_time_ms;
       
-      // Count elements with coordinates
-      const elementsWithCoords = Object.values(snapshotResult.elements).filter(el => el.coordinates).length;
-      
-      return {
-        text: `Visual webpage screenshot captured with ${Object.keys(snapshotResult.elements).length} interactive elements (${elementsWithCoords} marked visually)`,
-        images: [dataUrl],
-        timing: {
-          total_time_ms: totalTime,
-          screenshot_time_ms: screenshotResult.timing.screenshot_time_ms,
-          snapshot_time_ms: snapshotResult.timing.snapshot_time_ms,
-          coordinate_enrichment_time_ms: snapshotResult.timing.coordinate_enrichment_time_ms,
-          visual_marking_time_ms: markingTime,
-        },
-      };
+      return result;
     } catch (error) {
       const totalTime = Date.now() - startTime;
       return {
@@ -179,132 +191,6 @@ export class HybridBrowserToolkit {
     }
   }
 
-  private async addVisualMarksOptimized(screenshotBuffer: Buffer, snapshotResult: SnapshotResult): Promise<Buffer> {
-    try {
-      
-      // Check if we have any elements with coordinates
-      const elementsWithCoords = Object.entries(snapshotResult.elements)
-        .filter(([ref, element]) => element.coordinates);
-      
-      if (elementsWithCoords.length === 0) {
-        return screenshotBuffer;
-      }
-      
-      // Parse clickable elements from snapshot text
-      const clickableElements = this.parseClickableElements(snapshotResult.snapshot);
-      
-      // Use sharp for image processing
-      const sharp = require('sharp');
-      const page = await this.session.getCurrentPage();
-      let viewport = page.viewportSize();
-      
-      // In CDP mode, viewportSize might be null, get it from window dimensions
-      if (!viewport) {
-        const windowSize = await page.evaluate(() => ({
-          width: window.innerWidth,
-          height: window.innerHeight
-        }));
-        viewport = windowSize;
-      }
-      
-      // Get device pixel ratio to handle high DPI screens
-      const dpr = await page.evaluate(() => window.devicePixelRatio) || 1;
-      
-      // Get actual screenshot dimensions
-      const metadata = await sharp(screenshotBuffer).metadata();
-      const screenshotWidth = metadata.width || viewport.width;
-      const screenshotHeight = metadata.height || viewport.height;
-      
-      // Calculate scaling factor between CSS pixels and screenshot pixels
-      const scaleX = screenshotWidth / viewport.width;
-      const scaleY = screenshotHeight / viewport.height;
-      
-      // Debug logging for CDP mode
-      if (process.env.HYBRID_BROWSER_DEBUG === '1') {
-        console.log('[CDP Debug] Viewport size:', viewport);
-        console.log('[CDP Debug] Device pixel ratio:', dpr);
-        console.log('[CDP Debug] Screenshot dimensions:', { width: screenshotWidth, height: screenshotHeight });
-        console.log('[CDP Debug] Scale factors:', { scaleX, scaleY });
-        console.log('[CDP Debug] Elements with coordinates:', elementsWithCoords.length);
-        elementsWithCoords.slice(0, 3).forEach(([ref, element]) => {
-          console.log(`[CDP Debug] Element ${ref}:`, element.coordinates);
-        });
-      }
-      
-      // Filter elements visible in viewport
-      const visibleElements = elementsWithCoords.filter(([ref, element]) => {
-        const coords = element.coordinates!;
-        return coords.x < viewport.width && 
-               coords.y < viewport.height && 
-               coords.x + coords.width > 0 && 
-               coords.y + coords.height > 0;
-      });
-      
-      // Remove overlapped elements (only keep topmost)
-      const nonOverlappedElements = this.removeOverlappedElements(visibleElements);
-      
-      // Create SVG overlay with all the marks
-      const marks = nonOverlappedElements.map(([ref, element]) => {
-        const coords = element.coordinates!;
-        const isClickable = clickableElements.has(ref);
-        
-        // Scale coordinates from CSS pixels to screenshot pixels
-        const x = Math.max(0, coords.x * scaleX);
-        const y = Math.max(0, coords.y * scaleY);
-        const width = coords.width * scaleX;
-        const height = coords.height * scaleY;
-        
-        // Clamp to screenshot bounds
-        const clampedWidth = Math.min(width, screenshotWidth - x);
-        const clampedHeight = Math.min(height, screenshotHeight - y);
-        
-        // Position text to be visible even if element is partially cut off
-        const textX = Math.max(2, Math.min(x + 2, screenshotWidth - 40));
-        const textY = Math.max(14, Math.min(y + 14, screenshotHeight - 4));
-        
-        // Different colors for clickable vs non-clickable elements
-        const colors = isClickable ? {
-          fill: 'rgba(0, 150, 255, 0.15)',  // Blue for clickable
-          stroke: '#0096FF',
-          textFill: '#0096FF'
-        } : {
-          fill: 'rgba(255, 107, 107, 0.1)',  // Red for non-clickable
-          stroke: '#FF6B6B', 
-          textFill: '#FF6B6B'
-        };
-        
-        return `
-          <rect x="${x}" y="${y}" width="${clampedWidth}" height="${clampedHeight}" 
-                fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="2" rx="2"/>
-          <text x="${textX}" y="${textY}" font-family="Arial, sans-serif" 
-                font-size="12" fill="${colors.textFill}" font-weight="bold">${ref}</text>
-        `;
-      }).join('');
-      
-      const svgOverlay = `
-        <svg width="${screenshotWidth}" height="${screenshotHeight}" xmlns="http://www.w3.org/2000/svg">
-          ${marks}
-        </svg>
-      `;
-      
-      // Composite the overlay onto the screenshot
-      const markedImageBuffer = await sharp(screenshotBuffer)
-        .composite([{
-          input: Buffer.from(svgOverlay),
-          top: 0,
-          left: 0
-        }])
-        .png()
-        .toBuffer();
-      
-      return markedImageBuffer;
-      
-    } catch (error) {
-      // Error adding visual marks, falling back to original screenshot
-      // Return original screenshot if marking fails
-      return screenshotBuffer;
-    }
-  }
 
   /**
    * Parse clickable elements from snapshot text
@@ -314,8 +200,8 @@ export class HybridBrowserToolkit {
     const lines = snapshotText.split('\n');
     
     for (const line of lines) {
-      // Look for lines containing [cursor=pointer] and extract ref
-      if (line.includes('[cursor=pointer]')) {
+      // Look for lines containing [cursor=pointer] or [active] and extract ref
+      if (line.includes('[cursor=pointer]') || line.includes('[active]')) {
         const refMatch = line.match(/\[ref=([^\]]+)\]/);
         if (refMatch) {
           clickableElements.add(refMatch[1]);
@@ -326,56 +212,6 @@ export class HybridBrowserToolkit {
     return clickableElements;
   }
 
-  /**
-   * Remove overlapped elements, keeping only the topmost (last in DOM order)
-   */
-  private removeOverlappedElements(elements: Array<[string, any]>): Array<[string, any]> {
-    const result: Array<[string, any]> = [];
-    
-    for (let i = 0; i < elements.length; i++) {
-      const [refA, elementA] = elements[i];
-      const coordsA = elementA.coordinates!;
-      let isOverlapped = false;
-      
-      // Check if this element is completely overlapped by any later element
-      for (let j = i + 1; j < elements.length; j++) {
-        const [refB, elementB] = elements[j];
-        const coordsB = elementB.coordinates!;
-        
-        // Check if element A is completely covered by element B
-        if (this.isCompletelyOverlapped(coordsA, coordsB)) {
-          isOverlapped = true;
-          break;
-        }
-      }
-      
-      if (!isOverlapped) {
-        result.push(elements[i]);
-      }
-    }
-    
-    return result;
-  }
-
-  /**
-   * Check if element A is completely overlapped by element B
-   */
-  private isCompletelyOverlapped(
-    coordsA: { x: number; y: number; width: number; height: number },
-    coordsB: { x: number; y: number; width: number; height: number }
-  ): boolean {
-    // A is completely overlapped by B if:
-    // B's left edge is <= A's left edge AND
-    // B's top edge is <= A's top edge AND  
-    // B's right edge is >= A's right edge AND
-    // B's bottom edge is >= A's bottom edge
-    return (
-      coordsB.x <= coordsA.x &&
-      coordsB.y <= coordsA.y &&
-      coordsB.x + coordsB.width >= coordsA.x + coordsA.width &&
-      coordsB.y + coordsB.height >= coordsA.y + coordsA.height
-    );
-  }
 
   private async executeActionWithSnapshot(action: BrowserAction): Promise<any> {
     const result = await this.session.executeAction(action);
@@ -472,7 +308,7 @@ export class HybridBrowserToolkit {
       const navigationTime = Date.now() - navigationStart;
       
       const snapshotStart = Date.now();
-      const snapshot = await this.getPageSnapshot(this.viewportLimit);
+      const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       
       const totalTime = Date.now() - startTime;
@@ -512,7 +348,7 @@ export class HybridBrowserToolkit {
       const navigationTime = Date.now() - navigationStart;
       
       const snapshotStart = Date.now();
-      const snapshot = await this.getPageSnapshot(this.viewportLimit);
+      const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       
       const totalTime = Date.now() - startTime;
@@ -584,7 +420,7 @@ export class HybridBrowserToolkit {
       return {
         success: true,
         message: `Closed tab ${tabId}`,
-        snapshot: await this.getPageSnapshot(this.viewportLimit),
+        snapshot: await this.getSnapshotForAction(this.viewportLimit),
       };
     } else {
       return {
@@ -649,7 +485,7 @@ export class HybridBrowserToolkit {
       const { result, logs } = evalResult;
 
       const snapshotStart = Date.now();
-      const snapshot = await this.getPageSnapshot(this.viewportLimit);
+      const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
       const totalTime = Date.now() - startTime;
 
