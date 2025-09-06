@@ -249,7 +249,7 @@ def test_get_tools(mock_aci):
     result = toolkit.get_tools()
 
     # Verify results
-    assert len(result) == 14
+    assert len(result) == 16
     mock_client.app_configurations.list.assert_called_once()
     mock_client.functions.search.assert_called_once()
     mock_client.functions.get_definition.assert_called_once_with(

@@ -491,7 +491,7 @@ class ACIToolkit(BaseToolkit):
                 )
 
             # Add async_call method to the sync function for compatibility
-            dummy_func.async_call = async_dummy_func
+            dummy_func.async_call = async_dummy_func  # type: ignore[attr-defined]
 
             tool = FunctionTool(
                 func=dummy_func,
