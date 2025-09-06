@@ -655,7 +655,8 @@ module = [
     "pgvector.*",
     "reportlab.*",
     "surrealdb.*",
-    "microsandbox.*"
+    "microsandbox.*",
+    "sentence_transformers.*"
 ]
 ignore_missing_imports = true
 
