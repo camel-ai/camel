@@ -41,7 +41,6 @@ class FileWriteToolkit(BaseToolkit):
         working_directory: Optional[str] = None,
         timeout: Optional[float] = None,
         default_encoding: str = "utf-8",
-        backup_enabled: bool = True,
     ) -> None:
         r"""Initialize the FileWriteToolkit.
 
@@ -55,8 +54,7 @@ class FileWriteToolkit(BaseToolkit):
                 (default: :obj:`None`)
             default_encoding (str): Default character encoding for text
                 operations. (default: :obj:`utf-8`)
-            backup_enabled (bool): Whether to create backups of existing files
-                before overwriting. (default: :obj:`True`)
+
         """
         super().__init__(timeout=timeout)
         if working_directory:
@@ -69,7 +67,7 @@ class FileWriteToolkit(BaseToolkit):
                 self.working_directory = Path("./camel_working_dir").resolve()
         self.working_directory.mkdir(parents=True, exist_ok=True)
         self.default_encoding = default_encoding
-        self.backup_enabled = backup_enabled
+
         logger.info(
             f"FileWriteToolkit initialized with output directory"
             f": {self.working_directory}, encoding: {default_encoding}"
@@ -1062,6 +1060,425 @@ class FileWriteToolkit(BaseToolkit):
             logger.error(error_msg)
             return error_msg
 
+    # ----------------------------------------------
+    # Read File Functions
+    # ----------------------------------------------
+    def read_file(self, file_path: str) -> str:
+        r"""Read and return content of a file with automatic format
+        detection.
+
+        This method automatically detects the file format based on its
+        extension and uses the appropriate reader method. It supports
+        multiple file formats including text files, documents, PDFs,
+        structured data files, and web files.
+
+        Args:
+            file_path (str): The path to the file to read. Can be
+                relative or absolute. If relative, it will be resolved
+                relative to the working directory.
+
+        Returns:
+            str: The content of the file as a string. For structured
+                formats like JSON and YAML, the content is formatted with
+                proper indentation. For binary formats like PDFs, the
+                extracted text content is returned.
+        """
+        try:
+            file_path = self._resolve_filepath(file_path)
+
+            extension = file_path.suffix.lower()
+            if extension in [".doc", ".docx"]:
+                return self._read_docx_file(file_path)
+            elif extension == ".pdf":
+                return self._read_pdf_file(file_path)
+            elif extension == ".json":
+                return self._read_json_file(file_path)
+            elif extension in [".yaml", ".yml"]:
+                return self._read_yaml_file(file_path)
+            else:
+                return self._read_text_file(file_path)
+        except Exception as e:
+            return f"Error reading file: {e}"
+
+    @dependencies_required('docx')
+    def _read_docx_file(self, file_path: Path) -> str:
+        r"""Read the content of a DOCX file.
+
+        Args:
+            file_path (Path): The path to the file to read.
+        """
+
+        import docx
+
+        doc = docx.Document(str(file_path))
+        return "\n".join([paragraph.text for paragraph in doc.paragraphs])
+
+    @dependencies_required('PyPDF2')
+    def _read_pdf_file(self, file_path: Path) -> str:
+        r"""Read the content of a PDF file.
+
+        Args:
+            file_path (Path): The path to the file to read.
+        """
+        try:
+            import PyPDF2
+
+            with open(file_path, 'rb') as file:
+                pdf_reader = PyPDF2.PdfReader(file)
+                text = ""
+                for page in pdf_reader.pages:
+                    text += page.extract_text() + "\n"
+                return text
+        except Exception as e:
+            return f"Error reading PDF file: {e}"
+
+    def _read_text_file(self, file_path: Path) -> str:
+        r"""Read the content of a text file.
+
+        Args:
+            file_path (Path): The path to the file to read.
+        """
+        with file_path.open("r", encoding=self.default_encoding) as f:
+            return f.read()
+
+    def _read_json_file(self, file_path: Path) -> str:
+        r"""Read the content of a JSON file and return as formatted string.
+
+        Args:
+            file_path (Path): The path to the file to read.
+        """
+        import json
+
+        try:
+            with file_path.open("r", encoding=self.default_encoding) as f:
+                data = json.load(f)
+                return json.dumps(data, indent=2, ensure_ascii=False)
+        except Exception as e:
+            return f"Error reading JSON file: {e}"
+
+    @dependencies_required('yaml')
+    def _read_yaml_file(self, file_path: Path) -> str:
+        r"""Read the content of a YAML file and return as formatted string.
+
+        Args:
+            file_path (Path): The path to the file to read.
+        """
+        import yaml
+
+        try:
+            with file_path.open("r", encoding=self.default_encoding) as f:
+                data = yaml.safe_load(f)
+                return yaml.dump(
+                    data, default_flow_style=False, allow_unicode=True
+                )
+        except Exception as e:
+            return f"Error reading YAML file: {e}"
+
+    # ----------------------------------------------
+    # Edit File Functions
+    # ----------------------------------------------
+    def edit_file(
+        self, file_path: str, old_content: str, new_content: str
+    ) -> str:
+        r"""Edit the content of a file.
+
+        This method provides file editing capabilities that automatically
+        detect the file format and apply appropriate editing strategies. It
+        supports both content replacement and structured editing for
+        different file types.
+
+        Args:
+            file_path (str): The path to the file to edit. Can be
+                relative or absolute. If relative, it will be resolved
+                relative to the working directory. If the file doesn't
+                exist, it will be created.
+            old_content (str): The content to replace. For text files,
+                this is a literal string to find and replace. For
+                structured files like JSON, this can be a JSON path
+                (e.g., "$.key.subkey") or a key to modify.
+            new_content (str): The new content to write. For text files,
+                this replaces the old content. For structured files, this
+                is the new value to set.
+
+        Returns:
+            str: A success message if the edit was successful, or an
+                error message containing details about what went wrong.
+        """
+        try:
+            working_path = self._resolve_filepath(file_path)
+
+            # Determine file type and edit accordingly
+            extension = working_path.suffix.lower()
+
+            if extension in [".doc", ".docx"]:
+                result = self._edit_docx_file(
+                    working_path, old_content, new_content
+                )
+            elif extension == ".pdf":
+                result = self._edit_pdf_file(
+                    working_path, old_content, new_content
+                )
+            elif extension == ".json":
+                result = self._edit_json_file(
+                    working_path, old_content, new_content
+                )
+            elif extension in [".yaml", ".yml"]:
+                result = self._edit_yaml_file(
+                    working_path, old_content, new_content
+                )
+            else:
+                result = self._text_replace(
+                    working_path, old_content, new_content
+                )
+
+            return result
+
+        except Exception as e:
+            return f"Error editing file: {e}"
+
+    def _edit_json_file(
+        self, file_path: Path, old_content: str, new_content: str
+    ) -> str:
+        r"""Edit a JSON file by replacing content.
+
+        Args:
+            file_path (Path): The path to the JSON file to edit.
+            old_content (str): The content to replace (can be a JSON
+                path or key).
+            new_content (str): The new content to add.
+        """
+        import json
+
+        try:
+            # Read existing JSON data
+            with file_path.open("r", encoding=self.default_encoding) as f:
+                data = json.load(f)
+
+            # Try to parse old_content as JSON path or key
+            if old_content.startswith("$.") or "." in old_content:
+                # Handle JSON path-like replacement
+                keys = old_content.replace("$.", "").split(".")
+                current = data
+                for key in keys[:-1]:
+                    if isinstance(current, dict) and key in current:
+                        current = current[key]
+                    else:
+                        return f"Path {old_content} not found in JSON"
+
+                # Try to parse new_content as JSON, fallback to string
+                try:
+                    new_data = json.loads(new_content)
+                except json.JSONDecodeError:
+                    new_data = new_content
+
+                current[keys[-1]] = new_data
+
+            # Write back to file
+            with file_path.open("w", encoding=self.default_encoding) as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            return f"JSON file {file_path} edited successfully."
+        except Exception as e:
+            logger.error(f"Error editing JSON file: {e}")
+            return f"Error editing JSON file: {e}"
+
+    @dependencies_required('PyYAML')
+    def _edit_yaml_file(
+        self, file_path: Path, old_content: str, new_content: str
+    ) -> str:
+        r"""Edit a YAML file by replacing content.
+
+        Args:
+            file_path (Path): The path to the YAML file to edit.
+            old_content (str): The content to replace (can be a YAML
+                path or key).
+            new_content (str): The new content to add.
+        """
+        try:
+            import yaml
+
+            # Read existing YAML data
+            with file_path.open("r", encoding=self.default_encoding) as f:
+                data = yaml.safe_load(f)
+
+            # Try to parse old_content as YAML path or key
+            if "." in old_content:
+                # Handle YAML path-like replacement
+                keys = old_content.split(".")
+                current = data
+                for key in keys[:-1]:
+                    if isinstance(current, dict) and key in current:
+                        current = current[key]
+                    else:
+                        return f"Path {old_content} not found in YAML"
+
+                # Try to parse new_content as YAML, fallback to string
+                try:
+                    new_data = yaml.safe_load(new_content)
+                except yaml.YAMLError:
+                    new_data = new_content
+
+                current[keys[-1]] = new_data
+            else:
+                # Simple string replacement in the entire YAML
+                yaml_str = yaml.dump(
+                    data, default_flow_style=False, allow_unicode=True
+                )
+                if old_content in yaml_str:
+                    updated_str = yaml_str.replace(old_content, new_content)
+                    data = yaml.safe_load(updated_str)
+                else:
+                    # If old_content not found, append to root level
+                    try:
+                        new_data = yaml.safe_load(new_content)
+                        if isinstance(data, dict):
+                            data.update(new_data)
+                        else:
+                            data = new_data
+                    except yaml.YAMLError:
+                        # If new_content is not valid YAML, add as a new key
+                        if isinstance(data, dict):
+                            data["new_content"] = new_content
+
+            # Write back to file
+            with file_path.open("w", encoding=self.default_encoding) as f:
+                yaml.dump(
+                    data, f, default_flow_style=False, allow_unicode=True
+                )
+
+            return f"YAML file {file_path} edited successfully."
+        except Exception as e:
+            logger.error(f"Error editing YAML file: {e}")
+            return f"Error editing YAML file: {e}"
+
+    @dependencies_required('docx')
+    def _edit_docx_file(
+        self, file_path: Path, old_content: str, new_content: str
+    ) -> str:
+        r"""Edit a DOCX file by replacing content.
+
+        Args:
+            file_path (Path): The path to the DOCX file to edit.
+            old_content (str): The content to replace.
+            new_content (str): The new content to add.
+        """
+        import docx
+
+        try:
+            doc = docx.Document(str(file_path))
+            # Check if we're replacing the entire document content
+            # Read the current document content
+            current_content = "\n".join(
+                [paragraph.text for paragraph in doc.paragraphs]
+            )
+
+            if old_content.strip() == current_content.strip():
+                # Replace entire document content
+                # Clear existing paragraphs
+                for paragraph in doc.paragraphs[:]:
+                    p = paragraph._element
+                    p.getparent().remove(p)
+
+                # Add new content as paragraphs
+                for line in new_content.split('\n'):
+                    if line.strip():  # Only add non-empty lines
+                        doc.add_paragraph(line.strip())
+            else:
+                # Try to replace content within individual paragraphs
+                for paragraph in doc.paragraphs:
+                    if old_content in paragraph.text:
+                        paragraph.text = paragraph.text.replace(
+                            old_content, new_content
+                        )
+
+            doc.save(str(file_path))
+            return f"DOCX file {file_path} edited successfully."
+        except Exception as e:
+            logger.error(f"Error editing DOCX file: {e}")
+            return f"Error editing DOCX file: {e}"
+
+    def _edit_pdf_file(
+        self, file_path: Path, old_content: str, new_content: str
+    ) -> str:
+        r"""Edit a PDF file by creating a new version with modified content.
+
+        Since PDFs are complex binary files, this function creates a new PDF
+        with the modified content rather than editing the existing one.
+
+        Args:
+            file_path (Path): The path to the PDF file to edit.
+            old_content (str): The content to replace.
+            new_content (str): The new content to add.
+        """
+        try:
+            # Read the original PDF content
+            original_text = self._read_pdf_file(file_path)
+
+            # Replace the old content with new content
+            if old_content in original_text:
+                modified_text = original_text.replace(old_content, new_content)
+            else:
+                # If old content not found, append new content
+                modified_text = original_text + "\n\n" + new_content
+
+            # Create a new PDF with the modified content
+            self._write_pdf_file(
+                file_path,
+                title="Modified PDF Document",
+                content=modified_text,
+                use_latex=False,
+            )
+            return f"PDF file {file_path} edited successfully."
+        except Exception as e:
+            logger.error(f"Error editing PDF file: {e}")
+            return f"Error editing PDF file: {e}"
+
+    def _text_replace(
+        self, file_path: Path, old_content: str, new_content: str
+    ) -> str:
+        r"""Replace specified string in the file.
+        Use for updating specific content in the file.
+
+        Args:
+            file_path (Path): The path to the file to edit.
+            old_content (str): The old content to be replaced.
+            new_content (str): The new content to be replaced.
+
+        Returns:
+            str: A message indicating the result of the operation.
+        """
+        try:
+            file_text = file_path.read_text(encoding=self.default_encoding)
+            old_content = old_content.expandtabs()
+            new_content = new_content.expandtabs()
+
+            occurrences = file_text.count(old_content)
+            if occurrences == 0:
+                return (
+                    f"No replacement performed: '{old_content}' not found in "
+                    f"{file_path}."
+                )
+            elif occurrences > 1:
+                file_text_line = file_text.split('\n')
+                lines = [
+                    idx + 1
+                    for idx, line in enumerate(file_text_line)
+                    if old_content in line
+                ]
+                return (
+                    f"Multiple occurrences of '{old_content}' found in "
+                    f"{file_path} at lines {lines}. "
+                    "Please specify the line number to replace."
+                )
+
+            new_file_content = file_text.replace(old_content, new_content)
+            file_path.write_text(
+                new_file_content, encoding=self.default_encoding
+            )
+
+            return f"Content replaced in {file_path} successfully."
+        except Exception as e:
+            return f"Error replacing content in {file_path}: {e}"
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Return a list of FunctionTool objects representing the functions
         in the toolkit.
@@ -1072,4 +1489,6 @@ class FileWriteToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.write_to_file),
+            FunctionTool(self.read_file),
+            FunctionTool(self.edit_file),
         ]
