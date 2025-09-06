@@ -495,6 +495,7 @@
               "reference/camel.toolkits.data_commons_toolkit",
               "reference/camel.toolkits.edgeone_pages_mcp_toolkit",
               "reference/camel.toolkits.excel_toolkit",
+              "reference/camel.toolkits.file_toolkit",
               "reference/camel.toolkits.file_write_toolkit",
               "reference/camel.toolkits.function_tool",
               "reference/camel.toolkits.github_toolkit",
