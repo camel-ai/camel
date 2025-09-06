@@ -172,7 +172,9 @@ class AgentPool:
             self._in_use_agents.add(id(best_agent))
             return best_agent
 
-    async def return_agent(self, agent: ChatAgent, task_stat: str) -> None:
+    async def return_agent(
+        self, agent: ChatAgent, task_status: Optional[str] = None
+    ) -> None:
         r"""Return an agent to the pool."""
         async with self._lock:
             agent_id = id(agent)
@@ -182,7 +184,7 @@ class AgentPool:
             if agent_id in self._agent_metadata_pool:
                 metadata = self._agent_metadata_pool.get(agent_id, {})
                 metadata['task_count'] += 1
-                if task_stat == 'FAILED':
+                if task_status == 'FAILED':
                     metadata['error_count'] += 1
 
                 _, final_token_count = agent.memory.get_context()
