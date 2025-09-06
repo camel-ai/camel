@@ -36,11 +36,13 @@ class VertexAIVeoToolkit(BaseToolkit):
     customization options.
     """
 
-    @dependencies_required('google-cloud-aiplatform')
+    @dependencies_required('google.cloud.aiplatform')
     def __init__(
         self,
         project_id: Optional[str] = None,
         location: str = "us-central1",
+        model_id: str = "veo-2.0-generate-001",
+        output_storage_uri: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> None:
         r"""Initialize the Vertex AI Veo toolkit.
@@ -52,6 +54,12 @@ class VertexAIVeoToolkit(BaseToolkit):
                 (default: :obj:`None`)
             location (str): Google Cloud location for the API calls.
                 (default: :obj:`"us-central1"`)
+            model_id (str): The Veo model ID to use. Options include
+                "veo-2.0-generate-001" or "veo-3.0-generate-preview".
+                (default: :obj:`"veo-2.0-generate-001"`)
+            output_storage_uri (Optional[str]): Cloud Storage URI to save
+                output videos. If not provided, returns video bytes.
+                (default: :obj:`None`)
             timeout (Optional[float]): Request timeout in seconds.
                 (default: :obj:`None`)
         """
@@ -61,6 +69,8 @@ class VertexAIVeoToolkit(BaseToolkit):
 
         self.project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT")
         self.location = location
+        self.model_id = model_id
+        self.output_storage_uri = output_storage_uri
 
         if not self.project_id:
             raise ValueError(
@@ -74,21 +84,16 @@ class VertexAIVeoToolkit(BaseToolkit):
     def generate_video_from_text(
         self,
         text_prompt: str,
-        model_id: str = "veo-2.0-generate-001",
         response_count: int = 1,
         duration: int = 5,
         aspect_ratio: str = "16:9",
         negative_prompt: Optional[str] = None,
         person_generation: str = "allow_adult",
-        output_storage_uri: Optional[str] = None,
-    ) -> Dict:
+    ) -> Dict[str, Any]:
         r"""Generate video from text prompt using Vertex AI Veo.
 
         Args:
             text_prompt (str): The text prompt to guide video generation.
-            model_id (str): The Veo model ID to use. Options include
-                "veo-2.0-generate-001" or "veo-3.0-generate-preview".
-                (default: :obj:`"veo-2.0-generate-001"`)
             response_count (int): Number of videos to generate (1-4).
                 (default: :obj:`1`)
             duration (int): Video duration in seconds (5-8).
@@ -99,12 +104,14 @@ class VertexAIVeoToolkit(BaseToolkit):
                 (default: :obj:`None`)
             person_generation (str): Person safety setting. Options:
                 "allow_adult", "dont_allow". (default: :obj:`"allow_adult"`)
-            output_storage_uri (Optional[str]): Cloud Storage URI to save
-                output videos. If not provided, returns video bytes.
-                (default: :obj:`None`)
 
         Returns:
-            Dict: Video generation response containing video data or URIs.
+            Dict[str, Any]:
+                A dictionary containing:
+                - 'success' (bool): Whether the operation was successful
+                - 'videos' (List[Dict]): List of generated video data
+                - 'metadata' (Dict): Additional metadata from the response
+                - 'error' (str): Error message if operation failed
         """
         try:
             from google.protobuf import json_format
@@ -113,7 +120,7 @@ class VertexAIVeoToolkit(BaseToolkit):
             # Construct the request
             endpoint = (
                 f"projects/{self.project_id}/locations/{self.location}/"
-                f"publishers/google/models/{model_id}"
+                f"publishers/google/models/{self.model_id}"
             )
 
             # Build parameters
@@ -137,12 +144,14 @@ class VertexAIVeoToolkit(BaseToolkit):
                 "parameters": parameters,
             }
 
-            if output_storage_uri:
+            if self.output_storage_uri:
                 generation_config = request_body.setdefault(
                     "generationConfig", {}
                 )
                 if isinstance(generation_config, dict):
-                    generation_config["outputStorageUri"] = output_storage_uri
+                    generation_config["outputStorageUri"] = (
+                        self.output_storage_uri
+                    )
 
             # Convert to protobuf format
             request_value = json_format.ParseDict(request_body, Value())
@@ -164,21 +173,17 @@ class VertexAIVeoToolkit(BaseToolkit):
         self,
         image_path: str,
         text_prompt: str,
-        model_id: str = "veo-2.0-generate-001",
         response_count: int = 1,
         duration: int = 5,
         aspect_ratio: str = "16:9",
         negative_prompt: Optional[str] = None,
         person_generation: str = "allow_adult",
-        output_storage_uri: Optional[str] = None,
-    ) -> Dict:
+    ) -> Dict[str, Any]:
         r"""Generate video from image and text prompt using Vertex AI Veo.
 
         Args:
             image_path (str): Path to the input image file (local or GCS URI).
             text_prompt (str): The text prompt to guide video generation.
-            model_id (str): The Veo model ID to use.
-                (default: :obj:`"veo-2.0-generate-001"`)
             response_count (int): Number of videos to generate (1-4).
                 (default: :obj:`1`)
             duration (int): Video duration in seconds (5-8).
@@ -189,11 +194,14 @@ class VertexAIVeoToolkit(BaseToolkit):
                 (default: :obj:`None`)
             person_generation (str): Person safety setting.
                 (default: :obj:`"allow_adult"`)
-            output_storage_uri (Optional[str]): Cloud Storage URI to save
-                output videos. (default: :obj:`None`)
 
         Returns:
-            Dict: Video generation response containing video data or URIs.
+            Dict[str, Any]:
+                A dictionary containing:
+                - 'success' (bool): Whether the operation was successful
+                - 'videos' (List[Dict]): List of generated video data
+                - 'metadata' (Dict): Additional metadata from the response
+                - 'error' (str): Error message if operation failed
         """
         try:
             from google.protobuf import json_format
@@ -205,7 +213,7 @@ class VertexAIVeoToolkit(BaseToolkit):
             # Construct the request
             endpoint = (
                 f"projects/{self.project_id}/locations/{self.location}/"
-                f"publishers/google/models/{model_id}"
+                f"publishers/google/models/{self.model_id}"
             )
 
             # Build parameters
@@ -240,12 +248,14 @@ class VertexAIVeoToolkit(BaseToolkit):
                 "parameters": parameters,
             }
 
-            if output_storage_uri:
+            if self.output_storage_uri:
                 generation_config = request_body.setdefault(
                     "generationConfig", {}
                 )
                 if isinstance(generation_config, dict):
-                    generation_config["outputStorageUri"] = output_storage_uri
+                    generation_config["outputStorageUri"] = (
+                        self.output_storage_uri
+                    )
 
             # Convert to protobuf format
             request_value = json_format.ParseDict(request_body, Value())
@@ -267,30 +277,29 @@ class VertexAIVeoToolkit(BaseToolkit):
         self,
         video_uri: str,
         text_prompt: str,
-        model_id: str = "veo-2.0-generate-001",
         duration: int = 5,
         aspect_ratio: str = "16:9",
         negative_prompt: Optional[str] = None,
-        output_storage_uri: Optional[str] = None,
-    ) -> Dict:
+    ) -> Dict[str, Any]:
         r"""Extend an existing video using Vertex AI Veo.
 
         Args:
             video_uri (str): Cloud Storage URI of the video to extend.
             text_prompt (str): The text prompt to guide video extension.
-            model_id (str): The Veo model ID to use.
-                (default: :obj:`"veo-2.0-generate-001"`)
             duration (int): Duration to extend in seconds (5-8).
                 (default: :obj:`5`)
             aspect_ratio (str): Video aspect ratio.
                 (default: :obj:`"16:9"`)
             negative_prompt (Optional[str]): What to avoid in the extension.
                 (default: :obj:`None`)
-            output_storage_uri (Optional[str]): Cloud Storage URI to save
-                extended video. (default: :obj:`None`)
 
         Returns:
-            Dict: Video extension response containing video data or URIs.
+            Dict[str, Any]:
+                A dictionary containing:
+                - 'success' (bool): Whether the operation was successful
+                - 'videos' (List[Dict]): List of extended video data
+                - 'metadata' (Dict): Additional metadata from the response
+                - 'error' (str): Error message if operation failed
         """
         try:
             from google.protobuf import json_format
@@ -299,7 +308,7 @@ class VertexAIVeoToolkit(BaseToolkit):
             # Construct the request
             endpoint = (
                 f"projects/{self.project_id}/locations/{self.location}/"
-                f"publishers/google/models/{model_id}"
+                f"publishers/google/models/{self.model_id}"
             )
 
             # Build parameters
@@ -322,12 +331,14 @@ class VertexAIVeoToolkit(BaseToolkit):
                 "parameters": parameters,
             }
 
-            if output_storage_uri:
+            if self.output_storage_uri:
                 generation_config = request_body.setdefault(
                     "generationConfig", {}
                 )
                 if isinstance(generation_config, dict):
-                    generation_config["outputStorageUri"] = output_storage_uri
+                    generation_config["outputStorageUri"] = (
+                        self.output_storage_uri
+                    )
 
             # Convert to protobuf format
             request_value = json_format.ParseDict(request_body, Value())
@@ -348,86 +359,138 @@ class VertexAIVeoToolkit(BaseToolkit):
     async def agenerate_video_from_text(
         self,
         text_prompt: str,
-        model_id: str = "veo-2.0-generate-001",
         response_count: int = 1,
         duration: int = 5,
         aspect_ratio: str = "16:9",
         negative_prompt: Optional[str] = None,
         person_generation: str = "allow_adult",
-        output_storage_uri: Optional[str] = None,
-    ) -> Dict:
-        r"""Async version of generate_video_from_text."""
+    ) -> Dict[str, Any]:
+        r"""Generate video from text prompt using Vertex AI Veo.
+
+        Args:
+            text_prompt (str): The text prompt to guide video generation.
+            response_count (int): Number of videos to generate (1-4).
+                (default: :obj:`1`)
+            duration (int): Video duration in seconds (5-8).
+                (default: :obj:`5`)
+            aspect_ratio (str): Video aspect ratio. Options: "16:9", "9:16".
+                (default: :obj:`"16:9"`)
+            negative_prompt (Optional[str]): What to avoid in the video.
+                (default: :obj:`None`)
+            person_generation (str): Person safety setting. Options:
+                "allow_adult", "dont_allow". (default: :obj:`"allow_adult"`)
+
+        Returns:
+            Dict[str, Any]:
+                A dictionary containing:
+                - 'success' (bool): Whether the operation was successful
+                - 'videos' (List[Dict]): List of generated video data
+                - 'metadata' (Dict): Additional metadata from the response
+                - 'error' (str): Error message if operation failed
+        """
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
             None,
             self.generate_video_from_text,
             text_prompt,
-            model_id,
             response_count,
             duration,
             aspect_ratio,
             negative_prompt,
             person_generation,
-            output_storage_uri,
         )
 
     async def agenerate_video_from_image(
         self,
         image_path: str,
         text_prompt: str,
-        model_id: str = "veo-2.0-generate-001",
         response_count: int = 1,
         duration: int = 5,
         aspect_ratio: str = "16:9",
         negative_prompt: Optional[str] = None,
         person_generation: str = "allow_adult",
-        output_storage_uri: Optional[str] = None,
-    ) -> Dict:
-        r"""Async version of generate_video_from_image."""
+    ) -> Dict[str, Any]:
+        r"""Generate video from image and text prompt using Vertex AI Veo.
+
+        Args:
+            image_path (str): Path to the input image file (local or GCS URI).
+            text_prompt (str): The text prompt to guide video generation.
+            response_count (int): Number of videos to generate (1-4).
+                (default: :obj:`1`)
+            duration (int): Video duration in seconds (5-8).
+                (default: :obj:`5`)
+            aspect_ratio (str): Video aspect ratio. Options: "16:9", "9:16".
+                (default: :obj:`"16:9"`)
+            negative_prompt (Optional[str]): What to avoid in the video.
+                (default: :obj:`None`)
+            person_generation (str): Person safety setting.
+                (default: :obj:`"allow_adult"`)
+
+        Returns:
+            Dict[str, Any]:
+                A dictionary containing:
+                - 'success' (bool): Whether the operation was successful
+                - 'videos' (List[Dict]): List of generated video data
+                - 'metadata' (Dict): Additional metadata from the response
+                - 'error' (str): Error message if operation failed
+        """
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
             None,
             self.generate_video_from_image,
             image_path,
             text_prompt,
-            model_id,
             response_count,
             duration,
             aspect_ratio,
             negative_prompt,
             person_generation,
-            output_storage_uri,
         )
 
     async def aextend_video(
         self,
         video_uri: str,
         text_prompt: str,
-        model_id: str = "veo-2.0-generate-001",
         duration: int = 5,
         aspect_ratio: str = "16:9",
         negative_prompt: Optional[str] = None,
-        output_storage_uri: Optional[str] = None,
-    ) -> Dict:
-        r"""Async version of extend_video."""
+    ) -> Dict[str, Any]:
+        r"""Extend an existing video using Vertex AI Veo.
+
+        Args:
+            video_uri (str): Cloud Storage URI of the video to extend.
+            text_prompt (str): The text prompt to guide video extension.
+            duration (int): Duration to extend in seconds (5-8).
+                (default: :obj:`5`)
+            aspect_ratio (str): Video aspect ratio.
+                (default: :obj:`"16:9"`)
+            negative_prompt (Optional[str]): What to avoid in the extension.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]:
+                A dictionary containing:
+                - 'success' (bool): Whether the operation was successful
+                - 'videos' (List[Dict]): List of extended video data
+                - 'metadata' (Dict): Additional metadata from the response
+                - 'error' (str): Error message if operation failed
+        """
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
             None,
             self.extend_video,
             video_uri,
             text_prompt,
-            model_id,
             duration,
             aspect_ratio,
             negative_prompt,
-            output_storage_uri,
         )
 
     def _process_image(self, image_path: str) -> Tuple[str, str]:
         r"""Process image file and return base64 encoded data and MIME type."""
         if image_path.startswith('gs://'):
             # Handle Google Cloud Storage URIs
-            from google.cloud import storage
+            from google.cloud import storage  # type: ignore[attr-defined]
 
             # Parse GCS URI
             parts = image_path[5:].split('/', 1)
