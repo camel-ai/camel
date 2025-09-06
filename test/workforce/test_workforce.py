@@ -126,7 +126,10 @@ async def test_listen_to_channel_recovers_from_timeout():
             # Post initial ready tasks
             await workforce._post_ready_tasks()
 
-            returned_task_first = await workforce._get_returned_task()
+            try:
+                returned_task_first = await workforce._get_returned_task()
+            except asyncio.TimeoutError:
+                returned_task_first = None
             assert returned_task_first is None  # Should return None on timeout
 
             # Ensure the mock was called for the first attempt

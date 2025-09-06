@@ -84,7 +84,7 @@ logger = get_logger(__name__)
 # Constants for configuration values
 MAX_TASK_RETRIES = 3
 MAX_PENDING_TASKS_LIMIT = 20
-TASK_TIMEOUT_SECONDS = 480.0
+TASK_TIMEOUT_SECONDS = 600.0
 DEFAULT_WORKER_POOL_SIZE = 10
 
 
@@ -2313,6 +2313,9 @@ class Workforce(BaseNode):
         r"""Get the task that's published by this node and just get returned
         from the assignee. Includes timeout handling to prevent indefinite
         waiting.
+
+        Raises:
+            asyncio.TimeoutError: If waiting for task exceeds timeout
         """
         try:
             # Add timeout to prevent indefinite waiting
@@ -2320,6 +2323,17 @@ class Workforce(BaseNode):
                 self._channel.get_returned_task_by_publisher(self.node_id),
                 timeout=self.task_timeout_seconds,
             )
+        except asyncio.TimeoutError:
+            # Re-raise timeout errors to be handled by caller
+            # This prevents hanging when tasks are stuck
+            logger.warning(
+                f"Timeout waiting for task return in workforce "
+                f"{self.node_id}. "
+                f"Timeout: {self.task_timeout_seconds}s, "
+                f"Pending tasks: {len(self._pending_tasks)}, "
+                f"In-flight tasks: {self._in_flight_tasks}"
+            )
+            raise
         except Exception as e:
             error_msg = (
                 f"Error getting returned task {e} in "
@@ -2838,9 +2852,24 @@ class Workforce(BaseNode):
                         self._last_snapshot_time = time.time()
 
                 # Get returned task
-                returned_task = await self._get_returned_task()
+                try:
+                    returned_task = await self._get_returned_task()
+                except asyncio.TimeoutError:
+                    # Handle timeout - check if we have tasks stuck in flight
+                    if self._in_flight_tasks > 0:
+                        logger.warning(
+                            f"Timeout waiting for {self._in_flight_tasks} "
+                            f"in-flight tasks. Breaking to prevent hanging."
+                        )
+                        # Break the loop to prevent indefinite hanging
+                        # The finally block will handle cleanup
+                        break
+                    else:
+                        # No tasks in flight, safe to continue
+                        await self._post_ready_tasks()
+                        continue
 
-                # If no task was returned, continue
+                # If no task was returned (other errors), continue
                 if returned_task is None:
                     logger.debug(
                         f"No task returned in workforce {self.node_id}. "

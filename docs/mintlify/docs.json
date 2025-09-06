@@ -73,6 +73,13 @@
             ]
           },
           {
+            "group": "Awesome Toolkits",
+            "pages": [
+              "key_modules/browsertoolkit",
+              "key_modules/terminaltoolkit"
+            ]
+          },
+          {
             "group": "CAMEL with MCP",
             "pages": [
               "mcp/overview",
@@ -91,8 +98,7 @@
                   "cookbooks/basic_concepts/agents_message",
                   "cookbooks/basic_concepts/agents_prompting",
                   "cookbooks/basic_concepts/create_your_first_agent",
-                  "cookbooks/basic_concepts/create_your_first_agents_society",
-                  "cookbooks/basic_concepts/model_speed_comparison"
+                  "cookbooks/basic_concepts/create_your_first_agents_society"
                 ]
               },
               {
@@ -213,6 +219,7 @@
             "group": "Configs",
             "pages": [
               "reference/camel.configs.aiml_config",
+              "reference/camel.configs.amd_config",
               "reference/camel.configs.anthropic_config",
               "reference/camel.configs.base_config",
               "reference/camel.configs.bedrock_config",
@@ -227,6 +234,7 @@
               "reference/camel.configs.mistral_config",
               "reference/camel.configs.modelscope_config",
               "reference/camel.configs.moonshot_config",
+              "reference/camel.configs.nebius_config",
               "reference/camel.configs.netmind_config",
               "reference/camel.configs.novita_config",
               "reference/camel.configs.nvidia_config",
@@ -291,6 +299,7 @@
             "pages": [
               "reference/camel.models._utils",
               "reference/camel.models.aiml_model",
+              "reference/camel.models.amd_model",
               "reference/camel.models.anthropic_model",
               "reference/camel.models.aws_bedrock_model",
               "reference/camel.models.azure_openai_model",
@@ -310,6 +319,7 @@
               "reference/camel.models.model_manager",
               "reference/camel.models.modelscope_model",
               "reference/camel.models.moonshot_model",
+              "reference/camel.models.nebius_model",
               "reference/camel.models.nemotron_model",
               "reference/camel.models.netmind_model",
               "reference/camel.models.novita_model",
@@ -347,6 +357,7 @@
               "reference/camel.interpreters.e2b_interpreter",
               "reference/camel.interpreters.internal_python_interpreter",
               "reference/camel.interpreters.ipython_interpreter",
+              "reference/camel.interpreters.microsandbox_interpreter",
               "reference/camel.interpreters.subprocess_interpreter"
             ]
           },
@@ -477,6 +488,7 @@
               "reference/camel.toolkits.browser_toolkit",
               "reference/camel.toolkits.browser_toolkit_commons",
               "reference/camel.toolkits.code_execution",
+              "reference/camel.toolkits.context_summarizer_toolkit",
               "reference/camel.toolkits.craw4ai_toolkit",
               "reference/camel.toolkits.dalle_toolkit",
               "reference/camel.toolkits.dappier_toolkit",
@@ -492,6 +504,7 @@
               "reference/camel.toolkits.google_scholar_toolkit",
               "reference/camel.toolkits.human_toolkit",
               "reference/camel.toolkits.image_analysis_toolkit",
+              "reference/camel.toolkits.image_generation_toolkit",
               "reference/camel.toolkits.jina_reranker_toolkit",
               "reference/camel.toolkits.klavis_toolkit",
               "reference/camel.toolkits.linkedin_toolkit",
@@ -503,6 +516,7 @@
               "reference/camel.toolkits.message_agent_toolkit",
               "reference/camel.toolkits.message_integration",
               "reference/camel.toolkits.mineru_toolkit",
+              "reference/camel.toolkits.minimax_mcp_toolkit",
               "reference/camel.toolkits.networkx_toolkit",
               "reference/camel.toolkits.note_taking_toolkit",
               "reference/camel.toolkits.notion_mcp_toolkit",
@@ -529,10 +543,12 @@
               "reference/camel.toolkits.terminal_toolkit",
               "reference/camel.toolkits.thinking_toolkit",
               "reference/camel.toolkits.twitter_toolkit",
+              "reference/camel.toolkits.vertex_ai_veo_toolkit",
               "reference/camel.toolkits.video_analysis_toolkit",
               "reference/camel.toolkits.video_download_toolkit",
               "reference/camel.toolkits.weather_toolkit",
               "reference/camel.toolkits.web_deploy_toolkit",
+              "reference/camel.toolkits.wechat_official_toolkit",
               "reference/camel.toolkits.whatsapp_toolkit",
               "reference/camel.toolkits.wolfram_alpha_toolkit",
               "reference/camel.toolkits.zapier_toolkit",
@@ -593,6 +609,7 @@
             "pages": [
               "reference/camel.utils.async_func",
               "reference/camel.utils.commons",
+              "reference/camel.utils.context_utils",
               "reference/camel.utils.deduplication",
               "reference/camel.utils.filename",
               "reference/camel.utils.langfuse",

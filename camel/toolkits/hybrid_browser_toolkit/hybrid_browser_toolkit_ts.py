@@ -86,6 +86,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         cache_dir: str = "tmp/",
         enabled_tools: Optional[List[str]] = None,
         browser_log_to_file: bool = False,
+        log_dir: Optional[str] = None,
         session_id: Optional[str] = None,
         default_start_url: str = "https://google.com/",
         default_timeout: Optional[int] = None,
@@ -98,6 +99,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         viewport_limit: bool = False,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
+        full_visual_mode: bool = False,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
 
@@ -115,6 +117,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             Defaults to None.
             browser_log_to_file (bool): Whether to log browser actions to
             file. Defaults to False.
+            log_dir (Optional[str]): Custom directory path for log files.
+            If None, defaults to "browser_log". Defaults to None.
             session_id (Optional[str]): Session identifier. Defaults to None.
             default_start_url (str): Default URL to start with. Defaults
             to "https://google.com/".
@@ -143,6 +147,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
             connection (e.g., 'ws://localhost:9222/devtools/browser/...').
             Required when connect_over_cdp is True. Defaults to None.
+            full_visual_mode (bool): When True, browser actions like click,
+            browser_open, visit_page, etc. will not return snapshots.
+            Defaults to False.
         """
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
@@ -163,10 +170,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             viewport_limit=viewport_limit,
             cache_dir=cache_dir,
             browser_log_to_file=browser_log_to_file,
+            log_dir=log_dir,
             session_id=session_id,
             enabled_tools=enabled_tools,
             connect_over_cdp=connect_over_cdp,
             cdp_url=cdp_url,
+            full_visual_mode=full_visual_mode,
         )
 
         # Legacy attribute access for backward compatibility
@@ -182,6 +191,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._default_start_url = browser_config.default_start_url
         self._session_id = toolkit_config.session_id or "default"
         self._viewport_limit = browser_config.viewport_limit
+        self._full_visual_mode = browser_config.full_visual_mode
 
         # Store timeout configuration for backward compatibility
         self._default_timeout = browser_config.default_timeout
@@ -648,22 +658,29 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
             # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
-            result.update(
-                {
-                    "tabs": tab_info,
-                    "current_tab": next(
-                        (
-                            i
-                            for i, tab in enumerate(tab_info)
-                            if tab.get("is_current")
-                        ),
-                        0,
-                    ),
-                    "total_tabs": len(tab_info),
-                }
-            )
 
-            return result
+            response = {
+                "result": result.get("result", ""),
+                "snapshot": result.get("snapshot", ""),
+                "tabs": tab_info,
+                "current_tab": next(
+                    (
+                        i
+                        for i, tab in enumerate(tab_info)
+                        if tab.get("is_current")
+                    ),
+                    0,
+                ),
+                "total_tabs": len(tab_info),
+            }
+
+            if "newTabId" in result:
+                response["newTabId"] = result["newTabId"]
+
+            if "timing" in result:
+                response["timing"] = result["timing"]
+
+            return response
         except Exception as e:
             logger.error(f"Failed to click element: {e}")
             return {
@@ -1377,6 +1394,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             screenshot_timeout=self._screenshot_timeout,
             page_stability_timeout=self._page_stability_timeout,
             dom_content_loaded_timeout=self._dom_content_loaded_timeout,
+            viewport_limit=self._viewport_limit,
+            full_visual_mode=self._full_visual_mode,
         )
 
     def get_tools(self) -> List[FunctionTool]:
