@@ -479,6 +479,7 @@
             "group": "Toolkits",
             "pages": [
               "reference/camel.toolkits.aci_toolkit",
+              "reference/camel.toolkits.artifact_toolkit",
               "reference/camel.toolkits.arxiv_toolkit",
               "reference/camel.toolkits.ask_news_toolkit",
               "reference/camel.toolkits.async_browser_toolkit",
