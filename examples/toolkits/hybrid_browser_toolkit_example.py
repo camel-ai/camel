@@ -37,57 +37,29 @@ USER_DATA_DIR = "User_Data23"
 
 model_backend = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
+    model_type=ModelType.GPT_4_1,
     model_config_dict={"temperature": 0.0, "top_p": 1},
 )
 
-# Example 1: Use default tools (basic functionality)
-# web_toolkit_default = HybridBrowserToolkit(
-#     headless=False,
-#     user_data_dir=USER_DATA_DIR
-# )
-# print(f"Default tools: {web_toolkit_default.enabled_tools}")
-
-# Example 2: Use all available tools
-# web_toolkit_all = HybridBrowserToolkit(
-#     headless=False,
-#     user_data_dir=USER_DATA_DIR,
-#     enabled_tools=HybridBrowserToolkit.ALL_TOOLS
-# )
-# print(f"All tools: {web_toolkit_all.enabled_tools}")
-
-# Example 3: Use custom tools selection
 custom_tools = [
     "browser_open",
-    "browser_close",
-    "browser_visit_page",
-    "browser_back",
-    "browser_forward",
     "browser_click",
     "browser_type",
-    "browser_switch_tab",
     "browser_enter",
-    "browser_get_som_screenshot", # remove it to achieve faster operation
-    # "browser_press_key",
-    # "browser_console_view",
-    # "browser_console_exec",
-    # "browser_mouse_drag",
 ]
 
 web_toolkit_custom = HybridBrowserToolkit(
     headless=False,
     user_data_dir=USER_DATA_DIR,
     enabled_tools=custom_tools,
-    browser_log_to_file=True,  # generate detailed log file in ./browser_log
-    stealth=True,  # Using stealth mode during browser operation
+    browser_log_to_file=True,
+    stealth=True,
     viewport_limit=True,
     connect_over_cdp=True,
     cdp_no_page=True,
     cdp_url="http://localhost:9222/"
-    # Limit snapshot to current viewport to reduce context
 )
 print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
-# Use the custom toolkit for the actual task
 agent = ChatAgent(
     model=model_backend,
     tools=[*web_toolkit_custom.get_tools()],
@@ -96,24 +68,24 @@ agent = ChatAgent(
 )
 
 TASK_PROMPT = r"""
-open browser，在页面上搜索toys，然后用browser_get_som_screenshot查看截图，告诉我谷歌logo是啥颜色的
+open browser然后帮我填写表单
+用车类型为个人用车, 
+用车场景为学生用车, 
+下单人为18668079187，
+派单类型为人工派单，
+商业产品类型为多日包车，
+订单类型为包车单，
+服务等级为梅赛德斯-奔驰 S级，
+用车时间为2025-09-10 14:54 （type输入）
+
+上面这些信息如果没有radio就直接用browser_type输入，输入的对象为combobox或textbox, 只有radio用click，其他直接用browser_type输入.输入完成后用enter
+
 """
 
 
 async def main() -> None:
-    try:
         response = await agent.astep(TASK_PROMPT)
-        print("Task:", TASK_PROMPT)
-        print(f"Using user data directory: {USER_DATA_DIR}")
-        print(f"Enabled tools: {web_toolkit_custom.enabled_tools}")
-        print("\nResponse from agent:")
-        print(response.msgs[0].content if response.msgs else "<no response>")
-    finally:
-        # Ensure browser is closed properly
-        print("\nClosing browser...")
-        await web_toolkit_custom.browser_close()
-        print("Browser closed successfully.")
-
+        print(response)
 
 if __name__ == "__main__":
     asyncio.run(main())
