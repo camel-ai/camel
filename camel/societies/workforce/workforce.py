@@ -3633,21 +3633,24 @@ class Workforce(BaseNode):
                 # Yield new tasks if we have more than previously yielded
                 if len(current_tasks) > yielded_count:
                     new_tasks = current_tasks[yielded_count:]
-                    for task in new_tasks:
-                        task.additional_info = task.additional_info
-                        task.parent = task
+                    for t in new_tasks:
+                        t.additional_info = task.additional_info
+                        t.parent = task
                     yield new_tasks
                     yielded_count = len(current_tasks)
 
-            except Exception:
+            except Exception as e:
                 # If parsing fails, continue accumulating
+                logger.error(
+                    f"Failed to parse tasks from streaming response: {e}"
+                )
                 continue
 
         # Final complete parsing
         final_tasks = self._parse_response(accumulated_content, task.id)
-        for task in final_tasks:
-            task.additional_info = task.additional_info
-            task.parent = task
+        for t in final_tasks:
+            t.additional_info = task.additional_info
+            t.parent = task
         task.subtasks = final_tasks
 
     def _decompose_non_streaming(
