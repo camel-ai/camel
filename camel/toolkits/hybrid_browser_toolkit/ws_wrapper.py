@@ -380,6 +380,53 @@ class WebSocketBrowserWrapper:
 
         # Ensure process handle cleared
         self.process = None
+    
+    async def disconnect_only(self):
+        """Disconnect WebSocket and stop server without closing the browser.
+        
+        This is useful for CDP mode where the browser should remain open.
+        """
+        # Close websocket connection
+        if self.websocket:
+            with contextlib.suppress(Exception):
+                await self.websocket.close()
+            self.websocket = None
+
+        # Stop the Node process
+        if self.process:
+            try:
+                # Send SIGTERM to gracefully shutdown
+                self.process.terminate()
+                self.process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                # Force kill if needed
+                with contextlib.suppress(ProcessLookupError, Exception):
+                    self.process.kill()
+                    self.process.wait()
+            except Exception as e:
+                logger.warning(f"Error terminating process: {e}")
+
+        # Cancel background tasks
+        tasks_to_cancel = [
+            ('_receive_task', self._receive_task),
+            ('_log_reader_task', self._log_reader_task),
+        ]
+        for _, task in tasks_to_cancel:
+            if task and not task.done():
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+
+        # Close TS log file if open
+        if getattr(self, 'ts_log_file', None):
+            with contextlib.suppress(Exception):
+                self.ts_log_file.close()
+            self.ts_log_file = None
+
+        # Ensure process handle cleared
+        self.process = None
+        
+        logger.info("WebSocket disconnected without closing browser")
 
     async def _log_action(
         self,

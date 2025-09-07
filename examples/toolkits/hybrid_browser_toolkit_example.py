@@ -83,6 +83,8 @@ open browser然后帮我填写表单
 
 async def main() -> None:
         response = await agent.astep(TASK_PROMPT)
+        await web_toolkit_custom.disconnect_websocket()
+
         print(response)
 
 if __name__ == "__main__":

@@ -252,13 +252,23 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
             import asyncio
 
+            # Check if we're in CDP mode
+            is_cdp = self._ws_config.get('connectOverCdp', False) if hasattr(self, '_ws_config') else False
+
             try:
                 loop = asyncio.get_event_loop()
                 if not loop.is_closed() and not loop.is_running():
                     try:
-                        loop.run_until_complete(
-                            asyncio.wait_for(self.browser_close(), timeout=2.0)
-                        )
+                        if is_cdp:
+                            # For CDP mode, just disconnect without closing browser
+                            loop.run_until_complete(
+                                asyncio.wait_for(self.disconnect_websocket(), timeout=2.0)
+                            )
+                        else:
+                            # For regular mode, close browser
+                            loop.run_until_complete(
+                                asyncio.wait_for(self.browser_close(), timeout=2.0)
+                            )
                     except asyncio.TimeoutError:
                         pass
             except (RuntimeError, ImportError):
@@ -347,6 +357,32 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         except Exception as e:
             logger.error(f"Failed to close browser: {e}")
             return f"Error closing browser: {e}"
+    
+    async def disconnect_websocket(self) -> str:
+        r"""Disconnects the WebSocket connection without closing the browser.
+        
+        This is useful when using CDP mode where the browser should remain open.
+        
+        Returns:
+            str: A confirmation message.
+        """
+        try:
+            if self._ws_wrapper:
+                # Store CDP config before disconnecting
+                is_cdp = self._ws_config.get('connectOverCdp', False)
+                
+                if is_cdp:
+                    # For CDP mode, just disconnect without sending close command
+                    await self._ws_wrapper.disconnect_only()
+                else:
+                    # For non-CDP mode, use normal stop
+                    await self._ws_wrapper.stop()
+                
+                self._ws_wrapper = None
+            return "WebSocket disconnected."
+        except Exception as e:
+            logger.error(f"Failed to disconnect WebSocket: {e}")
+            return f"Error disconnecting WebSocket: {e}"
 
     async def browser_visit_page(self, url: str) -> Dict[str, Any]:
         r"""Opens a URL in a new browser tab and switches to it.
