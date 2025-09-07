@@ -1,4 +1,4 @@
-import { Page, Browser, BrowserContext, chromium, ConsoleMessage } from 'playwright';
+import { Page, Browser, BrowserContext, chromium, ConsoleMessage, Frame } from 'playwright';
 import { BrowserToolkitConfig, SnapshotResult, SnapshotElement, ActionResult, TabInfo, BrowserAction, DetailedTiming } from './types';
 import { ConfigLoader, StealthConfig } from './config-loader';
 
@@ -621,23 +621,15 @@ export class HybridBrowserSession {
           // Element might not have placeholder attribute
         }
         
-        // Record existing input elements before any action
-        let existingInputIds: Set<string> = new Set();
-        if (originalPlaceholder) {
-          const inputsBefore = await page.locator(`input[placeholder="${originalPlaceholder}"], textarea[placeholder="${originalPlaceholder}"]`).all();
-          for (const input of inputsBefore) {
-            try {
-              const id = await input.evaluate((el: any) => {
-                // Create a unique identifier for the element
-                return el.getAttribute('aria-ref') || el.id || el.outerHTML.substring(0, 100);
-              });
-              existingInputIds.add(id);
-            } catch (e) {
-              // Ignore errors
-            }
-          }
-          console.log(`Found ${existingInputIds.size} existing inputs with placeholder "${originalPlaceholder}" before action`);
+        // Get snapshot before action to record existing elements
+        const snapshotBefore = await (page as any)._snapshotForAI();
+        const existingRefs = new Set<string>();
+        const refPattern = /\[ref=([^\]]+)\]/g;
+        let match;
+        while ((match = refPattern.exec(snapshotBefore)) !== null) {
+          existingRefs.add(match[1]);
         }
+        console.log(`Found ${existingRefs.size} total elements before action`);
         
         // First try to fill the element directly
         try {
@@ -678,50 +670,60 @@ export class HybridBrowserSession {
               }
             }
             
-            // Step 2: If no child element found, look for new elements with same placeholder
-            if (originalPlaceholder) {
+            // Step 2: Look for new elements that appeared after the action
+            console.log(`Looking for new elements that appeared after action...`);
+            
+            // Get snapshot after action to find new elements
+            const snapshotAfter = await (page as any)._snapshotForAI();
+            const newRefs = new Set<string>();
+            const afterRefPattern = /\[ref=([^\]]+)\]/g;
+            let afterMatch;
+            while ((afterMatch = afterRefPattern.exec(snapshotAfter)) !== null) {
+              const refId = afterMatch[1];
+              if (!existingRefs.has(refId)) {
+                newRefs.add(refId);
+              }
+            }
+            
+            console.log(`Found ${newRefs.size} new elements after action`);
+            
+            // If we have a placeholder, try to find new input elements with that placeholder
+            if (originalPlaceholder && newRefs.size > 0) {
               console.log(`Looking for new input elements with placeholder: ${originalPlaceholder}`);
               
-              // Get current input elements after the click and wait
-              const currentInputs = await page.locator(`input[placeholder="${originalPlaceholder}"]:visible, textarea[placeholder="${originalPlaceholder}"]:visible`).all();
-              console.log(`Found ${currentInputs.length} visible input elements with placeholder: ${originalPlaceholder} after action`);
-              
-              // Try all visible elements
-              for (const input of currentInputs) {
+              // Try each new ref to see if it's an input with our placeholder
+              for (const newRef of newRefs) {
                 try {
-                  // Check if this element existed before
-                  const elementId = await input.evaluate((el: any) => {
-                    return el.getAttribute('aria-ref') || el.id || el.outerHTML.substring(0, 100);
-                  });
+                  const newElement = await page.locator(`aria-ref=${newRef}`).first();
+                  const tagName = await newElement.evaluate(el => el.tagName.toLowerCase()).catch(() => null);
                   
-                  const isNewElement = !existingInputIds.has(elementId);
-                  
-                  if (isNewElement) {
-                    console.log(`Found NEW input element that appeared after click`);
-                    // Log more details about the new element
-                    const elementInfo = await input.evaluate((el: any) => {
-                      return {
-                        tagName: el.tagName,
-                        id: el.id,
-                        className: el.className,
-                        ariaRef: el.getAttribute('aria-ref'),
-                        isVisible: el.offsetParent !== null,
-                        isReadonly: el.readOnly || el.getAttribute('readonly') !== null
-                      };
-                    });
-                    console.log(`New element details:`, JSON.stringify(elementInfo));
-                    
-                    await input.fill(text);
-                    return { success: true };
-                  } else {
-                    console.log(`Skipping pre-existing element with id: ${elementId}`);
+                  if (tagName === 'input' || tagName === 'textarea') {
+                    const placeholder = await newElement.getAttribute('placeholder').catch(() => null);
+                    if (placeholder === originalPlaceholder) {
+                      console.log(`Found new input element with matching placeholder: ref=${newRef}`);
+                      
+                      // Check if it's visible and fillable
+                      const elementInfo = await newElement.evaluate((el: any) => {
+                        return {
+                          tagName: el.tagName,
+                          id: el.id,
+                          className: el.className,
+                          placeholder: el.placeholder,
+                          isVisible: el.offsetParent !== null,
+                          isReadonly: el.readOnly || el.getAttribute('readonly') !== null
+                        };
+                      });
+                      console.log(`New element details:`, JSON.stringify(elementInfo));
+                      
+                      // Try to fill it
+                      await newElement.fill(text);
+                      return { success: true };
+                    }
                   }
                 } catch (e) {
-                  console.log(`Failed to fill element: ${e}`);
+                  // Ignore errors for non-input elements
                 }
               }
-              
-              console.log(`No new input elements found after click`);
             }
             
             console.log(`No suitable input element found for ref ${ref}`);
