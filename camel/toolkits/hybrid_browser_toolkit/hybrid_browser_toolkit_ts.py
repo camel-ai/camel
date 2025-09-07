@@ -86,6 +86,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         cache_dir: str = "tmp/",
         enabled_tools: Optional[List[str]] = None,
         browser_log_to_file: bool = False,
+        log_dir: Optional[str] = None,
         session_id: Optional[str] = None,
         default_start_url: str = "https://google.com/",
         default_timeout: Optional[int] = None,
@@ -117,6 +118,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             Defaults to None.
             browser_log_to_file (bool): Whether to log browser actions to
             file. Defaults to False.
+            log_dir (Optional[str]): Custom directory path for log files.
+            If None, defaults to "browser_log". Defaults to None.
             session_id (Optional[str]): Session identifier. Defaults to None.
             default_start_url (str): Default URL to start with. Defaults
             to "https://google.com/".
@@ -170,6 +173,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             viewport_limit=viewport_limit,
             cache_dir=cache_dir,
             browser_log_to_file=browser_log_to_file,
+            log_dir=log_dir,
             session_id=session_id,
             enabled_tools=enabled_tools,
             connect_over_cdp=connect_over_cdp,

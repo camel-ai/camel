@@ -122,6 +122,7 @@ class WebSocketBrowserWrapper:
         self.browser_log_to_file = (config or {}).get(
             'browser_log_to_file', False
         )
+        self.log_dir = (config or {}).get('log_dir', 'browser_log')
         self.session_id = (config or {}).get('session_id', 'default')
         self.log_file_path: Optional[str] = None
         self.log_buffer: List[Dict[str, Any]] = []
@@ -131,7 +132,7 @@ class WebSocketBrowserWrapper:
 
         # Set up log files if needed
         if self.browser_log_to_file:
-            log_dir = "browser_log"
+            log_dir = self.log_dir if self.log_dir else "browser_log"
             os.makedirs(log_dir, exist_ok=True)
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             self.log_file_path = os.path.join(
