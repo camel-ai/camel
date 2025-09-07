@@ -248,12 +248,22 @@ export class HybridBrowserToolkit {
     };
     
     if (result.success) {
-      const snapshotStart = Date.now();
-      response.snapshot = await this.getPageSnapshot(this.viewportLimit);
-      const snapshotTime = Date.now() - snapshotStart;
-      
-      if (result.timing) {
-        result.timing.snapshot_time_ms = snapshotTime;
+      // Check if we have a diff snapshot from combobox operations
+      if (result.details?.diffSnapshot) {
+        response.snapshot = result.details.diffSnapshot;
+        
+        if (result.timing) {
+          result.timing.snapshot_time_ms = 0; // Diff snapshot time is included in action time
+        }
+      } else {
+        // Get full snapshot as usual
+        const snapshotStart = Date.now();
+        response.snapshot = await this.getPageSnapshot(this.viewportLimit);
+        const snapshotTime = Date.now() - snapshotStart;
+        
+        if (result.timing) {
+          result.timing.snapshot_time_ms = snapshotTime;
+        }
       }
     }
     
@@ -265,6 +275,14 @@ export class HybridBrowserToolkit {
     // Include newTabId if present
     if (result.newTabId) {
       response.newTabId = result.newTabId;
+    }
+    
+    // Include details if present (excluding diffSnapshot as it's already in snapshot)
+    if (result.details) {
+      const { diffSnapshot, ...otherDetails } = result.details;
+      if (Object.keys(otherDetails).length > 0) {
+        response.details = otherDetails;
+      }
     }
     
     return response;

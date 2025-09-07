@@ -463,7 +463,7 @@ export class HybridBrowserSession {
   /**
    *  Enhanced click implementation with new tab detection and scroll fix
    */
-  private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string }> {
+  private async performClick(page: Page, ref: string): Promise<{ success: boolean; method?: string; error?: string; newTabId?: string; diffSnapshot?: string }> {
     
     try {
       //  Ensure we have the latest snapshot and mapping
@@ -478,6 +478,19 @@ export class HybridBrowserSession {
       
       if (!exists) {
         return { success: false, error: `Element with ref ${ref} not found` };
+      }
+      
+      // Check if this is a combobox or textbox element
+      const role = await element.getAttribute('role');
+      const elementTagName = await element.evaluate(el => el.tagName.toLowerCase());
+      const isCombobox = role === 'combobox' || elementTagName === 'combobox';
+      const isTextbox = role === 'textbox' || elementTagName === 'input' || elementTagName === 'textarea';
+      const shouldCheckDiff = isCombobox || isTextbox;
+      
+      let snapshotBefore: string | null = null;
+      if (shouldCheckDiff) {
+        // Capture snapshot before clicking element that might show dropdown
+        snapshotBefore = await (page as any)._snapshotForAI();
       }
       
       //  Check element properties
@@ -558,6 +571,18 @@ export class HybridBrowserSession {
           await element.click({ force: browserConfig.forceClick });
         }
         
+        // If this element might show dropdown, wait and check for new elements
+        if (shouldCheckDiff && snapshotBefore) {
+          await page.waitForTimeout(300); // Wait for dropdown to appear
+          const snapshotAfter = await (page as any)._snapshotForAI();
+          const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
+          
+          // Only return diff if there are new elements
+          if (diffSnapshot && diffSnapshot.trim() !== '') {
+            return { success: true, method: 'playwright-aria-ref', diffSnapshot };
+          }
+        }
+        
         return { success: true, method: 'playwright-aria-ref' };
       }
       
@@ -568,10 +593,50 @@ export class HybridBrowserSession {
   }
 
   /**
+   * Extract diff between two snapshots, returning only new elements of specified types
+   */
+  private getSnapshotDiff(snapshotBefore: string, snapshotAfter: string, targetRoles: string[]): string {
+    // Extract all refs from before snapshot
+    const refsBefore = new Set<string>();
+    const refPattern = /\[ref=([^\]]+)\]/g;
+    let match;
+    while ((match = refPattern.exec(snapshotBefore)) !== null) {
+      refsBefore.add(match[1]);
+    }
+    
+    // Parse after snapshot and collect new elements
+    const lines = snapshotAfter.split('\n');
+    const newElements: string[] = [];
+    
+    for (const line of lines) {
+      // Check if line contains a new ref
+      const refMatch = line.match(/\[ref=([^\]]+)\]/);
+      if (refMatch && !refsBefore.has(refMatch[1])) {
+        // Check if this line contains one of the target roles
+        const hasTargetRole = targetRoles.some(role => {
+          const rolePattern = new RegExp(`\\b${role}\\b`, 'i');
+          return rolePattern.test(line);
+        });
+        
+        if (hasTargetRole) {
+          newElements.push(line.trim());
+        }
+      }
+    }
+    
+    // Return formatted diff snapshot
+    if (newElements.length > 0) {
+      return newElements.join('\n');
+    } else {
+      return ''; // No new elements found
+    }
+  }
+
+  /**
    *  Simplified type implementation using Playwright's aria-ref selector
    *  Supports both single and multiple input operations
    */
-  private async performType(page: Page, ref: string | undefined, text: string | undefined, inputs?: Array<{ ref: string; text: string }>): Promise<{ success: boolean; error?: string; details?: Record<string, any> }> {
+  private async performType(page: Page, ref: string | undefined, text: string | undefined, inputs?: Array<{ ref: string; text: string }>): Promise<{ success: boolean; error?: string; details?: Record<string, any>; diffSnapshot?: string }> {
     try {
       // Ensure we have the latest snapshot
       await (page as any)._snapshotForAI();
@@ -617,6 +682,9 @@ export class HybridBrowserSession {
         let originalPlaceholder: string | null = null;
         let isReadonly = false;
         let elementType: string | null = null;
+        let isCombobox = false;
+        let isTextbox = false;
+        let shouldCheckDiff = false;
         
         try {
           // Get element info in one evaluation to minimize interactions
@@ -626,13 +694,22 @@ export class HybridBrowserSession {
               readonly: el.readOnly || el.hasAttribute('readonly'),
               type: el.type || null,
               tagName: el.tagName.toLowerCase(),
-              disabled: el.disabled || false
+              disabled: el.disabled || false,
+              role: el.getAttribute('role'),
+              ariaHaspopup: el.getAttribute('aria-haspopup')
             };
           });
           
           originalPlaceholder = elementInfo.placeholder;
           isReadonly = elementInfo.readonly;
           elementType = elementInfo.type;
+          isCombobox = elementInfo.role === 'combobox' || 
+                       elementInfo.tagName === 'combobox' ||
+                       elementInfo.ariaHaspopup === 'listbox';
+          isTextbox = elementInfo.role === 'textbox' || 
+                      elementInfo.tagName === 'input' || 
+                      elementInfo.tagName === 'textarea';
+          shouldCheckDiff = isCombobox || isTextbox;
           
           console.log(`Element info for ref=${ref}:`, JSON.stringify(elementInfo));
         } catch (e) {
@@ -675,6 +752,19 @@ export class HybridBrowserSession {
           try {
             // Use force option to avoid scrolling during fill
             await element.fill(text, { timeout: 3000, force: true });
+            
+            // If this element might show dropdown, wait and check for new elements
+            if (shouldCheckDiff) {
+              await page.waitForTimeout(300); // Wait for dropdown to appear
+              const snapshotAfter = await (page as any)._snapshotForAI();
+              const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
+              
+              // Only return diff if there are new elements
+              if (diffSnapshot && diffSnapshot.trim() !== '') {
+                return { success: true, diffSnapshot };
+              }
+            }
+            
             return { success: true };
           } catch (fillError: any) {
             // Log the error for debugging
@@ -710,6 +800,19 @@ export class HybridBrowserSession {
               console.log(`Found input element within ref ${ref}, attempting to fill`);
               try {
                 await inputElement.fill(text, { force: true });
+                
+                // If element might show dropdown, check for new elements
+                if (shouldCheckDiff) {
+                  await page.waitForTimeout(300);
+                  const snapshotFinal = await (page as any)._snapshotForAI();
+                  const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
+                  
+                  // Only return diff if there are new elements
+                  if (diffSnapshot && diffSnapshot.trim() !== '') {
+                    return { success: true, diffSnapshot };
+                  }
+                }
+                
                 return { success: true };
               } catch (innerError) {
                 console.log(`Failed to fill child element: ${innerError}`);
@@ -763,6 +866,19 @@ export class HybridBrowserSession {
                       
                       // Try to fill it with force to avoid scrolling
                       await newElement.fill(text, { force: true });
+                      
+                      // If element might show dropdown, check for new elements
+                      if (shouldCheckDiff) {
+                        await page.waitForTimeout(300);
+                        const snapshotFinal = await (page as any)._snapshotForAI();
+                        const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
+                        
+                        // Only return diff if there are new elements
+                        if (diffSnapshot && diffSnapshot.trim() !== '') {
+                          return { success: true, diffSnapshot };
+                        }
+                      }
+                      
                       return { success: true };
                     }
                   }
@@ -828,6 +944,19 @@ export class HybridBrowserSession {
                     
                     // Try to fill it with force to avoid scrolling
                     await newElement.fill(text, { force: true });
+                    
+                    // If element might show dropdown, check for new elements
+                    if (shouldCheckDiff) {
+                      await page.waitForTimeout(300);
+                      const snapshotFinal = await (page as any)._snapshotForAI();
+                      const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
+                      
+                      // Only return diff if there are new elements
+                      if (diffSnapshot && diffSnapshot.trim() !== '') {
+                        return { success: true, diffSnapshot };
+                      }
+                    }
+                    
                     return { success: true };
                   }
                 }
@@ -998,6 +1127,11 @@ export class HybridBrowserSession {
           //  Capture new tab ID if present
           newTabId = clickResult.newTabId;
           
+          // Capture diff snapshot if present
+          if (clickResult.diffSnapshot) {
+            actionDetails = { diffSnapshot: clickResult.diffSnapshot };
+          }
+          
           actionExecutionTime = Date.now() - clickStart;
           break;
         }
@@ -1018,6 +1152,14 @@ export class HybridBrowserSession {
             const totalCount = Object.keys(typeResult.details).length;
             customMessage = `Typed text into ${successCount}/${totalCount} elements`;
             actionDetails = typeResult.details;
+          }
+          
+          // Capture diff snapshot if present
+          if (typeResult.diffSnapshot) {
+            if (!actionDetails) {
+              actionDetails = {};
+            }
+            actionDetails.diffSnapshot = typeResult.diffSnapshot;
           }
           
           actionExecutionTime = Date.now() - typeStart;
