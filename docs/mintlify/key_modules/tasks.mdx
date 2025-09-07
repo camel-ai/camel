@@ -195,7 +195,7 @@ task_c.dependencies = [task_a, task_b]
 print(f"Task C dependencies: {[dep.id for dep in task_c.dependencies]}")
 
 ````
-</CodeGroup>
+
 </CodeGroup>
 
 ## Task Result Management
@@ -209,15 +209,19 @@ from camel.tasks import Task, TaskState
 task = Task(content="Calculate 2 + 2", id="calc")
 
 # Update task result
+
 task.update_result("2 + 2 = 4")
 
 # Check result and state
+
 print(f"Result: {task.result}")
 print(f"State: {task.state}")
 
 # Get formatted result string
+
 result_string = task.get_result()
 print(result_string)
+
 ````
 
 ```markdown output
@@ -250,10 +254,10 @@ task.reset()
 print(f"After reset - State: {task.state}, Result: {task.result}")
 
 ````
+
 ```markdown output
->>>
-Is result insufficient: True
-After reset - State: FAILED, Result:
+> > > Is result insufficient: True
+> > > After reset - State: FAILED, Result:
 ````
 
 </CodeGroup>
@@ -274,3 +278,4 @@ After reset - State: FAILED, Result:
   structure (Task) from execution logic (Workforce) ensures maintainable and
   scalable task orchestration for AI systems.
 </Card>
+```
