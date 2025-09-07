@@ -681,6 +681,8 @@ class WebSocketBrowserWrapper:
         # First click the element before typing
         await self._send_command('click', {'ref': ref})
         response = await self._send_command('type', {'ref': ref, 'text': text})
+        # Log the response for debugging
+        logger.debug(f"Type response for ref {ref}: {response}")
         return response
 
     @action_logger

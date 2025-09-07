@@ -580,57 +580,13 @@ export class HybridBrowserSession {
       if (inputs && inputs.length > 0) {
         const results: Record<string, { success: boolean; error?: string }> = {};
         
+        // Simply call single input mode for each input
         for (const input of inputs) {
-          const selector = `aria-ref=${input.ref}`;
-          const element = await page.locator(selector).first();
-          
-          const exists = await element.count() > 0;
-          if (!exists) {
-            results[input.ref] = { success: false, error: `Element with ref ${input.ref} not found` };
-            continue;
-          }
-          
-          try {
-            // First try to fill the element directly
-            await element.fill(input.text);
-            results[input.ref] = { success: true };
-          } catch (fillError: any) {
-            // Log the error for debugging
-            console.log(`Fill error for ref ${input.ref}: ${fillError.message}`);
-            
-            // If the element is not fillable, try to find input elements within it
-            const errorMessage = fillError.message.toLowerCase();
-            if (errorMessage.includes('not an <input>') || 
-                errorMessage.includes('not have a role allowing') ||
-                errorMessage.includes('element is not') ||
-                errorMessage.includes('cannot type') ||
-                errorMessage.includes('readonly') ||
-                errorMessage.includes('not editable')) {
-              
-              // Wait a bit for potential dynamic content
-              await page.waitForTimeout(200);
-              
-              const inputSelector = `input:visible, textarea:visible, [contenteditable="true"]:visible, [role="textbox"]:visible`;
-              const inputElement = await element.locator(inputSelector).first();
-              
-              const inputExists = await inputElement.count() > 0;
-              if (inputExists) {
-                try {
-                  console.log(`Found input element within ref ${input.ref}, attempting to fill`);
-                  // Found an input element, try to fill it
-                  await inputElement.fill(input.text);
-                  results[input.ref] = { success: true };
-                } catch (innerError) {
-                  results[input.ref] = { success: false, error: `Type failed: ${innerError}` };
-                }
-              } else {
-                console.log(`No input element found within ref ${input.ref}`);
-                results[input.ref] = { success: false, error: `Type failed: ${fillError}` };
-              }
-            } else {
-              results[input.ref] = { success: false, error: `Type failed: ${fillError}` };
-            }
-          }
+          const singleResult = await this.performType(page, input.ref, input.text);
+          results[input.ref] = {
+            success: singleResult.success,
+            error: singleResult.error
+          };
         }
         
         // Check if all inputs were successful
@@ -657,9 +613,36 @@ export class HybridBrowserSession {
           return { success: false, error: `Element with ref ${ref} not found` };
         }
         
+        // Get the placeholder of the original element if it exists
+        let originalPlaceholder: string | null = null;
+        try {
+          originalPlaceholder = await element.getAttribute('placeholder');
+        } catch (e) {
+          // Element might not have placeholder attribute
+        }
+        
+        // Record existing input elements before any action
+        let existingInputIds: Set<string> = new Set();
+        if (originalPlaceholder) {
+          const inputsBefore = await page.locator(`input[placeholder="${originalPlaceholder}"], textarea[placeholder="${originalPlaceholder}"]`).all();
+          for (const input of inputsBefore) {
+            try {
+              const id = await input.evaluate((el: any) => {
+                // Create a unique identifier for the element
+                return el.getAttribute('aria-ref') || el.id || el.outerHTML.substring(0, 100);
+              });
+              existingInputIds.add(id);
+            } catch (e) {
+              // Ignore errors
+            }
+          }
+          console.log(`Found ${existingInputIds.size} existing inputs with placeholder "${originalPlaceholder}" before action`);
+        }
+        
         // First try to fill the element directly
         try {
-          await element.fill(text);
+          // Add a shorter timeout to fail faster on readonly elements
+          await element.fill(text, { timeout: 3000 });
           return { success: true };
         } catch (fillError: any) {
           // Log the error for debugging
@@ -673,23 +656,75 @@ export class HybridBrowserSession {
               errorMessage.includes('element is not') ||
               errorMessage.includes('cannot type') ||
               errorMessage.includes('readonly') ||
-              errorMessage.includes('not editable')) {
+              errorMessage.includes('not editable') ||
+              errorMessage.includes('timeout') ||
+              errorMessage.includes('timeouterror')) {
             
             // Wait a bit for potential dynamic content
-            await page.waitForTimeout(200);
+            await page.waitForTimeout(500);
             
+            // Step 1: Try to find input elements within the clicked element
             const inputSelector = `input:visible, textarea:visible, [contenteditable="true"]:visible, [role="textbox"]:visible`;
             const inputElement = await element.locator(inputSelector).first();
             
             const inputExists = await inputElement.count() > 0;
             if (inputExists) {
               console.log(`Found input element within ref ${ref}, attempting to fill`);
-              // Found an input element, try to fill it
-              await inputElement.fill(text);
-              return { success: true };
-            } else {
-              console.log(`No input element found within ref ${ref}`);
+              try {
+                await inputElement.fill(text);
+                return { success: true };
+              } catch (innerError) {
+                console.log(`Failed to fill child element: ${innerError}`);
+              }
             }
+            
+            // Step 2: If no child element found, look for new elements with same placeholder
+            if (originalPlaceholder) {
+              console.log(`Looking for new input elements with placeholder: ${originalPlaceholder}`);
+              
+              // Get current input elements after the click and wait
+              const currentInputs = await page.locator(`input[placeholder="${originalPlaceholder}"]:visible, textarea[placeholder="${originalPlaceholder}"]:visible`).all();
+              console.log(`Found ${currentInputs.length} visible input elements with placeholder: ${originalPlaceholder} after action`);
+              
+              // Try all visible elements
+              for (const input of currentInputs) {
+                try {
+                  // Check if this element existed before
+                  const elementId = await input.evaluate((el: any) => {
+                    return el.getAttribute('aria-ref') || el.id || el.outerHTML.substring(0, 100);
+                  });
+                  
+                  const isNewElement = !existingInputIds.has(elementId);
+                  
+                  if (isNewElement) {
+                    console.log(`Found NEW input element that appeared after click`);
+                    // Log more details about the new element
+                    const elementInfo = await input.evaluate((el: any) => {
+                      return {
+                        tagName: el.tagName,
+                        id: el.id,
+                        className: el.className,
+                        ariaRef: el.getAttribute('aria-ref'),
+                        isVisible: el.offsetParent !== null,
+                        isReadonly: el.readOnly || el.getAttribute('readonly') !== null
+                      };
+                    });
+                    console.log(`New element details:`, JSON.stringify(elementInfo));
+                    
+                    await input.fill(text);
+                    return { success: true };
+                  } else {
+                    console.log(`Skipping pre-existing element with id: ${elementId}`);
+                  }
+                } catch (e) {
+                  console.log(`Failed to fill element: ${e}`);
+                }
+              }
+              
+              console.log(`No new input elements found after click`);
+            }
+            
+            console.log(`No suitable input element found for ref ${ref}`);
           }
           // Re-throw the original error if we couldn't find an input element
           throw fillError;
