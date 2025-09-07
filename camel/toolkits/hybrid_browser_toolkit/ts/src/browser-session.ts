@@ -591,11 +591,45 @@ export class HybridBrowserSession {
           }
           
           try {
-            // Type text using Playwright's built-in fill method
+            // First try to fill the element directly
             await element.fill(input.text);
             results[input.ref] = { success: true };
-          } catch (error) {
-            results[input.ref] = { success: false, error: `Type failed: ${error}` };
+          } catch (fillError: any) {
+            // Log the error for debugging
+            console.log(`Fill error for ref ${input.ref}: ${fillError.message}`);
+            
+            // If the element is not fillable, try to find input elements within it
+            const errorMessage = fillError.message.toLowerCase();
+            if (errorMessage.includes('not an <input>') || 
+                errorMessage.includes('not have a role allowing') ||
+                errorMessage.includes('element is not') ||
+                errorMessage.includes('cannot type') ||
+                errorMessage.includes('readonly') ||
+                errorMessage.includes('not editable')) {
+              
+              // Wait a bit for potential dynamic content
+              await page.waitForTimeout(200);
+              
+              const inputSelector = `input:visible, textarea:visible, [contenteditable="true"]:visible, [role="textbox"]:visible`;
+              const inputElement = await element.locator(inputSelector).first();
+              
+              const inputExists = await inputElement.count() > 0;
+              if (inputExists) {
+                try {
+                  console.log(`Found input element within ref ${input.ref}, attempting to fill`);
+                  // Found an input element, try to fill it
+                  await inputElement.fill(input.text);
+                  results[input.ref] = { success: true };
+                } catch (innerError) {
+                  results[input.ref] = { success: false, error: `Type failed: ${innerError}` };
+                }
+              } else {
+                console.log(`No input element found within ref ${input.ref}`);
+                results[input.ref] = { success: false, error: `Type failed: ${fillError}` };
+              }
+            } else {
+              results[input.ref] = { success: false, error: `Type failed: ${fillError}` };
+            }
           }
         }
         
@@ -623,10 +657,43 @@ export class HybridBrowserSession {
           return { success: false, error: `Element with ref ${ref} not found` };
         }
         
-        // Type text using Playwright's built-in fill method
-        await element.fill(text);
-        
-        return { success: true };
+        // First try to fill the element directly
+        try {
+          await element.fill(text);
+          return { success: true };
+        } catch (fillError: any) {
+          // Log the error for debugging
+          console.log(`Fill error for ref ${ref}: ${fillError.message}`);
+          
+          // If the element is not fillable, try to find input elements within it
+          // Check for various error messages that indicate the element is not fillable
+          const errorMessage = fillError.message.toLowerCase();
+          if (errorMessage.includes('not an <input>') || 
+              errorMessage.includes('not have a role allowing') ||
+              errorMessage.includes('element is not') ||
+              errorMessage.includes('cannot type') ||
+              errorMessage.includes('readonly') ||
+              errorMessage.includes('not editable')) {
+            
+            // Wait a bit for potential dynamic content
+            await page.waitForTimeout(200);
+            
+            const inputSelector = `input:visible, textarea:visible, [contenteditable="true"]:visible, [role="textbox"]:visible`;
+            const inputElement = await element.locator(inputSelector).first();
+            
+            const inputExists = await inputElement.count() > 0;
+            if (inputExists) {
+              console.log(`Found input element within ref ${ref}, attempting to fill`);
+              // Found an input element, try to fill it
+              await inputElement.fill(text);
+              return { success: true };
+            } else {
+              console.log(`No input element found within ref ${ref}`);
+            }
+          }
+          // Re-throw the original error if we couldn't find an input element
+          throw fillError;
+        }
       }
       
       return { success: false, error: 'No valid input provided' };
