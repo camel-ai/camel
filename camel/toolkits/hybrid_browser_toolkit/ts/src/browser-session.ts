@@ -562,14 +562,9 @@ export class HybridBrowserSession {
         }
       } else {
         //  Add options to prevent scrolling issues
-        try {
-          // First try normal click
-          const browserConfig = this.configLoader.getBrowserConfig();
-          await element.click({ timeout: browserConfig.clickTimeout });
-        } catch (clickError) {
-          // If normal click fails due to scrolling, try force click
-          await element.click({ force: browserConfig.forceClick });
-        }
+        // Always use force click to prevent automatic scrolling
+        const browserConfig = this.configLoader.getBrowserConfig();
+        await element.click({ force: browserConfig.forceClick });
         
         // If this element might show dropdown, wait and check for new elements
         if (shouldCheckDiff && snapshotBefore) {
