@@ -16,8 +16,6 @@ from camel.tasks import Task, TaskState
 
 
 def demonstrate_basic_task_usage():
-    """Demonstrate basic Task functionality after refactoring."""
-
     # Create a simple task
     task = Task(
         content=(
