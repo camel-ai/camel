@@ -33,7 +33,6 @@ logging.getLogger('camel.models').setLevel(logging.INFO)
 logging.getLogger('camel.toolkits.hybrid_browser_toolkit').setLevel(
     logging.DEBUG
 )
-USER_DATA_DIR = "User_Data23"
 
 model_backend = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
@@ -50,7 +49,6 @@ custom_tools = [
 
 web_toolkit_custom = HybridBrowserToolkit(
     headless=False,
-    user_data_dir=USER_DATA_DIR,
     enabled_tools=custom_tools,
     browser_log_to_file=True,
     stealth=True,
