@@ -678,8 +678,6 @@ class WebSocketBrowserWrapper:
     @action_logger
     async def type(self, ref: str, text: str) -> Dict[str, Any]:
         """Type text into an element."""
-        # First click the element before typing
-        await self._send_command('click', {'ref': ref})
         response = await self._send_command('type', {'ref': ref, 'text': text})
         # Log the response for debugging
         logger.debug(f"Type response for ref {ref}: {response}")

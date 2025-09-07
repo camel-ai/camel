@@ -613,12 +613,30 @@ export class HybridBrowserSession {
           return { success: false, error: `Element with ref ${ref} not found` };
         }
         
-        // Get the placeholder of the original element if it exists
+        // Get element attributes to check if it's readonly or a special input type
         let originalPlaceholder: string | null = null;
+        let isReadonly = false;
+        let elementType: string | null = null;
+        
         try {
-          originalPlaceholder = await element.getAttribute('placeholder');
+          // Get element info in one evaluation to minimize interactions
+          const elementInfo = await element.evaluate((el: any) => {
+            return {
+              placeholder: el.placeholder || null,
+              readonly: el.readOnly || el.hasAttribute('readonly'),
+              type: el.type || null,
+              tagName: el.tagName.toLowerCase(),
+              disabled: el.disabled || false
+            };
+          });
+          
+          originalPlaceholder = elementInfo.placeholder;
+          isReadonly = elementInfo.readonly;
+          elementType = elementInfo.type;
+          
+          console.log(`Element info for ref=${ref}:`, JSON.stringify(elementInfo));
         } catch (e) {
-          // Element might not have placeholder attribute
+          console.log(`Warning: Failed to get element attributes: ${e}`);
         }
         
         // Get snapshot before action to record existing elements
@@ -631,19 +649,40 @@ export class HybridBrowserSession {
         }
         console.log(`Found ${existingRefs.size} total elements before action`);
         
-        // First try to fill the element directly
-        try {
-          // Add a shorter timeout to fail faster on readonly elements
-          await element.fill(text, { timeout: 3000 });
-          return { success: true };
-        } catch (fillError: any) {
-          // Log the error for debugging
-          console.log(`Fill error for ref ${ref}: ${fillError.message}`);
+        // If element is readonly or a date/time input, skip fill attempt and go directly to click
+        if (isReadonly || ['date', 'datetime-local', 'time'].includes(elementType || '')) {
+          console.log(`Element ref=${ref} is readonly or date/time input, skipping direct fill attempt`);
           
-          // If the element is not fillable, try to find input elements within it
-          // Check for various error messages that indicate the element is not fillable
-          const errorMessage = fillError.message.toLowerCase();
-          if (errorMessage.includes('not an <input>') || 
+          // Click with force option to avoid scrolling
+          try {
+            await element.click({ force: true });
+            console.log(`Clicked readonly/special element ref=${ref} to trigger dynamic content`);
+            // Wait for potential dynamic content to appear
+            await page.waitForTimeout(500);
+          } catch (clickError) {
+            console.log(`Warning: Failed to click element: ${clickError}`);
+          }
+        } else {
+          // For normal inputs, click first then try to fill
+          try {
+            await element.click({ force: true });
+            console.log(`Clicked element ref=${ref} before typing`);
+          } catch (clickError) {
+            console.log(`Warning: Failed to click element before typing: ${clickError}`);
+          }
+          
+          // Try to fill the element directly
+          try {
+            // Use force option to avoid scrolling during fill
+            await element.fill(text, { timeout: 3000, force: true });
+            return { success: true };
+          } catch (fillError: any) {
+            // Log the error for debugging
+            console.log(`Fill error for ref ${ref}: ${fillError.message}`);
+            
+            // Check for various error messages that indicate the element is not fillable
+            const errorMessage = fillError.message.toLowerCase();
+            if (errorMessage.includes('not an <input>') || 
               errorMessage.includes('not have a role allowing') ||
               errorMessage.includes('element is not') ||
               errorMessage.includes('cannot type') ||
@@ -652,8 +691,15 @@ export class HybridBrowserSession {
               errorMessage.includes('timeout') ||
               errorMessage.includes('timeouterror')) {
             
-            // Wait a bit for potential dynamic content
-            await page.waitForTimeout(500);
+            // Click the element again to trigger dynamic content (like date pickers)
+            try {
+              await element.click({ force: true });
+              console.log(`Clicked element ref=${ref} again to trigger dynamic content`);
+              // Wait for potential dynamic content to appear
+              await page.waitForTimeout(500);
+            } catch (clickError) {
+              console.log(`Warning: Failed to click element to trigger dynamic content: ${clickError}`);
+            }
             
             // Step 1: Try to find input elements within the clicked element
             const inputSelector = `input:visible, textarea:visible, [contenteditable="true"]:visible, [role="textbox"]:visible`;
@@ -663,7 +709,7 @@ export class HybridBrowserSession {
             if (inputExists) {
               console.log(`Found input element within ref ${ref}, attempting to fill`);
               try {
-                await inputElement.fill(text);
+                await inputElement.fill(text, { force: true });
                 return { success: true };
               } catch (innerError) {
                 console.log(`Failed to fill child element: ${innerError}`);
@@ -715,8 +761,8 @@ export class HybridBrowserSession {
                       });
                       console.log(`New element details:`, JSON.stringify(elementInfo));
                       
-                      // Try to fill it
-                      await newElement.fill(text);
+                      // Try to fill it with force to avoid scrolling
+                      await newElement.fill(text, { force: true });
                       return { success: true };
                     }
                   }
@@ -727,9 +773,72 @@ export class HybridBrowserSession {
             }
             
             console.log(`No suitable input element found for ref ${ref}`);
+            }
+            // Re-throw the original error if we couldn't find an input element
+            throw fillError;
           }
-          // Re-throw the original error if we couldn't find an input element
-          throw fillError;
+        }
+        
+        // If we skipped the fill attempt (readonly elements), look for new elements directly
+        if (isReadonly || ['date', 'datetime-local', 'time'].includes(elementType || '')) {
+          // Look for new elements that appeared after clicking
+          console.log(`Looking for new elements that appeared after clicking readonly element...`);
+          
+          // Get snapshot after action to find new elements
+          const snapshotAfter = await (page as any)._snapshotForAI();
+          const newRefs = new Set<string>();
+          const afterRefPattern = /\[ref=([^\]]+)\]/g;
+          let afterMatch;
+          while ((afterMatch = afterRefPattern.exec(snapshotAfter)) !== null) {
+            const refId = afterMatch[1];
+            if (!existingRefs.has(refId)) {
+              newRefs.add(refId);
+            }
+          }
+          
+          console.log(`Found ${newRefs.size} new elements after clicking readonly element`);
+          
+          // If we have a placeholder, try to find new input elements with that placeholder
+          if (originalPlaceholder && newRefs.size > 0) {
+            console.log(`Looking for new input elements with placeholder: ${originalPlaceholder}`);
+            
+            // Try each new ref to see if it's an input with our placeholder
+            for (const newRef of newRefs) {
+              try {
+                const newElement = await page.locator(`aria-ref=${newRef}`).first();
+                const tagName = await newElement.evaluate(el => el.tagName.toLowerCase()).catch(() => null);
+                
+                if (tagName === 'input' || tagName === 'textarea') {
+                  const placeholder = await newElement.getAttribute('placeholder').catch(() => null);
+                  if (placeholder === originalPlaceholder) {
+                    console.log(`Found new input element with matching placeholder: ref=${newRef}`);
+                    
+                    // Check if it's visible and fillable
+                    const elementInfo = await newElement.evaluate((el: any) => {
+                      return {
+                        tagName: el.tagName,
+                        id: el.id,
+                        className: el.className,
+                        placeholder: el.placeholder,
+                        isVisible: el.offsetParent !== null,
+                        isReadonly: el.readOnly || el.getAttribute('readonly') !== null
+                      };
+                    });
+                    console.log(`New element details:`, JSON.stringify(elementInfo));
+                    
+                    // Try to fill it with force to avoid scrolling
+                    await newElement.fill(text, { force: true });
+                    return { success: true };
+                  }
+                }
+              } catch (e) {
+                // Ignore errors for non-input elements
+              }
+            }
+          }
+          
+          console.log(`No suitable input element found for readonly ref ${ref}`);
+          return { success: false, error: `Element ref=${ref} is readonly and no suitable input was found` };
         }
       }
       
