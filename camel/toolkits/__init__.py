@@ -92,6 +92,7 @@ from .context_summarizer_toolkit import ContextSummarizerToolkit
 from .notion_mcp_toolkit import NotionMCPToolkit
 from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
+from .sub_agent_toolkit import SubAgentToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -174,4 +175,5 @@ __all__ = [
     'NotionMCPToolkit',
     'VertexAIVeoToolkit',
     'MinimaxMCPToolkit',
+    'SubAgentToolkit',
 ]
