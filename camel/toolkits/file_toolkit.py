@@ -15,7 +15,7 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
@@ -26,14 +26,17 @@ logger = get_logger(__name__)
 
 
 @MCPServer()
-class FileWriteToolkit(BaseToolkit):
-    r"""A toolkit for creating, writing, and modifying text in files.
+class FileToolkit(BaseToolkit):
+    r"""A comprehensive toolkit for file operations including reading,
+    writing, and editing files.
 
-    This class provides cross-platform (macOS, Linux, Windows) support for
-    writing to various file formats (Markdown, DOCX, PDF, and plaintext),
-    replacing text in existing files, automatic filename uniquification to
-    prevent overwrites, custom encoding and enhanced formatting options for
-    specialized formats.
+    This class provides cross-platform (macOS, Linux, Windows) support for:
+    - Reading various file formats (text, JSON, YAML, PDF, DOCX)
+    - Writing to multiple formats (Markdown, DOCX, PDF, plaintext, JSON,
+      YAML, CSV, HTML)
+    - Editing and modifying existing files with content replacement
+    - Automatic backup creation before modifications
+    - Custom encoding and enhanced formatting options
     """
 
     def __init__(
@@ -126,36 +129,32 @@ class FileWriteToolkit(BaseToolkit):
         with file_path.open("w", encoding=encoding) as f:
             f.write(content)
 
-    def _generate_unique_filename(self, file_path: Path) -> Path:
-        r"""Generate a unique filename if the target file already exists.
+    def _create_backup(self, file_path: Path) -> Optional[Path]:
+        r"""Create a backup of the file if it exists and backup is enabled.
 
         Args:
-            file_path (Path): The original file path.
+            file_path (Path): The file path to backup.
 
         Returns:
-            Path: A unique file path that doesn't exist yet.
+            Optional[Path]: Path to the backup file if created, None otherwise.
         """
-        if not file_path.exists():
-            return file_path
+        if not self.backup_enabled or not file_path.exists():
+            return None
 
-        # Generate unique filename with timestamp and counter
+        # Generate backup filename with .bak extension and timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        stem = file_path.stem
-        suffix = file_path.suffix
-        parent = file_path.parent
+        backup_path = file_path.parent / f"{file_path.name}.{timestamp}.bak"
 
-        # First try with timestamp
-        new_path = parent / f"{stem}_{timestamp}{suffix}"
-        if not new_path.exists():
-            return new_path
+        # Copy the file to backup location
+        import shutil
 
-        # If timestamp version exists, add counter
-        counter = 1
-        while True:
-            new_path = parent / f"{stem}_{timestamp}_{counter}{suffix}"
-            if not new_path.exists():
-                return new_path
-            counter += 1
+        try:
+            shutil.copy2(file_path, backup_path)
+            logger.info(f"Created backup: {backup_path}")
+            return backup_path
+        except Exception as e:
+            logger.warning(f"Failed to create backup: {e}")
+            return None
 
     def _write_docx_file(self, file_path: Path, content: str) -> None:
         r"""Write text content to a DOCX file with default formatting.
@@ -1006,8 +1005,9 @@ class FileWriteToolkit(BaseToolkit):
         file_path = self._resolve_filepath(filename)
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Generate unique filename if file exists
-        file_path = self._generate_unique_filename(file_path)
+        # Create backup of existing file if backup is enabled
+        if file_path.exists() and self.backup_enabled:
+            self._create_backup(file_path)
 
         extension = file_path.suffix.lower()
 
@@ -1062,6 +1062,144 @@ class FileWriteToolkit(BaseToolkit):
             logger.error(error_msg)
             return error_msg
 
+    # ----------------------------------------------
+    # Read File Functions
+    # ----------------------------------------------
+    def read_file(
+        self, file_paths: Union[str, List[str]]
+    ) -> Union[str, Dict[str, str]]:
+        r"""Read and return content of one or more files using MarkItDown
+        for better format support.
+
+        This method uses MarkItDownLoader to convert various file formats
+        to Markdown. It supports a wide range of formats including:
+        - PDF (.pdf)
+        - Microsoft Office: Word (.doc, .docx), Excel (.xls, .xlsx),
+          PowerPoint (.ppt, .pptx)
+        - EPUB (.epub)
+        - HTML (.html, .htm)
+        - Images (.jpg, .jpeg, .png) for OCR
+        - Audio (.mp3, .wav) for transcription
+        - Text-based formats (.csv, .json, .xml, .txt, .md)
+        - ZIP archives (.zip)
+
+        Args:
+            file_paths (Union[str, List[str]]): A single file path or a list
+                of file paths to read. Paths can be relative or absolute.
+                If relative, they will be resolved relative to the working
+                directory.
+
+        Returns:
+            Union[str, Dict[str, str]]:
+                - If a single file path is provided: Returns the content as
+                  a string.
+                - If multiple file paths are provided: Returns a dictionary
+                  where keys are file paths and values are the corresponding
+                  content in Markdown format.
+                If conversion fails, returns an error message.
+        """
+        from camel.loaders.markitdown import MarkItDownLoader
+
+        try:
+            # Handle single file path for backward compatibility
+            if isinstance(file_paths, str):
+                resolved_path = self._resolve_filepath(file_paths)
+
+                # Use MarkItDownLoader to convert the file
+                result = MarkItDownLoader().convert_files(
+                    file_paths=[str(resolved_path)], parallel=False
+                )
+
+                # Return the converted content or error message
+                return result.get(
+                    str(resolved_path), f"Failed to read file: {resolved_path}"
+                )
+
+            # Handle multiple file paths
+            else:
+                resolved_paths = [
+                    str(self._resolve_filepath(fp)) for fp in file_paths
+                ]
+
+                # Use MarkItDownLoader to convert files in parallel
+                result = MarkItDownLoader().convert_files(
+                    file_paths=resolved_paths, parallel=True
+                )
+
+                # Map back to original paths if needed
+                return_dict = {}
+                for original, resolved in zip(file_paths, resolved_paths):
+                    return_dict[original] = result.get(
+                        resolved, f"Failed to read file: {resolved}"
+                    )
+
+                return return_dict
+
+        except Exception as e:
+            return f"Error reading file(s): {e}"
+
+    # ----------------------------------------------
+    # Edit File Functions
+    # ----------------------------------------------
+    def edit_file(
+        self, file_path: str, old_content: str, new_content: str
+    ) -> str:
+        r"""Edit a file by replacing specified content.
+
+        This method performs simple text replacement in files. It reads
+        the file, replaces all occurrences of old_content with new_content,
+        and writes the result back.
+
+        Args:
+            file_path (str): The path to the file to edit. Can be
+                relative or absolute. If relative, it will be resolved
+                relative to the working directory.
+            old_content (str): The exact text to find and replace.
+            new_content (str): The text to replace old_content with.
+
+        Returns:
+            str: A success message if the edit was successful, or an
+                error message if the content wasn't found or an error occurred.
+        """
+        try:
+            working_path = self._resolve_filepath(file_path)
+
+            if not working_path.exists():
+                return f"Error: File {working_path} does not exist"
+
+            # Create backup before editing if enabled
+            self._create_backup(working_path)
+
+            # Read the file content
+            try:
+                file_text = working_path.read_text(
+                    encoding=self.default_encoding
+                )
+            except Exception as e:
+                return f"Error reading file: {e}"
+
+            # Check if the old_content exists in the file
+            if old_content not in file_text:
+                return (
+                    f"No replacement performed: '{old_content}' not found in "
+                    f"{working_path}."
+                )
+
+            # Replace the content
+            new_file_text = file_text.replace(old_content, new_content)
+
+            # Write back to file
+            try:
+                working_path.write_text(
+                    new_file_text, encoding=self.default_encoding
+                )
+                return f"Successfully edited {working_path}"
+            except Exception as e:
+                return f"Error writing file: {e}"
+
+        except Exception as e:
+            return f"Error editing file: {e}"
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Return a list of FunctionTool objects representing the functions
         in the toolkit.
@@ -1072,4 +1210,26 @@ class FileWriteToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.write_to_file),
+            FunctionTool(self.read_file),
+            FunctionTool(self.edit_file),
         ]
+
+
+# Backward compatibility: FileWriteToolkit as deprecated alias
+class FileWriteToolkit(FileToolkit):
+    r"""Deprecated: Use FileToolkit instead.
+
+    This class is maintained for backward compatibility only.
+    Please use FileToolkit for new code.
+    """
+
+    def __init__(self, *args, **kwargs):
+        import warnings
+
+        warnings.warn(
+            "FileWriteToolkit is deprecated and will be removed in a "
+            "future version. Please use FileToolkit instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
