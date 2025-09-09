@@ -35,12 +35,12 @@ class HybridBrowserToolkit(BaseToolkit):
         user_data_dir: Optional[str] = None,
         stealth: bool = False,
         web_agent_model: Optional[BaseModelBackend] = None,
-        cache_dir: str = "tmp/",
+        cache_dir: Optional[str] = None,
         enabled_tools: Optional[List[str]] = None,
         browser_log_to_file: bool = False,
         log_dir: Optional[str] = None,
         session_id: Optional[str] = None,
-        default_start_url: str = "https://google.com/",
+        default_start_url: Optional[str] = None,
         default_timeout: Optional[int] = None,
         short_timeout: Optional[int] = None,
         navigation_timeout: Optional[int] = None,
@@ -51,7 +51,7 @@ class HybridBrowserToolkit(BaseToolkit):
         viewport_limit: bool = False,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
-        cdp_no_page: bool = False,
+        cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
         **kwargs: Any,
     ) -> Any:
@@ -103,8 +103,8 @@ class HybridBrowserToolkit(BaseToolkit):
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
                 connection. Required when connect_over_cdp is True.
                 Defaults to None. (Only supported in TypeScript mode)
-            cdp_no_page (bool): When True and using CDP mode, won't create
-                new pages but use the existing one. Defaults to False.
+            cdp_keep_current_page (bool): When True and using CDP mode,
+            won't create new pages but use the existing one. Defaults to False.
                 (Only supported in TypeScript mode)
             full_visual_mode (bool): When True, browser actions like click,
                 browser_open, visit_page, etc. will return 'full visual mode'
@@ -143,7 +143,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 viewport_limit=viewport_limit,
                 connect_over_cdp=connect_over_cdp,
                 cdp_url=cdp_url,
-                cdp_no_page=cdp_no_page,
+                cdp_keep_current_page=cdp_keep_current_page,
                 full_visual_mode=full_visual_mode,
                 **kwargs,
             )

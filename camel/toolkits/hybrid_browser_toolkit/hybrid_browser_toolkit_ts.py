@@ -81,12 +81,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         user_data_dir: Optional[str] = None,
         stealth: bool = False,
         web_agent_model: Optional[BaseModelBackend] = None,
-        cache_dir: str = "tmp/",
+        cache_dir: Optional[str] = None,
         enabled_tools: Optional[List[str]] = None,
         browser_log_to_file: bool = False,
         log_dir: Optional[str] = None,
         session_id: Optional[str] = None,
-        default_start_url: str = "https://google.com/",
+        default_start_url: Optional[str] = None,
         default_timeout: Optional[int] = None,
         short_timeout: Optional[int] = None,
         navigation_timeout: Optional[int] = None,
@@ -97,7 +97,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         viewport_limit: bool = False,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
-        cdp_no_page: bool = False,
+        cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
@@ -146,8 +146,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
             connection (e.g., 'ws://localhost:9222/devtools/browser/...').
             Required when connect_over_cdp is True. Defaults to None.
-            cdp_no_page (bool): When True and using CDP mode, won't create
-            new pages but use the existing one. Defaults to False.
+            cdp_keep_current_page (bool): When True and using CDP mode,
+            won't create new pages but use the existing one. Defaults to False.
             full_visual_mode (bool): When True, browser actions like click,
             browser_open, visit_page, etc. will not return snapshots.
             Defaults to False.
@@ -175,12 +175,23 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             enabled_tools=enabled_tools,
             connect_over_cdp=connect_over_cdp,
             cdp_url=cdp_url,
-            cdp_no_page=cdp_no_page,
+            cdp_keep_current_page=cdp_keep_current_page,
             full_visual_mode=full_visual_mode,
         )
 
         browser_config = self.config_loader.get_browser_config()
         toolkit_config = self.config_loader.get_toolkit_config()
+
+        if (
+            browser_config.cdp_keep_current_page
+            and default_start_url is not None
+        ):
+            raise ValueError(
+                "Cannot use default_start_url with "
+                "cdp_keep_current_page=True. When cdp_keep_current_page "
+                "is True, the browser will keep the current page and not "
+                "navigate to any URL."
+            )
 
         self._headless = browser_config.headless
         self._user_data_dir = browser_config.user_data_dir
@@ -1421,7 +1432,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_select": self.browser_select,
             "browser_scroll": self.browser_scroll,
             "browser_enter": self.browser_enter,
-            "browser_mouse_click": self.browser_mouse_control,
+            "browser_mouse_control": self.browser_mouse_control,
             "browser_mouse_drag": self.browser_mouse_drag,
             "browser_press_key": self.browser_press_key,
             "browser_wait_user": self.browser_wait_user,

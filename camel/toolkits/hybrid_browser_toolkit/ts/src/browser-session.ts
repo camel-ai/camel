@@ -5,6 +5,7 @@ import { ConfigLoader, StealthConfig } from './config-loader';
 export class HybridBrowserSession {
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
+  private contextOwnedByUs: boolean = false;
   private pages: Map<string, Page> = new Map();
   private consoleLogs: Map<string, ConsoleMessage[]> = new Map();
   private currentTabId: string | null = null;
@@ -59,6 +60,7 @@ export class HybridBrowserSession {
       const contexts = this.browser.contexts();
       if (contexts.length > 0) {
         this.context = contexts[0];
+        this.contextOwnedByUs = false;
         
         // Apply stealth headers to existing context if configured
         // Note: userAgent cannot be changed on an existing context
@@ -86,6 +88,7 @@ export class HybridBrowserSession {
         }
         
         this.context = await this.browser.newContext(contextOptions);
+        this.contextOwnedByUs = true;
         this.browser = this.context.browser();
       }
       
@@ -159,6 +162,7 @@ export class HybridBrowserSession {
           browserConfig.userDataDir,
           launchOptions
         );
+        this.contextOwnedByUs = true;
         this.browser = this.context.browser();
         const pages = this.context.pages();
         if (pages.length > 0) {
@@ -183,6 +187,7 @@ export class HybridBrowserSession {
         }
         
         this.context = await this.browser.newContext(contextOptions);
+        this.contextOwnedByUs = true;
         
         const initialPage = await this.context.newPage();
         const initialTabId = this.generateTabId();
@@ -1611,17 +1616,25 @@ export class HybridBrowserSession {
     this.pages.clear();
     this.currentTabId = null;
     
-    if (this.context) {
+    // Handle context cleanup separately for CDP mode
+    if (!browserConfig.cdpUrl && this.context && this.contextOwnedByUs) {
+      // For non-CDP mode, close context here
       await this.context.close();
       this.context = null;
+      this.contextOwnedByUs = false;
     }
     
     if (this.browser) {
       if (browserConfig.cdpUrl) {
-        // For CDP connections, just disconnect without closing the browser
-        await this.browser.close();
+        // In CDP mode: tear down only our context, then disconnect
+        if (this.context && this.contextOwnedByUs) {
+          await this.context.close().catch(() => {});
+          this.context = null;
+          this.contextOwnedByUs = false;
+        }
+        await this.browser.close(); // disconnect
       } else {
-        // For launched browsers, close completely
+        // Local launch: close everything
         await this.browser.close();
       }
       this.browser = null;
