@@ -260,14 +260,12 @@ export class HybridBrowserToolkit {
   private async executeActionWithSnapshot(action: BrowserAction): Promise<any> {
     const result = await this.session.executeAction(action);
     
-    // Format response for Python layer compatibility
     const response: any = {
       result: result.message,
       snapshot: '',
     };
     
     if (result.success) {
-      // Check if we have a diff snapshot from combobox operations
       if (result.details?.diffSnapshot) {
         response.snapshot = result.details.diffSnapshot;
         

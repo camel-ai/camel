@@ -480,7 +480,6 @@ export class HybridBrowserSession {
         return { success: false, error: `Element with ref ${ref} not found` };
       }
       
-      // Check if this is a combobox or textbox element
       const role = await element.getAttribute('role');
       const elementTagName = await element.evaluate(el => el.tagName.toLowerCase());
       const isCombobox = role === 'combobox' || elementTagName === 'combobox';
@@ -489,7 +488,6 @@ export class HybridBrowserSession {
       
       let snapshotBefore: string | null = null;
       if (shouldCheckDiff) {
-        // Capture snapshot before clicking element that might show dropdown
         snapshotBefore = await (page as any)._snapshotForAI();
       }
       
@@ -562,17 +560,14 @@ export class HybridBrowserSession {
         }
       } else {
         //  Add options to prevent scrolling issues
-        // Always use force click to prevent automatic scrolling
         const browserConfig = this.configLoader.getBrowserConfig();
         await element.click({ force: browserConfig.forceClick });
         
-        // If this element might show dropdown, wait and check for new elements
         if (shouldCheckDiff && snapshotBefore) {
-          await page.waitForTimeout(300); // Wait for dropdown to appear
+          await page.waitForTimeout(300);
           const snapshotAfter = await (page as any)._snapshotForAI();
           const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
           
-          // Only return diff if there are new elements
           if (diffSnapshot && diffSnapshot.trim() !== '') {
             return { success: true, method: 'playwright-aria-ref', diffSnapshot };
           }
@@ -591,23 +586,19 @@ export class HybridBrowserSession {
    * Extract diff between two snapshots, returning only new elements of specified types
    */
   private getSnapshotDiff(snapshotBefore: string, snapshotAfter: string, targetRoles: string[]): string {
-    // Extract all refs from before snapshot
-    const refsBefore = new Set<string>();
+      const refsBefore = new Set<string>();
     const refPattern = /\[ref=([^\]]+)\]/g;
     let match;
     while ((match = refPattern.exec(snapshotBefore)) !== null) {
       refsBefore.add(match[1]);
     }
     
-    // Parse after snapshot and collect new elements
     const lines = snapshotAfter.split('\n');
     const newElements: string[] = [];
     
     for (const line of lines) {
-      // Check if line contains a new ref
       const refMatch = line.match(/\[ref=([^\]]+)\]/);
       if (refMatch && !refsBefore.has(refMatch[1])) {
-        // Check if this line contains one of the target roles
         const hasTargetRole = targetRoles.some(role => {
           const rolePattern = new RegExp(`\\b${role}\\b`, 'i');
           return rolePattern.test(line);
@@ -619,11 +610,10 @@ export class HybridBrowserSession {
       }
     }
     
-    // Return formatted diff snapshot
     if (newElements.length > 0) {
       return newElements.join('\n');
     } else {
-      return ''; // No new elements found
+      return '';
     }
   }
 
@@ -640,7 +630,6 @@ export class HybridBrowserSession {
       if (inputs && inputs.length > 0) {
         const results: Record<string, { success: boolean; error?: string }> = {};
         
-        // Simply call single input mode for each input
         for (const input of inputs) {
           const singleResult = await this.performType(page, input.ref, input.text);
           results[input.ref] = {
@@ -749,12 +738,11 @@ export class HybridBrowserSession {
             
             // If this element might show dropdown, wait and check for new elements
             if (shouldCheckDiff) {
-              await page.waitForTimeout(300); // Wait for dropdown to appear
+              await page.waitForTimeout(300);
               const snapshotAfter = await (page as any)._snapshotForAI();
               const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
               
-              // Only return diff if there are new elements
-              if (diffSnapshot && diffSnapshot.trim() !== '') {
+                  if (diffSnapshot && diffSnapshot.trim() !== '') {
                 return { success: true, diffSnapshot };
               }
             }
@@ -801,8 +789,7 @@ export class HybridBrowserSession {
                   const snapshotFinal = await (page as any)._snapshotForAI();
                   const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
                   
-                  // Only return diff if there are new elements
-                  if (diffSnapshot && diffSnapshot.trim() !== '') {
+                          if (diffSnapshot && diffSnapshot.trim() !== '') {
                     return { success: true, diffSnapshot };
                   }
                 }
@@ -867,8 +854,7 @@ export class HybridBrowserSession {
                         const snapshotFinal = await (page as any)._snapshotForAI();
                         const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
                         
-                        // Only return diff if there are new elements
-                        if (diffSnapshot && diffSnapshot.trim() !== '') {
+                                      if (diffSnapshot && diffSnapshot.trim() !== '') {
                           return { success: true, diffSnapshot };
                         }
                       }
@@ -945,8 +931,7 @@ export class HybridBrowserSession {
                       const snapshotFinal = await (page as any)._snapshotForAI();
                       const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
                       
-                      // Only return diff if there are new elements
-                      if (diffSnapshot && diffSnapshot.trim() !== '') {
+                                  if (diffSnapshot && diffSnapshot.trim() !== '') {
                         return { success: true, diffSnapshot };
                       }
                     }
