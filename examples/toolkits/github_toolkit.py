@@ -70,7 +70,7 @@ from typing import (
     Union,
 )
 
-from openai.types.chat import ChatCompletionMessageFunctionToolCall
+from openai.types.chat import ChatCompletionMessageToolCall
 f
 ===============================================================================
 """
