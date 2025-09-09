@@ -1307,8 +1307,7 @@ class TerminalToolkit(BaseToolkit):
 
             detailed_error = traceback.format_exc()
             return (
-                f"Error: {error_msg}\n\n"
-                f"Detailed information: {detailed_error}"
+                f"Error: {error_msg}\n\nDetailed information: {detailed_error}"
             )
 
     # Mark shell_exec to skip automatic timeout wrapping
@@ -1536,6 +1535,69 @@ class TerminalToolkit(BaseToolkit):
             logger.error(f"Error killing process: {e}")
             return f"Error killing process: {e!s}"
 
+    def shell_ask_user_for_help(self, id: str, prompt: str) -> str:
+        """
+        This function pauses execution and asks a human for help with an
+        interactive session. It displays the last screen output and the
+        LLM's prompt to the user,
+        waits for the user to enter a command, sends it to the session, and
+        returns the resulting output.
+
+        Args:
+            id (str): The session ID of the interactive process needing help.
+            prompt (str): The question or instruction from the LLM to show the
+                human user (e.g., "The program is asking for a filename. Please
+                enter 'config.json'.").
+
+        Returns:
+            str: The output from the shell session after the user's command has
+                 been executed.
+        """
+        if id not in self.shell_sessions:
+            return f"Shell session not found: {id}"
+
+        session = self.shell_sessions[id]
+        process = session.get("process")
+
+        if process is None:
+            return f"No active process in session '{id}'"
+
+        if not session["running"] or process.poll() is not None:
+            return f"Process in session '{id}' is not running"
+
+        # Display the prompt to the user
+        prompt_banner = (
+            f"\n{'=' * 60}\n"
+            f"🤖 Interactive Help Request - Session: {id}\n"
+            f"{'=' * 60}\n"
+            f"💬 {prompt}\n"
+            f"{'=' * 60}\n"
+        )
+
+        print(prompt_banner, flush=True)
+        self._update_terminal_output(prompt_banner)
+
+        try:
+            # Get user input
+            user_input = input(f"🧑‍💻 [{id}] Enter command: ")
+
+            # Send input to the process
+            if user_input.strip():
+                result = self.shell_write_to_process(id, user_input, True)
+                # Get the output
+                output = self.shell_view(id)
+                return (
+                    f"User input sent: {user_input}\nResult: {result}\n"
+                    f"Output: {output}"
+                )
+            else:
+                return "No input provided by user"
+
+        except (EOFError, KeyboardInterrupt):
+            return "User cancelled the help request"
+        except Exception as e:
+            return f"Error during user help: {e}"
+
     def ask_user_for_help(self, id: str) -> str:
         r"""Pause the agent and ask a human for help with a command.
 
@@ -1583,12 +1645,12 @@ class TerminalToolkit(BaseToolkit):
 
             # Create clear banner message for user
             takeover_banner = (
-                f"\n{'='*60}\n"
+                f"\n{'=' * 60}\n"
                 f"🤖 CAMEL Agent needs human help! Session: {id}\n"
                 f"📂 Working directory: {self.working_dir}\n"
-                f"{'='*60}\n"
+                f"{'=' * 60}\n"
                 f"💡 Type commands or '/exit' to return control to agent.\n"
-                f"{'='*60}\n"
+                f"{'=' * 60}\n"
             )
 
             # Print once to console for immediate visibility
@@ -1647,11 +1709,11 @@ class TerminalToolkit(BaseToolkit):
                 finally:
                     # Notify completion clearly
                     finish_msg = (
-                        f"\n{'='*60}\n"
+                        f"\n{'=' * 60}\n"
                         f"✅ Human assistance completed! "
                         f"Commands: {command_count}\n"
                         f"🤖 Returning control to CAMEL agent...\n"
-                        f"{'='*60}\n"
+                        f"{'=' * 60}\n"
                     )
                     print(finish_msg, flush=True)
                     self._update_terminal_output(finish_msg)
@@ -1690,10 +1752,10 @@ class TerminalToolkit(BaseToolkit):
             logger.error(error_msg)
             # Notify user of the error clearly
             error_banner = (
-                f"\n{'='*60}\n"
+                f"\n{'=' * 60}\n"
                 f"❌ Error in human takeover! Session: {id}\n"
                 f"❗ {e}\n"
-                f"{'='*60}\n"
+                f"{'=' * 60}\n"
             )
             print(error_banner, flush=True)
             return error_msg
@@ -1795,4 +1857,5 @@ class TerminalToolkit(BaseToolkit):
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
             FunctionTool(self.ask_user_for_help),
+            FunctionTool(self.shell_ask_user_for_help),
         ]
