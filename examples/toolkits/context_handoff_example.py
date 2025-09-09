@@ -15,11 +15,8 @@
 
 """
 Clean example demonstrating the improved context handoff design.
-
-Key improvements:
-- Agent manages its own state (no circular dependency)
-- Toolkit focuses on file operations and summarization
-- Clear separation of concerns
+- Agent manages its own state.
+- Toolkit focuses on file operations and summarization.
 """
 
 from camel.agents import ChatAgent
