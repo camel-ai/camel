@@ -40,6 +40,7 @@ from .google_calendar_toolkit import GoogleCalendarToolkit
 from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
 from .whatsapp_toolkit import WhatsAppToolkit
+from .wechat_official_toolkit import WeChatOfficialToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
@@ -61,7 +62,7 @@ from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
 from .browser_toolkit import BrowserToolkit
 from .async_browser_toolkit import AsyncBrowserToolkit
-from .file_write_toolkit import FileWriteToolkit
+from .file_toolkit import FileToolkit, FileWriteToolkit
 from .pptx_toolkit import PPTXToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
@@ -88,7 +89,9 @@ from .message_agent_toolkit import AgentCommunicationToolkit
 from .web_deploy_toolkit import WebDeployToolkit
 from .screenshot_toolkit import ScreenshotToolkit
 from .message_integration import ToolkitMessageIntegration
+from .context_summarizer_toolkit import ContextSummarizerToolkit
 from .notion_mcp_toolkit import NotionMCPToolkit
+from .vertex_ai_veo_toolkit import VertexAIVeoToolkit
 from .minimax_mcp_toolkit import MinimaxMCPToolkit
 
 __all__ = [
@@ -104,6 +107,7 @@ __all__ = [
     'SearchToolkit',
     'SlackToolkit',
     'WhatsAppToolkit',
+    'WeChatOfficialToolkit',
     'ImageGenToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
@@ -137,7 +141,8 @@ __all__ = [
     'ImageAnalysisToolkit',
     'BrowserToolkit',
     'AsyncBrowserToolkit',
-    'FileWriteToolkit',
+    'FileToolkit',
+    'FileWriteToolkit',  # Deprecated, use FileToolkit instead
     'PPTXToolkit',
     'TerminalToolkit',
     'PubMedToolkit',
@@ -167,6 +172,8 @@ __all__ = [
     'ScreenshotToolkit',
     'RegisteredAgentToolkit',
     'ToolkitMessageIntegration',
+    'ContextSummarizerToolkit',
     'NotionMCPToolkit',
+    'VertexAIVeoToolkit',
     'MinimaxMCPToolkit',
 ]
