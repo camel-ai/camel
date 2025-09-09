@@ -43,7 +43,7 @@ class BrowserConfig:
     # CDP connection configuration
     connect_over_cdp: bool = False
     cdp_url: Optional[str] = None
-    cdp_no_page: bool = False
+    cdp_keep_current_page: bool = False
 
     # Full visual mode configuration
     full_visual_mode: bool = False
@@ -111,8 +111,8 @@ class ConfigLoader:
                 browser_kwargs["connect_over_cdp"] = value
             elif key == "cdpUrl":
                 browser_kwargs["cdp_url"] = value
-            elif key == "cdpNoPage":
-                browser_kwargs["cdp_no_page"] = value
+            elif key == "cdpKeepCurrentPage":
+                browser_kwargs["cdp_keep_current_page"] = value
             elif key == "consoleLogLimit":
                 browser_kwargs["console_log_limit"] = value
             elif key == "cacheDir":
@@ -156,7 +156,7 @@ class ConfigLoader:
             "viewport_limit": self.browser_config.viewport_limit,
             "connectOverCdp": self.browser_config.connect_over_cdp,
             "cdpUrl": self.browser_config.cdp_url,
-            "cdpNoPage": self.browser_config.cdp_no_page,
+            "cdpKeepCurrentPage": self.browser_config.cdp_keep_current_page,
             "fullVisualMode": self.browser_config.full_visual_mode,
         }
 

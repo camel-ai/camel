@@ -72,7 +72,7 @@ export interface BrowserToolkitConfig {
   useNativePlaywrightMapping?: boolean; // New option to control mapping implementation
   connectOverCdp?: boolean; // Whether to connect to existing browser via CDP
   cdpUrl?: string; // WebSocket endpoint URL for CDP connection
-  cdpNoPage?: boolean; // When true, CDP mode won't create new page but use existing one
+  cdpKeepCurrentPage?: boolean; // When true, CDP mode will keep the current page instead of creating new one
 }
 
 export interface ClickAction {

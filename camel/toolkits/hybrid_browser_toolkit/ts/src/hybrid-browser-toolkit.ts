@@ -26,10 +26,10 @@ export class HybridBrowserToolkit {
     try {
       await this.session.ensureBrowser();
       
-      // Check if we should skip navigation in CDP no-page mode
+      // Check if we should skip navigation in CDP keep-current-page mode
       const browserConfig = this.configLoader.getBrowserConfig();
-      if (browserConfig.cdpUrl && browserConfig.cdpNoPage && !startUrl) {
-        // In CDP no-page mode without explicit URL, just ensure browser and return current page
+      if (browserConfig.cdpUrl && browserConfig.cdpKeepCurrentPage && !startUrl) {
+        // In CDP keep-current-page mode without explicit URL, just ensure browser and return current page
         const snapshotStart = Date.now();
         const snapshot = await this.getSnapshotForAction(this.viewportLimit);
         const snapshotTime = Date.now() - snapshotStart;
@@ -41,7 +41,7 @@ export class HybridBrowserToolkit {
         
         return {
           success: true,
-          message: `Browser opened in CDP no-page mode (current page: ${currentUrl})`,
+          message: `Browser opened in CDP keep-current-page mode (current page: ${currentUrl})`,
           snapshot,
           timing: {
             total_time_ms: totalTime,
@@ -50,8 +50,8 @@ export class HybridBrowserToolkit {
         };
       }
       
-      // For normal mode or CDP with cdpNoPage=false: navigate to URL
-      if (!browserConfig.cdpUrl || !browserConfig.cdpNoPage) {
+      // For normal mode or CDP with cdpKeepCurrentPage=false: navigate to URL
+      if (!browserConfig.cdpUrl || !browserConfig.cdpKeepCurrentPage) {
         const url = startUrl || this.config.defaultStartUrl || 'https://google.com/';
         const result = await this.session.visitPage(url);
         

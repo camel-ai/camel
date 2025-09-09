@@ -50,7 +50,7 @@ export class HybridBrowserSession {
     const browserConfig = this.configLoader.getBrowserConfig();
     const stealthConfig = this.configLoader.getStealthConfig();
     
-    // Check if CDP URL is provided (ignore connectOverCdp flag)
+    // Check if CDP URL is provided
     if (browserConfig.cdpUrl) {
       // Connect to existing browser via CDP
       this.browser = await chromium.connectOverCDP(browserConfig.cdpUrl);
@@ -90,22 +90,22 @@ export class HybridBrowserSession {
       }
       
       const pages = this.context.pages();
-      console.log(`[CDP] cdpNoPage: ${browserConfig.cdpNoPage}, pages count: ${pages.length}`);
-      if (browserConfig.cdpNoPage) {
-        // cdpNoPage mode: use the first existing page without creating new ones
+      console.log(`[CDP] cdpKeepCurrentPage: ${browserConfig.cdpKeepCurrentPage}, pages count: ${pages.length}`);
+      if (browserConfig.cdpKeepCurrentPage) {
+        // Use existing page without creating new ones
         if (pages.length > 0) {
-          const page = pages[0]; // Use the first available page
+          const page = pages[0];
           const tabId = this.generateTabId();
           this.registerNewPage(tabId, page);
           this.currentTabId = tabId;
-          console.log(`[CDP] cdpNoPage mode: using existing page as initial tab: ${tabId}, URL: ${page.url()}`);
+          console.log(`[CDP] cdpKeepCurrentPage mode: using existing page as initial tab: ${tabId}, URL: ${page.url()}`);
         } else {
-          throw new Error('No pages available in CDP mode with cdpNoPage=true');
+          throw new Error('No pages available in CDP mode with cdpKeepCurrentPage=true');
         }
       } else {
-        // Normal CDP mode: look for blank pages or create new ones
+        // Look for blank pages or create new ones
         if (pages.length > 0) {
-          // Map existing pages - for CDP, find ONE available blank page
+          // Find one available blank page
           let availablePageFound = false;
           for (const page of pages) {
             const pageUrl = page.url();
@@ -115,7 +115,7 @@ export class HybridBrowserSession {
               this.currentTabId = tabId;
               availablePageFound = true;
               console.log(`[CDP] Registered blank page as initial tab: ${tabId}, URL: ${pageUrl}`);
-              break;  // Only register ONE page initially
+              break;
             }
           }
           
@@ -223,10 +223,10 @@ export class HybridBrowserSession {
     if (!this.currentTabId || !this.pages.has(this.currentTabId)) {
       const browserConfig = this.configLoader.getBrowserConfig();
       
-      // In CDP no-page mode, try to find an existing page from context
-      if (browserConfig.cdpNoPage && browserConfig.cdpUrl && this.context) {
+      // In CDP keep-current-page mode, find existing page
+      if (browserConfig.cdpKeepCurrentPage && browserConfig.cdpUrl && this.context) {
         const allPages = this.context.pages();
-        console.log(`[getCurrentPage] cdpNoPage mode: Looking for existing page, found ${allPages.length} pages`);
+        console.log(`[getCurrentPage] cdpKeepCurrentPage mode: Looking for existing page, found ${allPages.length} pages`);
         
         if (allPages.length > 0) {
           // Try to find a page that's not already tracked
@@ -236,7 +236,7 @@ export class HybridBrowserSession {
               const tabId = this.generateTabId();
               this.registerNewPage(tabId, page);
               this.currentTabId = tabId;
-              console.log(`[getCurrentPage] cdpNoPage mode: Found and registered untracked page: ${tabId}`);
+              console.log(`[getCurrentPage] cdpKeepCurrentPage mode: Found and registered untracked page: ${tabId}`);
               return page;
             }
           }
@@ -248,14 +248,14 @@ export class HybridBrowserSession {
             for (const [tabId, page] of this.pages.entries()) {
               if (page === firstPage) {
                 this.currentTabId = tabId;
-                console.log(`[getCurrentPage] cdpNoPage mode: Using existing tracked page: ${tabId}`);
+                console.log(`[getCurrentPage] cdpKeepCurrentPage mode: Using existing tracked page: ${tabId}`);
                 return page;
               }
             }
           }
         }
         
-        throw new Error('No active page available in CDP mode with cdpNoPage=true');
+        throw new Error('No active page available in CDP mode with cdpKeepCurrentPage=true');
       }
       
       // Normal mode: create new page

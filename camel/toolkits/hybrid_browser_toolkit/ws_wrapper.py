@@ -174,7 +174,8 @@ class WebSocketBrowserWrapper:
                     # Check if it's from the same directory
                     if any(self.ts_dir in arg for arg in proc.info['cmdline']):
                         logger.warning(
-                            f"Found existing WebSocket server process (PID: {proc.info['pid']}). "
+                            f"Found existing WebSocket server process "
+                            f"(PID: {proc.info['pid']}). "
                             f"Terminating it to prevent conflicts."
                         )
                         proc.terminate()
@@ -192,8 +193,9 @@ class WebSocketBrowserWrapper:
 
         if cleaned_count > 0:
             logger.warning(
-                f"Cleaned up {cleaned_count} existing WebSocket server process(es). "
-                f"This may have been caused by improper shutdown in previous sessions."
+                f"Cleaned up {cleaned_count} existing WebSocket server "
+                f"process(es). This may have been caused by improper "
+                f"shutdown in previous sessions."
             )
             # Give OS time to fully release resources
             await asyncio.sleep(0.5)
@@ -327,20 +329,18 @@ class WebSocketBrowserWrapper:
 
             raise RuntimeError(error_msg)
 
-        # Connect to the WebSocket server with retry mechanism
+        # Connect with retry
         max_retries = 3
-        retry_delays = [1, 2, 4]  # Exponential backoff
+        retry_delays = [1, 2, 4]
 
         for attempt in range(max_retries):
             try:
-                # Add connection timeout for handshake
-                connect_timeout = 10.0 + (
-                    attempt * 5.0
-                )  # Increase timeout with each retry
+                connect_timeout = 10.0 + (attempt * 5.0)
 
                 logger.info(
                     f"Attempting to connect to WebSocket server "
-                    f"(attempt {attempt + 1}/{max_retries}, timeout: {connect_timeout}s)"
+                    f"(attempt {attempt + 1}/{max_retries}, "
+                    f"timeout: {connect_timeout}s)"
                 )
 
                 self.websocket = await asyncio.wait_for(
@@ -348,35 +348,35 @@ class WebSocketBrowserWrapper:
                         f"ws://localhost:{self.server_port}",
                         ping_interval=30,
                         ping_timeout=10,
-                        max_size=50
-                        * 1024
-                        * 1024,  # 50MB limit to match server
+                        max_size=50 * 1024 * 1024,  # 50MB
                     ),
                     timeout=connect_timeout,
                 )
                 logger.info("Connected to WebSocket server")
-                break  # Success, exit retry loop
+                break
 
             except asyncio.TimeoutError:
                 if attempt < max_retries - 1:
                     delay = retry_delays[attempt]
                     logger.warning(
-                        f"WebSocket handshake timeout (attempt {attempt + 1}/{max_retries}). "
+                        f"WebSocket handshake timeout "
+                        f"(attempt {attempt + 1}/{max_retries}). "
                         f"Retrying in {delay} seconds..."
                     )
                     await asyncio.sleep(delay)
                 else:
                     # Last attempt failed
                     raise RuntimeError(
-                        f"Failed to connect to WebSocket server after {max_retries} attempts: "
-                        f"Handshake timeout"
+                        f"Failed to connect to WebSocket server after "
+                        f"{max_retries} attempts: Handshake timeout"
                     )
 
             except Exception as e:
                 if attempt < max_retries - 1 and "timed out" in str(e).lower():
                     delay = retry_delays[attempt]
                     logger.warning(
-                        f"WebSocket connection failed (attempt {attempt + 1}/{max_retries}): {e}. "
+                        f"WebSocket connection failed "
+                        f"(attempt {attempt + 1}/{max_retries}): {e}. "
                         f"Retrying in {delay} seconds..."
                     )
                     await asyncio.sleep(delay)

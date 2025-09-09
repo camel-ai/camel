@@ -73,7 +73,7 @@ export interface BrowserConfig {
   // CDP connection options
   connectOverCdp: boolean;
   cdpUrl?: string;
-  cdpNoPage: boolean;
+  cdpKeepCurrentPage: boolean;
 }
 
 export interface WebSocketConfig {
@@ -141,7 +141,7 @@ function getDefaultBrowserConfig(): BrowserConfig {
     },
     connectOverCdp: false,
     cdpUrl: undefined,
-    cdpNoPage: false
+    cdpKeepCurrentPage: false
   };
 }
 
@@ -220,7 +220,7 @@ export class ConfigLoader {
     // CDP connection options
     if (config.connectOverCdp !== undefined) browserConfig.connectOverCdp = config.connectOverCdp;
     if (config.cdpUrl !== undefined) browserConfig.cdpUrl = config.cdpUrl;
-    if (config.cdpNoPage !== undefined) browserConfig.cdpNoPage = config.cdpNoPage;
+    if (config.cdpKeepCurrentPage !== undefined) browserConfig.cdpKeepCurrentPage = config.cdpKeepCurrentPage;
 
     return new ConfigLoader(browserConfig, wsConfig);
   }

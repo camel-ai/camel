@@ -264,7 +264,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 if not loop.is_closed() and not loop.is_running():
                     try:
                         if is_cdp:
-                            # For CDP mode, just disconnect without closing browser
+                            # CDP: disconnect only
                             loop.run_until_complete(
                                 asyncio.wait_for(
                                     self.disconnect_websocket(), timeout=2.0
@@ -369,7 +369,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     async def disconnect_websocket(self) -> str:
         r"""Disconnects the WebSocket connection without closing the browser.
 
-        This is useful when using CDP mode where the browser should remain open.
+        This is useful when using CDP mode where the browser should
+        remain open.
 
         Returns:
             str: A confirmation message.
@@ -380,7 +381,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 is_cdp = self._ws_config.get('connectOverCdp', False)
 
                 if is_cdp:
-                    # For CDP mode, just disconnect without sending close command
+                    # CDP: disconnect only
                     await self._ws_wrapper.disconnect_only()
                 else:
                     # For non-CDP mode, use normal stop
