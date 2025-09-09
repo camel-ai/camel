@@ -122,6 +122,7 @@ class WebSocketBrowserWrapper:
         self.browser_log_to_file = (config or {}).get(
             'browser_log_to_file', False
         )
+        self.log_dir = (config or {}).get('log_dir', 'browser_log')
         self.session_id = (config or {}).get('session_id', 'default')
         self.log_file_path: Optional[str] = None
         self.log_buffer: List[Dict[str, Any]] = []
@@ -131,7 +132,7 @@ class WebSocketBrowserWrapper:
 
         # Set up log files if needed
         if self.browser_log_to_file:
-            log_dir = "browser_log"
+            log_dir = self.log_dir if self.log_dir else "browser_log"
             os.makedirs(log_dir, exist_ok=True)
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             self.log_file_path = os.path.join(
@@ -264,9 +265,20 @@ class WebSocketBrowserWrapper:
                     self.ts_log_file.close()
                 self.ts_log_file = None
             self.process = None
-            raise RuntimeError(
-                "WebSocket server failed to start within timeout"
-            )
+
+            error_msg = "WebSocket server failed to start within timeout"
+            import psutil
+
+            mem = psutil.virtual_memory()
+            if mem.available < 1024**3:  # Less than 1GB available
+                error_msg = (
+                    f"WebSocket server failed to start"
+                    f"(likely due to insufficient memory). "
+                    f"Available memory: {mem.available / 1024**3:.2f}GB "
+                    f"({mem.percent}% used)"
+                )
+
+            raise RuntimeError(error_msg)
 
         # Connect to the WebSocket server
         try:
@@ -291,9 +303,21 @@ class WebSocketBrowserWrapper:
                     self.ts_log_file.close()
                 self.ts_log_file = None
             self.process = None
-            raise RuntimeError(
-                f"Failed to connect to WebSocket server: {e}"
-            ) from e
+
+            error_msg = f"Failed to connect to WebSocket server: {e}"
+            import psutil
+
+            mem = psutil.virtual_memory()
+            if mem.available < 1024**3:  # Less than 1GB available
+                error_msg = (
+                    f"Failed to connect to WebSocket server"
+                    f"(likely due to insufficient memory). "
+                    f"Available memory: {mem.available / 1024**3:.2f}GB"
+                    f"({mem.percent}% used). "
+                    f"Original error: {e}"
+                )
+
+            raise RuntimeError(error_msg) from e
 
         # Start the background receiver task
         self._receive_task = asyncio.create_task(self._receive_loop())
@@ -443,7 +467,19 @@ class WebSocketBrowserWrapper:
     async def _ensure_connection(self) -> None:
         """Ensure WebSocket connection is alive."""
         if not self.websocket:
-            raise RuntimeError("WebSocket not connected")
+            error_msg = "WebSocket not connected"
+            import psutil
+
+            mem = psutil.virtual_memory()
+            if mem.available < 1024**3:  # Less than 1GB available
+                error_msg = (
+                    f"WebSocket not connected "
+                    f"(likely due to insufficient memory). "
+                    f"Available memory: {mem.available / 1024**3:.2f}GB "
+                    f"({mem.percent}% used)"
+                )
+
+            raise RuntimeError(error_msg)
 
         # Check if connection is still alive
         try:
@@ -453,7 +489,20 @@ class WebSocketBrowserWrapper:
         except Exception as e:
             logger.warning(f"WebSocket ping failed: {e}")
             self.websocket = None
-            raise RuntimeError("WebSocket connection lost")
+
+            error_msg = "WebSocket connection lost"
+            import psutil
+
+            mem = psutil.virtual_memory()
+            if mem.available < 1024**3:  # Less than 1GB available
+                error_msg = (
+                    f"WebSocket connection lost "
+                    f"(likely due to insufficient memory). "
+                    f"Available memory: {mem.available / 1024**3:.2f}GB "
+                    f"({mem.percent}% used)"
+                )
+
+            raise RuntimeError(error_msg)
 
     async def _send_command(
         self, command: str, params: Dict[str, Any]

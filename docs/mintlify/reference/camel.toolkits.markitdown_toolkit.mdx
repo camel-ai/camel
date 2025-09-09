@@ -10,6 +10,22 @@ class MarkItDownToolkit(BaseToolkit):
 
 A class representing a toolkit for MarkItDown.
 
+.. deprecated::
+MarkItDownToolkit is deprecated. Use FileToolkit instead, which now
+includes the same functionality through its read_file method that
+supports both single files and multiple files.
+
+Example migration:
+# Old way
+from camel.toolkits import MarkItDownToolkit
+toolkit = MarkItDownToolkit()
+content = toolkit.read_files(['file1.pdf', 'file2.docx'])
+
+# New way
+from camel.toolkits import FileToolkit
+toolkit = FileToolkit()
+content = toolkit.read_file(['file1.pdf', 'file2.docx'])
+
 <a id="camel.toolkits.markitdown_toolkit.MarkItDownToolkit.__init__"></a>
 
 ### __init__
