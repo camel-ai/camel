@@ -26,21 +26,22 @@ export class HybridBrowserToolkit {
     try {
       await this.session.ensureBrowser();
       
-      // COMMENTED OUT: Skip all navigation
-      /*
       // Check if we should skip navigation in CDP no-page mode
       const browserConfig = this.configLoader.getBrowserConfig();
-      if (browserConfig.connectOverCdp && browserConfig.cdpNoPage && !startUrl) {
+      if (browserConfig.cdpUrl && browserConfig.cdpNoPage && !startUrl) {
         // In CDP no-page mode without explicit URL, just ensure browser and return current page
         const snapshotStart = Date.now();
         const snapshot = await this.getSnapshotForAction(this.viewportLimit);
         const snapshotTime = Date.now() - snapshotStart;
         
+        const page = await this.session.getCurrentPage();
+        const currentUrl = page ? await page.url() : 'unknown';
+        
         const totalTime = Date.now() - startTime;
         
         return {
           success: true,
-          message: 'Browser connected to existing page',
+          message: `Browser opened in CDP no-page mode (current page: ${currentUrl})`,
           snapshot,
           timing: {
             total_time_ms: totalTime,
@@ -49,12 +50,30 @@ export class HybridBrowserToolkit {
         };
       }
       
-      // Normal flow: navigate to URL
-      const url = startUrl || this.config.defaultStartUrl || 'https://google.com/';
-      const result = await this.session.visitPage(url);
-      */
+      // For normal mode or CDP with cdpNoPage=false: navigate to URL
+      if (!browserConfig.cdpUrl || !browserConfig.cdpNoPage) {
+        const url = startUrl || this.config.defaultStartUrl || 'https://google.com/';
+        const result = await this.session.visitPage(url);
+        
+        const snapshotStart = Date.now();
+        const snapshot = await this.getSnapshotForAction(this.viewportLimit);
+        const snapshotTime = Date.now() - snapshotStart;
+        
+        const totalTime = Date.now() - startTime;
+        
+        return {
+          success: true,
+          message: result.message,
+          snapshot,
+          timing: {
+            total_time_ms: totalTime,
+            page_load_time_ms: result.timing?.page_load_time_ms || 0,
+            snapshot_time_ms: snapshotTime,
+          },
+        };
+      }
       
-      // Just return current page snapshot without any navigation
+      // Fallback: Just return current page snapshot without any navigation
       const snapshotStart = Date.now();
       const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;

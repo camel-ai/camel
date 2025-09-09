@@ -50,8 +50,8 @@ export class HybridBrowserSession {
     const browserConfig = this.configLoader.getBrowserConfig();
     const stealthConfig = this.configLoader.getStealthConfig();
     
-    // Check if CDP connection is requested
-    if (browserConfig.connectOverCdp && browserConfig.cdpUrl) {
+    // Check if CDP URL is provided (ignore connectOverCdp flag)
+    if (browserConfig.cdpUrl) {
       // Connect to existing browser via CDP
       this.browser = await chromium.connectOverCDP(browserConfig.cdpUrl);
       
@@ -224,7 +224,7 @@ export class HybridBrowserSession {
       const browserConfig = this.configLoader.getBrowserConfig();
       
       // In CDP no-page mode, try to find an existing page from context
-      if (browserConfig.cdpNoPage && browserConfig.connectOverCdp && this.context) {
+      if (browserConfig.cdpNoPage && browserConfig.cdpUrl && this.context) {
         const allPages = this.context.pages();
         console.log(`[getCurrentPage] cdpNoPage mode: Looking for existing page, found ${allPages.length} pages`);
         
@@ -1408,7 +1408,7 @@ export class HybridBrowserSession {
         let newTabId: string | null = null;
         
         const browserConfig = this.configLoader.getBrowserConfig();
-        if (browserConfig.connectOverCdp) {
+        if (browserConfig.cdpUrl) {
           // CDP mode: find an available blank tab
           const allPages = this.context.pages();
           for (const page of allPages) {
@@ -1632,7 +1632,7 @@ export class HybridBrowserSession {
     }
     
     if (this.browser) {
-      if (browserConfig.connectOverCdp) {
+      if (browserConfig.cdpUrl) {
         // For CDP connections, just disconnect without closing the browser
         await this.browser.close();
       } else {
