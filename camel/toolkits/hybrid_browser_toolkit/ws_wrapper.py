@@ -154,8 +154,45 @@ class WebSocketBrowserWrapper:
         """Async context manager exit."""
         await self.stop()
 
+    async def _cleanup_existing_processes(self):
+        """Clean up any existing Node.js WebSocket server processes."""
+        import psutil
+        
+        cleaned_count = 0
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                # Check if it's a node process running our websocket-server.js
+                if (proc.info['name'] and 'node' in proc.info['name'].lower() and
+                    proc.info['cmdline'] and any('websocket-server.js' in arg for arg in proc.info['cmdline'])):
+                    
+                    # Check if it's from the same directory
+                    if any(self.ts_dir in arg for arg in proc.info['cmdline']):
+                        logger.warning(
+                            f"Found existing WebSocket server process (PID: {proc.info['pid']}). "
+                            f"Terminating it to prevent conflicts."
+                        )
+                        proc.terminate()
+                        try:
+                            proc.wait(timeout=3)
+                        except psutil.TimeoutExpired:
+                            proc.kill()
+                        cleaned_count += 1
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+        
+        if cleaned_count > 0:
+            logger.warning(
+                f"Cleaned up {cleaned_count} existing WebSocket server process(es). "
+                f"This may have been caused by improper shutdown in previous sessions."
+            )
+            # Give OS time to fully release resources
+            await asyncio.sleep(0.5)
+
     async def start(self):
         """Start the WebSocket server and connect to it."""
+        # Clean up any existing processes first
+        await self._cleanup_existing_processes()
+        
         # Check if npm is installed
         npm_check = subprocess.run(
             ['npm', '--version'],
@@ -280,16 +317,62 @@ class WebSocketBrowserWrapper:
 
             raise RuntimeError(error_msg)
 
-        # Connect to the WebSocket server
-        try:
-            self.websocket = await websockets.connect(
-                f"ws://localhost:{self.server_port}",
-                ping_interval=30,
-                ping_timeout=10,
-                max_size=50 * 1024 * 1024,  # 50MB limit to match server
-            )
-            logger.info("Connected to WebSocket server")
-        except Exception as e:
+        # Connect to the WebSocket server with retry mechanism
+        max_retries = 3
+        retry_delays = [1, 2, 4]  # Exponential backoff
+        
+        for attempt in range(max_retries):
+            try:
+                # Add connection timeout for handshake
+                connect_timeout = 10.0 + (attempt * 5.0)  # Increase timeout with each retry
+                
+                logger.info(
+                    f"Attempting to connect to WebSocket server "
+                    f"(attempt {attempt + 1}/{max_retries}, timeout: {connect_timeout}s)"
+                )
+                
+                self.websocket = await asyncio.wait_for(
+                    websockets.connect(
+                        f"ws://localhost:{self.server_port}",
+                        ping_interval=30,
+                        ping_timeout=10,
+                        max_size=50 * 1024 * 1024,  # 50MB limit to match server
+                    ),
+                    timeout=connect_timeout
+                )
+                logger.info("Connected to WebSocket server")
+                break  # Success, exit retry loop
+                
+            except asyncio.TimeoutError:
+                if attempt < max_retries - 1:
+                    delay = retry_delays[attempt]
+                    logger.warning(
+                        f"WebSocket handshake timeout (attempt {attempt + 1}/{max_retries}). "
+                        f"Retrying in {delay} seconds..."
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    # Last attempt failed
+                    raise RuntimeError(
+                        f"Failed to connect to WebSocket server after {max_retries} attempts: "
+                        f"Handshake timeout"
+                    )
+                    
+            except Exception as e:
+                if attempt < max_retries - 1 and "timed out" in str(e).lower():
+                    delay = retry_delays[attempt]
+                    logger.warning(
+                        f"WebSocket connection failed (attempt {attempt + 1}/{max_retries}): {e}. "
+                        f"Retrying in {delay} seconds..."
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    # Non-timeout error or last attempt, proceed to cleanup
+                    break
+        
+        # If we get here without a connection, handle the error
+        if not self.websocket:
+            # Clean up the server process
             with contextlib.suppress(ProcessLookupError, Exception):
                 self.process.kill()
             with contextlib.suppress(Exception):
@@ -304,20 +387,20 @@ class WebSocketBrowserWrapper:
                 self.ts_log_file = None
             self.process = None
 
-            error_msg = f"Failed to connect to WebSocket server: {e}"
+            # Check memory as possible cause
             import psutil
-
             mem = psutil.virtual_memory()
+            
+            error_msg = "Failed to connect to WebSocket server after multiple attempts"
             if mem.available < 1024**3:  # Less than 1GB available
                 error_msg = (
-                    f"Failed to connect to WebSocket server"
+                    f"Failed to connect to WebSocket server "
                     f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB"
-                    f"({mem.percent}% used). "
-                    f"Original error: {e}"
+                    f"Available memory: {mem.available / 1024**3:.2f}GB "
+                    f"({mem.percent}% used)"
                 )
 
-            raise RuntimeError(error_msg) from e
+            raise RuntimeError(error_msg)
 
         # Start the background receiver task
         self._receive_task = asyncio.create_task(self._receive_loop())
@@ -380,10 +463,10 @@ class WebSocketBrowserWrapper:
 
         # Ensure process handle cleared
         self.process = None
-    
+
     async def disconnect_only(self):
         """Disconnect WebSocket and stop server without closing the browser.
-        
+
         This is useful for CDP mode where the browser should remain open.
         """
         # Close websocket connection
@@ -425,7 +508,7 @@ class WebSocketBrowserWrapper:
 
         # Ensure process handle cleared
         self.process = None
-        
+
         logger.info("WebSocket disconnected without closing browser")
 
     async def _log_action(
@@ -501,7 +584,14 @@ class WebSocketBrowserWrapper:
                 except asyncio.CancelledError:
                     break
                 except Exception as e:
-                    logger.error(f"Error in receive loop: {e}")
+                    # Check if it's a normal WebSocket close
+                    if isinstance(e, websockets.exceptions.ConnectionClosed):
+                        if e.code == 1000:  # Normal closure
+                            logger.debug(f"WebSocket closed normally: {e}")
+                        else:
+                            logger.warning(f"WebSocket closed with code {e.code}: {e}")
+                    else:
+                        logger.error(f"Error in receive loop: {e}")
                     # Notify all pending futures of the error
                     for future in self._pending_responses.values():
                         if not future.done():
@@ -589,6 +679,14 @@ class WebSocketBrowserWrapper:
             except asyncio.TimeoutError:
                 # Remove from pending if timeout
                 self._pending_responses.pop(message_id, None)
+                # Special handling for shutdown command
+                if command == 'shutdown':
+                    logger.debug(
+                        "Shutdown command timeout is expected - "
+                        "server may have closed before responding"
+                    )
+                    # Return a success response for shutdown
+                    return {'message': 'Browser shutdown (no response received)'}
                 raise RuntimeError(
                     f"Timeout waiting for response to command: {command}"
                 )
@@ -602,6 +700,10 @@ class WebSocketBrowserWrapper:
                 "close frame" in str(e)
                 or "connection closed" in str(e).lower()
             ):
+                # Special handling for shutdown command
+                if command == 'shutdown':
+                    logger.debug(f"Connection closed during shutdown (expected): {e}")
+                    return {'message': 'Browser shutdown (connection closed)'}
                 logger.error(f"WebSocket connection closed unexpectedly: {e}")
                 # Mark connection as closed
                 self.websocket = None

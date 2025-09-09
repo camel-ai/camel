@@ -706,7 +706,6 @@ export class HybridBrowserSession {
                       elementInfo.tagName === 'textarea';
           shouldCheckDiff = isCombobox || isTextbox;
           
-          console.log(`Element info for ref=${ref}:`, JSON.stringify(elementInfo));
         } catch (e) {
           console.log(`Warning: Failed to get element attributes: ${e}`);
         }
