@@ -122,7 +122,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
                 continue
             seen_uuids.add(record.memory_record.uuid)
 
-            token_count = self.token_counter.count_tokens_from_messages(
+            token_count = self.token_counter.extract_usage_from_response(
                 [record.memory_record.to_openai_message()]
             )
             regular_units.append(
@@ -377,7 +377,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
             return None, []
 
         message = first_record.memory_record.to_openai_message()
-        tokens = self.token_counter.count_tokens_from_messages([message])
+        tokens = self.token_counter.extract_usage_from_response([message])
         system_message_unit = _ContextUnit(
             idx=0,
             record=first_record,
