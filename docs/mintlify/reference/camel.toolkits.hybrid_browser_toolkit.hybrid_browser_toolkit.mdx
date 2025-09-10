@@ -48,6 +48,7 @@ Create a HybridBrowserToolkit instance with the specified mode.
 - **viewport_limit** (bool): Whether to filter page snapshot elements to only those visible in the current viewport. Defaults to False.
 - **connect_over_cdp** (bool): Whether to connect to an existing browser via Chrome DevTools Protocol. Defaults to False. (Only supported in TypeScript mode)
 - **cdp_url** (Optional[str]): WebSocket endpoint URL for CDP connection. Required when connect_over_cdp is True. Defaults to None. (Only supported in TypeScript mode)
+- **cdp_keep_current_page** (bool): When True and using CDP mode, won't create new pages but use the existing one. Defaults to False. (Only supported in TypeScript mode)
 - **full_visual_mode** (bool): When True, browser actions like click, browser_open, visit_page, etc. will return 'full visual mode' as snapshot instead of actual page content. The browser_get_page_snapshot method will still return the actual snapshot. Defaults to False. **kwargs: Additional keyword arguments passed to the implementation.
 
 **Returns:**
