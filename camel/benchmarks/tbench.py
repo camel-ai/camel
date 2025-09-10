@@ -16,7 +16,7 @@ import logging
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Optional
 
 from terminal_bench.agents.agent_name import (
     AgentName,  # type: ignore[import-not-found]
@@ -99,6 +99,45 @@ class TerminalBench(Harness):
             **kwargs,
         )
 
+    r"""
+        Runs the Terminal-Bench harness.
+
+        Args:
+            output_path: The path to the output directory. Results and logs will be
+                written here.
+            run_id: The ID of the run.
+            agent_name: The name of the agent to use to generate commands.
+            agent_import_path: The import path of the agent.
+            dataset_name: The name of the dataset to use.
+            dataset_version: The version of the dataset to use.
+            dataset_path: The path to the dataset.
+            dataset_config: Path to a YAML configuration file for the dataset.
+                If provided, this will override dataset_name, dataset_version,
+                dataset_path, task_ids, n_tasks, and exclude_task_ids.
+            registry_url: The URL of the registry to use for the dataset.
+            local_registry_path: The path to the local registry file to use for the
+                dataset. If provided, will use the local registry instead of the remote
+                registry.
+            model_name: The name of the model to use for the agent.
+            agent_kwargs: Additional keyword arguments to pass to the agent.
+            no_rebuild: Whether to avoid rebuilding the Docker image.
+            cleanup: Whether to remove the Docker image after the run.
+            log_level: The logging level to use (debug, info, warning, error, critical).
+            task_ids: The IDs of the tasks to run. If None, all tasks will be run.
+            n_tasks: The number of tasks to run. If None, all tasks will be run.
+            livestream: Whether to livestream the log file. Turns off all other logging
+                to the console.
+            upload_results: Whether to upload results to S3.
+                The bucket name is read from config.
+            n_concurrent_trials: Maximum number of tasks to run concurrently.
+            exclude_task_ids: Set of task IDs or regex patterns to exclude from the run.
+                Supports both exact matches and regex patterns.
+            n_attempts: Number of attempts to make for each task.
+            global_timeout_multiplier: Multiplier for the global timeout for agent runs.
+            global_agent_timeout_sec: Global timeout for agent runs in seconds.
+            global_test_timeout_sec: Global timeout for test runs in seconds.
+        """
+
     async def _run_agent_with_timeout(
         self,
         trial_handler: TrialHandler,
@@ -134,12 +173,18 @@ class TBench(BaseBenchmark):
     def run(
         self,
         agent: ChatAgent,
-        on: Literal["train", "valid", "test"],
-        randomize: bool = False,
         subset: Optional[int] = None,
-        *args: Any,
-        **kwargs: Any,
     ) -> "BaseBenchmark":
+        r"""Run the Terminal-Bench benchmark.
+
+        Args:
+            agent: The ChatAgent to use for the benchmark.
+            subset: Optional subset of tasks to run. If None, all tasks will be run.
+
+        Returns:
+            BaseBenchmark: The benchmark instance.
+        """
+
         harness = TerminalBench(
             ChatAgent=agent,
             output_path=Path(self.save_to),

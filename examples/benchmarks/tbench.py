@@ -437,4 +437,4 @@ TBench_instance = TBench(
     save_to="tbench_results",
     processes=1,
 )
-print(TBench_instance.run(camel_agent=camel_agent, subset=["hello-world"]))
+print(TBench_instance.run(camel_agent=camel_agent, subset=2))
