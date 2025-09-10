@@ -97,11 +97,23 @@ export class HybridBrowserSession {
       if (browserConfig.cdpKeepCurrentPage) {
         // Use existing page without creating new ones
         if (pages.length > 0) {
-          const page = pages[0];
-          const tabId = this.generateTabId();
-          this.registerNewPage(tabId, page);
-          this.currentTabId = tabId;
-          console.log(`[CDP] cdpKeepCurrentPage mode: using existing page as initial tab: ${tabId}, URL: ${page.url()}`);
+          // Find first non-closed page
+          let validPage: Page | null = null;
+          for (const page of pages) {
+            if (!page.isClosed()) {
+              validPage = page;
+              break;
+            }
+          }
+          
+          if (validPage) {
+            const tabId = this.generateTabId();
+            this.registerNewPage(tabId, validPage);
+            this.currentTabId = tabId;
+            console.log(`[CDP] cdpKeepCurrentPage mode: using existing page as initial tab: ${tabId}, URL: ${validPage.url()}`);
+          } else {
+            throw new Error('No active pages available in CDP mode with cdpKeepCurrentPage=true (all pages are closed)');
+          }
         } else {
           throw new Error('No pages available in CDP mode with cdpKeepCurrentPage=true');
         }
@@ -591,7 +603,7 @@ export class HybridBrowserSession {
    * Extract diff between two snapshots, returning only new elements of specified types
    */
   private getSnapshotDiff(snapshotBefore: string, snapshotAfter: string, targetRoles: string[]): string {
-      const refsBefore = new Set<string>();
+    const refsBefore = new Set<string>();
     const refPattern = /\[ref=([^\]]+)\]/g;
     let match;
     while ((match = refPattern.exec(snapshotBefore)) !== null) {
@@ -747,7 +759,7 @@ export class HybridBrowserSession {
               const snapshotAfter = await (page as any)._snapshotForAI();
               const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotAfter, ['option', 'menuitem']);
               
-                  if (diffSnapshot && diffSnapshot.trim() !== '') {
+              if (diffSnapshot && diffSnapshot.trim() !== '') {
                 return { success: true, diffSnapshot };
               }
             }
@@ -794,7 +806,7 @@ export class HybridBrowserSession {
                   const snapshotFinal = await (page as any)._snapshotForAI();
                   const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
                   
-                          if (diffSnapshot && diffSnapshot.trim() !== '') {
+                  if (diffSnapshot && diffSnapshot.trim() !== '') {
                     return { success: true, diffSnapshot };
                   }
                 }
@@ -859,7 +871,7 @@ export class HybridBrowserSession {
                         const snapshotFinal = await (page as any)._snapshotForAI();
                         const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
                         
-                                      if (diffSnapshot && diffSnapshot.trim() !== '') {
+                        if (diffSnapshot && diffSnapshot.trim() !== '') {
                           return { success: true, diffSnapshot };
                         }
                       }
@@ -936,7 +948,7 @@ export class HybridBrowserSession {
                       const snapshotFinal = await (page as any)._snapshotForAI();
                       const diffSnapshot = this.getSnapshotDiff(snapshotBefore, snapshotFinal, ['option', 'menuitem']);
                       
-                                  if (diffSnapshot && diffSnapshot.trim() !== '') {
+                      if (diffSnapshot && diffSnapshot.trim() !== '') {
                         return { success: true, diffSnapshot };
                       }
                     }
