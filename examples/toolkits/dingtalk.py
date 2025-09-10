@@ -114,6 +114,42 @@ def main():
             },
             # send_text_message response (second call)
             {'errcode': 0, 'task_id': '12347'},
+            # send_link_message response
+            {'errcode': 0, 'task_id': '12348'},
+            # send_action_card_message response
+            {'errcode': 0, 'task_id': '12349'},
+            # get_user_by_mobile response
+            {
+                'errcode': 0,
+                'userid': 'mobile_user_123',
+                'name': '手机用户',
+                'mobile': '13800000000',
+                'department': [1],
+            },
+            # get_department_detail response
+            {
+                'errcode': 0,
+                'id': 1,
+                'name': '技术部详细信息',
+                'parent_id': 0,
+                'member_count': 25,
+                'create_time': '2024-01-01T00:00:00Z',
+            },
+            # send_work_notification response
+            {'errcode': 0, 'task_id': '12350'},
+            # get_group_info response
+            {
+                'errcode': 0,
+                'chatid': 'chat123',
+                'name': '项目讨论组',
+                'owner': 'owner_123',
+                'member_count': 8,
+                'create_time': '2024-01-15T10:00:00Z',
+            },
+            # update_group response
+            {'errcode': 0},
+            # send_oa_message response
+            {'errcode': 0, 'task_id': '12351'},
         ]
 
         # Mock webhook responses
@@ -189,9 +225,50 @@ def main():
         print_tool_calls(response.info['tool_calls'])
         print()
 
+        # Example 5: Send different message types (new features)
+        print("\n5️⃣ Example 5: Send link and action card messages")
+        response = agent.step(
+            "Send a link message to user 'test_userid' with title "
+            "'Visit Our Website', description 'Click to visit our website', "
+            "and URL 'https://camel-ai.org'. Then send an action card message "
+            "with title 'Action Required', content 'Please review document', "
+            "button text 'Review Now', and button URL 'https://docs.camel-ai.org'."
+        )
+        print("Link and Action Card Response:", response.msg.content)
+        print("Tool calls:")
+        print_tool_calls(response.info['tool_calls'])
+        print()
+
+        # Example 6: Advanced user management
+        print("\n6️⃣ Example 6: Advanced user management")
+        response = agent.step(
+            "Get user information by mobile number '13800000000', then get "
+            "detailed information about department ID 1, and finally send a "
+            "work notification to users 'user1', 'user2', 'user3' with "
+            "message 'Team meeting at 3 PM today'."
+        )
+        print("Advanced User Management Response:", response.msg.content)
+        print("Tool calls:")
+        print_tool_calls(response.info['tool_calls'])
+        print()
+
+        # Example 7: Group management with new features
+        print("\n7️⃣ Example 7: Advanced group management")
+        response = agent.step(
+            "Get information about group 'chat123', then update the group by "
+            "adding users 'newuser1' and 'newuser2' to it, and finally send "
+            "an OA message to user 'test_userid' with title 'System Update', "
+            "content 'System maintenance tonight'."
+        )
+        print("Advanced Group Management Response:", response.msg.content)
+        print("Tool calls:")
+        print_tool_calls(response.info['tool_calls'])
+        print()
+
         print("=" * 60)
         print("✅ All examples completed with mocked responses!")
-        print("\n📋 Copy the responses above to update the example file.")
+        print(f"📊 Total tools available: {len(dingtalk_toolkit.get_tools())}")
+        print("📋 Copy the responses above to update the example file.")
 
 
 if __name__ == "__main__":

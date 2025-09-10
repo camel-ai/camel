@@ -61,7 +61,7 @@ def _get_dingtalk_access_token() -> str:
     url = "https://oapi.dingtalk.com/gettoken"
     params = {"appkey": app_key, "appsecret": app_secret}
 
-    response = requests.get(url, params=params)
+    response = requests.get(url, params=params, timeout=30)
     response.raise_for_status()
     data = response.json()
 
@@ -613,18 +613,423 @@ class DingtalkToolkit(BaseToolkit):
         except Exception as e:
             return f"Failed to send group message: {e!s}"
 
+    @api_keys_required(
+        [
+            (None, "DINGTALK_APP_KEY"),
+            (None, "DINGTALK_APP_SECRET"),
+        ]
+    )
+    def send_link_message(
+        self,
+        userid: str,
+        title: str,
+        text: str,
+        message_url: str,
+        pic_url: Optional[str] = None,
+    ) -> str:
+        r"""Sends a link message to a Dingtalk user.
+
+        Args:
+            userid (str): The user's userid.
+            title (str): Link title.
+            text (str): Link description text.
+            message_url (str): The URL to link to.
+            pic_url (Optional[str]): Optional picture URL for the link.
+
+        Returns:
+            str: Success or error message.
+
+        References:
+            https://open.dingtalk.com/document/orgapp-server/send-single-chat-message
+        """
+        link_data = {
+            "messageUrl": message_url,
+            "title": title,
+            "text": text,
+        }
+        if pic_url:
+            link_data["picUrl"] = pic_url
+
+        payload = {
+            "msg": {"msgtype": "link", "link": link_data},
+            "userid": userid,
+        }
+
+        try:
+            _make_dingtalk_request(
+                "POST",
+                "/topapi/message/corpconversation/asyncsend_v2",
+                headers={"Content-Type": "application/json"},
+                json=payload,
+            )
+            return (
+                f"Link message '{title}' sent successfully to user {userid}."
+            )
+        except Exception as e:
+            return f"Failed to send link message: {e!s}"
+
+    @api_keys_required(
+        [
+            (None, "DINGTALK_APP_KEY"),
+            (None, "DINGTALK_APP_SECRET"),
+        ]
+    )
+    def send_action_card_message(
+        self,
+        userid: str,
+        title: str,
+        text: str,
+        single_title: str,
+        single_url: str,
+    ) -> str:
+        r"""Sends an action card message to a Dingtalk user.
+
+        Args:
+            userid (str): The user's userid.
+            title (str): Card title.
+            text (str): Card content (supports markdown).
+            single_title (str): Button text.
+            single_url (str): Button click URL.
+
+        Returns:
+            str: Success or error message.
+
+        References:
+            https://open.dingtalk.com/document/orgapp-server/send-single-chat-message
+        """
+        payload = {
+            "msg": {
+                "msgtype": "actionCard",
+                "actionCard": {
+                    "title": title,
+                    "text": text,
+                    "singleTitle": single_title,
+                    "singleURL": single_url,
+                },
+            },
+            "userid": userid,
+        }
+
+        try:
+            _make_dingtalk_request(
+                "POST",
+                "/topapi/message/corpconversation/asyncsend_v2",
+                headers={"Content-Type": "application/json"},
+                json=payload,
+            )
+            return f"Action card '{title}' sent successfully to user {userid}."
+        except Exception as e:
+            return f"Failed to send action card: {e!s}"
+
+    @api_keys_required(
+        [
+            (None, "DINGTALK_APP_KEY"),
+            (None, "DINGTALK_APP_SECRET"),
+        ]
+    )
+    def get_user_by_mobile(self, mobile: str) -> Dict[str, Any]:
+        r"""Gets user information by mobile number.
+
+        Args:
+            mobile (str): User's mobile number.
+
+        Returns:
+            Dict[str, Any]: User information or error information.
+
+        References:
+            https://open.dingtalk.com/document/orgapp-server/query-users-by-phone-number
+        """
+        try:
+            data = _make_dingtalk_request(
+                "POST",
+                "/topapi/v2/user/getbymobile",
+                headers={"Content-Type": "application/json"},
+                json={"mobile": mobile},
+            )
+            return data
+        except Exception as e:
+            return {"error": f"Failed to get user by mobile: {e!s}"}
+
+    @api_keys_required(
+        [
+            (None, "DINGTALK_APP_KEY"),
+            (None, "DINGTALK_APP_SECRET"),
+        ]
+    )
+    def get_user_by_unionid(self, unionid: str) -> Dict[str, Any]:
+        r"""Gets user information by unionid.
+
+        Args:
+            unionid (str): User's unionid.
+
+        Returns:
+            Dict[str, Any]: User information or error information.
+
+        References:
+            https://open.dingtalk.com/document/orgapp-server/query-a-user-by-the-union-id
+        """
+        try:
+            data = _make_dingtalk_request(
+                "POST",
+                "/topapi/v2/user/getbyunionid",
+                headers={"Content-Type": "application/json"},
+                json={"unionid": unionid},
+            )
+            return data
+        except Exception as e:
+            return {"error": f"Failed to get user by unionid: {e!s}"}
+
+    @api_keys_required(
+        [
+            (None, "DINGTALK_APP_KEY"),
+            (None, "DINGTALK_APP_SECRET"),
+        ]
+    )
+    def get_department_detail(self, dept_id: int) -> Dict[str, Any]:
+        r"""Gets detailed information about a department.
+
+        Args:
+            dept_id (int): Department ID.
+
+        Returns:
+            Dict[str, Any]: Department details or error information.
+
+        References:
+            https://open.dingtalk.com/document/orgapp-server/query-department-details
+        """
+        try:
+            data = _make_dingtalk_request(
+                "POST",
+                "/topapi/v2/department/get",
+                headers={"Content-Type": "application/json"},
+                json={"dept_id": dept_id},
+            )
+            return data
+        except Exception as e:
+            return {"error": f"Failed to get department detail: {e!s}"}
+
+    @api_keys_required(
+        [
+            (None, "DINGTALK_APP_KEY"),
+            (None, "DINGTALK_APP_SECRET"),
+        ]
+    )
+    def send_oa_message(
+        self,
+        userid: str,
+        message_url: str,
+        head_bgcolor: str,
+        head_text: str,
+        body_title: str,
+        body_content: str,
+        body_author: Optional[str] = None,
+    ) -> str:
+        r"""Sends an OA (Office Automation) message to a Dingtalk user.
+
+        Args:
+            userid (str): The user's userid.
+            message_url (str): URL to jump to when message is clicked.
+            head_bgcolor (str): Header background color (e.g., "FFBBBBBB").
+            head_text (str): Header text.
+            body_title (str): Body title.
+            body_content (str): Body content.
+            body_author (Optional[str]): Message author.
+
+        Returns:
+            str: Success or error message.
+
+        References:
+            https://open.dingtalk.com/document/orgapp-server/send-single-chat-message
+        """
+        oa_data: Dict[str, Any] = {
+            "message_url": message_url,
+            "head": {"bgcolor": head_bgcolor, "text": head_text},
+            "body": {
+                "title": body_title,
+                "content": body_content,
+            },
+        }
+        if body_author:
+            oa_data["body"]["author"] = str(body_author)
+
+        payload = {
+            "msg": {"msgtype": "oa", "oa": oa_data},
+            "userid": userid,
+        }
+
+        try:
+            _make_dingtalk_request(
+                "POST",
+                "/topapi/message/corpconversation/asyncsend_v2",
+                headers={"Content-Type": "application/json"},
+                json=payload,
+            )
+            return f"OA message sent successfully to user {userid}."
+        except Exception as e:
+            return f"Failed to send OA message: {e!s}"
+
+    @api_keys_required(
+        [
+            (None, "DINGTALK_APP_KEY"),
+            (None, "DINGTALK_APP_SECRET"),
+        ]
+    )
+    def get_group_info(self, chatid: str) -> Dict[str, Any]:
+        r"""Gets information about a group chat.
+
+        Args:
+            chatid (str): Group chat ID.
+
+        Returns:
+            Dict[str, Any]: Group information or error information.
+
+        References:
+            https://open.dingtalk.com/document/orgapp-server/query-group-session-information
+        """
+        try:
+            data = _make_dingtalk_request(
+                "POST",
+                "/topapi/im/chat/get",
+                headers={"Content-Type": "application/json"},
+                json={"chatid": chatid},
+            )
+            return data
+        except Exception as e:
+            return {"error": f"Failed to get group info: {e!s}"}
+
+    @api_keys_required(
+        [
+            (None, "DINGTALK_APP_KEY"),
+            (None, "DINGTALK_APP_SECRET"),
+        ]
+    )
+    def update_group(
+        self,
+        chatid: str,
+        name: Optional[str] = None,
+        owner: Optional[str] = None,
+        add_useridlist: Optional[List[str]] = None,
+        del_useridlist: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        r"""Updates a group chat (name, owner, or members).
+
+        Args:
+            chatid (str): Group chat ID.
+            name (Optional[str]): New group name.
+            owner (Optional[str]): New group owner userid.
+            add_useridlist (Optional[List[str]]): User IDs to add.
+            del_useridlist (Optional[List[str]]): User IDs to remove.
+
+        Returns:
+            Dict[str, Any]: Update result or error information.
+
+        References:
+            https://open.dingtalk.com/document/orgapp-server/modify-group-session
+        """
+        payload = {"chatid": chatid}
+
+        if name:
+            payload["name"] = name
+        if owner:
+            payload["owner"] = owner
+        if add_useridlist:
+            payload["add_useridlist"] = ",".join(add_useridlist)
+        if del_useridlist:
+            payload["del_useridlist"] = ",".join(del_useridlist)
+
+        try:
+            data = _make_dingtalk_request(
+                "POST",
+                "/topapi/im/chat/update",
+                headers={"Content-Type": "application/json"},
+                json=payload,
+            )
+            return data
+        except Exception as e:
+            return {"error": f"Failed to update group: {e!s}"}
+
+    @api_keys_required(
+        [
+            (None, "DINGTALK_APP_KEY"),
+            (None, "DINGTALK_APP_SECRET"),
+        ]
+    )
+    def send_work_notification(
+        self,
+        userid_list: List[str],
+        msg_content: str,
+        msg_type: Literal["text", "markdown"] = "text",
+    ) -> str:
+        r"""Sends work notification to multiple users.
+
+        Args:
+            userid_list (List[str]): List of user IDs to send to.
+            msg_content (str): Message content.
+            msg_type (Literal["text", "markdown"]): Message type.
+
+        Returns:
+            str: Success or error message.
+
+        References:
+            https://open.dingtalk.com/document/orgapp-server/asynchronous-sending-of-enterprise-session-messages
+        """
+        if not userid_list:
+            return "Error: userid_list cannot be empty"
+
+        if len(userid_list) > 100:
+            return "Error: Cannot send to more than 100 users at once"
+
+        msg_data: Dict[str, Any] = {"msgtype": msg_type}
+        if msg_type == "text":
+            msg_data["text"] = {"content": msg_content}
+        elif msg_type == "markdown":
+            msg_data["markdown"] = {"text": msg_content}
+
+        payload = {
+            "msg": msg_data,
+            "userid_list": userid_list,  # 应该是数组,不是逗号分隔的字符串
+        }
+
+        try:
+            _make_dingtalk_request(
+                "POST",
+                "/topapi/message/corpconversation/asyncsend_v2",
+                headers={"Content-Type": "application/json"},
+                json=payload,
+            )
+            return (
+                f"Work notification sent successfully to "
+                f"{len(userid_list)} users."
+            )
+        except Exception as e:
+            return f"Failed to send work notification: {e!s}"
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns toolkit functions as tools."""
         return [
+            # Original message functions
             FunctionTool(self.send_text_message),
             FunctionTool(self.send_markdown_message),
+            FunctionTool(self.send_webhook_message),
+            # New message types
+            FunctionTool(self.send_link_message),
+            FunctionTool(self.send_action_card_message),
+            FunctionTool(self.send_oa_message),
+            FunctionTool(self.send_work_notification),
+            # User management functions
             FunctionTool(self.get_user_info),
+            FunctionTool(self.get_user_by_mobile),
+            FunctionTool(self.get_user_by_unionid),
+            FunctionTool(self.search_users_by_name),
+            # Department management functions
             FunctionTool(self.get_department_list),
             FunctionTool(self.get_department_users),
-            FunctionTool(self.search_users_by_name),
-            FunctionTool(self.send_webhook_message),
+            FunctionTool(self.get_department_detail),
+            # Group management functions
             FunctionTool(self.create_group),
             FunctionTool(self.send_group_message),
+            FunctionTool(self.get_group_info),
+            FunctionTool(self.update_group),
         ]
 
 

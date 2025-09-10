@@ -300,3 +300,221 @@ def test_toolkit_initialization_with_token_failure():
         # Should not raise exception, just log warning
         toolkit = DingtalkToolkit()
         assert toolkit.base_url == "https://oapi.dingtalk.com"
+
+
+# ========= Tests for new extended features =========
+
+
+@patch('camel.toolkits.dingtalk._make_dingtalk_request')
+def test_send_link_message(mock_request):
+    """Test sending link message."""
+    mock_request.return_value = {'errcode': 0}
+
+    with patch(
+        'camel.toolkits.dingtalk._get_dingtalk_access_token'
+    ) as mock_token:
+        mock_token.return_value = "test_access_token"
+        toolkit = DingtalkToolkit()
+        result = toolkit.send_link_message(
+            'test_userid', 'Test Link', 'Click to visit', 'https://example.com'
+        )
+        assert 'Link message' in result and 'sent successfully' in result
+
+
+@patch('camel.toolkits.dingtalk._make_dingtalk_request')
+def test_send_action_card_message(mock_request):
+    """Test sending action card message."""
+    mock_request.return_value = {'errcode': 0}
+
+    with patch(
+        'camel.toolkits.dingtalk._get_dingtalk_access_token'
+    ) as mock_token:
+        mock_token.return_value = "test_access_token"
+        toolkit = DingtalkToolkit()
+        result = toolkit.send_action_card_message(
+            'test_userid',
+            'Action Required',
+            'Please click the button below',
+            'Click Here',
+            'https://example.com/action',
+        )
+        assert 'Action card' in result and 'sent successfully' in result
+
+
+@patch('camel.toolkits.dingtalk._make_dingtalk_request')
+def test_get_user_by_mobile(mock_request):
+    """Test getting user by mobile number."""
+    expected_data = {
+        'userid': 'test_userid',
+        'name': 'Test User',
+        'mobile': '13800000000',
+        'errcode': 0,
+    }
+    mock_request.return_value = expected_data
+
+    with patch(
+        'camel.toolkits.dingtalk._get_dingtalk_access_token'
+    ) as mock_token:
+        mock_token.return_value = "test_access_token"
+        toolkit = DingtalkToolkit()
+        result = toolkit.get_user_by_mobile('13800000000')
+        assert result == expected_data
+
+
+@patch('camel.toolkits.dingtalk._make_dingtalk_request')
+def test_get_user_by_unionid(mock_request):
+    """Test getting user by unionid."""
+    expected_data = {
+        'userid': 'test_userid',
+        'name': 'Test User',
+        'unionid': 'test_unionid',
+        'errcode': 0,
+    }
+    mock_request.return_value = expected_data
+
+    with patch(
+        'camel.toolkits.dingtalk._get_dingtalk_access_token'
+    ) as mock_token:
+        mock_token.return_value = "test_access_token"
+        toolkit = DingtalkToolkit()
+        result = toolkit.get_user_by_unionid('test_unionid')
+        assert result == expected_data
+
+
+@patch('camel.toolkits.dingtalk._make_dingtalk_request')
+def test_get_department_detail(mock_request):
+    """Test getting department details."""
+    expected_data = {
+        'id': 1,
+        'name': 'Test Department',
+        'parent_id': 0,
+        'member_count': 10,
+        'errcode': 0,
+    }
+    mock_request.return_value = expected_data
+
+    with patch(
+        'camel.toolkits.dingtalk._get_dingtalk_access_token'
+    ) as mock_token:
+        mock_token.return_value = "test_access_token"
+        toolkit = DingtalkToolkit()
+        result = toolkit.get_department_detail(1)
+        assert result == expected_data
+
+
+@patch('camel.toolkits.dingtalk._make_dingtalk_request')
+def test_send_oa_message(mock_request):
+    """Test sending OA message."""
+    mock_request.return_value = {'errcode': 0}
+
+    with patch(
+        'camel.toolkits.dingtalk._get_dingtalk_access_token'
+    ) as mock_token:
+        mock_token.return_value = "test_access_token"
+        toolkit = DingtalkToolkit()
+        result = toolkit.send_oa_message(
+            'test_userid',
+            'https://example.com',
+            'FFBBBBBB',
+            'Important Notice',
+            'System Update',
+            'The system will be updated tonight.',
+        )
+        assert 'OA message sent successfully' in result
+
+
+@patch('camel.toolkits.dingtalk._make_dingtalk_request')
+def test_get_group_info(mock_request):
+    """Test getting group information."""
+    expected_data = {
+        'chatid': 'test_chatid',
+        'name': 'Test Group',
+        'owner': 'owner_userid',
+        'member_count': 5,
+        'errcode': 0,
+    }
+    mock_request.return_value = expected_data
+
+    with patch(
+        'camel.toolkits.dingtalk._get_dingtalk_access_token'
+    ) as mock_token:
+        mock_token.return_value = "test_access_token"
+        toolkit = DingtalkToolkit()
+        result = toolkit.get_group_info('test_chatid')
+        assert result == expected_data
+
+
+@patch('camel.toolkits.dingtalk._make_dingtalk_request')
+def test_update_group(mock_request):
+    """Test updating group."""
+    expected_data = {'errcode': 0}
+    mock_request.return_value = expected_data
+
+    with patch(
+        'camel.toolkits.dingtalk._get_dingtalk_access_token'
+    ) as mock_token:
+        mock_token.return_value = "test_access_token"
+        toolkit = DingtalkToolkit()
+        result = toolkit.update_group(
+            'test_chatid',
+            name='New Group Name',
+            add_useridlist=['user1', 'user2'],
+        )
+        assert result == expected_data
+
+
+@patch('camel.toolkits.dingtalk._make_dingtalk_request')
+def test_send_work_notification(mock_request):
+    """Test sending work notification to multiple users."""
+    mock_request.return_value = {'errcode': 0}
+
+    with patch(
+        'camel.toolkits.dingtalk._get_dingtalk_access_token'
+    ) as mock_token:
+        mock_token.return_value = "test_access_token"
+        toolkit = DingtalkToolkit()
+        result = toolkit.send_work_notification(
+            ['user1', 'user2', 'user3'],
+            'Important announcement for all team members.',
+        )
+        assert 'Work notification sent successfully to 3 users' in result
+
+
+def test_send_work_notification_validation():
+    """Test work notification input validation."""
+    with patch(
+        'camel.toolkits.dingtalk._get_dingtalk_access_token'
+    ) as mock_token:
+        mock_token.return_value = "test_access_token"
+        toolkit = DingtalkToolkit()
+
+        # Test empty user list
+        result = toolkit.send_work_notification([], 'test message')
+        assert 'userid_list cannot be empty' in result
+
+        # Test too many users
+        large_user_list = [f'user{i}' for i in range(101)]
+        result = toolkit.send_work_notification(
+            large_user_list, 'test message'
+        )
+        assert 'Cannot send to more than 100 users' in result
+
+
+def test_extended_tools_count():
+    """Test that all new tools are included."""
+    with patch(
+        'camel.toolkits.dingtalk._get_dingtalk_access_token'
+    ) as mock_token:
+        mock_token.return_value = "test_access_token"
+        toolkit = DingtalkToolkit()
+        tools = toolkit.get_tools()
+
+        # Should have original 9 tools + 9 new tools = 18 tools
+        assert len(tools) == 18
+
+        # Check some specific new tools are present
+        tool_names = [tool.func.__name__ for tool in tools]
+        assert 'send_link_message' in tool_names
+        assert 'send_action_card_message' in tool_names
+        assert 'get_user_by_mobile' in tool_names
+        assert 'send_work_notification' in tool_names
