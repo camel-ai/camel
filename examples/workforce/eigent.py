@@ -324,7 +324,6 @@ def search_agent_factory(
         "browser_get_som_screenshot",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
-        mode="python",
         headless=False,
         enabled_tools=custom_tools,
         browser_log_to_file=True,
