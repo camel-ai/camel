@@ -393,3 +393,53 @@ class ContextUtility:
             str: The session ID.
         """
         return self.session_id
+
+    def load_markdown_context_to_memory(
+        self, agent: "ChatAgent", filename: str
+    ) -> str:
+        r"""Load context from a markdown file and append it to agent memory.
+        Preserves existing conversation history without wiping it.
+
+        Args:
+            agent (ChatAgent): The agent to append context to.
+            filename (str): Name of the markdown file (without .md extension).
+
+        Returns:
+            str: Status message indicating success or failure with details.
+        """
+        try:
+            content = self.load_markdown_file(filename)
+
+            if not content.strip():
+                return f"Context file not found or empty: {filename}"
+
+            from camel.messages import BaseMessage
+            from camel.types import OpenAIBackendRole
+
+            prefix_prompt = (
+                "The following is the context from a previous "
+                "session or workflow. This information might help you "
+                "understand the background, choose which tools to use, "
+                "and plan your next steps."
+            )
+
+            context_message = BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content=f"{prefix_prompt}\n\n{content}",
+            )
+
+            agent.update_memory(context_message, OpenAIBackendRole.SYSTEM)
+
+            char_count = len(content)
+            log_msg = (
+                f"Context appended to agent {agent.agent_id} "
+                f"({char_count} characters)"
+            )
+            logger.info(log_msg)
+
+            return log_msg
+
+        except Exception as e:
+            error_msg = f"Failed to load markdown context to memory: {e}"
+            logger.error(error_msg)
+            return error_msg
