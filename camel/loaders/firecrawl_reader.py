@@ -42,6 +42,22 @@ class Firecrawl:
 
         self.app = FirecrawlApp(api_key=self._api_key, api_url=self._api_url)
 
+    def _prepare_params(
+        self, params: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Prepare parameters by ensuring they include the integration key.
+
+        Args:
+            params (Optional[Dict[str, Any]]): The input parameters.
+
+        Returns:
+            Dict[str, Any]: The parameters with the integration key added.
+        """
+        if params is None:
+            params = {}
+        params['integration'] = 'camelai'
+        return params
+
     def crawl(
         self,
         url: str,
@@ -68,6 +84,7 @@ class Firecrawl:
         """
 
         try:
+            params = self._prepare_params(params)
             crawl_response = self.app.crawl_url(
                 url=url,
                 params=params,
@@ -118,6 +135,7 @@ class Firecrawl:
             RuntimeError: If the scrape process fails.
         """
         try:
+            params = self._prepare_params(params)
             return self.app.scrape_url(url=url, params=params)
         except Exception as e:
             raise RuntimeError(f"Failed to scrape the URL: {e}")
@@ -139,13 +157,11 @@ class Firecrawl:
             RuntimeError: If the scrape process fails.
         """
         try:
-            data = self.app.scrape_url(
-                url,
-                {
-                    'formats': ['extract'],
-                    'extract': {'schema': response_format.model_json_schema()},
-                },
-            )
+            params = self._prepare_params({
+                'formats': ['extract'],
+                'extract': {'schema': response_format.model_json_schema()},
+            })
+            data = self.app.scrape_url(url, params)
             return data.get("extract", {})
         except Exception as e:
             raise RuntimeError(f"Failed to perform structured scrape: {e}")
@@ -167,6 +183,7 @@ class Firecrawl:
             RuntimeError: If the mapping process fails.
         """
         try:
+            params = self._prepare_params(params)
             return self.app.map_url(url=url, params=params)
         except Exception as e:
             raise RuntimeError(f"Failed to map the site: {e}")
