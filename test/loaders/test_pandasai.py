@@ -17,13 +17,14 @@ import tempfile
 
 import pandas as pd  # type: ignore[import-untyped]
 import pytest
+from pandasai import SmartDataframe
 from pandasai.llm import OpenAI  # type: ignore[import-untyped]
 
-from camel.loaders import PandasReader
+from camel.loaders import PandasLoader
 
 
 def test_load_dataframe():
-    reader = PandasReader()
+    reader = PandasLoader()
     sales_by_country = {
         "country": [
             "United States",
@@ -50,7 +51,9 @@ def test_load_dataframe():
             7000,
         ],
     }
-    df = reader.load(pd.DataFrame(sales_by_country))
+    df = reader.load(pd.DataFrame(sales_by_country))[
+        str(pd.DataFrame(sales_by_country))
+    ]
     # Test that the dataframe was loaded correctly
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (10, 2)
@@ -60,7 +63,7 @@ def test_load_dataframe():
 
 
 def test_multi_column_dataframe():
-    reader = PandasReader()
+    reader = PandasLoader()
     sales_by_country = {
         "country": [
             "United States",
@@ -99,7 +102,9 @@ def test_multi_column_dataframe():
             1200,
         ],
     }
-    df = reader.load(pd.DataFrame(sales_by_country))
+    df = reader.load(pd.DataFrame(sales_by_country))[
+        str(pd.DataFrame(sales_by_country))
+    ]
     # Test that the dataframe was loaded correctly with multiple columns
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (10, 3)
@@ -111,7 +116,7 @@ def test_multi_column_dataframe():
 
 def test_load_from_url():
     """Test loading from a file path instead of URL to avoid hanging."""
-    reader = PandasReader()
+    reader = PandasLoader()
 
     # Create a temporary CSV file
     with tempfile.NamedTemporaryFile(suffix='.csv', delete=False) as tmp:
@@ -123,7 +128,7 @@ def test_load_from_url():
 
     try:
         # Test loading from the file
-        df = reader.load(tmp_path)
+        df = reader.load(tmp_path)[tmp_path]
         assert isinstance(df, pd.DataFrame)
         assert "Country" in df.columns
         assert df.shape == (3, 3)
@@ -144,15 +149,15 @@ def test_with_llm():
             api_token=os.getenv("OPENAI_API_KEY"),
         )
     }
-    reader = PandasReader(config=llm_config)
+    reader = PandasLoader(config=llm_config)
     sales_by_country = {
         "country": ["United States", "United Kingdom", "China"],
         "sales": [5000, 3200, 7000],
     }
-    df = reader.load(pd.DataFrame(sales_by_country))
+    df = reader.load(pd.DataFrame(sales_by_country))[
+        str(pd.DataFrame(sales_by_country))
+    ]
     # With LLM config, should return a SmartDataframe
-    from pandasai import SmartDataframe
-
     assert isinstance(df, SmartDataframe)
 
     # Test chat functionality if needed

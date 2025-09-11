@@ -20,23 +20,21 @@ class BaseLoader(ABC):
     r"""Abstract base class for all data loaders in CAMEL."""
 
     @abstractmethod
-    def _load_single(self, source: Union[str, Path]) -> Dict[str, Any]:
+    def _load_single(self, source: Union[str, Path]) -> Any:
         r"""Load data from a single source.
 
         Args:
             source (Union[str, Path]): The data source to load from.
 
         Returns:
-            Dict[str, Any]: A dictionary containing the loaded data. It is
-                recommended that the dictionary includes a "content" key with
-                the primary data and optional metadata keys.
+            Any: Loaded data by the source.
         """
         pass
 
     def load(
         self,
         source: Union[str, Path, List[Union[str, Path]]],
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    ) -> Dict[str, Any]:
         r"""Load data from one or multiple sources.
 
         Args:
@@ -46,9 +44,8 @@ class BaseLoader(ABC):
                 - A list of paths/URLs
 
         Returns:
-            Dict[str, List[Dict[str, Any]]]: A dictionary with a single key
-                "contents" containing a list of loaded data. If a single source
-                is provided, the list will contain a single item.
+            Dict[str, Any]: A dictionary of loaded data. If a single source
+                is provided, the dictionary will contain a single item.
 
         Raises:
             ValueError: If no sources are provided
@@ -61,17 +58,17 @@ class BaseLoader(ABC):
         sources = [source] if isinstance(source, (str, Path)) else list(source)
 
         # Process all sources
-        results = []
+        results = {}
         for i, src in enumerate(sources, 1):
             try:
                 content = self._load_single(src)
-                results.append(content)
+                results[str(src)] = content
             except Exception as e:
                 raise RuntimeError(
                     f"Error loading source {i}/{len(sources)}: {src}"
                 ) from e
 
-        return {"contents": results}
+        return results
 
     @property
     @abstractmethod
