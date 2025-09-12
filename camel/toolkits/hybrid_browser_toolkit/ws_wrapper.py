@@ -109,6 +109,7 @@ class WebSocketBrowserWrapper:
         self._send_lock = asyncio.Lock()
         self._receive_task = None
         self._pending_responses: Dict[str, asyncio.Future[Dict[str, Any]]] = {}
+        self._browser_opened = False
         self._server_ready_future = None
 
         self.browser_log_to_file = (config or {}).get(
@@ -391,6 +392,9 @@ class WebSocketBrowserWrapper:
 
         await self._send_command('init', self.config)
 
+        if self.config.get('cdpUrl'):
+            self._browser_opened = True
+
     async def stop(self):
         """Stop the WebSocket connection and server."""
         if self.websocket:
@@ -400,10 +404,11 @@ class WebSocketBrowserWrapper:
                     timeout=2.0,
                 )
 
-            # Close websocket connection
             with contextlib.suppress(Exception):
                 await self.websocket.close()
             self.websocket = None
+
+        self._browser_opened = False
 
         # Gracefully stop the Node process before cancelling the log reader
         if self.process:
@@ -448,11 +453,12 @@ class WebSocketBrowserWrapper:
 
         This is useful for CDP mode where the browser should remain open.
         """
-        # Close websocket connection
         if self.websocket:
             with contextlib.suppress(Exception):
                 await self.websocket.close()
             self.websocket = None
+
+        self._browser_opened = False
 
         # Stop the Node process
         if self.process:
@@ -709,17 +715,31 @@ class WebSocketBrowserWrapper:
         response = await self._send_command(
             'open_browser', {'startUrl': start_url}
         )
+        self._browser_opened = True
         return response
 
     @action_logger
     async def close_browser(self) -> str:
         """Close browser."""
         response = await self._send_command('close_browser', {})
+        self._browser_opened = False
         return response['message']
 
     @action_logger
     async def visit_page(self, url: str) -> Dict[str, Any]:
-        """Visit a page."""
+        """Visit a page.
+
+        In non-CDP mode, automatically opens browser if not already open.
+        """
+        if not self._browser_opened:
+            is_cdp_mode = bool(self.config.get('cdpUrl'))
+
+            if not is_cdp_mode:
+                logger.info(
+                    "Browser not open, automatically opening browser..."
+                )
+                await self.open_browser()
+
         response = await self._send_command('visit_page', {'url': url})
         return response
 
