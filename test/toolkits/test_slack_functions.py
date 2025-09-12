@@ -134,6 +134,7 @@ def test_delete_slack_message(slack_toolkit):
         response = slack_toolkit.delete_slack_message("123", "123")
         assert response == "{}"
 
+
 def test_get_slack_user_list(slack_toolkit):
     with patch(
         "camel.toolkits.slack_toolkit.SlackToolkit._login_slack"
@@ -141,12 +142,11 @@ def test_get_slack_user_list(slack_toolkit):
         mock_client = MagicMock()
         mock_login.return_value = mock_client
         mock_client.users_list.return_value = {
-            "members": [
-                {"id": "123", "name": "test_user"}
-            ]
+            "members": [{"id": "123", "name": "test_user"}]
         }
         response = slack_toolkit.get_slack_user_list()
         assert response == '[{"id": "123", "name": "test_user"}]'
+
 
 def test_get_slack_user_info(slack_toolkit):
     with patch(
@@ -157,6 +157,7 @@ def test_get_slack_user_info(slack_toolkit):
         mock_client.users_info.return_value = {
             "user": {"id": "123", "name": "test_user"}
         }
+
         response = slack_toolkit.get_slack_user_info("123")
         expected_response = '{"user": {"id": "123", "name": "test_user"}}'
         assert response == expected_response
