@@ -51,9 +51,8 @@ class NpmBuildHook(BuildHookInterface):
 
     def _get_ts_directory(self, base_dir: Path) -> Path:
         r"""Get the TypeScript directory path."""
-        return (
-                base_dir / "camel" / "toolkits" / "hybrid_browser_toolkit" / "ts"
-        )
+        ts_path = "camel/toolkits/hybrid_browser_toolkit/ts"
+        return base_dir / ts_path
 
     def _parse_version(self, version_str: str) -> Tuple[int, int, int]:
         r"""Parse version string into major, minor, patch numbers."""
@@ -73,8 +72,8 @@ class NpmBuildHook(BuildHookInterface):
             required_version = self._parse_version(required[1:])
             current_version = self._parse_version(current)
             return (
-                    current_version[0] == required_version[0]
-                    and current_version >= required_version
+                current_version[0] == required_version[0]
+                and current_version >= required_version
             )
         return True
 
@@ -105,13 +104,13 @@ class NpmBuildHook(BuildHookInterface):
         return None
 
     def _check_node_npm_versions(
-            self, ts_dir: Path
+        self, ts_dir: Path
     ) -> Tuple[Optional[str], Optional[str], bool]:
         r"""Check Node.js and npm versions against requirements."""
         node_version = None
         npm_version = None
         versions_ok = True
-        
+
         is_windows = platform.system() == "Windows"
 
         try:
@@ -179,7 +178,7 @@ class NpmBuildHook(BuildHookInterface):
     def _run_npm_build_process(self, ts_dir: Path, dist_dir: Path) -> bool:
         r"""Run the npm build process."""
         is_windows = platform.system() == "Windows"
-        
+
         try:
             print("Installing npm dependencies...")
             subprocess.run(
@@ -288,22 +287,22 @@ def build_npm_dependencies_standalone():
     r"""Standalone function for testing purposes."""
     root = str(Path(__file__).parent.absolute())
     config = {}
-    
+
     class MockBuildConfig:
         pass
-    
+
     class MockMetadata:
         pass
-    
+
     hook = NpmBuildHook(
         root=root,
         config=config,
         build_config=MockBuildConfig(),
         metadata=MockMetadata(),
         directory=root,
-        target_name='wheel'
+        target_name='wheel',
     )
-    
+
     hook.build_npm_dependencies()
 
 

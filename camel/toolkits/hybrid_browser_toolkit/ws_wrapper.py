@@ -193,6 +193,7 @@ class WebSocketBrowserWrapper:
         await self._cleanup_existing_processes()
 
         import platform
+
         use_shell = platform.system() == 'Windows'
         npm_check = subprocess.run(
             ['npm', '--version'],
