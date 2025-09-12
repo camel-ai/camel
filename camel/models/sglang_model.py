@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
-from camel.configs import SGLANG_API_PARAMS, SGLangConfig
+from camel.configs import SGLangConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -208,21 +208,6 @@ class SGLangModel(BaseModelBackend):
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to SGLang API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in SGLANG_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into SGLang model backend."
-                )
 
     @observe(as_type='generation')
     async def _arun(

@@ -25,7 +25,6 @@ def __init__(
     size: Optional[Literal['256x256', '512x512', '1024x1024', '1536x1024', '1024x1536', '1792x1024', '1024x1792', 'auto']] = '1024x1024',
     quality: Optional[Literal['auto', 'low', 'medium', 'high', 'standard', 'hd']] = 'standard',
     response_format: Optional[Literal['url', 'b64_json']] = 'b64_json',
-    n: Optional[int] = 1,
     background: Optional[Literal['transparent', 'opaque', 'auto']] = 'auto',
     style: Optional[Literal['vivid', 'natural']] = None,
     working_directory: Optional[str] = 'image_save'
@@ -41,7 +40,6 @@ Initializes a new instance of the OpenAIImageToolkit class.
 - **model** (Optional[str]): The model to use. (default: :obj:`"dall-e-3"`)
 - **timeout** (Optional[float]): The timeout value for API requests in seconds. If None, no timeout is applied. (default: :obj:`None`) size (Optional[Literal["256x256", "512x512", "1024x1024", "1536x1024", "1024x1536", "1792x1024", "1024x1792", "auto"]]): The size of the image to generate. (default: :obj:`"1024x1024"`) quality (Optional[Literal["auto", "low", "medium", "high", "standard", "hd"]]):The quality of the image to generate. Different models support different values. (default: :obj:`"standard"`)
 - **response_format** (`Optional[Literal["url", "b64_json"]]`): The format of the response.(default: :obj:`"b64_json"`)
-- **n** (Optional[int]): The number of images to generate. (default: :obj:`1`)
 - **background** (`Optional[Literal["transparent", "opaque", "auto"]]`): The background of the image.(default: :obj:`"auto"`)
 - **style** (`Optional[Literal["vivid", "natural"]]`): The style of the image.(default: :obj:`None`)
 - **working_directory** (Optional[str]): The path to save the generated image.(default: :obj:`"image_save"`)
@@ -70,7 +68,7 @@ fails.
 ### _build_base_params
 
 ```python
-def _build_base_params(self, prompt: str):
+def _build_base_params(self, prompt: str, n: Optional[int] = None):
 ```
 
 Build base parameters dict for OpenAI API calls.
@@ -78,6 +76,7 @@ Build base parameters dict for OpenAI API calls.
 **Parameters:**
 
 - **prompt** (str): The text prompt for the image operation.
+- **n** (Optional[int]): The number of images to generate.
 
 **Returns:**
 
@@ -91,7 +90,7 @@ Build base parameters dict for OpenAI API calls.
 def _handle_api_response(
     self,
     response,
-    image_name: str,
+    image_name: Union[str, List[str]],
     operation: str
 ):
 ```
@@ -101,7 +100,7 @@ Handle API response from OpenAI image operations.
 **Parameters:**
 
 - **response**: The response object from OpenAI API.
-- **image_name** (str): Name for the saved image file.
+- **image_name** (Union[str, List[str]]): Name(s) for the saved image file(s). If str, the same name is used for all images (will cause error for multiple images). If list, must have exactly the same length as the number of images generated.
 - **operation** (str): Operation type for success message ("generated").
 
 **Returns:**
@@ -113,7 +112,12 @@ Handle API response from OpenAI image operations.
 ### generate_image
 
 ```python
-def generate_image(self, prompt: str, image_name: str = 'image'):
+def generate_image(
+    self,
+    prompt: str,
+    image_name: Union[str, List[str]] = 'image.png',
+    n: int = 1
+):
 ```
 
 Generate an image using OpenAI's Image Generation models.
@@ -124,7 +128,8 @@ formats).
 **Parameters:**
 
 - **prompt** (str): The text prompt to generate the image.
-- **image_name** (str): The name of the image to save. (default: :obj:`"image"`)
+- **image_name** (Union[str, List[str]]): The name(s) of the image(s) to save. The image name must end with `.png`. If str: same name used for all images (causes error if n > 1). If list: must match the number of images being generated (n parameter). (default: :obj:`"image.png"`)
+- **n** (int): The number of images to generate. (default: :obj:`1`) (default: 1)
 
 **Returns:**
 

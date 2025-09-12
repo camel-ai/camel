@@ -21,18 +21,21 @@ from camel.toolkits import SearchToolkit
 # Search Engine ID: https://cse.google.com/cse/all
 
 
-toolkit = SearchToolkit(number_of_result_pages=3)
-search_result = toolkit.search_google(query="Python Wikipedia")
+toolkit = SearchToolkit()
+search_result = toolkit.search_google(
+    query="Python Wikipedia", number_of_result_pages=3
+)
 print("Search results for 'Python Wikipedia':\n")
 for result in search_result:
     print(result['url'])
 toolkit = SearchToolkit(
-    number_of_result_pages=3,
     exclude_domains=[
         "wikipedia.org",
     ],
 )
-search_result = toolkit.search_google(query="Python Wikipedia")
+search_result = toolkit.search_google(
+    query="Python Wikipedia", number_of_result_pages=3
+)
 print("\nExcluding specified domains related to wikipedia:\n")
 for result in search_result:
     print(result['url'])

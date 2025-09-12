@@ -193,14 +193,6 @@ Runs the query to the backend model.
 `ChatCompletionStreamManager[BaseModel]` in the structured
 stream mode.
 
-<a id="camel.models.base_model.BaseModelBackend.check_model_config"></a>
-
-### check_model_config
-
-```python
-def check_model_config(self):
-```
-
 <a id="camel.models.base_model.BaseModelBackend.count_tokens_from_messages"></a>
 
 ### count_tokens_from_messages

@@ -18,7 +18,6 @@ import os
 from PIL import Image
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.tasks import (
     Task,
@@ -27,11 +26,6 @@ from camel.tasks import (
 from camel.types import (
     ModelPlatformType,
     ModelType,
-)
-
-# set up LLM model
-assistant_model_config = ChatGPTConfig(
-    temperature=0.0,
 )
 
 model = ModelFactory.create(

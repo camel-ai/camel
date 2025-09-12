@@ -30,7 +30,7 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
-    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4.1-mini-2025-04-14")
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-5-mini")
 
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
@@ -48,6 +48,9 @@ class ModelType(UnifiedModelType, Enum):
     O4_MINI = "o4-mini"
     O3 = "o3"
     O3_PRO = "o3-pro"
+    GPT_5 = "gpt-5"
+    GPT_5_MINI = "gpt-5-mini"
+    GPT_5_NANO = "gpt-5-nano"
 
     AWS_CLAUDE_3_7_SONNET = "anthropic.claude-3-7-sonnet-20250219-v1:0"
     AWS_CLAUDE_3_5_SONNET = "anthropic.claude-3-5-sonnet-20241022-v2:0"
@@ -59,6 +62,9 @@ class ModelType(UnifiedModelType, Enum):
     AWS_LLAMA_3_2_11B_INSTRUCT = "us.meta.llama3-2-11b-instruct-v1:0"
     AWS_CLAUDE_SONNET_4 = "anthropic.claude-sonnet-4-20250514-v1:0"
     AWS_CLAUDE_OPUS_4 = "anthropic.claude-opus-4-20250514-v1:0"
+    AWS_CLAUDE_OPUS_4_1 = "anthropic.claude-opus-4-1-20250805-v1:0"
+
+    AMD_GPT4 = "dvue-aoai-001-gpt-4.1"
 
     GLM_4 = "glm-4"
     GLM_4V = "glm-4v"
@@ -83,6 +89,15 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
+    # Nebius AI Studio platform models
+    NEBIUS_GPT_OSS_120B = "gpt-oss-120b"
+    NEBIUS_GPT_OSS_20B = "gpt-oss-20b"
+    NEBIUS_GLM_4_5 = "GLM-4.5"
+    NEBIUS_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
+    NEBIUS_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
+    NEBIUS_LLAMA_3_1_70B = "meta-llama/Meta-Llama-3.1-70B-Instruct"
+    NEBIUS_MISTRAL_7B_INSTRUCT = "mistralai/Mistral-7B-Instruct-v0.3"
+
     # OpenRouter models
     OPENROUTER_LLAMA_3_1_405B = "meta-llama/llama-3.1-405b-instruct"
     OPENROUTER_LLAMA_3_1_70B = "meta-llama/llama-3.1-70b-instruct"
@@ -91,6 +106,7 @@ class ModelType(UnifiedModelType, Enum):
     OPENROUTER_LLAMA_4_SCOUT = "meta-llama/llama-4-scout"
     OPENROUTER_LLAMA_4_SCOUT_FREE = "meta-llama/llama-4-scout:free"
     OPENROUTER_OLYMPICODER_7B = "open-r1/olympiccoder-7b:free"
+    OPENROUTER_HORIZON_ALPHA = "openrouter/horizon-alpha"
 
     # LMStudio models
     LMSTUDIO_GEMMA_3_1B = "gemma-3-1b"
@@ -157,6 +173,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
+    CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
 
     # Netmind models
     NETMIND_LLAMA_4_MAVERICK_17B_128E_INSTRUCT = (
@@ -207,8 +224,7 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
-    MISTRAL_MEDIUM_3 = "mistral-medium-latest"
-    MAGISTRAL_MEDIUM = "magistral-medium-2506"
+    MISTRAL_MEDIUM_3_1 = "mistral-medium-2508"
     MISTRAL_SMALL_3_2 = "mistral-small-2506"
 
     # Reka models
@@ -495,8 +511,18 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_5,
+            ModelType.GPT_5_MINI,
+            ModelType.GPT_5_NANO,
             ModelType.O4_MINI,
             ModelType.O3,
+        }
+
+    @property
+    def is_amd(self) -> bool:
+        r"""Returns whether this type of models is a AMD model."""
+        return self in {
+            ModelType.AMD_GPT4,
         }
 
     @property
@@ -513,6 +539,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_LLAMA_3_2_11B_INSTRUCT,
             ModelType.AWS_CLAUDE_SONNET_4,
             ModelType.AWS_CLAUDE_OPUS_4,
+            ModelType.AWS_CLAUDE_OPUS_4_1,
         }
 
     @property
@@ -535,6 +562,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
+            ModelType.GPT_5,
             ModelType.O4_MINI,
             ModelType.O3,
         }
@@ -577,6 +605,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
+            ModelType.CLAUDE_OPUS_4_1,
         }
 
     @property
@@ -593,6 +622,20 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_nebius(self) -> bool:
+        r"""Returns whether this type of models is served by Nebius AI
+        Studio."""
+        return self in {
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
+            ModelType.NEBIUS_GLM_4_5,
+            ModelType.NEBIUS_DEEPSEEK_V3,
+            ModelType.NEBIUS_DEEPSEEK_R1,
+            ModelType.NEBIUS_LLAMA_3_1_70B,
+            ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
+        }
+
+    @property
     def is_openrouter(self) -> bool:
         r"""Returns whether this type of models is served by OpenRouter."""
         return self in {
@@ -603,6 +646,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.OPENROUTER_LLAMA_4_SCOUT,
             ModelType.OPENROUTER_LLAMA_4_SCOUT_FREE,
             ModelType.OPENROUTER_OLYMPICODER_7B,
+            ModelType.OPENROUTER_HORIZON_ALPHA,
         }
 
     @property
@@ -650,8 +694,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
-            ModelType.MISTRAL_MEDIUM_3,
-            ModelType.MAGISTRAL_MEDIUM,
+            ModelType.MISTRAL_MEDIUM_3_1,
             ModelType.MISTRAL_SMALL_3_2,
         }
 
@@ -1127,6 +1170,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_MISTRAL_7B,
             ModelType.NOVITA_LLAMA_3_2_11B_VISION,
             ModelType.NOVITA_LLAMA_3_2_3B,
+            ModelType.NEBIUS_MISTRAL_7B_INSTRUCT,
         }:
             return 32_768
         elif self in {
@@ -1170,6 +1214,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
             ModelType.GPT_4_5_PREVIEW,
+            ModelType.GPT_5,
+            ModelType.GPT_5_NANO,
+            ModelType.GPT_5_MINI,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.MISTRAL_PIXTRAL_12B,
@@ -1209,10 +1256,15 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_R1,
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
-            ModelType.MISTRAL_MEDIUM_3,
+            ModelType.MISTRAL_MEDIUM_3_1,
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
             ModelType.MOONSHOT_KIMI_K2,
+            ModelType.NEBIUS_GLM_4_5,
+            ModelType.NEBIUS_DEEPSEEK_V3,
+            ModelType.NEBIUS_DEEPSEEK_R1,
+            ModelType.NEBIUS_GPT_OSS_120B,
+            ModelType.NEBIUS_GPT_OSS_20B,
         }:
             return 128_000
         elif self in {
@@ -1247,6 +1299,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NOVITA_LLAMA_4_SCOUT_17B,
             ModelType.NOVITA_LLAMA_3_3_70B,
             ModelType.NOVITA_MISTRAL_NEMO,
+            ModelType.NEBIUS_LLAMA_3_1_70B,
         }:
             return 131_072
         elif self in {
@@ -1262,6 +1315,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_7_SONNET,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
+            ModelType.CLAUDE_OPUS_4_1,
             ModelType.YI_MEDIUM_200K,
             ModelType.AWS_CLAUDE_3_5_SONNET,
             ModelType.AWS_CLAUDE_3_HAIKU,
@@ -1269,6 +1323,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.AWS_CLAUDE_3_7_SONNET,
             ModelType.AWS_CLAUDE_SONNET_4,
             ModelType.AWS_CLAUDE_OPUS_4,
+            ModelType.AWS_CLAUDE_OPUS_4_1,
             ModelType.O4_MINI,
             ModelType.O3,
         }:
@@ -1276,6 +1331,7 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.MISTRAL_CODESTRAL_MAMBA,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK_FREE,
+            ModelType.OPENROUTER_HORIZON_ALPHA,
         }:
             return 256_000
 
@@ -1302,6 +1358,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4_LONG,
             ModelType.TOGETHER_LLAMA_4_MAVERICK,
             ModelType.OPENROUTER_LLAMA_4_MAVERICK,
+            ModelType.AMD_GPT4,
             ModelType.GPT_4_1,
             ModelType.GPT_4_1_MINI,
             ModelType.GPT_4_1_NANO,
@@ -1317,10 +1374,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_LLAMA_4_SCOUT,
         }:
             return 10_000_000
-        elif self in {
-            ModelType.MAGISTRAL_MEDIUM,
-        }:
-            return 40_000
 
         else:
             logger.warning(
@@ -1519,6 +1572,7 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
+    NEBIUS = "nebius"
     OPENROUTER = "openrouter"
     OLLAMA = "ollama"
     LITELLM = "litellm"
@@ -1535,6 +1589,7 @@ class ModelPlatformType(Enum):
     COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
+    AMD = "amd"
     NVIDIA = "nvidia"
     DEEPSEEK = "deepseek"
     PPIO = "ppio"

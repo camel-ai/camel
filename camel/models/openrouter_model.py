@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import OPENROUTER_API_PARAMS, OpenRouterConfig
+from camel.configs import OpenRouterConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
@@ -81,19 +81,3 @@ class OpenRouterModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected
-        arguments to OpenRouter API. But OpenRouter API does not have any
-        additional arguments to check.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenRouter API.
-        """
-        for param in self.model_config_dict:
-            if param not in OPENROUTER_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into OpenRouter model backend."
-                )

@@ -141,9 +141,13 @@ class WebSocketBrowserServer {
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.getPageSnapshot(params.viewport_limit);
 
-      case 'get_snapshot_for_ai':
+      case 'get_snapshot_for_ai': {
         if (!this.toolkit) throw new Error('Toolkit not initialized');
-        return await this.toolkit.getSnapshotForAI();
+        // Support includeCoordinates and viewportLimit parameters
+        const includeCoordinates = Boolean(params.includeCoordinates);
+        const viewportLimit = Boolean(params.viewportLimit);
+        return await this.toolkit.session.getSnapshotForAI(includeCoordinates, viewportLimit);
+      }
 
       case 'get_som_screenshot': {
         if (!this.toolkit) throw new Error('Toolkit not initialized');
@@ -160,7 +164,14 @@ class WebSocketBrowserServer {
 
       case 'type':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
-        return await this.toolkit.type(params.ref, params.text);
+        // Handle both single input and multiple inputs
+        if (params.inputs) {
+          // Multiple inputs mode - pass inputs array directly
+          return await this.toolkit.type(params.inputs);
+        } else {
+          // Single input mode - pass ref and text
+          return await this.toolkit.type(params.ref, params.text);
+        }
 
       case 'select':
         if (!this.toolkit) throw new Error('Toolkit not initialized');
@@ -218,8 +229,10 @@ class WebSocketBrowserServer {
         if (!this.toolkit) throw new Error('Toolkit not initialized');
         return await this.toolkit.waitUser(params.timeout);
 
-      case 'shutdown':
+      case 'shutdown': {
         console.log('Shutting down server...');
+        
+        // Close browser first
         if (this.toolkit) {
           try {
             await this.toolkit.closeBrowser();
@@ -227,10 +240,37 @@ class WebSocketBrowserServer {
             console.error('Error closing browser:', error);
           }
         }
+        
+        // Return response immediately
+        const shutdownResponse = { message: 'Server shutting down' };
+        
+        // Schedule server shutdown after a short delay to ensure response is sent
         setTimeout(() => {
-          process.exit(0);
-        }, 1000);
-        return { message: 'Server shutting down' };
+          // Close the WebSocket server properly
+          if (this.server) {
+            this.server.close((err) => {
+              if (err) {
+                console.error('Error closing server:', err);
+              } else {
+                console.log('WebSocket server closed successfully');
+              }
+              console.log('Exiting process...');
+              process.exit(0);
+            });
+            
+            // Fallback timeout in case server close hangs
+            setTimeout(() => {
+              console.log('Server close timeout, forcing exit...');
+              process.exit(0);
+            }, 5000); // 5 second fallback
+          } else {
+            console.log('No server to close, exiting...');
+            process.exit(0);
+          }
+        }, 100);  // Delay to ensure response is sent
+        
+        return shutdownResponse;
+      }
 
       default:
         throw new Error(`Unknown command: ${command}`);

@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 from openai import AsyncStream
 
-from camel.configs import MISTRAL_API_PARAMS, MistralConfig
+from camel.configs import MistralConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
@@ -413,21 +413,6 @@ class MistralModel(BaseModelBackend):
             request_config["response_format"] = {"type": "json_object"}
 
         return request_config
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Mistral API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Mistral API.
-        """
-        for param in self.model_config_dict:
-            if param not in MISTRAL_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Mistral model backend."
-                )
 
     @property
     def stream(self) -> bool:

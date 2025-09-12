@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import re
 
 import pytest
 
@@ -45,26 +44,6 @@ def test_netmind_model(model_type: ModelType):
     assert isinstance(model.model_type.value_for_tiktoken, str)
 
     assert isinstance(model.model_type.token_limit, int)
-
-
-@pytest.mark.model_backend
-def test_netmind_model_unexpected_argument():
-    model_type = ModelType.NETMIND_LLAMA_4_SCOUT_17B_16E_INSTRUCT
-
-    model_config_dict = {
-        "model_path": "netmind_llama_4_scout_17b_16e_instruct"
-    }
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into NETMIND model backend."
-            )
-        ),
-    ):
-        _ = NetmindModel(model_type, model_config_dict)
 
 
 @pytest.mark.model_backend

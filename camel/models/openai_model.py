@@ -22,7 +22,7 @@ from openai.lib.streaming.chat import (
 )
 from pydantic import BaseModel
 
-from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
+from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
@@ -303,9 +303,6 @@ class OpenAIModel(BaseModelBackend):
         is_streaming = self.model_config_dict.get("stream", False)
 
         if response_format:
-            result: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
-                self._request_parse(messages, response_format, tools)
-            )
             if is_streaming:
                 # Use streaming parse for structured output
                 return self._request_stream_parse(
@@ -377,9 +374,6 @@ class OpenAIModel(BaseModelBackend):
         is_streaming = self.model_config_dict.get("stream", False)
 
         if response_format:
-            result: Union[
-                ChatCompletion, AsyncStream[ChatCompletionChunk]
-            ] = await self._arequest_parse(messages, response_format, tools)
             if is_streaming:
                 # Use streaming parse for structured output
                 return await self._arequest_stream_parse(
@@ -544,21 +538,6 @@ class OpenAIModel(BaseModelBackend):
             response_format=response_format,
             **request_config,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to OpenAI API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in OPENAI_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into OpenAI model backend."
-                )
 
     @property
     def stream(self) -> bool:

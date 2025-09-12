@@ -18,7 +18,7 @@ from .agent_memories import (
     VectorDBMemory,
 )
 from .base import AgentMemory, BaseContextCreator, MemoryBlock
-from .blocks.chat_history_block import ChatHistoryBlock
+from .blocks.chat_history_block import ChatHistoryBlock, EmptyMemoryWarning
 from .blocks.vectordb_block import VectorDBBlock
 from .context_creators.score_based import ScoreBasedContextCreator
 from .records import ContextRecord, MemoryRecord
@@ -35,4 +35,5 @@ __all__ = [
     'ChatHistoryBlock',
     'VectorDBBlock',
     'LongtermAgentMemory',
+    'EmptyMemoryWarning',
 ]

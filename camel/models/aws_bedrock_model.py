@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncStream
 from pydantic import BaseModel
 
-from camel.configs import BEDROCK_API_PARAMS, BedrockConfig
+from camel.configs import BedrockConfig
 from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
@@ -103,18 +103,3 @@ class AWSBedrockModel(OpenAICompatibleModel):
         raise NotImplementedError(
             "AWS Bedrock does not support async inference."
         )
-
-    def check_model_config(self):
-        r"""Check whether the input model configuration contains unexpected
-        arguments.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected argument for this model class.
-        """
-        for param in self.model_config_dict:
-            if param not in BEDROCK_API_PARAMS:
-                raise ValueError(
-                    f"Invalid parameter '{param}' in model_config_dict. "
-                    f"Valid parameters are: {BEDROCK_API_PARAMS}"
-                )

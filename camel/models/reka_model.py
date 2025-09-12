@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel
 
-from camel.configs import REKA_API_PARAMS, RekaConfig
+from camel.configs import RekaConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -353,21 +353,6 @@ class RekaModel(BaseModelBackend):
             record(llm_event)
 
         return openai_response
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Reka API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Reka API.
-        """
-        for param in self.model_config_dict:
-            if param not in REKA_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Reka model backend."
-                )
 
     @property
     def stream(self) -> bool:

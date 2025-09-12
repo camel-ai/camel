@@ -1,0 +1,41 @@
+<a id="camel.models.nebius_model"></a>
+
+<a id="camel.models.nebius_model.NebiusModel"></a>
+
+## NebiusModel
+
+```python
+class NebiusModel(OpenAICompatibleModel):
+```
+
+LLM API served by Nebius AI Studio in a unified OpenAICompatibleModel
+interface.
+
+**Parameters:**
+
+- **model_type** (Union[ModelType, str]): Model for which a backend is created.
+- **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary that will be fed into:obj:`openai.ChatCompletion.create()`.
+- **If**: obj:`None`, :obj:`NebiusConfig().as_dict()` will be used. (default: :obj:`None`)
+- **api_key** (Optional[str], optional): The API key for authenticating with the Nebius AI Studio service. (default: :obj:`None`).
+- **url** (Optional[str], optional): The url to the Nebius AI Studio service. (default: :obj:`None`)
+- **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter( ModelType.GPT_4O_MINI)` will be used. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
+- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`) **kwargs (Any): Additional arguments to pass to the client initialization.
+
+<a id="camel.models.nebius_model.NebiusModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    model_config_dict: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    token_counter: Optional[BaseTokenCounter] = None,
+    timeout: Optional[float] = None,
+    max_retries: int = 3,
+    **kwargs: Any
+):
+```

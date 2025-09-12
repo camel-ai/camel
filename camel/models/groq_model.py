@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import GROQ_API_PARAMS, GroqConfig
+from camel.configs import GroqConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
@@ -80,19 +80,3 @@ class GroqModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected
-        arguments to Groq API. But Groq API does not have any additional
-        arguments to check.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Groq API.
-        """
-        for param in self.model_config_dict:
-            if param not in GROQ_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Groq model backend."
-                )

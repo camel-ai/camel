@@ -34,7 +34,7 @@ from camel.types import (
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
+    model_type=ModelType.GPT_5_MINI,
 )
 
 model_backend_rsp = ChatCompletion(
@@ -105,13 +105,11 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     assert isinstance(assistant_agent, ChatAgent)
     assert isinstance(user_agent, ChatAgent)
     if model is None:
-        assert (
-            assistant_agent.model_backend.model_type == ModelType.GPT_4_1_MINI
-        )
-        assert user_agent.model_backend.model_type == ModelType.GPT_4_1_MINI
+        assert assistant_agent.model_backend.model_type == ModelType.GPT_5_MINI
+        assert user_agent.model_backend.model_type == ModelType.GPT_5_MINI
     else:
-        assert assistant_agent.model_backend.model_type == ModelType.GPT_4O
-        assert user_agent.model_backend.model_type == ModelType.GPT_4O
+        assert assistant_agent.model_backend.model_type == ModelType.GPT_5_MINI
+        assert user_agent.model_backend.model_type == ModelType.GPT_5_MINI
 
     if not with_critic_in_the_loop:
         assert critic is None
@@ -123,11 +121,9 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
             assert isinstance(critic, CriticAgent)
             assert role_playing.critic_sys_msg is not None
             if model is None:
-                assert (
-                    critic.model_backend.model_type == ModelType.GPT_4_1_MINI
-                )
+                assert critic.model_backend.model_type == ModelType.GPT_5_MINI
             else:
-                assert critic.model_backend.model_type == ModelType.GPT_4O
+                assert critic.model_backend.model_type == ModelType.GPT_5_MINI
 
 
 @pytest.mark.model_backend

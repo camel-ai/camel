@@ -187,9 +187,9 @@ Use Google search engine to search information for the given query.
 **Parameters:**
 
 - **query** (str): The query to be searched.
-- **search_type** (str): The type of search to perform. Either "web" for web pages or "image" for image search. (default: "web")
-- **number_of_result_pages** (int): The number of result pages to retrieve. Adjust this based on your task - use fewer results for focused searches and more for comprehensive searches. (default: :obj:`10`)
-- **start_page** (int): The result page to start from. Use this for pagination - e.g., start_page=1 for results 1-10, start_page=11 for results 11-20, etc. This allows agents to check initial results and continue searching if needed. (default: :obj:`1`)
+- **search_type** (str): The type of search to perform. Must be either "web" for web pages or "image" for image search. Any other value will raise a ValueError. (default: "web")
+- **number_of_result_pages** (int): The number of result pages to retrieve. Must be a positive integer between 1 and 10. Google Custom Search API limits results to 10 per request. If a value greater than 10 is provided, it will be capped at 10 with a warning. Adjust this based on your task - use fewer results for focused searches and more for comprehensive searches. (default: :obj:`10`)
+- **start_page** (int): The result page to start from. Must be a positive integer (`>= 1`). Use this for pagination - e.g., start_page=1 for results 1-10, start_page=11 for results 11-20, etc. This allows agents to check initial results and continue searching if needed. (default: :obj:`1`)
 
 **Returns:**
 
@@ -236,12 +236,12 @@ Example image result:
 'height': 600
 \}`
 
-<a id="camel.toolkits.search_toolkit.SearchToolkit.tavily_search"></a>
+<a id="camel.toolkits.search_toolkit.SearchToolkit.search_tavily"></a>
 
-### tavily_search
+### search_tavily
 
 ```python
-def tavily_search(
+def search_tavily(
     self,
     query: str,
     number_of_result_pages: int = 10,
@@ -442,6 +442,36 @@ features:
 message. Each result contains title, snippet, url and other
 metadata.
 
+<a id="camel.toolkits.search_toolkit.SearchToolkit.search_metaso"></a>
+
+### search_metaso
+
+```python
+def search_metaso(
+    self,
+    query: str,
+    page: int = 1,
+    include_summary: bool = False,
+    include_raw_content: bool = False,
+    concise_snippet: bool = False,
+    scope: Literal['webpage', 'document', 'scholar', 'image', 'video', 'podcast'] = 'webpage'
+):
+```
+
+Perform a web search using the metaso.cn API.
+
+**Parameters:**
+
+- **query** (str): The search query string.
+- **page** (int): Page number. (default: :obj:`1`) (default: 1)
+- **include_summary** (bool): Whether to include summary in the result. (default: :obj:`False`)
+- **include_raw_content** (bool): Whether to include raw content in the result. (default: :obj:`False`)
+- **concise_snippet** (bool): Whether to return concise snippet. (default: :obj:`False`) scope (Literal["webpage", "document", "scholar", "image", "video", "podcast"]): Search scope. (default: :obj:`"webpage"`)
+
+**Returns:**
+
+  Dict[str, Any]: Search results or error information.
+
 <a id="camel.toolkits.search_toolkit.SearchToolkit.get_tools"></a>
 
 ### get_tools
@@ -454,3 +484,13 @@ def get_tools(self):
 
   List[FunctionTool]: A list of FunctionTool objects
 representing the functions in the toolkit.
+
+<a id="camel.toolkits.search_toolkit.SearchToolkit.tavily_search"></a>
+
+### tavily_search
+
+```python
+def tavily_search(self, *args, **kwargs):
+```
+
+Deprecated: Use search_tavily instead for consistency with other search methods.

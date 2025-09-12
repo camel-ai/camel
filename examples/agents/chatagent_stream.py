@@ -40,6 +40,8 @@ streaming_model = ModelFactory.create(
     model_type=ModelType.GPT_4O_MINI,
     model_config_dict={
         "stream": True,
+        # Ask OpenAI to include token usage in the final streamed chunk
+        "stream_options": {"include_usage": True},
     },
 )
 
@@ -103,6 +105,12 @@ def test_content_accumulation():
 
             previous_content = current_content
 
+    usage = response.info.get("usage", {})
+    print(
+        f"\n\nUsage: prompt={usage.get('prompt_tokens')}, "
+        f"completion={usage.get('completion_tokens')}, "
+        f"total={usage.get('total_tokens')}"
+    )
     print("\n✅ Content accumulation test passed!")
     print("\n" + "=" * 50)
     return True
@@ -147,6 +155,13 @@ async def test_async_tool_execution():
 
             previous_content = current_content
 
+    final_response = await streaming_response
+    usage = final_response.info.get("usage", {})
+    print(
+        f"\n\nUsage: prompt={usage.get('prompt_tokens')}, "
+        f"completion={usage.get('completion_tokens')}, "
+        f"total={usage.get('total_tokens')}"
+    )
     print("\n" + "=" * 50)
     return True
 
@@ -291,7 +306,6 @@ async def run_all_tests():
         return
 
     # Test async structured output
-
     if not await test_async_structured_output():
         print("❌ Async structured output test failed!")
         return

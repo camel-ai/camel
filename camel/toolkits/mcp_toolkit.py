@@ -220,25 +220,33 @@ class MCPToolkit(BaseToolkit):
         self._exit_stack = AsyncExitStack()
 
         try:
-            # Connect to all clients using AsyncExitStack
-            for i, client in enumerate(self.clients):
-                try:
-                    # Use MCPClient directly as async context manager
-                    await self._exit_stack.enter_async_context(client)
-                    msg = f"Connected to client {i+1}/{len(self.clients)}"
-                    logger.debug(msg)
-                except Exception as e:
-                    logger.error(f"Failed to connect to client {i+1}: {e}")
-                    # AsyncExitStack will handle cleanup of already connected
-                    await self._exit_stack.aclose()
-                    self._exit_stack = None
-                    error_msg = f"Failed to connect to client {i+1}: {e}"
-                    raise MCPConnectionError(error_msg) from e
+            # Apply timeout to the entire connection process
+            import asyncio
+
+            timeout_seconds = self.timeout or 30.0
+            await asyncio.wait_for(
+                self._connect_all_clients(), timeout=timeout_seconds
+            )
 
             self._is_connected = True
             msg = f"Successfully connected to {len(self.clients)} MCP servers"
             logger.info(msg)
             return self
+
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            self._is_connected = False
+            if self._exit_stack:
+                await self._exit_stack.aclose()
+                self._exit_stack = None
+
+            timeout_seconds = self.timeout or 30.0
+            error_msg = (
+                f"Connection timeout after {timeout_seconds}s. "
+                f"One or more MCP servers are not responding. "
+                f"Please check if the servers are running and accessible."
+            )
+            logger.error(error_msg)
+            raise MCPConnectionError(error_msg)
 
         except Exception:
             self._is_connected = False
@@ -246,6 +254,23 @@ class MCPToolkit(BaseToolkit):
                 await self._exit_stack.aclose()
                 self._exit_stack = None
             raise
+
+    async def _connect_all_clients(self):
+        r"""Connect to all clients sequentially."""
+        # Connect to all clients using AsyncExitStack
+        for i, client in enumerate(self.clients):
+            try:
+                # Use MCPClient directly as async context manager
+                await self._exit_stack.enter_async_context(client)
+                msg = f"Connected to client {i+1}/{len(self.clients)}"
+                logger.debug(msg)
+            except Exception as e:
+                logger.error(f"Failed to connect to client {i+1}: {e}")
+                # AsyncExitStack will cleanup already connected clients
+                await self._exit_stack.aclose()
+                self._exit_stack = None
+                error_msg = f"Failed to connect to client {i+1}: {e}"
+                raise MCPConnectionError(error_msg) from e
 
     async def disconnect(self):
         r"""Disconnect from all MCP servers."""

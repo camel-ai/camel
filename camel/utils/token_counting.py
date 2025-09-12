@@ -133,7 +133,11 @@ class OpenAITokenCounter(BaseTokenCounter):
             self.tokens_per_message = 4
             # If there's a name, the role is omitted
             self.tokens_per_name = -1
-        elif ("gpt-3.5-turbo" in self.model) or ("gpt-4" in self.model):
+        elif (
+            ("gpt-3.5-turbo" in self.model)
+            or ("gpt-4" in self.model)
+            or ("gpt-5" in self.model)
+        ):
             self.tokens_per_message = 3
             self.tokens_per_name = 1
         elif (

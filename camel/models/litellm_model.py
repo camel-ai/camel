@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel
 
-from camel.configs import LITELLM_API_PARAMS, LiteLLMConfig
+from camel.configs import LiteLLMConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -217,18 +217,3 @@ class LiteLLMModel(BaseModelBackend):
             usage=response.usage,
         )
         return response
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected
-        arguments to LiteLLM API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments.
-        """
-        for param in self.model_config_dict:
-            if param not in LITELLM_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into LiteLLM model backend."
-                )

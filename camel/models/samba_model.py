@@ -22,8 +22,6 @@ from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.configs import (
-    SAMBA_CLOUD_API_PARAMS,
-    SAMBA_VERSE_API_PARAMS,
     SambaCloudAPIConfig,
 )
 from camel.messages import OpenAIMessage
@@ -155,36 +153,6 @@ class SambaModel(BaseModelBackend):
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to SambaNova API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to SambaNova API.
-        """
-        if self._url == "https://sambaverse.sambanova.ai/api/predict":
-            for param in self.model_config_dict:
-                if param not in SAMBA_VERSE_API_PARAMS:
-                    raise ValueError(
-                        f"Unexpected argument `{param}` is "
-                        "input into SambaVerse API."
-                    )
-
-        elif self._url == "https://api.sambanova.ai/v1":
-            for param in self.model_config_dict:
-                if param not in SAMBA_CLOUD_API_PARAMS:
-                    raise ValueError(
-                        f"Unexpected argument `{param}` is "
-                        "input into SambaCloud API."
-                    )
-
-        else:
-            raise ValueError(
-                f"{self._url} is not supported, please check the url to the"
-                " SambaNova service"
-            )
 
     @observe(as_type="generation")
     async def _arun(  # type: ignore[misc]

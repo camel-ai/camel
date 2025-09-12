@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import re
 
 import pytest
 
@@ -47,20 +46,3 @@ def test_zhipuai_model(model_type: ModelType):
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
-
-
-@pytest.mark.model_backend
-def test_zhipuai_model_unexpected_argument():
-    model_type = ModelType.GLM_4V
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into ZhipuAI model backend."
-            )
-        ),
-    ):
-        _ = ZhipuAIModel(model_type, model_config_dict)
