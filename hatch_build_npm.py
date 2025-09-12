@@ -111,7 +111,7 @@ class NpmBuildHook(BuildHookInterface):
         npm_version = None
         versions_ok = True
 
-        is_windows = platform.system() == "Windows"
+        use_shell = platform.system() == "Windows"
 
         try:
             result = subprocess.run(
@@ -120,7 +120,7 @@ class NpmBuildHook(BuildHookInterface):
                 capture_output=True,
                 text=True,
                 timeout=30,
-                shell=is_windows,
+                shell=use_shell,
             )
             node_version = result.stdout.strip()
             print(f"Found Node.js version: {node_version}")
@@ -135,7 +135,7 @@ class NpmBuildHook(BuildHookInterface):
                 capture_output=True,
                 text=True,
                 timeout=30,
-                shell=is_windows,
+                shell=use_shell,
             )
             npm_version = result.stdout.strip()
             print(f"Found npm version: {npm_version}")
@@ -177,7 +177,7 @@ class NpmBuildHook(BuildHookInterface):
 
     def _run_npm_build_process(self, ts_dir: Path, dist_dir: Path) -> bool:
         r"""Run the npm build process."""
-        is_windows = platform.system() == "Windows"
+        use_shell = platform.system() == "Windows"
 
         try:
             print("Installing npm dependencies...")
@@ -187,7 +187,7 @@ class NpmBuildHook(BuildHookInterface):
                 check=True,
                 text=True,
                 timeout=300,
-                shell=is_windows,
+                shell=use_shell,
             )
 
             print("Building TypeScript...")
@@ -197,7 +197,7 @@ class NpmBuildHook(BuildHookInterface):
                 check=True,
                 text=True,
                 timeout=300,
-                shell=is_windows,
+                shell=use_shell,
             )
 
             print("Installing Playwright browsers...")
@@ -208,7 +208,7 @@ class NpmBuildHook(BuildHookInterface):
                     check=True,
                     text=True,
                     timeout=600,
-                    shell=is_windows,
+                    shell=use_shell,
                 )
                 print("Playwright browsers installed successfully")
             except subprocess.CalledProcessError as e:
