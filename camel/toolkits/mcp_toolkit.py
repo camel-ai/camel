@@ -672,66 +672,68 @@ class MCPToolkit(BaseToolkit):
         try:
             schema = tool.get_openai_tool_schema()
 
-            def _check_schema_limits(json_schema):
-                """Check OpenAI schema limits."""
-                counts = {
-                    "properties": 0,
-                    "depth": 0,
-                    "enums": 0,
-                    "string_length": 0,
-                }
+            def _has_strict_mode_incompatible_features(json_schema):
+                r"""Check if schema has features incompatible
+                with OpenAI strict mode."""
 
-                def _count_elements(obj, depth=0):
-                    if depth > 5:
-                        raise ValueError(
-                            "Schema exceeds maximum nesting depth of 5"
-                        )
+                def _check_incompatible(obj, path=""):
+                    if not isinstance(obj, dict):
+                        return False
 
-                    counts["depth"] = max(counts["depth"], depth)
+                    # Check for allOf in array items (known to cause issues)
+                    if "items" in obj and isinstance(obj["items"], dict):
+                        items_schema = obj["items"]
+                        if "allOf" in items_schema:
+                            logger.debug(
+                                f"Found allOf in array items at {path}"
+                            )
+                            return True
+                        # Recursively check items schema
+                        if _check_incompatible(items_schema, f"{path}.items"):
+                            return True
 
-                    if isinstance(obj, dict):
-                        if obj.get("type") == "object" and "properties" in obj:
-                            props = obj["properties"]
-                            if isinstance(props, dict):
-                                counts["properties"] += len(props)
-                                for prop_name, prop_schema in props.items():
-                                    counts["string_length"] += len(
-                                        str(prop_name)
-                                    )
-                                    _count_elements(prop_schema, depth + 1)
+                    # Check for other potentially problematic patterns
+                    # anyOf/oneOf in certain contexts can also cause issues
+                    if (
+                        "anyOf" in obj and len(obj["anyOf"]) > 10
+                    ):  # Large unions can be problematic
+                        return True
 
-                        if "enum" in obj and isinstance(obj["enum"], list):
-                            counts["enums"] += len(obj["enum"])
-                            for val in obj["enum"]:
-                                if isinstance(val, str):
-                                    counts["string_length"] += len(val)
+                    # Recursively check nested objects
+                    for key in [
+                        "properties",
+                        "additionalProperties",
+                        "patternProperties",
+                    ]:
+                        if key in obj and isinstance(obj[key], dict):
+                            if key == "properties":
+                                for prop_name, prop_schema in obj[key].items():
+                                    if isinstance(
+                                        prop_schema, dict
+                                    ) and _check_incompatible(
+                                        prop_schema,
+                                        f"{path}.{key}.{prop_name}",
+                                    ):
+                                        return True
+                            elif _check_incompatible(
+                                obj[key], f"{path}.{key}"
+                            ):
+                                return True
 
-                        # Process nested structures
-                        for key in ["items", "anyOf", "oneOf", "allOf"]:
-                            if key in obj:
-                                value = obj[key]
-                                if isinstance(value, dict):
-                                    _count_elements(value, depth + 1)
-                                elif isinstance(value, list):
-                                    for item in value:
-                                        if isinstance(item, dict):
-                                            _count_elements(item, depth + 1)
+                    # Check arrays and unions
+                    for key in ["allOf", "anyOf", "oneOf"]:
+                        if key in obj and isinstance(obj[key], list):
+                            for i, item in enumerate(obj[key]):
+                                if isinstance(
+                                    item, dict
+                                ) and _check_incompatible(
+                                    item, f"{path}.{key}[{i}]"
+                                ):
+                                    return True
 
-                _count_elements(json_schema)
+                    return False
 
-                # Check OpenAI limits
-                if counts["properties"] > 5000:
-                    raise ValueError(
-                        "Schema exceeds maximum of 5000 properties"
-                    )
-                if counts["enums"] > 1000:
-                    raise ValueError(
-                        "Schema exceeds maximum of 1000 enum values"
-                    )
-                if counts["string_length"] > 120000:
-                    raise ValueError(
-                        "Schema exceeds maximum string length of 120000"
-                    )
+                return _check_incompatible(json_schema)
 
             # Apply sanitization if available
             if "function" in schema:
@@ -762,7 +764,15 @@ class MCPToolkit(BaseToolkit):
                     parameters["properties"] = {}
 
                 try:
-                    _check_schema_limits(parameters)
+                    # _check_schema_limits(parameters)
+
+                    # Check for OpenAI strict mode incompatible features
+                    if _has_strict_mode_incompatible_features(parameters):
+                        raise ValueError(
+                            "Schema contains features "
+                            "incompatible with strict mode"
+                        )
+
                     strict_params = ensure_strict_json_schema(parameters)
                     schema["function"]["parameters"] = strict_params
                     schema["function"]["strict"] = True
