@@ -20,6 +20,7 @@ It gracefully handles cases where Node.js/npm is not available.
 """
 
 import json
+import platform
 import re
 import subprocess
 from pathlib import Path
@@ -51,7 +52,7 @@ class NpmBuildHook(BuildHookInterface):
     def _get_ts_directory(self, base_dir: Path) -> Path:
         r"""Get the TypeScript directory path."""
         return (
-            base_dir / "camel" / "toolkits" / "hybrid_browser_toolkit" / "ts"
+                base_dir / "camel" / "toolkits" / "hybrid_browser_toolkit" / "ts"
         )
 
     def _parse_version(self, version_str: str) -> Tuple[int, int, int]:
@@ -72,8 +73,8 @@ class NpmBuildHook(BuildHookInterface):
             required_version = self._parse_version(required[1:])
             current_version = self._parse_version(current)
             return (
-                current_version[0] == required_version[0]
-                and current_version >= required_version
+                    current_version[0] == required_version[0]
+                    and current_version >= required_version
             )
         return True
 
@@ -104,12 +105,14 @@ class NpmBuildHook(BuildHookInterface):
         return None
 
     def _check_node_npm_versions(
-        self, ts_dir: Path
+            self, ts_dir: Path
     ) -> Tuple[Optional[str], Optional[str], bool]:
         r"""Check Node.js and npm versions against requirements."""
         node_version = None
         npm_version = None
         versions_ok = True
+        
+        is_windows = platform.system() == "Windows"
 
         try:
             result = subprocess.run(
@@ -118,6 +121,7 @@ class NpmBuildHook(BuildHookInterface):
                 capture_output=True,
                 text=True,
                 timeout=30,
+                shell=is_windows,
             )
             node_version = result.stdout.strip()
             print(f"Found Node.js version: {node_version}")
@@ -132,6 +136,7 @@ class NpmBuildHook(BuildHookInterface):
                 capture_output=True,
                 text=True,
                 timeout=30,
+                shell=is_windows,
             )
             npm_version = result.stdout.strip()
             print(f"Found npm version: {npm_version}")
@@ -173,6 +178,8 @@ class NpmBuildHook(BuildHookInterface):
 
     def _run_npm_build_process(self, ts_dir: Path, dist_dir: Path) -> bool:
         r"""Run the npm build process."""
+        is_windows = platform.system() == "Windows"
+        
         try:
             print("Installing npm dependencies...")
             subprocess.run(
@@ -181,6 +188,7 @@ class NpmBuildHook(BuildHookInterface):
                 check=True,
                 text=True,
                 timeout=300,
+                shell=is_windows,
             )
 
             print("Building TypeScript...")
@@ -190,6 +198,7 @@ class NpmBuildHook(BuildHookInterface):
                 check=True,
                 text=True,
                 timeout=300,
+                shell=is_windows,
             )
 
             print("Installing Playwright browsers...")
@@ -200,6 +209,7 @@ class NpmBuildHook(BuildHookInterface):
                     check=True,
                     text=True,
                     timeout=600,
+                    shell=is_windows,
                 )
                 print("Playwright browsers installed successfully")
             except subprocess.CalledProcessError as e:
@@ -276,8 +286,24 @@ class NpmBuildHook(BuildHookInterface):
 
 def build_npm_dependencies_standalone():
     r"""Standalone function for testing purposes."""
-    hook = NpmBuildHook(None, None)
-    hook.root = Path(__file__).parent.absolute()
+    root = str(Path(__file__).parent.absolute())
+    config = {}
+    
+    class MockBuildConfig:
+        pass
+    
+    class MockMetadata:
+        pass
+    
+    hook = NpmBuildHook(
+        root=root,
+        config=config,
+        build_config=MockBuildConfig(),
+        metadata=MockMetadata(),
+        directory=root,
+        target_name='wheel'
+    )
+    
     hook.build_npm_dependencies()
 
 
