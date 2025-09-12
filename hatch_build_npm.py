@@ -51,15 +51,17 @@ class NpmBuildHook(BuildHookInterface):
 
     def _get_ts_directory(self, base_dir: Path) -> Path:
         r"""Get the TypeScript directory path."""
-        ts_path = "camel/toolkits/hybrid_browser_toolkit/ts"
-        return base_dir / ts_path
+        return (
+            base_dir / "camel" / "toolkits" / "hybrid_browser_toolkit" / "ts"
+        )
 
     def _parse_version(self, version_str: str) -> Tuple[int, int, int]:
         r"""Parse version string into major, minor, patch numbers."""
         version_str = version_str.strip().lstrip('v')
         match = re.match(r'(\d+)\.(\d+)\.(\d+)', version_str)
         if match:
-            return tuple(map(int, match.groups()))
+            groups = match.groups()
+            return (int(groups[0]), int(groups[1]), int(groups[2]))
         return (0, 0, 0)
 
     def _check_version_requirement(self, current: str, required: str) -> bool:
@@ -285,24 +287,8 @@ class NpmBuildHook(BuildHookInterface):
 
 def build_npm_dependencies_standalone():
     r"""Standalone function for testing purposes."""
-    root = str(Path(__file__).parent.absolute())
-    config = {}
-
-    class MockBuildConfig:
-        pass
-
-    class MockMetadata:
-        pass
-
-    hook = NpmBuildHook(
-        root=root,
-        config=config,
-        build_config=MockBuildConfig(),
-        metadata=MockMetadata(),
-        directory=root,
-        target_name='wheel',
-    )
-
+    hook = NpmBuildHook(None, None)
+    hook.root = Path(__file__).parent.absolute()
     hook.build_npm_dependencies()
 
 
