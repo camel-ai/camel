@@ -1046,134 +1046,52 @@ class ChatAgent(BaseAgent):
             self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
 
     def load_context_summary(self, summary_file_path: str) -> str:
-        r"""Load summary, and inject it into the agent's system message.
+        r"""Load a markdown summary into agent memory using ContextUtility.
 
-        This method reads a previously saved summary from a markdown file and
-        enhances the agent's system message with context, allowing the agent to
-        continue conversations with knowledge of previous interactions.
+        This preserves existing conversation history and appends the summary
+        as a system-context message, leveraging
+        :meth:`ContextUtility.load_markdown_context_to_memory`.
 
         Args:
-            summary_file_path (str): Path to the markdown file.
+            summary_file_path (str): Absolute or relative path to the
+                markdown file to load.
 
         Returns:
-            str: Status message indicating success or failure with details.
+            str: Status message from the loading operation.
         """
         try:
             from pathlib import Path
+
+            from camel.utils.context_utils import ContextUtility
 
             summary_path = Path(summary_file_path)
 
             if not summary_path.exists():
                 return f"Summary file not found: {summary_file_path}"
 
-            # Read the summary file
-            summary_content = summary_path.read_text(encoding="utf-8")
-
-            if not summary_content.strip():
+            # Basic empty-file guard for clearer feedback
+            file_text = summary_path.read_text(encoding="utf-8")
+            if not file_text.strip():
                 return f"Summary file is empty: {summary_file_path}"
 
-            # Extract summary content (remove markdown metadata if present)
-            summary_text = self._extract_summary_content(summary_content)
+            # Adapt ContextUtility to work with an arbitrary file path by
+            # pointing its working_directory to the file's parent directory
+            # and bypassing the per-session subfolder.
+            util = ContextUtility(working_directory=str(summary_path.parent))
+            # Override the session-specific working dir so we can load the
+            # provided file directly from its folder.
+            util.working_directory = summary_path.parent
 
-            if not summary_text.strip():
-                return f"No summary content found in file: {summary_file_path}"
-
-            # Enhance the system message with context
-            if self.system_message is None:
-                current_system_msg = ""
-            else:
-                current_system_msg = self.system_message.content
-
-            enhanced_system_msg = f"""{current_system_msg}
-
-CONTEXT LOADED FROM PREVIOUS INTERACTIONS:
-{summary_text}
-"""
-
-            # Create new system message
-            new_system_message = BaseMessage.make_assistant_message(
-                role_name="system",
-                content=enhanced_system_msg,
+            # Use the utility to append context into memory as SYSTEM role
+            result = util.load_markdown_context_to_memory(
+                agent=self, filename=summary_path.stem
             )
-
-            # Update the agent's system message
-            self._system_message = new_system_message
-
-            # Update memory with new system message if memory exists
-            if hasattr(self, '_memory') and self._memory is not None:
-                self.memory.clear()
-                self.update_memory(
-                    new_system_message, OpenAIBackendRole.SYSTEM
-                )
-
-            char_count = len(summary_text)
-            return f"Summary loaded successfully ({char_count} characters)"
+            return result
 
         except Exception as e:
             error_msg = f"Failed to load summary: {e}"
             logger.error(error_msg)
             return error_msg
-
-    def _extract_summary_content(self, markdown_content: str) -> str:
-        r"""Extract the actual summary content from markdown file,
-        removing metadata and formatting.
-
-        Args:
-            markdown_content (str): Raw markdown file content.
-
-        Returns:
-            str: Cleaned summary content.
-        """
-        try:
-            lines = markdown_content.split('\n')
-            summary_lines = []
-            in_summary_section = False
-
-            for line in lines:
-                # Look for summary section
-                if line.strip().startswith('## Summary'):
-                    in_summary_section = True
-                    continue
-
-                # Skip metadata sections
-                if line.strip().startswith('## Metadata'):
-                    in_summary_section = False
-                    continue
-
-                # Skip title lines starting with #
-                if line.strip().startswith('#'):
-                    continue
-
-                # Skip metadata bullet points
-                if line.strip().startswith('- ') and not in_summary_section:
-                    continue
-
-                # Add content lines
-                if in_summary_section or not any(
-                    line.strip().startswith(prefix)
-                    for prefix in [
-                        '#',
-                        '- ',
-                        '**',
-                        'Session ID:',
-                        'Save Time:',
-                    ]
-                ):
-                    summary_lines.append(line)
-
-            # Join and clean up
-            summary_text = '\n'.join(summary_lines).strip()
-
-            # Remove excessive newlines
-            while '\n\n\n' in summary_text:
-                summary_text = summary_text.replace('\n\n\n', '\n\n')
-
-            return summary_text
-
-        except Exception as e:
-            logger.warning(f"Error extracting summary content: {e}")
-            # Fallback: return original content
-            return markdown_content
 
     def _generate_system_message_for_output_language(
         self,
