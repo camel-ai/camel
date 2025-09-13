@@ -20,11 +20,11 @@ from camel.models import ModelFactory
 from camel.toolkits import PlaywrightMCPToolkit
 from camel.types import ModelPlatformType, ModelType
 
-
 async def main():
+    # Create PlaywrightMCPToolkit (now inherits directly from MCPToolkit)
     playwright_mcp_toolkit = PlaywrightMCPToolkit()
 
-    # connect to playwright mcp
+    # Connect to playwright mcp (inherited method from MCPToolkit)
     await playwright_mcp_toolkit.connect()
 
     model = ModelFactory.create(
@@ -32,23 +32,25 @@ async def main():
         model_type=ModelType.DEFAULT,
     )
 
-    # pydantic basemodel as input params format
+    # Pydantic basemodel as input params format
     class AgentResponse(BaseModel):
         url: str = Field(description="Url of the repository")
         stars: int = Field(description="Stars of the repository")
 
     chat_agent = ChatAgent(
         model=model,
-        tools=playwright_mcp_toolkit.get_tools(),
+        tools=playwright_mcp_toolkit.get_tools(),  # Inherited method
     )
-
+    
     response = await chat_agent.astep(
-        "search for camel-ai using google search, how many stars does it has?",
+        "Navigate to https://github.com/camel-ai/camel and get the star count.",
         response_format=AgentResponse,
     )
+
+    print("=== Model Response ===")
     print(response.msg.content)
 
-    # disconnect from playwright mcp
+    # Disconnect from playwright mcp (inherited method from MCPToolkit)
     await playwright_mcp_toolkit.disconnect()
 
 
@@ -58,6 +60,9 @@ if __name__ == "__main__":
 
 """
 ==============================================================================
-{"url":"https://github.com/camel-ai/camel","stars":12900}
+{
+  "url": "https://github.com/camel-ai/camel",
+  "stars": 14040
+}
 ==============================================================================
 """
