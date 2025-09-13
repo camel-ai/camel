@@ -190,7 +190,7 @@ class AnthropicModel(OpenAICompatibleModel):
         from camel.utils import AnthropicTokenCounter
 
         original_count_tokens = (
-            AnthropicTokenCounter.count_tokens_from_messages
+            AnthropicTokenCounter.extract_usage_from_response
         )
 
         @functools.wraps(original_count_tokens)
@@ -213,4 +213,4 @@ class AnthropicModel(OpenAICompatibleModel):
             ).input_tokens
 
         # Apply the monkey patch
-        AnthropicTokenCounter.count_tokens_from_messages = patched_count_tokens
+        AnthropicTokenCounter.extract_usage_from_response = patched_count_tokens

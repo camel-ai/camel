@@ -497,7 +497,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         Returns:
             int: Number of tokens in the messages.
         """
-        return self.token_counter.count_tokens_from_messages(messages)
+        return self.token_counter.extract_usage_from_response(messages)
 
     def _to_chat_completion(
         self, response: ParsedChatCompletion
