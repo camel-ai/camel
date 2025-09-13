@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import json
+import os
 import time
 import uuid
 from collections import deque
@@ -79,7 +80,15 @@ from camel.utils import dependencies_required
 
 from .workforce_logger import WorkforceLogger
 
-logger = get_logger(__name__)
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+    try:
+        import traceroot  # type: ignore[import]
+
+        logger = traceroot.get_logger('camel')
+    except ImportError:
+        logger = get_logger(__name__)
+else:
+    logger = get_logger(__name__)
 
 # Constants for configuration values
 MAX_TASK_RETRIES = 3
