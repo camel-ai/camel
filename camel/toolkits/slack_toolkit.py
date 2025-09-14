@@ -237,7 +237,7 @@ class SlackToolkit(BaseToolkit):
     ) -> str:
         r"""Send a message to a Slack channel. When use this function you must
         call `get_slack_channel_information` function first to get the
-        `channel id`. If use user id, you must use `get_slack_user_list`
+        `channel id`. If use user, you must use `get_slack_user_list`
         function first to get the user id.
 
         Args:
@@ -335,7 +335,8 @@ class SlackToolkit(BaseToolkit):
     def get_slack_user_info(self, user_id: str) -> str:
         r"""Retrieve information about a specific user in the Slack workspace.
         normally, you don't need to use this method, when you need to get a
-        user's detailed information, use this method.
+        user's detailed information, use this method. Use `get_slack_user_list`
+        function first to get the user id.
 
         Args:
             user_id (str): The ID of the user to retrieve information about.
