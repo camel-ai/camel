@@ -41,6 +41,7 @@ Main Documentation
    key_modules/memory.md
    key_modules/tools.md
    key_modules/prompts.md
+   key_modules/runtimes.md
    key_modules/tasks.md
    key_modules/loaders.md
    key_modules/storages.md
@@ -60,6 +61,8 @@ Main Documentation
    cookbooks/data_generation/index
    cookbooks/applications/index
    cookbooks/data_processing/index
+   cookbooks/loong/index
+   cookbooks/mcp/index
 
 .. toctree::
    :maxdepth: 1

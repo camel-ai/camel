@@ -1,0 +1,38 @@
+name: Test Minimal Dependency
+
+on:
+  pull_request:
+    paths:
+      - "pyproject.toml"
+      - "camel/**"
+      - "examples/**"
+      - "test/integration_test/**"
+      - ".github/workflows/test-minimal-install.yml"
+
+jobs:
+  minimal-dependency:
+    name: Minimal dependency check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Create and activate virtual environment
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -e .
+
+      - name: Run integration test on minimal examples
+        env:
+          OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
+        run: |
+          source .venv/bin/activate
+          pip install pytest dotenv
+          pytest test/integration_test/test_minimal_dependency.py

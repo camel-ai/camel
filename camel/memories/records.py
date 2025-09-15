@@ -12,8 +12,11 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
+import time
 from dataclasses import asdict
-from datetime import datetime, timezone
 from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
@@ -50,7 +53,8 @@ class MemoryRecord(BaseModel):
     uuid: UUID = Field(default_factory=uuid4)
     extra_info: Dict[str, str] = Field(default_factory=dict)
     timestamp: float = Field(
-        default_factory=lambda: datetime.now(timezone.utc).timestamp()
+        default_factory=lambda: time.time_ns()
+        / 1_000_000_000  # Nanosecond precision
     )
     agent_id: str = Field(default="")
 
@@ -106,5 +110,6 @@ class ContextRecord(BaseModel):
     memory_record: MemoryRecord
     score: float
     timestamp: float = Field(
-        default_factory=lambda: datetime.now(timezone.utc).timestamp()
+        default_factory=lambda: time.time_ns()
+        / 1_000_000_000  # Nanosecond precision
     )

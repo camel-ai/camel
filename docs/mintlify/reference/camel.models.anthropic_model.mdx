@@ -1,0 +1,99 @@
+<a id="camel.models.anthropic_model"></a>
+
+<a id="camel.models.anthropic_model.strip_trailing_whitespace_from_messages"></a>
+
+## strip_trailing_whitespace_from_messages
+
+```python
+def strip_trailing_whitespace_from_messages(messages: List[OpenAIMessage]):
+```
+
+Strip trailing whitespace from all message contents in a list of
+messages. This is necessary because the Anthropic API doesn't allow
+trailing whitespace in message content.
+
+**Parameters:**
+
+- **messages** (List[OpenAIMessage]): List of messages to process
+
+**Returns:**
+
+  List[OpenAIMessage]: The processed messages with trailing whitespace
+removed
+
+<a id="camel.models.anthropic_model.AnthropicModel"></a>
+
+## AnthropicModel
+
+```python
+class AnthropicModel(OpenAICompatibleModel):
+```
+
+Anthropic API in a unified OpenAICompatibleModel interface.
+
+**Parameters:**
+
+- **model_type** (Union[ModelType, str]): Model for which a backend is created, one of CLAUDE_* series.
+- **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary that will be fed into `openai.ChatCompletion.create()`. If :obj:`None`, :obj:`AnthropicConfig().as_dict()` will be used. (default: :obj:`None`)
+- **api_key** (Optional[str], optional): The API key for authenticating with the Anthropic service. (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the Anthropic service. (default: :obj:`https://api.anthropic.com/v1/`)
+- **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`AnthropicTokenCounter` will be used. (default: :obj:`None`)
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
+- **max_retries** (int, optional): Maximum number of retries for API calls. (default: :obj:`3`) **kwargs (Any): Additional arguments to pass to the client initialization.
+
+<a id="camel.models.anthropic_model.AnthropicModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    model_config_dict: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    token_counter: Optional[BaseTokenCounter] = None,
+    timeout: Optional[float] = None,
+    max_retries: int = 3,
+    **kwargs: Any
+):
+```
+
+<a id="camel.models.anthropic_model.AnthropicModel.token_counter"></a>
+
+### token_counter
+
+```python
+def token_counter(self):
+```
+
+**Returns:**
+
+  OpenAITokenCounter: The token counter following the model's
+tokenization style.
+
+<a id="camel.models.anthropic_model.AnthropicModel._request_chat_completion"></a>
+
+### _request_chat_completion
+
+```python
+def _request_chat_completion(
+    self,
+    messages: List[OpenAIMessage],
+    tools: Optional[List[Dict[str, Any]]] = None
+):
+```
+
+<a id="camel.models.anthropic_model.AnthropicModel._patch_anthropic_token_counter"></a>
+
+### _patch_anthropic_token_counter
+
+```python
+def _patch_anthropic_token_counter(self):
+```
+
+Monkey patch the AnthropicTokenCounter class to handle trailing
+whitespace.
+
+This patches the count_tokens_from_messages method to strip trailing
+whitespace from message content before sending to the Anthropic API.

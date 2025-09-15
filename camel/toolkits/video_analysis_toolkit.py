@@ -12,8 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+# Enables postponed evaluation of annotations (for string-based type hints)
+from __future__ import annotations
+
 import io
 import os
+import re
 import tempfile
 from pathlib import Path
 from typing import List, Optional
@@ -38,6 +42,11 @@ VIDEO_QA_PROMPT = """
 Analyze the provided video frames and corresponding audio transcription to \
 answer the given question(s) thoroughly and accurately.
 
+The transcriptions may come from two sources:
+  1. **Audio Transcription**: The spoken words in the video.
+  2. **Visual Text (OCR)**: Text extracted from the video frames (like \
+  captions, on-screen text, etc.).
+
 Instructions:
     1. Visual Analysis:
         - Examine the video frames to identify visible entities.
@@ -46,11 +55,13 @@ such as size, color, shape, texture, or behavior.
         - Note significant groupings, interactions, or contextual patterns \
 relevant to the analysis.
 
-    2. Audio Integration:
+    2. Audio and Text Integration:
         - Use the audio transcription to complement or clarify your visual \
 observations.
+        - Use the visual text (OCR) to get exact textual information that may \
+not be accurately readable from the images alone.
         - Identify names, descriptions, or contextual hints in the \
-transcription that help confirm or refine your visual analysis.
+transcriptions that help confirm or refine your visual analysis.
 
     3. Detailed Reasoning and Justification:
         - Provide a brief explanation of how you identified and distinguished \
@@ -62,7 +73,7 @@ your reasoning.
         - Specify the total number of distinct species or object types \
 identified in the video.
         - Describe the defining characteristics and any supporting evidence \
-from the video and transcription.
+from the video and transcription sources.
 
     5. Important Considerations:
         - Pay close attention to subtle differences that could distinguish \
@@ -72,6 +83,9 @@ similar-looking species or objects
 
 **Audio Transcription:**
 {audio_transcription}
+
+**Visual Text (OCR):**
+{visual_text}
 
 **Question:**
 {question}
@@ -83,7 +97,7 @@ class VideoAnalysisToolkit(BaseToolkit):
     r"""A class for analysing videos with vision-language model.
 
     Args:
-        download_directory (Optional[str], optional): The directory where the
+        working_directory (Optional[str], optional): The directory where the
             video will be downloaded to. If not provided, video will be stored
             in a temporary directory and will be cleaned up after use.
             (default: :obj:`None`)
@@ -93,6 +107,8 @@ class VideoAnalysisToolkit(BaseToolkit):
             transcription using OpenAI's audio models. Requires a valid OpenAI
             API key. When disabled, video analysis will be based solely on
             visual content. (default: :obj:`False`)
+        use_ocr (bool, optional): Whether to enable OCR for extracting text
+            from video frames. (default: :obj:`False`)
         frame_interval (float, optional): Interval in seconds between frames
             to extract from the video. (default: :obj:`4.0`)
         output_language (str, optional): The language for output responses.
@@ -107,38 +123,40 @@ class VideoAnalysisToolkit(BaseToolkit):
     @dependencies_required("ffmpeg", "scenedetect")
     def __init__(
         self,
-        download_directory: Optional[str] = None,
+        working_directory: Optional[str] = None,
         model: Optional[BaseModelBackend] = None,
         use_audio_transcription: bool = False,
+        use_ocr: bool = False,
         frame_interval: float = 4.0,
         output_language: str = "English",
         cookies_path: Optional[str] = None,
         timeout: Optional[float] = None,
     ) -> None:
         super().__init__(timeout=timeout)
-        self._cleanup = download_directory is None
+        self._cleanup = working_directory is None
         self._temp_files: list[str] = []  # Track temporary files for cleanup
         self._use_audio_transcription = use_audio_transcription
+        self._use_ocr = use_ocr
         self.output_language = output_language
         self.frame_interval = frame_interval
 
-        self._download_directory = Path(
-            download_directory or tempfile.mkdtemp()
+        self._working_directory = Path(
+            working_directory or tempfile.mkdtemp()
         ).resolve()
 
         self.video_downloader_toolkit = VideoDownloaderToolkit(
-            download_directory=str(self._download_directory),
+            working_directory=str(self._working_directory),
             cookies_path=cookies_path,
         )
 
         try:
-            self._download_directory.mkdir(parents=True, exist_ok=True)
+            self._working_directory.mkdir(parents=True, exist_ok=True)
         except OSError as e:
             raise ValueError(
-                f"Error creating directory {self._download_directory}: {e}"
+                f"Error creating directory {self._working_directory}: {e}"
             )
 
-        logger.info(f"Video will be downloaded to {self._download_directory}")
+        logger.info(f"Video will be downloaded to {self._working_directory}")
 
         self.vl_model = model
         # Ensure ChatAgent is initialized with a model if provided
@@ -177,27 +195,33 @@ class VideoAnalysisToolkit(BaseToolkit):
         destroyed.
         """
         # Clean up temporary files
-        for temp_file in self._temp_files:
-            if os.path.exists(temp_file):
-                try:
-                    os.remove(temp_file)
-                    logger.debug(f"Removed temporary file: {temp_file}")
-                except OSError as e:
-                    logger.warning(
-                        f"Failed to remove temporary file {temp_file}: {e}"
-                    )
+        if hasattr(self, '_temp_files'):
+            for temp_file in self._temp_files:
+                if os.path.exists(temp_file):
+                    try:
+                        os.remove(temp_file)
+                        logger.debug(f"Removed temporary file: {temp_file}")
+                    except OSError as e:
+                        logger.warning(
+                            f"Failed to remove temporary file {temp_file}: {e}"
+                        )
 
         # Clean up temporary directory if needed
-        if self._cleanup and os.path.exists(self._download_directory):
+        if (
+            hasattr(self, '_cleanup')
+            and self._cleanup
+            and hasattr(self, '_working_directory')
+            and os.path.exists(self._working_directory)
+        ):
             try:
                 import sys
 
                 if getattr(sys, 'modules', None) is not None:
                     import shutil
 
-                    shutil.rmtree(self._download_directory)
+                    shutil.rmtree(self._working_directory)
                     logger.debug(
-                        f"Removed temp directory: {self._download_directory}"
+                        f"Removed temp directory: {self._working_directory}"
                     )
             except (ImportError, AttributeError):
                 # Skip cleanup if interpreter is shutting down
@@ -205,8 +229,55 @@ class VideoAnalysisToolkit(BaseToolkit):
             except OSError as e:
                 logger.warning(
                     f"Failed to remove temporary directory "
-                    f"{self._download_directory}: {e}"
+                    f"{self._working_directory}: {e}"
                 )
+
+    @dependencies_required("pytesseract", "cv2", "numpy")
+    def _extract_text_from_frame(self, frame: Image.Image) -> str:
+        r"""Extract text from a video frame using OCR.
+
+        Args:
+            frame (Image.Image): PIL image frame to process.
+
+        Returns:
+            str: Extracted text from the frame.
+        """
+        import cv2
+        import numpy as np
+        import pytesseract
+
+        try:
+            # Convert to OpenCV format for preprocessing
+            cv_image = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
+
+            # Preprocessing for better OCR results
+            gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+            blur = cv2.GaussianBlur(gray, (3, 3), 0)
+            _, threshold = cv2.threshold(
+                blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+            )
+
+            # Convert back to PIL image for OCR
+            preprocessed_frame = Image.fromarray(threshold)
+            return pytesseract.image_to_string(preprocessed_frame).strip()
+        except Exception as e:
+            logger.error(f"OCR failed: {e}")
+            return ""
+
+    def _process_extracted_text(self, text: str) -> str:
+        r"""Clean and format OCR-extracted text.
+
+        Args:
+            text (str): Raw extracted OCR text.
+
+        Returns:
+            str: Cleaned and formatted text.
+        """
+        # Filter irrelevant characters and noise
+        text = re.sub(r'[^\w\s,.?!:;\'"()-]', '', text)
+        # Remove excessive whitespace
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
 
     def _extract_audio_from_video(
         self, video_path: str, output_format: str = "mp3"
@@ -508,9 +579,21 @@ class VideoAnalysisToolkit(BaseToolkit):
                 audio_path = self._extract_audio_from_video(video_path)
                 audio_transcript = self._transcribe_audio(audio_path)
 
+            # Extract visual text with OCR
+            visual_text = ""
             video_frames = self._extract_keyframes(video_path)
+            # Build visual text only if OCR is enabled
+            if self._use_ocr:
+                for frame in video_frames:
+                    text = self._extract_text_from_frame(frame)
+                    processed = self._process_extracted_text(text)
+                    if processed:
+                        visual_text += processed + "\n"
+                visual_text = visual_text.strip() or "No visual text detected."
+
             prompt = VIDEO_QA_PROMPT.format(
                 audio_transcription=audio_transcript,
+                visual_text=visual_text,
                 question=question,
             )
 

@@ -1,0 +1,70 @@
+<a id="camel.datagen.self_instruct.filter.instruction_filter"></a>
+
+<a id="camel.datagen.self_instruct.filter.instruction_filter.InstructionFilter"></a>
+
+## InstructionFilter
+
+```python
+class InstructionFilter:
+```
+
+<a id="camel.datagen.self_instruct.filter.instruction_filter.InstructionFilter.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    filters_config: Dict[str, Dict[str, Any]],
+    stop_on_first_failure: bool = False
+):
+```
+
+Initialize the InstructionFilter with a dictionary of filter
+configurations.
+
+**Parameters:**
+
+- **filters_config** (Dict[str, Dict[str, Any]]): Example filters_config: `{ "length": {"min_len": 5, "max_len": 100}, "keyword": {"keywords": ["image", "video"]}, "non_english": {}, "rouge_similarity": { "existing_instructions": ["Some existing text"], "threshold": 0.6 } }` Each key in filters_config corresponds to a filter name (registered in FILTER_REGISTRY). Each value is a dict of parameters for that filter.
+- **stop_on_first_failure** (bool): If True, stops checking filters after the first failure.
+
+<a id="camel.datagen.self_instruct.filter.instruction_filter.InstructionFilter.add_filter"></a>
+
+### add_filter
+
+```python
+def add_filter(self, filter_function: FilterFunction):
+```
+
+Add a custom filter function to the InstructionFilter.
+This allows adding filters that are not in the registry.
+
+**Parameters:**
+
+- **filter_function** (FilterFunction): The filter function to be added
+
+<a id="camel.datagen.self_instruct.filter.instruction_filter.InstructionFilter.filter"></a>
+
+### filter
+
+```python
+def filter(
+    self,
+    prompt: str,
+    instruction: str,
+    return_details: bool = False
+):
+```
+
+Check if the given instruction passes all filter functions.
+
+**Parameters:**
+
+- **prompt** (str): The prompt of generating the instruction.
+- **instruction** (str): The instruction to evaluate.
+- **return_details** (bool): If True, returns a tuple (bool, List[str]) where the list contains the names of filters that failed. (default::obj:`False`)
+
+**Returns:**
+
+  bool: True if the instruction passes all filters, False otherwise.
+OR (bool, List[str]) if return_details is True.

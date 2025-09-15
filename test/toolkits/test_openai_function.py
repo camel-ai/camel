@@ -160,10 +160,7 @@ def test_get_openai_tool_schema():
                         'type': 'string',
                         'description': 'datatime_para desc',
                     },
-                    'default_enum_para': {
-                        '$ref': '#/$defs/RoleType',
-                        'description': 'default_enum_para desc',
-                    },
+                    'default_enum_para': {'$ref': '#/$defs/RoleType'},
                 },
                 'required': [
                     'any_para',
@@ -426,15 +423,17 @@ def test_get_set_openai_tool_schema():
 
 def test_get_set_parameter_description():
     add = FunctionTool(add_with_doc)
-    assert add.get_paramter_description("a") == "The first number to be added."
-    add.set_paramter_description("a", "New description for a.")
-    assert add.get_paramter_description("a") == "New description for a."
+    assert (
+        add.get_parameter_description("a") == "The first number to be added."
+    )
+    add.set_parameter_description("a", "New description for a.")
+    assert add.get_parameter_description("a") == "New description for a."
 
 
 def test_get_set_parameter_description_non_existing():
     add = FunctionTool(add_with_doc)
     with pytest.raises(KeyError):
-        add.get_paramter_description("non_existing")
+        add.get_parameter_description("non_existing")
 
 
 def test_get_set_openai_function_schema():

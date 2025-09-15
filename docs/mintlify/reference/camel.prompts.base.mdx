@@ -1,0 +1,186 @@
+<a id="camel.prompts.base"></a>
+
+<a id="camel.prompts.base.return_prompt_wrapper"></a>
+
+## return_prompt_wrapper
+
+```python
+def return_prompt_wrapper(cls: Any, func: Callable):
+```
+
+Wrapper that converts the return value of a function to an input
+class instance if it's a string.
+
+**Parameters:**
+
+- **cls** (Any): The class to convert to.
+- **func** (Callable): The function to decorate.
+
+**Returns:**
+
+  Callable[..., Union[Any, str]]: Decorated function that
+returns the decorated class instance if the return value is a
+string.
+
+<a id="camel.prompts.base.wrap_prompt_functions"></a>
+
+## wrap_prompt_functions
+
+```python
+def wrap_prompt_functions(cls: T):
+```
+
+Decorator that wraps functions of a class inherited from :obj:`str`
+with the :obj:`return_text_prompt` decorator.
+
+**Parameters:**
+
+- **cls** (type): The class to decorate.
+
+**Returns:**
+
+  type: Decorated class with wrapped functions.
+
+<a id="camel.prompts.base.TextPrompt"></a>
+
+## TextPrompt
+
+```python
+class TextPrompt(str):
+```
+
+A class that represents a text prompt. The :obj:`TextPrompt` class
+extends the built-in :obj:`str` class to provide a property for retrieving
+the set of keywords in the prompt.
+
+**Parameters:**
+
+- **key_words** (set): A set of strings representing the keywords in the prompt.
+
+<a id="camel.prompts.base.TextPrompt.key_words"></a>
+
+### key_words
+
+```python
+def key_words(self):
+```
+
+Returns a set of strings representing the keywords in the prompt.
+
+<a id="camel.prompts.base.TextPrompt.format"></a>
+
+### format
+
+```python
+def format(self, *args: Any, **kwargs: Any):
+```
+
+Overrides the built-in :obj:`str.format` method to allow for
+default values in the format string. This is used to allow formatting
+the partial string.
+
+**Returns:**
+
+  TextPrompt: A new :obj:`TextPrompt` object with the format string
+replaced with the formatted string.
+
+<a id="camel.prompts.base.CodePrompt"></a>
+
+## CodePrompt
+
+```python
+class CodePrompt(TextPrompt):
+```
+
+A class that represents a code prompt. It extends the :obj:`TextPrompt`
+class with a :obj:`code_type` property.
+
+**Parameters:**
+
+- **code_type** (str, optional): The type of code. Defaults to None.
+
+<a id="camel.prompts.base.CodePrompt.__new__"></a>
+
+### __new__
+
+```python
+def __new__(cls, *args: Any, **kwargs: Any):
+```
+
+Creates a new instance of the :obj:`CodePrompt` class.
+
+**Returns:**
+
+  CodePrompt: The created :obj:`CodePrompt` instance.
+
+<a id="camel.prompts.base.CodePrompt.code_type"></a>
+
+### code_type
+
+```python
+def code_type(self):
+```
+
+**Returns:**
+
+  Optional[str]: The type of code.
+
+<a id="camel.prompts.base.CodePrompt.set_code_type"></a>
+
+### set_code_type
+
+```python
+def set_code_type(self, code_type: str):
+```
+
+Sets the type of code.
+
+**Parameters:**
+
+- **code_type** (str): The type of code.
+
+<a id="camel.prompts.base.CodePrompt.execute"></a>
+
+### execute
+
+```python
+def execute(
+    self,
+    interpreter: Optional[BaseInterpreter] = None,
+    **kwargs: Any
+):
+```
+
+Executes the code string using the provided interpreter.
+
+This method runs a code string through either a specified interpreter
+or a default one. It supports additional keyword arguments for
+flexibility.
+
+**Parameters:**
+
+- **interpreter** (Optional[BaseInterpreter]): The interpreter instance to use for execution. If `None`, a default interpreter is used. (default: :obj:`None`) **kwargs: Additional keyword arguments passed to the interpreter to run the code.
+
+**Returns:**
+
+  str: The result of the code execution. If the execution fails, this
+should include sufficient information to diagnose and correct
+the issue.
+
+<a id="camel.prompts.base.TextPromptDict"></a>
+
+## TextPromptDict
+
+```python
+class TextPromptDict:
+```
+
+A dictionary class that maps from key to :obj:`TextPrompt` object.
+
+<a id="camel.prompts.base.TextPromptDict.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, *args: Any, **kwargs: Any):
+```

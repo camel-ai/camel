@@ -1,0 +1,296 @@
+---
+title: "Tools Cookbook"
+---
+
+You can also check this cookbook in colab [here](https://colab.research.google.com/drive/1f1jYwDy6pB8QB6c_UdoBvFx6wr6kA5xq?usp=sharing)
+
+⭐ <i>Star us on [*Github*](https://github.com/camel-ai/camel), join our [*Discord*](https://discord.camel-ai.org) or follow our [*X*](https://x.com/camelaiorg)</i>
+
+## *TLDR:*
+*CAMEL allows AI agents to extend their capabilities by integrating custom tools, similar to how humans use tools to surpass natural limits. This tutorial shows how to set up and customize tools within CAMEL, from basic functions like calculators to creating multi-agent systems that collaborate on tasks. You’ll learn to equip AI agents with the ability to use tools for various tasks, making them more powerful and versatile. Engage with the CAMEL-AI community and explore extensive resources to push the boundaries of AI development. Ready to enhance your AI agents? Dive into the tutorial and start building.*
+
+## ‍Table of Content:
+
+* Introduction
+* Tool Usage of a Single Agent (Customize Your Own Tools)
+* AI Society with Tool Usage
+* Conclusion
+
+## Introduction
+The key difference between humans and animals lies in the human ability to create and use tools, allowing us to shape the world beyond natural limits. Similarly, in AI, Large Language Models (LLMs) enable agents to utilize external tools, acting as extensions of their capabilities. These tools, each with a specific name, purpose, input, and output, empower agents to perform tasks otherwise impossible.
+
+This tutorial will show you how to use tools integrated by CAMEL and how to customize your own tools.
+
+## Tool Usage of a Single Agent
+A single agent can utilize multiple tools to answer questions, take actions, or perform complex tasks. Here you will build an agent using both the supported toolkit in CAMEL and the tool customized by you.
+
+First we are going to take the search tool as an example for utilizing existing tools but you can also see some of the other tools supported by CAMEL below.
+
+
+
+
+```python
+!pip install "camel-ai[all]==0.2.16"
+```
+
+
+```python
+from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
+from camel.toolkits import (
+    SearchToolkit,
+    # MathToolkit,
+    # GoogleMapsToolkit,
+    # TwitterToolkit,
+    # WeatherToolkit,
+    # RetrievalToolkit,
+    # TwitterToolkit,
+    # SlackToolkit,
+    # LinkedInToolkit,
+    # RedditToolkit,
+)
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+```
+
+After importing necessary modules, you need to set up your OpenAI key.
+
+
+```python
+import os
+from getpass import getpass
+
+# Prompt for the API key securely
+openai_api_key = getpass('Enter your API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+```
+
+Now you have done that, let’s customize a tool by taking the simple math calculator, functions add and sub, as an example. When you define your own function, make sure the argument name and docstring are clear so that the agent can understand what this function can do and when to use the function based on the function information you provide. 
+> This is just to demonstrate the use of custom tools, the built-in MathToolkit already includes tools for add and sub.
+
+
+```python
+def add(a: int, b: int) -> int:
+    r"""Adds two numbers.
+
+    Args:
+        a (int): The first number to be added.
+        b (int): The second number to be added.
+
+    Returns:
+        integer: The sum of the two numbers.
+    """
+    return a + b
+
+def sub(a: int, b: int) -> int:
+    r"""Do subtraction between two numbers.
+
+    Args:
+        a (int): The minuend in subtraction.
+        b (int): The subtrahend in subtraction.
+
+    Returns:
+        integer: The result of subtracting :obj:`b` from :obj:`a`.
+    """
+    return a - b
+```
+
+Add these 2 customized functions as CAMEL’s FunctionTool list:
+
+
+```python
+from camel.toolkits import FunctionTool
+
+
+MATH_FUNCS: list[FunctionTool] = [
+    FunctionTool(func) for func in [add, sub]
+]
+```
+
+Then you can add the tool from CAMEL and the one defined by yourself to the tool list:
+
+
+
+```python
+tools_list = [
+    # *MathToolkit().get_tools(),
+    *SearchToolkit().get_tools(),
+    *MATH_FUNCS,
+]
+```
+
+Next let's set the parameters to the agent and initianize ChatAgent to call the tool:
+
+
+```python
+# Set the backend mode, this model should support tool calling
+model=ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O_MINI
+)
+
+# Set message for the assistant
+assistant_sys_msg =  """You are a helpful assistant to do search task."""
+
+
+# Set the agent
+agent = ChatAgent(
+    assistant_sys_msg,
+    model=model,
+    tools=tools_list
+)
+```
+
+Here we define two test prompts for the agent, asking about the facts about University of Oxford. Here the agent needs to take advantage of the searching capability to know when University of Oxford is founded and the calculating skills to obtain the estimated age of the Uni.
+
+
+```python
+# Set prompt for the search task
+prompt_search = ("""When was University of Oxford set up""")
+# Set prompt for the calculation task
+prompt_calculate = ("""Assume now is 2024 in the Gregorian calendar, University of Oxford was set up in 1096, estimate the current age of University of Oxford""")
+
+# Convert the two prompt as message that can be accepted by the Agent
+user_msg_search = BaseMessage.make_user_message(role_name="User", content=prompt_search)
+user_msg_calculate = BaseMessage.make_user_message(role_name="User", content=prompt_calculate)
+
+# Get response
+assistant_response_search = agent.step(user_msg_search)
+assistant_response_calculate = agent.step(user_msg_calculate)
+```
+
+
+Let’s see the agent' performance for answering above questions. The agent should tell you correctly when University of Oxford was set up and its estimated age!
+
+
+```python
+print(assistant_response_search.info['tool_calls'])
+```
+
+
+```python
+print(assistant_response_calculate.info['tool_calls'])
+```
+
+## AI Society with Tool Usage
+Now you've enabled a single agent to utilize tools, but you can surelytake this concept further. Let's establish a small AI ecosystem. This setup will consist of two agents: a user agent and an assistant agent. The assistant agent will be the one we've just configured with tool-using capabilities.
+
+
+```python
+from camel.societies import RolePlaying
+from camel.agents.chat_agent import FunctionCallingRecord
+from camel.utils import print_text_animated
+from colorama import Fore
+```
+
+
+```python
+# Set a task
+task_prompt=("Assume now is 2024 in the Gregorian calendar, "
+        "estimate the current age of University of Oxford "
+        "and then add 10 more years to this age.")
+
+# Set role playing
+role_play_session = RolePlaying(
+    assistant_role_name="Searcher",
+    user_role_name="Professor",
+    assistant_agent_kwargs=dict(
+        model=ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4O_MINI,
+        ),
+        tools=tools_list,
+    ),
+    user_agent_kwargs=dict(
+        model=ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4O_MINI,
+        ),
+    ),
+    task_prompt=task_prompt,
+    with_task_specify=False,
+)
+
+# Set the limit for the chat turn
+chat_turn_limit=10
+
+print(
+    Fore.GREEN
+    + f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n"
+)
+print(
+    Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n"
+)
+
+print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
+print(
+    Fore.CYAN
+    + "Specified task prompt:"
+    + f"\n{role_play_session.specified_task_prompt}\n"
+)
+print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
+
+n = 0
+input_msg = role_play_session.init_chat()
+while n < chat_turn_limit:
+    n += 1
+    assistant_response, user_response = role_play_session.step(input_msg)
+
+    if assistant_response.terminated:
+        print(
+            Fore.GREEN
+            + (
+                "AI Assistant terminated. Reason: "
+                f"{assistant_response.info['termination_reasons']}."
+            )
+        )
+        break
+    if user_response.terminated:
+        print(
+            Fore.GREEN
+            + (
+                "AI User terminated. "
+                f"Reason: {user_response.info['termination_reasons']}."
+            )
+        )
+        break
+
+    # Print output from the user
+    print_text_animated(
+        Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
+    )
+
+    if "CAMEL_TASK_DONE" in user_response.msg.content:
+        break
+
+    # Print output from the assistant, including any function
+    # execution information
+    print_text_animated(Fore.GREEN + "AI Assistant:")
+    tool_calls: list[FunctionCallingRecord] = assistant_response.info[
+        'tool_calls'
+    ]
+    for func_record in tool_calls:
+        print_text_animated(f"{func_record}")
+    print_text_animated(f"{assistant_response.msg.content}\n")
+
+
+    input_msg = assistant_response.msg
+```
+
+## Conclusion
+We anticipate that the integration of custom tool usage within AI agents, as demonstrated through CAMEL, will continue to evolve and expand. This approach not only empowers agents to perform tasks beyond their native capabilities but also fosters collaboration in multi-agent systems. By standardizing the interface for tool usage, CAMEL simplifies the process of customizing and deploying tools across various AI applications, saving time and enhancing versatility. To fully utilize these capabilities, ensure your CAMEL-AI setup is up to date. Dive into the tutorial and start building more powerful AI agents today!

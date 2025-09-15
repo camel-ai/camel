@@ -15,6 +15,7 @@
 from camel.agents import ChatAgent
 from camel.configs import AnthropicConfig
 from camel.models import ModelFactory
+from camel.toolkits import FunctionTool
 from camel.types import ModelPlatformType, ModelType
 
 """
@@ -46,22 +47,15 @@ Hi CAMEL AI! It's great to meet an open-source community focused on advancing re
 ===============================================================================
 '''  # noqa: E501
 
-# Use the extended thinking model with Claude 3.7 Sonnet
-config = AnthropicConfig(
-    thinking={"type": "enabled", "budget_tokens": 2048}
-).as_dict()
-
 model = ModelFactory.create(
     model_platform=ModelPlatformType.ANTHROPIC,
     model_type=ModelType.CLAUDE_3_7_SONNET,
-    model_config_dict=config,
 )
 
 camel_agent = ChatAgent(model=model)
 
-user_msg = """Write a bash script that takes a matrix represented as a string with 
-format '[1,2],[3,4],[5,6]' and prints the transpose in the same format.
-"""  # noqa: E501
+user_msg = """Write a bash script that takes a matrix represented as a string 
+with format '[1,2],[3,4],[5,6]' and prints the transpose in the same format."""
 
 response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
@@ -69,7 +63,8 @@ print(response.msgs[0].content)
 ===============================================================================
 # Matrix Transpose Bash Script
 
-Here's a bash script that transposes a matrix from the format `[1,2],[3,4],[5,6]` to `[1,3,5],[2,4,6]`:
+Here's a bash script that transposes a matrix from the format `[1,2],[3,4],[5,
+6]` to `[1,3,5],[2,4,6]`:
 
 ```bash
 #!/bin/bash
@@ -91,7 +86,8 @@ IFS='|' read -ra rows <<< "$input"
 
 # Determine dimensions of the matrix
 row_count="${#rows[@]}"
-IFS=',' read -ra first_row <<< "${rows[0]//[\[\]]}"  # Remove brackets from first row
+IFS=',' read -ra first_row <<< "${rows[0]//[\[\]]}"  # Remove brackets from 
+first row
 col_count="${#first_row[@]}"
 
 # Create transpose
@@ -135,14 +131,8 @@ The script works by:
 2. Finding the dimensions of the original matrix
 3. Creating the transpose by iterating through columns first, then rows
 4. Formatting the result with proper brackets and commas
-'''  # noqa: E501
-
-# Tool calling
-from camel.agents import ChatAgent  # noqa: E402
-from camel.configs import AnthropicConfig  # noqa: E402
-from camel.models import ModelFactory  # noqa: E402
-from camel.toolkits import FunctionTool  # noqa: E402
-from camel.types import ModelPlatformType, ModelType  # noqa: E402
+===============================================================================
+'''
 
 
 def my_add(a: int, b: int) -> int:
@@ -166,7 +156,9 @@ user_msg = "Use the tool my_add to calculate 2 + 2"
 response = anthropic_agent.step(user_msg)
 print(response.msgs[0].content)
 """
+===============================================================================
 The result of adding 2 + 2 is 4.
+===============================================================================
 """
 
 # Check if tool was called
@@ -177,6 +169,122 @@ else:
     print("No tool calls were made.")
 
 """
+===============================================================================
 Tool was called successfully!
-Tool calls: [ToolCallingRecord(tool_name='my_add', args={'a': 2, 'b': 2}, result=4, tool_call_id='toolu_01L1KV8GZtMEyHUGTudpMg5g')]
-"""  # noqa: E501
+Tool calls: [ToolCallingRecord(tool_name='my_add', args={'a': 2, 'b': 2}, 
+result=4, tool_call_id='toolu_01L1KV8GZtMEyHUGTudpMg5g')]
+===============================================================================
+"""
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.ANTHROPIC,
+    model_type=ModelType.CLAUDE_SONNET_4,
+    model_config_dict={
+        "extra_body": {"thinking": {"type": "enabled", "budget_tokens": 2000}}
+    },
+)
+
+camel_agent = ChatAgent(model=model)
+
+user_msg = """Are there an infinite number of prime numbers such that n mod 4 
+== 3?"""
+
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+
+"""
+===============================================================================
+Yes, there are infinitely many prime numbers that are congruent to 3 modulo 4.
+
+This can be proven using a technique similar to Euclid's proof of the 
+infinitude of primes. Here's the proof:
+
+**Proof by contradiction:**
+
+Assume there are only finitely many primes of the form 4k + 3. Let's call them 
+p₁, p₂, ..., pₙ where each pᵢ ≡ 3 (mod 4).
+
+Consider the number N = 4(p₁ × p₂ × ... × pₙ) - 1.
+
+Note that N ≡ 3 (mod 4) since 4(p₁ × p₂ × ... × pₙ) ≡ 0 (mod 4), so N ≡ -1 ≡ 3 
+(mod 4).
+
+Now, N must have at least one prime factor. We know that:
+- N is not divisible by any of the primes p₁, p₂, ..., pₙ (since N ≡ -1 (mod 
+pᵢ) for each i)
+- N cannot be divisible only by primes of the form 4k + 1, because the product 
+of numbers that are ≡ 1 (mod 4) is also ≡ 1 (mod 4), but N ≡ 3 (mod 4)
+
+Therefore, N must have at least one prime factor that is congruent to 3 modulo 
+4, and this prime factor is different from all the primes in our assumed 
+finite list.
+
+This contradicts our assumption that p₁, p₂, ..., pₙ were all the primes 
+congruent to 3 modulo 4.
+
+Therefore, there must be infinitely many primes of the form 4k + 3.
+
+This result is part of **Dirichlet's theorem on arithmetic progressions**, 
+which more generally states that for any arithmetic progression an + b where 
+gcd(a,b) = 1, there are infinitely many primes in that progression.
+===============================================================================
+"""  # noqa: RUF001
+
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.ANTHROPIC,
+    model_type=ModelType.CLAUDE_OPUS_4_1,
+    model_config_dict={
+        "extra_body": {"thinking": {"type": "enabled", "budget_tokens": 2000}}
+    },
+)
+
+camel_agent = ChatAgent(model=model)
+
+user_msg = """Are there an infinite number of prime numbers such that n mod 4 
+== 3?"""
+
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+
+"""
+===============================================================================
+Yes, there are infinitely many prime numbers p such that p ≡ 3 (mod 4).
+
+Here's a proof by contradiction:
+
+**Proof:**
+
+Suppose there are only finitely many primes ≡ 3 (mod 4). Let's call them p₁, 
+p₂, ..., pₙ.
+
+Consider the number:
+**N = 4p₁p₂···pₙ - 1**
+
+Key observations about N:
+1. **N ≡ 3 (mod 4)** since N = 4(p₁p₂···pₙ) - 1
+2. N is odd (so 2 doesn't divide N)
+3. None of the primes p₁, p₂, ..., pₙ divide N (if pᵢ divided N, then pᵢ would 
+divide N - 4p₁p₂···pₙ = -1, which is impossible)
+
+Now, N must have prime factorization. Every odd prime is either ≡ 1 (mod 4) or 
+≡ 3 (mod 4).
+
+**Crucial fact:** The product of numbers that are all ≡ 1 (mod 4) is also ≡ 1 
+(mod 4).
+
+Since N ≡ 3 (mod 4), not all of its prime factors can be ≡ 1 (mod 4). 
+Therefore, N must have at least one prime factor q where q ≡ 3 (mod 4).
+
+But we established that none of p₁, p₂, ..., pₙ divide N, so q must be a prime 
+≡ 3 (mod 4) that's not in our supposedly complete list. This is a 
+contradiction!
+
+Therefore, there must be infinitely many primes ≡ 3 (mod 4).
+
+This same argument structure can also prove there are infinitely many primes ≡ 
+2 (mod 3), but interestingly, it *cannot* directly prove there are infinitely 
+many primes ≡ 1 (mod 4) (that requires Dirichlet's theorem on primes in 
+arithmetic progressions).
+===============================================================================
+"""

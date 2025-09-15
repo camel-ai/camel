@@ -18,6 +18,8 @@ import pytest
 from camel.environments.models import Action
 from camel.environments.tic_tac_toe import Opponent, TicTacToeEnv
 
+pytestmark = pytest.mark.heavy_dependency
+
 # --- Setup and Initialization Tests ---
 
 

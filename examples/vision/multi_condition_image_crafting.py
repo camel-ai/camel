@@ -17,7 +17,7 @@ from camel.agents.chat_agent import ChatAgent
 from camel.generators import PromptTemplateGenerator
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
-from camel.toolkits import DalleToolkit
+from camel.toolkits import OpenAIImageToolkit
 from camel.types import (
     ModelPlatformType,
     ModelType,
@@ -42,7 +42,7 @@ def main(image_paths: list[str]) -> list[str]:
     dalle_agent = ChatAgent(
         system_message=sys_msg,
         model=model,
-        tools=DalleToolkit().get_tools(),
+        tools=OpenAIImageToolkit().get_tools(),
     )
 
     image_list = [Image.open(image_path) for image_path in image_paths]

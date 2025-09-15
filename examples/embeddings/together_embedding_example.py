@@ -28,7 +28,7 @@ Default model embedding dimension: 768
 
 # Example with a different model
 together_embed_alt = TogetherEmbedding(
-    model_name="togethercomputer/m2-bert-80M-2k-retrieval",
+    model_type="togethercomputer/m2-bert-80M-2k-retrieval",
 )
 
 # Embed multiple texts

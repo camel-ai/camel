@@ -1,0 +1,41 @@
+<a id="camel.schemas.base"></a>
+
+<a id="camel.schemas.base.BaseConverter"></a>
+
+## BaseConverter
+
+```python
+class BaseConverter(ABC):
+```
+
+A base class for schema outputs that includes functionality
+for managing the response format.
+
+**Parameters:**
+
+- **output_schema** (Optional[Type[BaseModel]], optional): The expected format of the response. (default: :obj:`None`)
+
+<a id="camel.schemas.base.BaseConverter.convert"></a>
+
+### convert
+
+```python
+def convert(
+    self,
+    content: str,
+    *args: Any,
+    **kwargs: Dict[str, Any]
+):
+```
+
+Structures the input text into the expected response format.
+
+**Parameters:**
+
+- **text** (str): The input text to be structured.
+- **output_schema** (Optional[Type[BaseModel]], optional): The expected format of the response. Defaults to None.
+- **prompt** (Optional[str], optional): The prompt to be used.
+
+**Returns:**
+
+  Any: The converted response.

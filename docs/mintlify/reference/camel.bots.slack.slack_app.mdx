@@ -1,0 +1,110 @@
+<a id="camel.bots.slack.slack_app"></a>
+
+<a id="camel.bots.slack.slack_app.SlackApp"></a>
+
+## SlackApp
+
+```python
+class SlackApp:
+```
+
+Represents a Slack app that is powered by a Slack Bolt `AsyncApp`.
+
+This class is responsible for initializing and managing the Slack
+application by setting up event handlers, running the app server, and
+handling events such as messages and mentions from Slack.
+
+**Parameters:**
+
+- **token** (Optional[str]): Slack API token for authentication.
+- **scopes** (Optional[str]): Slack app scopes for permissions.
+- **signing_secret** (Optional[str]): Signing secret for verifying Slack requests.
+- **client_id** (Optional[str]): Slack app client ID.
+- **client_secret** (Optional[str]): Slack app client secret.
+- **redirect_uri_path** (str): The URI path for OAuth redirect, defaults to "/slack/oauth_redirect".
+- **installation_store** (Optional[AsyncInstallationStore]): The installation store for handling OAuth installations.
+
+<a id="camel.bots.slack.slack_app.SlackApp.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    token: Optional[str] = None,
+    scopes: Optional[str] = None,
+    signing_secret: Optional[str] = None,
+    client_id: Optional[str] = None,
+    client_secret: Optional[str] = None,
+    redirect_uri_path: str = '/slack/oauth_redirect',
+    installation_store: Optional[AsyncInstallationStore] = None
+):
+```
+
+Initializes the SlackApp instance by setting up the Slack Bolt app
+and configuring event handlers and OAuth settings.
+
+**Parameters:**
+
+- **token** (Optional[str]): The Slack API token.
+- **scopes** (Optional[str]): The scopes for Slack app permissions.
+- **signing_secret** (Optional[str]): The signing secret for verifying requests.
+- **client_id** (Optional[str]): The Slack app client ID.
+- **client_secret** (Optional[str]): The Slack app client secret.
+- **redirect_uri_path** (str): The URI path for handling OAuth redirects (default is "/slack/oauth_redirect").
+- **installation_store** (Optional[AsyncInstallationStore]): An optional installation store for OAuth installations.
+
+<a id="camel.bots.slack.slack_app.SlackApp.setup_handlers"></a>
+
+### setup_handlers
+
+```python
+def setup_handlers(self):
+```
+
+Sets up the event handlers for Slack events, such as `app_mention`
+and `message`.
+
+This method registers the `app_mention` and `on_message` event handlers
+with the Slack Bolt app to respond to Slack events.
+
+<a id="camel.bots.slack.slack_app.SlackApp.run"></a>
+
+### run
+
+```python
+def run(
+    self,
+    port: int = 3000,
+    path: str = '/slack/events',
+    host: Optional[str] = None
+):
+```
+
+Starts the Slack Bolt app server to listen for incoming Slack
+events.
+
+**Parameters:**
+
+- **port** (int): The port on which the server should run (default is 3000).
+- **path** (str): The endpoint path for receiving Slack events (default is "/slack/events").
+- **host** (Optional[str]): The hostname to bind the server (default is None).
+
+<a id="camel.bots.slack.slack_app.SlackApp.mention_me"></a>
+
+### mention_me
+
+```python
+def mention_me(self, context: 'AsyncBoltContext', body: SlackEventBody):
+```
+
+Check if the bot is mentioned in the message.
+
+**Parameters:**
+
+- **context** (AsyncBoltContext): The Slack Bolt context for the event.
+- **body** (SlackEventBody): The body of the Slack event.
+
+**Returns:**
+
+  bool: True if the bot is mentioned in the message, False otherwise.

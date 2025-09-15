@@ -77,7 +77,8 @@ if os.getenv("OPENAI_API_KEY"):
 else:
     print("Skipping LLM example: OPENAI_API_KEY environment variable not set")
 
-'''
+"""
+===============================================================================
 Example output:
 
 Example 1: PandasReader without LLM
@@ -100,4 +101,4 @@ Querying data with LLM:
 3         Germany   4100
 1  United Kingdom   3200
 ===============================================================================
-'''
+"""

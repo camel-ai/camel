@@ -16,8 +16,6 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 
-from sqlalchemy import JSON, Column, Integer
-
 if TYPE_CHECKING:
     from pyobvector.client import ObVecClient
 
@@ -80,6 +78,7 @@ class OceanBaseStorage(BaseVectorStorage):
             IndexParams,
         )
         from pyobvector.schema import VECTOR
+        from sqlalchemy import JSON, Column, Integer
 
         self.vector_dim: int = vector_dim
         self.table_name: str = table_name

@@ -1,0 +1,397 @@
+---
+title: "Sft Data Generation And Unsloth Finetuning Tinyllama"
+---
+
+### Agentic SFT Data generation with CAMEL and finetuning Meta models with Unsloth
+
+For more detailed usage information, please refer to our [cookbook](https://colab.research.google.com/drive/1fdBns2QA1XNwF_tsvG3Hc27QGdViHH3b?usp=sharing)
+
+To run this, press "*Runtime*" and press "*Run all*" on a **free** Tesla T4 Google Colab instance!
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---
+
+CAMEL and Unsloth make an excellent pair. In this notebook we will combine the two to train a model to be proficient at content on a page
+
+You will learn how to do data generation with CAMEL, how to train, and how to run the model.
+
+![SFT v2.png](./images/sft_data_generation_and_unsloth_finetuning_tinyllama_1.png)
+
+
+```python
+%%capture
+!pip install unsloth
+# Install CAMEL-AI with no optional dependencies
+!pip install camel-ai==0.2.16
+# Get Unsloth
+!pip install --upgrade --no-deps "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git@0de54572525788d09a6a9ef1efc7611e65dd7547"
+!pip install firecrawl
+```
+
+First we will set the OPENAI_API_KEY that will be used to generate the data.
+
+CAMEL supports many other models. See [here](https://docs.camel-ai.org/key_modules/models.html) for a list.
+
+
+```python
+from getpass import getpass
+import os
+
+openai_api_key = getpass('Enter your OpenAI API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
+
+# Generate an API key at https://www.firecrawl.dev/app/api-keys
+firecrawl_api_key = getpass('Enter your Firecrawl API key: ')
+os.environ["FIRECRAWL_API_KEY"] = firecrawl_api_key
+```
+
+Alternatively, if running on Colab, you could save your API keys and tokens as **Colab Secrets**, and use them across notebooks.
+
+To do so, **comment out** the above **manual** API key prompt code block(s), and **uncomment** the following codeblock.
+
+⚠️ Don't forget granting access to the API key you would be using to the current notebook.
+
+
+```python
+# import os
+# from google.colab import userdata
+
+# os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+# os.environ["FIRECRAWL_API_KEY"] = userdata.get("FIRECRAWL_API_KEY")
+```
+
+Next we will set up our model for training using Unsloth.
+
+
+```python
+from unsloth import FastLanguageModel
+import torch
+max_seq_length = 4096
+dtype = None
+load_in_4bit = True
+
+model, tokenizer = FastLanguageModel.from_pretrained(
+    model_name = "unsloth/tinyllama-bnb-4bit", # "unsloth/tinyllama" for 16bit loading
+    max_seq_length = max_seq_length,
+    dtype = dtype,
+    load_in_4bit = load_in_4bit,
+    # token = "hf_...", # use one if using gated models like meta-llama/Llama-2-7b-hf
+)
+model = FastLanguageModel.get_peft_model(
+    model,
+    r = 32,
+    target_modules = ["q_proj", "k_proj", "v_proj", "o_proj",
+                      "gate_proj", "up_proj", "down_proj",
+                      "embed_tokens", "lm_head"],
+    lora_alpha = 32,
+    use_gradient_checkpointing = False, # @@@ IF YOU GET OUT OF MEMORY - set to True @@@
+    random_state = 3407,
+    use_rslora = False,  # We support rank stabilized LoRA
+    loftq_config = None, # And LoftQ
+)
+```
+
+Now as a control, lets see how this model does with our CAMEL-specific question
+
+
+```python
+from camel.messages.conversion import AlpacaItem
+
+temp_model = FastLanguageModel.for_inference(model) # Enable native 2x faster inference
+inputs = tokenizer(
+[
+
+   AlpacaItem(
+       instruction="Explain how can I stay up to date with the CAMEL community.",
+       input="",
+       output="", # leave this blank for generation!
+   ).to_string()
+
+], return_tensors = "pt").to("cuda")
+
+outputs = temp_model.generate(**inputs, max_new_tokens = 512, use_cache = True)
+temp_model = None
+tokenizer.batch_decode(outputs)
+
+```
+
+Note that it hasn't been trained on this output format, so the output is total junk
+
+### Data models
+We want to generate data in the Alpaca format, so we can use CAMEL's built-in AlpacaItem class which has some handy conversion functions for us.
+
+We will be using CAMEL's structured output to generate all of these items in one request, which is much faster and cheaper.
+
+
+Here we create a wrapper around the AlpacaItem to help the model know how many have been generated as it's going along, and another wrapper class that represents a list of these.
+
+
+```python
+from pydantic import BaseModel
+
+class NumberedAlpacaItem(BaseModel):
+    number: int
+    item: AlpacaItem
+
+
+class AlpacaItemResponse(BaseModel):
+    """
+    Represents an instruction-response item in the Alpaca format.
+    """
+    items: list[NumberedAlpacaItem]
+```
+
+<a name="Data"></a>
+### Data generation
+Next we define our data generation function. It takes a source content, and generates a list of instruction-input-response triplets around it.
+
+We will use this later to train our model to be proficient with the source content.
+
+
+```python
+from typing import List
+from camel.loaders import Firecrawl
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+from camel.configs import ChatGPTConfig
+from camel.agents import ChatAgent
+import json
+
+
+def generate_alpaca_items(content: str, n_items: int, start_num: int = 1, examples: List[AlpacaItem] = None) -> List[AlpacaItem]:
+    system_msg = """
+You are an AI assistant generating detailed, accurate responses based on the provided content.
+You will be given a reference content, and you must generate a specific number of AlpacaItems.
+These are instruction-input-response triplets, where the input is the context or examples.
+
+Add a number to the items to keep track of the order. Generate exactly that many.
+
+For each instruction, imagine but do not include a real world scenario and real user in that scenario to inform realistic and varied instructions. Avoid common sense questions and answers.
+
+Include multiple lines in the output as appropriate to provide sufficient detail. Cite the most relevant context verbatim in output fields, do not omit anything important.
+
+Leave the input field blank.
+
+Ensure all of the most significant parts of the context are covered.
+
+Start with open ended instructions, then move to more specific ones. Consider the starting number for an impression of what has already been generated.
+    """
+
+    examples_str = ""
+    if examples:
+        examples_str = "\n\nHere are some example items for reference:\n" + \
+            "\n".join(ex.model_dump_json() for ex in examples)
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict=ChatGPTConfig(
+            temperature=0.6, response_format=AlpacaItemResponse
+        ).as_dict(),
+    )
+
+    agent = ChatAgent(
+        system_message=system_msg,
+        model=model,
+    )
+
+    prompt = f"Content reference:\n{content}{examples_str}\n\n Generate {n_items} AlpacaItems. The first should start numbering at {start_num}."
+    response = agent.step(prompt)
+
+    # Parse the generated JSON to our wrapper class
+    alpaca_items = [n_item.item for n_item in
+                    AlpacaItemResponse.
+                    model_validate_json(response.msgs[0].content).items]
+
+    return alpaca_items
+
+
+def save_json(data: List, filename: str):
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump([entry.model_dump() for entry in data], f, indent=2,
+                  ensure_ascii=False)
+
+
+# Few shot examples to ensure the right amount of detail
+examples = [
+    AlpacaItem(
+        instruction="Explain the process for sprint planning and review in CAMEL.",
+        input="",
+        output="The process for sprint planning and review in CAMEL includes:\n1. **Sprint Duration**: Each sprint lasts two weeks for development and one week for review.\n2. **Planning Meeting**: Conducted biweekly, where the founder highlights the sprint goal and developers select items for the sprint.\n3. **Review Meeting**: Stakeholders review the delivered features and provide feedback on the work completed during the sprint."
+    )
+]
+
+
+```
+
+# Point to content and generate data!
+Now we point to the content that we wish to generate SFT data around and use CAMEL's Firecrawl integration to get this content in a nice markdown format.
+
+You can get a Firecrawl API key from [here](https://www.firecrawl.dev/app/api-keys)
+
+
+```python
+import random
+firecrawl = Firecrawl()
+# Scrape and clean content from a specified URL
+response = firecrawl.scrape(
+    url="https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md"
+)
+
+# Generate the items 50 a time up to 300
+alpaca_entries = []
+for start in range(1, 301, 50):
+    # Combine default examples with random samples from previous generations
+    current_examples = examples + (random.sample(alpaca_entries,
+                                                 min(5, len(alpaca_entries)))
+                                                  if alpaca_entries else [])
+
+    batch = generate_alpaca_items(
+        content=response["markdown"],
+        n_items=50,
+        start_num=start,
+        examples=current_examples
+    )
+    print(f"Generated {len(batch)} items")
+    alpaca_entries.extend(batch)
+
+print(alpaca_entries)
+save_json(alpaca_entries, 'alpaca_format_data.json')
+```
+
+Now to define how each row is formatted
+
+
+
+
+```python
+EOS_TOKEN = tokenizer.eos_token
+
+# Provide function showing how to convert dataset row into inference text
+def formatting_prompts_func(dataset_row):
+    return {
+        "text": [
+            AlpacaItem(instruction=inst, input=inp, output=out)
+                        .to_string() + EOS_TOKEN # Use handy to_string method
+            for inst, inp, out in zip(
+                dataset_row["instruction"],
+                dataset_row["input"],
+                dataset_row["output"]
+            )
+        ]
+    }
+
+
+from datasets import load_dataset
+dataset = load_dataset("json", data_files="alpaca_format_data.json", split="train")
+dataset = dataset.map(formatting_prompts_func, batched = True,)
+```
+
+Train the model
+
+
+```python
+from trl import SFTTrainer
+from transformers import TrainingArguments
+from unsloth import is_bfloat16_supported
+trainer = SFTTrainer(
+    model = model,
+    tokenizer = tokenizer,
+    train_dataset = dataset,
+    dataset_text_field = "text",
+    max_seq_length = 512,
+    dataset_num_proc = 2,
+    packing = True, # Packs short sequences together to save time!
+    args = TrainingArguments(
+        per_device_train_batch_size = 2,
+        gradient_accumulation_steps = 4,
+        warmup_ratio = 0.1,
+        num_train_epochs = 40,
+        learning_rate = 2e-3,
+        fp16 = not is_bfloat16_supported(),
+        bf16 = is_bfloat16_supported(),
+        logging_steps = 1,
+        optim = "adamw_8bit",
+        weight_decay = 0.1,
+        lr_scheduler_type = "linear",
+        seed = 3407,
+        output_dir = "outputs",
+        report_to = "none", # Use this for WandB etc
+    ),
+)
+# Ensure model is fully back in training mode
+model = FastLanguageModel.for_training(model)
+```
+
+
+```python
+dtrainer_stats = trainer.train()
+```
+
+<a name="Inference"></a>
+### Inference
+Let's run the model! You can change the instruction and input - leave the output blank!
+
+
+```python
+FastLanguageModel.for_inference(model) # Enable native 2x faster inference
+inputs = tokenizer(
+[
+
+    AlpacaItem(
+        instruction="Explain how can I stay up to date with the CAMEL community.",
+        input="",
+        output="", # leave this blank for generation!
+    ).to_string()
+
+], return_tensors = "pt").to("cuda")
+
+outputs = model.generate(**inputs, max_new_tokens = 512, use_cache = True)
+tokenizer.batch_decode(outputs)
+```
+
+**Summary**
+
+
+We have generated realistic user queries and responses from a real page and trained on them to produce a model that understands the underlying content.
+
+That's everything: Got questions about 🐫 CAMEL-AI? Join us on [Discord](https://discord.camel-ai.org)! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝
+
+Check out some of our other work:
+
+1. 🐫 Creating Your First CAMEL Agent [free Colab](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+
+2.  Graph RAG Cookbook [free Colab](https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing)
+
+3. 🧑‍⚖️ Create A Hackathon Judge Committee with Workforce [free Colab](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+
+4. 🔥 3 ways to ingest data from websites with Firecrawl & CAMEL [free Colab](https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing)
+
+5. 🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharing)
+
+6. 🦥 Agentic SFT Data Generation with CAMEL and Qwen Models, Fine-Tuned with Unsloth [free Colab](https://colab.research.google.com/drive/1sMnWOvdmASEMhsRIOUSAeYuEywby6FRV?usp=sharing)
+
+Thanks from everyone at 🐫 CAMEL-AI
+
+
+<div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
+  <a href="https://www.camel-ai.org/">
+    <img src="https://i.postimg.cc/KzQ5rfBC/button.png" width="150" alt="CAMEL Homepage"/>
+  </a>
+  <a href="https://discord.camel-ai.org">
+    <img src="https://i.postimg.cc/L4wPdG9N/join-2.png" width="150" alt="Join Discord"/>
+  </a>
+</div>  
+
+⭐ *Star us on [GitHub](https://github.com/camel-ai/camel), join our [Discord](https://discord.camel-ai.org), or follow us on [X](https://x.com/camelaiorg)*
+
+---

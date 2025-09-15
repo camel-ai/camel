@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import urllib.parse
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -169,18 +170,6 @@ class KlavisToolkit(BaseToolkit):
         endpoint = f"/mcp-server/instance/delete/{instance_id}"
         return self._request('DELETE', endpoint)
 
-    def get_server_tools(self, server_name: str) -> Dict[str, Any]:
-        r"""Get list of tool names for a specific MCP server.
-
-        Args:
-            server_name (str): The name of the target MCP server.
-
-        Returns:
-            Dict[str, Any]: List of tools available for the specified server.
-        """
-        endpoint = f"/mcp-server/tools/{server_name}"
-        return self._request('GET', endpoint)
-
     def get_all_servers(self) -> Dict[str, Any]:
         r"""Get all MCP servers with their basic information.
 
@@ -209,6 +198,60 @@ class KlavisToolkit(BaseToolkit):
             'POST', endpoint, payload=payload, additional_headers=headers
         )
 
+    def list_tools(self, server_url: str) -> Dict[str, Any]:
+        r"""Lists all tools available for a specific remote MCP server.
+
+        Args:
+            server_url (str): The full URL for connecting to the MCP server
+                via Server-Sent Events (SSE).
+
+        Returns:
+            Dict[str, Any]: Response containing the list of tools or an error.
+        """
+
+        encoded_server_url = urllib.parse.quote(server_url, safe='')
+        endpoint = f"/mcp-server/list-tools/{encoded_server_url}"
+        return self._request('GET', endpoint)
+
+    def call_tool(
+        self,
+        server_url: str,
+        tool_name: str,
+        tool_args: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        r"""Calls a remote MCP server tool directly using the provided server
+        URL.
+
+        Args:
+            server_url (str): The full URL for connecting to the MCP server
+                via Server-Sent Events (SSE).
+            tool_name (str): The name of the tool to call.
+            tool_args (Optional[Dict[str, Any]]): The input parameters for
+                the tool. Defaults to None, which might be treated as empty
+                args by the server. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: Response containing the result of the tool call
+                or an error.
+        """
+        endpoint = "/mcp-server/call-tool"
+        payload: Dict[str, Any] = {
+            "serverUrl": server_url,
+            "toolName": tool_name,
+        }
+        # Add toolArgs only if provided, otherwise server might expect empty
+        # dict
+        if tool_args is not None:
+            payload["toolArgs"] = tool_args
+        else:
+            # Explicitly setting to empty dict based on schema interpretation
+            payload["toolArgs"] = {}
+
+        headers = {'Content-Type': 'application/json'}
+        return self._request(
+            'POST', endpoint, payload=payload, additional_headers=headers
+        )
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
         in the toolkit.
@@ -222,7 +265,8 @@ class KlavisToolkit(BaseToolkit):
             FunctionTool(self.get_server_instance),
             FunctionTool(self.delete_auth_data),
             FunctionTool(self.delete_server_instance),
-            FunctionTool(self.get_server_tools),
             FunctionTool(self.get_all_servers),
             FunctionTool(self.set_auth_token),
+            FunctionTool(self.list_tools),
+            FunctionTool(self.call_tool),
         ]

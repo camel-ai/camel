@@ -1,0 +1,126 @@
+<a id="camel.storages.key_value_storages.mem0_cloud"></a>
+
+<a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage"></a>
+
+## Mem0Storage
+
+```python
+class Mem0Storage(BaseKeyValueStorage):
+```
+
+A concrete implementation of the :obj:`BaseKeyValueStorage` using Mem0
+as the backend. This storage system uses Mem0's text capabilities to store,
+search, and manage text with context.
+
+**Parameters:**
+
+- **agent_id** (str): Default agent ID to associate memories with.
+- **api_key** (str, optional): The API key for authentication. If not provided, will try to get from environment variable MEM0_API_KEY (default: :obj:`None`).
+- **user_id** (str, optional): Default user ID to associate memories with (default: :obj:`None`).
+- **metadata** (Dict[str, Any], optional): Default metadata to include with all memories (default: :obj:`None`).
+- **References**: 
+- **https**: //docs.mem0.ai
+
+<a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    agent_id: str,
+    api_key: Optional[str] = None,
+    user_id: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None
+):
+```
+
+<a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage._prepare_options"></a>
+
+### _prepare_options
+
+```python
+def _prepare_options(
+    self,
+    agent_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    **kwargs: Any
+):
+```
+
+Helper method to prepare options for Mem0 API calls.
+
+**Parameters:**
+
+- **agent_id** (Optional[str], optional): Agent ID to use (default: :obj:`None`).
+- **user_id** (Optional[str], optional): User ID to use (default: :obj:`None`).
+- **metadata** (Optional[Dict[str, Any]], optional): Additional metadata to include (default: :obj:`None`). **kwargs (Any): Additional keyword arguments.
+
+**Returns:**
+
+  Dict[str, Any]: Prepared options dictionary for API calls.
+
+<a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage._prepare_messages"></a>
+
+### _prepare_messages
+
+```python
+def _prepare_messages(self, records: List[Dict[str, Any]]):
+```
+
+Prepare messages from records for Mem0 API calls.
+
+**Parameters:**
+
+- **records** (List[Dict[str, Any]]): List of record dictionaries.
+
+**Returns:**
+
+  List[Dict[str, Any]]: List of prepared message dictionaries.
+
+<a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage.save"></a>
+
+### save
+
+```python
+def save(self, records: List[Dict[str, Any]]):
+```
+
+Saves a batch of records to the Mem0 storage system.
+
+**Parameters:**
+
+- **records** (List[Dict[str, Any]]): A list of dictionaries, where each dictionary represents a unique record to be stored.
+
+<a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage.load"></a>
+
+### load
+
+```python
+def load(self):
+```
+
+**Returns:**
+
+  List[Dict[str, Any]]: A list of dictionaries, where each dictionary
+represents a stored record.
+
+<a id="camel.storages.key_value_storages.mem0_cloud.Mem0Storage.clear"></a>
+
+### clear
+
+```python
+def clear(
+    self,
+    agent_id: Optional[str] = None,
+    user_id: Optional[str] = None
+):
+```
+
+Removes all records from the Mem0 storage system.
+
+**Parameters:**
+
+- **agent_id** (Optional[str]): Specific agent ID to clear memories for.
+- **user_id** (Optional[str]): Specific user ID to clear memories for.

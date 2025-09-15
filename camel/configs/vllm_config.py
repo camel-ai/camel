@@ -90,6 +90,7 @@ class VLLMConfig(BaseConfig):
             most likely tokens to return at each token position, each with an
             associated log probability. `logprobs` must be set to `true` if
             this parameter is used. (default: :obj:`None`)
+        extra_body: Add additional JSON properties to the request. (default: :obj:`None`)
     """
 
     temperature: Optional[float] = None  # openai default: 1.0
@@ -105,6 +106,7 @@ class VLLMConfig(BaseConfig):
     user: Optional[str] = None
     logprobs: Optional[bool] = None
     top_logprobs: Optional[int] = None
+    extra_body: Optional[dict] = None
 
 
 VLLM_API_PARAMS = {param for param in VLLMConfig.model_fields.keys()}

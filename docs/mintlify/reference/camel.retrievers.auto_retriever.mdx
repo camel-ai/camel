@@ -1,0 +1,105 @@
+<a id="camel.retrievers.auto_retriever"></a>
+
+<a id="camel.retrievers.auto_retriever.AutoRetriever"></a>
+
+## AutoRetriever
+
+```python
+class AutoRetriever:
+```
+
+Facilitates the automatic retrieval of information using a
+query-based approach with pre-defined elements.
+
+**Parameters:**
+
+- **url_and_api_key** (Optional[Tuple[str, str]]): URL and API key for accessing the vector storage remotely.
+- **vector_storage_local_path** (Optional[str]): Local path for vector storage, if applicable.
+- **storage_type** (Optional[StorageType]): The type of vector storage to use. Defaults to `StorageType.QDRANT`.
+- **embedding_model** (Optional[BaseEmbedding]): Model used for embedding queries and documents. Defaults to `OpenAIEmbedding()`.
+
+<a id="camel.retrievers.auto_retriever.AutoRetriever.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    url_and_api_key: Optional[Tuple[str, str]] = None,
+    vector_storage_local_path: Optional[str] = None,
+    storage_type: Optional[StorageType] = None,
+    embedding_model: Optional[BaseEmbedding] = None
+):
+```
+
+<a id="camel.retrievers.auto_retriever.AutoRetriever._initialize_vector_storage"></a>
+
+### _initialize_vector_storage
+
+```python
+def _initialize_vector_storage(self, collection_name: Optional[str] = None):
+```
+
+Sets up and returns a vector storage instance with specified
+parameters.
+
+**Parameters:**
+
+- **collection_name** (Optional[str]): Name of the collection in the vector storage.
+
+**Returns:**
+
+  BaseVectorStorage: Configured vector storage instance.
+
+<a id="camel.retrievers.auto_retriever.AutoRetriever._collection_name_generator"></a>
+
+### _collection_name_generator
+
+```python
+def _collection_name_generator(self, content: Union[str, 'Element']):
+```
+
+Generates a valid collection name from a given file path or URL.
+
+**Parameters:**
+
+- **content** (Union[str, Element]): Local file path, remote URL, string content or Element object.
+
+**Returns:**
+
+  str: A sanitized, valid collection name suitable for use.
+
+<a id="camel.retrievers.auto_retriever.AutoRetriever.run_vector_retriever"></a>
+
+### run_vector_retriever
+
+```python
+def run_vector_retriever(
+    self,
+    query: str,
+    contents: Union[str, List[str], 'Element', List['Element']],
+    top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+    similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
+    return_detailed_info: bool = False,
+    max_characters: int = 500
+):
+```
+
+Executes the automatic vector retriever process using vector
+storage.
+
+**Parameters:**
+
+- **query** (str): Query string for information retriever.
+- **contents** (Union[str, List[str], Element, List[Element]]): Local file paths, remote URLs, string contents or Element objects.
+- **top_k** (int, optional): The number of top results to return during retrieve. Must be a positive integer. Defaults to `DEFAULT_TOP_K_RESULTS`.
+- **similarity_threshold** (float, optional): The similarity threshold for filtering results. Defaults to `DEFAULT_SIMILARITY_THRESHOLD`.
+- **return_detailed_info** (bool, optional): Whether to return detailed information including similarity score, content path and metadata. Defaults to `False`.
+- **max_characters** (int): Max number of characters in each chunk. Defaults to `500`.
+
+**Returns:**
+
+  dict[str, Sequence[Collection[str]]]: By default, returns
+only the text information. If `return_detailed_info` is
+`True`, return detailed information including similarity
+score, content path and metadata.

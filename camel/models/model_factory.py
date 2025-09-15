@@ -12,16 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
-from typing import Dict, Optional, Type, Union
-
-import yaml
+import os
+from typing import ClassVar, Dict, Optional, Type, Union
 
 from camel.models.aiml_model import AIMLModel
+from camel.models.amd_model import AMDModel
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.cohere_model import CohereModel
+from camel.models.crynux_model import CrynuxModel
 from camel.models.deepseek_model import DeepSeekModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
@@ -31,6 +32,7 @@ from camel.models.lmstudio_model import LMStudioModel
 from camel.models.mistral_model import MistralModel
 from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
+from camel.models.nebius_model import NebiusModel
 from camel.models.netmind_model import NetmindModel
 from camel.models.novita_model import NovitaModel
 from camel.models.nvidia_model import NvidiaModel
@@ -39,6 +41,7 @@ from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.openrouter_model import OpenRouterModel
 from camel.models.ppio_model import PPIOModel
+from camel.models.qianfan_model import QianfanModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
@@ -52,7 +55,7 @@ from camel.models.watsonx_model import WatsonXModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
-from camel.utils import BaseTokenCounter
+from camel.utils import BaseTokenCounter, configure_langfuse
 
 
 class ModelFactory:
@@ -61,6 +64,48 @@ class ModelFactory:
     Raises:
         ValueError: in case the provided model type is unknown.
     """
+
+    _MODEL_PLATFORM_TO_CLASS_MAP: ClassVar[
+        Dict[ModelPlatformType, Type[BaseModelBackend]]
+    ] = {
+        ModelPlatformType.OLLAMA: OllamaModel,
+        ModelPlatformType.VLLM: VLLMModel,
+        ModelPlatformType.SGLANG: SGLangModel,
+        ModelPlatformType.OPENAI_COMPATIBLE_MODEL: OpenAICompatibleModel,
+        ModelPlatformType.SAMBA: SambaModel,
+        ModelPlatformType.TOGETHER: TogetherAIModel,
+        ModelPlatformType.LITELLM: LiteLLMModel,
+        ModelPlatformType.AWS_BEDROCK: AWSBedrockModel,
+        ModelPlatformType.NVIDIA: NvidiaModel,
+        ModelPlatformType.SILICONFLOW: SiliconFlowModel,
+        ModelPlatformType.AMD: AMDModel,
+        ModelPlatformType.AIML: AIMLModel,
+        ModelPlatformType.VOLCANO: VolcanoModel,
+        ModelPlatformType.NETMIND: NetmindModel,
+        ModelPlatformType.OPENAI: OpenAIModel,
+        ModelPlatformType.AZURE: AzureOpenAIModel,
+        ModelPlatformType.ANTHROPIC: AnthropicModel,
+        ModelPlatformType.GROQ: GroqModel,
+        ModelPlatformType.NEBIUS: NebiusModel,
+        ModelPlatformType.LMSTUDIO: LMStudioModel,
+        ModelPlatformType.OPENROUTER: OpenRouterModel,
+        ModelPlatformType.ZHIPU: ZhipuAIModel,
+        ModelPlatformType.GEMINI: GeminiModel,
+        ModelPlatformType.MISTRAL: MistralModel,
+        ModelPlatformType.REKA: RekaModel,
+        ModelPlatformType.COHERE: CohereModel,
+        ModelPlatformType.YI: YiModel,
+        ModelPlatformType.QWEN: QwenModel,
+        ModelPlatformType.DEEPSEEK: DeepSeekModel,
+        ModelPlatformType.PPIO: PPIOModel,
+        ModelPlatformType.INTERNLM: InternLMModel,
+        ModelPlatformType.MOONSHOT: MoonshotModel,
+        ModelPlatformType.MODELSCOPE: ModelScopeModel,
+        ModelPlatformType.NOVITA: NovitaModel,
+        ModelPlatformType.WATSONX: WatsonXModel,
+        ModelPlatformType.QIANFAN: QianfanModel,
+        ModelPlatformType.CRYNUX: CrynuxModel,
+    }
 
     @staticmethod
     def create(
@@ -71,6 +116,8 @@ class ModelFactory:
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
@@ -94,6 +141,12 @@ class ModelFactory:
                 (default: :obj:`None`)
             timeout (Optional[float], optional): The timeout value in seconds
                 for API calls. (default: :obj:`None`)
+            max_retries (int, optional): Maximum number of retries
+                for API calls. (default: :obj:`3`)
+            **kwargs: Additional model-specific parameters that will be passed
+                to the model constructor. For example, Azure OpenAI models may
+                require `api_version`, `azure_deployment_name`,
+                `azure_ad_token_provider`, and `azure_ad_token`.
 
         Returns:
             BaseModelBackend: The initialized backend.
@@ -101,6 +154,12 @@ class ModelFactory:
         Raises:
             ValueError: If there is no backend for the model.
         """
+
+        # Auto-configure Langfuse only if explicitly enabled
+        env_enabled_str = os.environ.get("LANGFUSE_ENABLED")
+        if env_enabled_str and env_enabled_str.lower() == "true":
+            configure_langfuse()
+
         # Convert string to ModelPlatformType enum if needed
         if isinstance(model_platform, str):
             try:
@@ -119,81 +178,15 @@ class ModelFactory:
         model_class: Optional[Type[BaseModelBackend]] = None
         model_type = UnifiedModelType(model_type)
 
-        if model_platform.is_ollama:
-            model_class = OllamaModel
-        elif model_platform.is_vllm:
-            model_class = VLLMModel
-        elif model_platform.is_sglang:
-            model_class = SGLangModel
-        elif model_platform.is_openai_compatible_model:
-            model_class = OpenAICompatibleModel
-        elif model_platform.is_samba:
-            model_class = SambaModel
-        elif model_platform.is_together:
-            model_class = TogetherAIModel
-        elif model_platform.is_litellm:
-            model_class = LiteLLMModel
-        elif model_platform.is_aws_bedrock:
-            model_class = AWSBedrockModel
-        elif model_platform.is_nvidia:
-            model_class = NvidiaModel
-        elif model_platform.is_siliconflow:
-            model_class = SiliconFlowModel
-        elif model_platform.is_aiml:
-            model_class = AIMLModel
-        elif model_platform.is_volcano:
-            model_class = VolcanoModel
-        elif model_platform.is_netmind:
-            model_class = NetmindModel
+        model_class = ModelFactory._MODEL_PLATFORM_TO_CLASS_MAP.get(
+            model_platform
+        )
 
-        elif model_platform.is_openai and model_type.is_openai:
-            model_class = OpenAIModel
-        elif model_platform.is_azure and model_type.is_azure_openai:
-            model_class = AzureOpenAIModel
-        elif model_platform.is_anthropic and model_type.is_anthropic:
-            model_class = AnthropicModel
-        elif model_platform.is_groq and model_type.is_groq:
-            model_class = GroqModel
-        elif model_platform.is_lmstudio and model_type.is_lmstudio:
-            model_class = LMStudioModel
-        elif model_platform.is_openrouter and model_type.is_openrouter:
-            model_class = OpenRouterModel
-        elif model_platform.is_zhipuai and model_type.is_zhipuai:
-            model_class = ZhipuAIModel
-        elif model_platform.is_gemini and model_type.is_gemini:
-            model_class = GeminiModel
-        elif model_platform.is_mistral and model_type.is_mistral:
-            model_class = MistralModel
-        elif model_platform.is_reka and model_type.is_reka:
-            model_class = RekaModel
-        elif model_platform.is_cohere and model_type.is_cohere:
-            model_class = CohereModel
-        elif model_platform.is_yi and model_type.is_yi:
-            model_class = YiModel
-        elif model_platform.is_qwen and model_type.is_qwen:
-            model_class = QwenModel
-        elif model_platform.is_deepseek:
-            model_class = DeepSeekModel
-        elif model_platform.is_ppio:
-            model_class = PPIOModel
-        elif model_platform.is_internlm and model_type.is_internlm:
-            model_class = InternLMModel
-        elif model_platform.is_moonshot and model_type.is_moonshot:
-            model_class = MoonshotModel
-        elif model_platform.is_modelscope:
-            model_class = ModelScopeModel
-        elif model_platform.is_novita:
-            model_class = NovitaModel
-        elif model_type == ModelType.STUB:
+        if model_type == ModelType.STUB:
             model_class = StubModel
-        elif model_type.is_watsonx:
-            model_class = WatsonXModel
 
         if model_class is None:
-            raise ValueError(
-                f"Unknown pair of model platform `{model_platform}` "
-                f"and model type `{model_type}`."
-            )
+            raise ValueError(f"Unknown model platform `{model_platform}`")
 
         return model_class(
             model_type=model_type,
@@ -202,6 +195,8 @@ class ModelFactory:
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
 
     @classmethod
@@ -243,6 +238,8 @@ class ModelFactory:
 
     @classmethod
     def __load_yaml(cls, filepath: str) -> Dict:
+        import yaml
+
         r"""Loads and parses a YAML file into a dictionary.
 
         Args:

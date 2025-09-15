@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import re
 
 import pytest
 
@@ -50,20 +49,3 @@ def test_qwen_model(model_type: ModelType):
     assert model.model_config_dict == QwenConfig().as_dict()
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
-
-
-@pytest.mark.model_backend
-def test_qwen_model_unexpected_argument():
-    model_type = ModelType.QWEN_MAX
-    model_config_dict = {"model_path": "qwen-max"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into Qwen model backend."
-            )
-        ),
-    ):
-        _ = QwenModel(model_type, model_config_dict)

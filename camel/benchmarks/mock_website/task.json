@@ -1,0 +1,104 @@
+{
+    "products": [
+        {
+            "id": 1,
+            "name": "Gaming Laptop",
+            "price": 1200,
+            "image": "assets/img/products/laptop.jpg",
+            "category": "Electronics",
+            "rating": 4.5,
+            "description": "High-performance gaming laptop with latest specs."
+        },
+        {
+            "id": 2,
+            "name": "Wireless Mouse",
+            "price": 25,
+            "image": "assets/img/products/mouse.jpg",
+            "category": "Electronics",
+            "rating": 4.0,
+            "description": "Ergonomic wireless mouse with long battery life."
+        },
+        {
+            "id": 3,
+            "name": "Mechanical Keyboard",
+            "price": 75,
+            "image": "assets/img/products/keyboard.jpg",
+            "category": "Electronics",
+            "rating": 4.8,
+            "description": "RGB mechanical keyboard with customizable keys."
+        },
+        {
+            "id": 4,
+            "name": "Coffee Maker",
+            "price": 50,
+            "image": "assets/img/products/coffeemaker.jpg",
+            "category": "Home Goods",
+            "rating": 3.9,
+            "description": "Drip coffee maker with programmable timer."
+        },
+        {
+            "id": 5,
+            "name": "Bluetooth Speaker",
+            "price": 45,
+            "image": "assets/img/products/speaker.jpg",
+            "category": "Electronics",
+            "rating": 4.2,
+            "description": "Portable Bluetooth speaker with rich sound."
+        },
+        {
+            "id": 6,
+            "name": "Smartphone",
+            "price": 699,
+            "image": "assets/img/products/smartphone.jpg",
+            "category": "Electronics",
+            "rating": 4.6,
+            "description": "Latest-gen smartphone with stunning display and fast performance."
+        },
+        {
+            "id": 7,
+            "name": "Air Purifier",
+            "price": 130,
+            "image": "assets/img/products/airpurifier.jpg",
+            "category": "Home Goods",
+            "rating": 4.3,
+            "description": "HEPA air purifier with quiet operation and multiple fan speeds."
+        },
+        {
+            "id": 8,
+            "name": "Fitness Tracker",
+            "price": 85,
+            "image": "assets/img/products/fitnesstracker.jpg",
+            "category": "Electronics",
+            "rating": 4.1,
+            "description": "Waterproof fitness tracker with heart rate and sleep monitoring."
+        },
+        {
+            "id": 9,
+            "name": "Electric Kettle",
+            "price": 35,
+            "image": "assets/img/products/kettle.jpg",
+            "category": "Home Goods",
+            "rating": 4.0,
+            "description": "Stainless steel electric kettle with auto shut-off feature."
+        },
+        {
+            "id": 10,
+            "name": "Noise Cancelling Headphones",
+            "price": 150,
+            "image": "assets/img/products/headphones.jpg",
+            "category": "Electronics",
+            "rating": 4.7,
+            "description": "Over-ear headphones with active noise cancellation and long battery life."
+        }
+    ],
+    "ground_truth_cart": [
+        {
+            "id": 1,
+            "quantity": 1
+        },
+        {
+            "id": 2,
+            "quantity": 1
+        }
+    ]
+} 

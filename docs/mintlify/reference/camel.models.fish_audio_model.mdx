@@ -1,0 +1,71 @@
+<a id="camel.models.fish_audio_model"></a>
+
+<a id="camel.models.fish_audio_model.FishAudioModel"></a>
+
+## FishAudioModel
+
+```python
+class FishAudioModel(BaseAudioModel):
+```
+
+Provides access to FishAudio's Text-to-Speech (TTS) and Speech_to_Text
+(STT) models.
+
+<a id="camel.models.fish_audio_model.FishAudioModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, api_key: Optional[str] = None, url: Optional[str] = None):
+```
+
+Initialize an instance of FishAudioModel.
+
+**Parameters:**
+
+- **api_key** (Optional[str]): API key for FishAudio service. If not provided, the environment variable `FISHAUDIO_API_KEY` will be used.
+- **url** (Optional[str]): Base URL for FishAudio API. If not provided, the environment variable `FISHAUDIO_API_BASE_URL` will be used.
+
+<a id="camel.models.fish_audio_model.FishAudioModel.text_to_speech"></a>
+
+### text_to_speech
+
+```python
+def text_to_speech(self, input: str, **kwargs: Any):
+```
+
+Convert text to speech and save the output to a file.
+
+**Parameters:**
+
+- **input** (str): The text to convert to speech.
+- **storage_path** (Optional[str]): The file path where the resulting speech will be saved. (default: :obj:`None`)
+- **reference_id** (Optional[str]): An optional reference ID to associate with the request. (default: :obj:`None`)
+- **reference_audio** (Optional[str]): Path to an audio file for reference speech. (default: :obj:`None`)
+- **reference_audio_text** (Optional[str]): Text for the reference audio. (default: :obj:`None`) **kwargs (Any): Additional parameters to pass to the TTS request.
+
+<a id="camel.models.fish_audio_model.FishAudioModel.speech_to_text"></a>
+
+### speech_to_text
+
+```python
+def speech_to_text(
+    self,
+    audio_file_path: str,
+    language: Optional[str] = None,
+    ignore_timestamps: Optional[bool] = None,
+    **kwargs: Any
+):
+```
+
+Convert speech to text from an audio file.
+
+**Parameters:**
+
+- **audio_file_path** (str): The path to the audio file to transcribe.
+- **language** (Optional[str]): The language of the audio. (default: :obj:`None`)
+- **ignore_timestamps** (Optional[bool]): Whether to ignore timestamps. (default: :obj:`None`) **kwargs (Any): Additional parameters to pass to the STT request.
+
+**Returns:**
+
+  str: The transcribed text from the audio.

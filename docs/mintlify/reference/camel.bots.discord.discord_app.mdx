@@ -1,0 +1,71 @@
+<a id="camel.bots.discord.discord_app"></a>
+
+<a id="camel.bots.discord.discord_app.DiscordApp"></a>
+
+## DiscordApp
+
+```python
+class DiscordApp:
+```
+
+A class representing a Discord app that uses the `discord.py` library
+to interact with Discord servers.
+
+This bot can respond to messages in specific channels and only reacts to
+messages that mention the bot.
+
+**Parameters:**
+
+- **channel_ids** (Optional[List[int]]): A list of allowed channel IDs. If provided, the bot will only respond to messages in these channels.
+- **token** (Optional[str]): The Discord bot token used for authentication.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    channel_ids: Optional[List[int]] = None,
+    token: Optional[str] = None,
+    client_id: Optional[str] = None,
+    client_secret: Optional[str] = None,
+    redirect_uri: Optional[str] = None,
+    installation_store: Optional[DiscordBaseInstallationStore] = None,
+    intents: Optional[discord.Intents] = None
+):
+```
+
+Initialize the DiscordApp instance by setting up the Discord client
+and event handlers.
+
+**Parameters:**
+
+- **channel_ids** (Optional[List[int]]): A list of allowed channel IDs. The bot will only respond to messages in these channels if provided. (default: :obj:`None`)
+- **token** (Optional[str]): The Discord bot token for authentication. If not provided, the token will be retrieved from the environment variable `DISCORD_TOKEN`. (default: :obj:`None`)
+- **client_id** (str, optional): The client ID for Discord OAuth. (default: :obj:`None`)
+- **client_secret** (Optional[str]): The client secret for Discord OAuth. (default: :obj:`None`)
+- **redirect_uri** (str): The redirect URI for OAuth callbacks. (default: :obj:`None`)
+- **installation_store** (DiscordAsyncInstallationStore): The database stores all information of all installations. (default: :obj:`None`)
+- **intents** (discord.Intents): The Discord intents of this app. (default: :obj:`None`)
+
+<a id="camel.bots.discord.discord_app.DiscordApp.run"></a>
+
+### run
+
+```python
+def run(self):
+```
+
+Start the Discord bot using its token.
+
+This method starts the bot and logs into Discord synchronously using
+the provided token. It blocks execution and keeps the bot running.
+
+<a id="camel.bots.discord.discord_app.DiscordApp.client"></a>
+
+### client
+
+```python
+def client(self):
+```

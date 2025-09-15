@@ -17,48 +17,6 @@ from pydantic import BaseModel
 from camel.agents import ChatAgent
 from camel.toolkits import FunctionTool, SearchToolkit
 
-res_simple = SearchToolkit().query_wolfram_alpha(
-    query="solve 3x-7=11", is_detailed=False
-)
-
-print(res_simple)
-'''
-===============================================================================
-x = 6
-===============================================================================
-'''
-
-res_detailed = SearchToolkit().query_wolfram_alpha(
-    query="solve 3x-7=11", is_detailed=True
-)
-
-print(res_detailed)
-'''
-===============================================================================
-{'query': 'solve 3x-7=11', 'pod_info': [{'title': 'Input interpretation',
-'description': 'solve 3 x - 7 = 11', 'image_url': 'https://www6b3.wolframalpha.
-com/Calculate/MSP/MSP37741a3dc67f338579ff00003fih94dg39300iaf?
-MSPStoreType=image/gif&s=18'}, {'title': 'Result', 'description': 'x = 6',
-'image_url': 'https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP37751a3dc67f338579ff00001dg4gbdcd0f10i3f?MSPStoreType=image/gif&s=18'},
-{'title': 'Plot', 'description': None, 'image_url': 'https://www6b3.
-wolframalpha.com/Calculate/MSP/MSP37761a3dc67f338579ff0000374484g95bh3ah3e?
-MSPStoreType=image/gif&s=18'}, {'title': 'Number line', 'description': None,
-'image_url': 'https://www6b3.wolframalpha.com/Calculate/MSP/
-MSP37771a3dc67f338579ff00005573c3a87ahg8dbc?MSPStoreType=image/gif&s=18'}],
-'final_answer': 'x = 6', 'steps': {'step1': 'Isolate terms with x to the left
-hand side.\nAdd 7 to both sides:\n3 x + (7 - 7) = 7 + 11', 'step2': 'Look for
-the difference of two identical terms.\n7 - 7 = 0:\n3 x = 11 + 7', 'step3':
-'Evaluate 11 + 7.\n11 + 7 = 18:\n3 x = 18', 'step4': 'Divide both sides by a
-constant to simplify the equation.\nDivide both sides of 3 x = 18 by 3:\n(3 x)/
-3 = 18/3', 'step5': 'Any nonzero number divided by itself is one.\n3/3 = 1:\nx
-= 18/3', 'step6': 'Reduce 18/3 to lowest terms. Start by finding the greatest
-common divisor of 18 and 3.\nThe greatest common divisor of 18 and 3 is 3, so
-factor out 3 from both the numerator and denominator: 18/3 = (3x6)/(3x1) = 3/3
-x 6 = 6\nAnswer: | \n | x = 6'}}
-===============================================================================
-'''
-
 res_brave = SearchToolkit().search_brave(
     q="What is the weather in Tokyo?",
     search_lang="en",
@@ -420,3 +378,42 @@ print(search_alibaba_tongxiao_response)
 ]}
 ===============================================================================
 """
+# Example using metaso response
+metaso_response = SearchToolkit().search_metaso(
+    query="What is CAMEL-AI?",
+    scope="webpage",
+    page=1,
+)
+
+print(metaso_response)
+"""
+===============================================================================
+{'credits': 10, 'searchParameters': {'q': 'What is CAMEL-AI?', 'scope': 'webpage',
+ 'page': 1, 'includeSummary': False, 'includeRawContent': False, 'conciseSnippet':
+  False, 'format': 'chat_completions'}, 'webpages': [{'title': '使用CAMEL框架和Qwen
+  模型自动进行数据获取及报告与知识 ...', 'link': 'https://developer.aliyun.com/articl
+  e/1647631', 'score': 'high', 'snippet': '**关于CAMEL AI**\n* * *\n**"Finding the
+   Scaling Law of Agents"**\nCAMEL AI (https://www.camel-ai.org) 是一个致力于构建基
+   于大语言模型(LLMs)的多智能体系统的开源平台,旨在推动人工智能的发展。就像AI领域的“沙
+   漠之舟”,CAMEL不仅在信息的广袤领域里稳步前行,更为实现AGI探索出一条前沿之路。CAMEL框架
+   是最早基于ChatGPT的autonomous agents的知名项目,已被NeurlPS 2023录用。', 'position'
+   : 1, 'authors': ['阿里云开发者社区'], 'date': '2024年12月31日'}, {'title':
+   'CAMEL-AI团队参与发表Nature子刊啦!聚焦LLM如何重塑 ...', 'link': 'https://cloud.
+   tencent.com/developer/article/2475624', 'score': 'high', 'snippet': 'Finding
+   the Scaling Law of Agents"\nCAMEL AI (https://www.camel-ai.org) 是一个致力于构建
+   基于大语言模型)LLMs)的多智能体系统的开源平台，旨在推动人工智能的发展。\n就像AI领域的
+   “沙漠之舟”,CAMEL不仅在信息的广袤领域里稳步前行,更为实现AGI探索出一条前沿之路。\n
+   CAMEL框架是最早基于ChatGPT的autonomous agents的知名项目,已被NeurlPS 2023录用。\n
+   CAMEL AI框架设计上极具灵活性与模块化,包含多种智能体实现、专业领域提示示例以及AI数据探
+   索功能等模块，适应各种高效决策与复杂数据处理需求。\n通过协作运作的智能体队列,CAMEL AI
+   不仅在金融、零售、医疗等领域展示出强大的适用性和创新性，还大大提升了自适应能力......
+   'position': 9, 'authors': ['KubeNine'], 'date': '2025年04月15日'}, {'title': '
+   RAG应用的评估-CSDN博客', 'link': 'https://blog.csdn.net/weixin_44245188/article/
+   details/148157069', 'score': 'high', 'snippet': "Query: 什么是CAMEL AI?\n
+   Expected Answers: ['CAMEL AI 是一个开源的、社区驱动的AI框架。']\nRetrieved
+   Results: ['CAMEL AI 介绍\\n\\nCAMEL AI 是一个开源的、社区驱动的AI框架,旨在简化AI应
+   用的开发和部署。该框架提供了多种功能模块，包括数据加载、特征工程、模型训练和部署等。']
+   \nPrecision: 1.0000\nRecall: 1.0000\nF1 Score: 1.0000\nAverage
+ Similarity: 0.9584", 'position': 10, 'date': '2025年05月23日'}], 'total': 38}
+===============================================================================
+"""  # noqa: E501

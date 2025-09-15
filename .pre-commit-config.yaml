@@ -4,20 +4,20 @@ repos:
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --show-fixes]
-        exclude: ^docs/cookbooks/  # Ignore files under docs/cookbooks
+        exclude: ^(docs/cookbooks/|examples/usecases/)  # Ignore files under docs/cookbooks and examples/usecases
       - id: ruff-format
-        exclude: ^docs/cookbooks/  # Ignore files under docs/cookbooks
+        exclude: ^(docs/cookbooks/|examples/usecases/)  # Ignore files under docs/cookbooks and examples/usecases
 
   - repo: local
     hooks:
       - id: mypy
         name: Check mypy
-        entry: mypy --namespace-packages -p camel -p test -p apps
-        language: python
+        entry: uv run mypy --namespace-packages -p camel -p test -p apps
+        language: system
         types: [python]
         pass_filenames: false
         require_serial: true
-        exclude: ^docs/cookbooks/  # Ignore files under docs/cookbooks
+        exclude: ^(docs/cookbooks/|examples/usecases/)  # Ignore files under docs/cookbooks and examples/usecases
 
   - repo: local
     hooks:
@@ -26,12 +26,13 @@ repos:
       entry: python licenses/update_license.py . licenses/license_template.txt 
       language: system
       types: [python]
-      exclude: ^docs/cookbooks/  # Ignore files under docs/cookbooks
+      exclude: ^(docs/cookbooks/|examples/usecases/)  # Ignore files under docs/cookbooks and examples/usecases
 
   - repo: https://github.com/codespell-project/codespell
     # Configuration for codespell is in pyproject.toml
     rev: v2.4.1
     hooks:
     - id: codespell
+      exclude: ^(examples/usecases/|docs/cookbooks/)  # Ignore files under examples/usecases and docs/cookbooks
       additional_dependencies:
       - tomli  # for python_version < '3.11'

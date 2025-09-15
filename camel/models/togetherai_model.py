@@ -15,7 +15,7 @@
 import os
 from typing import Any, Dict, Optional, Union
 
-from camel.configs import TOGETHERAI_API_PARAMS, TogetherAIConfig
+from camel.configs import TogetherAIConfig
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import ModelType
 from camel.utils import (
@@ -47,6 +47,10 @@ class TogetherAIModel(OpenAICompatibleModel):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -62,6 +66,8 @@ class TogetherAIModel(OpenAICompatibleModel):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = TogetherAIConfig().as_dict()
@@ -77,19 +83,6 @@ class TogetherAIModel(OpenAICompatibleModel):
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
+            **kwargs,
         )
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to TogetherAI API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to TogetherAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in TOGETHERAI_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into TogetherAI model backend."
-                )

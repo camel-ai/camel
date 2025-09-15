@@ -1,0 +1,70 @@
+<a id="camel.embeddings.jina_embedding"></a>
+
+<a id="camel.embeddings.jina_embedding.JinaEmbedding"></a>
+
+## JinaEmbedding
+
+```python
+class JinaEmbedding:
+```
+
+Provides text and image embedding functionalities using Jina AI's API.
+
+**Parameters:**
+
+- **model_type** (EmbeddingModelType, optional): The model to use for embeddings. (default: :obj:`JINA_EMBEDDINGS_V3`)
+- **api_key** (Optional[str], optional): The API key for authenticating with Jina AI. (default: :obj:`None`)
+- **dimensions** (Optional[int], optional): The dimension of the output embeddings. (default: :obj:`None`)
+- **embedding_type** (Optional[str], optional): The type of embedding format to generate. Options: 'int8' (binary encoding with higher storage and transfer efficiency), 'uint8' (unsigned binary encoding with higher storage and transfer efficiency), 'base64' (base64 string encoding with higher transfer efficiency). (default: :obj:`None`)
+- **task** (Optional[str], optional): The type of task for text embeddings.
+- **Options**: retrieval.query, retrieval.passage, text-matching, classification, separation. (default: :obj:`None`)
+- **late_chunking** (bool, optional): If true, concatenates all sentences in input and treats as a single input. (default: :obj:`False`)
+- **normalized** (bool, optional): If true, embeddings are normalized to unit L2 norm. (default: :obj:`False`)
+
+<a id="camel.embeddings.jina_embedding.JinaEmbedding.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: EmbeddingModelType = EmbeddingModelType.JINA_EMBEDDINGS_V3,
+    api_key: Optional[str] = None,
+    dimensions: Optional[int] = None,
+    embedding_type: Optional[str] = None,
+    task: Optional[str] = None,
+    late_chunking: bool = False,
+    normalized: bool = False
+):
+```
+
+<a id="camel.embeddings.jina_embedding.JinaEmbedding.embed_list"></a>
+
+### embed_list
+
+```python
+def embed_list(self, objs: list[Union[str, Image.Image]], **kwargs: Any):
+```
+
+Generates embeddings for the given texts or images.
+
+**Parameters:**
+
+- **objs** (list[Union[str, Image.Image]]): The texts or images for which to generate the embeddings. **kwargs (Any): Extra kwargs passed to the embedding API. Not used in this implementation.
+
+**Returns:**
+
+  list[list[float]]: A list that represents the generated embedding
+as a list of floating-point numbers.
+
+<a id="camel.embeddings.jina_embedding.JinaEmbedding.get_output_dim"></a>
+
+### get_output_dim
+
+```python
+def get_output_dim(self):
+```
+
+**Returns:**
+
+  int: The dimensionality of the embedding for the current model.

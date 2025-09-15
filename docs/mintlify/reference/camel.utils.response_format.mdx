@@ -1,0 +1,40 @@
+<a id="camel.utils.response_format"></a>
+
+<a id="camel.utils.response_format.get_pydantic_model"></a>
+
+## get_pydantic_model
+
+```python
+def get_pydantic_model(input_data: Union[str, Type[BaseModel], Callable]):
+```
+
+A multi-purpose function that can be used as a normal function,
+a class decorator, or a function decorator.
+
+**Parameters:**
+
+- **input_data** (Union[str, type, Callable]): - If a string is provided, it should be a JSON-encoded string that will be converted into a BaseModel. - If a function is provided, it will be decorated such that its arguments are converted into a BaseModel. - If a BaseModel class is provided, it will be returned directly.
+
+**Returns:**
+
+  Type[BaseModel]: The BaseModel class that will be used to
+structure the input data.
+
+<a id="camel.utils.response_format.model_from_json_schema"></a>
+
+## model_from_json_schema
+
+```python
+def model_from_json_schema(name: str, schema: Dict[str, Any]):
+```
+
+Create a Pydantic model from a JSON schema.
+
+**Parameters:**
+
+- **name** (str): The name of the model.
+- **schema** (Dict[str, Any]): The JSON schema to create the model from.
+
+**Returns:**
+
+  Type[BaseModel]: The Pydantic model.

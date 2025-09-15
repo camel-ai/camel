@@ -1,0 +1,152 @@
+<a id="camel.loaders.mineru_extractor"></a>
+
+<a id="camel.loaders.mineru_extractor.MinerU"></a>
+
+## MinerU
+
+```python
+class MinerU:
+```
+
+Document extraction service supporting OCR, formula recognition
+and tables.
+
+**Parameters:**
+
+- **api_key** (str, optional): Authentication key for MinerU API service. If not provided, will use MINERU_API_KEY environment variable. (default: :obj:`None`)
+- **api_url** (str, optional): Base URL endpoint for the MinerU API service. (default: :obj:`"https://mineru.net/api/v4"`)
+
+**Note:**
+
+- Single file size limit: 200MB
+- Page limit per file: 600 pages
+- Daily high-priority parsing quota: 2000 pages
+- Some URLs (GitHub, AWS) may timeout due to network restrictions
+
+<a id="camel.loaders.mineru_extractor.MinerU.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    api_key: Optional[str] = None,
+    api_url: Optional[str] = 'https://mineru.net/api/v4',
+    is_ocr: bool = False,
+    enable_formula: bool = False,
+    enable_table: bool = True,
+    layout_model: str = 'doclayout_yolo',
+    language: str = 'en'
+):
+```
+
+Initialize MinerU extractor.
+
+**Parameters:**
+
+- **api_key** (str, optional): Authentication key for MinerU API service. If not provided, will use MINERU_API_KEY environment variable.
+- **api_url** (str, optional): Base URL endpoint for MinerU API service. (default: "https://mineru.net/api/v4")
+- **is_ocr** (bool, optional): Enable optical character recognition. (default: :obj:`False`)
+- **enable_formula** (bool, optional): Enable formula recognition. (default: :obj:`False`)
+- **enable_table** (bool, optional): Enable table detection, extraction. (default: :obj:`True`)
+- **layout_model** (str, optional): Model for document layout detection. Options are 'doclayout_yolo' or 'layoutlmv3'. (default: :obj:`"doclayout_yolo"`)
+- **language** (str, optional): Primary language of the document. (default: :obj:`"en"`)
+
+<a id="camel.loaders.mineru_extractor.MinerU.extract_url"></a>
+
+### extract_url
+
+```python
+def extract_url(self, url: str):
+```
+
+Extract content from a URL document.
+
+**Parameters:**
+
+- **url** (str): Document URL to extract content from.
+
+**Returns:**
+
+  Dict: Task identifier for tracking extraction progress.
+
+<a id="camel.loaders.mineru_extractor.MinerU.batch_extract_urls"></a>
+
+### batch_extract_urls
+
+```python
+def batch_extract_urls(self, files: List[Dict[str, Union[str, bool]]]):
+```
+
+Extract content from multiple document URLs in batch.
+
+**Parameters:**
+
+- **files** (List[Dict[str, Union[str, bool]]]): List of document configurations. Each document requires 'url' and optionally 'is_ocr' and 'data_id' parameters.
+
+**Returns:**
+
+  str: Batch identifier for tracking extraction progress.
+
+<a id="camel.loaders.mineru_extractor.MinerU.get_task_status"></a>
+
+### get_task_status
+
+```python
+def get_task_status(self, task_id: str):
+```
+
+Retrieve status of a single extraction task.
+
+**Parameters:**
+
+- **task_id** (str): Unique identifier of the extraction task.
+
+**Returns:**
+
+  Dict: Current task status and results if completed.
+
+<a id="camel.loaders.mineru_extractor.MinerU.get_batch_status"></a>
+
+### get_batch_status
+
+```python
+def get_batch_status(self, batch_id: str):
+```
+
+Retrieve status of a batch extraction task.
+
+**Parameters:**
+
+- **batch_id** (str): Unique identifier of the batch extraction task.
+
+**Returns:**
+
+  Dict: Current status and results for all documents in the batch.
+
+<a id="camel.loaders.mineru_extractor.MinerU.wait_for_completion"></a>
+
+### wait_for_completion
+
+```python
+def wait_for_completion(
+    self,
+    task_id: str,
+    is_batch: bool = False,
+    timeout: float = 100,
+    check_interval: float = 5
+):
+```
+
+Monitor task until completion or timeout.
+
+**Parameters:**
+
+- **task_id** (str): Unique identifier of the task or batch.
+- **is_batch** (bool, optional): Indicates if task is a batch operation. (default: :obj:`False`)
+- **timeout** (float, optional): Maximum wait time in seconds. (default: :obj:`100`)
+- **check_interval** (float, optional): Time between status checks in seconds. (default: :obj:`5`)
+
+**Returns:**
+
+  Dict: Final task status and extraction results.

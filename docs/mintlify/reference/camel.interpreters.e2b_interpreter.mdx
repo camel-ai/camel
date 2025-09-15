@@ -1,0 +1,96 @@
+<a id="camel.interpreters.e2b_interpreter"></a>
+
+<a id="camel.interpreters.e2b_interpreter.E2BInterpreter"></a>
+
+## E2BInterpreter
+
+```python
+class E2BInterpreter(BaseInterpreter):
+```
+
+E2B Code Interpreter implementation.
+
+**Parameters:**
+
+- **require_confirm** (bool, optional): If True, prompt user before running code strings for security. (default: :obj:`True`) Environment Variables:
+- **E2B_API_KEY**: The API key for authenticating with the E2B service.
+- **E2B_DOMAIN**: The base URL for the E2B API. If not provided, will use the default E2B endpoint.
+
+<a id="camel.interpreters.e2b_interpreter.E2BInterpreter.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, require_confirm: bool = True):
+```
+
+<a id="camel.interpreters.e2b_interpreter.E2BInterpreter.__del__"></a>
+
+### __del__
+
+```python
+def __del__(self):
+```
+
+Destructor for the E2BInterpreter class.
+
+This method ensures that the e2b sandbox is killed when the
+interpreter is deleted.
+
+<a id="camel.interpreters.e2b_interpreter.E2BInterpreter.run"></a>
+
+### run
+
+```python
+def run(self, code: str, code_type: str = 'python'):
+```
+
+Executes the given code in the e2b sandbox.
+
+**Parameters:**
+
+- **code** (str): The code string to execute.
+- **code_type** (str): The type of code to execute (e.g., 'python', 'bash'). (default: obj:`python`)
+
+**Returns:**
+
+  str: The string representation of the output of the executed code.
+
+<a id="camel.interpreters.e2b_interpreter.E2BInterpreter.supported_code_types"></a>
+
+### supported_code_types
+
+```python
+def supported_code_types(self):
+```
+
+Provides supported code types by the interpreter.
+
+<a id="camel.interpreters.e2b_interpreter.E2BInterpreter.update_action_space"></a>
+
+### update_action_space
+
+```python
+def update_action_space(self, action_space: Dict[str, Any]):
+```
+
+Updates action space for *python* interpreter
+
+<a id="camel.interpreters.e2b_interpreter.E2BInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Execute a command can be used to resolve the dependency of the
+code.
+
+**Parameters:**
+
+- **command** (str): The command to execute.
+
+**Returns:**
+
+  str: The output of the command.

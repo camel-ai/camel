@@ -149,6 +149,14 @@ class AgentMemory(MemoryBlock, ABC):
         """
         return self.get_context_creator().create_context(self.retrieve())
 
+    def clean_tool_calls(self) -> None:
+        r"""Removes tool call messages from memory.
+        This is an optional method that can be overridden by subclasses
+        to implement cleaning of tool-related messages. By default, it
+        does nothing, maintaining backward compatibility.
+        """
+        pass
+
     def __repr__(self) -> str:
         r"""Returns a string representation of the AgentMemory.
 

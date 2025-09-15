@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
-from camel.configs import SGLANG_API_PARAMS, SGLangConfig
+from camel.configs import SGLangConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -29,7 +29,21 @@ from camel.types import (
     ChatCompletionChunk,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    get_current_agent_session_id,
+    update_current_observation,
+    update_langfuse_trace,
+)
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 
 class SGLangModel(BaseModelBackend):
@@ -56,8 +70,13 @@ class SGLangModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        max_retries (int, optional): Maximum number of retries for API calls.
+            (default: :obj:`3`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
 
-    Reference: https://sgl-project.github.io/backend/openai_api_completions.html
+    Reference: https://sgl-project.github.io/backend/openai_api_completions.
+    html
     """
 
     def __init__(
@@ -68,6 +87,8 @@ class SGLangModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = SGLangConfig().as_dict()
@@ -81,7 +102,13 @@ class SGLangModel(BaseModelBackend):
 
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
+            model_type,
+            model_config_dict,
+            api_key,
+            url,
+            token_counter,
+            timeout,
+            max_retries,
         )
 
         self._client = None
@@ -90,15 +117,17 @@ class SGLangModel(BaseModelBackend):
             # Initialize the client if an existing URL is provided
             self._client = OpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=self._max_retries,
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,
+                **kwargs,
             )
             self._async_client = AsyncOpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=self._max_retries,
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,
+                **kwargs,
             )
 
     def _start_server(self) -> None:
@@ -133,7 +162,7 @@ class SGLangModel(BaseModelBackend):
             # Initialize the client after the server starts
             self._client = OpenAI(
                 timeout=self._timeout,
-                max_retries=3,
+                max_retries=self._max_retries,
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,
             )
@@ -180,21 +209,7 @@ class SGLangModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to SGLang API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in SGLANG_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into SGLang model backend."
-                )
-
+    @observe(as_type='generation')
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -213,6 +228,28 @@ class SGLangModel(BaseModelBackend):
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
 
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "source": "camel",
+                    "agent_id": agent_session_id,
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         # Ensure server is running
         self._ensure_server_running()
 
@@ -230,9 +267,16 @@ class SGLangModel(BaseModelBackend):
             model=self.model_type,
             **self.model_config_dict,
         )
-
+        update_current_observation(
+            usage_details={
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens,
+                "total_tokens": response.usage.total_tokens,
+            },
+        )
         return response
 
+    @observe(as_type='generation')
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -250,6 +294,27 @@ class SGLangModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "source": "camel",
+                    "agent_id": agent_session_id,
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
 
         # Ensure server is running
         self._ensure_server_running()
@@ -267,6 +332,13 @@ class SGLangModel(BaseModelBackend):
             messages=messages,
             model=self.model_type,
             **self.model_config_dict,
+        )
+        update_current_observation(
+            usage_details={
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens,
+                "total_tokens": response.usage.total_tokens,
+            },
         )
 
         return response

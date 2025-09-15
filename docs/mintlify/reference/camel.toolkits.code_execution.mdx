@@ -1,0 +1,89 @@
+<a id="camel.toolkits.code_execution"></a>
+
+<a id="camel.toolkits.code_execution.CodeExecutionToolkit"></a>
+
+## CodeExecutionToolkit
+
+```python
+class CodeExecutionToolkit(BaseToolkit):
+```
+
+A toolkit for code execution.
+
+**Parameters:**
+
+- **sandbox** (str): The environment type used to execute code. (default: `subprocess`)
+- **verbose** (bool): Whether to print the output of the code execution. (default: :obj:`False`)
+- **unsafe_mode** (bool): If `True`, the interpreter runs the code by `eval()` without any security check. (default: :obj:`False`)
+- **import_white_list** (Optional[List[str]]): A list of allowed imports. (default: :obj:`None`)
+- **require_confirm** (bool): Whether to require confirmation before executing code. (default: :obj:`False`)
+- **timeout** (Optional[float]): General timeout for toolkit operations. (default: :obj:`None`)
+- **microsandbox_config** (Optional[dict]): Configuration for microsandbox interpreter. Available keys: 'server_url', 'api_key', 'namespace', 'sandbox_name', 'timeout'. If None, uses default configuration. (default: :obj:`None`)
+
+<a id="camel.toolkits.code_execution.CodeExecutionToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    sandbox: Literal['internal_python', 'jupyter', 'docker', 'subprocess', 'e2b', 'microsandbox'] = 'subprocess',
+    verbose: bool = False,
+    unsafe_mode: bool = False,
+    import_white_list: Optional[List[str]] = None,
+    require_confirm: bool = False,
+    timeout: Optional[float] = None,
+    microsandbox_config: Optional[dict] = None
+):
+```
+
+<a id="camel.toolkits.code_execution.CodeExecutionToolkit.execute_code"></a>
+
+### execute_code
+
+```python
+def execute_code(self, code: str, code_type: str = 'python'):
+```
+
+Execute a given code snippet.
+
+**Parameters:**
+
+- **code** (str): The input code to the Code Interpreter tool call.
+- **code_type** (str): The type of the code to be executed (e.g. node.js, python, etc). (default: obj:`python`)
+
+**Returns:**
+
+  str: The text output from the Code Interpreter tool call.
+
+<a id="camel.toolkits.code_execution.CodeExecutionToolkit.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Execute a command can be used to resolve the dependency of the
+code. Useful if there's dependency issues when you try to execute code.
+
+**Parameters:**
+
+- **command** (str): The command to execute.
+
+**Returns:**
+
+  Union[str, tuple[str, str]]: The output of the command.
+
+<a id="camel.toolkits.code_execution.CodeExecutionToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+**Returns:**
+
+  List[FunctionTool]: A list of FunctionTool objects
+representing the functions in the toolkit.

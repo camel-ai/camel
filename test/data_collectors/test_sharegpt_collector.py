@@ -14,7 +14,7 @@
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.data_collector import ShareGPTDataCollector
+from camel.data_collectors import ShareGPTDataCollector
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import MathToolkit
@@ -26,7 +26,6 @@ def test_sharegpt_converter():
 
     model_config_dict = ChatGPTConfig(
         tools=tool_list,
-        temperature=0.0,
     ).as_dict()
 
     model = ModelFactory.create(
@@ -63,7 +62,6 @@ def test_sharegpt_llm_converter():
 
     model_config_dict = ChatGPTConfig(
         tools=tool_list,
-        temperature=0.0,
     ).as_dict()
 
     model = ModelFactory.create(
