@@ -61,8 +61,8 @@ def create_tar_archive(
 def copy_to_container(
     container: Container,
     paths: list[Path] | Path,
-    container_dir: str | None = None,
-    container_filename: str | None = None,
+    container_dir: Optional[str] = None,
+    container_filename: Optional[str] = None,
 ) -> None:
     """Copy files or directories to a running docker container."""
     container_dir = container_dir or (
@@ -132,9 +132,7 @@ def clean_cast_file(input_path: str, output_path: str):
         try:
             parsed = json.loads(line)
         except json.JSONDecodeError:
-            logger.warning(
-                f"Skipping invalid JSON line {i}: {line.strip()}"
-            )
+            logger.warning(f"Skipping invalid JSON line {i}: {line.strip()}")
             continue
 
         if isinstance(parsed, list) and len(parsed) == 3 and parsed[1] == "o":
@@ -194,8 +192,8 @@ class TerminalToolkitDocker(BaseToolkit):
         session_name: str,
         container_name: str,
         timeout: Optional[float] = 20.0,
-        container_log_path: str | None = None,
-        log_path: str | None = None,
+        container_log_path: Optional[str] = None,
+        log_path: Optional[str] = None,
         disable_recording: bool = False,
         user: str = "",
         safe_mode: bool = True,
@@ -206,7 +204,7 @@ class TerminalToolkitDocker(BaseToolkit):
         self._container_name = container_name
         self._session_name = session_name
         self._disable_recording = disable_recording
-        self._asciinema_markers = []
+        self._asciinema_markers: list[float] = []
         self._previous_buffer: Optional[str] = None
         self._user = user
         self.safe_mode = safe_mode
