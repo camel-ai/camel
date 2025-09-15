@@ -42,25 +42,29 @@ except ImportError:
 
 @MCPServer()
 class TerminalToolkit(BaseToolkit):
-    """
-    A toolkit for LLM agents to execute and interact with terminal commands
-    in either a local or a sandboxed Docker environment.
+    r"""Toolkit to execute and interact with terminal commands for agents.
+
+    Supports both local execution and an optional Docker backend. For local
+    execution, `working_directory` acts as a sandbox boundary. For Docker,
+    commands run inside the specified container.
 
     Args:
-    use_docker_backend (bool): If True, all commands are executed in a
-        Docker container. Defaults to False.
-    docker_container_name (Optional[str]): The name of the Docker
-        container to use. Required if use_docker_backend is True.
-    working_dir (str): The base directory for all operations.
-        For the local backend, this acts as a security sandbox.
-    session_logs_dir (Optional[str]): The directory to store session
-        logs. Defaults to a 'terminal_logs' subfolder in the
-        working_dir.
-    timeout (int): The default timeout in seconds for blocking
-        commands. Defaults to 60.
-
-    Note:
-
+        timeout (Optional[float]): Default timeout in seconds for blocking
+            commands. (default: :obj:`20.0`)
+        shell_sessions (Optional[Dict[str, Any]]): Internal session mapping
+            used for non-blocking processes. (default: :obj:`None`)
+        working_directory (Optional[str]): Base directory for all operations.
+            For local backend, this is the sandbox root. (default: :obj:`None`)
+        use_docker_backend (bool): If :obj:`True`, execute commands in a Docker
+            container instead of locally. (default: :obj:`False`)
+        docker_container_name (Optional[str]): Docker container name or ID
+            when using the Docker backend. (default: :obj:`None`)
+        session_logs_dir (Optional[str]): Directory to store session logs.
+            Defaults to ``<working_directory>/terminal_logs``.
+        safe_mode (bool): Whether to restrict or sanitize risky operations in
+            local mode. (default: :obj:`True`)
+        need_terminal (bool): Whether an interactive terminal is required.
+            (default: :obj:`False`)
     """
 
     def __init__(
@@ -114,7 +118,7 @@ class TerminalToolkit(BaseToolkit):
                 self.container = self.docker_client.containers.get(
                     docker_container_name
                 )
-                print(
+                logger.info(
                     f"Successfully attached to Docker container '{docker_container_name}'."
                 )
             except NotFound:
@@ -283,22 +287,19 @@ class TerminalToolkit(BaseToolkit):
         return "".join(output_parts) + warning_message
 
     def shell_exec(self, id: str, command: str, block: bool = True) -> str:
-        """
-        This function executes a shell command. The command can run in blocking mode (waits for completion)
-        or non-blocking mode (runs in the background). A unique session ID is created for each session.
+        r"""Execute a shell command either blocking or non-blocking.
 
         Args:
+            id (str): Session identifier. For non-blocking mode, identifies
+                the interactive session.
             command (str): The command to execute.
-            block (bool): If True, the command runs synchronously, waiting for it
-                to complete or time out, and returns its full output. If False,
-                the command runs asynchronously in the background.
-            id (Optional[str]): A specific ID for the session. If not provided,
-                a unique ID is generated for non-blocking sessions.
+            block (bool): If :obj:`True`, run synchronously and return full
+                output; otherwise start a background session. (default:
+                :obj:`True`)
 
         Returns:
-            str: If block is True, returns the complete stdout and stderr.
-                 If block is False, returns a message containing the new session
-                 ID and the initial output from the command after it goes idle.
+            str: Blocking mode returns combined stdout and stderr. Non-blocking
+                mode returns a message with the session ID and initial output.
         """
         is_safe, message = self._sanitize_command(command)
         if not is_safe:
@@ -423,17 +424,16 @@ class TerminalToolkit(BaseToolkit):
                 return error_msg
 
     def shell_write_to_process(self, id: str, command: str) -> str:
-        r"""
-        This function sends command to a running non-blocking process and returns the resulting
-        output after the process becomes idle again. A newline \n is automatically
-        appended to the input command.
+        r"""Send input to a running non-blocking session and return output.
+
+        A trailing newline is appended automatically to the input.
 
         Args:
-            id (str): The unique session ID of the non-blocking process.
-            command (str): The text to write to the process's standard input.
+            id (str): The unique non-blocking session ID.
+            command (str): Text to write to the process's standard input.
 
         Returns:
-            str: The output from the process after the command is sent.
+            str: Output produced after the command is processed.
         """
         if (
             id not in self.shell_sessions
@@ -471,18 +471,16 @@ class TerminalToolkit(BaseToolkit):
             return f"Error writing to session '{id}': {e}"
 
     def shell_view(self, id: str) -> str:
-        """
-        This function retrieves any new output from a non-blocking session since the last
-        time this function was called. If the process has terminated, it drains
-        the output queue and appends a termination message. If the process
-        is still running, it simply returns any new output.
+        r"""Retrieve any new output from a non-blocking session.
+
+        If the process has terminated, drain the remaining output and append a
+        termination message.
 
         Args:
-            id (str): The unique session ID of the non-blocking process.
+            id (str): The unique non-blocking session ID.
 
         Returns:
-            str: The new output from the process's stdout and stderr. Returns
-                 an empty string if there is no new output.
+            str: Newly available output; empty string if none.
         """
         if id not in self.shell_sessions:
             return f"Error: No session found with ID '{id}'."
@@ -510,16 +508,15 @@ class TerminalToolkit(BaseToolkit):
         return "".join(output)
 
     def shell_wait(self, id: str, wait_seconds: float = 5.0) -> str:
-        """
-        This function waits for a specified duration for a non-blocking process to produce
-        more output or terminate.
+        r"""Wait for additional output or termination for a session.
 
         Args:
-            id (str): The unique session ID of the non-blocking process.
-            wait_seconds (float): The maximum number of seconds to wait.
+            id (str): The unique non-blocking session ID.
+            wait_seconds (float): Maximum seconds to wait. (default:
+                :obj:`5.0`)
 
         Returns:
-            str: All output collected during the wait period.
+            str: All output collected during the wait window.
         """
         if id not in self.shell_sessions:
             return f"Error: No session found with ID '{id}'."
@@ -539,14 +536,13 @@ class TerminalToolkit(BaseToolkit):
         return "".join(output_collected)
 
     def shell_kill_process(self, id: str) -> str:
-        """
-        This function forcibly terminates a running non-blocking process.
+        r"""Terminate a running non-blocking process.
 
         Args:
-            id (str): The unique session ID of the non-blocking process to kill.
+            id (str): The unique non-blocking session ID to kill.
 
         Returns:
-            str: A confirmation message indicating the process was terminated.
+            str: Confirmation message upon termination.
         """
         if (
             id not in self.shell_sessions
@@ -573,21 +569,17 @@ class TerminalToolkit(BaseToolkit):
             return f"Error killing process in session '{id}': {e}"
 
     def shell_ask_user_for_help(self, id: str, prompt: str) -> str:
-        """
-        This function pauses execution and asks a human for help with an interactive session.
-        It displays the last screen output and the LLM's prompt to the user,
-        waits for the user to enter a command, sends it to the session, and
-        returns the resulting output.
+        r"""Pause and ask a human for help with an interactive session.
+
+        Displays the latest output and the prompt to the user, waits for
+        input, sends it to the session, and returns the resulting output.
 
         Args:
-            id (str): The session ID of the interactive process needing help.
-            prompt (str): The question or instruction from the LLM to show the
-                human user (e.g., "The program is asking for a filename. Please
-                enter 'config.json'.").
+            id (str): The interactive session ID that requires input.
+            prompt (str): Instruction or question to present to the user.
 
         Returns:
-            str: The output from the shell session after the user's command has
-                 been executed.
+            str: Output from the shell session after user's input executes.
         """
         if id not in self.shell_sessions:
             return f"Error: No session found with ID '{id}'."

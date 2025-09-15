@@ -120,7 +120,7 @@ def clean_text_file(input_path: str, output_path: str):
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(cleaned)
 
-    print(f"✅ Cleaned plain text saved to: {output_path}")
+    logger.info(f"Cleaned plain text saved to: {output_path}")
 
 
 def clean_cast_file(input_path: str, output_path: str):
@@ -132,7 +132,9 @@ def clean_cast_file(input_path: str, output_path: str):
         try:
             parsed = json.loads(line)
         except json.JSONDecodeError:
-            print(f"⚠️ Skipping invalid JSON line {i}: {line.strip()}")
+            logger.warning(
+                f"Skipping invalid JSON line {i}: {line.strip()}"
+            )
             continue
 
         if isinstance(parsed, list) and len(parsed) == 3 and parsed[1] == "o":
@@ -144,28 +146,34 @@ def clean_cast_file(input_path: str, output_path: str):
     with open(output_path, "w", encoding="utf-8") as f:
         f.write('\n'.join(cleaned_lines))
 
-    print(f"✅ Cleaned cast file saved to: {output_path}")
+    logger.info(f"Cleaned cast file saved to: {output_path}")
 
 
 # @MCPServer()
 class TerminalToolkitDocker(BaseToolkit):
-    r"""A toolkit for terminal operations inside a Docker container.
+    r"""Toolkit for executing terminal operations inside a Docker container.
 
-    Make sure the container has `tmux` and `asciinema` installed.
-    Add this to Dockerfile: # RUN apt-get update && apt-get install -y tmux asciinema
+    The container must have `tmux` and `asciinema` installed to support
+    multiplexed sessions and recording. Example for Dockerfile:
+    ``RUN apt-get update && apt-get install -y tmux asciinema``.
 
     Args:
-        timeout (Optional[float]): The timeout for terminal operations.
-            (default: :obj:`20.0`)
-        working_directory (Optional[str]): The working directory for
-            operations. If not provided, it will be determined by the
-            `CAMEL_WORKDIR` environment variable (if set). If the
-            environment variable is not set, it defaults to `./workspace`. All
-            execution and write operations will be restricted to this
-            directory. Read operations can access paths outside this
-            directory. (default: :obj:`None`)
-        safe_mode (bool): Whether to enable safe mode to restrict
-            operations. (default: :obj:`True`)
+        session_name (str): The tmux session name used inside the container.
+        container_name (str): The running Docker container name or ID to
+            attach to.
+        timeout (Optional[float]): Maximum seconds to wait for blocking
+            operations. (default: :obj:`20.0`)
+        container_log_path (Optional[str]): Directory path inside the
+            container where session logs and recordings are stored.
+            (default: :obj:`None`)
+        log_path (Optional[str]): Host directory path for storing command and
+            output logs. (default: :obj:`None`)
+        disable_recording (bool): Whether to disable asciinema recording.
+            (default: :obj:`False`)
+        user (str): Linux user name to run commands as inside the container.
+            (default: :obj:`""`)
+        safe_mode (bool): Whether to restrict operations for safety.
+            (default: :obj:`True`)
     """
 
     _ENTER_KEYS = {"Enter", "C-m", "KPEnter", "C-j", "^M", "^J"}
@@ -588,19 +596,14 @@ class TerminalToolkitDocker(BaseToolkit):
         """
         Find new content by comparing current buffer with previous buffer.
 
-        Args:
-            current_lines: Current buffer split into lines
-
         Returns:
             str: New content, or None if can't reliably determine
         """
         pb = self._previous_buffer.strip()
         if pb in current_buffer:
-            idx = current_buffer.index(pb)
-            # Find the end of the previous buffer content
-            if '\n' in pb:
-                idx = pb.rfind("\n")
-            return current_buffer[idx:]
+            # Find the end position of the previous buffer in the current buffer
+            start_idx = current_buffer.index(pb) + len(pb)
+            return current_buffer[start_idx:]
         return None
 
     def _get_visible_screen(self) -> str:
@@ -646,17 +649,16 @@ class TerminalToolkitDocker(BaseToolkit):
         pass
 
     def shell_exec(self, command: str) -> str:
-        r"""Executes a shell command in the tmux session within the Docker container.
+        r"""Execute a shell command in the container's tmux session.
 
-        This method sends a shell command to the tmux session running inside the
-        Docker container and waits for its execution to complete. The command's
-        output is captured and returned.
+        Sends a command to the tmux session running inside the Docker
+        container, waits until completion, and returns the captured output.
 
         Args:
             command (str): The shell command to execute.
 
         Returns:
-            str: The output of the executed command.
+            str: Captured terminal output after the command completes.
         """
         if isinstance(command, str):
             command = command.strip()
@@ -678,17 +680,15 @@ class TerminalToolkitDocker(BaseToolkit):
         command has finished execution.
 
         Returns:
-            str: The current tmux session screen content.
+            str: The currently visible tmux pane content.
         """
         return self.capture_pane(capture_entire=False)
 
     def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the functions
-        in the toolkit.
+        r"""Return tool wrappers for callable public toolkit functions.
 
         Returns:
-            List[FunctionTool]: A list of FunctionTool objects representing the
-                functions in the toolkit.
+            List[FunctionTool]: Wrapped callable tools exposed to agents.
         """
         return [
             FunctionTool(self.shell_exec),
