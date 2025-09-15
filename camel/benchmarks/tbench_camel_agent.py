@@ -14,15 +14,23 @@
 
 import os
 from pathlib import Path
-from typing import List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
-from terminal_bench.agents.base_agent import AgentResult, BaseAgent
-from terminal_bench.harness.models import FailureMode
-from terminal_bench.terminal.tmux_session import TmuxSession
+if TYPE_CHECKING:
+    from terminal_bench.agents.base_agent import (  # type: ignore[import-untyped]
+        AgentResult,
+        BaseAgent,
+    )
+    from terminal_bench.harness.models import (  # type: ignore[import-untyped]
+        FailureMode,
+    )
+    from terminal_bench.terminal.tmux_session import (  # type: ignore[import-untyped]
+        TmuxSession,
+    )
 
-from camel.agents import ChatAgent
+    from camel.agents import ChatAgent
+
 from camel.logger import get_logger
-from camel.toolkits import TerminalToolkit
 
 logger = get_logger(__name__)
 
@@ -40,7 +48,7 @@ class TerminalBenchAgent(BaseAgent):
         self,
         instruction: str,
         session: TmuxSession,
-        camel_agent: ChatAgent,
+        camel_agent: "ChatAgent",
         logging_dir: Path | None = None,
     ) -> AgentResult:
         """Execute a task using the Terminal Bench harness.
@@ -83,8 +91,11 @@ class TerminalBenchAgent(BaseAgent):
             'session_logs_dir': session_logs_dir,
             'safe_mode': False,
         }
-        camel_agent.add_tools(
-            TerminalToolkit(**terminal_toolkit_kwargs).get_tools()
+        # Lazy import to avoid importing heavy modules at module import time
+        from camel.toolkits import TerminalToolkit
+
+        camel_agent.add_tools(  # type: ignore[arg-type]
+            TerminalToolkit(**terminal_toolkit_kwargs).get_tools()  # type: ignore[arg-type]
         )
 
         usr_msg = f"{instruction}\n"
@@ -101,12 +112,12 @@ class TerminalBenchAgent(BaseAgent):
         total_output_tokens = response.info['usage']['completion_tokens']
 
         memory_list = (
-            camel_agent._memory._chat_history_block.storage.memory_list
+            camel_agent._memory._chat_history_block.storage.memory_list  # type: ignore[attr-defined]
         )
 
         def create_timestamped_marker_from_memory(
             records: List[dict],
-        ) -> Tuple[float, str]:
+        ) -> List[Tuple[float, str]]:
             """Create a timestamped marker from memory records."""
             results = []
             print(f"Total records: {len(records)}")

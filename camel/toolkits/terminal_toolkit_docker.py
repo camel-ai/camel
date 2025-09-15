@@ -20,7 +20,7 @@ import tarfile
 import time
 from pathlib import Path
 from types import SimpleNamespace
-from typing import List, Optional
+from typing import ClassVar, List, Optional
 
 import docker
 import docker.errors
@@ -85,8 +85,9 @@ def copy_to_container(
 
 
 def strip_ansi(text: str) -> str:
-    """
-    Strip all ANSI escape sequences, including CSI, OSC, and terminal control codes.
+    r"""
+    Strip all ANSI escape sequences, including CSI, OSC,
+    and terminal control codes.
     """
     ansi_escape = re.compile(
         r'''
@@ -103,7 +104,7 @@ def strip_ansi(text: str) -> str:
 
 
 def is_cast_file(first_line: str) -> bool:
-    """Check if the file looks like a .cast (asciinema) JSON file."""
+    r"""Check if the file looks like a .cast (asciinema) JSON file."""
     try:
         obj = json.loads(first_line)
         return isinstance(obj, dict) and obj.get("version") == 2
@@ -174,7 +175,14 @@ class TerminalToolkitDocker(BaseToolkit):
             (default: :obj:`True`)
     """
 
-    _ENTER_KEYS = {"Enter", "C-m", "KPEnter", "C-j", "^M", "^J"}
+    _ENTER_KEYS: ClassVar[set[str]] = {
+        "Enter",
+        "C-m",
+        "KPEnter",
+        "C-j",
+        "^M",
+        "^J",
+    }
     _ENDS_WITH_NEWLINE_PATTERN = r"[\r\n]$"
     _NEWLINE_CHARS = "\r\n"
     _TMUX_COMPLETION_COMMAND = "; tmux wait -S done"
@@ -199,7 +207,7 @@ class TerminalToolkitDocker(BaseToolkit):
         safe_mode: bool = True,
     ):
         # Store timeout before calling super().__init__
-        self._timeout = timeout
+        self._timeout: float = 20.0 if timeout is None else float(timeout)
         super().__init__(timeout=timeout)
         self._container_name = container_name
         self._session_name = session_name
@@ -208,8 +216,16 @@ class TerminalToolkitDocker(BaseToolkit):
         self._previous_buffer: Optional[str] = None
         self._user = user
         self.safe_mode = safe_mode
-        self.container_log_path = container_log_path
-        self.log_path = log_path
+        self.container_log_path = (
+            container_log_path
+            if container_log_path is not None
+            else f"/tmp/terminal_logs/{self._session_name}"
+        )
+        self.log_path = (
+            log_path
+            if log_path is not None
+            else os.path.join(os.getcwd(), "terminal_logs", self._session_name)
+        )
 
         self._commands_log_initialized = False
         # get container information
@@ -228,7 +244,7 @@ class TerminalToolkitDocker(BaseToolkit):
             )
         except Exception as e:
             raise RuntimeError(
-                f"An unexpected error occurred while accessing the container: {e!s}"
+                f"An unexpected error occurred while accessing the container: {e!s}"  # noqa: E501
             )
 
         result = self._exec_run(["tmux", "-V"])
@@ -246,10 +262,13 @@ class TerminalToolkitDocker(BaseToolkit):
         result = self._exec_run(['ls -l', self.container_log_path])
         if result.exit_code != 0:
             logger.debug(
-                f"Container log path {self.container_log_path} does not exist. "
+                f"Container log path {self.container_log_path} does not exist. "  # noqa: E501
                 "Creating it."
             )
             self._exec_run(["mkdir", "-p", self.container_log_path])
+
+        # Initialize recording path as Optional[str]
+        self._recording_path: Optional[str] = None
 
         if not self._disable_recording:
             result = self._exec_run(["asciinema", "--version"])
@@ -257,7 +276,7 @@ class TerminalToolkitDocker(BaseToolkit):
                 raise RuntimeError(
                     "Recording is enabled but asciinema is not "
                     "installed in the container. "
-                    "Please install asciinema in the container to run Terminal-Bench."
+                    "Please install asciinema in the container to run Terminal-Bench."  # noqa: E501
                 )
             self._recording_path = (
                 f"{self.container_log_path}/{self._session_name}.cast"
@@ -289,7 +308,8 @@ class TerminalToolkitDocker(BaseToolkit):
         """Save content to a file on host.
         Args:
             content (str | list[str]): The content to save.
-            category (str): The category of the content, e.g. 'Commands', 'Outputs'.
+            category (str): The category of the content,
+             e.g. 'Commands', 'Outputs'.
         """
         _commands_path = f"{self.log_path}/{self._session_name}_commands.txt"
 
@@ -316,7 +336,7 @@ class TerminalToolkitDocker(BaseToolkit):
             "-c",
             (
                 # TODO(alexgshaw) make x & y configurable.
-                f"tmux new-session -x 160 -y 40 -d -s {self._session_name} \\; "
+                f"tmux new-session -x 160 -y 40 -d -s {self._session_name} \\; "  # noqa: E501
                 f"pipe-pane -t {self._session_name} "
                 f'"cat > {self.logging_path}"'
             ),
@@ -409,8 +429,8 @@ class TerminalToolkitDocker(BaseToolkit):
             block (bool): Whether to wait for the command to complete.
 
         Returns:
-            tuple[list[str], bool]: The keys to send to the terminal and whether the
-                the keys are blocking.
+            tuple[list[str], bool]: The keys to send to the terminal
+                and whether the the keys are blocking.
         """
         if isinstance(keys, str):
             keys = [keys]
@@ -486,10 +506,10 @@ class TerminalToolkitDocker(BaseToolkit):
         Args:
             keys (str): The keys to send to the tmux session.
             block (bool): Whether to wait for the command to complete.
-            min_timeout_sec (float): Minimum time in seconds to wait after executing.
-                Defaults to 0.
-            max_timeout_sec (float): Maximum time in seconds to wait for blocking
-                commands. Defaults to 3 minutes.
+            min_timeout_sec (float): Minimum time in seconds to wait after
+                executing. Defaults to 0.
+            max_timeout_sec (float): Maximum time in seconds to wait for
+                blocking commands. Defaults to 3 minutes.
         """
         if block and min_timeout_sec > 0.0:
             logger.debug(
@@ -524,7 +544,7 @@ class TerminalToolkitDocker(BaseToolkit):
         # if isinstance(result, tuple) and len(result) == 2:
         #     logger.error(
         #         f"Exec run returned a tuple: {result}. "
-        #         f"This is unexpected and may indicate an issue with the command {cmd}."
+        #         f"This is unexpected and may indicate an issue with the command {cmd}." # noqa: E501
         #     )
         #     exit_code, output = result
         #     return SimpleNamespace(exit_code=exit_code, output=output)
@@ -533,7 +553,7 @@ class TerminalToolkitDocker(BaseToolkit):
         if isinstance(result, str):
             logger.error(
                 f"Exec run returned a raw string: {result}. "
-                f"This is unexpected and may indicate an issue with the command {cmd}."
+                f"This is unexpected and may indicate an issue with the command {cmd}."  # noqa: E501
             )
             return SimpleNamespace(exit_code=-1, output=result)
 
@@ -557,9 +577,10 @@ class TerminalToolkitDocker(BaseToolkit):
         Get either new terminal output since last call, or current screen if
         unable to determine.
 
-        This method tracks the previous buffer state and attempts to find new content
-        by comparing against the current full buffer. This provides better handling for
-        commands with large output that would overflow the visible screen.
+        This method tracks the previous buffer state and attempts to find
+        new content by comparing against the current full buffer. This
+        provides better handling for commands with large output that
+        would overflow the visible screen.
 
         Returns:
             str: Formatted output with either "New Terminal Output:" or
@@ -587,7 +608,7 @@ class TerminalToolkitDocker(BaseToolkit):
                     f"Current Terminal Screen:\n{self._get_visible_screen()}"
                 )
         else:
-            # Couldn't reliably determine new content, fall back to current screen
+            # Couldn't reliably determine new content, fall back to current screen  # noqa: E501
             return f"Current Terminal Screen:\n{self._get_visible_screen()}"
 
     def _find_new_content(self, current_buffer):
@@ -599,7 +620,7 @@ class TerminalToolkitDocker(BaseToolkit):
         """
         pb = self._previous_buffer.strip()
         if pb in current_buffer:
-            # Find the end position of the previous buffer in the current buffer
+            # Find the end position of the previous buffer in the current buffer  # noqa: E501
             start_idx = current_buffer.index(pb) + len(pb)
             return current_buffer[start_idx:]
         return None
@@ -615,7 +636,7 @@ class TerminalToolkitDocker(BaseToolkit):
         )
         if result.exit_code != 0:
             logger.warning(
-                f"Failed to clear tmux history for session {self._session_name}. "
+                f"Failed to clear tmux history for session {self._session_name}. "  # noqa: E501
                 f"Exit code: {result.exit_code}"
             )
         else:
@@ -641,7 +662,7 @@ class TerminalToolkitDocker(BaseToolkit):
         #             output_path=f"{self.logging_path}.strip"
         #         )
         #     # Remove the tmux session
-        #     # self._exec_run(["tmux", "kill-session", "-t", self._session_name])
+        #     # self._exec_run(["tmux", "kill-session", "-t", self._session_name]) # noqa: E501
         # except Exception as e:
         #     logger.error(f"Error during cleanup: {e!s}")
         pass
@@ -659,11 +680,14 @@ class TerminalToolkitDocker(BaseToolkit):
             str: Captured terminal output after the command completes.
         """
         if isinstance(command, str):
-            command = command.strip()
-            command = [command, 'Enter']
-        self._save_to_file(command, "Commands")
-        pre_session_content = self.get_incremental_output()
-        self.send_keys(command, block=True, max_timeout_sec=self._timeout)
+            cmd_str = command.strip()
+            keys: list[str] = [cmd_str, 'Enter']
+        else:
+            keys = [str(command), 'Enter']
+        self._save_to_file(keys, "Commands")
+        # Capture initial session content (unused currently)
+        self.get_incremental_output()
+        self.send_keys(keys, block=True, max_timeout_sec=float(self._timeout))
         post_session_content = self.get_incremental_output()
 
         self._save_to_file(post_session_content, "Outputs")
@@ -674,8 +698,8 @@ class TerminalToolkitDocker(BaseToolkit):
     ) -> str:
         r"""Retrieves the current tmux session screen content.
 
-        This is useful for checking the history of a session, especially after a
-        command has finished execution.
+        This is useful for checking the history of a session, especially after
+        a command has finished execution.
 
         Returns:
             str: The currently visible tmux pane content.

@@ -82,7 +82,9 @@ class TerminalToolkit(BaseToolkit):
         self.timeout = timeout
         self.shell_sessions: Dict[str, Dict[str, Any]] = {}
         self.working_dir = (
-            os.path.abspath(working_directory) if working_directory else None
+            os.path.abspath(working_directory)
+            if working_directory
+            else os.getcwd()
         )
         self.safe_mode = safe_mode
         self.need_terminal = need_terminal
@@ -100,26 +102,31 @@ class TerminalToolkit(BaseToolkit):
 
         if self.use_docker_backend:
             if docker is None:
-                raise ImportError(
-                    "The 'docker' library is required to use the Docker backend. "
+                msg = (
+                    "The 'docker' library is required to use the \
+                        Docker backend. "
                     "Please install it with 'pip install docker'."
                 )
+                raise ImportError(msg)
             if not docker_container_name:
                 raise ValueError(
-                    "docker_container_name must be provided when using Docker backend."
+                    "docker_container_name must be provided"
+                    "when using Docker backend."
                 )
             try:
-                # APIClient is used for operations that need a timeout, like exec_start
+                # APIClient is used for operations that need a timeout,
+                # like exec_start
                 self.docker_api_client = docker.APIClient(
                     base_url='unix://var/run/docker.sock', timeout=self.timeout
                 )
-                # The standard client is for higher-level, convenient operations
+                # The standard client is for higher-level
                 self.docker_client = docker.from_env()
                 self.container = self.docker_client.containers.get(
                     docker_container_name
                 )
                 logger.info(
-                    f"Successfully attached to Docker container '{docker_container_name}'."
+                    f"Successfully attached to Docker container"
+                    f"'{docker_container_name}'."
                 )
             except NotFound:
                 raise RuntimeError(
@@ -156,7 +163,8 @@ class TerminalToolkit(BaseToolkit):
             ):
                 return (
                     False,
-                    f"Command '{base_cmd}' with forceful options is blocked for safety.",
+                    f"Command '{base_cmd}' with forceful options is blocked"
+                    "for safety.",
                 )
             if base_cmd != 'rm':
                 return False, f"Command '{base_cmd}' is blocked for safety."
@@ -228,23 +236,29 @@ class TerminalToolkit(BaseToolkit):
         max_wait: float = 5.0,
     ) -> str:
         """
-        Collects output from a session until it's idle or a max wait time is reached.
+        Collects output from a session until it's idle or a max wait time
+        is reached.
 
         Args:
             id (str): The session ID.
-            idle_duration (float): How long the stream must be empty to be considered idle.
+            idle_duration (float): How long the stream must be empty
+                    to be considered idle. (default: :obj:`0.5`)
             check_interval (float): The time to sleep between checks.
-            max_wait (float): The maximum total time to wait for the process to go idle.
+             (default: :obj:`0.1`)
+            max_wait (float): The maximum total time to wait for the process
+                            to go idle. (default: :obj:`5.0`)
+
+
 
         Returns:
-            str: The collected output. If max_wait is reached while the process is
-                 still outputting, a warning is appended.
+            str: The collected output. If max_wait is reached while
+             the process is still outputting, a warning is appended.
         """
         if id not in self.shell_sessions:
             return f"Error: No session found with ID '{id}'."
 
         output_parts = []
-        idle_time = 0
+        idle_time = 0.0
         start_time = time.time()
 
         while time.time() - start_time < max_wait:
@@ -281,7 +295,7 @@ class TerminalToolkit(BaseToolkit):
             output_parts.append(final_output)
 
         warning_message = (
-            "\n--- WARNING: Process is still actively outputting after max wait time. "
+            "\n--- WARNING: Process is still actively outputting after max wait time. "  # noqa: E501
             "Consider using shell_wait() before sending the next command. ---"
         )
         return "".join(output_parts) + warning_message
@@ -306,14 +320,14 @@ class TerminalToolkit(BaseToolkit):
             return f"Error: {message}"
         command = message
         if self.use_docker_backend:
-            # For Docker, we always run commands in a shell to support complex commands
+            # For Docker, we always run commands in a shell to support complex commands  # noqa: E501
             command = f'bash -c "{command}"'
 
         session_id = id
 
         if block:
             # --- BLOCKING EXECUTION ---
-            log_entry = f"--- Executing blocking command at {time.ctime()} ---\n> {command}\n"
+            log_entry = f"--- Executing blocking command at {time.ctime()} ---\n> {command}\n"  # noqa: E501
             output = ""
             try:
                 if not self.use_docker_backend:
@@ -352,7 +366,7 @@ class TerminalToolkit(BaseToolkit):
                 return error_msg
             except Exception as e:
                 if "Read timed out" in str(e):
-                    error_msg = f"Error: Command timed out after {self.timeout} seconds."
+                    error_msg = f"Error: Command timed out after {self.timeout} seconds."  # noqa: E501
                 else:
                     error_msg = f"Error executing command: {e}"
                 log_entry += f"--- Error ---\n{error_msg}\n"
@@ -368,7 +382,7 @@ class TerminalToolkit(BaseToolkit):
 
             with open(session_log_file, "a", encoding="utf-8") as f:
                 f.write(
-                    f"--- Starting non-blocking session at {time.ctime()} ---\n> {command}\n"
+                    f"--- Starting non-blocking session at {time.ctime()} ---\n> {command}\n"  # noqa: E501
                 )
 
             self.shell_sessions[session_id] = {
@@ -414,7 +428,7 @@ class TerminalToolkit(BaseToolkit):
                 # time.sleep(0.1)
                 initial_output = self._collect_output_until_idle(session_id)
 
-                return f"Session started with ID: {session_id}\n\n[Initial Output]:\n{initial_output}"
+                return f"Session started with ID: {session_id}\n\n[Initial Output]:\n{initial_output}"  # noqa: E501
 
             except Exception as e:
                 self.shell_sessions[session_id]["running"] = False
@@ -487,7 +501,8 @@ class TerminalToolkit(BaseToolkit):
 
         session = self.shell_sessions[id]
 
-        # If session is terminated, drain the queue and return with a status message.
+        # If session is terminated, drain the queue and return with a
+        # status message.
         if not session["running"]:
             final_output = []
             try:
@@ -523,7 +538,7 @@ class TerminalToolkit(BaseToolkit):
 
         session = self.shell_sessions[id]
         if not session["running"]:
-            return "Session is no longer running. Use shell_view to get final output."
+            return "Session is no longer running. Use shell_view to get final output."  # noqa: E501
 
         output_collected = []
         end_time = time.time() + wait_seconds
