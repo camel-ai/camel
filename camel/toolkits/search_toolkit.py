@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
+import warnings
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
 
 import requests
@@ -683,7 +684,7 @@ class SearchToolkit(BaseToolkit):
             responses.append({"error": f"google search failed: {e!s}"})
         return responses
 
-    def tavily_search(
+    def search_tavily(
         self, query: str, number_of_result_pages: int = 10, **kwargs
     ) -> List[Dict[str, Any]]:
         r"""Use Tavily Search API to search information for the given query.
@@ -1358,7 +1359,7 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_linkup),
             FunctionTool(self.search_google),
             FunctionTool(self.search_duckduckgo),
-            FunctionTool(self.tavily_search),
+            FunctionTool(self.search_tavily),
             FunctionTool(self.search_brave),
             FunctionTool(self.search_bocha),
             FunctionTool(self.search_baidu),
@@ -1367,3 +1368,13 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_alibaba_tongxiao),
             FunctionTool(self.search_metaso),
         ]
+
+    # Deprecated method alias for backward compatibility
+    def tavily_search(self, *args, **kwargs):
+        r"""Deprecated: Use search_tavily instead for consistency with other search methods."""
+        warnings.warn(
+            "tavily_search is deprecated. Use search_tavily instead for consistency.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.search_tavily(*args, **kwargs)

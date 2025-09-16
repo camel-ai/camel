@@ -15,7 +15,7 @@ Ollama service interface.
 - **model_type** (Union[ModelType, str]): Model for which a backend is created.
 - **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary that will be fed into:obj:`openai.ChatCompletion.create()`.
 - **If**: obj:`None`, :obj:`OllamaConfig().as_dict()` will be used. (default: :obj:`None`)
-- **api_key** (Optional[str], optional): The API key for authenticating with the model service. Ollama doesn't need API key, it would be ignored if set. (default: :obj:`None`)
+- **api_key** (Optional[str], optional): The API key for authenticating with the model service. Required for Ollama cloud services. If not provided, defaults to "Not_Provided". (default: :obj:`None`)
 - **url** (Optional[str], optional): The url to the model service. (default: :obj:`None`)
 - **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter( ModelType.GPT_4O_MINI)` will be used. (default: :obj:`None`)
 - **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)

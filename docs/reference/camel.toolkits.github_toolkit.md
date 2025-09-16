@@ -49,12 +49,12 @@ def get_github_access_token(self):
 
   str: A string containing the GitHub access token.
 
-<a id="camel.toolkits.github_toolkit.GithubToolkit.create_pull_request"></a>
+<a id="camel.toolkits.github_toolkit.GithubToolkit.github_create_pull_request"></a>
 
-### create_pull_request
+### github_create_pull_request
 
 ```python
-def create_pull_request(
+def github_create_pull_request(
     self,
     repo_name: str,
     file_path: str,
@@ -85,12 +85,12 @@ description contains information about the issue title and number.
   str: A formatted report of whether the pull request was created
 successfully or not.
 
-<a id="camel.toolkits.github_toolkit.GithubToolkit.get_issue_list"></a>
+<a id="camel.toolkits.github_toolkit.GithubToolkit.github_get_issue_list"></a>
 
-### get_issue_list
+### github_get_issue_list
 
 ```python
-def get_issue_list(
+def github_get_issue_list(
     self,
     repo_name: str,
     state: Literal['open', 'closed', 'all'] = 'all'
@@ -109,12 +109,12 @@ Retrieves all issues from the GitHub repository.
   List[Dict[str, object]]: A list of dictionaries where each
 dictionary contains the issue number and title.
 
-<a id="camel.toolkits.github_toolkit.GithubToolkit.get_issue_content"></a>
+<a id="camel.toolkits.github_toolkit.GithubToolkit.github_get_issue_content"></a>
 
-### get_issue_content
+### github_get_issue_content
 
 ```python
-def get_issue_content(self, repo_name: str, issue_number: int):
+def github_get_issue_content(self, repo_name: str, issue_number: int):
 ```
 
 Retrieves the content of a specific issue by its number.
@@ -128,12 +128,12 @@ Retrieves the content of a specific issue by its number.
 
   str: issues content details.
 
-<a id="camel.toolkits.github_toolkit.GithubToolkit.get_pull_request_list"></a>
+<a id="camel.toolkits.github_toolkit.GithubToolkit.github_get_pull_request_list"></a>
 
-### get_pull_request_list
+### github_get_pull_request_list
 
 ```python
-def get_pull_request_list(
+def github_get_pull_request_list(
     self,
     repo_name: str,
     state: Literal['open', 'closed', 'all'] = 'all'
@@ -152,12 +152,12 @@ Retrieves all pull requests from the GitHub repository.
   list: A list of dictionaries where each dictionary contains the
 pull request number and title.
 
-<a id="camel.toolkits.github_toolkit.GithubToolkit.get_pull_request_code"></a>
+<a id="camel.toolkits.github_toolkit.GithubToolkit.github_get_pull_request_code"></a>
 
-### get_pull_request_code
+### github_get_pull_request_code
 
 ```python
-def get_pull_request_code(self, repo_name: str, pr_number: int):
+def github_get_pull_request_code(self, repo_name: str, pr_number: int):
 ```
 
 Retrieves the code changes of a specific pull request.
@@ -173,12 +173,12 @@ Retrieves the code changes of a specific pull request.
 contains the file name and the corresponding code changes
 (patch).
 
-<a id="camel.toolkits.github_toolkit.GithubToolkit.get_pull_request_comments"></a>
+<a id="camel.toolkits.github_toolkit.GithubToolkit.github_get_pull_request_comments"></a>
 
-### get_pull_request_comments
+### github_get_pull_request_comments
 
 ```python
-def get_pull_request_comments(self, repo_name: str, pr_number: int):
+def github_get_pull_request_comments(self, repo_name: str, pr_number: int):
 ```
 
 Retrieves the comments from a specific pull request.
@@ -193,12 +193,12 @@ Retrieves the comments from a specific pull request.
   List[Dict[str, str]]: A list of dictionaries where each dictionary
 contains the user ID and the comment body.
 
-<a id="camel.toolkits.github_toolkit.GithubToolkit.get_all_file_paths"></a>
+<a id="camel.toolkits.github_toolkit.GithubToolkit.github_get_all_file_paths"></a>
 
-### get_all_file_paths
+### github_get_all_file_paths
 
 ```python
-def get_all_file_paths(self, repo_name: str, path: str = ''):
+def github_get_all_file_paths(self, repo_name: str, path: str = ''):
 ```
 
 Recursively retrieves all file paths in the GitHub repository.
@@ -213,12 +213,12 @@ Recursively retrieves all file paths in the GitHub repository.
   List[str]: A list of file paths within the specified directory
 structure.
 
-<a id="camel.toolkits.github_toolkit.GithubToolkit.retrieve_file_content"></a>
+<a id="camel.toolkits.github_toolkit.GithubToolkit.github_retrieve_file_content"></a>
 
-### retrieve_file_content
+### github_retrieve_file_content
 
 ```python
-def retrieve_file_content(self, repo_name: str, file_path: str):
+def github_retrieve_file_content(self, repo_name: str, file_path: str):
 ```
 
 Retrieves the content of a file from the GitHub repository.

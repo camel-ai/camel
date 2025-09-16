@@ -317,7 +317,8 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                         ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
-                                arguments='{"a":1776,"b":2007}', name='sub'
+                                arguments='{"a":1776,"b":2007}',
+                                name='math_subtract',
                             ),
                             type='function',
                         )
@@ -364,7 +365,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
             "external_tool_call_requests"
         ]
         assert (
-            external_tool_call_requests[0].tool_name == "sub"
+            external_tool_call_requests[0].tool_name == "math_subtract"
         ), f"Error in calling round {i+1}"
 
 
@@ -448,7 +449,8 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
                         ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123456',
                             function=Function(
-                                arguments='{"a":1776,"b":2007}', name='sub'
+                                arguments='{"a":1776,"b":2007}',
+                                name='math_subtract',
                             ),
                             type='function',
                         )
@@ -507,7 +509,7 @@ async def test_chat_agent_astep_with_external_tools(step_call_count=3):
             "external_tool_call_requests"
         ]
         assert (
-            external_tool_call_requests[0].tool_name == "sub"
+            external_tool_call_requests[0].tool_name == "math_subtract"
         ), f"Error in calling round {i+1}"
 
 
@@ -863,14 +865,15 @@ def test_tool_calling_sync(step_call_count=3):
                                     "b": 8, \
                                     "decimal_places": 0 \
                                 }',
-                                name='multiply',
+                                name='math_multiply',
                             ),
                             type='function',
                         ),
                         ChatCompletionMessageFunctionToolCall(
                             id='call_mock_123457',
                             function=Function(
-                                arguments='{"a": 0, "b": 10}', name='sub'
+                                arguments='{"a": 0, "b": 10}',
+                                name='math_subtract',
                             ),
                             type='function',
                         ),
@@ -903,7 +906,8 @@ def test_tool_calling_sync(step_call_count=3):
                         ChatCompletionMessageFunctionToolCall(
                             id='call_kIJby7Y6As6gAbWoxDqxD6HG',
                             function=Function(
-                                arguments='{"a":16,"b":10}', name='sub'
+                                arguments='{"a":16,"b":10}',
+                                name='math_subtract',
                             ),
                             type='function',
                         )
@@ -967,7 +971,7 @@ def test_tool_calling_sync(step_call_count=3):
             "Tool Execution"
         ), f"Error in calling round {i+1}"
         assert (
-            tool_calls[0].tool_name == "multiply"
+            tool_calls[0].tool_name == "math_multiply"
         ), f"Error in calling round {i+1}"
         assert tool_calls[0].args == {
             "a": 2,
@@ -987,7 +991,9 @@ async def test_tool_calling_math_async(step_call_count=3):
         content="You are a help assistant.",
     )
     model_config = ChatGPTConfig(temperature=0)
-    math_funcs = sync_funcs_to_async([FunctionTool(MathToolkit().multiply)])
+    math_funcs = sync_funcs_to_async(
+        [FunctionTool(MathToolkit().math_multiply)]
+    )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_5_MINI,
@@ -1032,7 +1038,7 @@ async def test_tool_calling_math_async(step_call_count=3):
                                     "b": 8, \
                                     "decimal_places": 0 \
                                 }',
-                                name='multiply',
+                                name='math_multiply',
                             ),
                             type='function',
                         )
@@ -1088,7 +1094,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         tool_calls = agent_response.info['tool_calls']
 
         assert (
-            tool_calls[0].tool_name == "multiply"
+            tool_calls[0].tool_name == "math_multiply"
         ), f"Error in calling round {i+1}"
         assert tool_calls[0].args == {
             "a": 2,

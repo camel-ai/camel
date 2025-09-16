@@ -72,6 +72,7 @@ export interface BrowserToolkitConfig {
   useNativePlaywrightMapping?: boolean; // New option to control mapping implementation
   connectOverCdp?: boolean; // Whether to connect to existing browser via CDP
   cdpUrl?: string; // WebSocket endpoint URL for CDP connection
+  cdpKeepCurrentPage?: boolean; // When true, CDP mode will keep the current page instead of creating new one
 }
 
 export interface ClickAction {
@@ -81,8 +82,9 @@ export interface ClickAction {
 
 export interface TypeAction {
   type: 'type';
-  ref: string;
-  text: string;
+  ref?: string;  // Optional for backward compatibility
+  text?: string; // Optional for backward compatibility
+  inputs?: Array<{ ref: string; text: string }>; // New field for multiple inputs
 }
 
 export interface SelectAction {

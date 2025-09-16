@@ -73,12 +73,14 @@ export interface BrowserConfig {
   // CDP connection options
   connectOverCdp: boolean;
   cdpUrl?: string;
+  cdpKeepCurrentPage: boolean;
 }
 
 export interface WebSocketConfig {
   browser_log_to_file: boolean;
   session_id?: string;
   viewport_limit: boolean;
+  fullVisualMode?: boolean;
 }
 
 // Default stealth configuration
@@ -117,7 +119,7 @@ function getDefaultBrowserConfig(): BrowserConfig {
     consoleLogLimit: 1000,
     scrollPositionScale: 0.1,
     navigationDelay: 100,
-    blankPageUrls: ['about:blank', ''],
+    blankPageUrls: ['chrome://newtab/', 'edge://newtab/', 'chrome://new-tab-page/'],
     dataUrlPrefix: 'data:',
     domContentLoadedState: 'domcontentloaded',
     networkIdleState: 'networkidle',
@@ -138,7 +140,8 @@ function getDefaultBrowserConfig(): BrowserConfig {
       height: 720
     },
     connectOverCdp: false,
-    cdpUrl: undefined
+    cdpUrl: undefined,
+    cdpKeepCurrentPage: false
   };
 }
 
@@ -212,10 +215,12 @@ export class ConfigLoader {
     if (config.browser_log_to_file !== undefined) wsConfig.browser_log_to_file = config.browser_log_to_file;
     if (config.session_id !== undefined) wsConfig.session_id = config.session_id;
     if (config.viewport_limit !== undefined) wsConfig.viewport_limit = config.viewport_limit;
+    if (config.fullVisualMode !== undefined) wsConfig.fullVisualMode = config.fullVisualMode;
     
     // CDP connection options
     if (config.connectOverCdp !== undefined) browserConfig.connectOverCdp = config.connectOverCdp;
     if (config.cdpUrl !== undefined) browserConfig.cdpUrl = config.cdpUrl;
+    if (config.cdpKeepCurrentPage !== undefined) browserConfig.cdpKeepCurrentPage = config.cdpKeepCurrentPage;
 
     return new ConfigLoader(browserConfig, wsConfig);
   }

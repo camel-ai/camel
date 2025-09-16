@@ -35,8 +35,8 @@ class OllamaModel(OpenAICompatibleModel):
             If:obj:`None`, :obj:`OllamaConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
-            the model service.  Ollama doesn't need API key, it would be
-            ignored if set. (default: :obj:`None`)
+            the model service. Required for Ollama cloud services. If not
+            provided, defaults to "Not_Provided". (default: :obj:`None`)
         url (Optional[str], optional): The url to the model service.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
@@ -79,7 +79,7 @@ class OllamaModel(OpenAICompatibleModel):
         super().__init__(
             model_type=self._model_type,
             model_config_dict=model_config_dict,
-            api_key="Not_Used",
+            api_key=api_key or "Not_Provided",
             url=self._url,
             token_counter=token_counter,
             timeout=timeout,

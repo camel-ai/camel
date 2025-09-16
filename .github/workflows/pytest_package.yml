@@ -35,6 +35,7 @@ jobs:
         ZHIPUAI_API_BASE_URL: "${{ secrets.ZHIPUAI_API_BASE_URL }}"
         ZHIPUAI_API_KEY: "${{ secrets.ZHIPUAI_API_KEY }}"
         HF_TOKEN: "${{ secrets.HF_TOKEN }}"
+        AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
         AZURE_OPENAI_API_KEY: "${{ secrets.AZURE_OPENAI_API_KEY }}"
         AZURE_API_VERSION: "${{ secrets.AZURE_API_VERSION }}"
         AZURE_DEPLOYMENT_NAME: "${{ secrets.AZURE_DEPLOYMENT_NAME }}"
@@ -79,6 +80,7 @@ jobs:
         ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
         BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
         CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
+        NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -163,6 +165,8 @@ jobs:
         ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
         BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
         CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
+        NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
+        AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -245,6 +249,8 @@ jobs:
         ACI_API_KEY: "${{ secrets.ACI_API_KEY }}"
         BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
         CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
+        NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
+        AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"

@@ -1,6 +1,6 @@
 ---
 title: "Models"
-description: "CAMEL-AI: Flexible integration and deployment of top LLMs and multimodal models like [OpenAI](https://openai.com/), [Mistral](https://mistral.ai/), [Gemini](https://ai.google.dev/gemini-api/docs/models), [Llama](https://www.llama.com/), and more."
+description: "CAMEL-AI: Flexible integration and deployment of top LLMs and multimodal models like [OpenAI](https://openai.com/), [Mistral](https://mistral.ai/), [Gemini](https://ai.google.dev/gemini-api/docs/models), [Llama](https://www.llama.com/), [Nebius](https://studio.nebius.com), and more."
 icon: gear-code
 ---
 
@@ -16,7 +16,7 @@ Play with different models in our [interactive Colab Notebook](https://colab.res
   </Card>
 
   <Card title="Flexible Model Integration" icon="plug">
-    CAMEL allows quick integration and swapping of leading LLMs from providers like OpenAI, Gemini, Llama, and Anthropic, helping you match the best model to your task.
+    CAMEL allows quick integration and swapping of leading LLMs from providers like OpenAI, Gemini, Llama, Anthropic, Nebius, and more, helping you match the best model to your task.
   </Card>
 
   <Card title="Optimized for Customization" icon="sliders">
@@ -38,13 +38,14 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | :--------------  | :------------ |
 | **OpenAI**       | gpt-4.5-preview<br/>gpt-4o, gpt-4o-mini<br/>o1, o1-preview, o1-mini<br/>o3-mini, o3-pro<br/>gpt-4-turbo, gpt-4, gpt-3.5-turbo |
 | **Azure OpenAI** | gpt-4o, gpt-4-turbo<br/>gpt-4, gpt-3.5-turbo |
-| **Mistral AI**   | mistral-large-latest, pixtral-12b-2409<br/>ministral-8b-latest, ministral-3b-latest<br/>open-mistral-nemo, codestral-latest<br/>open-mistral-7b, open-mixtral-8x7b<br/>open-mixtral-8x22b, open-codestral-mamba<br/>magistral-medium-2506, mistral-small-2506 |
+| **Mistral AI**   | mistral-large-latest, pixtral-12b-2409<br/>ministral-8b-latest, ministral-3b-latest<br/>open-mistral-nemo, codestral-latest<br/>open-mistral-7b, open-mixtral-8x7b<br/>open-mixtral-8x22b, open-codestral-mamba<br/>mistral-small-2506, mistral-medium-2508 |
 | **Moonshot**     | moonshot-v1-8k<br/>moonshot-v1-32k<br/>moonshot-v1-128k |
 | **Anthropic**    | claude-2.1, claude-2.0, claude-instant-1.2<br/>claude-3-opus-latest, claude-3-sonnet-20240229, claude-3-haiku-20240307<br/>claude-3-5-sonnet-latest, claude-3-5-haiku-latest |
 | **Gemini**       | gemini-2.5-pro, gemini-2.5-flash<br/>gemini-2.0-flash, gemini-2.0-flash-thinking<br/> gemini-2.0-flash-lite|
 | **Lingyiwanwu**  | yi-lightning, yi-large, yi-medium<br/>yi-large-turbo, yi-vision, yi-medium-200k<br/>yi-spark, yi-large-rag, yi-large-fc |
 | **Qwen**         | qwen3-coder-plus,qwq-32b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long<br/>qwen-vl-max, qwen-vl-plus, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo<br/>qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
 | **DeepSeek**     | deepseek-chat<br/>deepseek-reasoner |
+| **Nebius**       | **All models available on [Nebius AI Studio](https://studio.nebius.com/)**<br/>Including: gpt-oss-120b, Kimi-K2-Instruct, GLM-4.5<br/>DeepSeek V3 & R1, LLaMA, Mistral, and more |
 | **ZhipuAI**      | glm-4, glm-4v, glm-4v-flash<br/>glm-4v-plus-0111, glm-4-plus, glm-4-air<br/>glm-4-air-0111, glm-4-airx, glm-4-long<br/>glm-4-flashx, glm-zero-preview, glm-4-flash, glm-3-turbo |
 | **InternLM**     | internlm3-latest, internlm3-8b-instruct<br/>internlm2.5-latest, internlm2-pro-chat |
 | **Reka**         | reka-core, reka-flash, reka-edge |
@@ -152,7 +153,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
 
   model = ModelFactory.create(
       model_platform=ModelPlatformType.MISTRAL,
-      model_type=ModelType.MISTRAL_MEDIUM_3,
+      model_type=ModelType.MISTRAL_MEDIUM_3_1,
       model_config_dict=MistralConfig(temperature=0.0).as_dict(),
   )
 
@@ -190,6 +191,61 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
 
   response = agent.step("Say hi to CAMEL AI community.")
   print(response.msgs[0].content)
+  ```
+
+  </Tab>
+
+  <Tab title="Nebius">
+    
+  Leverage [Nebius](https://studio.nebius.com)'s state-of-the-art inference models through an OpenAI-compatible API:
+
+ - **Nebius AI Studio** ([Platform](https://studio.nebius.com/)): Access powerful models through their cloud infrastructure.
+ - **API Key Setup** ([Generate Key](https://studio.nebius.ai/settings/api-keys)): Obtain your Nebius API key to start integration.
+ - **Nebius Docs** ([Documentation](https://docs.nebius.com/studio/inference)): Explore detailed Nebius API capabilities.
+
+  ```python
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType, ModelType
+  from camel.configs import NebiusConfig
+  from camel.agents import ChatAgent
+
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.NEBIUS,
+      model_type=ModelType.NEBIUS_GPT_OSS_120B,
+      model_config_dict=NebiusConfig(temperature=0.2).as_dict(),
+  )
+
+  agent = ChatAgent(
+      system_message="You are a helpful assistant.",
+      model=model
+  )
+
+  response = agent.step("Say hi to CAMEL AI community.")
+  print(response.msgs[0].content)
+  ```
+
+  <Note type="info">
+    **Flexible Model Access:** You can use any model available on Nebius by passing the model name as a string to `model_type`, even if it's not in the predefined enums.
+  </Note>
+
+  **Environment Variables:**
+  ```bash
+  export NEBIUS_API_KEY="your_nebius_api_key"
+  export NEBIUS_API_BASE_URL="https://api.studio.nebius.com/v1"  # Optional
+  ```
+
+  **Model Support:**
+  - **Complete Access:** All models available on [Nebius AI Studio](https://studio.nebius.com/) are supported
+  - **Predefined Enums:** Common models like `NEBIUS_GPT_OSS_120B`, `NEBIUS_DEEPSEEK_V3`, etc.
+  - **String-based Access:** Use any model name directly as a string for maximum flexibility
+  
+  **Example with any model:**
+  ```python
+  # Use any model available on Nebius
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.NEBIUS,
+      model_type="your-custom-model-name"  # Any Nebius model
+  )
   ```
 
   </Tab>
@@ -444,61 +500,6 @@ CAMEL-AI makes it easy to integrate local open-source models as part of your age
 >
   Explore the full <b>CAMEL-AI Examples</b> library for advanced workflows, tool integrations, and multi-agent demos.
 </Card>
-
-
-## Model Speed and Performance
-
-<CardGroup cols={2}>
-  <Card
-    title="Why Model Speed Matters"
-    icon="gauge-simple-max"
-  >
-    For interactive AI applications, response speed can make or break the user experience. CAMEL-AI benchmarks tokens processed per second (TPS) across a range of supported models—helping you choose the right balance of power and performance.
-  </Card>
-  <Card
-    title="Benchmark Insights"
-    icon="ranking-star"
-  >
-    We ran side-by-side tests in <a href="../cookbooks/model_speed_comparison.ipynb" target="_blank"><b>this notebook</b></a> comparing top models from OpenAI (GPT-4o Mini, GPT-4o, O1 Preview) and SambaNova (Llama series), measuring output speed in tokens per second.
-  </Card>
-</CardGroup>
-
-<Note type="info">
-<b>Key Findings:</b>
-<ul>
-  <li>
-    <b>Small models = blazing speed:</b> SambaNova’s Llama 8B and OpenAI GPT-4o Mini deliver the fastest responses.
-  </li>
-  <li>
-    <b>Bigger models = higher quality, slower output:</b> Llama 405B (SambaNova) and similar large models trade off speed for more nuanced reasoning.
-  </li>
-  <li>
-    <b>OpenAI models = consistent speed:</b> Most OpenAI models maintain stable throughput across use cases.
-  </li>
-  <li>
-    <b>Llama 8B (SambaNova) = top performer:</b> Outpaces others in raw tokens/sec.
-  </li>
-</ul>
-</Note>
-
-<div align="center" style={{ margin: "1.5em 0" }}>
-  <img
-    src="https://i.postimg.cc/4xByytyZ/model-speed.png"
-    alt="Model Speed Comparison: Tokens per second for various AI models"
-    style={{ maxWidth: 520, borderRadius: 16, boxShadow: "0 2px 8px #0002" }}
-  />
-  <div style={{ fontSize: 13, color: "#666", marginTop: 8 }}>
-    <i>Model Speed Comparison &mdash; tokens per second across CAMEL-supported models</i>
-  </div>
-</div>
-
-<Card title="Local Inference: vLLM vs. SGLang" icon="terminal">
-  We compared local inference speeds between <b>vLLM</b> and <b>SGLang</b> on the same hardware. SGLang (meta-llama/Llama-3.2-1B-Instruct) hit <b>220.98 tokens/sec</b>, while vLLM peaked at <b>107.2 tokens/sec</b>.<br/>
-  <br/>
-  <b>Bottom line:</b> For maximum speed in local environments, SGLang currently leads.
-</Card>
-
----
 
 ## Next Steps
 

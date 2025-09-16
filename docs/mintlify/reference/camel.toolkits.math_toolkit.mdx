@@ -13,12 +13,12 @@ A class representing a toolkit for mathematical operations.
 This class provides methods for basic mathematical operations such as
 addition, subtraction, multiplication, division, and rounding.
 
-<a id="camel.toolkits.math_toolkit.MathToolkit.add"></a>
+<a id="camel.toolkits.math_toolkit.MathToolkit.math_add"></a>
 
-### add
+### math_add
 
 ```python
-def add(self, a: float, b: float):
+def math_add(self, a: float, b: float):
 ```
 
 Adds two numbers.
@@ -32,12 +32,12 @@ Adds two numbers.
 
   float: The sum of the two numbers.
 
-<a id="camel.toolkits.math_toolkit.MathToolkit.sub"></a>
+<a id="camel.toolkits.math_toolkit.MathToolkit.math_subtract"></a>
 
-### sub
+### math_subtract
 
 ```python
-def sub(self, a: float, b: float):
+def math_subtract(self, a: float, b: float):
 ```
 
 Do subtraction between two numbers.
@@ -51,12 +51,12 @@ Do subtraction between two numbers.
 
   float: The result of subtracting :obj:`b` from :obj:`a`.
 
-<a id="camel.toolkits.math_toolkit.MathToolkit.multiply"></a>
+<a id="camel.toolkits.math_toolkit.MathToolkit.math_multiply"></a>
 
-### multiply
+### math_multiply
 
 ```python
-def multiply(
+def math_multiply(
     self,
     a: float,
     b: float,
@@ -76,12 +76,12 @@ Multiplies two numbers.
 
   float: The product of the two numbers.
 
-<a id="camel.toolkits.math_toolkit.MathToolkit.divide"></a>
+<a id="camel.toolkits.math_toolkit.MathToolkit.math_divide"></a>
 
-### divide
+### math_divide
 
 ```python
-def divide(
+def math_divide(
     self,
     a: float,
     b: float,
@@ -101,12 +101,12 @@ Divides two numbers.
 
   float: The result of dividing :obj:`a` by :obj:`b`.
 
-<a id="camel.toolkits.math_toolkit.MathToolkit.round"></a>
+<a id="camel.toolkits.math_toolkit.MathToolkit.math_round"></a>
 
-### round
+### math_round
 
 ```python
-def round(self, a: float, decimal_places: int = 0):
+def math_round(self, a: float, decimal_places: int = 0):
 ```
 
 Rounds a number to a specified number of decimal places.
@@ -132,3 +132,54 @@ def get_tools(self):
 
   List[FunctionTool]: A list of FunctionTool objects
 representing the functions in the toolkit.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.add"></a>
+
+### add
+
+```python
+def add(self, *args, **kwargs):
+```
+
+Deprecated: Use math_add instead.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.sub"></a>
+
+### sub
+
+```python
+def sub(self, *args, **kwargs):
+```
+
+Deprecated: Use math_subtract instead.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.multiply"></a>
+
+### multiply
+
+```python
+def multiply(self, *args, **kwargs):
+```
+
+Deprecated: Use math_multiply instead.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.divide"></a>
+
+### divide
+
+```python
+def divide(self, *args, **kwargs):
+```
+
+Deprecated: Use math_divide instead.
+
+<a id="camel.toolkits.math_toolkit.MathToolkit.round"></a>
+
+### round
+
+```python
+def round(self, *args, **kwargs):
+```
+
+Deprecated: Use math_round instead. Note: This was shadowing
+Python's built-in round().

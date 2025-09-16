@@ -200,17 +200,17 @@ def search_agent_factory(
     agent_id = str(uuid.uuid4())[:8]
 
     custom_tools = [
-        "open_browser",
-        "close_browser",
-        "click",
-        "type",
-        "back",
-        "forward",
-        "switch_tab",
-        "enter",
-        "get_som_screenshot",
-        "visit_page",
-        "scroll",
+        "browser_open",
+        "browser_close",
+        "browser_click",
+        "browser_type",
+        "browser_back",
+        "browser_forward",
+        "browser_switch_tab",
+        "browser_enter",
+        "browser_get_som_screenshot",
+        "browser_visit_page",
+        "browser_scroll",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
