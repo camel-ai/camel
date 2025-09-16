@@ -101,7 +101,7 @@ Data analysis of customer sales using pandas and matplotlib.
     )
     assert "Data analysis of customer sales" in context_message.content
     assert "Sales increased 15%" in context_message.content
-    assert backend_role.value == "system"
+    assert backend_role.value == "user"
 
 
 def test_load_markdown_context_to_memory_file_not_found(
