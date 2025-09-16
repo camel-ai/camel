@@ -423,12 +423,14 @@ class ContextUtility:
                 "and plan your next steps."
             )
 
+            # TODO: change to system message once multi-system-message
+            # is supported
             context_message = BaseMessage.make_assistant_message(
                 role_name="Assistant",
                 content=f"{prefix_prompt}\n\n{content}",
             )
 
-            agent.update_memory(context_message, OpenAIBackendRole.SYSTEM)
+            agent.update_memory(context_message, OpenAIBackendRole.USER)
 
             char_count = len(content)
             log_msg = (
