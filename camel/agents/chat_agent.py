@@ -1045,54 +1045,6 @@ class ChatAgent(BaseAgent):
         if self.system_message is not None:
             self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
 
-    def load_context_summary(self, summary_file_path: str) -> str:
-        r"""Load a markdown summary into agent memory using ContextUtility.
-
-        This preserves existing conversation history and appends the summary
-        as a system-context message, leveraging
-        :meth:`ContextUtility.load_markdown_context_to_memory`.
-
-        Args:
-            summary_file_path (str): Absolute or relative path to the
-                markdown file to load.
-
-        Returns:
-            str: Status message from the loading operation.
-        """
-        try:
-            from pathlib import Path
-
-            from camel.utils.context_utils import ContextUtility
-
-            summary_path = Path(summary_file_path)
-
-            if not summary_path.exists():
-                return f"Summary file not found: {summary_file_path}"
-
-            # Basic empty-file guard for clearer feedback
-            file_text = summary_path.read_text(encoding="utf-8")
-            if not file_text.strip():
-                return f"Summary file is empty: {summary_file_path}"
-
-            # Adapt ContextUtility to work with an arbitrary file path by
-            # pointing its working_directory to the file's parent directory
-            # and bypassing the per-session subfolder.
-            util = ContextUtility(working_directory=str(summary_path.parent))
-            # Override the session-specific working dir so we can load the
-            # provided file directly from its folder.
-            util.working_directory = summary_path.parent
-
-            # Use the utility to append context into memory as SYSTEM role
-            result = util.load_markdown_context_to_memory(
-                agent=self, filename=summary_path.stem
-            )
-            return result
-
-        except Exception as e:
-            error_msg = f"Failed to load summary: {e}"
-            logger.error(error_msg)
-            return error_msg
-
     def _generate_system_message_for_output_language(
         self,
     ) -> Optional[BaseMessage]:
