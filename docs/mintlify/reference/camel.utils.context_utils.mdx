@@ -293,3 +293,23 @@ def get_session_id(self):
 **Returns:**
 
   str: The session ID.
+
+<a id="camel.utils.context_utils.ContextUtility.load_markdown_context_to_memory"></a>
+
+### load_markdown_context_to_memory
+
+```python
+def load_markdown_context_to_memory(self, agent: 'ChatAgent', filename: str):
+```
+
+Load context from a markdown file and append it to agent memory.
+Preserves existing conversation history without wiping it.
+
+**Parameters:**
+
+- **agent** (ChatAgent): The agent to append context to.
+- **filename** (str): Name of the markdown file (without .md extension).
+
+**Returns:**
+
+  str: Status message indicating success or failure with details.
