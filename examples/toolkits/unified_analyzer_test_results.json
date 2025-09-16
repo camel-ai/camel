@@ -1,0 +1,1749 @@
+{
+  "url": "file:///E:/EnjoyAI/camel/examples/toolkits/filtering_demo.html",
+  "elements": {
+    "e2": {
+      "role": "generic",
+      "name": "",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 162.5,
+          "y": 20,
+          "width": 940,
+          "height": 2140.6171875,
+          "top": 20,
+          "left": 162.5,
+          "right": 1102.5,
+          "bottom": 2160.6171875
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e3": {
+      "role": "heading",
+      "name": "CAMEL Filtering Test - Extended Demo",
+      "tagName": "h1",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": 1,
+      "coordinates": [
+        {
+          "x": 182.5,
+          "y": 61.4375,
+          "width": 900,
+          "height": 51.1953125,
+          "top": 61.4375,
+          "left": 182.5,
+          "right": 1082.5,
+          "bottom": 112.6328125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e4": {
+      "role": "generic",
+      "name": "Comprehensive test for occlusion filtering and no-information label filtering",
+      "tagName": "p",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 182.5,
+          "y": 134.0703125,
+          "width": 900,
+          "height": 25.59375,
+          "top": 134.0703125,
+          "left": 182.5,
+          "right": 1082.5,
+          "bottom": 159.6640625
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e5": {
+      "role": "generic",
+      "name": "\n            1. Occlusion Filtering Test\n            Elements hidden behind other elements should be filtered out\n            \n            \n                Hidden Button 1\n                Red Overlay\n                \n                Small Hidden\n                Purple Cover\n                \n                Visible Button\n            \n            Expected: 2 buttons should be filtered (Hidden Button 1, Small Hidden), 1 should remain (Visible Button)\n        ",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 182.5,
+          "y": 189.6640625,
+          "width": 900,
+          "height": 349.78125,
+          "top": 189.6640625,
+          "left": 182.5,
+          "right": 1082.5,
+          "bottom": 539.4453125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e6": {
+      "role": "generic",
+      "name": "1. Occlusion Filtering Test",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 203.6640625,
+          "width": 228.8515625,
+          "height": 41.59375,
+          "top": 203.6640625,
+          "left": 204.5,
+          "right": 433.3515625,
+          "bottom": 245.2578125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e7": {
+      "role": "generic",
+      "name": "Elements hidden behind other elements should be filtered out",
+      "tagName": "p",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 276.2578125,
+          "width": 856,
+          "height": 25.59375,
+          "top": 276.2578125,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 301.8515625
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e8": {
+      "role": "generic",
+      "name": "\n                Hidden Button 1\n                Red Overlay\n                \n                Small Hidden\n                Purple Cover\n                \n                Visible Button\n            ",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 317.8515625,
+          "width": 856,
+          "height": 142,
+          "top": 317.8515625,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 459.8515625
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e9": {
+      "role": "generic",
+      "name": "Red Overlay",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 220.5,
+          "y": 333.8515625,
+          "width": 144.921875,
+          "height": 61.59375,
+          "top": 333.8515625,
+          "left": 220.5,
+          "right": 365.421875,
+          "bottom": 395.4453125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e10": {
+      "role": "generic",
+      "name": "Purple Cover",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 320.5,
+          "y": 393.8515625,
+          "width": 141.375,
+          "height": 57.59375,
+          "top": 393.8515625,
+          "left": 320.5,
+          "right": 461.875,
+          "bottom": 451.4453125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e11": {
+      "role": "button",
+      "name": "Visible Button",
+      "tagName": "button",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 485.5,
+          "y": 398.8515625,
+          "width": 113.2734375,
+          "height": 31.5,
+          "top": 398.8515625,
+          "left": 485.5,
+          "right": 598.7734375,
+          "bottom": 430.3515625
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e12": {
+      "role": "generic",
+      "name": "Expected: 2 buttons should be filtered (Hidden Button 1, Small Hidden), 1 should remain (Visible Button)",
+      "tagName": "p",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 475.8515625,
+          "width": 856,
+          "height": 25.59375,
+          "top": 475.8515625,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 501.4453125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e14": {
+      "role": "generic",
+      "name": "",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 182.5,
+          "y": 569.4453125,
+          "width": 900,
+          "height": 484.25,
+          "top": 569.4453125,
+          "left": 182.5,
+          "right": 1082.5,
+          "bottom": 1053.6953125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e15": {
+      "role": "generic",
+      "name": "2. No-Information Label Filtering Test",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 583.4453125,
+          "width": 312.3828125,
+          "height": 41.59375,
+          "top": 583.4453125,
+          "left": 204.5,
+          "right": 516.8828125,
+          "bottom": 625.0390625
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e16": {
+      "role": "generic",
+      "name": "Interactive elements without meaningful content should be filtered",
+      "tagName": "p",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 656.0390625,
+          "width": 856,
+          "height": 25.59375,
+          "top": 656.0390625,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 681.6328125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e17": {
+      "role": "heading",
+      "name": "Empty Elements (should be filtered):",
+      "tagName": "h4",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": 4,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 702.90625,
+          "width": 856,
+          "height": 25.59375,
+          "top": 702.90625,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 728.5
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e18": {
+      "role": "generic",
+      "name": "\n                \n                   \n                \n                  \n                \n                \n            ",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 749.7734375,
+          "width": 856,
+          "height": 46,
+          "top": 749.7734375,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 795.7734375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e19": {
+      "role": "heading",
+      "name": "Symbol-only Elements (should be filtered):",
+      "tagName": "h4",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": 4,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 817.046875,
+          "width": 856,
+          "height": 25.59375,
+          "top": 817.046875,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 842.640625
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e20": {
+      "role": "generic",
+      "name": "Expected: All 16 empty/symbol elements above should be filtered",
+      "tagName": "p",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 990.1015625,
+          "width": 856,
+          "height": 25.59375,
+          "top": 990.1015625,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 1015.6953125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e22": {
+      "role": "generic",
+      "name": "\n            3. Valid Elements Test (should NOT be filtered)\n            Elements with clear functionality and meaningful content\n            \n            \n                Search\n                Submit Form\n                Login\n                Cancel\n                Delete Item\n                \n                \n                \n                \n                \n                \n                    \n                    \n                    \n                    \n                \n                \n                \n                    \n                    \n                    \n                    \n                \n                \n                Home\n                About Us\n                Contact\n            \n            \n            Expected: All 16 elements above should be preserved\n        ",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 182.5,
+          "y": 1083.6953125,
+          "width": 900,
+          "height": 360.96875,
+          "top": 1083.6953125,
+          "left": 182.5,
+          "right": 1082.5,
+          "bottom": 1444.6640625
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e23": {
+      "role": "generic",
+      "name": "3. Valid Elements Test (should NOT be filtered)",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1097.6953125,
+          "width": 383.546875,
+          "height": 41.59375,
+          "top": 1097.6953125,
+          "left": 204.5,
+          "right": 588.046875,
+          "bottom": 1139.2890625
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e24": {
+      "role": "generic",
+      "name": "Elements with clear functionality and meaningful content",
+      "tagName": "p",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1170.2890625,
+          "width": 856,
+          "height": 25.59375,
+          "top": 1170.2890625,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 1195.8828125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e25": {
+      "role": "generic",
+      "name": "\n                Search\n                Submit Form\n                Login\n                Cancel\n                Delete Item\n                \n                \n                \n                \n                \n                \n                    \n                    \n                    \n                    \n                \n                \n                \n                    \n                    \n                    \n                    \n                \n                \n                Home\n                About Us\n                Contact\n            ",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1211.8828125,
+          "width": 856,
+          "height": 153.1875,
+          "top": 1211.8828125,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 1365.0703125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e26": {
+      "role": "button",
+      "name": "Search",
+      "tagName": "button",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1211.8828125,
+          "width": 84.359375,
+          "height": 36,
+          "top": 1211.8828125,
+          "left": 204.5,
+          "right": 288.859375,
+          "bottom": 1247.8828125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": true
+    },
+    "e27": {
+      "role": "button",
+      "name": "Submit Form",
+      "tagName": "button",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 303.859375,
+          "y": 1211.8828125,
+          "width": 120.125,
+          "height": 36,
+          "top": 1211.8828125,
+          "left": 303.859375,
+          "right": 423.984375,
+          "bottom": 1247.8828125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": true
+    },
+    "e28": {
+      "role": "button",
+      "name": "Login",
+      "tagName": "button",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 438.984375,
+          "y": 1211.8828125,
+          "width": 74.2578125,
+          "height": 36,
+          "top": 1211.8828125,
+          "left": 438.984375,
+          "right": 513.2421875,
+          "bottom": 1247.8828125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": true
+    },
+    "e29": {
+      "role": "button",
+      "name": "Cancel",
+      "tagName": "button",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 528.2421875,
+          "y": 1211.8828125,
+          "width": 83.5859375,
+          "height": 36,
+          "top": 1211.8828125,
+          "left": 528.2421875,
+          "right": 611.828125,
+          "bottom": 1247.8828125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": true
+    },
+    "e30": {
+      "role": "button",
+      "name": "Delete Item",
+      "tagName": "button",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 626.828125,
+          "y": 1211.8828125,
+          "width": 111.5859375,
+          "height": 36,
+          "top": 1211.8828125,
+          "left": 626.828125,
+          "right": 738.4140625,
+          "bottom": 1247.8828125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": true
+    },
+    "e31": {
+      "role": "textbox",
+      "name": "",
+      "tagName": "input",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 753.4140625,
+          "y": 1211.8828125,
+          "width": 196.5,
+          "height": 36,
+          "top": 1211.8828125,
+          "left": 753.4140625,
+          "right": 949.9140625,
+          "bottom": 1247.8828125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": "Enter your name",
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e32": {
+      "role": "textbox",
+      "name": "",
+      "tagName": "input",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1262.8828125,
+          "width": 196.5,
+          "height": 43.59375,
+          "top": 1262.8828125,
+          "left": 204.5,
+          "right": 401,
+          "bottom": 1306.4765625
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": "Email address",
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e33": {
+      "role": "textbox",
+      "name": "",
+      "tagName": "input",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 416,
+          "y": 1262.8828125,
+          "width": 196.5,
+          "height": 43.59375,
+          "top": 1262.8828125,
+          "left": 416,
+          "right": 612.5,
+          "bottom": 1306.4765625
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": "Password",
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e34": {
+      "role": "select",
+      "name": "\n                    \n                    \n                    \n                    \n                ",
+      "tagName": "select",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 627.5,
+          "y": 1262.8828125,
+          "width": 136.5,
+          "height": 43.59375,
+          "top": 1262.8828125,
+          "left": 627.5,
+          "right": 764,
+          "bottom": 1306.4765625
+        }
+      ],
+      "href": null,
+      "value": "Choose option",
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e35": {
+      "role": "select",
+      "name": "\n                    \n                    \n                    \n                    \n                ",
+      "tagName": "select",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 779,
+          "y": 1262.8828125,
+          "width": 135,
+          "height": 43.59375,
+          "top": 1262.8828125,
+          "left": 779,
+          "right": 914,
+          "bottom": 1306.4765625
+        }
+      ],
+      "href": null,
+      "value": "Select country",
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e36": {
+      "role": "link",
+      "name": "Home",
+      "tagName": "a",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 929,
+          "y": 1262.8828125,
+          "width": 74.6796875,
+          "height": 43.59375,
+          "top": 1262.8828125,
+          "left": 929,
+          "right": 1003.6796875,
+          "bottom": 1306.4765625
+        }
+      ],
+      "href": "file:///E:/EnjoyAI/camel/examples/toolkits/filtering_demo.html#home",
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": true
+    },
+    "e37": {
+      "role": "link",
+      "name": "About Us",
+      "tagName": "a",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1321.4765625,
+          "width": 97.8125,
+          "height": 43.59375,
+          "top": 1321.4765625,
+          "left": 204.5,
+          "right": 302.3125,
+          "bottom": 1365.0703125
+        }
+      ],
+      "href": "file:///E:/EnjoyAI/camel/examples/toolkits/filtering_demo.html#about",
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": true
+    },
+    "e38": {
+      "role": "link",
+      "name": "Contact",
+      "tagName": "a",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 317.3125,
+          "y": 1321.4765625,
+          "width": 87.140625,
+          "height": 43.59375,
+          "top": 1321.4765625,
+          "left": 317.3125,
+          "right": 404.453125,
+          "bottom": 1365.0703125
+        }
+      ],
+      "href": "file:///E:/EnjoyAI/camel/examples/toolkits/filtering_demo.html#contact",
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": true
+    },
+    "e39": {
+      "role": "generic",
+      "name": "Expected: All 16 elements above should be preserved",
+      "tagName": "p",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1381.0703125,
+          "width": 856,
+          "height": 25.59375,
+          "top": 1381.0703125,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 1406.6640625
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e41": {
+      "role": "generic",
+      "name": "\n            4. Complex Layout Test\n            Mixed content with various interactive elements\n            \n            \n                \n                    User Profile\n                    \n                    \n                    Update Profile\n                \n                \n                \n                    Settings\n                    \n                         Enable notifications\n                    \n                    \n                         Dark mode\n                    \n                    Save Settings\n                \n            \n        ",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 182.5,
+          "y": 1474.6640625,
+          "width": 900,
+          "height": 378.984375,
+          "top": 1474.6640625,
+          "left": 182.5,
+          "right": 1082.5,
+          "bottom": 1853.6484375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e42": {
+      "role": "generic",
+      "name": "4. Complex Layout Test",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1488.6640625,
+          "width": 208.40625,
+          "height": 41.59375,
+          "top": 1488.6640625,
+          "left": 204.5,
+          "right": 412.90625,
+          "bottom": 1530.2578125
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e43": {
+      "role": "generic",
+      "name": "Mixed content with various interactive elements",
+      "tagName": "p",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1561.2578125,
+          "width": 856,
+          "height": 25.59375,
+          "top": 1561.2578125,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 1586.8515625
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e44": {
+      "role": "generic",
+      "name": "\n                \n                    User Profile\n                    \n                    \n                    Update Profile\n                \n                \n                \n                    Settings\n                    \n                         Enable notifications\n                    \n                    \n                         Dark mode\n                    \n                    Save Settings\n                \n            ",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1606.8515625,
+          "width": 856,
+          "height": 204.796875,
+          "top": 1606.8515625,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 1811.6484375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e45": {
+      "role": "generic",
+      "name": "\n                    User Profile\n                    \n                    \n                    Update Profile\n                ",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1606.8515625,
+          "width": 418,
+          "height": 204.796875,
+          "top": 1606.8515625,
+          "left": 204.5,
+          "right": 622.5,
+          "bottom": 1811.6484375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e46": {
+      "role": "generic",
+      "name": "User Profile",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 220.5,
+          "y": 1622.8515625,
+          "width": 386,
+          "height": 28.796875,
+          "top": 1622.8515625,
+          "left": 220.5,
+          "right": 606.5,
+          "bottom": 1651.6484375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e47": {
+      "role": "textbox",
+      "name": "",
+      "tagName": "input",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 220.5,
+          "y": 1666.6484375,
+          "width": 412,
+          "height": 34,
+          "top": 1666.6484375,
+          "left": 220.5,
+          "right": 632.5,
+          "bottom": 1700.6484375
+        }
+      ],
+      "href": null,
+      "value": "John Doe",
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e48": {
+      "role": "textbox",
+      "name": "",
+      "tagName": "input",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 220.5,
+          "y": 1710.6484375,
+          "width": 412,
+          "height": 34,
+          "top": 1710.6484375,
+          "left": 220.5,
+          "right": 632.5,
+          "bottom": 1744.6484375
+        }
+      ],
+      "href": null,
+      "value": "john@example.com",
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e49": {
+      "role": "button",
+      "name": "Update Profile",
+      "tagName": "button",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 220.5,
+          "y": 1759.6484375,
+          "width": 128.71875,
+          "height": 36,
+          "top": 1759.6484375,
+          "left": 220.5,
+          "right": 349.21875,
+          "bottom": 1795.6484375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": true
+    },
+    "e50": {
+      "role": "generic",
+      "name": "\n                    Settings\n                    \n                         Enable notifications\n                    \n                    \n                         Dark mode\n                    \n                    Save Settings\n                ",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 642.5,
+          "y": 1606.8515625,
+          "width": 418,
+          "height": 204.796875,
+          "top": 1606.8515625,
+          "left": 642.5,
+          "right": 1060.5,
+          "bottom": 1811.6484375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e51": {
+      "role": "generic",
+      "name": "Settings",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 658.5,
+          "y": 1622.8515625,
+          "width": 386,
+          "height": 28.796875,
+          "top": 1622.8515625,
+          "left": 658.5,
+          "right": 1044.5,
+          "bottom": 1651.6484375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e53": {
+      "role": "checkbox",
+      "name": "",
+      "tagName": "input",
+      "disabled": null,
+      "checked": true,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 662.5,
+          "y": 1666.6484375,
+          "width": 13,
+          "height": 13,
+          "top": 1666.6484375,
+          "left": 662.5,
+          "right": 675.5,
+          "bottom": 1679.6484375
+        }
+      ],
+      "href": null,
+      "value": "on",
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e55": {
+      "role": "checkbox",
+      "name": "",
+      "tagName": "input",
+      "disabled": null,
+      "checked": false,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 662.5,
+          "y": 1702.2421875,
+          "width": 13,
+          "height": 13,
+          "top": 1702.2421875,
+          "left": 662.5,
+          "right": 675.5,
+          "bottom": 1715.2421875
+        }
+      ],
+      "href": null,
+      "value": "on",
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e56": {
+      "role": "button",
+      "name": "Save Settings",
+      "tagName": "button",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 658.5,
+          "y": 1742.8359375,
+          "width": 126.390625,
+          "height": 36,
+          "top": 1742.8359375,
+          "left": 658.5,
+          "right": 784.890625,
+          "bottom": 1778.8359375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": true
+    },
+    "e57": {
+      "role": "generic",
+      "name": "",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 182.5,
+          "y": 1883.6484375,
+          "width": 900,
+          "height": 226.96875,
+          "top": 1883.6484375,
+          "left": 182.5,
+          "right": 1082.5,
+          "bottom": 2110.6171875
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e58": {
+      "role": "generic",
+      "name": "5. Expected Results Summary",
+      "tagName": "div",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1897.6484375,
+          "width": 258.5390625,
+          "height": 41.59375,
+          "top": 1897.6484375,
+          "left": 204.5,
+          "right": 463.0390625,
+          "bottom": 1939.2421875
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e59": {
+      "role": "list",
+      "name": "",
+      "tagName": "ul",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 204.5,
+          "y": 1970.2421875,
+          "width": 856,
+          "height": 102.375,
+          "top": 1970.2421875,
+          "left": 204.5,
+          "right": 1060.5,
+          "bottom": 2072.6171875
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e60": {
+      "role": "listitem",
+      "name": "Occluded Filtered: 2 elements (Hidden Button 1, Small Hidden)",
+      "tagName": "li",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 244.5,
+          "y": 1970.2421875,
+          "width": 816,
+          "height": 25.59375,
+          "top": 1970.2421875,
+          "left": 244.5,
+          "right": 1060.5,
+          "bottom": 1995.8359375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e61": {
+      "role": "generic",
+      "name": "Occluded Filtered:",
+      "tagName": "strong",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 244.5,
+          "y": 1973.7421875,
+          "width": 140.46875,
+          "height": 18,
+          "top": 1973.7421875,
+          "left": 244.5,
+          "right": 384.96875,
+          "bottom": 1991.7421875
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e62": {
+      "role": "listitem",
+      "name": "No-Info Filtered: 16 elements (6 empty + 10 symbol-only)",
+      "tagName": "li",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 244.5,
+          "y": 1995.8359375,
+          "width": 816,
+          "height": 25.59375,
+          "top": 1995.8359375,
+          "left": 244.5,
+          "right": 1060.5,
+          "bottom": 2021.4296875
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e63": {
+      "role": "generic",
+      "name": "No-Info Filtered:",
+      "tagName": "strong",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 244.5,
+          "y": 1999.3359375,
+          "width": 123.5390625,
+          "height": 18,
+          "top": 1999.3359375,
+          "left": 244.5,
+          "right": 368.0390625,
+          "bottom": 2017.3359375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e64": {
+      "role": "listitem",
+      "name": "Total Filtered: 18 elements",
+      "tagName": "li",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 244.5,
+          "y": 2021.4296875,
+          "width": 816,
+          "height": 25.59375,
+          "top": 2021.4296875,
+          "left": 244.5,
+          "right": 1060.5,
+          "bottom": 2047.0234375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e65": {
+      "role": "generic",
+      "name": "Total Filtered:",
+      "tagName": "strong",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 244.5,
+          "y": 2024.9296875,
+          "width": 104.59375,
+          "height": 18,
+          "top": 2024.9296875,
+          "left": 244.5,
+          "right": 349.09375,
+          "bottom": 2042.9296875
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e66": {
+      "role": "listitem",
+      "name": "Preserved Elements: ~20+ meaningful interactive elements",
+      "tagName": "li",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 244.5,
+          "y": 2047.0234375,
+          "width": 816,
+          "height": 25.59375,
+          "top": 2047.0234375,
+          "left": 244.5,
+          "right": 1060.5,
+          "bottom": 2072.6171875
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    },
+    "e67": {
+      "role": "generic",
+      "name": "Preserved Elements:",
+      "tagName": "strong",
+      "disabled": null,
+      "checked": null,
+      "expanded": null,
+      "level": null,
+      "coordinates": [
+        {
+          "x": 244.5,
+          "y": 2050.5234375,
+          "width": 158.3046875,
+          "height": 18,
+          "top": 2050.5234375,
+          "left": 244.5,
+          "right": 402.8046875,
+          "bottom": 2068.5234375
+        }
+      ],
+      "href": null,
+      "value": null,
+      "placeholder": null,
+      "scrollable": false,
+      "receivesPointerEvents": true,
+      "hasPointerCursor": false
+    }
+  },
+  "snapshotText": "- generic \"Comprehensive test for occlusion filtering and no-information label filtering\" [ref=e4]\n- generic \"1. Occlusion Filtering Test Elements hidden behind other elements should be filtered out Hidden Button 1 Red Overlay Small Hidden Purple Cover Visible Button Expected: 2 buttons should be filtered (Hidden Button 1, Small Hidden), 1 should remain (Visible Button)\" [ref=e5]\n  - generic \"1. Occlusion Filtering Test\" [ref=e6]\n  - generic \"Elements hidden behind other elements should be filtered out\" [ref=e7]\n  - generic \"Hidden Button 1 Red Overlay Small Hidden Purple Cover Visible Button\" [ref=e8]\n    - generic \"Red Overlay\" [ref=e9]\n    - generic \"Purple Cover\" [ref=e10]\n    - button \"Visible Button\" [ref=e11]\n  - generic \"Expected: 2 buttons should be filtered (Hidden Button 1, Small Hidden), 1 should remain (Visible Button)\" [ref=e12]\n- generic \"2. No-Information Label Filtering Test\" [ref=e15]\n- generic \"Interactive elements without meaningful content should be filtered\" [ref=e16]\n- heading \"Empty Elements (should be filtered):\" [level=4] [ref=e17]\n- heading \"Symbol-only Elements (should be filtered):\" [level=4] [ref=e19]\n- text \"···\"\n- text \"...\"\n- text \"---\"\n- text \"→\"\n- text \"⋮\"\n- text \"|||\"\n- text \"***\"\n- text \"+++\"\n- text \"@@@\"\n- text \"###\"\n- generic \"Expected: All 16 empty/symbol elements above should be filtered\" [ref=e20]\n- generic \"3. Valid Elements Test (should NOT be filtered) Elements with clear functionality and meaningful content Search Submit Form Login Cancel Delete Item Home About Us Contact Expected: All 16 elements above should be preserved\" [ref=e22]\n  - generic \"3. Valid Elements Test (should NOT be filtered)\" [ref=e23]\n  - generic \"Elements with clear functionality and meaningful content\" [ref=e24]\n  - generic \"Search Submit Form Login Cancel Delete Item Home About Us Contact\" [ref=e25]\n    - button \"Search\" [ref=e26] [cursor=pointer]\n    - button \"Submit Form\" [ref=e27] [cursor=pointer]\n    - button \"Login\" [ref=e28] [cursor=pointer]\n    - button \"Cancel\" [ref=e29] [cursor=pointer]\n    - button \"Delete Item\" [ref=e30] [cursor=pointer]\n    - text \"Choose option\"\n    - text \"Option 1\"\n    - text \"Option 2\"\n    - text \"Option 3\"\n    - text \"Select country\"\n    - text \"USA\"\n    - text \"Canada\"\n    - text \"UK\"\n    - link \"Home\" [ref=e36] [cursor=pointer]\n    - link \"About Us\" [ref=e37] [cursor=pointer]\n    - link \"Contact\" [ref=e38] [cursor=pointer]\n  - generic \"Expected: All 16 elements above should be preserved\" [ref=e39]\n- generic \"4. Complex Layout Test Mixed content with various interactive elements User Profile Update Profile Settings Enable notifications Dark mode Save Settings\" [ref=e41]\n  - generic \"4. Complex Layout Test\" [ref=e42]\n  - generic \"Mixed content with various interactive elements\" [ref=e43]\n  - generic \"User Profile Update Profile Settings Enable notifications Dark mode Save Settings\" [ref=e44]\n    - generic \"User Profile Update Profile\" [ref=e45]\n      - generic \"User Profile\" [ref=e46]\n      - button \"Update Profile\" [ref=e49] [cursor=pointer]\n    - generic \"Settings Enable notifications Dark mode Save Settings\" [ref=e50]\n      - generic \"Settings\" [ref=e51]\n      - checkbox checked=true [ref=e53]\n      - checkbox checked=false [ref=e55]\n      - button \"Save Settings\" [ref=e56] [cursor=pointer]\n- generic \"5. Expected Results Summary\" [ref=e58]\n- listitem \"Occluded Filtered: 2 elements (Hidden Button 1, Small Hidden)\" [ref=e60]\n  - generic \"Occluded Filtered:\" [ref=e61]\n- listitem \"No-Info Filtered: 16 elements (6 empty + 10 symbol-only)\" [ref=e62]\n  - generic \"No-Info Filtered:\" [ref=e63]\n- listitem \"Total Filtered: 18 elements\" [ref=e64]\n  - generic \"Total Filtered:\" [ref=e65]\n- listitem \"Preserved Elements: ~20+ meaningful interactive elements\" [ref=e66]\n  - generic \"Preserved Elements:\" [ref=e67]",
+  "metadata": {
+    "timestamp": "2025-09-16T15:39:07.466Z",
+    "elementCount": 61,
+    "screenInfo": {
+      "width": 1280,
+      "height": 720,
+      "devicePixelRatio": 1
+    },
+    "ariaRefCounts": {
+      "e1": 1,
+      "e2": 1,
+      "e3": 1,
+      "e4": 1,
+      "e5": 1,
+      "e6": 1,
+      "e7": 1,
+      "e8": 1,
+      "e9": 1,
+      "e10": 1,
+      "e11": 1,
+      "e12": 1,
+      "e13": 1,
+      "e14": 1,
+      "e15": 1,
+      "e16": 1,
+      "e17": 1,
+      "e18": 1,
+      "e19": 1,
+      "e20": 1,
+      "e21": 1,
+      "e22": 1,
+      "e23": 1,
+      "e24": 1,
+      "e25": 1,
+      "e26": 1,
+      "e27": 1,
+      "e28": 1,
+      "e29": 1,
+      "e30": 1,
+      "e31": 1,
+      "e32": 1,
+      "e33": 1,
+      "e34": 1,
+      "e35": 1,
+      "e36": 1,
+      "e37": 1,
+      "e38": 1,
+      "e39": 1,
+      "e40": 1,
+      "e41": 1,
+      "e42": 1,
+      "e43": 1,
+      "e44": 1,
+      "e45": 1,
+      "e46": 1,
+      "e47": 1,
+      "e48": 1,
+      "e49": 1,
+      "e50": 1,
+      "e51": 1,
+      "e52": 1,
+      "e53": 1,
+      "e54": 1,
+      "e55": 1,
+      "e56": 1,
+      "e57": 1,
+      "e58": 1,
+      "e59": 1,
+      "e60": 1,
+      "e61": 1,
+      "e62": 1,
+      "e63": 1,
+      "e64": 1,
+      "e65": 1,
+      "e66": 1,
+      "e67": 1
+    },
+    "duplicateRefsFound": false,
+    "staleRefsCleanedUp": 0,
+    "refValidationErrors": [],
+    "totalMappedRefs": 67,
+    "refCounterValue": 68,
+    "memoryInfo": {
+      "currentRefCount": 67,
+      "maxRefs": 2000,
+      "memoryUtilization": "3.4%",
+      "lruAccessTimesCount": 67
+    },
+    "cacheHit": true,
+    "analysisTime": 12,
+    "filteringStats": {
+      "occludedElementsFiltered": 4,
+      "noInfoElementsFiltered": 34,
+      "totalElementsFiltered": 38
+    }
+  }
+}
