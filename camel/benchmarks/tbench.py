@@ -16,7 +16,7 @@ import logging
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Literal
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from terminal_bench.agents.agent_name import (  # type: ignore[import-untyped]
@@ -183,8 +183,6 @@ class TBench(BaseBenchmark):
     def run(
         self,
         agent: ChatAgent,
-        on: Literal["train", "valid", "test"],
-        randomize: bool = False,
         subset: Optional[int] = None,
         *args,
         **kwargs,
