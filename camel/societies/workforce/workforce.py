@@ -2166,12 +2166,6 @@ class Workforce(BaseNode):
             all_assignments = (
                 filtered_valid_assignments + retry_and_fallback_assignments
             )
-            logger.warning(
-                f"Removed {
-                    len(valid_assignments) - len(filtered_valid_assignments)
-                } "
-                f"overlapping assignments from valid set"
-            )
         else:
             all_assignments = (
                 valid_assignments + retry_and_fallback_assignments
