@@ -15,7 +15,7 @@ export class HybridBrowserToolkit {
   constructor(config: BrowserToolkitConfig = {}) {
     this.configLoader = ConfigLoader.fromPythonConfig(config);
     this.config = config; // Store original config for backward compatibility
-    this.session = new HybridBrowserSession(this.configLoader.getBrowserConfig()); // Pass processed config
+    this.session = new HybridBrowserSession(config); // Pass original config
     this.viewportLimit = this.configLoader.getWebSocketConfig().viewport_limit;
     this.fullVisualMode = this.configLoader.getWebSocketConfig().fullVisualMode || false;
   }
@@ -26,9 +26,54 @@ export class HybridBrowserToolkit {
     try {
       await this.session.ensureBrowser();
       
-      const url = startUrl || this.config.defaultStartUrl || 'https://google.com/';
-      const result = await this.session.visitPage(url);
+      // Check if we should skip navigation in CDP keep-current-page mode
+      const browserConfig = this.configLoader.getBrowserConfig();
+      if (browserConfig.cdpUrl && browserConfig.cdpKeepCurrentPage && !startUrl) {
+        // In CDP keep-current-page mode without explicit URL, just ensure browser and return current page
+        const snapshotStart = Date.now();
+        const snapshot = await this.getSnapshotForAction(this.viewportLimit);
+        const snapshotTime = Date.now() - snapshotStart;
+        
+        const page = await this.session.getCurrentPage();
+        const currentUrl = page ? await page.url() : 'unknown';
+        
+        const totalTime = Date.now() - startTime;
+        
+        return {
+          success: true,
+          message: `Browser opened in CDP keep-current-page mode (current page: ${currentUrl})`,
+          snapshot,
+          timing: {
+            total_time_ms: totalTime,
+            snapshot_time_ms: snapshotTime,
+          },
+        };
+      }
       
+      // For normal mode or CDP with cdpKeepCurrentPage=false: navigate to URL
+      if (!browserConfig.cdpUrl || !browserConfig.cdpKeepCurrentPage) {
+        const url = startUrl || this.config.defaultStartUrl || 'https://google.com/';
+        const result = await this.session.visitPage(url);
+        
+        const snapshotStart = Date.now();
+        const snapshot = await this.getSnapshotForAction(this.viewportLimit);
+        const snapshotTime = Date.now() - snapshotStart;
+        
+        const totalTime = Date.now() - startTime;
+        
+        return {
+          success: true,
+          message: result.message,
+          snapshot,
+          timing: {
+            total_time_ms: totalTime,
+            page_load_time_ms: result.timing?.page_load_time_ms || 0,
+            snapshot_time_ms: snapshotTime,
+          },
+        };
+      }
+      
+      // Fallback: Just return current page snapshot without any navigation
       const snapshotStart = Date.now();
       const snapshot = await this.getSnapshotForAction(this.viewportLimit);
       const snapshotTime = Date.now() - snapshotStart;
@@ -37,11 +82,10 @@ export class HybridBrowserToolkit {
       
       return {
         success: true,
-        message: `Browser opened and navigated to ${url}`,
+        message: `Browser opened without navigation`,
         snapshot,
         timing: {
           total_time_ms: totalTime,
-          ...result.timing,
           snapshot_time_ms: snapshotTime,
         },
       };
@@ -216,19 +260,27 @@ export class HybridBrowserToolkit {
   private async executeActionWithSnapshot(action: BrowserAction): Promise<any> {
     const result = await this.session.executeAction(action);
     
-    // Format response for Python layer compatibility
     const response: any = {
       result: result.message,
       snapshot: '',
     };
     
     if (result.success) {
-      const snapshotStart = Date.now();
-      response.snapshot = await this.getPageSnapshot(this.viewportLimit);
-      const snapshotTime = Date.now() - snapshotStart;
-      
-      if (result.timing) {
-        result.timing.snapshot_time_ms = snapshotTime;
+      if (result.details?.diffSnapshot) {
+        response.snapshot = result.details.diffSnapshot;
+        
+        if (result.timing) {
+          result.timing.snapshot_time_ms = 0; // Diff snapshot time is included in action time
+        }
+      } else {
+        // Get full snapshot as usual
+        const snapshotStart = Date.now();
+        response.snapshot = await this.getPageSnapshot(this.viewportLimit);
+        const snapshotTime = Date.now() - snapshotStart;
+        
+        if (result.timing) {
+          result.timing.snapshot_time_ms = snapshotTime;
+        }
       }
     }
     
@@ -240,6 +292,14 @@ export class HybridBrowserToolkit {
     // Include newTabId if present
     if (result.newTabId) {
       response.newTabId = result.newTabId;
+    }
+    
+    // Include details if present (excluding diffSnapshot as it's already in snapshot)
+    if (result.details) {
+      const { diffSnapshot, ...otherDetails } = result.details;
+      if (Object.keys(otherDetails).length > 0) {
+        response.details = otherDetails;
+      }
     }
     
     return response;

@@ -73,6 +73,7 @@ export interface BrowserConfig {
   // CDP connection options
   connectOverCdp: boolean;
   cdpUrl?: string;
+  cdpKeepCurrentPage: boolean;
 }
 
 export interface WebSocketConfig {
@@ -118,7 +119,7 @@ function getDefaultBrowserConfig(): BrowserConfig {
     consoleLogLimit: 1000,
     scrollPositionScale: 0.1,
     navigationDelay: 100,
-    blankPageUrls: [],
+    blankPageUrls: ['chrome://newtab/', 'edge://newtab/', 'chrome://new-tab-page/'],
     dataUrlPrefix: 'data:',
     domContentLoadedState: 'domcontentloaded',
     networkIdleState: 'networkidle',
@@ -139,7 +140,8 @@ function getDefaultBrowserConfig(): BrowserConfig {
       height: 720
     },
     connectOverCdp: false,
-    cdpUrl: undefined
+    cdpUrl: undefined,
+    cdpKeepCurrentPage: false
   };
 }
 
@@ -218,6 +220,7 @@ export class ConfigLoader {
     // CDP connection options
     if (config.connectOverCdp !== undefined) browserConfig.connectOverCdp = config.connectOverCdp;
     if (config.cdpUrl !== undefined) browserConfig.cdpUrl = config.cdpUrl;
+    if (config.cdpKeepCurrentPage !== undefined) browserConfig.cdpKeepCurrentPage = config.cdpKeepCurrentPage;
 
     return new ConfigLoader(browserConfig, wsConfig);
   }
