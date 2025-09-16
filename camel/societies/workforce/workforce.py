@@ -2169,7 +2169,7 @@ class Workforce(BaseNode):
             logger.warning(
                 f"Removed {
                     len(valid_assignments) - len(filtered_valid_assignments)
-                    } "
+                } "
                 f"overlapping assignments from valid set"
             )
         else:
