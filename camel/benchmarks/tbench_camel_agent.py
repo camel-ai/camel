@@ -16,10 +16,11 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Tuple
 
+from terminal_bench.agents.base_agent import BaseAgent
+
 if TYPE_CHECKING:
     from terminal_bench.agents.base_agent import (  # type: ignore[import-untyped]
         AgentResult,
-        BaseAgent,
     )
     from terminal_bench.harness.models import (  # type: ignore[import-untyped]
         FailureMode,
@@ -47,10 +48,10 @@ class TerminalBenchAgent(BaseAgent):
     def perform_task(
         self,
         instruction: str,
-        session: TmuxSession,
+        session: "TmuxSession",
         camel_agent: "ChatAgent",
         logging_dir: Path | None = None,
-    ) -> AgentResult:
+    ) -> "AgentResult":
         """Execute a task using the Terminal Bench harness.
 
         Args:
@@ -94,7 +95,7 @@ class TerminalBenchAgent(BaseAgent):
         # Lazy import to avoid importing heavy modules at module import time
         from camel.toolkits import TerminalToolkit
 
-        camel_agent.add_tools(  # type: ignore[arg-type]
+        camel_agent.add_tools(
             TerminalToolkit(**terminal_toolkit_kwargs).get_tools()  # type: ignore[arg-type]
         )
 
@@ -103,10 +104,10 @@ class TerminalBenchAgent(BaseAgent):
         # Get response information
         # Define a user message for creating logs directory
         usr_msg = f"Task instruction: {instruction}"
-        print(f"User message: {usr_msg}")
+        logger.info(f"User message: {usr_msg}")
         # Get response information
         response = camel_agent.step(usr_msg)
-        print(str(response.info['tool_calls'])[:1000])
+        logger.info(str(response.info['tool_calls'])[:1000])
 
         total_input_tokens = response.info['usage']['prompt_tokens']
         total_output_tokens = response.info['usage']['completion_tokens']
@@ -120,7 +121,7 @@ class TerminalBenchAgent(BaseAgent):
         ) -> List[Tuple[float, str]]:
             """Create a timestamped marker from memory records."""
             results = []
-            print(f"Total records: {len(records)}")
+            logger.info(f"Total records: {len(records)}")
             for record in records:
                 if 'func_name' in record['message'].keys():
                     timestamp = record['timestamp']
@@ -142,9 +143,9 @@ class TerminalBenchAgent(BaseAgent):
             memory_list
         )
 
-        print(f"Total input tokens: {total_input_tokens}")
-        print(f"Total output tokens: {total_output_tokens}")
-        print(f"Timestamped markers: {timestamped_markers}")
+        logger.info(f"Total input tokens: {total_input_tokens}")
+        logger.info(f"Total output tokens: {total_output_tokens}")
+        logger.info(f"Timestamped markers: {timestamped_markers}")
 
         del camel_agent
 

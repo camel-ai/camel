@@ -16,7 +16,7 @@ import logging
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Optional, Literal
 
 if TYPE_CHECKING:
     from terminal_bench.agents.agent_name import (  # type: ignore[import-untyped]
@@ -29,10 +29,10 @@ if TYPE_CHECKING:
     from terminal_bench.handlers.trial_handler import (  # type: ignore[import-untyped]
         TrialHandler,
     )
-    from terminal_bench.harness import Harness  # type: ignore[import-untyped]
     from terminal_bench.terminal.tmux_session import (  # type: ignore[import-untyped]
         TmuxSession,
     )
+from terminal_bench.harness import Harness  # type: ignore[import-untyped]
 from typing_extensions import override
 
 from camel.agents import ChatAgent
@@ -46,29 +46,29 @@ class TerminalBench(Harness):  # type: ignore[misc]
         output_path: Path,
         run_id: str,
         ChatAgent: ChatAgent,
-        agent_name: AgentName | None = None,
+        agent_name: Optional["AgentName"] = None,
         agent_import_path: str | None = None,
         dataset_name: str | None = None,
         dataset_version: str | None = None,
-        dataset_path: Path | None = None,
-        dataset_config: Path | None = None,
-        registry_url: str | None = None,
-        local_registry_path: Path | None = None,
-        model_name: str | None = None,
-        agent_kwargs: dict[str, Any] | None = None,
+        dataset_path: Optional[Path] = None,
+        dataset_config: Optional[Path] = None,
+        registry_url: Optional[str] = None,
+        local_registry_path: Optional[Path] = None,
+        model_name: Optional[str] = None,
+        agent_kwargs: Optional[dict[str, Any]] = None,
         no_rebuild: bool = False,
         cleanup: bool = False,
         log_level: int = logging.INFO,
-        task_ids: list[str] | None = None,
-        n_tasks: int | None = None,
+        task_ids: Optional[list[str]] = None,
+        n_tasks: Optional[int] = None,
         livestream: bool = False,
         upload_results: bool = False,
         n_concurrent_trials: int = 4,
-        exclude_task_ids: list[str] | None = None,
+        exclude_task_ids: Optional[list[str]] = None,
         n_attempts: int = 1,
         global_timeout_multiplier: float = 1.0,
-        global_agent_timeout_sec: float | None = None,
-        global_test_timeout_sec: float | None = None,
+        global_agent_timeout_sec: Optional[float] = None,
+        global_test_timeout_sec: Optional[float] = None,
         **kwargs,
     ):
         self.ChatAgent = ChatAgent
@@ -149,12 +149,12 @@ class TerminalBench(Harness):  # type: ignore[misc]
 
     async def _run_agent_with_timeout(
         self,
-        trial_handler: TrialHandler,
-        session: TmuxSession,
+        trial_handler: "TrialHandler",
+        session: "TmuxSession",
         logging_dir: Path,
         timeout_sec: float,
-        agent: BaseAgent,
-    ) -> AgentResult | None:
+        agent: "BaseAgent",
+    ) -> Optional["AgentResult"]:
         loop = asyncio.get_event_loop()
         task = loop.run_in_executor(
             None,
