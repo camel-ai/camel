@@ -2075,8 +2075,30 @@ class Workforce(BaseNode):
             TaskAssignResult: Assignment result containing task assignments
                 with their dependencies.
         """
+        # Wait for workers to be ready before assignment
+        max_wait_time = 2.0  # Maximum wait time in seconds
+        wait_interval = 0.01  # Check interval
+        elapsed_time = 0.0
+
+        while elapsed_time < max_wait_time:
+            valid_worker_ids = self._get_valid_worker_ids()
+            if len(valid_worker_ids) > 0:
+                logger.debug(
+                    f"Workers ready after {elapsed_time:.3f}s: "
+                    f"{len(valid_worker_ids)} workers available"
+                )
+                break
+            await asyncio.sleep(wait_interval)
+            elapsed_time += wait_interval
+        else:
+            # Timeout reached, log warning but continue
+            logger.warning(
+                f"Worker readiness timeout after {max_wait_time}s, "
+                f"proceeding with {len(self._children)} children"
+            )
+            valid_worker_ids = self._get_valid_worker_ids()
+
         self.coordinator_agent.reset()
-        valid_worker_ids = self._get_valid_worker_ids()
 
         logger.debug(
             f"Sending batch assignment request to coordinator "
@@ -2110,7 +2132,50 @@ class Workforce(BaseNode):
                 invalid_assignments, tasks, valid_worker_ids
             )
         )
-        all_assignments = valid_assignments + retry_and_fallback_assignments
+
+        # check overlap between valid and retry assignments
+        valid_task_ids = {a.task_id for a in valid_assignments}
+        retry_task_ids = {a.task_id for a in retry_and_fallback_assignments}
+        overlap_task_ids = valid_task_ids & retry_task_ids
+
+        if overlap_task_ids:
+            for task_id in overlap_task_ids:
+                valid_assignment = next(
+                    a for a in valid_assignments if a.task_id == task_id
+                )
+                retry_assignment = next(
+                    a
+                    for a in retry_and_fallback_assignments
+                    if a.task_id == task_id
+                )
+                logger.warning(
+                    f"Task {task_id}: "
+                    f"valid worker={valid_assignment.assignee_id}, "
+                    f"retry worker={retry_assignment.assignee_id}"
+                )
+
+            # remove overlap - use retry results
+            retry_task_ids_set = {
+                a.task_id for a in retry_and_fallback_assignments
+            }
+            filtered_valid_assignments = [
+                a
+                for a in valid_assignments
+                if a.task_id not in retry_task_ids_set
+            ]
+            all_assignments = (
+                filtered_valid_assignments + retry_and_fallback_assignments
+            )
+            logger.warning(
+                f"Removed {
+                    len(valid_assignments) - len(filtered_valid_assignments)
+                    } "
+                f"overlapping assignments from valid set"
+            )
+        else:
+            all_assignments = (
+                valid_assignments + retry_and_fallback_assignments
+            )
 
         # Update Task.dependencies for all final assignments
         self._update_task_dependencies_from_assignments(all_assignments, tasks)
