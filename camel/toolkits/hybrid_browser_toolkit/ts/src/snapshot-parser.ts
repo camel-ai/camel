@@ -21,26 +21,19 @@ export function parseSnapshotHierarchy(snapshotText: string): Map<string, Snapsh
   for (const line of lines) {
     if (!line.trim()) continue;
     
-    // Calculate indentation
     const indent = line.length - line.trimStart().length;
     
-    // Extract element info using regex
-    // Support both lines with : (have children) and without : (leaf nodes)
-    // Also support quoted lines like - 'button "text" [ref=...]'
-    // Also support escaped quotes in text
-    // Also support attributes before [ref=...]
-    // Extract type and optional label (before any [..] blocks)
+    // Extract type and optional label
     const headerMatch = line.match(/^\s*(?:-\s*)?'?([a-z0-9_-]+)(?:\s+"((?:[^"\\]|\\.)*)")?/i);
     if (!headerMatch) continue;
     const [, typeRaw, label] = headerMatch;
     const type = (typeRaw || 'unknown');
 
-    // Extract mandatory ref
     const refMatch = line.match(/\[ref=([^\]]+)\]/i);
     if (!refMatch) continue;
     const ref = refMatch[1];
 
-    // Parse all bracketed attributes except the [ref=...] block
+    // Parse bracketed attributes
     const attrs: Record<string, string> = {};
     for (const block of line.matchAll(/\[([^\]]+)\]/g)) {
       const content = block[1];
@@ -53,12 +46,10 @@ export function parseSnapshotHierarchy(snapshotText: string): Map<string, Snapsh
       }
     }
     
-    // Update parent stack based on indentation
     while (parentStack.length > 0 && parentStack[parentStack.length - 1].indent >= indent) {
       parentStack.pop();
     }
     
-    // Create node
     const node: SnapshotNode = {
       ref,
       type: type.toLowerCase(),
@@ -68,15 +59,12 @@ export function parseSnapshotHierarchy(snapshotText: string): Map<string, Snapsh
       parent: parentStack.length > 0 ? parentStack[parentStack.length - 1].ref : undefined
     };
     
-    // Add to parent's children if has parent
     if (node.parent && nodes.has(node.parent)) {
       nodes.get(node.parent)!.children.push(ref);
     }
     
-    // Add to nodes map
     nodes.set(ref, node);
     
-    // Add to parent stack
     parentStack.push({ ref, indent });
   }
   
