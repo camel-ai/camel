@@ -5,7 +5,7 @@
 ## PlaywrightMCPToolkit
 
 ```python
-class PlaywrightMCPToolkit(BaseToolkit):
+class PlaywrightMCPToolkit(MCPToolkit):
 ```
 
 PlaywrightMCPToolkit provides an interface for interacting with web
@@ -39,15 +39,3 @@ Initializes the PlaywrightMCPToolkit.
 
 - **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
 - **additional_args** (Optional[List[str]]): Additional command-line arguments to pass to the Playwright MCP server. For example, `["--cdp-endpoint=http://localhost:9222"]`. (default: :obj:`None`)
-
-<a id="camel.toolkits.playwright_mcp_toolkit.PlaywrightMCPToolkit.get_tools"></a>
-
-### get_tools
-
-```python
-def get_tools(self):
-```
-
-**Returns:**
-
-  List[FunctionTool]: List of available tools.

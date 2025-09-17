@@ -1,0 +1,258 @@
+<a id="camel.toolkits.wechat_official_toolkit"></a>
+
+<a id="camel.toolkits.wechat_official_toolkit._get_wechat_access_token"></a>
+
+## _get_wechat_access_token
+
+```python
+def _get_wechat_access_token():
+```
+
+**Returns:**
+
+  str: The valid access token.
+
+**Raises:**
+
+- **ValueError**: If credentials are missing or token retrieval fails.
+- **References**: 
+- **https**: //developers.weixin.qq.com/doc/offiaccount/Basic_Information/Get_access_token.html
+
+<a id="camel.toolkits.wechat_official_toolkit._make_wechat_request"></a>
+
+## _make_wechat_request
+
+```python
+def _make_wechat_request(method: Literal['GET', 'POST'], endpoint: str, **kwargs):
+```
+
+Makes a request to WeChat API with proper error handling.
+
+**Parameters:**
+
+- **method** (`Literal["GET", "POST"]`): HTTP method ('GET' or 'POST').
+- **endpoint** (str): API endpoint path. **kwargs: Additional arguments for requests.
+
+**Returns:**
+
+  Dict[str, Any]: API response data.
+
+**Raises:**
+
+- **requests.exceptions.RequestException**: If request fails.
+- **ValueError**: If API returns an error.
+
+<a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit"></a>
+
+## WeChatOfficialToolkit
+
+```python
+class WeChatOfficialToolkit(BaseToolkit):
+```
+
+A toolkit for WeChat Official Account operations.
+
+This toolkit provides methods to interact with the WeChat Official Account
+API, allowing users to send messages, manage users, and handle media files.
+
+References:
+- Documentation: https://developers.weixin.qq.com/doc/offiaccount/Getting_Started/Overview.html
+- Test Account: https://mp.weixin.qq.com/debug/cgi-bin/sandbox?t=sandbox/login
+
+**Note:**
+
+Set environment variables: WECHAT_APP_ID, WECHAT_APP_SECRET
+
+<a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+Initializes the WeChatOfficialToolkit.
+
+<a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.send_customer_message"></a>
+
+### send_customer_message
+
+```python
+def send_customer_message(
+    self,
+    openid: str,
+    content: str,
+    msgtype: Literal['text', 'image', 'voice', 'video'] = 'text'
+):
+```
+
+Sends a customer service message to a WeChat user.
+
+**Parameters:**
+
+- **openid** (str): The user's OpenID.
+- **content** (str): Message content or media_id for non-text messages.
+- **msgtype** (str): Message type: "text", "image", "voice", "video".
+
+**Returns:**
+
+  str: Success or error message.
+
+References:
+https://developers.weixin.qq.com/doc/offiaccount/Message_Management/Service_Center_messages.html
+
+<a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.get_user_info"></a>
+
+### get_user_info
+
+```python
+def get_user_info(self, openid: str, lang: str = 'zh_CN'):
+```
+
+Retrieves WeChat user information.
+
+**Parameters:**
+
+- **openid** (str): The user's OpenID.
+- **lang** (str): Response language. Common values: "zh_CN", "zh_TW", "en". (default: "zh_CN")
+
+**Returns:**
+
+  Dict[str, Any]: User information as dictionary or error
+information.
+
+References:
+https://developers.weixin.qq.com/doc/offiaccount/User_Management/
+Getting_user_basic_information.html
+
+<a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.get_followers_list"></a>
+
+### get_followers_list
+
+```python
+def get_followers_list(self, next_openid: str = ''):
+```
+
+Retrieves list of followers' OpenIDs.
+
+**Parameters:**
+
+- **next_openid** (str): Starting OpenID for pagination. (default: "") (default: `""`)
+
+**Returns:**
+
+  Dict[str, Any]: Followers list as dictionary or error information.
+
+References:
+https://developers.weixin.qq.com/doc/offiaccount/User_Management/
+Getting_a_list_of_followers.html
+
+<a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.upload_wechat_media"></a>
+
+### upload_wechat_media
+
+```python
+def upload_wechat_media(
+    self,
+    media_type: Literal['image', 'voice', 'video', 'thumb'],
+    file_path: str,
+    permanent: bool = False,
+    description: Optional[str] = None
+):
+```
+
+Uploads media file to WeChat.
+
+**Parameters:**
+
+- **media_type** (str): Media type: "image", "voice", "video", "thumb".
+- **file_path** (str): Local file path.
+- **permanent** (bool): Whether to upload as permanent media. (default: :obj:`False`)
+- **description** (Optional[str]): Video description in JSON format for permanent upload. (default: :obj:`None`)
+
+**Returns:**
+
+  Dict[str, Any]: Upload result with media_id or error information.
+
+References:
+- Temporary: https://developers.weixin.qq.com/doc/offiaccount/
+Asset_Management/Adding_Temporary_Assets.html
+- Permanent: https://developers.weixin.qq.com/doc/offiaccount/
+Asset_Management/Adding_Permanent_Assets.html
+
+<a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.get_media_list"></a>
+
+### get_media_list
+
+```python
+def get_media_list(
+    self,
+    media_type: Literal['image', 'voice', 'video', 'news'],
+    offset: int = 0,
+    count: int = 20
+):
+```
+
+Gets list of permanent media files.
+
+**Parameters:**
+
+- **media_type** (str): Media type: "image", "voice", "video", "news".
+- **offset** (int): Starting position. (default: :obj:`0`) (default: 0)
+- **count** (int): Number of items (1-20). (default: :obj:`20`) (default: 20)
+
+**Returns:**
+
+  Dict[str, Any]: Media list as dictionary or error information.
+
+References:
+https://developers.weixin.qq.com/doc/offiaccount/Asset_Management/
+Get_the_list_of_all_materials.html
+
+<a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.send_mass_message_to_all"></a>
+
+### send_mass_message_to_all
+
+```python
+def send_mass_message_to_all(
+    self,
+    content: str,
+    msgtype: Literal['text', 'image', 'voice', 'video'] = 'text',
+    clientmsgid: Optional[str] = None,
+    send_ignore_reprint: Optional[int] = 0,
+    batch_size: int = 10000
+):
+```
+
+Sends a mass message to all followers (by OpenID list).
+
+This method paginates all follower OpenIDs and calls the
+mass-send API in batches.
+
+**Parameters:**
+
+- **content** (str): For text, the message content; for non-text, the media_id.
+- **msgtype** (`Literal["text","image","voice","video"]`): Message type. For "video", the mass API expects "mpvideo" internally.
+- **clientmsgid** (Optional[str]): Idempotency key to avoid duplicate mass jobs.
+- **send_ignore_reprint** (Optional[int]): Whether to continue when a news article is judged as a reprint (reserved; applies to news/mpnews).
+- **batch_size** (int): Max OpenIDs per request (WeChat limit is up to 10000 per batch).
+
+**Returns:**
+
+  Dict[str, Any]: Aggregated result including counts and
+each batch response.
+
+References:
+- Mass send by OpenID list:
+https://developers.weixin.qq.com/doc/service/api/notify/message/
+api_masssend.html
+
+<a id="camel.toolkits.wechat_official_toolkit.WeChatOfficialToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+Returns toolkit functions as tools.

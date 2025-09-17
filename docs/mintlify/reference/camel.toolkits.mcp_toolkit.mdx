@@ -20,6 +20,57 @@ class MCPToolError(Exception):
 
 Raised when MCP tool execution fails.
 
+<a id="camel.toolkits.mcp_toolkit.ensure_strict_json_schema"></a>
+
+## ensure_strict_json_schema
+
+```python
+def ensure_strict_json_schema(schema: dict[str, Any]):
+```
+
+Mutates the given JSON schema to ensure it conforms to the
+`strict` standard that the OpenAI API expects.
+
+<a id="camel.toolkits.mcp_toolkit._ensure_strict_json_schema"></a>
+
+## _ensure_strict_json_schema
+
+```python
+def _ensure_strict_json_schema(json_schema: object):
+```
+
+<a id="camel.toolkits.mcp_toolkit.resolve_ref"></a>
+
+## resolve_ref
+
+```python
+def resolve_ref():
+```
+
+<a id="camel.toolkits.mcp_toolkit.is_dict"></a>
+
+## is_dict
+
+```python
+def is_dict(obj: object):
+```
+
+<a id="camel.toolkits.mcp_toolkit.is_list"></a>
+
+## is_list
+
+```python
+def is_list(obj: object):
+```
+
+<a id="camel.toolkits.mcp_toolkit.has_more_than_n_keys"></a>
+
+## has_more_than_n_keys
+
+```python
+def has_more_than_n_keys(obj: dict[str, object], n: int):
+```
+
 <a id="camel.toolkits.mcp_toolkit.MCPToolkit"></a>
 
 ## MCPToolkit
@@ -204,16 +255,15 @@ Create a single MCP client from configuration.
 def _ensure_strict_tool_schema(self, tool: FunctionTool):
 ```
 
-Ensure a tool has a strict schema compatible with OpenAI's
-requirements according to the structured outputs specification.
+Ensure a tool has a strict schema compatible with
+OpenAI's requirements.
 
-**Parameters:**
-
-- **tool** (FunctionTool): The tool to check and update if necessary.
-
-**Returns:**
-
-  FunctionTool: The tool with a strict schema.
+Strategy:
+- Ensure parameters exist with at least an empty properties object
+(OpenAI requirement).
+- Try converting parameters to strict using ensure_strict_json_schema.
+- If conversion fails, mark function.strict = False and
+keep best-effort parameters.
 
 <a id="camel.toolkits.mcp_toolkit.MCPToolkit.get_tools"></a>
 
