@@ -2075,8 +2075,40 @@ class Workforce(BaseNode):
             TaskAssignResult: Assignment result containing task assignments
                 with their dependencies.
         """
+        # Wait for workers to be ready before assignment with exponential
+        # backoff
+        worker_readiness_timeout = 2.0  # Maximum wait time in seconds
+        worker_readiness_check_interval = 0.05  # Initial check interval
+        start_time = time.time()
+        check_interval = worker_readiness_check_interval
+        backoff_multiplier = 1.5  # Exponential backoff factor
+        max_interval = 0.5  # Cap the maximum interval
+
+        while (time.time() - start_time) < worker_readiness_timeout:
+            valid_worker_ids = self._get_valid_worker_ids()
+            if len(valid_worker_ids) > 0:
+                elapsed = time.time() - start_time
+                logger.debug(
+                    f"Workers ready after {elapsed:.3f}s: "
+                    f"{len(valid_worker_ids)} workers available"
+                )
+                break
+
+            await asyncio.sleep(check_interval)
+            # Exponential backoff with cap
+            check_interval = min(
+                check_interval * backoff_multiplier, max_interval
+            )
+        else:
+            # Timeout reached, log warning but continue
+            logger.warning(
+                f"Worker readiness timeout after "
+                f"{worker_readiness_timeout}s, "
+                f"proceeding with {len(self._children)} children"
+            )
+            valid_worker_ids = self._get_valid_worker_ids()
+
         self.coordinator_agent.reset()
-        valid_worker_ids = self._get_valid_worker_ids()
 
         logger.debug(
             f"Sending batch assignment request to coordinator "
@@ -2110,7 +2142,24 @@ class Workforce(BaseNode):
                 invalid_assignments, tasks, valid_worker_ids
             )
         )
-        all_assignments = valid_assignments + retry_and_fallback_assignments
+
+        # Combine assignments with deduplication, prioritizing retry results
+        assignment_map = {a.task_id: a for a in valid_assignments}
+        assignment_map.update(
+            {a.task_id: a for a in retry_and_fallback_assignments}
+        )
+        all_assignments = list(assignment_map.values())
+
+        # Log any overwrites for debugging
+        valid_task_ids = {a.task_id for a in valid_assignments}
+        retry_task_ids = {a.task_id for a in retry_and_fallback_assignments}
+        overlap_task_ids = valid_task_ids & retry_task_ids
+
+        if overlap_task_ids:
+            logger.warning(
+                f"Retry assignments overrode {len(overlap_task_ids)} "
+                f"valid assignments for tasks: {sorted(overlap_task_ids)}"
+            )
 
         # Update Task.dependencies for all final assignments
         self._update_task_dependencies_from_assignments(all_assignments, tasks)
