@@ -161,7 +161,8 @@ def send_slack_message(
 
 Send a message to a Slack channel. When use this function you must
 call `get_slack_channel_information` function first to get the
-`channel id`.
+`channel id`. If use user, you must use `get_slack_user_list`
+function first to get the user id.
 
 **Parameters:**
 
@@ -195,6 +196,40 @@ must call `get_slack_channel_information` function first to get the
 **Returns:**
 
   str: A string containing the API response from Slack.
+
+<a id="camel.toolkits.slack_toolkit.SlackToolkit.get_slack_user_list"></a>
+
+### get_slack_user_list
+
+```python
+def get_slack_user_list(self):
+```
+
+**Returns:**
+
+  str: A JSON string representing a list of users. Each user
+object contains 'id', 'name'.
+
+<a id="camel.toolkits.slack_toolkit.SlackToolkit.get_slack_user_info"></a>
+
+### get_slack_user_info
+
+```python
+def get_slack_user_info(self, user_id: str):
+```
+
+Retrieve information about a specific user in the Slack workspace.
+normally, you don't need to use this method, when you need to get a
+user's detailed information, use this method. Use `get_slack_user_list`
+function first to get the user id.
+
+**Parameters:**
+
+- **user_id** (str): The ID of the user to retrieve information about.
+
+**Returns:**
+
+  str: A JSON string representing the user's information.
 
 <a id="camel.toolkits.slack_toolkit.SlackToolkit.get_tools"></a>
 
