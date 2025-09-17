@@ -142,8 +142,7 @@ class StreamContentAccumulator:
 
     def __init__(self):
         self.base_content = ""  # Content before tool calls
-        # Use list to efficiently accumulate streaming fragments
-        self.current_content = []  # type: List[str]
+        self.current_content = []  # Accumulated streaming fragments
         self.tool_status_messages = []  # Accumulated tool status messages
 
     def set_base_content(self, content: str):
