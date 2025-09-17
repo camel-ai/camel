@@ -2075,25 +2075,35 @@ class Workforce(BaseNode):
             TaskAssignResult: Assignment result containing task assignments
                 with their dependencies.
         """
-        # Wait for workers to be ready before assignment
-        max_wait_time = 2.0  # Maximum wait time in seconds
-        wait_interval = 0.01  # Check interval
-        elapsed_time = 0.0
+        # Wait for workers to be ready before assignment with exponential
+        # backoff
+        worker_readiness_timeout = 2.0  # Maximum wait time in seconds
+        worker_readiness_check_interval = 0.05  # Initial check interval
+        start_time = time.time()
+        check_interval = worker_readiness_check_interval
+        backoff_multiplier = 1.5  # Exponential backoff factor
+        max_interval = 0.5  # Cap the maximum interval
 
-        while elapsed_time < max_wait_time:
+        while (time.time() - start_time) < worker_readiness_timeout:
             valid_worker_ids = self._get_valid_worker_ids()
             if len(valid_worker_ids) > 0:
+                elapsed = time.time() - start_time
                 logger.debug(
-                    f"Workers ready after {elapsed_time:.3f}s: "
+                    f"Workers ready after {elapsed:.3f}s: "
                     f"{len(valid_worker_ids)} workers available"
                 )
                 break
-            await asyncio.sleep(wait_interval)
-            elapsed_time += wait_interval
+
+            await asyncio.sleep(check_interval)
+            # Exponential backoff with cap
+            check_interval = min(
+                check_interval * backoff_multiplier, max_interval
+            )
         else:
             # Timeout reached, log warning but continue
             logger.warning(
-                f"Worker readiness timeout after {max_wait_time}s, "
+                f"Worker readiness timeout after "
+                f"{worker_readiness_timeout}s, "
                 f"proceeding with {len(self._children)} children"
             )
             valid_worker_ids = self._get_valid_worker_ids()
@@ -2133,42 +2143,22 @@ class Workforce(BaseNode):
             )
         )
 
-        # check overlap between valid and retry assignments
+        # Combine assignments with deduplication, prioritizing retry results
+        assignment_map = {a.task_id: a for a in valid_assignments}
+        assignment_map.update(
+            {a.task_id: a for a in retry_and_fallback_assignments}
+        )
+        all_assignments = list(assignment_map.values())
+
+        # Log any overwrites for debugging
         valid_task_ids = {a.task_id for a in valid_assignments}
         retry_task_ids = {a.task_id for a in retry_and_fallback_assignments}
         overlap_task_ids = valid_task_ids & retry_task_ids
 
         if overlap_task_ids:
-            for task_id in overlap_task_ids:
-                valid_assignment = next(
-                    a for a in valid_assignments if a.task_id == task_id
-                )
-                retry_assignment = next(
-                    a
-                    for a in retry_and_fallback_assignments
-                    if a.task_id == task_id
-                )
-                logger.warning(
-                    f"Task {task_id}: "
-                    f"valid worker={valid_assignment.assignee_id}, "
-                    f"retry worker={retry_assignment.assignee_id}"
-                )
-
-            # remove overlap - use retry results
-            retry_task_ids_set = {
-                a.task_id for a in retry_and_fallback_assignments
-            }
-            filtered_valid_assignments = [
-                a
-                for a in valid_assignments
-                if a.task_id not in retry_task_ids_set
-            ]
-            all_assignments = (
-                filtered_valid_assignments + retry_and_fallback_assignments
-            )
-        else:
-            all_assignments = (
-                valid_assignments + retry_and_fallback_assignments
+            logger.warning(
+                f"Retry assignments overrode {len(overlap_task_ids)} "
+                f"valid assignments for tasks: {sorted(overlap_task_ids)}"
             )
 
         # Update Task.dependencies for all final assignments
