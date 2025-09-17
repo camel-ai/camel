@@ -43,8 +43,8 @@ class OrigeneToolkit(MCPToolkit):
 
         Args:
             config_dict (Optional[Dict]): Configuration dictionary for MCP
-                servers. If None, raises ValueError as configuration is required.
-                (default: :obj:`None`)
+                servers. If None, raises ValueError as configuration is
+                required. (default: :obj:`None`)
             timeout (Optional[float]): Connection timeout in seconds.
                 (default: :obj:`None`)
         """

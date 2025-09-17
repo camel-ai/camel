@@ -20,6 +20,7 @@ from camel.models import ModelFactory
 from camel.toolkits import PlaywrightMCPToolkit
 from camel.types import ModelPlatformType, ModelType
 
+
 async def main():
     # Create PlaywrightMCPToolkit (now inherits directly from MCPToolkit)
     playwright_mcp_toolkit = PlaywrightMCPToolkit()
@@ -41,9 +42,9 @@ async def main():
         model=model,
         tools=playwright_mcp_toolkit.get_tools(),  # Inherited method
     )
-    
+
     response = await chat_agent.astep(
-        "Navigate to https://github.com/camel-ai/camel and get the star count.",
+        "Navigate to https://github.com/camel-ai/camel and get the star count",
         response_format=AgentResponse,
     )
 
