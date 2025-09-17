@@ -1078,18 +1078,65 @@ class ChatAgent(BaseAgent):
                 self
             )
             if not memory_records:
-                message = "No conversation context available to summarize."
-                result["status"] = message
+                status_message = (
+                    "No conversation context available to summarize."
+                )
+                result["status"] = status_message
                 return result
 
-            conversation_text = (
-                self._context_utility.format_memory_as_conversation(
-                    memory_records
-                ).strip()
-            )
+            def _stringify_payload(payload: Any) -> str:
+                if isinstance(payload, str):
+                    return payload
+                try:
+                    return json.dumps(payload, ensure_ascii=False)
+                except Exception:
+                    return str(payload)
+
+            conversation_lines: List[str] = []
+            for record in memory_records:
+                role = (
+                    record.role_at_backend.value
+                    if hasattr(record.role_at_backend, "value")
+                    else str(record.role_at_backend)
+                )
+
+                record_message = record.message
+                content_parts: List[str] = []
+
+                if getattr(record_message, "content", None):
+                    content_parts.append(str(record_message.content))
+
+                if isinstance(record_message, FunctionCallingMessage):
+                    if record_message.args:
+                        args_repr = _stringify_payload(record_message.args)
+                        content_parts.append(
+                            f"[TOOL CALL] {record_message.func_name} args={args_repr}"  # noqa: E501
+                        )
+                    if record_message.result is not None:
+                        result_repr = _stringify_payload(record_message.result)
+                        content_parts.append(
+                            f"[TOOL RESULT] {record_message.func_name} result={result_repr}"  # noqa: E501
+                        )
+
+                conversation_line = " ".join(
+                    part for part in content_parts if part
+                )
+                conversation_line = (
+                    f"{role}: {conversation_line.strip()}"
+                    if conversation_line.strip()
+                    else role
+                )
+                conversation_lines.append(conversation_line)
+
+            conversation_text = "\n".join(
+                line for line in conversation_lines if line.strip()
+            ).strip()
+
             if not conversation_text:
-                message = "Conversation context is empty; skipping summary."
-                result["status"] = message
+                status_message = (
+                    "Conversation context is empty; skipping summary."
+                )
+                result["status"] = status_message
                 return result
 
             if self._context_summary_agent is None:
@@ -1113,14 +1160,16 @@ class ChatAgent(BaseAgent):
 
             response = self._context_summary_agent.step(prompt_text)
             if not response.msgs:
-                message = "Failed to generate summary from model response."
-                result["status"] = message
+                status_message = (
+                    "Failed to generate summary from model response."
+                )
+                result["status"] = status_message
                 return result
 
             summary_content = response.msgs[-1].content.strip()
             if not summary_content:
-                message = "Generated summary is empty."
-                result["status"] = message
+                status_message = "Generated summary is empty."
+                result["status"] = status_message
                 return result
 
             base_filename = (
