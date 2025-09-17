@@ -30,7 +30,7 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import ToolCallingRecord
+from camel.agents.chat_agent import StreamContentAccumulator, ToolCallingRecord
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
@@ -741,6 +741,55 @@ def test_chat_agent_stream_output(step_call_count=3):
             == stream_usage["completion_tokens"]
             + stream_usage["prompt_tokens"]
         ), f"Error in calling round {i+1}"
+
+
+@pytest.mark.model_backend
+def test_chat_agent_stream_accumulate_mode_accumulated():
+    """Verify accumulated streaming behavior (stream_accumulate=True)."""
+    chunks = ["Hello", " ", "world"]
+    step_usage = {
+        "completion_tokens": 0,
+        "prompt_tokens": 0,
+        "total_tokens": 0,
+    }
+
+    agent = ChatAgent()
+    accumulator = StreamContentAccumulator()
+    outputs = []
+    for c in chunks:
+        resp = agent._create_streaming_response_with_accumulator(
+            accumulator, c, step_usage, "acc", []
+        )
+        outputs.append(resp.msg.content)
+
+    assert len(outputs) == 3
+    assert outputs[0] == "Hello"
+    assert outputs[1] == "Hello "
+    assert outputs[2] == "Hello world"
+    assert accumulator.get_full_content() == "Hello world"
+
+
+@pytest.mark.model_backend
+def test_chat_agent_stream_accumulate_mode_delta():
+    """Verify delta streaming behavior (stream_accumulate=False)."""
+    chunks = ["Hello", " ", "world"]
+    step_usage = {
+        "completion_tokens": 0,
+        "prompt_tokens": 0,
+        "total_tokens": 0,
+    }
+
+    agent = ChatAgent(stream_accumulate=False)
+    accumulator = StreamContentAccumulator()
+    outputs = []
+    for c in chunks:
+        resp = agent._create_streaming_response_with_accumulator(
+            accumulator, c, step_usage, "delta", []
+        )
+        outputs.append(resp.msg.content)
+
+    assert outputs == chunks
+    assert accumulator.get_full_content() == "Hello world"
 
 
 @pytest.mark.model_backend
