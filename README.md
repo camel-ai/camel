@@ -246,6 +246,13 @@ This example demonstrates how to create a `ChatAgent` using the CAMEL framework 
   export OPENAI_API_KEY='your_openai_api_key'
   ```
 
+   Alternatively, use a `.env` file:
+
+   ```bash
+   cp .env.example .env
+   # then edit .env and add your keys
+   ```
+
 3. **Run the following Python code:**
 
   ```python
