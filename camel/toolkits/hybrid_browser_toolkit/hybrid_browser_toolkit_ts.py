@@ -37,7 +37,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     _snapshotForAI functionality for enhanced AI integration.
     """
 
-    # Default tool list - core browser functionality
     DEFAULT_TOOLS: ClassVar[List[str]] = [
         "browser_open",
         "browser_close",
@@ -49,7 +48,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_switch_tab",
     ]
 
-    # All available tools
     ALL_TOOLS: ClassVar[List[str]] = [
         "browser_open",
         "browser_close",
@@ -83,11 +81,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         user_data_dir: Optional[str] = None,
         stealth: bool = False,
         web_agent_model: Optional[BaseModelBackend] = None,
-        cache_dir: str = "tmp/",
+        cache_dir: Optional[str] = None,
         enabled_tools: Optional[List[str]] = None,
         browser_log_to_file: bool = False,
+        log_dir: Optional[str] = None,
         session_id: Optional[str] = None,
-        default_start_url: str = "https://google.com/",
+        default_start_url: Optional[str] = None,
         default_timeout: Optional[int] = None,
         short_timeout: Optional[int] = None,
         navigation_timeout: Optional[int] = None,
@@ -98,6 +97,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         viewport_limit: bool = False,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
+        cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
     ) -> None:
         r"""Initialize the HybridBrowserToolkit.
@@ -116,6 +116,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             Defaults to None.
             browser_log_to_file (bool): Whether to log browser actions to
             file. Defaults to False.
+            log_dir (Optional[str]): Custom directory path for log files.
+            If None, defaults to "browser_log". Defaults to None.
             session_id (Optional[str]): Session identifier. Defaults to None.
             default_start_url (str): Default URL to start with. Defaults
             to "https://google.com/".
@@ -144,6 +146,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
             connection (e.g., 'ws://localhost:9222/devtools/browser/...').
             Required when connect_over_cdp is True. Defaults to None.
+            cdp_keep_current_page (bool): When True and using CDP mode,
+            won't create new pages but use the existing one. Defaults to False.
             full_visual_mode (bool): When True, browser actions like click,
             browser_open, visit_page, etc. will not return snapshots.
             Defaults to False.
@@ -151,7 +155,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         super().__init__()
         RegisteredAgentToolkit.__init__(self)
 
-        # Initialize configuration loader
         self.config_loader = ConfigLoader.from_kwargs(
             headless=headless,
             user_data_dir=user_data_dir,
@@ -167,16 +170,28 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             viewport_limit=viewport_limit,
             cache_dir=cache_dir,
             browser_log_to_file=browser_log_to_file,
+            log_dir=log_dir,
             session_id=session_id,
             enabled_tools=enabled_tools,
             connect_over_cdp=connect_over_cdp,
             cdp_url=cdp_url,
+            cdp_keep_current_page=cdp_keep_current_page,
             full_visual_mode=full_visual_mode,
         )
 
-        # Legacy attribute access for backward compatibility
         browser_config = self.config_loader.get_browser_config()
         toolkit_config = self.config_loader.get_toolkit_config()
+
+        if (
+            browser_config.cdp_keep_current_page
+            and default_start_url is not None
+        ):
+            raise ValueError(
+                "Cannot use default_start_url with "
+                "cdp_keep_current_page=True. When cdp_keep_current_page "
+                "is True, the browser will keep the current page and not "
+                "navigate to any URL."
+            )
 
         self._headless = browser_config.headless
         self._user_data_dir = browser_config.user_data_dir
@@ -189,7 +204,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         self._viewport_limit = browser_config.viewport_limit
         self._full_visual_mode = browser_config.full_visual_mode
 
-        # Store timeout configuration for backward compatibility
         self._default_timeout = browser_config.default_timeout
         self._short_timeout = browser_config.short_timeout
         self._navigation_timeout = browser_config.navigation_timeout
@@ -200,11 +214,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             browser_config.dom_content_loaded_timeout
         )
 
-        # Configure enabled tools
         if enabled_tools is None:
             self.enabled_tools = self.DEFAULT_TOOLS.copy()
         else:
-            # Validate enabled tools
             invalid_tools = [
                 tool for tool in enabled_tools if tool not in self.ALL_TOOLS
             ]
@@ -217,7 +229,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         logger.info(f"Enabled tools: {self.enabled_tools}")
 
-        # Initialize WebSocket wrapper
         self._ws_wrapper: Optional[WebSocketBrowserWrapper] = None
         self._ws_config = self.config_loader.to_ws_config()
 
@@ -244,13 +255,29 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
             import asyncio
 
+            is_cdp = (
+                self._ws_config.get('connectOverCdp', False)
+                if hasattr(self, '_ws_config')
+                else False
+            )
+
             try:
                 loop = asyncio.get_event_loop()
                 if not loop.is_closed() and not loop.is_running():
                     try:
-                        loop.run_until_complete(
-                            asyncio.wait_for(self.browser_close(), timeout=2.0)
-                        )
+                        if is_cdp:
+                            # CDP: disconnect only
+                            loop.run_until_complete(
+                                asyncio.wait_for(
+                                    self.disconnect_websocket(), timeout=2.0
+                                )
+                            )
+                        else:
+                            loop.run_until_complete(
+                                asyncio.wait_for(
+                                    self.browser_close(), timeout=2.0
+                                )
+                            )
                     except asyncio.TimeoutError:
                         pass
             except (RuntimeError, ImportError):
@@ -273,8 +300,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         """Get the cache directory."""
         return self._cache_dir
 
-    # Public API Methods
-
     async def browser_open(self) -> Dict[str, Any]:
         r"""Starts a new browser session. This must be the first browser
         action.
@@ -295,7 +320,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.open_browser(self._default_start_url)
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -340,6 +364,31 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             logger.error(f"Failed to close browser: {e}")
             return f"Error closing browser: {e}"
 
+    async def disconnect_websocket(self) -> str:
+        r"""Disconnects the WebSocket connection without closing the browser.
+
+        This is useful when using CDP mode where the browser should
+        remain open.
+
+        Returns:
+            str: A confirmation message.
+        """
+        try:
+            if self._ws_wrapper:
+                is_cdp = self._ws_config.get('connectOverCdp', False)
+
+                if is_cdp:
+                    # CDP: disconnect only
+                    await self._ws_wrapper.disconnect_only()
+                else:
+                    await self._ws_wrapper.stop()
+
+                self._ws_wrapper = None
+            return "WebSocket disconnected."
+        except Exception as e:
+            logger.error(f"Failed to disconnect WebSocket: {e}")
+            return f"Error disconnecting WebSocket: {e}"
+
     async def browser_visit_page(self, url: str) -> Dict[str, Any]:
         r"""Opens a URL in a new browser tab and switches to it.
 
@@ -359,7 +408,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.visit_page(url)
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -405,7 +453,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.back()
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -451,7 +498,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.forward()
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -543,19 +589,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.get_som_screenshot()
 
-            # Initialize result text
             result_text = result.text
             file_path = None
 
-            # Save screenshot to cache directory if images are available
             if result.images:
-                # Ensure cache directory exists (use absolute path)
                 cache_dir = os.path.abspath(self._cache_dir)
                 os.makedirs(cache_dir, exist_ok=True)
 
-                # Get current page URL for filename
                 try:
-                    # Try to get the current page URL from the wrapper
                     page_info = await ws_wrapper.get_tab_info()
                     current_tab = next(
                         (tab for tab in page_info if tab.get('is_current')),
@@ -565,7 +606,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 except Exception:
                     url = 'unknown'
 
-                # Generate filename
                 parsed_url = urllib.parse.urlparse(url)
                 url_name = sanitize_filename(
                     str(parsed_url.path) or 'homepage', max_length=241
@@ -575,24 +615,19 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     cache_dir, f"{url_name}_{timestamp}_som.png"
                 )
 
-                # Extract base64 data and save to file
                 for _, image_data in enumerate(result.images):
                     if image_data.startswith('data:image/png;base64,'):
-                        # Remove data URL prefix
                         base64_data = image_data.split(',', 1)[1]
 
-                        # Decode and save
                         image_bytes = base64.b64decode(base64_data)
                         with open(file_path, 'wb') as f:
                             f.write(image_bytes)
 
                         logger.info(f"Screenshot saved to: {file_path}")
 
-                        # Update result text to include file path
                         result_text += f" (saved to: {file_path})"
                         break
 
-            # Analyze image if requested and agent is registered
             if read_image and file_path:
                 if self.agent is None:
                     logger.error(
@@ -607,7 +642,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     )
                 else:
                     try:
-                        # Load the image and create a message
                         from PIL import Image
 
                         img = Image.open(file_path)
@@ -618,7 +652,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                             image_list=[img],
                         )
 
-                        # Get agent's analysis
                         response = await self.agent.astep(message)
                         agent_response = response.msgs[0].content
                         result_text += f". Agent analysis: {agent_response}"
@@ -652,7 +685,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.click(ref)
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
 
             response = {
@@ -725,10 +757,8 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         try:
             ws_wrapper = await self._get_ws_wrapper()
 
-            # Handle single input mode (backward compatibility)
             if ref is not None and text is not None:
                 result = await ws_wrapper.type(ref, text)
-            # Handle multiple inputs mode
             elif inputs is not None:
                 result = await ws_wrapper.type_multiple(inputs)
             else:
@@ -737,7 +767,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                     "or 'inputs' for multiple inputs"
                 )
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -786,7 +815,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.select(ref, value)
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -835,7 +863,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.scroll(direction, amount)
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -883,7 +910,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.enter()
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -935,7 +961,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.mouse_control(control, x, y)
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -984,7 +1009,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.mouse_drag(from_ref, to_ref)
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -1033,7 +1057,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.press_key(keys)
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -1082,7 +1105,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.switch_tab(tab_id)
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -1132,7 +1154,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.close_tab(tab_id)
 
-            # Add tab information
             tab_info = await ws_wrapper.get_tab_info()
             result.update(
                 {
@@ -1411,7 +1432,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_select": self.browser_select,
             "browser_scroll": self.browser_scroll,
             "browser_enter": self.browser_enter,
-            "browser_mouse_click": self.browser_mouse_control,
+            "browser_mouse_control": self.browser_mouse_control,
             "browser_mouse_drag": self.browser_mouse_drag,
             "browser_press_key": self.browser_press_key,
             "browser_wait_user": self.browser_wait_user,

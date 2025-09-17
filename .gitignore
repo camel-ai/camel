@@ -432,8 +432,9 @@ benchmark/gaia/results.jsonl
 # Secret files for docker
 .container/.env
 
-# Environment variables file
-.env
+# Environment variables files (ignore real envs, keep examples)
+/.env*
+!/.env*.example
 
 ##### Node.js/TypeScript.gitignore #####
 # Hybrid Browser Toolkit TypeScript

@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
-import shlex
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 
 from camel.interpreters.base import BaseInterpreter
@@ -54,7 +53,7 @@ class MicrosandboxInterpreter(BaseInterpreter):
 
     Note:
         The SDK handles parameter priority as: user parameter > environment
-        variable > default value.
+            variable > default value.
     """
 
     _CODE_TYPE_MAPPING: ClassVar[Dict[str, str]] = {
@@ -84,15 +83,10 @@ class MicrosandboxInterpreter(BaseInterpreter):
         sandbox_name: Optional[str] = None,
         timeout: int = 30,
     ) -> None:
-        try:
-            from microsandbox import (  # type: ignore[import-not-found,import-untyped]
-                NodeSandbox,
-                PythonSandbox,
-            )
-        except ImportError as e:
-            raise ImportError(
-                "Please install microsandbox to use MicrosandboxInterpreter"
-            ) from e
+        from microsandbox import (
+            NodeSandbox,
+            PythonSandbox,
+        )
 
         # Store parameters, let SDK handle defaults and environment variables
         self.require_confirm = require_confirm
@@ -205,7 +199,9 @@ class MicrosandboxInterpreter(BaseInterpreter):
         async with self._PythonSandbox.create(
             **self._sandbox_config
         ) as sandbox:
-            execution = await sandbox.run(code)
+            execution = await asyncio.wait_for(
+                sandbox.run(code), timeout=self.timeout
+            )
             return await self._get_execution_output(execution)
 
     async def _run_node_code(self, code: str) -> str:
@@ -218,7 +214,9 @@ class MicrosandboxInterpreter(BaseInterpreter):
             str: Execution output.
         """
         async with self._NodeSandbox.create(**self._sandbox_config) as sandbox:
-            execution = await sandbox.run(code)
+            execution = await asyncio.wait_for(
+                sandbox.run(code), timeout=self.timeout
+            )
             return await self._get_execution_output(execution)
 
     async def _run_shell_command(self, code: str) -> str:
@@ -234,7 +232,9 @@ class MicrosandboxInterpreter(BaseInterpreter):
         async with self._PythonSandbox.create(
             **self._sandbox_config
         ) as sandbox:
-            execution = await sandbox.command.run("bash", ["-c", code])
+            execution = await asyncio.wait_for(
+                sandbox.command.run("bash", ["-c", code]), timeout=self.timeout
+            )
             return await self._get_command_output(execution)
 
     async def _get_execution_output(self, execution) -> str:
@@ -372,24 +372,13 @@ class MicrosandboxInterpreter(BaseInterpreter):
             InterpreterError: If execution fails.
         """
         try:
-            # Parse the command string into command and arguments
-            try:
-                command_parts = shlex.split(command)
-                if not command_parts:
-                    raise InterpreterError("Empty command")
-
-                cmd = command_parts[0]
-                args = command_parts[1:] if len(command_parts) > 1 else []
-            except ValueError as e:
-                raise InterpreterError(f"Invalid command format: {e}")
-
-            # Create and use sandbox with context manager
             async with self._PythonSandbox.create(
                 **self._sandbox_config
             ) as sandbox:
-                # Use the command interface with proper command and args format
-                execution = await sandbox.command.run(cmd, args)
-
+                execution = await asyncio.wait_for(
+                    sandbox.command.run("bash", ["-c", command]),
+                    timeout=self.timeout,
+                )
                 return await self._get_command_output(execution)
 
         except Exception as e:
