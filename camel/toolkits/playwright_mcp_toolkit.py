@@ -14,8 +14,6 @@
 
 from typing import List, Optional
 
-from camel.toolkits import FunctionTool
-
 from .mcp_toolkit import MCPToolkit
 
 
@@ -61,8 +59,6 @@ class PlaywrightMCPToolkit(MCPToolkit):
                 }
             }
         }
-        
+
         # Initialize parent MCPToolkit with Playwright configuration
         super().__init__(config_dict=config_dict, timeout=timeout)
-
-
