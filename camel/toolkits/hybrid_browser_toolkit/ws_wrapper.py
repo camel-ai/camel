@@ -192,10 +192,14 @@ class WebSocketBrowserWrapper:
         """Start the WebSocket server and connect to it."""
         await self._cleanup_existing_processes()
 
+        import platform
+
+        use_shell = platform.system() == 'Windows'
         npm_check = subprocess.run(
             ['npm', '--version'],
             capture_output=True,
             text=True,
+            shell=use_shell,
         )
         if npm_check.returncode != 0:
             raise RuntimeError(
@@ -208,6 +212,7 @@ class WebSocketBrowserWrapper:
             ['node', '--version'],
             capture_output=True,
             text=True,
+            shell=use_shell,
         )
         if node_check.returncode != 0:
             raise RuntimeError(
@@ -224,6 +229,7 @@ class WebSocketBrowserWrapper:
                 cwd=self.ts_dir,
                 capture_output=True,
                 text=True,
+                shell=use_shell,
             )
             if install_result.returncode != 0:
                 logger.error(f"npm install failed: {install_result.stderr}")
@@ -238,6 +244,7 @@ class WebSocketBrowserWrapper:
             cwd=self.ts_dir,
             capture_output=True,
             text=True,
+            shell=use_shell,
         )
         if build_result.returncode != 0:
             logger.error(f"TypeScript build failed: {build_result.stderr}")
@@ -245,13 +252,16 @@ class WebSocketBrowserWrapper:
                 f"TypeScript build failed: {build_result.stderr}"
             )
 
+        # use_shell already defined above
         self.process = subprocess.Popen(
             ['node', 'websocket-server.js'],
             cwd=self.ts_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
+            encoding='utf-8',
             bufsize=1,
+            shell=use_shell,
         )
 
         self._server_ready_future = asyncio.get_running_loop().create_future()
