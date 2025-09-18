@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10, <3.13"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -763,6 +763,7 @@ all = [
     { name = "reka-api" },
     { name = "reportlab" },
     { name = "requests-oauthlib" },
+    { name = "resend" },
     { name = "rlcard" },
     { name = "rouge" },
     { name = "scenedetect" },
@@ -802,6 +803,7 @@ communication-tools = [
     { name = "praw" },
     { name = "pygithub" },
     { name = "pytelegrambotapi" },
+    { name = "resend" },
     { name = "slack-bolt" },
     { name = "slack-sdk" },
 ]
@@ -1118,7 +1120,7 @@ requires-dist = [
     { name = "discord-py", marker = "extra == 'communication-tools'", specifier = ">=2.3.2,<3" },
     { name = "docker", marker = "extra == 'all'", specifier = ">=7.1.0,<8" },
     { name = "docker", marker = "extra == 'dev-tools'", specifier = ">=7.1.0,<8" },
-    { name = "docstring-parser", specifier = ">=0.15,<0.16" },
+    { name = "docstring-parser", specifier = ">=0.17.0,<0.18" },
     { name = "docutils", marker = "extra == 'docs'", specifier = "<0.20.0" },
     { name = "docx", marker = "extra == 'all'", specifier = ">=0.2.4" },
     { name = "docx", marker = "extra == 'document-tools'", specifier = ">=0.2.4" },
@@ -1332,6 +1334,8 @@ requires-dist = [
     { name = "requests-oauthlib", marker = "extra == 'eigent'", specifier = ">=1.3.1,<2" },
     { name = "requests-oauthlib", marker = "extra == 'owl'", specifier = ">=1.3.1,<2" },
     { name = "requests-oauthlib", marker = "extra == 'web-tools'", specifier = ">=1.3.1,<2" },
+    { name = "resend", marker = "extra == 'all'", specifier = ">=2.0.0,<3" },
+    { name = "resend", marker = "extra == 'communication-tools'", specifier = ">=2.0.0,<3" },
     { name = "rlcard", marker = "extra == 'all'", specifier = ">=1.0.0,<1.3.0" },
     { name = "rouge", marker = "extra == 'all'", specifier = ">=1.0.1,<2" },
     { name = "rouge", marker = "extra == 'data-tools'", specifier = ">=1.0.1,<2" },
@@ -2218,11 +2222,11 @@ wheels = [
 
 [[package]]
 name = "docstring-parser"
-version = "0.15"
+version = "0.17.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e8/2d/ea1dfc15b909cc660f657a3a9d698a2916b7f3b05535a2d72e8d7ea3ad5b/docstring_parser-0.15.tar.gz", hash = "sha256:48ddc093e8b1865899956fcc03b03e66bb7240c310fac5af81814580c55bf682", size = 26768, upload-time = "2022-09-05T07:36:08.139Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b2/9d/c3b43da9515bd270df0f80548d9944e389870713cc1fe2b8fb35fe2bcefd/docstring_parser-0.17.0.tar.gz", hash = "sha256:583de4a309722b3315439bb31d64ba3eebada841f2e2cee23b99df001434c912", size = 27442, upload-time = "2025-07-21T07:35:01.868Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/89/e3/32e272db7adcf90e93f73e9a98fd763049ed7c641fb57ab26cb8f3e7e79c/docstring_parser-0.15-py3-none-any.whl", hash = "sha256:d1679b86250d269d06a99670924d6bce45adc00b08069dae8c47d98e89b667a9", size = 36093, upload-time = "2022-09-05T07:36:05.303Z" },
+    { url = "https://files.pythonhosted.org/packages/55/e2/2537ebcff11c1ee1ff17d8d0b6f4db75873e3b0fb32c2d4a2ee31ecb310a/docstring_parser-0.17.0-py3-none-any.whl", hash = "sha256:cf2569abd23dce8099b300f9b4fa8191e9582dda731fd533daf54c4551658708", size = 36896, upload-time = "2025-07-21T07:35:00.684Z" },
 ]
 
 [[package]]
@@ -6949,6 +6953,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f3/61/d7545dafb7ac2230c70d38d31cbfe4cc64f7144dc41f6e4e4b78ecd9f5bb/requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6", size = 206888, upload-time = "2023-05-01T04:11:33.229Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06", size = 54481, upload-time = "2023-05-01T04:11:28.427Z" },
+]
+
+[[package]]
+name = "resend"
+version = "2.13.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d6/ba/de34669cd9ccf2efa65938691ae054e908cbb9c3f2f4cf5ec74d4bbc875e/resend-2.13.1.tar.gz", hash = "sha256:689e2abf17ec46acf97400c096869e95cbb0b67572b0132d1158fdbbf9b1deba", size = 15465, upload-time = "2025-08-26T15:06:47.295Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ab/6a/a5837efa1e8ff6d5c8a40574b506f85ce725126303cedec7c6e1b4382a03/resend-2.13.1-py2.py3-none-any.whl", hash = "sha256:4104d3c8f2c91113c7629e4d51ab1ca255272dd9355d2c584ab1fc10a8c65bee", size = 22279, upload-time = "2025-08-26T15:06:46.293Z" },
 ]
 
 [[package]]
