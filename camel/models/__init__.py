@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .aiml_model import AIMLModel
+from .amd_model import AMDModel
 from .anthropic_model import AnthropicModel
 from .aws_bedrock_model import AWSBedrockModel
 from .azure_openai_model import AzureOpenAIModel
@@ -62,6 +63,7 @@ __all__ = [
     'OpenRouterModel',
     'AzureOpenAIModel',
     'AnthropicModel',
+    'AMDModel',
     'MistralModel',
     'GroqModel',
     'StubModel',

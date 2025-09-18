@@ -16,6 +16,7 @@ import os
 from typing import ClassVar, Dict, Optional, Type, Union
 
 from camel.models.aiml_model import AIMLModel
+from camel.models.amd_model import AMDModel
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
@@ -77,6 +78,7 @@ class ModelFactory:
         ModelPlatformType.AWS_BEDROCK: AWSBedrockModel,
         ModelPlatformType.NVIDIA: NvidiaModel,
         ModelPlatformType.SILICONFLOW: SiliconFlowModel,
+        ModelPlatformType.AMD: AMDModel,
         ModelPlatformType.AIML: AIMLModel,
         ModelPlatformType.VOLCANO: VolcanoModel,
         ModelPlatformType.NETMIND: NetmindModel,

@@ -97,6 +97,7 @@ class AutoRetriever:
                     "URL (database url) and API key required for TiDB storage "
                     "are not provided. Format: "
                     "mysql+pymysql://<username>:<password>@<host>:4000/test"
+                    "You can get the database url from https://tidbcloud.com/console/clusters"
                 )
             return TiDBStorage(
                 vector_dim=self.embedding_model.get_output_dim(),

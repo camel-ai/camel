@@ -65,6 +65,21 @@ class MemoryRecord(BaseModel):
         "FunctionCallingMessage": FunctionCallingMessage,
     }
 
+    @staticmethod
+    def _enum_to_value(obj: Any) -> Any:
+        r"""Recursively convert Enum instances to their raw values.
+
+        Ensures the returned object tree is JSON-serializable by converting
+        enums found in dicts/lists to their .value.
+        """
+        if isinstance(obj, Enum):
+            return obj.value
+        if isinstance(obj, dict):
+            return {k: MemoryRecord._enum_to_value(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [MemoryRecord._enum_to_value(v) for v in obj]
+        return obj
+
     @classmethod
     def from_dict(cls, record_dict: Dict[str, Any]) -> "MemoryRecord":
         r"""Reconstruct a :obj:`MemoryRecord` from the input dict.
@@ -78,18 +93,48 @@ class MemoryRecord(BaseModel):
         # Restore enums expected by BaseMessage
         if "role_type" in kwargs and isinstance(kwargs["role_type"], str):
             try:
-                kwargs["role_type"] = RoleType(kwargs["role_type"])
-            except Exception as e:
-                logging.info(f"Failed to restore enum {kwargs['role_type']} for {message_cls.__name__}, {e}")
-                pass
+                kwargs["role_type"] = RoleType(kwargs["role_type"]) 
+            except ValueError as e:
+                logging.warning(
+                    f"Failed to restore RoleType from '{kwargs['role_type']}' for {message_cls.__name__}: {e}. "
+                    "Falling back to RoleType.DEFAULT."
+                )
+                kwargs["role_type"] = RoleType.DEFAULT
         reconstructed_message = message_cls(**kwargs)
+
+        # Restore OpenAIBackendRole with error handling and sensible fallback
+        raw_backend_role = record_dict.get("role_at_backend")
+        role_at_backend: OpenAIBackendRole
+        if isinstance(raw_backend_role, str):
+            try:
+                role_at_backend = OpenAIBackendRole(raw_backend_role)
+            except ValueError as e:
+                logging.warning(
+                    f"Failed to restore OpenAIBackendRole from '{raw_backend_role}': {e}. "
+                    "Falling back based on message.role_type."
+                )
+                role_at_backend = (
+                    OpenAIBackendRole.USER
+                    if getattr(reconstructed_message, "role_type", RoleType.ASSISTANT) == RoleType.USER
+                    else OpenAIBackendRole.ASSISTANT
+                )
+        elif isinstance(raw_backend_role, OpenAIBackendRole):
+            role_at_backend = raw_backend_role
+        else:
+            logging.warning(
+                f"Unexpected type for role_at_backend: {type(raw_backend_role)}. "
+                "Falling back based on message.role_type."
+            )
+            role_at_backend = (
+                OpenAIBackendRole.USER
+                if getattr(reconstructed_message, "role_type", RoleType.ASSISTANT) == RoleType.USER
+                else OpenAIBackendRole.ASSISTANT
+            )
+
         return cls(
             uuid=UUID(record_dict["uuid"]),
             message=reconstructed_message,
-            role_at_backend=(
-                OpenAIBackendRole(record_dict["role_at_backend"]) if isinstance(record_dict["role_at_backend"], str)
-                else record_dict["role_at_backend"]
-            ),
+            role_at_backend=role_at_backend,
             extra_info=record_dict["extra_info"],
             timestamp=record_dict["timestamp"],
             agent_id=record_dict["agent_id"],
@@ -102,17 +147,8 @@ class MemoryRecord(BaseModel):
             **asdict(self.message),
         }
 
-        def _enum_to_value(obj: Any) -> Any:
-            if isinstance(obj, Enum):
-                return obj.value
-            if isinstance(obj, dict):
-                return {k: _enum_to_value(v) for k, v in obj.items()}
-            if isinstance(obj, list):
-                return [_enum_to_value(v) for v in obj]
-            return obj
-
         # Normalize enums inside message payload (e.g., role_type)
-        message_dict = _enum_to_value(message_dict)
+        message_dict = MemoryRecord._enum_to_value(message_dict)
 
         out: Dict[str, Any] = {
             "uuid": str(self.uuid),
@@ -120,7 +156,7 @@ class MemoryRecord(BaseModel):
             "role_at_backend": self.role_at_backend.value
             if isinstance(self.role_at_backend, Enum)
             else self.role_at_backend,
-            "extra_info": _enum_to_value(self.extra_info),
+            "extra_info": MemoryRecord._enum_to_value(self.extra_info),
             "timestamp": self.timestamp,
             "agent_id": self.agent_id,
         }

@@ -36,9 +36,12 @@ async def main():
     )
 
     response = await chat_agent.astep(
-        """create a new page in my notion named 'CAMEL-AI Notion MCP Toolkit 
-        Test'""",
+        """create a new page in my notion named 'Camel Introduction' 
+and add some content describing Camel as a lightweight multi-agent framework 
+that supports role-driven collaboration and modular workflows."""
     )
+
+    print("=== Model Response ===")
     print(response.msg.content)
 
     # disconnect from notion mcp
@@ -48,11 +51,21 @@ async def main():
 # Run the async main function
 if __name__ == "__main__":
     asyncio.run(main())
-""""
+
+"""
 ===========================================================================
-I have created a new page in your Notion named 'CAMEL-AI Notion MCP Toolkit 
-Test'. You can access it here: https://www.notion.so/
-23720ddf035c8146812bf34c9b8d30c5 Is there anything else you would like to do 
-with this page?
+[681981] [Remote→Local] 0
+[681981] [Local→Remote] notifications/initialized
+[681981] [Local→Remote] tools/list
+[681981] [Remote→Local] 1
+/home/lyz/Camel/camel/camel/memories/blocks/chat_history_block.py:73: 
+UserWarning: The `ChatHistoryMemory` is empty.
+  warnings.warn("The `ChatHistoryMemory` is empty.")
+[681981] [Local→Remote] tools/call
+[681981] [Remote→Local] 2
+I have created the page "Camel Introduction" for you. You can view it here: 
+https://www.notion.so/2626be7b2793819aaf2cfe686a554bdd
+[681981] 
+Shutting down...
 ============================================================================
 """
