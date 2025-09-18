@@ -55,6 +55,7 @@ from camel.societies.workforce.structured_output_handler import (
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
     FailureContext,
+    PipelineTaskBuilder,
     RecoveryDecision,
     RecoveryStrategy,
     TaskAssignment,
@@ -104,6 +105,14 @@ class WorkforceState(Enum):
     RUNNING = "running"
     PAUSED = "paused"
     STOPPED = "stopped"
+
+
+class WorkforceMode(Enum):
+    r"""Workforce execution mode for different task processing strategies."""
+
+    AUTO_DECOMPOSE = "auto_decompose"  # Current automatic task decomposition mode
+    PIPELINE = "pipeline"              # Predefined pipeline mode
+    HYBRID = "hybrid"                  # Hybrid mode allowing partial auto-decomposition
 
 
 class WorkforceSnapshot:
@@ -246,6 +255,7 @@ class Workforce(BaseNode):
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
         task_timeout_seconds: Optional[float] = None,
+        mode: WorkforceMode = WorkforceMode.AUTO_DECOMPOSE,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[
@@ -259,6 +269,7 @@ class Workforce(BaseNode):
         self.task_timeout_seconds = (
             task_timeout_seconds or TASK_TIMEOUT_SECONDS
         )
+        self.mode = mode
         if self.use_structured_output_handler:
             self.structured_handler = StructuredOutputHandler()
         self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
@@ -267,6 +278,9 @@ class Workforce(BaseNode):
         self._task_dependencies: Dict[str, List[str]] = {}
         self._assignees: Dict[str, str] = {}
         self._in_flight_tasks: int = 0
+        
+        # Pipeline building state
+        self._pipeline_builder: Optional[PipelineTaskBuilder] = None
         # Dictionary to track task start times
         self._task_start_times: Dict[str, float] = {}
         # Human intervention support
@@ -520,8 +534,196 @@ class Workforce(BaseNode):
     def __repr__(self):
         return (
             f"Workforce {self.node_id} ({self.description}) - "
-            f"State: {self._state.value}"
+            f"State: {self._state.value} - Mode: {self.mode.value}"
         )
+
+    def _ensure_pipeline_builder(self):
+        """Ensure pipeline builder is initialized and switch to pipeline mode."""
+        if self._pipeline_builder is None:
+            self._pipeline_builder = PipelineTaskBuilder()
+        
+        # Auto-switch to pipeline mode
+        if self.mode != WorkforceMode.PIPELINE:
+            self.mode = WorkforceMode.PIPELINE
+
+    def add_pipeline_task(
+        self,
+        content: str,
+        task_id: Optional[str] = None,
+        dependencies: Optional[List[str]] = None,
+        additional_info: Optional[Dict[str, Any]] = None,
+        auto_depend: bool = True,
+    ) -> 'Workforce':
+        """Add a task to the pipeline with support for chaining.
+
+        Args:
+            content (str): The content/description of the task.
+            task_id (str, optional): Unique identifier for the task. If None,
+                a unique ID will be generated. (default: :obj:`None`)
+            dependencies (List[str], optional): List of task IDs that this
+                task depends on. If None and auto_depend=True, will depend on
+                the last added task. (default: :obj:`None`)
+            additional_info (Dict[str, Any], optional): Additional information
+                for the task. (default: :obj:`None`)
+            auto_depend (bool, optional): If True and dependencies is None,
+                automatically depend on the last added task. (default: :obj:`True`)
+
+        Returns:
+            Workforce: Self for method chaining.
+            
+        Example:
+            >>> workforce.add_pipeline_task("Step 1").add_pipeline_task("Step 2").add_pipeline_task("Step 3")
+        """
+        self._ensure_pipeline_builder()
+        self._pipeline_builder.add_task(content, task_id, dependencies, additional_info, auto_depend)
+        return self
+
+    def add_parallel_pipeline_tasks(
+        self,
+        task_contents: List[str],
+        dependencies: Optional[List[str]] = None,
+        task_id_prefix: str = "parallel",
+        auto_depend: bool = True,
+    ) -> 'Workforce':
+        """Add multiple parallel tasks to the pipeline.
+
+        Args:
+            task_contents (List[str]): List of task content strings.
+            dependencies (List[str], optional): Common dependencies for all
+                parallel tasks. (default: :obj:`None`)
+            task_id_prefix (str, optional): Prefix for generated task IDs.
+                (default: :obj:`"parallel"`)
+            auto_depend (bool, optional): If True and dependencies is None,
+                automatically depend on the last added task. (default: :obj:`True`)
+
+        Returns:
+            Workforce: Self for method chaining.
+        """
+        self._ensure_pipeline_builder()
+        self._pipeline_builder.add_parallel_tasks(task_contents, dependencies, task_id_prefix, auto_depend)
+        return self
+
+    def add_sync_pipeline_task(
+        self,
+        content: str,
+        wait_for: Optional[List[str]] = None,
+        task_id: Optional[str] = None,
+    ) -> 'Workforce':
+        """Add a synchronization task that waits for multiple tasks.
+
+        Args:
+            content (str): Content of the synchronization task.
+            wait_for (List[str], optional): List of task IDs to wait for.
+                If None, will automatically wait for the last parallel tasks.
+            task_id (str, optional): ID for the sync task.
+
+        Returns:
+            Workforce: Self for method chaining.
+        """
+        self._ensure_pipeline_builder()
+        self._pipeline_builder.add_sync_task(content, wait_for, task_id)
+        return self
+
+    def fork_pipeline(self, task_contents: List[str]) -> 'Workforce':
+        """Create parallel branches from the current task (alias for add_parallel_pipeline_tasks).
+        
+        Args:
+            task_contents (List[str]): List of task content strings for parallel execution.
+            
+        Returns:
+            Workforce: Self for method chaining.
+        """
+        self._ensure_pipeline_builder()
+        self._pipeline_builder.fork(task_contents)
+        return self
+    
+    def join_pipeline(self, content: str, task_id: Optional[str] = None) -> 'Workforce':
+        """Join parallel branches with a synchronization task (alias for add_sync_pipeline_task).
+        
+        Args:
+            content (str): Content of the join/sync task.
+            task_id (str, optional): ID for the sync task.
+            
+        Returns:
+            Workforce: Self for method chaining.
+        """
+        self._ensure_pipeline_builder()
+        self._pipeline_builder.join(content, task_id)
+        return self
+    
+    def then_pipeline(self, content: str, task_id: Optional[str] = None) -> 'Workforce':
+        """Add a sequential task (alias for add_pipeline_task for better readability).
+        
+        Args:
+            content (str): Content of the task.
+            task_id (str, optional): ID for the task.
+            
+        Returns:
+            Workforce: Self for method chaining.
+        """
+        self._ensure_pipeline_builder()
+        self._pipeline_builder.then(content, task_id)
+        return self
+
+    def finalize_pipeline(self) -> 'Workforce':
+        """Finalize the pipeline and set up the tasks for execution.
+        
+        Returns:
+            Workforce: Self for method chaining.
+        """
+        if self._pipeline_builder is None:
+            raise ValueError("No pipeline tasks defined")
+        
+        tasks = self._pipeline_builder.build()
+        self.set_pipeline_tasks(tasks)
+        
+        return self
+
+    def get_pipeline_builder(self) -> PipelineTaskBuilder:
+        """Get the underlying PipelineTaskBuilder for advanced usage.
+        
+        Returns:
+            PipelineTaskBuilder: The pipeline builder instance.
+            
+        Example:
+            >>> builder = workforce.get_pipeline_builder()
+            >>> builder.add_task("Complex Task").fork(["A", "B"]).join("Merge")
+            >>> tasks = builder.build()
+            >>> workforce.set_pipeline_tasks(tasks)
+        """
+        self._ensure_pipeline_builder()
+        return self._pipeline_builder
+
+    def set_pipeline_tasks(self, tasks: List[Task]) -> None:
+        """Set predefined pipeline tasks for PIPELINE mode.
+        
+        Args:
+            tasks (List[Task]): List of tasks with dependencies already set.
+                The dependencies should be Task objects in the Task.dependencies
+                attribute.
+        
+        Raises:
+            ValueError: If tasks are invalid.
+        """
+        if not tasks:
+            raise ValueError("Cannot set empty task list for pipeline")
+        
+        # Auto-switch to pipeline mode if not already
+        if self.mode != WorkforceMode.PIPELINE:
+            self.mode = WorkforceMode.PIPELINE
+        
+        # Clear existing tasks and dependencies
+        self._pending_tasks.clear()
+        self._task_dependencies.clear()
+        self._assignees.clear()
+        
+        # Add tasks and set up dependencies
+        for task in tasks:
+            self._pending_tasks.append(task)
+            if task.dependencies:
+                self._task_dependencies[task.id] = [dep.id for dep in task.dependencies]
+            else:
+                self._task_dependencies[task.id] = []
 
     def _collect_shared_memory(self) -> Dict[str, List]:
         r"""Collect memory from all SingleAgentWorker instances for sharing.
@@ -739,10 +941,18 @@ class Workforce(BaseNode):
         r"""Decompose the task into subtasks. This method will also set the
         relationship between the task and its subtasks.
 
+        Args:
+            task (Task): The task to decompose.
+
         Returns:
             Union[List[Task], Generator[List[Task], None, None]]:
-            The subtasks or generator of subtasks.
+            The subtasks or generator of subtasks. Returns empty list for
+            PIPELINE mode.
         """
+        # In PIPELINE mode, don't decompose - use predefined tasks
+        if self.mode == WorkforceMode.PIPELINE:
+            return []
+        
         decompose_prompt = TASK_DECOMPOSE_PROMPT.format(
             content=task.content,
             child_nodes_info=self._get_child_nodes_info(),
@@ -1211,6 +1421,16 @@ class Workforce(BaseNode):
             )
             return task
 
+        # Route to appropriate processing method based on mode
+        if self.mode == WorkforceMode.PIPELINE:
+            return await self._process_task_with_pipeline(task)
+        elif self.mode == WorkforceMode.HYBRID:
+            return await self._process_task_with_hybrid(task)
+        else:  # AUTO_DECOMPOSE mode (default)
+            return await self._process_task_with_auto_decompose(task)
+
+    async def _process_task_with_auto_decompose(self, task: Task) -> Task:
+        """Process task using automatic decomposition (original behavior)."""
         self.reset()
         self._task = task
         if self.metrics_logger:
@@ -1272,6 +1492,62 @@ class Workforce(BaseNode):
                 task.state = TaskState.FAILED
 
         return task
+
+    async def _process_task_with_pipeline(self, task: Task) -> Task:
+        """Process task using predefined pipeline tasks."""
+        if not self._pending_tasks:
+            raise ValueError(
+                "No pipeline tasks defined. Use set_pipeline_tasks() first."
+            )
+        
+        # Don't reset here - keep the predefined tasks
+        self._task = task
+        if self.metrics_logger:
+            self.metrics_logger.log_task_created(
+                task_id=task.id,
+                description=task.content,
+                task_type=task.type,
+                metadata=task.additional_info,
+            )
+        
+        task.state = TaskState.FAILED
+        self.set_channel(TaskChannel())
+        await self.start()
+        
+        # Collect results from all pipeline tasks
+        task.result = self._collect_pipeline_results()
+        task.state = (
+            TaskState.DONE if self._all_pipeline_tasks_successful() 
+            else TaskState.FAILED
+        )
+        
+        return task
+
+    async def _process_task_with_hybrid(self, task: Task) -> Task:
+        """Process task using hybrid approach (partial auto-decomposition)."""
+        # For now, fall back to auto-decompose mode
+        # This can be extended to support more sophisticated hybrid logic
+        return await self._process_task_with_auto_decompose(task)
+
+    def _collect_pipeline_results(self) -> str:
+        """Collect results from all completed pipeline tasks."""
+        results = []
+        for task in self._completed_tasks:
+            if task.result:
+                results.append(f"--- Task {task.id} Result ---\n{task.result}")
+        return "\n\n".join(results) if results else "Pipeline completed"
+
+    def _all_pipeline_tasks_successful(self) -> bool:
+        """Check if all pipeline tasks completed successfully."""
+        expected_task_ids = {task.id for task in self._pending_tasks}
+        expected_task_ids.update(task.id for task in self._completed_tasks)
+        
+        completed_successful_ids = {
+            task.id for task in self._completed_tasks 
+            if task.state == TaskState.DONE
+        }
+        
+        return expected_task_ids.issubset(completed_successful_ids)
 
     def process_task(self, task: Task) -> Task:
         r"""Synchronous wrapper for process_task that handles async operations
@@ -1702,6 +1978,10 @@ class Workforce(BaseNode):
         self.coordinator_agent.reset()
         self.task_agent.reset()
         self._task_start_times.clear()
+        
+        # Reset pipeline building state
+        self._pipeline_builder = None
+        
         for child in self._children:
             child.reset()
 
@@ -3161,6 +3441,7 @@ class Workforce(BaseNode):
             share_memory=self.share_memory,
             use_structured_output_handler=self.use_structured_output_handler,
             task_timeout_seconds=self.task_timeout_seconds,
+            mode=self.mode,
         )
 
         for child in self._children:
