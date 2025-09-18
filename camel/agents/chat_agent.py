@@ -537,7 +537,7 @@ class ChatAgent(BaseAgent):
         self.retry_attempts = max(1, retry_attempts)
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
-        self._context_utility = ContextUtility()
+        self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
         self.stream_accumulate = stream_accumulate
 
@@ -1074,6 +1074,9 @@ class ChatAgent(BaseAgent):
         }
 
         try:
+            if self._context_utility is None:
+                self._context_utility = ContextUtility()
+
             memory_records = self._context_utility.get_agent_memory_records(
                 self
             )
