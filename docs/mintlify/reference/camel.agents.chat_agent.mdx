@@ -244,6 +244,7 @@ Class for managing conversations of CAMEL Chat Agents.
 - **retry_attempts** (int, optional): Maximum number of retry attempts for rate limit errors. (default: :obj:`3`)
 - **retry_delay** (float, optional): Initial delay in seconds between retries. Uses exponential backoff. (default: :obj:`1.0`)
 - **step_timeout** (Optional[float], optional): Timeout in seconds for the entire step operation. If None, no timeout is applied. (default: :obj:`None`)
+- **stream_accumulate** (bool, optional): When True, partial streaming updates return accumulated content (current behavior). When False, partial updates return only the incremental delta. (default: :obj:`True`)
 
 <a id="camel.agents.chat_agent.ChatAgent.__init__"></a>
 
@@ -272,7 +273,8 @@ def __init__(
     prune_tool_calls_from_memory: bool = False,
     retry_attempts: int = 3,
     retry_delay: float = 1.0,
-    step_timeout: Optional[float] = None
+    step_timeout: Optional[float] = None,
+    stream_accumulate: bool = True
 ):
 ```
 
