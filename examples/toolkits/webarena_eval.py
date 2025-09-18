@@ -467,14 +467,19 @@ def build_system_message() -> str:
         "You are an autonomous agent operating a web browser to complete Shopping Admin tasks.\n"
         "Follow a strict loop each turn: OBSERVE -> PLAN (ordered checklist) -> ACT (one tool call) -> VERIFY.\n"
         "- Always call browser_get_page_snapshot to inspect the DOM after any navigation or major action before deciding the next step.\n"
+        "- Navigate to the Sales by product (or equivalent) report before extracting results.\n"
+        "- Set the exact requested period (e.g., '2022' or 'Jan 2023') and VERIFY the filter text matches precisely before reading results.\n"
+        "- Date handling: NEVER use hyphens. Replace any '-' with '/'. Use MM/DD/YY strictly. For a year (e.g., 2022), set start '01/01/22' and end '12/31/22'. For a month (e.g., Jan 2023), set start '01/01/23' and end '01/31/23'. After typing, VERIFY each date field matches ^\\d{2}/\\d{2}/\\d{2}$; if not, clear and retype. Prefer clicking preset date ranges if available and they match the requested period.\n"
+        "- Sort by Quantity/Units descending and VERIFY the sort indicator shows descending on the correct column.\n"
+        "- Read product names from the table in on-screen row order. If totals tie, use the rendered order.\n"
+        "- Copy product names exactly as displayed (including symbols like ™); do not add quotes or extra punctuation.\n"
+        "- For top-1 tasks, output only the exact product name in the FINAL ANSWER (no extra words). Example: FINAL ANSWER: Quest Lumaflex™ Band\n"
+        "- For top-N tasks, list only the product names in order; avoid counts unless explicitly requested.\n"
         "- Prefer robust selectors: visible text, labels, roles, aria-label, name, placeholder, or data-* attributes; avoid coordinate-based clicks.\n"
         "- Use browser_scroll to reveal off-screen elements before interacting.\n"
         "- Stay strictly within the admin site unless explicitly required by the task.\n"
-        "- When entering dates, use MM/DD/YY (e.g., 01/01/10), never hyphens.\n"
-        "- After performing changes, VERIFY by reading back UI values, success toasts/messages, or table entries. If verification fails, revise the plan and retry.\n"
-        "- Do not hallucinate elements. If an element is not present, broaden search (scroll, navigate to the correct section) and re-inspect.\n"
-        "- Avoid opening new tabs unless necessary; keep a single focused flow.\n"
-        "- Output a single final line when done: 'FINAL ANSWER: <concise result>'."
+        "- If verification fails at any step, re-check filters/sorting and retry before answering.\n"
+        "- Output a single final line when done: 'FINAL ANSWER: <exact name or list>'."
     )
 
 
@@ -619,7 +624,7 @@ async def main_async() -> None:
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1,
         model_config_dict={
-            "temperature": 0.1,
+            "temperature": 0.0,
             "top_p": 1.0,
             "parallel_tool_calls": False,
         },
