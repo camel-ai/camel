@@ -16,7 +16,7 @@ import os
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.toolkits import FileWriteToolkit
+from camel.toolkits import FileToolkit
 from camel.types import ModelPlatformType
 from camel.types.enums import ModelType
 
@@ -24,7 +24,6 @@ from camel.types.enums import ModelType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    model_config_dict={"temperature": 0},
 )
 
 # Define system message for the agent
@@ -35,7 +34,7 @@ working_directory = "./file_write_outputs"
 os.makedirs(working_directory, exist_ok=True)
 
 # Initialize the FileWriteToolkit with the output directory
-file_toolkit = FileWriteToolkit(working_directory=working_directory)
+file_toolkit = FileToolkit(working_directory=working_directory)
 
 # Get the tools from the toolkit
 tools_list = file_toolkit.get_tools()
@@ -309,5 +308,155 @@ These agents can be software programs, robots, or any entities that can perceive
 # Managing resources in smart grids or traffic systems.\n- **Game Theory**: Analyzing strategies in competitive environments.\n- **Simulation**: Modeling complex systems in economics, biology,
 # and social sciences.\n\n### Conclusion\n\nMultiagent systems provide a framework for understanding and designing systems where multiple agents interact, leading to complex behaviors and solutions to problems that are difficult for a single agent to solve alone.',
 #  'filename': 'multiagent_overview.pdf', 'encoding': None, 'use_latex': False}, result='Content successfully written to file: /Users/yifengwang/project/camel/file_write_outputs/multiagent_overview.pdf', tool_call_id='call_btYqjycX4aUfBNJUy8bpnHSV')]
+===============================================================================
+'''
+
+# Example 9: Read file content
+read_query = """Please read the content of the web server python file that was created earlier."""
+
+camel_agent.reset()
+response = camel_agent.step(read_query)
+print("Example 9: Reading file content")
+print(response.msgs[0].content)
+print("Tool calls:", response.info['tool_calls'])
+print("\n")
+
+'''
+===============================================================================
+Example 9: Reading file content
+Here is the content of the `simple_flask_server.py` file:
+
+```python
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Hello, Flask!"
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+This is a simple Flask web server that returns "Hello, Flask!" when accessed at the root URL.
+Tool calls: [ToolCallingRecord(tool_name='read_file', args={'file_path': 'simple_flask_server.py'}, result='from flask import Flask\n\napp = Flask(__name__)\n\n@app.route(\'/\')\ndef home():\n    return "Hello, Flask!"\n\nif __name__ == \'__main__\':\n    app.run(debug=True)', tool_call_id='call_abc123def456')]
+===============================================================================
+'''
+
+# Example 10: Edit file content
+edit_query = """Please edit the simple_flask_server.py file to add a new route '/about' that returns 'About Flask Server'."""
+
+camel_agent.reset()
+response = camel_agent.step(edit_query)
+print("Example 10: Editing file content")
+print(response.msgs[0].content)
+print("Tool calls:", response.info['tool_calls'])
+print("\n")
+
+'''
+===============================================================================
+Example 10: Editing file content
+I have successfully edited the `simple_flask_server.py` file to add a new route '/about' that returns 'About Flask Server'. The file now includes both the original home route and the new about route.
+Tool calls: [ToolCallingRecord(tool_name='edit_file', args={'file_path': 'simple_flask_server.py', 'old_content': '@app.route(\'/\')\ndef home():\n    return "Hello, Flask!"\n\nif __name__ == \'__main__\':', 'new_content': '@app.route(\'/\')\ndef home():\n    return "Hello, Flask!"\n\n@app.route(\'/about\')\ndef about():\n    return "About Flask Server"\n\nif __name__ == \'__main__\':'}, result='Successfully edited file: /Users/enrei/Desktop/camel0209/camel/file_write_outputs/simple_flask_server.py', tool_call_id='call_def789ghi012')]
+===============================================================================
+'''
+
+# Example 11: Insert content at specific line
+insert_query = """Please insert a comment '# This is a simple Flask application' at the beginning of the simple_flask_server.py file."""
+
+camel_agent.reset()
+response = camel_agent.step(insert_query)
+print("Example 11: Inserting content at specific line")
+print(response.msgs[0].content)
+print("Tool calls:", response.info['tool_calls'])
+print("\n")
+
+'''
+===============================================================================
+Example 11: Inserting content at specific line
+I have successfully inserted the comment '# This is a simple Flask application' at the beginning of the `simple_flask_server.py` file. The comment has been added as the first line of the file.
+Tool calls: [ToolCallingRecord(tool_name='insert_at_line', args={'file_path': 'simple_flask_server.py', 'content': '# This is a simple Flask application', 'line_number': 0}, result='Successfully inserted content at line 0 in /Users/enrei/Desktop/camel0209/camel/file_write_outputs/simple_flask_server.py', tool_call_id='call_jkl345mno678')]
+===============================================================================
+'''
+
+# Example 12: Read and edit JSON file
+json_edit_query = """Please read the books.json file, then edit it to add a new book with title 'The Future of AI', author 'Dr. Smith', publication year 2023, and genre 'Science Fiction'."""
+
+camel_agent.reset()
+response = camel_agent.step(json_edit_query)
+print("Example 12: Reading and editing JSON file")
+print(response.msgs[0].content)
+print("Tool calls:", response.info['tool_calls'])
+print("\n")
+
+'''
+===============================================================================
+Example 12: Reading and editing JSON file
+I have successfully read the books.json file and added a new book entry. The file now contains 4 books including the newly added "The Future of AI" by Dr. Smith.
+Tool calls: [ToolCallingRecord(tool_name='read_file', args={'file_path': 'books.json'}, result='[\n  {\n    "title": "The Whispering Shadows",\n    "author": "Ava Sinclair",\n    "publication_year": 2021,\n    "genre": "Fantasy"\n  },\n  {\n    "title": "Echoes of the Past",\n    "author": "Liam Carter",\n    "publication_year": 2019,\n    "genre": "Historical Fiction"\n  },\n  {\n    "title": "The Last Star",\n    "author": "Maya Thompson",\n    "publication_year": 2022,\n    "genre": "Science Fiction"\n  }\n]', tool_call_id='call_pqr901stu234'), ToolCallingRecord(tool_name='edit_file', args={'file_path': 'books.json', 'old_content': '  }\n]', 'new_content': '  },\n  {\n    "title": "The Future of AI",\n    "author": "Dr. Smith",\n    "publication_year": 2023,\n    "genre": "Science Fiction"\n  }\n]'}, result='Successfully edited file: /Users/enrei/Desktop/camel0209/camel/file_write_outputs/books.json', tool_call_id='call_vwx567yza890')]
+===============================================================================
+'''
+
+# Example 13: Insert at end of file
+insert_end_query = """Please insert a new route '/contact' that returns 'Contact us at contact@example.com' at the end of the simple_flask_server.py file, just before the 'if __name__ == \'__main__\':' line."""
+
+camel_agent.reset()
+response = camel_agent.step(insert_end_query)
+print("Example 13: Inserting at end of file")
+print(response.msgs[0].content)
+print("Tool calls:", response.info['tool_calls'])
+print("\n")
+
+'''
+===============================================================================
+Example 13: Inserting at end of file
+I have successfully inserted the new '/contact' route in the `simple_flask_server.py` file. The route has been added just before the main execution block, so the file now has three routes: '/', '/about', and '/contact'.
+Tool calls: [ToolCallingRecord(tool_name='insert_at_line', args={'file_path': 'simple_flask_server.py', 'content': '@app.route(\'/contact\')\ndef contact():\n    return "Contact us at contact@example.com"', 'line_number': -2}, result='Successfully inserted content at line -2 in /Users/enrei/Desktop/camel0209/camel/file_write_outputs/simple_flask_server.py', tool_call_id='call_bcd123efg456')]
+===============================================================================
+'''
+
+# Example 14: Read the final modified file
+final_read_query = """Please read the final content of the simple_flask_server.py file to see all the modifications we made."""
+
+camel_agent.reset()
+response = camel_agent.step(final_read_query)
+print("Example 14: Reading final modified file")
+print(response.msgs[0].content)
+print("Tool calls:", response.info['tool_calls'])
+print("\n")
+
+'''
+===============================================================================
+Example 14: Reading final modified file
+Here is the final content of the `simple_flask_server.py` file after all our modifications:
+
+```python
+# This is a simple Flask application
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Hello, Flask!"
+
+@app.route('/about')
+def about():
+    return "About Flask Server"
+
+@app.route('/contact')
+def contact():
+    return "Contact us at contact@example.com"
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+The file now includes:
+1. A comment at the top
+2. Three routes: '/', '/about', and '/contact'
+3. All the original functionality plus the new features we added
+Tool calls: [ToolCallingRecord(tool_name='read_file', args={'file_path': 'simple_flask_server.py'}, result='# This is a simple Flask application\nfrom flask import Flask\n\napp = Flask(__name__)\n\n@app.route(\'/\')\ndef home():\n    return "Hello, Flask!"\n\n@app.route(\'/about\')\ndef about():\n    return "About Flask Server"\n\n@app.route(\'/contact\')\ndef contact():\n    return "Contact us at contact@example.com"\n\nif __name__ == \'__main__\':\n    app.run(debug=True)', tool_call_id='call_hij789klm012')]
 ===============================================================================
 '''

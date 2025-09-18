@@ -20,14 +20,15 @@ from pathlib import Path
 import pytest
 import yaml
 
-from camel.toolkits import FileWriteToolkit
+from camel.toolkits import FileToolkit, FileWriteToolkit
 
 
 @pytest.fixture
 def file_write_toolkit():
-    r"""Create a FileWriteToolkit instance for testing."""
+    r"""Create a FileToolkit instance for testing."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        toolkit = FileWriteToolkit(working_directory=temp_dir)
+        # Use FileToolkit (new name) for testing
+        toolkit = FileToolkit(working_directory=temp_dir)
         yield toolkit
 
 
@@ -39,8 +40,8 @@ def temp_dir():
 
 
 def test_initialization():
-    r"""Test the initialization of FileWriteToolkit with default parameters."""
-    toolkit = FileWriteToolkit()
+    r"""Test the initialization of FileToolkit with default parameters."""
+    toolkit = FileToolkit()
 
     assert toolkit.working_directory == Path("./camel_working_dir").resolve()
     assert toolkit.default_encoding == "utf-8"
@@ -48,12 +49,12 @@ def test_initialization():
 
 
 def test_initialization_with_custom_parameters():
-    r"""Test the initialization of FileWriteToolkit with custom parameters."""
+    r"""Test the initialization of FileToolkit with custom parameters."""
     working_directory = "./custom_dir"
     default_encoding = "latin-1"
     backup_enabled = False
 
-    toolkit = FileWriteToolkit(
+    toolkit = FileToolkit(
         working_directory=working_directory,
         default_encoding=default_encoding,
         backup_enabled=backup_enabled,
@@ -295,7 +296,7 @@ def test_write_to_file_nested_directory(file_write_toolkit):
 
 def test_write_to_file_absolute_path(temp_dir):
     r"""Test writing to a file using an absolute path."""
-    toolkit = FileWriteToolkit(working_directory="./default")
+    toolkit = FileToolkit(working_directory="./default")
     content = "Content with absolute path"
     filename = os.path.join(temp_dir, "absolute_path.txt")
 
@@ -318,10 +319,14 @@ def test_get_tools(file_write_toolkit):
     tools = file_write_toolkit.get_tools()
 
     # Check that we have the expected number of tools
-    assert len(tools) == 1
+    # (now 3: write_to_file, read_file, edit_file)
+    assert len(tools) == 3
 
-    # Check that the tool has the correct function name
-    assert tools[0].get_function_name() == "write_to_file"
+    # Check that the tools have the correct function names
+    tool_names = [tool.get_function_name() for tool in tools]
+    assert "write_to_file" in tool_names
+    assert "read_file" in tool_names
+    assert "edit_file" in tool_names
 
 
 def test_sanitize_and_resolve_filepath(file_write_toolkit):
@@ -344,3 +349,106 @@ def test_sanitize_and_resolve_filepath(file_write_toolkit):
     assert (
         resolved_path == expected_path.resolve()
     ), "The resolved file path does not match the expected sanitized path."
+
+
+def test_backup_functionality(file_write_toolkit):
+    r"""Test that backup files are created when backup_enabled is True."""
+    # Write initial file
+    content = "Initial content"
+    filename = "test_backup.txt"
+    result = file_write_toolkit.write_to_file(
+        title="Test", content=content, filename=filename
+    )
+    assert "successfully" in result.lower()
+
+    # Write again with backup enabled (default)
+    new_content = "Updated content"
+    result = file_write_toolkit.write_to_file(
+        title="Test", content=new_content, filename=filename
+    )
+    assert "successfully" in result.lower()
+
+    # Check that backup file exists
+    import glob
+
+    backup_files = glob.glob(
+        str(file_write_toolkit.working_directory / f"{filename}.*.bak")
+    )
+    assert len(backup_files) == 1, "Backup file should have been created"
+
+    # Read backup file and verify it contains original content
+    with open(backup_files[0], 'r') as f:
+        backup_content = f.read()
+    assert "Initial content" in backup_content
+
+
+def test_no_backup_when_disabled(tmp_path):
+    r"""Test that no backup is created when backup_enabled is False."""
+    # Use a temporary directory for this test
+    toolkit = FileToolkit(
+        working_directory=str(tmp_path), backup_enabled=False
+    )
+
+    # Write initial file
+    content = "Initial content"
+    filename = "test_no_backup.txt"
+    result = toolkit.write_to_file(
+        title="Test", content=content, filename=filename
+    )
+    assert "successfully" in result.lower()
+
+    # Read the file to verify content
+    file_path = toolkit.working_directory / filename
+    assert file_path.exists()
+    with open(file_path, 'r') as f:
+        file_content = f.read()
+    assert "Initial content" in file_content
+
+    # Write again with backup disabled - should overwrite
+    new_content = "Updated content"
+    result = toolkit.write_to_file(
+        title="Test", content=new_content, filename=filename
+    )
+    assert "successfully" in result.lower()
+
+    # Check that no backup file exists
+    import glob
+
+    backup_files = glob.glob(
+        str(toolkit.working_directory / f"{filename}.*.bak")
+    )
+    assert len(backup_files) == 0, "No backup file should have been created"
+
+    # Check that the original file was overwritten (only 1 file exists)
+    all_files = glob.glob(
+        str(toolkit.working_directory / "test_no_backup*.txt")
+    )
+    assert len(all_files) == 1, "Should have only 1 file (overwritten)"
+
+    # Verify the file contains the updated content
+    with open(file_path, 'r') as f:
+        file_content = f.read()
+    assert "Updated content" in file_content
+    assert "Initial content" not in file_content
+
+
+def test_deprecated_alias():
+    r"""Test that FileWriteToolkit still works with deprecation warning."""
+    import warnings
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        # This should trigger a deprecation warning
+        toolkit = FileWriteToolkit()
+
+        # Check that a deprecation warning was issued
+        assert len(w) == 1
+        assert issubclass(w[0].category, DeprecationWarning)
+        assert "FileWriteToolkit is deprecated" in str(w[0].message)
+
+        # Verify the toolkit still works
+        assert toolkit is not None
+        assert hasattr(toolkit, 'write_to_file')
+        assert hasattr(toolkit, 'read_file')
+        assert hasattr(toolkit, 'edit_file')

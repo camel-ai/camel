@@ -12,14 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List, Optional
-
-from camel.toolkits import BaseToolkit, FunctionTool
+from typing import Optional
 
 from .mcp_toolkit import MCPToolkit
 
 
-class EdgeOnePagesMCPToolkit(BaseToolkit):
+class EdgeOnePagesMCPToolkit(MCPToolkit):
     r"""EdgeOnePagesMCPToolkit provides an interface for interacting with
     EdgeOne pages using the EdgeOne Pages MCP server.
 
@@ -38,32 +36,14 @@ class EdgeOnePagesMCPToolkit(BaseToolkit):
             timeout (Optional[float]): Connection timeout in seconds.
                 (default: :obj:`None`)
         """
-        super().__init__(timeout=timeout)
-
-        self._mcp_toolkit = MCPToolkit(
-            config_dict={
-                "mcpServers": {
-                    "edgeone-pages-mcp-server": {
-                        "command": "npx",
-                        "args": ["edgeone-pages-mcp"],
-                    }
+        config_dict = {
+            "mcpServers": {
+                "edgeone-pages-mcp-server": {
+                    "command": "npx",
+                    "args": ["edgeone-pages-mcp"],
                 }
-            },
-            timeout=timeout,
-        )
+            }
+        }
 
-    async def connect(self):
-        r"""Explicitly connect to the EdgeOne Pages MCP server."""
-        await self._mcp_toolkit.connect()
-
-    async def disconnect(self):
-        r"""Explicitly disconnect from the EdgeOne Pages MCP server."""
-        await self._mcp_toolkit.disconnect()
-
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of tools provided by the EdgeOnePagesMCPToolkit.
-
-        Returns:
-            List[FunctionTool]: List of available tools.
-        """
-        return self._mcp_toolkit.get_tools()
+        # Initialize parent MCPToolkit with EdgeOne Pages configuration
+        super().__init__(config_dict=config_dict, timeout=timeout)
