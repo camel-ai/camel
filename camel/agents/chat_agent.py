@@ -1448,7 +1448,6 @@ class ChatAgent(BaseAgent):
         ]
         usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
 
-        # TODO: Handle tool calls
         return ModelResponse(
             response=response,
             tool_call_requests=None,
