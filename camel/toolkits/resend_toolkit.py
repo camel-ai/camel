@@ -17,19 +17,21 @@ from typing import Dict, List, Optional
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer, api_keys_required
- 
+
 
 @MCPServer()
 class ResendToolkit(BaseToolkit):
     r"""A toolkit for sending emails using the Resend API.
 
-    This toolkit provides functionality to send emails using Resend's Python SDK.
-    It supports sending both HTML and plain text emails, with options for multiple
-    recipients, CC, BCC, reply-to addresses, and custom headers.
+    This toolkit provides functionality to send emails using Resend's
+    Python SDK.It supports sending both HTML and plain text emails,
+    with options for multiple recipients, CC, BCC, reply-to
+    addresses, and custom headers.
 
     Notes:
-        To use this toolkit, you need to set the following environment variable:
-        - RESEND_API_KEY: Your Resend API key. You can get one from 
+        To use this toolkit, you need to set the following environment
+        variable:
+        - RESEND_API_KEY: Your Resend API key. You can get one from
           https://resend.com/api-keys
 
     Example:
@@ -39,7 +41,7 @@ class ResendToolkit(BaseToolkit):
 
             # Initialize the toolkit
             toolkit = ResendToolkit()
-            
+
             # Get tools
             tools = toolkit.get_tools()
     """
@@ -67,19 +69,19 @@ class ResendToolkit(BaseToolkit):
                 domain.
             html (Optional[str]): The HTML content of the email. Either html or
                 text must be provided. (default: :obj:`None`)
-            text (Optional[str]): The plain text content of the email. Either html
-                or text must be provided. (default: :obj:`None`)
+            text (Optional[str]): The plain text content of the email. Either
+                html or text must be provided. (default: :obj:`None`)
             cc (Optional[List[str]]): List of CC recipient email addresses.
                 (default: :obj:`None`)
             bcc (Optional[List[str]]): List of BCC recipient email addresses.
                 (default: :obj:`None`)
             reply_to (Optional[str]): The reply-to email address.
                 (default: :obj:`None`)
-        tags (Optional[List[Dict[str, str]]]): List of tags to attach to the email.
-            Each tag should be a dict with 'name' and 'value' keys.
-            (default: :obj:`None`)
-        headers (Optional[Dict[str, str]]): Custom headers to include in the email.
-            (default: :obj:`None`)
+            tags (Optional[List[Dict[str, str]]]): List of tags to attach to
+                the email. Each tag should be a dict with 'name' and
+                'value' keys. (default: :obj:`None`)
+            headers (Optional[Dict[str, str]]): Custom headers to include in
+                the email.(default: :obj:`None`)
 
         Returns:
             str: A success message with the email ID if sent successfully,
@@ -101,9 +103,11 @@ class ResendToolkit(BaseToolkit):
                 )
         """
         import os
-        
+
         if not html and not text:
-            raise ValueError("Either 'html' or 'text' content must be provided")
+            raise ValueError(
+                "Either 'html' or 'text' content must be provided"
+            )
 
         try:
             import resend
@@ -144,9 +148,12 @@ class ResendToolkit(BaseToolkit):
         try:
             # Send the email
             email = resend.Emails.send(params)
-            return f"Email sent successfully. Email ID: {email.get('id', 'Unknown')}"
+            return (
+                f"Email sent successfully. "
+                f"Email ID: {email.get('id', 'Unknown')}"
+            )
         except Exception as e:
-            return f"Failed to send email: {str(e)}"
+            return f"Failed to send email: {e!s}"
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the

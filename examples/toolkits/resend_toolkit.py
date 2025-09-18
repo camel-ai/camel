@@ -15,7 +15,7 @@ from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.toolkits import ResendToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.configs import ChatGPTConfig
+
 
 def main():
     # Initialize ResendToolkit
@@ -41,8 +41,8 @@ def main():
     print("=" * 50)
     response = agent.step(
         "Send an email to user@example.com with subject 'Welcome to CAMEL AI' "
-        "and HTML content '<h1>Welcome!</h1><p>Thank you for joining CAMEL AI.</p>' "
-        "from onboarding@resend.dev"
+        "and HTML content '<h1>Welcome!</h1><p>Thank you for joining "
+        "CAMEL AI.</p>' from onboarding@resend.dev"
     )
     print(response.msg.content)
 
@@ -69,6 +69,7 @@ def main():
         "and plain text content 'Newsletter\n\nHere are this week updates.'"
     )
     print(response.msg.content)
+
 
 if __name__ == "__main__":
     main()
