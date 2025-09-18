@@ -111,5 +111,4 @@ Details:
 - Subject: Weekly Newsletter
 - Content types: HTML and Plain Text
 - Email ID: 9bd0****86b1
-
 """
