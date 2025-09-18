@@ -45,7 +45,7 @@ class TerminalBench(Harness):  # type: ignore[misc]
         self,
         output_path: Path,
         run_id: str,
-        ChatAgent: ChatAgent,
+        chat_agent: ChatAgent,
         agent_name: Optional["AgentName"] = None,
         agent_import_path: str | None = None,
         dataset_name: str | None = None,
@@ -71,7 +71,7 @@ class TerminalBench(Harness):  # type: ignore[misc]
         global_test_timeout_sec: Optional[float] = None,
         **kwargs,
     ):
-        self.ChatAgent = ChatAgent
+        self.chat_agent = ChatAgent
         super().__init__(
             output_path,
             run_id,
@@ -163,7 +163,7 @@ class TerminalBench(Harness):  # type: ignore[misc]
                 instruction=trial_handler.instruction,
                 session=session,
                 logging_dir=logging_dir,
-                camel_agent=self.ChatAgent,
+                camel_agent=self.chat_agent,
             ),
         )
         return await asyncio.wait_for(task, timeout=timeout_sec)
@@ -191,8 +191,6 @@ class TBench(BaseBenchmark):
 
         Args:
             agent: The ChatAgent to use for the benchmark.
-            on: The data split to run the benchmark on.
-            randomize: Whether to randomize the data.
             subset: Optional subset of tasks to run.
                 If None, all tasks will be run.
 
@@ -201,7 +199,7 @@ class TBench(BaseBenchmark):
         """
 
         harness = TerminalBench(
-            ChatAgent=agent,
+            chat_agent=agent,
             output_path=Path(self.save_to),
             run_id=datetime.now().strftime("%Y-%m-%d__%H-%M-%S"),
             dataset_name="terminal-bench-core".strip(),

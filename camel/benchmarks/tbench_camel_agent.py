@@ -52,7 +52,7 @@ class TerminalBenchAgent(BaseAgent):
         camel_agent: "ChatAgent",
         logging_dir: Path | None = None,
     ) -> "AgentResult":
-        """Execute a task using the Terminal Bench harness.
+        r"""Execute a task using the Terminal Bench harness.
 
         Args:
             instruction: The task instruction to execute
@@ -99,8 +99,6 @@ class TerminalBenchAgent(BaseAgent):
             TerminalToolkit(**terminal_toolkit_kwargs).get_tools()  # type: ignore[arg-type]
         )
 
-        usr_msg = f"{instruction}\n"
-
         # Get response information
         # Define a user message for creating logs directory
         usr_msg = f"Task instruction: {instruction}"
@@ -119,7 +117,7 @@ class TerminalBenchAgent(BaseAgent):
         def create_timestamped_marker_from_memory(
             records: List[dict],
         ) -> List[Tuple[float, str]]:
-            """Create a timestamped marker from memory records."""
+            r"""Create a timestamped marker from memory records."""
             results = []
             logger.info(f"Total records: {len(records)}")
             for record in records:
