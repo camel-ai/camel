@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -121,7 +121,7 @@ class ResendToolkit(BaseToolkit):
         resend.api_key = os.getenv("RESEND_API_KEY")
 
         # Prepare email parameters
-        params = {
+        params: resend.Emails.SendParams = {
             "from": from_email,
             "to": to,
             "subject": subject,
@@ -141,7 +141,7 @@ class ResendToolkit(BaseToolkit):
         if reply_to:
             params["reply_to"] = reply_to
         if tags:
-            params["tags"] = tags
+            params["tags"] = cast('list[resend.emails._tag.Tag]', tags)
         if headers:
             params["headers"] = headers
 

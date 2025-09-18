@@ -30,7 +30,8 @@ def main():
     # Create agent with ResendToolkit
     agent = ChatAgent(
         system_message="You are an email assistant. "
-        "Help send emails using the ResendToolkit.",
+        "Help send emails using the ResendToolkit.The sender email is "
+        "onboarding@resend.dev",
         model=model,
         tools=resend_toolkit.get_tools(),
     )
