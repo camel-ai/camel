@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.76a0"
+version = "0.2.76a4"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -70,7 +70,7 @@ rag = [
     "numpy>=1.2,<=2.2",
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
-    "pytidb-experimental==0.0.1.dev4",
+    "pytidb>=0.0.13",
     "faiss-cpu>=1.7.2,<2",
     "weaviate-client>=4.15.0",
     "protobuf>=6.0.0",
@@ -201,7 +201,7 @@ huggingface = [
 storage = [
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
-    "pytidb-experimental==0.0.1.dev4",
+    "pytidb>=0.0.13",
     "faiss-cpu>=1.7.2,<2",
     "neo4j>=5.18.0,<6",
     "nebula3-python==3.8.2",
@@ -361,7 +361,7 @@ all = [
     "networkx>=3.4.2,<4",
     "qdrant-client>=1.9.0,<2",
     "pymilvus>=2.4.0,<3",
-    "pytidb-experimental==0.0.1.dev4",
+    "pytidb>=0.0.13",
     "faiss-cpu>=1.7.2,<2",
     "cohere>=5.11.0,<6",
     "neo4j>=5.18.0,<6",

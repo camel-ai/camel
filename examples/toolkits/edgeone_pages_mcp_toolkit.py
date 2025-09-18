@@ -38,6 +38,8 @@ async def main():
     response = await chat_agent.astep(
         "write a hello world page",
     )
+
+    print("=== Model Response ===")
     print(response.msg.content)
 
     # disconnect from edgeone pages mcp
@@ -50,7 +52,15 @@ if __name__ == "__main__":
 
 """
 ==============================================================================
-I have created a "Hello, World!" web page for you. You can view it here: 
-https://mcp.edgeone.site/share/7D8SNj2ftY9SRtPrWZ5rW
+I've created a Hello World page for you! The page has been deployed and is now 
+live at:
+
+**https://mcp.edgeone.site/share/M-MXzJzHJ3mGc013OQNIM**
+
+The page features:
+- A modern, gradient background
+- Centered "Hello World!" heading
+- Clean, responsive design
+- A welcome message below the main heading
 ==============================================================================
 """

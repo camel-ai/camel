@@ -24,6 +24,7 @@ from openai.lib.streaming.chat import (
 )
 from pydantic import BaseModel
 
+from camel.logger import get_logger as camel_get_logger
 from camel.messages import OpenAIMessage
 from camel.types import (
     ChatCompletion,
@@ -33,6 +34,21 @@ from camel.types import (
     UnifiedModelType,
 )
 from camel.utils import BaseTokenCounter
+
+if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
+    try:
+        from traceroot import get_logger  # type: ignore[import]
+        from traceroot import trace as observe  # type: ignore[import]
+
+        logger = get_logger('base_model')
+    except ImportError:
+        from camel.utils import observe
+
+        logger = camel_get_logger('base_model')
+else:
+    from camel.utils import observe
+
+    logger = camel_get_logger('base_model')
 
 
 class ModelBackendMeta(abc.ABCMeta):
@@ -364,6 +380,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         """
         pass
 
+    @observe()
     def run(
         self,
         messages: List[OpenAIMessage],
@@ -403,7 +420,13 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         elif not tools:
             tools = None
 
+        logger.info("Running model: %s", self.model_type)
+        logger.info("Messages: %s", messages)
+        logger.info("Response format: %s", response_format)
+        logger.info("Tools: %s", tools)
+
         result = self._run(messages, response_format, tools)
+        logger.info("Result: %s", result)
 
         # Log the response if logging is enabled
         if log_path:
@@ -411,6 +434,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
         return result
 
+    @observe()
     async def arun(
         self,
         messages: List[OpenAIMessage],
@@ -448,7 +472,13 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         elif not tools:
             tools = None
 
+        logger.info("Running model: %s", self.model_type)
+        logger.info("Messages: %s", messages)
+        logger.info("Response format: %s", response_format)
+        logger.info("Tools: %s", tools)
+
         result = await self._arun(messages, response_format, tools)
+        logger.info("Result: %s", result)
 
         # Log the response if logging is enabled
         if log_path:
