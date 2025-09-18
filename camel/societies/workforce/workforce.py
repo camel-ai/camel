@@ -117,35 +117,14 @@ class Workforce(BaseNode):
 
         # Warning messages for default model usage
         if coordinator_agent_kwargs is None:
-            logger.warning(
-                "No coordinator_agent_kwargs provided. Using default "
-                "ChatAgent settings (ModelPlatformType.DEFAULT, "
-                "ModelType.DEFAULT). To customize the coordinator agent "
-                "that assigns tasks and handles failures, pass a dictionary "
-                "with ChatAgent parameters, e.g.: {'model': your_model, "
-                "'tools': your_tools, 'token_limit': 8000}. See ChatAgent "
-                "documentation for all available options."
-            )
+            logger.info("Using default coordinator agent settings. " \
+            "Pass coordinator_agent_kwargs to customize.")
         if task_agent_kwargs is None:
-            logger.warning(
-                "No task_agent_kwargs provided. Using default ChatAgent "
-                "settings (ModelPlatformType.DEFAULT, ModelType.DEFAULT). "
-                "To customize the task planning agent that "
-                "decomposes/composes tasks, pass a dictionary with "
-                "ChatAgent parameters, e.g.: {'model': your_model, "
-                "'token_limit': 16000}. See ChatAgent documentation for "
-                "all available options."
-            )
+            logger.info("Using default task agent settings. " \
+            "Pass task_agent_kwargs to customize.")
         if new_worker_agent_kwargs is None:
-            logger.warning(
-                "No new_worker_agent_kwargs provided. Workers created at "
-                "runtime will use default ChatAgent settings with "
-                "SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. "
-                "To customize runtime worker creation, pass a dictionary "
-                "with ChatAgent parameters, e.g.: {'model': your_model, "
-                "'tools': your_tools}. See ChatAgent documentation for all "
-                "available options."
-            )
+            logger.info("Using default worker settings with SearchToolkit, CodeExecutionToolkit, and ThinkingToolkit. " \
+            "Pass new_worker_agent_kwargs to customize.")
 
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
             role_name="Workforce Manager",
