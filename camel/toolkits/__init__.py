@@ -76,6 +76,7 @@ from .klavis_toolkit import KlavisToolkit
 from .aci_toolkit import ACIToolkit
 from .origene_mcp_toolkit import OrigeneToolkit
 from .playwright_mcp_toolkit import PlaywrightMCPToolkit
+from .resend_toolkit import ResendToolkit
 from .wolfram_alpha_toolkit import WolframAlphaToolkit
 from .task_planning_toolkit import TaskPlanningToolkit
 from .hybrid_browser_toolkit import HybridBrowserToolkit
@@ -155,6 +156,7 @@ __all__ = [
     'KlavisToolkit',
     'ACIToolkit',
     'PlaywrightMCPToolkit',
+    'ResendToolkit',
     'WolframAlphaToolkit',
     'BohriumToolkit',
     'OpenAIImageToolkit',  # Backward compatibility
