@@ -20,6 +20,9 @@
 
 <a href="https://trendshift.io/repositories/649" target="_blank"><img src="https://trendshift.io/api/badge/repositories/649" alt="camel-ai/camel | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
+[English](README.md) |
+[简体中文](README.zh.md)
+
 </div>
 
 
@@ -245,6 +248,13 @@ This example demonstrates how to create a `ChatAgent` using the CAMEL framework 
   ```bash
   export OPENAI_API_KEY='your_openai_api_key'
   ```
+
+   Alternatively, use a `.env` file:
+
+   ```bash
+   cp .env.example .env
+   # then edit .env and add your keys
+   ```
 
 3. **Run the following Python code:**
 
