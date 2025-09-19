@@ -11,14 +11,12 @@ class GoogleScholarToolkit(BaseToolkit):
 A toolkit for retrieving information about authors and their
 publications from Google Scholar.
 
-Attributes:
-author_identifier (Union[str, None]): The author's Google Scholar URL
-or name of the author to search for.
-is_author_name (bool): Flag to indicate if the identifier is a name.
-(default: :obj:`False`)
-scholarly (module): The scholarly module for querying Google Scholar.
-author (Optional[Dict[str, Any]]): Cached author details, allowing
-manual assignment if desired.
+**Parameters:**
+
+- **author_identifier** (Union[str, None]): The author's Google Scholar URL or name of the author to search for.
+- **is_author_name** (bool): Flag to indicate if the identifier is a name. (default: :obj:`False`)
+- **scholarly** (module): The scholarly module for querying Google Scholar.
+- **author** (Optional[Dict[str, Any]]): Cached author details, allowing manual assignment if desired.
 
 <a id="camel.toolkits.google_scholar_toolkit.GoogleScholarToolkit.__init__"></a>
 

@@ -47,7 +47,11 @@ Initialize the SingleStepEnv.
 - **dataset** (Union[StaticDataset, BaseGenerator]): Dataset to sample problems from.
 - **verifier** (BaseVerifier): Verifier used to evaluate LLM responses against ground-truth answers.
 - **timeout** (Optional[float], optional): The execution timeout in seconds. (default: :obj:`180.0`) **kwargs: Optional metadata or configuration values.
-- **Notes**: This class assumes all interactions are single-step: one question, one LLM response, one reward.
+
+**Note:**
+
+This class assumes all interactions are single-step: one question,
+one LLM response, one reward.
 
 <a id="camel.environments.single_step.SingleStepEnv._normalize_actions"></a>
 

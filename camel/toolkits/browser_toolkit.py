@@ -125,6 +125,7 @@ class BaseBrowser:
         cache_dir: Optional[str] = None,
         channel: Literal["chrome", "msedge", "chromium"] = "chromium",
         cookie_json_path: Optional[str] = None,
+        user_data_dir: Optional[str] = None,
     ):
         r"""Initialize the WebBrowser instance.
 
@@ -137,8 +138,11 @@ class BaseBrowser:
             cookie_json_path (Optional[str]): Path to a JSON file containing
                 authentication cookies and browser storage state. If provided
                 and the file exists, the browser will load this state to
-                maintain
-                authenticated sessions without requiring manual login.
+                maintain authenticated sessions. This is primarily used when
+                `user_data_dir` is not set.
+            user_data_dir (Optional[str]): The directory to store user data
+                for persistent context. If None, a fresh browser instance
+                is used without saving data. (default: :obj:`None`)
 
         Returns:
             None
@@ -156,10 +160,15 @@ class BaseBrowser:
             str
         ] = []  # stores the history of visited pages
         self.cookie_json_path = cookie_json_path
+        self.user_data_dir = user_data_dir
 
         # Set the cache directory
         self.cache_dir = "tmp/" if cache_dir is None else cache_dir
         os.makedirs(self.cache_dir, exist_ok=True)
+
+        # Create user data directory only if specified
+        if self.user_data_dir:
+            os.makedirs(self.user_data_dir, exist_ok=True)
 
         # Load the page script
         abs_dir_path = os.path.dirname(os.path.abspath(__file__))
@@ -183,27 +192,56 @@ class BaseBrowser:
 
     def init(self) -> None:
         r"""Initialize the browser."""
-        # Launch the browser, if headless is False, the browser will display
         assert self.playwright is not None
-        self.browser = self.playwright.chromium.launch(
-            headless=self.headless, channel=self.channel
+
+        browser_launch_args = [
+            "--disable-blink-features=AutomationControlled",  # Basic stealth
+        ]
+
+        user_agent_string = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/91.0.4472.124 Safari/537.36"
         )
 
-        # Check if cookie file exists before using it to maintain
-        # authenticated sessions. This prevents errors when the cookie file
-        # doesn't exist
-        assert self.browser is not None
-        if self.cookie_json_path and os.path.exists(self.cookie_json_path):
-            self.context = self.browser.new_context(
-                accept_downloads=True, storage_state=self.cookie_json_path
-            )
-        else:
-            self.context = self.browser.new_context(
+        if self.user_data_dir:
+            self.context = self.playwright.chromium.launch_persistent_context(
+                user_data_dir=self.user_data_dir,
+                headless=self.headless,
+                channel=self.channel,
                 accept_downloads=True,
+                user_agent=user_agent_string,
+                java_script_enabled=True,
+                args=browser_launch_args,
             )
-        # Create a new page
+            self.browser = None  # Not using a separate browser instance
+            if (
+                len(self.context.pages) > 0
+            ):  # Persistent context might reopen pages
+                self.page = self.context.pages[0]
+            else:
+                self.page = self.context.new_page()
+        else:
+            # Launch a fresh browser instance
+            self.browser = self.playwright.chromium.launch(
+                headless=self.headless,
+                channel=self.channel,
+                args=browser_launch_args,
+            )
+
+            new_context_kwargs: Dict[str, Any] = {
+                "accept_downloads": True,
+                "user_agent": user_agent_string,
+                "java_script_enabled": True,
+            }
+            if self.cookie_json_path and os.path.exists(self.cookie_json_path):
+                new_context_kwargs["storage_state"] = self.cookie_json_path
+
+            self.context = self.browser.new_context(**new_context_kwargs)
+            self.page = self.context.new_page()
+
         assert self.context is not None
-        self.page = self.context.new_page()
+        assert self.page is not None
 
     def clean_cache(self) -> None:
         r"""Delete the cache directory and its contents."""
@@ -690,8 +728,12 @@ class BaseBrowser:
         self._wait_for_load()
 
     def close(self):
-        assert self.browser is not None
-        self.browser.close()
+        if self.context is not None:
+            self.context.close()
+        if (
+            self.browser is not None
+        ):  # Only close browser if it was launched separately
+            self.browser.close()
         if self.playwright:
             self.playwright.stop()  # Stop playwright instance
 
@@ -781,6 +823,7 @@ class BrowserToolkit(BaseToolkit):
         planning_agent_model: Optional[BaseModelBackend] = None,
         output_language: str = "en",
         cookie_json_path: Optional[str] = None,
+        user_data_dir: Optional[str] = None,
     ):
         r"""Initialize the BrowserToolkit instance.
 
@@ -804,6 +847,9 @@ class BrowserToolkit(BaseToolkit):
                 maintain
                 authenticated sessions without requiring manual login.
                 (default: :obj:`None`)
+            user_data_dir (Optional[str]): The directory to store user data
+                for persistent context. If None, a fresh browser instance
+                is used without saving data. (default: :obj:`None`)
         """
         super().__init__()  # Call to super().__init__() added
         self.browser = BaseBrowser(
@@ -811,6 +857,7 @@ class BrowserToolkit(BaseToolkit):
             cache_dir=cache_dir,
             channel=channel,
             cookie_json_path=cookie_json_path,
+            user_data_dir=user_data_dir,
         )
         self.browser.web_agent_model = web_agent_model  # Pass model to
         # BaseBrowser instance

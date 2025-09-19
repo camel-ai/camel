@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-import json
 from typing import Dict, List, Optional
 
 from colorama import Fore
@@ -25,10 +24,12 @@ from camel.societies.workforce.prompts import (
     ROLEPLAY_PROCESS_TASK_PROMPT,
     ROLEPLAY_SUMMARIZE_PROMPT,
 )
+from camel.societies.workforce.structured_output_handler import (
+    StructuredOutputHandler,
+)
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
-from camel.tasks.task import Task, TaskState
-from camel.utils import print_text_animated
+from camel.tasks.task import Task, TaskState, is_task_result_insufficient
 
 
 class RolePlayingWorker(Worker):
@@ -48,7 +49,15 @@ class RolePlayingWorker(Worker):
             initialize the summarize agent, like the model name, etc.
             (default: :obj:`None`)
         chat_turn_limit (int): The maximum number of chat turns in the role
-            playing. (default: :obj:`3`)
+            playing. (default: :obj:`20`)
+        use_structured_output_handler (bool, optional): Whether to use the
+            structured output handler instead of native structured output.
+            When enabled, the workforce will use prompts with structured
+            output instructions and regex extraction to parse responses.
+            This ensures compatibility with agents that don't reliably
+            support native structured output. When disabled, the workforce
+            uses the native response_format parameter.
+            (default: :obj:`True`)
     """
 
     def __init__(
@@ -59,9 +68,16 @@ class RolePlayingWorker(Worker):
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
         summarize_agent_kwargs: Optional[Dict] = None,
-        chat_turn_limit: int = 3,
+        chat_turn_limit: int = 20,
+        use_structured_output_handler: bool = True,
     ) -> None:
         super().__init__(description)
+        self.use_structured_output_handler = use_structured_output_handler
+        self.structured_handler = (
+            StructuredOutputHandler()
+            if use_structured_output_handler
+            else None
+        )
         self.summarize_agent_kwargs = summarize_agent_kwargs
         summ_sys_msg = BaseMessage.make_assistant_message(
             role_name="Summarizer",
@@ -105,7 +121,8 @@ class RolePlayingWorker(Worker):
         dependency_tasks_info = self._get_dep_tasks_info(dependencies)
         prompt = ROLEPLAY_PROCESS_TASK_PROMPT.format(
             content=task.content,
-            dependency_task_info=dependency_tasks_info,
+            parent_task_content=task.parent.content if task.parent else "",
+            dependency_tasks_info=dependency_tasks_info,
             additional_info=task.additional_info,
         )
         role_play_session = RolePlaying(
@@ -141,24 +158,20 @@ class RolePlayingWorker(Worker):
                 )
                 break
 
-            print_text_animated(
+            print(
                 f"{Fore.BLUE}AI User:\n\n{user_response.msg.content}"
                 f"{Fore.RESET}\n",
-                delay=0.005,
             )
             chat_history.append(f"AI User: {user_response.msg.content}")
 
-            print_text_animated(
-                f"{Fore.GREEN}AI Assistant:{Fore.RESET}", delay=0.005
-            )
+            print(f"{Fore.GREEN}AI Assistant:{Fore.RESET}")
 
             for func_record in assistant_response.info['tool_calls']:
                 print(func_record)
 
-            print_text_animated(
+            print(
                 f"\n{Fore.GREEN}{assistant_response.msg.content}"
                 f"{Fore.RESET}\n",
-                delay=0.005,
             )
             chat_history.append(
                 f"AI Assistant: {assistant_response.msg.content}"
@@ -177,12 +190,60 @@ class RolePlayingWorker(Worker):
             chat_history=chat_history_str,
             additional_info=task.additional_info,
         )
-        response = self.summarize_agent.step(
-            prompt, response_format=TaskResult
-        )
-        result_dict = json.loads(response.msg.content)
-        task_result = TaskResult(**result_dict)
-        task.result = task_result.content
+        if self.use_structured_output_handler and self.structured_handler:
+            # Use structured output handler for prompt-based extraction
+            enhanced_prompt = (
+                self.structured_handler.generate_structured_prompt(
+                    base_prompt=prompt,
+                    schema=TaskResult,
+                    examples=[
+                        {
+                            "content": "The assistant successfully completed "
+                            "the task by...",
+                            "failed": False,
+                        }
+                    ],
+                    additional_instructions=(
+                        "Summarize the task execution based "
+                        "on the chat history, clearly indicating whether "
+                        "the task succeeded or failed."
+                    ),
+                )
+            )
+            response = self.summarize_agent.step(enhanced_prompt)
+            task_result = self.structured_handler.parse_structured_response(
+                response_text=response.msg.content if response.msg else "",
+                schema=TaskResult,
+                fallback_values={
+                    "content": "Task summarization failed",
+                    "failed": True,
+                },
+            )
+        else:
+            # Use native structured output if supported
+            response = self.summarize_agent.step(
+                prompt, response_format=TaskResult
+            )
+            if response.msg.parsed is None:
+                print(
+                    f"{Fore.RED}Error in summarization: Invalid "
+                    f"task result{Fore.RESET}"
+                )
+                task_result = TaskResult(
+                    content="Failed to generate valid task summary.",
+                    failed=True,
+                )
+            else:
+                task_result = response.msg.parsed
+
+        task.result = task_result.content  # type: ignore[union-attr]
+
+        if is_task_result_insufficient(task):
+            print(
+                f"{Fore.RED}Task {task.id}: Content validation failed - "
+                f"task marked as failed{Fore.RESET}"
+            )
+            return TaskState.FAILED
 
         print(f"Task result: {task.result}\n")
         return TaskState.DONE

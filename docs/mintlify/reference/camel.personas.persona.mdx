@@ -10,20 +10,15 @@ class Persona(BaseModel):
 
 A persona is a character in the society.
 
-Attributes:
-name (Optional[str]): Name of the persona.
-description (Optional[str]): Description of the persona.
-text_to_persona_prompt (Union[TextPrompt, str]): The prompt to convert
-text into a persona.
-persona_to_persona_prompt (Union[TextPrompt, str]): Persona-to-Persona
-interaction prompt.
-id (uuid.UUID): The unique identifier for the persona, automatically
-generated.
-_id (uuid.UUID): Internal unique identifier for the persona,
-generated lazily using `uuid.uuid4`.
-model_config (ClassVar[ConfigDict]): Configuration for the Pydantic
-model. Allows arbitrary types and includes custom JSON schema
-settings.
+**Parameters:**
+
+- **name** (Optional[str]): Name of the persona.
+- **description** (Optional[str]): Description of the persona.
+- **text_to_persona_prompt** (Union[TextPrompt, str]): The prompt to convert text into a persona.
+- **persona_to_persona_prompt** (Union[TextPrompt, str]): Persona-to-Persona interaction prompt.
+- **id** (uuid.UUID): The unique identifier for the persona, automatically generated.
+- **_id** (uuid.UUID): Internal unique identifier for the persona, generated lazily using `uuid.uuid4`.
+- **model_config** (ClassVar[ConfigDict]): Configuration for the Pydantic model. Allows arbitrary types and includes custom JSON schema settings.
 
 <a id="camel.personas.persona.Persona.id"></a>
 

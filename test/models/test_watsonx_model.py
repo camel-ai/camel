@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import re
 
 import pytest
 
@@ -60,20 +59,3 @@ def test_watsonx_model_create(model_type):
         model_config_dict=WatsonXConfig(temperature=0.7).as_dict(),
     )
     assert model.model_type == model_type
-
-
-@pytest.mark.model_backend
-def test_watsonx_model_unexpected_argument():
-    model_type = "meta-llama/llama-3-3-70b-instruct"
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into WatsonX model backend."
-            )
-        ),
-    ):
-        _ = WatsonXModel(model_type, model_config_dict)

@@ -25,14 +25,14 @@ def pptx_toolkit():
     r"""Fixture that creates a PPTXToolkit instance with a temporary
     directory."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        toolkit = PPTXToolkit(output_dir=temp_dir)
+        toolkit = PPTXToolkit(working_directory=temp_dir)
         yield toolkit
 
 
 def test_pptx_toolkit_initialization(pptx_toolkit):
     r"""Test that PPTXToolkit initializes correctly."""
     assert isinstance(pptx_toolkit, PPTXToolkit)
-    assert pptx_toolkit.output_dir.exists()
+    assert pptx_toolkit.working_directory.exists()
 
 
 def test_get_tools(pptx_toolkit):
@@ -263,7 +263,7 @@ def test_sanitize_and_resolve_filepath(pptx_toolkit):
     assert "test_file_with_spaces_special_chars_.pptx" in str(resolved_path)
 
     # Should be under the output directory
-    assert str(pptx_toolkit.output_dir) in str(resolved_path)
+    assert str(pptx_toolkit.working_directory) in str(resolved_path)
 
 
 def test_resolve_filepath_absolute_path(pptx_toolkit):

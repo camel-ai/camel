@@ -1,0 +1,40 @@
+<a id="camel.models.qianfan_model"></a>
+
+<a id="camel.models.qianfan_model.QianfanModel"></a>
+
+## QianfanModel
+
+```python
+class QianfanModel(OpenAICompatibleModel):
+```
+
+Constructor for Qianfan backend with OpenAI compatibility.
+
+**Parameters:**
+
+- **model_type** (Union[ModelType, str]): Model for which a backend is created, supported model can be found here:
+- **https**: //cloud.baidu.com/doc/QIANFANWORKSHOP/s/Wm9cvy6rl
+- **model_config_dict** (Optional[Dict[str, Any]], optional): A dictionary that will be fed into:obj:`openai.ChatCompletion.create()`. If :obj:`None`, :obj:`QianfanConfig().as_dict()` will be used. (default: :obj:`None`)
+- **api_key** (Optional[str], optional): The API key for authenticating with the Qianfan service. (default: :obj:`None`)
+- **url** (Optional[str], optional): The url to the Qianfan service. If not provided, "https://qianfan.baidubce.com/v2/chat/completions" will be used.(default: :obj:`None`)
+- **token_counter** (Optional[BaseTokenCounter], optional): Token counter to use for the model. If not provided, :obj:`OpenAITokenCounter( ModelType.GPT_4O_MINI)` will be used.
+- **timeout** (Optional[float], optional): The timeout value in seconds for API calls. If not provided, will fall back to the MODEL_TIMEOUT environment variable or default to 180 seconds. (default: :obj:`None`)
+- **max_retries** (Optional[int], optional): Maximum number of retries for API calls. (default: :obj:`None`) **kwargs: Additional model-specific parameters that will be passed to the model constructor.
+
+<a id="camel.models.qianfan_model.QianfanModel.__init__"></a>
+
+### __init__
+
+```python
+def __init__(
+    self,
+    model_type: Union[ModelType, str],
+    model_config_dict: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
+    url: Optional[str] = None,
+    token_counter: Optional[BaseTokenCounter] = None,
+    timeout: Optional[float] = None,
+    max_retries: int = 3,
+    **kwargs
+):
+```

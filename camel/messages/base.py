@@ -69,7 +69,7 @@ class BaseMessage:
         image_detail (Literal["auto", "low", "high"]): Detail level of the
             images associated with the message. (default: :obj:`auto`)
         video_detail (Literal["auto", "low", "high"]): Detail level of the
-            videos associated with the message. (default: :obj:`low`)
+            videos associated with the message. (default: :obj:`auto`)
         parsed: Optional[Union[Type[BaseModel], dict]]: Optional object which
             is parsed from the content. (default: :obj:`None`)
     """
@@ -82,7 +82,7 @@ class BaseMessage:
     video_bytes: Optional[bytes] = None
     image_list: Optional[List[Image.Image]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
-    video_detail: Literal["auto", "low", "high"] = "low"
+    video_detail: Literal["auto", "low", "high"] = "auto"
     parsed: Optional[Union[BaseModel, dict]] = None
 
     @classmethod
@@ -437,12 +437,8 @@ class BaseMessage:
         if self.image_list and len(self.image_list) > 0:
             for image in self.image_list:
                 if image.format is None:
-                    raise ValueError(
-                        f"Image's `format` is `None`, please "
-                        f"transform the `PIL.Image.Image` to  one of "
-                        f"following supported formats, such as "
-                        f"{list(OpenAIImageType)}"
-                    )
+                    # Set default format to PNG as fallback
+                    image.format = 'PNG'
 
                 image_type: str = image.format.lower()
                 if image_type not in OpenAIImageType:
@@ -537,7 +533,18 @@ class BaseMessage:
             OpenAIAssistantMessage: The converted :obj:`OpenAIAssistantMessage`
                 object.
         """
-        return {"role": "assistant", "content": self.content}
+        message_dict: Dict[str, Any] = {
+            "role": "assistant",
+            "content": self.content,
+        }
+
+        # Check if meta_dict contains tool_calls
+        if self.meta_dict and "tool_calls" in self.meta_dict:
+            tool_calls = self.meta_dict["tool_calls"]
+            if tool_calls:
+                message_dict["tool_calls"] = tool_calls
+
+        return message_dict  # type: ignore[return-value]
 
     def to_dict(self) -> Dict:
         r"""Converts the message to a dictionary.

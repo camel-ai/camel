@@ -16,6 +16,8 @@ import atexit
 import os
 import platform
 import queue
+import shutil
+import signal
 import subprocess
 import sys
 import threading
@@ -41,21 +43,32 @@ class TerminalToolkit(BaseToolkit):
 
     Args:
         timeout (Optional[float]): The timeout for terminal operations.
+            (default: :obj:`20.0`)
         shell_sessions (Optional[Dict[str, Any]]): A dictionary to store
-            shell session information. If None, an empty dictionary will be
-            used. (default: :obj:`{}`)
-        working_dir (str): The working directory for operations.
-            If specified, all execution and write operations will be restricted
-            to this directory. Read operations can access paths outside this
-            directory.(default: :obj:`"./workspace"`)
+            shell session information. If :obj:`None`, an empty dictionary
+            will be used. (default: :obj:`None`)
+        working_directory (Optional[str]): The working directory for
+            operations. If not provided, it will be determined by the
+            `CAMEL_WORKDIR` environment variable (if set). If the
+            environment variable is not set, it defaults to `./workspace`. All
+            execution and write operations will be restricted to this
+            directory. Read operations can access paths outside this
+            directory. (default: :obj:`None`)
         need_terminal (bool): Whether to create a terminal interface.
             (default: :obj:`True`)
-        use_shell_mode (bool): Whether to use shell mode for command execution.
-            (default: :obj:`True`)
+        use_shell_mode (bool): Whether to use shell mode for command
+            execution. (default: :obj:`True`)
         clone_current_env (bool): Whether to clone the current Python
-            environment.(default: :obj:`False`)
-        safe_mode (bool): Whether to enable safe mode to restrict operations.
-            (default: :obj:`True`)
+            environment. (default: :obj:`False`)
+        safe_mode (bool): Whether to enable safe mode to restrict
+            operations. (default: :obj:`True`)
+        interactive (bool): Whether to use interactive mode for shell commands,
+            connecting them to the terminal's standard input. This is useful
+            for commands that require user input, like `ssh`. Interactive mode
+            is only supported on macOS and Linux. (default: :obj:`False`)
+        log_dir (Optional[str]): Custom directory path for log files.
+            If None, logs are saved to the current working directory.
+            (default: :obj:`None`)
 
     Note:
         Most functions are compatible with Unix-based systems (macOS, Linux).
@@ -65,14 +78,18 @@ class TerminalToolkit(BaseToolkit):
 
     def __init__(
         self,
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = 20.0,
         shell_sessions: Optional[Dict[str, Any]] = None,
-        working_dir: str = "./workspace",
+        working_directory: Optional[str] = None,
         need_terminal: bool = True,
         use_shell_mode: bool = True,
         clone_current_env: bool = False,
         safe_mode: bool = True,
+        interactive: bool = False,
+        log_dir: Optional[str] = None,
     ):
+        # Store timeout before calling super().__init__
+        self._timeout = timeout
         super().__init__(timeout=timeout)
         self.shell_sessions = shell_sessions or {}
         self.os_type = platform.system()
@@ -81,18 +98,32 @@ class TerminalToolkit(BaseToolkit):
         self.terminal_ready = threading.Event()
         self.gui_thread = None
         self.safe_mode = safe_mode
-
+        self._file_initialized = False
         self.cloned_env_path = None
         self.use_shell_mode = use_shell_mode
+        self._human_takeover_active = False
+        self.interactive = interactive
+        self.log_dir = log_dir
 
         self.python_executable = sys.executable
         self.is_macos = platform.system() == 'Darwin'
+        self.initial_env_path: Optional[str] = None
+        self.initial_env_prepared = False
+        self.uv_path: Optional[str] = None
 
         atexit.register(self.__del__)
 
-        if not os.path.exists(working_dir):
-            os.makedirs(working_dir, exist_ok=True)
-        self.working_dir = os.path.abspath(working_dir)
+        if working_directory:
+            self.working_dir = os.path.abspath(working_directory)
+        else:
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                self.working_dir = os.path.abspath(camel_workdir)
+            else:
+                self.working_dir = os.path.abspath("./workspace")
+
+        if not os.path.exists(self.working_dir):
+            os.makedirs(self.working_dir, exist_ok=True)
         self._update_terminal_output(
             f"Working directory set to: {self.working_dir}\n"
         )
@@ -107,6 +138,7 @@ class TerminalToolkit(BaseToolkit):
             self._clone_current_environment()
         else:
             self.cloned_env_path = None
+            self._prepare_initial_environment()
 
         if need_terminal:
             if self.is_macos:
@@ -126,34 +158,38 @@ class TerminalToolkit(BaseToolkit):
         r"""Set up file output to replace GUI, using a fixed file to simulate
         terminal.
         """
-
-        self.log_file = os.path.join(os.getcwd(), "camel_terminal.txt")
-
-        if os.path.exists(self.log_file):
-            with open(self.log_file, "w") as f:
-                f.truncate(0)
-                f.write("CAMEL Terminal Session\n")
-                f.write("=" * 50 + "\n")
-                f.write(f"Working Directory: {os.getcwd()}\n")
-                f.write("=" * 50 + "\n\n")
+        # Use custom log directory if provided, otherwise use current directory
+        if self.log_dir:
+            # Create the log directory if it doesn't exist
+            os.makedirs(self.log_dir, exist_ok=True)
+            self.log_file = os.path.join(self.log_dir, "camel_terminal.txt")
         else:
-            with open(self.log_file, "w") as f:
-                f.write("CAMEL Terminal Session\n")
-                f.write("=" * 50 + "\n")
-                f.write(f"Working Directory: {os.getcwd()}\n")
-                f.write("=" * 50 + "\n\n")
+            self.log_file = os.path.join(os.getcwd(), "camel_terminal.txt")
 
         # Inform the user
-        logger.info(f"Terminal output redirected to: {self.log_file}")
+        logger.info(f"Terminal output will be redirected to: {self.log_file}")
 
         def file_update(output: str):
+            import sys
+
             try:
+                # For macOS/Linux file-based mode, also write to stdout
+                # to provide real-time feedback in the user's terminal.
+                sys.stdout.write(output)
+                sys.stdout.flush()
+
+                # Initialize file on first write
+                if not self._file_initialized:
+                    with open(self.log_file, "w") as f:
+                        f.write("CAMEL Terminal Session\n")
+                        f.write("=" * 50 + "\n")
+                        f.write(f"Working Directory: {os.getcwd()}\n")
+                        f.write("=" * 50 + "\n\n")
+                    self._file_initialized = True
+
                 # Directly append to the end of the file
                 with open(self.log_file, "a") as f:
                     f.write(output)
-                    # If the output does not end with a newline, add one
-                    if output and not output.endswith('\n'):
-                        f.write('\n')
                 # Ensure the agent also receives the output
                 self.agent_queue.put(output)
             except Exception as e:
@@ -165,6 +201,12 @@ class TerminalToolkit(BaseToolkit):
     def _clone_current_environment(self):
         r"""Create a new Python virtual environment."""
         try:
+            if self.cloned_env_path is None:
+                self._update_terminal_output(
+                    "Error: No environment path specified\n"
+                )
+                return
+
             if os.path.exists(self.cloned_env_path):
                 self._update_terminal_output(
                     f"Using existing environment: {self.cloned_env_path}\n"
@@ -172,22 +214,440 @@ class TerminalToolkit(BaseToolkit):
                 return
 
             self._update_terminal_output(
-                f"Creating new Python environment at:{self.cloned_env_path}\n"
+                f"Creating new Python environment at: {self.cloned_env_path}\n"
             )
 
-            venv.create(self.cloned_env_path, with_pip=True)
+            # Try to use uv if available
+            if self._ensure_uv_available():
+                # Use uv to create environment with current Python version
+                uv_command = self.uv_path if self.uv_path else "uv"
+
+                # Get current Python version
+                current_version = (
+                    f"{sys.version_info.major}.{sys.version_info.minor}"
+                )
+
+                subprocess.run(
+                    [
+                        uv_command,
+                        "venv",
+                        "--python",
+                        current_version,
+                        self.cloned_env_path,
+                    ],
+                    check=True,
+                    capture_output=True,
+                    cwd=self.working_dir,
+                    timeout=300,
+                )
+
+                # Get the python path from the new environment
+                if self.os_type == 'Windows':
+                    python_path = os.path.join(
+                        self.cloned_env_path, "Scripts", "python.exe"
+                    )
+                else:
+                    python_path = os.path.join(
+                        self.cloned_env_path, "bin", "python"
+                    )
+
+                # Install pip and setuptools using uv
+                subprocess.run(
+                    [
+                        uv_command,
+                        "pip",
+                        "install",
+                        "--python",
+                        python_path,
+                        "pip",
+                        "setuptools",
+                        "wheel",
+                    ],
+                    check=True,
+                    capture_output=True,
+                    cwd=self.working_dir,
+                    timeout=300,
+                )
+
+                self._update_terminal_output(
+                    "[UV] Cloned Python environment created successfully!\n"
+                )
+
+            else:
+                # Fallback to standard venv
+                self._update_terminal_output(
+                    "Falling back to standard venv for cloning environment\n"
+                )
+
+                # Create virtual environment with pip. On macOS, use
+                # symlinks=False to avoid dyld library loading issues
+                venv.create(
+                    self.cloned_env_path, with_pip=True, symlinks=False
+                )
+
+                # Ensure pip is properly available by upgrading it
+                if self.os_type == 'Windows':
+                    python_path = os.path.join(
+                        self.cloned_env_path, "Scripts", "python.exe"
+                    )
+                else:
+                    python_path = os.path.join(
+                        self.cloned_env_path, "bin", "python"
+                    )
+
+                # Verify python executable exists
+                if os.path.exists(python_path):
+                    # Use python -m pip to ensure pip is available
+                    subprocess.run(
+                        [
+                            python_path,
+                            "-m",
+                            "pip",
+                            "install",
+                            "--upgrade",
+                            "pip",
+                        ],
+                        check=True,
+                        capture_output=True,
+                        cwd=self.working_dir,
+                        timeout=60,
+                    )
+                    self._update_terminal_output(
+                        "New Python environment created successfully "
+                        "with pip!\n"
+                    )
+                else:
+                    self._update_terminal_output(
+                        f"Warning: Python executable not found "
+                        f"at {python_path}\n"
+                    )
+
+        except subprocess.CalledProcessError as e:
+            error_msg = e.stderr.decode() if e.stderr else str(e)
             self._update_terminal_output(
-                "New Python environment created successfully!\n"
+                f"Failed to upgrade pip in cloned environment: {error_msg}\n"
             )
-
+            logger.error(f"Failed to upgrade pip: {error_msg}")
+        except subprocess.TimeoutExpired:
+            self._update_terminal_output(
+                "Pip upgrade timed out, but environment may still be usable\n"
+            )
         except Exception as e:
             self._update_terminal_output(
                 f"Failed to create environment: {e!s}\n"
             )
             logger.error(f"Failed to create environment: {e}")
 
+    def _is_uv_environment(self) -> bool:
+        r"""Detect whether the current Python runtime is managed by uv."""
+        return (
+            "UV_CACHE_DIR" in os.environ
+            or "uv" in sys.executable
+            or shutil.which("uv") is not None
+        )
+
+    def _ensure_uv_available(self) -> bool:
+        r"""Ensure uv is available, installing it if necessary.
+
+        Returns:
+            bool: True if uv is available (either already installed or
+                successfully installed), False otherwise.
+        """
+        # Check if uv is already available
+        existing_uv = shutil.which("uv")
+        if existing_uv is not None:
+            self.uv_path = existing_uv
+            self._update_terminal_output(
+                f"uv is already available at: {self.uv_path}\n"
+            )
+            return True
+
+        try:
+            self._update_terminal_output("uv not found, installing...\n")
+
+            # Install uv using the official installer script
+            if self.os_type in ['Darwin', 'Linux']:
+                # Use curl to download and execute the installer
+                install_cmd = "curl -LsSf https://astral.sh/uv/install.sh | sh"
+                result = subprocess.run(
+                    install_cmd,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+
+                if result.returncode != 0:
+                    self._update_terminal_output(
+                        f"Failed to install uv: {result.stderr}\n"
+                    )
+                    return False
+
+                # Check if uv was installed in the expected location
+                home = os.path.expanduser("~")
+                uv_bin_path = os.path.join(home, ".cargo", "bin")
+                uv_executable = os.path.join(uv_bin_path, "uv")
+
+                if os.path.exists(uv_executable):
+                    # Store the full path to uv instead of modifying PATH
+                    self.uv_path = uv_executable
+                    self._update_terminal_output(
+                        f"uv installed successfully at: {self.uv_path}\n"
+                    )
+                    return True
+
+            elif self.os_type == 'Windows':
+                # Use PowerShell to install uv on Windows
+                install_cmd = (
+                    "powershell -ExecutionPolicy Bypass -c "
+                    "\"irm https://astral.sh/uv/install.ps1 | iex\""
+                )
+                result = subprocess.run(
+                    install_cmd,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+
+                if result.returncode != 0:
+                    self._update_terminal_output(
+                        f"Failed to install uv: {result.stderr}\n"
+                    )
+                    return False
+
+                # Check if uv was installed in the expected location on Windows
+                home = os.path.expanduser("~")
+                uv_bin_path = os.path.join(home, ".cargo", "bin")
+                uv_executable = os.path.join(uv_bin_path, "uv.exe")
+
+                if os.path.exists(uv_executable):
+                    # Store the full path to uv instead of modifying PATH
+                    self.uv_path = uv_executable
+                    self._update_terminal_output(
+                        f"uv installed successfully at: {self.uv_path}\n"
+                    )
+                    return True
+
+            self._update_terminal_output("Failed to verify uv installation\n")
+            return False
+
+        except Exception as e:
+            self._update_terminal_output(f"Error installing uv: {e!s}\n")
+            logger.error(f"Failed to install uv: {e}")
+            return False
+
+    def _prepare_initial_environment(self):
+        r"""Prepare initial environment with Python 3.10, pip, and other
+        essential tools.
+        """
+        try:
+            self.initial_env_path = os.path.join(
+                self.working_dir, ".initial_env"
+            )
+
+            if os.path.exists(self.initial_env_path):
+                self._update_terminal_output(
+                    f"Using existing initial environment"
+                    f": {self.initial_env_path}\n"
+                )
+                self.initial_env_prepared = True
+                return
+
+            self._update_terminal_output(
+                f"Preparing initial environment at: {self.initial_env_path}\n"
+            )
+
+            # Create the initial environment directory
+            os.makedirs(self.initial_env_path, exist_ok=True)
+
+            # Try to ensure uv is available and use it preferentially
+            if self._ensure_uv_available():
+                self._setup_initial_env_with_uv()
+            else:
+                # Fallback to venv if uv installation failed
+                self._update_terminal_output(
+                    "Falling back to standard venv for environment setup\n"
+                )
+                self._setup_initial_env_with_venv()
+
+            self.initial_env_prepared = True
+            self._update_terminal_output(
+                "Initial environment prepared successfully!\n"
+            )
+
+        except Exception as e:
+            self._update_terminal_output(
+                f"Failed to prepare initial environment: {e!s}\n"
+            )
+            logger.error(f"Failed to prepare initial environment: {e}")
+
+    def _setup_initial_env_with_uv(self):
+        r"""Set up initial environment using uv."""
+        if self.initial_env_path is None:
+            raise Exception("Initial environment path not set")
+
+        try:
+            # Use the stored uv path if available, otherwise fall back to "uv"
+            uv_command = self.uv_path if self.uv_path else "uv"
+
+            # Create virtual environment with Python 3.10 using uv
+            subprocess.run(
+                [
+                    uv_command,
+                    "venv",
+                    "--python",
+                    "3.10",
+                    self.initial_env_path,
+                ],
+                check=True,
+                capture_output=True,
+                cwd=self.working_dir,
+                timeout=300,
+            )
+
+            # Get the python path from the new environment
+            if self.os_type == 'Windows':
+                python_path = os.path.join(
+                    self.initial_env_path, "Scripts", "python.exe"
+                )
+            else:
+                python_path = os.path.join(
+                    self.initial_env_path, "bin", "python"
+                )
+
+            # Install essential packages using uv
+            essential_packages = [
+                "pip",
+                "setuptools",
+                "wheel",
+                "pyautogui",
+                "plotly",
+                "ffmpeg",
+            ]
+            subprocess.run(
+                [
+                    uv_command,
+                    "pip",
+                    "install",
+                    "--python",
+                    python_path,
+                    *essential_packages,
+                ],
+                check=True,
+                capture_output=True,
+                cwd=self.working_dir,
+                timeout=300,
+            )
+
+            # Check if Node.js is available (but don't install it)
+            self._check_nodejs_availability()
+
+            self._update_terminal_output(
+                "[UV] Initial environment created with Python 3.10 "
+                "and essential packages\n"
+            )
+
+        except subprocess.CalledProcessError as e:
+            error_msg = e.stderr.decode() if e.stderr else str(e)
+            raise Exception(f"UV setup failed: {error_msg}")
+        except subprocess.TimeoutExpired:
+            raise Exception("UV setup timed out after 5 minutes")
+
+    def _setup_initial_env_with_venv(self):
+        r"""Set up initial environment using standard venv."""
+        if self.initial_env_path is None:
+            raise Exception("Initial environment path not set")
+
+        try:
+            # Create virtual environment with system Python
+            # On macOS, use symlinks=False to avoid dyld library loading issues
+            venv.create(
+                self.initial_env_path,
+                with_pip=True,
+                system_site_packages=False,
+                symlinks=False,
+            )
+
+            # Get pip path
+            if self.os_type == 'Windows':
+                pip_path = os.path.join(
+                    self.initial_env_path, "Scripts", "pip.exe"
+                )
+            else:
+                pip_path = os.path.join(self.initial_env_path, "bin", "pip")
+
+            # Upgrade pip and install essential packages
+            essential_packages = [
+                "pip",
+                "setuptools",
+                "wheel",
+                "pyautogui",
+                "plotly",
+                "ffmpeg",
+            ]
+            subprocess.run(
+                [pip_path, "install", "--upgrade", *essential_packages],
+                check=True,
+                capture_output=True,
+                cwd=self.working_dir,
+                timeout=300,
+            )
+
+            # Check if Node.js is available (but don't install it)
+            self._check_nodejs_availability()
+
+            self._update_terminal_output(
+                "Initial environment created with system Python and "
+                "essential packages\n"
+            )
+
+        except subprocess.CalledProcessError as e:
+            error_msg = e.stderr.decode() if e.stderr else str(e)
+            raise Exception(f"Venv setup failed: {error_msg}")
+        except subprocess.TimeoutExpired:
+            raise Exception("Venv setup timed out after 5 minutes")
+
+    def _check_nodejs_availability(self):
+        r"""Check if Node.js is available without modifying the system."""
+        try:
+            # Check if Node.js is already available in the system
+            node_result = subprocess.run(
+                ["node", "--version"],
+                check=False,
+                capture_output=True,
+                timeout=10,
+            )
+
+            npm_result = subprocess.run(
+                ["npm", "--version"],
+                check=False,
+                capture_output=True,
+                timeout=10,
+            )
+
+            if node_result.returncode == 0 and npm_result.returncode == 0:
+                node_version = node_result.stdout.decode().strip()
+                npm_version = npm_result.stdout.decode().strip()
+                self._update_terminal_output(
+                    f"Node.js {node_version} and npm {npm_version} "
+                    "are available\n"
+                )
+            else:
+                self._update_terminal_output(
+                    "Note: Node.js not found. If needed, please install it "
+                    "manually.\n"
+                )
+
+        except Exception as e:
+            self._update_terminal_output(
+                f"Note: Could not check Node.js availability - {e}.\n"
+            )
+            logger.warning(f"Failed to check Node.js: {e}")
+
     def _create_terminal(self):
-        r"""Create a terminal GUI."""
+        r"""Create a terminal GUI. If GUI creation fails, fallback
+        to file output."""
 
         try:
             import tkinter as tk
@@ -239,7 +699,12 @@ class TerminalToolkit(BaseToolkit):
             self.root.mainloop()
 
         except Exception as e:
-            logger.error(f"Failed to create terminal: {e}")
+            logger.warning(
+                f"Failed to create GUI terminal: {e}, "
+                f"falling back to file output mode"
+            )
+            # Fallback to file output mode when GUI creation fails
+            self._setup_file_output()
             self.terminal_ready.set()
 
     def _update_terminal_output(self, output: str):
@@ -249,8 +714,9 @@ class TerminalToolkit(BaseToolkit):
             output (str): The output to be sent to the agent
         """
         try:
-            # If it is macOS , only write to file
-            if self.is_macos:
+            # If it is macOS or if we have a log_file (fallback mode),
+            # write to file
+            if self.is_macos or hasattr(self, 'log_file'):
                 if hasattr(self, 'log_file'):
                     with open(self.log_file, "a") as f:
                         f.write(output)
@@ -321,94 +787,6 @@ class TerminalToolkit(BaseToolkit):
         except Exception as e:
             logger.error(f"Failed to copy file: {e}")
             return None
-
-    def file_find_in_content(
-        self, file: str, regex: str, sudo: bool = False
-    ) -> str:
-        r"""Search for matching text within file content.
-
-        Args:
-            file (str): Absolute path of the file to search within.
-            regex (str): Regular expression pattern to match.
-            sudo (bool, optional): Whether to use sudo privileges. Defaults to
-                False. Note: Using sudo requires the process to have
-                appropriate permissions.
-
-        Returns:
-            str: Matching content found in the file.
-        """
-
-        if not os.path.exists(file):
-            return f"File not found: {file}"
-
-        if not os.path.isfile(file):
-            return f"The path provided is not a file: {file}"
-
-        command = []
-        if sudo:
-            error_msg = self._enforce_working_dir_for_execution(file)
-            if error_msg:
-                return error_msg
-            command.extend(["sudo"])
-
-        if self.os_type in ['Darwin', 'Linux']:  # macOS or Linux
-            command.extend(["grep", "-E", regex, file])
-        else:  # Windows
-            # For Windows, we could use PowerShell or findstr
-            command.extend(["findstr", "/R", regex, file])
-
-        try:
-            result = subprocess.run(
-                command, check=False, capture_output=True, text=True
-            )
-            return result.stdout.strip()
-        except subprocess.SubprocessError as e:
-            logger.error(f"Error searching in file content: {e}")
-            return f"Error: {e!s}"
-
-    def file_find_by_name(self, path: str, glob: str) -> str:
-        r"""Find files by name pattern in specified directory.
-
-        Args:
-            path (str): Absolute path of directory to search.
-            glob (str): Filename pattern using glob syntax wildcards.
-
-        Returns:
-            str: List of files matching the pattern.
-        """
-        if not os.path.exists(path):
-            return f"Directory not found: {path}"
-
-        if not os.path.isdir(path):
-            return f"The path provided is not a directory: {path}"
-
-        command = []
-        if self.os_type in ['Darwin', 'Linux']:  # macOS or Linux
-            command.extend(["find", path, "-name", glob])
-        else:  # Windows
-            # For Windows, we use dir command with /s for recursive search
-            # and /b for bare format
-
-            pattern = glob
-            file_path = os.path.join(path, pattern).replace('/', '\\')
-            command.extend(["cmd", "/c", "dir", "/s", "/b", file_path])
-
-        try:
-            result = subprocess.run(
-                command,
-                check=False,
-                capture_output=True,
-                text=True,
-                shell=False,
-            )
-
-            output = result.stdout.strip()
-            if self.os_type == 'Windows':
-                output = output.replace('\\', '/')
-            return output
-        except subprocess.SubprocessError as e:
-            logger.error(f"Error finding files by name: {e}")
-            return f"Error: {e!s}"
 
     def _sanitize_command(self, command: str, exec_dir: str) -> Tuple:
         r"""Check and modify command to ensure safety.
@@ -641,17 +1019,28 @@ class TerminalToolkit(BaseToolkit):
         return True, command
 
     def shell_exec(self, id: str, command: str) -> str:
-        r"""Execute commands. This can be used to execute various commands,
-        such as writing code, executing code, and running commands.
+        r"""Executes a shell command in a specified session.
+
+        This function creates and manages shell sessions to execute commands,
+        simulating a real terminal. The behavior depends on the toolkit's
+        interactive mode setting. Each session is identified by a unique ID.
+        If a session with the given ID does not exist, it will be created.
 
         Args:
-            id (str): Unique identifier of the target shell session.
-            command (str): Shell command to execute.
+            id (str): A unique identifier for the shell session. This is used
+                to manage multiple concurrent shell processes.
+            command (str): The shell command to be executed.
 
         Returns:
-            str: Output of the command execution or error message.
+            str: The standard output and standard error from the command. If an
+                error occurs during execution, a descriptive error message is
+                returned.
+
+        Note:
+            When the toolkit is initialized with interactive mode, commands may
+            block if they require input. In safe mode, some commands that are
+            considered dangerous are restricted.
         """
-        # Command execution must be within the working directory
         error_msg = self._enforce_working_dir_for_execution(self.working_dir)
         if error_msg:
             return error_msg
@@ -664,7 +1053,6 @@ class TerminalToolkit(BaseToolkit):
                 return f"Command rejected: {sanitized_command}"
             command = sanitized_command
 
-        # If the session does not exist, create a new session
         if id not in self.shell_sessions:
             self.shell_sessions[id] = {
                 "process": None,
@@ -673,54 +1061,86 @@ class TerminalToolkit(BaseToolkit):
             }
 
         try:
-            # First, log the command to be executed
             self._update_terminal_output(f"\n$ {command}\n")
 
             if command.startswith('python') or command.startswith('pip'):
-                if self.cloned_env_path:
+                python_path = None
+                pip_path = None
+
+                # Try cloned environment first
+                if self.cloned_env_path and os.path.exists(
+                    self.cloned_env_path
+                ):
                     if self.os_type == 'Windows':
                         base_path = os.path.join(
                             self.cloned_env_path, "Scripts"
                         )
-                        python_path = os.path.join(base_path, "python.exe")
-                        pip_path = os.path.join(base_path, "pip.exe")
+                        python_candidate = os.path.join(
+                            base_path, "python.exe"
+                        )
+                        pip_candidate = os.path.join(base_path, "pip.exe")
                     else:
                         base_path = os.path.join(self.cloned_env_path, "bin")
-                        python_path = os.path.join(base_path, "python")
-                        pip_path = os.path.join(base_path, "pip")
-                else:
+                        python_candidate = os.path.join(base_path, "python")
+                        pip_candidate = os.path.join(base_path, "pip")
+
+                    # Verify the executables exist
+                    if os.path.exists(python_candidate):
+                        python_path = python_candidate
+                        # For pip, use python -m pip if pip executable doesn't
+                        # exist
+                        if os.path.exists(pip_candidate):
+                            pip_path = pip_candidate
+                        else:
+                            pip_path = f'"{python_path}" -m pip'
+
+                # Try initial environment if cloned environment failed
+                if (
+                    python_path is None
+                    and self.initial_env_prepared
+                    and self.initial_env_path
+                    and os.path.exists(self.initial_env_path)
+                ):
+                    if self.os_type == 'Windows':
+                        base_path = os.path.join(
+                            self.initial_env_path, "Scripts"
+                        )
+                        python_candidate = os.path.join(
+                            base_path, "python.exe"
+                        )
+                        pip_candidate = os.path.join(base_path, "pip.exe")
+                    else:
+                        base_path = os.path.join(self.initial_env_path, "bin")
+                        python_candidate = os.path.join(base_path, "python")
+                        pip_candidate = os.path.join(base_path, "pip")
+
+                    # Verify the executables exist
+                    if os.path.exists(python_candidate):
+                        python_path = python_candidate
+                        # For pip, use python -m pip if pip executable doesn't
+                        # exist
+                        if os.path.exists(pip_candidate):
+                            pip_path = pip_candidate
+                        else:
+                            pip_path = f'"{python_path}" -m pip'
+
+                # Fall back to system Python
+                if python_path is None:
                     python_path = self.python_executable
                     pip_path = f'"{python_path}" -m pip'
 
-                if command.startswith('python'):
+                # Ensure we have valid paths before replacement
+                if python_path and command.startswith('python'):
                     command = command.replace('python', f'"{python_path}"', 1)
-                elif command.startswith('pip'):
+                elif pip_path and command.startswith('pip'):
                     command = command.replace('pip', pip_path, 1)
 
-            if self.is_macos:
-                # Type safe version - macOS uses subprocess.run
-                process = subprocess.run(
-                    command,
-                    shell=True,
-                    cwd=self.working_dir,
-                    capture_output=True,
-                    text=True,
-                    env=os.environ.copy(),
-                )
+            if not self.interactive:
+                # Use preexec_fn to create a new process group on Unix systems
+                preexec_fn = None
+                if self.os_type in ['Darwin', 'Linux']:
+                    preexec_fn = os.setsid
 
-                # Process the output
-                output = process.stdout or ""
-                if process.stderr:
-                    output += f"\nStderr Output:\n{process.stderr}"
-
-                # Update session information and terminal
-                self.shell_sessions[id]["output"] = output
-                self._update_terminal_output(output + "\n")
-
-                return output
-
-            else:
-                # Non-macOS systems use the Popen method
                 proc = subprocess.Popen(
                     command,
                     shell=True,
@@ -732,31 +1152,157 @@ class TerminalToolkit(BaseToolkit):
                     bufsize=1,
                     universal_newlines=True,
                     env=os.environ.copy(),
+                    preexec_fn=preexec_fn,
+                    errors='replace',  # Handle non-UTF-8 characters
                 )
 
-                # Store the process and mark it as running
                 self.shell_sessions[id]["process"] = proc
                 self.shell_sessions[id]["running"] = True
+                try:
+                    # Use the instance timeout if available
+                    stdout, stderr = proc.communicate(timeout=self.timeout)
+                    output = stdout or ""
+                    if stderr:
+                        output += f"\nStderr Output:\n{stderr}"
+                    self.shell_sessions[id]["output"] = output
+                    self.shell_sessions[id]["running"] = False
+                    self._update_terminal_output(output + "\n")
+                    return output
+                except subprocess.TimeoutExpired:
+                    # Kill the entire process group on Unix systems
+                    if self.os_type in ['Darwin', 'Linux']:
+                        try:
+                            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                            # Give it a short time to terminate
+                            stdout, stderr = proc.communicate(timeout=1)
+                        except subprocess.TimeoutExpired:
+                            # Force kill the process group
+                            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                            stdout, stderr = proc.communicate()
+                        except ProcessLookupError:
+                            # Process already dead
+                            stdout, stderr = proc.communicate()
+                    else:
+                        # Windows fallback
+                        proc.terminate()
+                        try:
+                            stdout, stderr = proc.communicate(timeout=1)
+                        except subprocess.TimeoutExpired:
+                            proc.kill()
+                            stdout, stderr = proc.communicate()
 
-                # Get output
-                stdout, stderr = proc.communicate()
+                    output = stdout or ""
+                    if stderr:
+                        output += f"\nStderr Output:\n{stderr}"
+                    error_msg = (
+                        f"\nCommand timed out after {self.timeout} seconds"
+                    )
+                    output += error_msg
+                    self.shell_sessions[id]["output"] = output
+                    self.shell_sessions[id]["running"] = False
+                    self._update_terminal_output(output + "\n")
+                    return output
 
-                output = stdout or ""
-                if stderr:
-                    output += f"\nStderr Output:\n{stderr}"
+            # Interactive mode with real-time streaming via PTY
+            if self.os_type not in ['Darwin', 'Linux']:
+                return (
+                    "Interactive mode is not supported on "
+                    f"{self.os_type} due to PTY limitations."
+                )
 
-                # Update session information and terminal
-                self.shell_sessions[id]["output"] = output
-                self._update_terminal_output(output + "\n")
+            import pty
+            import select
+            import sys
+            import termios
+            import tty
 
-                return output
+            # Fork a new process with a PTY
+            pid, master_fd = pty.fork()
+
+            if pid == 0:  # Child process
+                # Execute the command in the child process
+                try:
+                    import shlex
+
+                    parts = shlex.split(command)
+                    if not parts:
+                        logger.error("Error: Empty command")
+                        os._exit(1)
+
+                    os.chdir(self.working_dir)
+                    os.execvp(parts[0], parts)
+                except (ValueError, IndexError, OSError) as e:
+                    logger.error(f"Command execution error: {e}")
+                    os._exit(127)
+                except Exception as e:
+                    logger.error(f"Unexpected error: {e}")
+                    os._exit(1)
+
+            # Parent process
+            self.shell_sessions[id]["process_id"] = pid
+            self.shell_sessions[id]["running"] = True
+            output_lines: List[str] = []
+            original_settings = termios.tcgetattr(sys.stdin)
+
+            try:
+                tty.setraw(sys.stdin.fileno())
+
+                while True:
+                    # Check if the child process has exited
+                    try:
+                        wait_pid, status = os.waitpid(pid, os.WNOHANG)
+                        if wait_pid == pid:
+                            self.shell_sessions[id]["running"] = False
+                            break
+                    except OSError:
+                        # Process already reaped
+                        self.shell_sessions[id]["running"] = False
+                        break
+
+                    # Use select to wait for I/O on stdin or master PTY
+                    r, _, _ = select.select(
+                        [sys.stdin, master_fd], [], [], 0.1
+                    )
+
+                    if master_fd in r:
+                        try:
+                            data = os.read(master_fd, 1024)
+                            if not data:
+                                break
+                            decoded_data = data.decode(
+                                'utf-8', errors='replace'
+                            )
+                            # Echo to user's terminal and log
+                            self._update_terminal_output(decoded_data)
+                            output_lines.append(decoded_data)
+                        except OSError:
+                            break  # PTY has been closed
+
+                    if sys.stdin in r:
+                        try:
+                            user_input = os.read(sys.stdin.fileno(), 1024)
+                            if not user_input:
+                                break
+                            os.write(master_fd, user_input)
+                        except OSError:
+                            break
+
+            finally:
+                if original_settings is not None:
+                    termios.tcsetattr(
+                        sys.stdin, termios.TCSADRAIN, original_settings
+                    )
+                if master_fd:
+                    os.close(master_fd)
+
+            final_output = "".join(output_lines)
+            self.shell_sessions[id]["output"] = final_output
+            return final_output
 
         except Exception as e:
             error_msg = f"Command execution error: {e!s}"
             logger.error(error_msg)
             self._update_terminal_output(f"\nError: {error_msg}\n")
-
-            # More detailed error information
             import traceback
 
             detailed_error = traceback.format_exc()
@@ -765,14 +1311,23 @@ class TerminalToolkit(BaseToolkit):
                 f"Detailed information: {detailed_error}"
             )
 
+    # Mark shell_exec to skip automatic timeout wrapping
+    shell_exec._manual_timeout = True  # type: ignore[attr-defined]
+
     def shell_view(self, id: str) -> str:
-        r"""View the content of a specified shell session.
+        r"""View the full output history of a specified shell session.
+
+        Retrieves the accumulated output (both stdout and stderr) generated by
+        commands in the specified session since its creation. This is useful
+        for checking the complete history of a session, especially after a
+        command has finished execution.
 
         Args:
-            id (str): Unique identifier of the target shell session.
+            id (str): The unique identifier of the shell session to view.
 
         Returns:
-            str: Current output content of the shell session.
+            str: The complete output history of the shell session. Returns an
+                error message if the session is not found.
         """
         if id not in self.shell_sessions:
             return f"Shell session not found: {id}"
@@ -803,16 +1358,22 @@ class TerminalToolkit(BaseToolkit):
             return f"Error: {e!s}"
 
     def shell_wait(self, id: str, seconds: Optional[int] = None) -> str:
-        r"""Wait for the running process in a specified shell session to
-        return.
+        r"""Wait for a command to finish in a specified shell session.
+
+        Blocks execution and waits for the running process in a shell session
+        to complete. This is useful for ensuring a long-running command has
+        finished before proceeding.
 
         Args:
-            id (str): Unique identifier of the target shell session.
-            seconds (Optional[int], optional): Wait duration in seconds.
-                If None, wait indefinitely. Defaults to None.
+            id (str): The unique identifier of the target shell session.
+            seconds (Optional[int], optional): The maximum time to wait, in
+                seconds. If `None`, it waits indefinitely.
+                (default: :obj:`None`)
 
         Returns:
-            str: Final output content after waiting.
+            str: A message indicating that the process has completed, including
+                the final output. If the process times out, it returns a
+                timeout message.
         """
         if id not in self.shell_sessions:
             return f"Shell session not found: {id}"
@@ -872,13 +1433,20 @@ class TerminalToolkit(BaseToolkit):
     ) -> str:
         r"""Write input to a running process in a specified shell session.
 
+        Sends a string of text to the standard input of a running process.
+        This is useful for interacting with commands that require input. This
+        function cannot be used with a command that was started in
+        interactive mode.
+
         Args:
-            id (str): Unique identifier of the target shell session.
-            input (str): Input content to write to the process.
-            press_enter (bool): Whether to press Enter key after input.
+            id (str): The unique identifier of the target shell session.
+            input (str): The text to write to the process's stdin.
+            press_enter (bool): If `True`, a newline character (`\n`) is
+                appended to the input, simulating pressing the Enter key.
 
         Returns:
-            str: Status message indicating whether the input was sent.
+            str: A status message indicating whether the input was sent, or an
+                error message if the operation fails.
         """
         if id not in self.shell_sessions:
             return f"Shell session not found: {id}"
@@ -902,8 +1470,17 @@ class TerminalToolkit(BaseToolkit):
             if press_enter:
                 input = input + "\n"
 
-            # Write bytes to stdin
-            process.stdin.write(input.encode('utf-8'))
+            # Write to stdin - handle encoding
+            if hasattr(process.stdin, 'write'):
+                if isinstance(input, str):
+                    process.stdin.write(input)
+                else:
+                    process.stdin.write(
+                        input.decode('utf-8', errors='replace')
+                    )
+            else:
+                # Fallback for byte mode
+                process.stdin.write(input.encode('utf-8', errors='replace'))
             process.stdin.flush()
 
             return f"Input sent to process in session '{id}'"
@@ -914,11 +1491,17 @@ class TerminalToolkit(BaseToolkit):
     def shell_kill_process(self, id: str) -> str:
         r"""Terminate a running process in a specified shell session.
 
+        Forcibly stops a command that is currently running in a shell session.
+        This is useful for ending processes that are stuck, running too long,
+        or need to be cancelled.
+
         Args:
-            id (str): Unique identifier of the target shell session.
+            id (str): The unique identifier of the shell session containing the
+                process to be terminated.
 
         Returns:
-            str: Status message indicating whether the process was terminated.
+            str: A status message indicating that the process has been
+                terminated, or an error message if the operation fails.
         """
         if id not in self.shell_sessions:
             return f"Shell session not found: {id}"
@@ -953,6 +1536,171 @@ class TerminalToolkit(BaseToolkit):
             logger.error(f"Error killing process: {e}")
             return f"Error killing process: {e!s}"
 
+    def ask_user_for_help(self, id: str) -> str:
+        r"""Pause the agent and ask a human for help with a command.
+
+        This function should be used when the agent is stuck and requires
+        manual intervention, such as solving a CAPTCHA or debugging a complex
+        issue. It pauses the agent's execution and allows a human to take
+        control of a specified shell session. The human can execute one
+        command to resolve the issue, and then control is returned to the
+        agent.
+
+        Args:
+            id (str): The identifier of the shell session for the human to
+                interact with. If the session does not exist, it will be
+                created.
+
+        Returns:
+            str: A status message indicating that the human has finished,
+                including the number of commands executed. If the takeover
+                times out or fails, an error message is returned.
+        """
+        # Input validation
+        if not id or not isinstance(id, str):
+            return "Error: Invalid session ID provided"
+
+        # Prevent concurrent human takeovers
+        if (
+            hasattr(self, '_human_takeover_active')
+            and self._human_takeover_active
+        ):
+            return "Error: Human takeover already in progress"
+
+        try:
+            self._human_takeover_active = True
+
+            # Ensure the session exists so that the human can reuse it
+            if id not in self.shell_sessions:
+                self.shell_sessions[id] = {
+                    "process": None,
+                    "output": "",
+                    "running": False,
+                }
+
+            command_count = 0
+            error_occurred = False
+
+            # Create clear banner message for user
+            takeover_banner = (
+                f"\n{'='*60}\n"
+                f"🤖 CAMEL Agent needs human help! Session: {id}\n"
+                f"📂 Working directory: {self.working_dir}\n"
+                f"{'='*60}\n"
+                f"💡 Type commands or '/exit' to return control to agent.\n"
+                f"{'='*60}\n"
+            )
+
+            # Print once to console for immediate visibility
+            print(takeover_banner, flush=True)
+            # Log for terminal output tracking
+            self._update_terminal_output(takeover_banner)
+
+            # Helper flag + event for coordination
+            done_event = threading.Event()
+
+            def _human_loop() -> None:
+                r"""Blocking loop that forwards human input to shell_exec."""
+                nonlocal command_count, error_occurred
+                try:
+                    while True:
+                        try:
+                            # Clear, descriptive prompt for user input
+                            user_cmd = input(f"🧑‍💻 [{id}]> ")
+                            if (
+                                user_cmd.strip()
+                            ):  # Only count non-empty commands
+                                command_count += 1
+                        except EOFError:
+                            # e.g. Ctrl_D / stdin closed, treat as exit.
+                            break
+                        except (KeyboardInterrupt, Exception) as e:
+                            logger.warning(
+                                f"Input error during human takeover: {e}"
+                            )
+                            error_occurred = True
+                            break
+
+                        if user_cmd.strip() in {"/exit", "exit", "quit"}:
+                            break
+
+                        try:
+                            exec_result = self.shell_exec(id, user_cmd)
+                            # Show the result immediately to the user
+                            if exec_result.strip():
+                                print(exec_result)
+                            logger.info(
+                                f"Human command executed: {user_cmd[:50]}..."
+                            )
+                            # Auto-exit after successful command
+                            break
+                        except Exception as e:
+                            error_msg = f"Error executing command: {e}"
+                            logger.error(f"Error executing human command: {e}")
+                            print(error_msg)  # Show error to user immediately
+                            self._update_terminal_output(f"{error_msg}\n")
+                            error_occurred = True
+
+                except Exception as e:
+                    logger.error(f"Unexpected error in human loop: {e}")
+                    error_occurred = True
+                finally:
+                    # Notify completion clearly
+                    finish_msg = (
+                        f"\n{'='*60}\n"
+                        f"✅ Human assistance completed! "
+                        f"Commands: {command_count}\n"
+                        f"🤖 Returning control to CAMEL agent...\n"
+                        f"{'='*60}\n"
+                    )
+                    print(finish_msg, flush=True)
+                    self._update_terminal_output(finish_msg)
+                    done_event.set()
+
+            # Start interactive thread (non-daemon for proper cleanup)
+            thread = threading.Thread(target=_human_loop, daemon=False)
+            thread.start()
+
+            # Block until human signals completion with timeout
+            if done_event.wait(timeout=600):  # 10 minutes timeout
+                thread.join(timeout=10)  # Give thread time to cleanup
+
+                # Generate detailed status message
+                status = "completed successfully"
+                if error_occurred:
+                    status = "completed with some errors"
+
+                result_msg = (
+                    f"Human assistance {status} for session '{id}'. "
+                    f"Total commands executed: {command_count}. "
+                    f"Working directory: {self.working_dir}"
+                )
+                logger.info(result_msg)
+                return result_msg
+            else:
+                timeout_msg = (
+                    f"Human takeover for session '{id}' timed out after 10 "
+                    "minutes"
+                )
+                logger.warning(timeout_msg)
+                return timeout_msg
+
+        except Exception as e:
+            error_msg = f"Error during human takeover for session '{id}': {e}"
+            logger.error(error_msg)
+            # Notify user of the error clearly
+            error_banner = (
+                f"\n{'='*60}\n"
+                f"❌ Error in human takeover! Session: {id}\n"
+                f"❗ {e}\n"
+                f"{'='*60}\n"
+            )
+            print(error_banner, flush=True)
+            return error_msg
+        finally:
+            # Always reset the flag
+            self._human_takeover_active = False
+
     def __del__(self):
         r"""Clean up resources when the object is being destroyed.
         Terminates all running processes and closes any open file handles.
@@ -961,51 +1709,65 @@ class TerminalToolkit(BaseToolkit):
         logger.info("TerminalToolkit cleanup initiated")
 
         # Clean up all processes in shell sessions
-        for session_id, session in self.shell_sessions.items():
-            process = session.get("process")
-            if process is not None and session.get("running", False):
-                try:
-                    logger.info(
-                        f"Terminating process in session '{session_id}'"
-                    )
-
-                    # Close process input/output streams if open
-                    if (
-                        hasattr(process, 'stdin')
-                        and process.stdin
-                        and not process.stdin.closed
-                    ):
-                        process.stdin.close()
-
-                    # Terminate the process
-                    process.terminate()
+        if hasattr(self, 'shell_sessions'):
+            for session_id, session in self.shell_sessions.items():
+                process = session.get("process")
+                if process is not None and session.get("running", False):
                     try:
-                        # Give the process a short time to terminate gracefully
-                        process.wait(timeout=3)
-                    except subprocess.TimeoutExpired:
-                        # Force kill if the process doesn't terminate
-                        # gracefully
-                        logger.warning(
-                            f"Process in session '{session_id}' did not "
-                            f"terminate gracefully, forcing kill"
+                        logger.info(
+                            f"Terminating process in session '{session_id}'"
                         )
-                        process.kill()
 
-                    # Mark the session as not running
-                    session["running"] = False
+                        # Close process input/output streams if open
+                        if (
+                            hasattr(process, 'stdin')
+                            and process.stdin
+                            and not process.stdin.closed
+                        ):
+                            process.stdin.close()
 
-                except Exception as e:
-                    logger.error(
-                        f"Error cleaning up process in session "
-                        f"'{session_id}': {e}"
-                    )
+                        # Terminate the process
+                        process.terminate()
+                        try:
+                            # Give the process a short time to terminate
+                            # gracefully
+                            process.wait(timeout=3)
+                        except subprocess.TimeoutExpired:
+                            # Force kill if the process doesn't terminate
+                            # gracefully
+                            logger.warning(
+                                f"Process in session '{session_id}' did not "
+                                f"terminate gracefully, forcing kill"
+                            )
+                            process.kill()
 
-        # Close file output if it exists
+                        # Mark the session as not running
+                        session["running"] = False
+
+                    except Exception as e:
+                        logger.error(
+                            f"Error cleaning up process in session "
+                            f"'{session_id}': {e}"
+                        )
+
+        # Clean up file output if it exists
         if hasattr(self, 'log_file') and self.is_macos:
             try:
                 logger.info(f"Final terminal log saved to: {self.log_file}")
             except Exception as e:
                 logger.error(f"Error logging file information: {e}")
+
+        # Clean up initial environment if it exists
+        if hasattr(self, 'initial_env_path') and self.initial_env_path:
+            try:
+                if os.path.exists(self.initial_env_path):
+                    shutil.rmtree(self.initial_env_path)
+                    logger.info(
+                        f"Cleaned up initial environment: "
+                        f"{self.initial_env_path}"
+                    )
+            except Exception as e:
+                logger.error(f"Error cleaning up initial environment: {e}")
 
         # Clean up GUI resources if they exist
         if hasattr(self, 'root') and self.root:
@@ -1027,11 +1789,10 @@ class TerminalToolkit(BaseToolkit):
                 functions in the toolkit.
         """
         return [
-            FunctionTool(self.file_find_in_content),
-            FunctionTool(self.file_find_by_name),
             FunctionTool(self.shell_exec),
             FunctionTool(self.shell_view),
             FunctionTool(self.shell_wait),
             FunctionTool(self.shell_write_to_process),
             FunctionTool(self.shell_kill_process),
+            FunctionTool(self.ask_user_for_help),
         ]

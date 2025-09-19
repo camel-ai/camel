@@ -11,11 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel
 
-from camel.configs import REKA_API_PARAMS, RekaConfig
+from camel.configs import RekaConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -24,7 +25,18 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
+    get_current_agent_session_id,
+    update_current_observation,
+    update_langfuse_trace,
 )
+
+if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
+    try:
+        from langfuse.decorators import observe
+    except ImportError:
+        from camel.utils import observe
+else:
+    from camel.utils import observe
 
 if TYPE_CHECKING:
     from reka.types import ChatMessage, ChatResponse
@@ -60,6 +72,8 @@ class RekaModel(BaseModelBackend):
             API calls. If not provided, will fall back to the MODEL_TIMEOUT
             environment variable or default to 180 seconds.
             (default: :obj:`None`)
+        **kwargs (Any): Additional arguments to pass to the client
+            initialization.
     """
 
     @api_keys_required(
@@ -76,6 +90,7 @@ class RekaModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
+        **kwargs: Any,
     ) -> None:
         from reka.client import AsyncReka, Reka
 
@@ -85,13 +100,25 @@ class RekaModel(BaseModelBackend):
         url = url or os.environ.get("REKA_API_BASE_URL")
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter, timeout
+            model_type,
+            model_config_dict,
+            api_key,
+            url,
+            token_counter,
+            timeout,
+            **kwargs,
         )
         self._client = Reka(
-            api_key=self._api_key, base_url=self._url, timeout=self._timeout
+            api_key=self._api_key,
+            base_url=self._url,
+            timeout=self._timeout,
+            **kwargs,
         )
         self._async_client = AsyncReka(
-            api_key=self._api_key, base_url=self._url, timeout=self._timeout
+            api_key=self._api_key,
+            base_url=self._url,
+            timeout=self._timeout,
+            **kwargs,
         )
 
     def _convert_reka_to_openai_response(
@@ -188,6 +215,7 @@ class RekaModel(BaseModelBackend):
             )
         return self._token_counter
 
+    @observe(as_type="generation")
     async def _arun(
         self,
         messages: List[OpenAIMessage],
@@ -203,6 +231,29 @@ class RekaModel(BaseModelBackend):
         Returns:
             ChatCompletion.
         """
+
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "source": "camel",
+                    "agent_id": agent_session_id,
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
         response = await self._async_client.chat.create(
@@ -212,6 +263,10 @@ class RekaModel(BaseModelBackend):
         )
 
         openai_response = self._convert_reka_to_openai_response(response)
+
+        update_current_observation(
+            usage=openai_response.usage,
+        )
 
         # Add AgentOps LLM Event tracking
         if LLMEvent:
@@ -229,6 +284,7 @@ class RekaModel(BaseModelBackend):
 
         return openai_response
 
+    @observe(as_type="generation")
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -244,6 +300,30 @@ class RekaModel(BaseModelBackend):
         Returns:
             ChatCompletion.
         """
+
+        update_current_observation(
+            input={
+                "messages": messages,
+                "tools": tools,
+            },
+            model=str(self.model_type),
+            model_parameters=self.model_config_dict,
+        )
+
+        # Update Langfuse trace with current agent session and metadata
+        agent_session_id = get_current_agent_session_id()
+        if agent_session_id:
+            update_langfuse_trace(
+                session_id=agent_session_id,
+                metadata={
+                    "source": "camel",
+                    "agent_id": agent_session_id,
+                    "agent_type": "camel_chat_agent",
+                    "model_type": str(self.model_type),
+                },
+                tags=["CAMEL-AI", str(self.model_type)],
+            )
+
         reka_messages = self._convert_openai_to_reka_messages(messages)
 
         response = self._client.chat.create(
@@ -253,6 +333,10 @@ class RekaModel(BaseModelBackend):
         )
 
         openai_response = self._convert_reka_to_openai_response(response)
+
+        update_current_observation(
+            usage=openai_response.usage,
+        )
 
         # Add AgentOps LLM Event tracking
         if LLMEvent:
@@ -269,21 +353,6 @@ class RekaModel(BaseModelBackend):
             record(llm_event)
 
         return openai_response
-
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Reka API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to Reka API.
-        """
-        for param in self.model_config_dict:
-            if param not in REKA_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Reka model backend."
-                )
 
     @property
     def stream(self) -> bool:

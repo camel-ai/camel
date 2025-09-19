@@ -12,8 +12,8 @@ repos:
     hooks:
       - id: mypy
         name: Check mypy
-        entry: mypy --namespace-packages -p camel -p test -p apps
-        language: python
+        entry: uv run mypy --namespace-packages -p camel -p test -p apps
+        language: system
         types: [python]
         pass_filenames: false
         require_serial: true
@@ -33,6 +33,6 @@ repos:
     rev: v2.4.1
     hooks:
     - id: codespell
-      exclude: ^(examples/usecases/)  # Ignore files under examples/usecases
+      exclude: ^(examples/usecases/|docs/cookbooks/)  # Ignore files under examples/usecases and docs/cookbooks
       additional_dependencies:
       - tomli  # for python_version < '3.11'

@@ -79,7 +79,7 @@ camel.
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.MISTRAL,
-    model_type=ModelType.MISTRAL_MEDIUM_3,
+    model_type=ModelType.MISTRAL_MEDIUM_3_1,
     model_config_dict=MistralConfig(temperature=0.0).as_dict(),
 )
 
@@ -100,5 +100,56 @@ print(response.msgs[0].content)
 Hello, CAMEL AI! It's great to see an open-source community dedicated to the 
 study of autonomous and communicative agents. I'm excited to learn more about 
 your work and how I can assist you. How can I help you today?
+===============================================================================
+"""
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.MISTRAL,
+    model_type=ModelType.MISTRAL_MEDIUM_3_1,
+    model_config_dict=MistralConfig(temperature=0.0).as_dict(),
+)
+
+# Define system message
+sys_msg = "You are a helpful assistant."
+
+# Set agent
+camel_agent = ChatAgent(system_message=sys_msg, model=model)
+
+user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
+    study of autonomous and communicative agents."""
+
+# Get response information
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+"""
+===============================================================================
+Hello, CAMEL AI! It's great to see an open-source community dedicated to the 
+study of autonomous and communicative agents. I'm excited to learn more about 
+your work and how I can assist you. How can I help you today?
+===============================================================================
+"""
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.MISTRAL,
+    model_type=ModelType.MISTRAL_SMALL_3_2,
+    model_config_dict=MistralConfig(temperature=0.0).as_dict(),
+)
+
+# Define system message
+sys_msg = "You are a helpful assistant."
+
+# Set agent
+camel_agent = ChatAgent(system_message=sys_msg, model=model)
+
+user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
+    study of autonomous and communicative agents."""
+
+# Get response information
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+"""
+===============================================================================
+Hello to CAMEL AI, an open-source community focused on the research of 
+autonomous and communicative agents!
 ===============================================================================
 """

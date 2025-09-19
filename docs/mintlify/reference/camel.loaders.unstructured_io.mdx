@@ -71,6 +71,15 @@ Loads a file or a URL and parses its contents into elements.
   Union[List[Element],None]: List of elements after parsing the file
 or URL if success.
 
+**Note:**
+
+Supported file types:
+"csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
+"org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
+
+References:
+https://unstructured-io.github.io/unstructured/
+
 <a id="camel.loaders.unstructured_io.UnstructuredIO.parse_bytes"></a>
 
 ### parse_bytes
@@ -90,7 +99,8 @@ Parses a bytes stream and converts its contents into elements.
   Union[List[Element], None]: List of elements after parsing the file
 if successful, otherwise `None`.
 
-Notes:
+**Note:**
+
 Supported file types:
 "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
 "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
@@ -130,6 +140,16 @@ operations is applied. These defaults including operations
 **Returns:**
 
   str: The cleaned text.
+
+**Note:**
+
+The 'options' dictionary keys must correspond to valid cleaning
+brick names from the `unstructured` library.
+Each brick's parameters must be provided in a nested dictionary
+as the value for the key.
+
+References:
+https://unstructured-io.github.io/unstructured/
 
 <a id="camel.loaders.unstructured_io.UnstructuredIO.extract_data_from_text"></a>
 

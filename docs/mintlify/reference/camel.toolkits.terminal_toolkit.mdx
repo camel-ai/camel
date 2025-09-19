@@ -16,14 +16,21 @@ managing terminal sessions.
 
 **Parameters:**
 
-- **timeout** (Optional[float]): The timeout for terminal operations.
-- **shell_sessions** (Optional[Dict[str, Any]]): A dictionary to store shell session information. If None, an empty dictionary will be used. (default: :obj:`{}`)
-- **working_dir** (str): The working directory for operations. If specified, all execution and write operations will be restricted to this directory. Read operations can access paths outside this directory.(default: :obj:`"./workspace"`)
+- **timeout** (Optional[float]): The timeout for terminal operations. (default: :obj:`20.0`)
+- **shell_sessions** (Optional[Dict[str, Any]]): A dictionary to store shell session information. If :obj:`None`, an empty dictionary will be used. (default: :obj:`None`)
+- **working_directory** (Optional[str]): The working directory for operations. If not provided, it will be determined by the `CAMEL_WORKDIR` environment variable (if set). If the environment variable is not set, it defaults to `./workspace`. All execution and write operations will be restricted to this directory. Read operations can access paths outside this directory. (default: :obj:`None`)
 - **need_terminal** (bool): Whether to create a terminal interface. (default: :obj:`True`)
 - **use_shell_mode** (bool): Whether to use shell mode for command execution. (default: :obj:`True`)
-- **clone_current_env** (bool): Whether to clone the current Python environment.(default: :obj:`False`)
+- **clone_current_env** (bool): Whether to clone the current Python environment. (default: :obj:`False`)
 - **safe_mode** (bool): Whether to enable safe mode to restrict operations. (default: :obj:`True`)
-- **Note**: Most functions are compatible with Unix-based systems (macOS, Linux). For Windows compatibility, additional implementation details are needed.
+- **interactive** (bool): Whether to use interactive mode for shell commands, connecting them to the terminal's standard input. This is useful for commands that require user input, like `ssh`. Interactive mode is only supported on macOS and Linux. (default: :obj:`False`)
+- **log_dir** (Optional[str]): Custom directory path for log files. If None, logs are saved to the current working directory. (default: :obj:`None`)
+
+**Note:**
+
+Most functions are compatible with Unix-based systems (macOS, Linux).
+For Windows compatibility, additional implementation details are
+needed.
 
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit.__init__"></a>
 
@@ -32,13 +39,15 @@ managing terminal sessions.
 ```python
 def __init__(
     self,
-    timeout: Optional[float] = None,
+    timeout: Optional[float] = 20.0,
     shell_sessions: Optional[Dict[str, Any]] = None,
-    working_dir: str = './workspace',
+    working_directory: Optional[str] = None,
     need_terminal: bool = True,
     use_shell_mode: bool = True,
     clone_current_env: bool = False,
-    safe_mode: bool = True
+    safe_mode: bool = True,
+    interactive: bool = False,
+    log_dir: Optional[str] = None
 ):
 ```
 
@@ -63,6 +72,70 @@ def _clone_current_environment(self):
 
 Create a new Python virtual environment.
 
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit._is_uv_environment"></a>
+
+### _is_uv_environment
+
+```python
+def _is_uv_environment(self):
+```
+
+Detect whether the current Python runtime is managed by uv.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit._ensure_uv_available"></a>
+
+### _ensure_uv_available
+
+```python
+def _ensure_uv_available(self):
+```
+
+**Returns:**
+
+  bool: True if uv is available (either already installed or
+successfully installed), False otherwise.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit._prepare_initial_environment"></a>
+
+### _prepare_initial_environment
+
+```python
+def _prepare_initial_environment(self):
+```
+
+Prepare initial environment with Python 3.10, pip, and other
+essential tools.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit._setup_initial_env_with_uv"></a>
+
+### _setup_initial_env_with_uv
+
+```python
+def _setup_initial_env_with_uv(self):
+```
+
+Set up initial environment using uv.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit._setup_initial_env_with_venv"></a>
+
+### _setup_initial_env_with_venv
+
+```python
+def _setup_initial_env_with_venv(self):
+```
+
+Set up initial environment using standard venv.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit._check_nodejs_availability"></a>
+
+### _check_nodejs_availability
+
+```python
+def _check_nodejs_availability(self):
+```
+
+Check if Node.js is available without modifying the system.
+
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit._create_terminal"></a>
 
 ### _create_terminal
@@ -71,7 +144,8 @@ Create a new Python virtual environment.
 def _create_terminal(self):
 ```
 
-Create a terminal GUI.
+Create a terminal GUI. If GUI creation fails, fallback
+to file output.
 
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit._update_terminal_output"></a>
 
@@ -145,50 +219,6 @@ Copy external file to working directory.
   Optional[str]: New path after copying to the working directory,
 returns None on failure
 
-<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.file_find_in_content"></a>
-
-### file_find_in_content
-
-```python
-def file_find_in_content(
-    self,
-    file: str,
-    regex: str,
-    sudo: bool = False
-):
-```
-
-Search for matching text within file content.
-
-**Parameters:**
-
-- **file** (str): Absolute path of the file to search within.
-- **regex** (str): Regular expression pattern to match.
-- **sudo** (bool, optional): Whether to use sudo privileges. Defaults to False. Note: Using sudo requires the process to have appropriate permissions.
-
-**Returns:**
-
-  str: Matching content found in the file.
-
-<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.file_find_by_name"></a>
-
-### file_find_by_name
-
-```python
-def file_find_by_name(self, path: str, glob: str):
-```
-
-Find files by name pattern in specified directory.
-
-**Parameters:**
-
-- **path** (str): Absolute path of directory to search.
-- **glob** (str): Filename pattern using glob syntax wildcards.
-
-**Returns:**
-
-  str: List of files matching the pattern.
-
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit._sanitize_command"></a>
 
 ### _sanitize_command
@@ -216,17 +246,29 @@ Check and modify command to ensure safety.
 def shell_exec(self, id: str, command: str):
 ```
 
-Execute commands. This can be used to execute various commands,
-such as writing code, executing code, and running commands.
+Executes a shell command in a specified session.
+
+This function creates and manages shell sessions to execute commands,
+simulating a real terminal. The behavior depends on the toolkit's
+interactive mode setting. Each session is identified by a unique ID.
+If a session with the given ID does not exist, it will be created.
 
 **Parameters:**
 
-- **id** (str): Unique identifier of the target shell session.
-- **command** (str): Shell command to execute.
+- **id** (str): A unique identifier for the shell session. This is used to manage multiple concurrent shell processes.
+- **command** (str): The shell command to be executed.
 
 **Returns:**
 
-  str: Output of the command execution or error message.
+  str: The standard output and standard error from the command. If an
+error occurs during execution, a descriptive error message is
+returned.
+
+**Note:**
+
+When the toolkit is initialized with interactive mode, commands may
+block if they require input. In safe mode, some commands that are
+considered dangerous are restricted.
 
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit.shell_view"></a>
 
@@ -236,15 +278,21 @@ such as writing code, executing code, and running commands.
 def shell_view(self, id: str):
 ```
 
-View the content of a specified shell session.
+View the full output history of a specified shell session.
+
+Retrieves the accumulated output (both stdout and stderr) generated by
+commands in the specified session since its creation. This is useful
+for checking the complete history of a session, especially after a
+command has finished execution.
 
 **Parameters:**
 
-- **id** (str): Unique identifier of the target shell session.
+- **id** (str): The unique identifier of the shell session to view.
 
 **Returns:**
 
-  str: Current output content of the shell session.
+  str: The complete output history of the shell session. Returns an
+error message if the session is not found.
 
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit.shell_wait"></a>
 
@@ -254,17 +302,22 @@ View the content of a specified shell session.
 def shell_wait(self, id: str, seconds: Optional[int] = None):
 ```
 
-Wait for the running process in a specified shell session to
-return.
+Wait for a command to finish in a specified shell session.
+
+Blocks execution and waits for the running process in a shell session
+to complete. This is useful for ensuring a long-running command has
+finished before proceeding.
 
 **Parameters:**
 
-- **id** (str): Unique identifier of the target shell session.
-- **seconds** (Optional[int], optional): Wait duration in seconds. If None, wait indefinitely. Defaults to None.
+- **id** (str): The unique identifier of the target shell session.
+- **seconds** (Optional[int], optional): The maximum time to wait, in seconds. If `None`, it waits indefinitely. (default: :obj:`None`)
 
 **Returns:**
 
-  str: Final output content after waiting.
+  str: A message indicating that the process has completed, including
+the final output. If the process times out, it returns a
+timeout message.
 
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit.shell_write_to_process"></a>
 
@@ -281,15 +334,21 @@ def shell_write_to_process(
 
 Write input to a running process in a specified shell session.
 
+Sends a string of text to the standard input of a running process.
+This is useful for interacting with commands that require input. This
+function cannot be used with a command that was started in
+interactive mode.
+
 **Parameters:**
 
-- **id** (str): Unique identifier of the target shell session.
-- **input** (str): Input content to write to the process.
-- **press_enter** (bool): Whether to press Enter key after input.
+- **id** (str): The unique identifier of the target shell session.
+- **input** (str): The text to write to the process's stdin.
+- **press_enter** (bool): If `True`, a newline character (`\n`) is appended to the input, simulating pressing the Enter key.
 
 **Returns:**
 
-  str: Status message indicating whether the input was sent.
+  str: A status message indicating whether the input was sent, or an
+error message if the operation fails.
 
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit.shell_kill_process"></a>
 
@@ -301,13 +360,45 @@ def shell_kill_process(self, id: str):
 
 Terminate a running process in a specified shell session.
 
+Forcibly stops a command that is currently running in a shell session.
+This is useful for ending processes that are stuck, running too long,
+or need to be cancelled.
+
 **Parameters:**
 
-- **id** (str): Unique identifier of the target shell session.
+- **id** (str): The unique identifier of the shell session containing the process to be terminated.
 
 **Returns:**
 
-  str: Status message indicating whether the process was terminated.
+  str: A status message indicating that the process has been
+terminated, or an error message if the operation fails.
+
+<a id="camel.toolkits.terminal_toolkit.TerminalToolkit.ask_user_for_help"></a>
+
+### ask_user_for_help
+
+```python
+def ask_user_for_help(self, id: str):
+```
+
+Pause the agent and ask a human for help with a command.
+
+This function should be used when the agent is stuck and requires
+manual intervention, such as solving a CAPTCHA or debugging a complex
+issue. It pauses the agent's execution and allows a human to take
+control of a specified shell session. The human can execute one
+command to resolve the issue, and then control is returned to the
+agent.
+
+**Parameters:**
+
+- **id** (str): The identifier of the shell session for the human to interact with. If the session does not exist, it will be created.
+
+**Returns:**
+
+  str: A status message indicating that the human has finished,
+including the number of commands executed. If the takeover
+times out or fails, an error message is returned.
 
 <a id="camel.toolkits.terminal_toolkit.TerminalToolkit.__del__"></a>
 

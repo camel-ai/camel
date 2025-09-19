@@ -156,7 +156,12 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
         if (name := param.arg_name) in parameters_dict["properties"] and (
             description := param.description
         ):
-            parameters_dict["properties"][name]["description"] = description
+            # OpenAI does not allow descriptions on properties that use $ref.
+            # To avoid schema errors, we only add the description if "$ref" is
+            # not present.
+            prop = parameters_dict["properties"][name]
+            if "$ref" not in prop:
+                prop["description"] = description
 
     short_description = docstring.short_description or ""
     long_description = docstring.long_description or ""
@@ -190,7 +195,9 @@ def sanitize_and_enforce_required(parameters_dict):
     r"""Cleans and updates the function schema to conform with OpenAI's
     requirements:
     - Removes invalid 'default' fields from the parameters schema.
-    - Ensures all fields or function parameters are marked as required.
+    - Ensures all fields are marked as required or have null type for optional
+    fields.
+    - Recursively adds additionalProperties: false to all nested objects.
 
     Args:
         parameters_dict (dict): The dictionary representing the function
@@ -198,8 +205,38 @@ def sanitize_and_enforce_required(parameters_dict):
 
     Returns:
         dict: The updated dictionary with invalid defaults removed and all
-            fields set as required.
+            fields properly configured for strict mode.
     """
+
+    def _add_additional_properties_false(obj):
+        r"""Recursively add additionalProperties: false to all objects."""
+        if isinstance(obj, dict):
+            if (
+                obj.get("type") == "object"
+                and "additionalProperties" not in obj
+            ):
+                obj["additionalProperties"] = False
+
+            # Process nested structures
+            for key, value in obj.items():
+                if key == "properties" and isinstance(value, dict):
+                    for prop_value in value.values():
+                        _add_additional_properties_false(prop_value)
+                elif key in [
+                    "items",
+                    "allOf",
+                    "oneOf",
+                    "anyOf",
+                ] and isinstance(value, (dict, list)):
+                    if isinstance(value, dict):
+                        _add_additional_properties_false(value)
+                    elif isinstance(value, list):
+                        for item in value:
+                            _add_additional_properties_false(item)
+                elif key == "$defs" and isinstance(value, dict):
+                    for def_value in value.values():
+                        _add_additional_properties_false(def_value)
+
     # Check if 'function' and 'parameters' exist
     if (
         'function' in parameters_dict
@@ -209,12 +246,65 @@ def sanitize_and_enforce_required(parameters_dict):
         parameters = parameters_dict['function']['parameters']
         properties = parameters.get('properties', {})
 
-        # Remove 'default' key from each property
-        for field in properties.values():
-            field.pop('default', None)
+        # Track which fields should be required vs optional
+        required_fields = []
 
-        # Mark all keys in 'properties' as required
-        parameters['required'] = list(properties.keys())
+        # Process each property
+        for field_name, field_schema in properties.items():
+            # Check if this field had a default value (making it optional)
+            had_default = 'default' in field_schema
+
+            # Remove 'default' key from field schema as required by OpenAI
+            field_schema.pop('default', None)
+
+            if had_default:
+                # This field is optional - add null to its type
+                current_type = field_schema.get('type')
+                has_ref = '$ref' in field_schema
+                has_any_of = 'anyOf' in field_schema
+
+                if has_ref:
+                    # Fields with $ref shouldn't have additional type field
+                    # The $ref itself defines the type structure
+                    pass
+                elif has_any_of:
+                    # Field already has anyOf
+                    any_of_types = field_schema['anyOf']
+                    has_null_type = any(
+                        item.get('type') == 'null' for item in any_of_types
+                    )
+                    if not has_null_type:
+                        # Add null type to anyOf
+                        field_schema['anyOf'].append({'type': 'null'})
+                    # Remove conflicting type field if it exists
+                    if 'type' in field_schema:
+                        del field_schema['type']
+                elif current_type:
+                    if isinstance(current_type, str):
+                        # Single type - convert to array with null
+                        field_schema['type'] = [current_type, 'null']
+                    elif (
+                        isinstance(current_type, list)
+                        and 'null' not in current_type
+                    ):
+                        # Array of types - add null if not present
+                        field_schema['type'] = [*current_type, 'null']
+                else:
+                    # No type specified, add null type
+                    field_schema['type'] = ['null']
+
+                # Optional fields are still marked as required in strict mode
+                # but with null type to indicate they can be omitted
+                required_fields.append(field_name)
+            else:
+                # This field is required
+                required_fields.append(field_name)
+
+        # Set all fields as required (strict mode requirement)
+        parameters['required'] = required_fields
+
+        # Recursively add additionalProperties: false to all objects
+        _add_additional_properties_false(parameters)
 
     return parameters_dict
 
@@ -459,9 +549,10 @@ class FunctionTool:
             param_dict = properties[param_name]
             if "description" not in param_dict:
                 warnings.warn(
-                    f"Parameter description is missing "
-                    f"for {param_dict}. This may affect the "
-                    f"quality of tool calling."
+                    f"Parameter description is missing for the "
+                    f"function '{openai_tool_schema['function']['name']}'. "
+                    f"The parameter definition is {param_dict}. "
+                    f"This may affect the quality of tool calling."
                 )
 
     def get_openai_tool_schema(self) -> Dict[str, Any]:
@@ -547,7 +638,7 @@ class FunctionTool:
         """
         self.openai_tool_schema["function"]["description"] = description
 
-    def get_paramter_description(self, param_name: str) -> str:
+    def get_parameter_description(self, param_name: str) -> str:
         r"""Gets the description of a specific parameter from the function
         schema.
 
@@ -563,7 +654,7 @@ class FunctionTool:
             param_name
         ]["description"]
 
-    def set_paramter_description(
+    def set_parameter_description(
         self,
         param_name: str,
         description: str,

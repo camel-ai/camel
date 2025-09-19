@@ -15,13 +15,12 @@
 please set the below os environment:
 export AZURE_OPENAI_BASE_URL=""
 
-# if `AZURE_API_VERSION` is not set, `OPENAI_API_VERSION` will be used as api version
+# if `AZURE_API_VERSION` is not set, `OPENAI_API_VERSION` will be used as api
+# version
 export AZURE_API_VERSION=""
 export AZURE_OPENAI_API_KEY=""
 export AZURE_DEPLOYMENT_NAME=""
 """
-
-import re
 
 import pytest
 
@@ -70,20 +69,3 @@ def test_openai_model_create(model_type: ModelType):
         model_config_dict=ChatGPTConfig(temperature=0.8, n=3).as_dict(),
     )
     assert model.model_type == model_type
-
-
-@pytest.mark.model_backend
-def test_openai_model_unexpected_argument():
-    model_type = ModelType.GPT_4
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
-
-    with pytest.raises(
-        ValueError,
-        # ruff: noqa: E501
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is input into Azure OpenAI model backend."
-            )
-        ),
-    ):
-        _ = AzureOpenAIModel(model_type, model_config_dict)

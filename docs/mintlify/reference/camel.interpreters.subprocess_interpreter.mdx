@@ -42,7 +42,7 @@ def __init__(
 ### run_file
 
 ```python
-def run_file(self, file: Path, code_type: str):
+def run_file(self, file: Path, code_type: str = 'python'):
 ```
 
 Executes a code file in a subprocess and captures its output.
@@ -50,7 +50,7 @@ Executes a code file in a subprocess and captures its output.
 **Parameters:**
 
 - **file** (Path): The path object of the file to run.
-- **code_type** (str): The type of code to execute (e.g., 'python', 'bash').
+- **code_type** (str): The type of code to execute (e.g., 'python', 'bash'). (default: obj:`python`)
 
 **Returns:**
 
@@ -142,3 +142,22 @@ Check if a command is available in the system PATH.
 **Returns:**
 
   bool: True if the command is available, False otherwise.
+
+<a id="camel.interpreters.subprocess_interpreter.SubprocessInterpreter.execute_command"></a>
+
+### execute_command
+
+```python
+def execute_command(self, command: str):
+```
+
+Executes a shell command in a subprocess and captures its output.
+
+**Parameters:**
+
+- **command** (str): The shell command to execute.
+
+**Returns:**
+
+  tuple: A tuple containing the captured stdout and stderr of the
+executed command.

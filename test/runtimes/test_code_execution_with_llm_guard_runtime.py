@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.runtimes import LLMGuardRuntime
@@ -33,15 +32,9 @@ def test_code_execution_with_llm_guard_runtime():
     assert tools[0].get_function_name() == "ignore_risk"
     assert tools[1].get_function_name() == "execute_code"
 
-    # set up LLM model
-    assistant_model_config = ChatGPTConfig(
-        temperature=0.0,
-    )
-
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
         model_type=ModelType.DEFAULT,
-        model_config_dict=assistant_model_config.as_dict(),
     )
 
     # set up agent

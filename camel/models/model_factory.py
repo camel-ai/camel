@@ -12,14 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
+import os
 from typing import ClassVar, Dict, Optional, Type, Union
 
 from camel.models.aiml_model import AIMLModel
+from camel.models.amd_model import AMDModel
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.aws_bedrock_model import AWSBedrockModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.cohere_model import CohereModel
+from camel.models.crynux_model import CrynuxModel
 from camel.models.deepseek_model import DeepSeekModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
@@ -29,6 +32,7 @@ from camel.models.lmstudio_model import LMStudioModel
 from camel.models.mistral_model import MistralModel
 from camel.models.modelscope_model import ModelScopeModel
 from camel.models.moonshot_model import MoonshotModel
+from camel.models.nebius_model import NebiusModel
 from camel.models.netmind_model import NetmindModel
 from camel.models.novita_model import NovitaModel
 from camel.models.nvidia_model import NvidiaModel
@@ -37,6 +41,7 @@ from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.openrouter_model import OpenRouterModel
 from camel.models.ppio_model import PPIOModel
+from camel.models.qianfan_model import QianfanModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
@@ -50,7 +55,7 @@ from camel.models.watsonx_model import WatsonXModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
-from camel.utils import BaseTokenCounter
+from camel.utils import BaseTokenCounter, configure_langfuse
 
 
 class ModelFactory:
@@ -73,6 +78,7 @@ class ModelFactory:
         ModelPlatformType.AWS_BEDROCK: AWSBedrockModel,
         ModelPlatformType.NVIDIA: NvidiaModel,
         ModelPlatformType.SILICONFLOW: SiliconFlowModel,
+        ModelPlatformType.AMD: AMDModel,
         ModelPlatformType.AIML: AIMLModel,
         ModelPlatformType.VOLCANO: VolcanoModel,
         ModelPlatformType.NETMIND: NetmindModel,
@@ -80,6 +86,7 @@ class ModelFactory:
         ModelPlatformType.AZURE: AzureOpenAIModel,
         ModelPlatformType.ANTHROPIC: AnthropicModel,
         ModelPlatformType.GROQ: GroqModel,
+        ModelPlatformType.NEBIUS: NebiusModel,
         ModelPlatformType.LMSTUDIO: LMStudioModel,
         ModelPlatformType.OPENROUTER: OpenRouterModel,
         ModelPlatformType.ZHIPU: ZhipuAIModel,
@@ -96,6 +103,8 @@ class ModelFactory:
         ModelPlatformType.MODELSCOPE: ModelScopeModel,
         ModelPlatformType.NOVITA: NovitaModel,
         ModelPlatformType.WATSONX: WatsonXModel,
+        ModelPlatformType.QIANFAN: QianfanModel,
+        ModelPlatformType.CRYNUX: CrynuxModel,
     }
 
     @staticmethod
@@ -107,6 +116,7 @@ class ModelFactory:
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         timeout: Optional[float] = None,
+        max_retries: int = 3,
         **kwargs,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
@@ -131,6 +141,8 @@ class ModelFactory:
                 (default: :obj:`None`)
             timeout (Optional[float], optional): The timeout value in seconds
                 for API calls. (default: :obj:`None`)
+            max_retries (int, optional): Maximum number of retries
+                for API calls. (default: :obj:`3`)
             **kwargs: Additional model-specific parameters that will be passed
                 to the model constructor. For example, Azure OpenAI models may
                 require `api_version`, `azure_deployment_name`,
@@ -142,6 +154,12 @@ class ModelFactory:
         Raises:
             ValueError: If there is no backend for the model.
         """
+
+        # Auto-configure Langfuse only if explicitly enabled
+        env_enabled_str = os.environ.get("LANGFUSE_ENABLED")
+        if env_enabled_str and env_enabled_str.lower() == "true":
+            configure_langfuse()
+
         # Convert string to ModelPlatformType enum if needed
         if isinstance(model_platform, str):
             try:
@@ -177,6 +195,7 @@ class ModelFactory:
             url=url,
             token_counter=token_counter,
             timeout=timeout,
+            max_retries=max_retries,
             **kwargs,
         )
 

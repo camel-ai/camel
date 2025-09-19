@@ -12,13 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
+import warnings
 from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union, cast
 
 import requests
 
+from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import MCPServer, api_keys_required, dependencies_required
+
+logger = get_logger(__name__)
 
 
 @MCPServer()
@@ -28,6 +32,24 @@ class SearchToolkit(BaseToolkit):
     This class provides methods for searching information on the web using
     search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave.
     """
+
+    def __init__(
+        self,
+        timeout: Optional[float] = None,
+        exclude_domains: Optional[List[str]] = None,
+    ):
+        r"""Initializes the SearchToolkit.
+
+        Args:
+            timeout (float): Timeout for API requests in seconds.
+                (default: :obj:`None`)
+            exclude_domains (Optional[List[str]]): List of domains to
+                exclude from search results. Currently only supported
+                by the `search_google` function.
+                (default: :obj:`None`)
+        """
+        super().__init__(timeout=timeout)
+        self.exclude_domains = exclude_domains
 
     @dependencies_required("wikipedia")
     def search_wiki(self, entity: str) -> str:
@@ -86,8 +108,8 @@ class SearchToolkit(BaseToolkit):
             depth (Literal["standard", "deep"]): The depth of the search.
                 "standard" for a straightforward search, "deep" for a more
                 comprehensive search.
-            output_type (Literal["searchResults", "sourcedAnswer",
-                "structured"]): The type of output:
+            output_type (Literal["searchResults", "sourcedAnswer", "structured"]):
+                The type of output:
                 - "searchResults" for raw search results,
                 - "sourcedAnswer" for an answer with supporting sources,
                 - "structured" for output based on a provided schema.
@@ -141,7 +163,10 @@ class SearchToolkit(BaseToolkit):
 
     @dependencies_required("duckduckgo_search")
     def search_duckduckgo(
-        self, query: str, source: str = "text", max_results: int = 5
+        self,
+        query: str,
+        source: str = "text",
+        number_of_result_pages: int = 10,
     ) -> List[Dict[str, Any]]:
         r"""Use DuckDuckGo search engine to search information for
         the given query.
@@ -154,7 +179,10 @@ class SearchToolkit(BaseToolkit):
             query (str): The query to be searched.
             source (str): The type of information to query (e.g., "text",
                 "images", "videos"). Defaults to "text".
-            max_results (int): Max number of results, defaults to `5`.
+            number_of_result_pages (int): The number of result pages to
+                retrieve. Adjust this based on your task - use fewer results
+                for focused searches and more for comprehensive searches.
+                (default: :obj:`10`)
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
@@ -168,7 +196,9 @@ class SearchToolkit(BaseToolkit):
 
         if source == "text":
             try:
-                results = ddgs.text(keywords=query, max_results=max_results)
+                results = ddgs.text(
+                    keywords=query, max_results=number_of_result_pages
+                )
             except RequestException as e:
                 # Handle specific exceptions or general request exceptions
                 responses.append({"error": f"duckduckgo search failed.{e}"})
@@ -186,7 +216,9 @@ class SearchToolkit(BaseToolkit):
 
         elif source == "images":
             try:
-                results = ddgs.images(keywords=query, max_results=max_results)
+                results = ddgs.images(
+                    keywords=query, max_results=number_of_result_pages
+                )
             except RequestException as e:
                 # Handle specific exceptions or general request exceptions
                 responses.append({"error": f"duckduckgo search failed.{e}"})
@@ -205,7 +237,9 @@ class SearchToolkit(BaseToolkit):
 
         elif source == "videos":
             try:
-                results = ddgs.videos(keywords=query, max_results=max_results)
+                results = ddgs.videos(
+                    keywords=query, max_results=number_of_result_pages
+                )
             except RequestException as e:
                 # Handle specific exceptions or general request exceptions
                 responses.append({"error": f"duckduckgo search failed.{e}"})
@@ -238,7 +272,6 @@ class SearchToolkit(BaseToolkit):
         country: str = "US",
         search_lang: str = "en",
         ui_lang: str = "en-US",
-        count: int = 20,
         offset: int = 0,
         safesearch: str = "moderate",
         freshness: Optional[str] = None,
@@ -249,6 +282,7 @@ class SearchToolkit(BaseToolkit):
         units: Optional[str] = None,
         extra_snippets: Optional[bool] = None,
         summary: Optional[bool] = None,
+        number_of_result_pages: int = 10,
     ) -> Dict[str, Any]:
         r"""This function queries the Brave search engine API and returns a
         dictionary, representing a search result.
@@ -262,17 +296,18 @@ class SearchToolkit(BaseToolkit):
                 The country string is limited to 2 character country codes of
                 supported countries. For a list of supported values, see
                 Country Codes. (default: :obj:`US `)
-            search_lang (str): The search language preference. The 2 or more
-                character language code for which search results are provided.
-                For a list of possible values, see Language Codes.
+            search_lang (str): The search language preference.
+                Use ONLY these exact values, NOT standard ISO codes:
+                'ar', 'eu', 'bn', 'bg', 'ca', 'zh-hans', 'zh-hant', 'hr',
+                'cs', 'da', 'nl', 'en', 'en-gb', 'et', 'fi', 'fr', 'gl', 'de',
+                'gu', 'he', 'hi', 'hu', 'is', 'it', 'jp', 'kn', 'ko', 'lv',
+                'lt', 'ms', 'ml', 'mr', 'nb', 'pl', 'pt-br', 'pt-pt', 'pa',
+                'ro', 'ru', 'sr', 'sk', 'sl', 'es', 'sv', 'ta', 'te', 'th',
+                'tr', 'uk', 'vi'.
             ui_lang (str): User interface language preferred in response.
-                Usually of the format '<language_code>-<country_code>'. For
-                more, see RFC 9110. For a list of supported values, see UI
-                Language Codes.
-            count (int): The number of search results returned in response.
-                The maximum is 20. The actual number delivered may be less than
-                requested. Combine this parameter with offset to paginate
-                search results.
+                Format: '<language_code>-<country_code>'. Common examples:
+                'en-US', 'en-GB', 'jp-JP', 'zh-hans-CN', 'zh-hant-TW',
+                'de-DE', 'fr-FR', 'es-ES', 'pt-BR', 'ru-RU', 'ko-KR'.
             offset (int): The zero based offset that indicates number of search
                 results per page (count) to skip before returning the result.
                 The maximum is 9. The actual number delivered may be less than
@@ -334,6 +369,10 @@ class SearchToolkit(BaseToolkit):
             summary (Optional[bool]): This parameter enables summary key
                 generation in web search results. This is required for
                 summarizer to be enabled.
+            number_of_result_pages (int): The number of result pages to
+                retrieve. Adjust this based on your task - use fewer results
+                for focused searches and more for comprehensive searches.
+                (default: :obj:`10`)
 
         Returns:
             Dict[str, Any]: A dictionary representing a search result.
@@ -360,7 +399,7 @@ class SearchToolkit(BaseToolkit):
             "country": country,
             "search_lang": search_lang,
             "ui_lang": ui_lang,
-            "count": count,
+            "count": number_of_result_pages,
             "offset": offset,
             "safesearch": safesearch,
             "freshness": freshness,
@@ -372,10 +411,36 @@ class SearchToolkit(BaseToolkit):
             "extra_snippets": extra_snippets,
             "summary": summary,
         }
+        params = {k: v for k, v in params.items() if v is not None}
 
         response = requests.get(url, headers=headers, params=params)
-        data = response.json()["web"]
-        return data
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            raise RuntimeError(
+                f"Brave API HTTP error: {e}, body={response.text!r}"
+            )
+
+        json_data = response.json()
+        # Check if response has search results
+        content_keys = [
+            'web',
+            'news',
+            'videos',
+            'images',
+            'locations',
+            'discussions',
+            'faq',
+            'infobox',
+        ]
+        has_results = any(key in json_data for key in content_keys)
+
+        if not has_results:
+            # Return empty results structure if no content found
+            json_data['web'] = {'results': []}
+            json_data['message'] = 'No search results found for the query'
+
+        return json_data
 
     @api_keys_required(
         [
@@ -384,25 +449,53 @@ class SearchToolkit(BaseToolkit):
         ]
     )
     def search_google(
-        self, query: str, num_result_pages: int = 5
+        self,
+        query: str,
+        search_type: str = "web",
+        number_of_result_pages: int = 10,
+        start_page: int = 1,
     ) -> List[Dict[str, Any]]:
         r"""Use Google search engine to search information for the given query.
 
         Args:
             query (str): The query to be searched.
-            num_result_pages (int): The number of result pages to retrieve.
+            search_type (str): The type of search to perform. Must be either
+                "web" for web pages or "image" for image search. Any other
+                value will raise a ValueError. (default: "web")
+            number_of_result_pages (int): The number of result pages to
+                retrieve. Must be a positive integer between 1 and 10.
+                Google Custom Search API limits results to 10 per request.
+                If a value greater than 10 is provided, it will be capped
+                at 10 with a warning. Adjust this based on your task - use
+                fewer results for focused searches and more for comprehensive
+                searches. (default: :obj:`10`)
+            start_page (int): The result page to start from. Must be a
+                positive integer (>= 1). Use this for pagination - e.g.,
+                start_page=1 for results 1-10, start_page=11 for results
+                11-20, etc. This allows agents to check initial results
+                and continue searching if needed. (default: :obj:`1`)
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
-            represents a website.
-                Each dictionary contains the following keys:
+            represents a search result.
+
+                For web search, each dictionary contains:
                 - 'result_id': A number in order.
                 - 'title': The title of the website.
                 - 'description': A brief description of the website.
                 - 'long_description': More detail of the website.
                 - 'url': The URL of the website.
 
-                Example:
+                For image search, each dictionary contains:
+                - 'result_id': A number in order.
+                - 'title': The title of the image.
+                - 'image_url': The URL of the image.
+                - 'display_link': The website hosting the image.
+                - 'context_url': The URL of the page containing the image.
+                - 'width': Image width in pixels (if available).
+                - 'height': Image height in pixels (if available).
+
+                Example web result:
                 {
                     'result_id': 1,
                     'title': 'OpenAI',
@@ -414,28 +507,79 @@ class SearchToolkit(BaseToolkit):
                     benefit humanity as a whole',
                     'url': 'https://www.openai.com'
                 }
-            title, description, url of a website.
+
+                Example image result:
+                {
+                    'result_id': 1,
+                    'title': 'Beautiful Sunset',
+                    'image_url': 'https://example.com/image.jpg',
+                    'display_link': 'example.com',
+                    'context_url': 'https://example.com/page.html',
+                    'width': 800,
+                    'height': 600
+                }
         """
+        from urllib.parse import quote
+
         import requests
+
+        # Validate input parameters
+        if not isinstance(start_page, int) or start_page < 1:
+            raise ValueError("start_page must be a positive integer")
+
+        if (
+            not isinstance(number_of_result_pages, int)
+            or number_of_result_pages < 1
+        ):
+            raise ValueError(
+                "number_of_result_pages must be a positive integer"
+            )
+
+        # Google Custom Search API has a limit of 10 results per request
+        if number_of_result_pages > 10:
+            logger.warning(
+                f"Google API limits results to 10 per request. "
+                f"Requested {number_of_result_pages}, using 10 instead."
+            )
+            number_of_result_pages = 10
+
+        if search_type not in ["web", "image"]:
+            raise ValueError("search_type must be either 'web' or 'image'")
 
         # https://developers.google.com/custom-search/v1/overview
         GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
         # https://cse.google.com/cse/all
         SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
 
-        # Using the first page
-        start_page_idx = 1
+        # Using the specified start page
+        start_page_idx = start_page
         # Different language may get different result
         search_language = "en"
-        # How many pages to return
-        num_result_pages = num_result_pages
+
+        modified_query = query
+        if self.exclude_domains:
+            # Use Google's -site: operator to exclude domains
+            exclusion_terms = " ".join(
+                [f"-site:{domain}" for domain in self.exclude_domains]
+            )
+            modified_query = f"{query} {exclusion_terms}"
+            logger.debug(f"Excluded domains, modified query: {modified_query}")
+
+        encoded_query = quote(modified_query)
+
         # Constructing the URL
         # Doc: https://developers.google.com/custom-search/v1/using_rest
-        url = (
+        base_url = (
             f"https://www.googleapis.com/customsearch/v1?"
-            f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start="
-            f"{start_page_idx}&lr={search_language}&num={num_result_pages}"
+            f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={encoded_query}&start="
+            f"{start_page_idx}&lr={search_language}&num={number_of_result_pages}"
         )
+
+        # Add searchType parameter for image search
+        if search_type == "image":
+            url = base_url + "&searchType=image"
+        else:
+            url = base_url
 
         responses = []
         # Fetch the results given the URL
@@ -448,55 +592,109 @@ class SearchToolkit(BaseToolkit):
             if "items" in data:
                 search_items = data.get("items")
 
-                # Iterate over 10 results found
+                # Iterate over results found
                 for i, search_item in enumerate(search_items, start=1):
-                    # Check metatags are present
-                    if "pagemap" not in search_item:
-                        continue
-                    if "metatags" not in search_item["pagemap"]:
-                        continue
-                    if (
-                        "og:description"
-                        in search_item["pagemap"]["metatags"][0]
-                    ):
-                        long_description = search_item["pagemap"]["metatags"][
-                            0
-                        ]["og:description"]
+                    if search_type == "image":
+                        # Process image search results
+                        title = search_item.get("title")
+                        image_url = search_item.get("link")
+                        display_link = search_item.get("displayLink")
+
+                        # Get context URL (page containing the image)
+                        image_info = search_item.get("image", {})
+                        context_url = image_info.get("contextLink", "")
+
+                        # Get image dimensions if available
+                        width = image_info.get("width")
+                        height = image_info.get("height")
+
+                        response = {
+                            "result_id": i,
+                            "title": title,
+                            "image_url": image_url,
+                            "display_link": display_link,
+                            "context_url": context_url,
+                        }
+
+                        if width:
+                            response["width"] = int(width)
+                        if height:
+                            response["height"] = int(height)
+
+                        responses.append(response)
                     else:
-                        long_description = "N/A"
-                    # Get the page title
-                    title = search_item.get("title")
-                    # Page snippet
-                    snippet = search_item.get("snippet")
+                        if "pagemap" not in search_item:
+                            continue
+                        if "metatags" not in search_item["pagemap"]:
+                            continue
+                        if (
+                            "og:description"
+                            in search_item["pagemap"]["metatags"][0]
+                        ):
+                            long_description = search_item["pagemap"][
+                                "metatags"
+                            ][0]["og:description"]
+                        else:
+                            long_description = "N/A"
+                        title = search_item.get("title")
+                        snippet = search_item.get("snippet")
 
-                    # Extract the page url
-                    link = search_item.get("link")
-                    response = {
-                        "result_id": i,
-                        "title": title,
-                        "description": snippet,
-                        "long_description": long_description,
-                        "url": link,
-                    }
-                    responses.append(response)
+                        link = search_item.get("link")
+                        response = {
+                            "result_id": i,
+                            "title": title,
+                            "description": snippet,
+                            "long_description": long_description,
+                            "url": link,
+                        }
+                        responses.append(response)
             else:
-                responses.append({"error": "google search failed."})
+                if "error" in data:
+                    error_info = data.get("error", {})
+                    logger.error(
+                        f"Google search failed - API response: {error_info}"
+                    )
+                    responses.append(
+                        {
+                            "error": f"Google search failed - "
+                            f"API response: {error_info}"
+                        }
+                    )
+                elif "searchInformation" in data:
+                    search_info = data.get("searchInformation", {})
+                    total_results = search_info.get("totalResults", "0")
+                    if total_results == "0":
+                        logger.info(f"No results found for query: {query}")
+                        # Return empty list to indicate no results (not an error)
+                        responses = []
+                    else:
+                        logger.warning(
+                            f"Google search returned no items but claims {total_results} results"
+                        )
+                        responses = []
+                else:
+                    logger.error(
+                        f"Unexpected Google API response format: {data}"
+                    )
+                    responses.append(
+                        {"error": "Unexpected response format from Google API"}
+                    )
 
-        except requests.RequestException:
-            # Handle specific exceptions or general request exceptions
-            responses.append({"error": "google search failed."})
-        # If no answer found, return an empty list
+        except Exception as e:
+            responses.append({"error": f"google search failed: {e!s}"})
         return responses
 
-    def tavily_search(
-        self, query: str, num_results: int = 5, **kwargs
+    def search_tavily(
+        self, query: str, number_of_result_pages: int = 10, **kwargs
     ) -> List[Dict[str, Any]]:
         r"""Use Tavily Search API to search information for the given query.
 
         Args:
             query (str): The query to be searched.
-            num_results (int): The number of search results to retrieve
-                (default is `5`).
+            number_of_result_pages (int): The number of result pages to
+                retrieve. Adjust this based on your task - use fewer results
+                for focused searches and more for comprehensive searches.
+                (default: :obj:`10`)
             **kwargs: Additional optional parameters supported by Tavily's API:
                 - search_depth (str): "basic" or "advanced" search depth.
                 - topic (str): The search category, e.g., "general" or "news."
@@ -532,7 +730,9 @@ class SearchToolkit(BaseToolkit):
         client = TavilyClient(Tavily_API_KEY)
 
         try:
-            results = client.search(query, max_results=num_results, **kwargs)
+            results = client.search(
+                query, max_results=number_of_result_pages, **kwargs
+            )
             return results
         except Exception as e:
             return [{"error": f"An unexpected error occurred: {e!s}"}]
@@ -543,8 +743,8 @@ class SearchToolkit(BaseToolkit):
         query: str,
         freshness: str = "noLimit",
         summary: bool = False,
-        count: int = 10,
         page: int = 1,
+        number_of_result_pages: int = 10,
     ) -> Dict[str, Any]:
         r"""Query the Bocha AI search API and return search results.
 
@@ -559,8 +759,11 @@ class SearchToolkit(BaseToolkit):
                 - 'oneYear': past year.
             summary (bool): Whether to include text summaries in results.
                 Default is False.
-            count (int): Number of results to return (1-50). Default is 10.
             page (int): Page number of results. Default is 1.
+            number_of_result_pages (int): The number of result pages to
+                retrieve. Adjust this based on your task - use fewer results
+                for focused searches and more for comprehensive searches.
+                (default: :obj:`10`)
 
         Returns:
             Dict[str, Any]: A dictionary containing search results, including
@@ -582,7 +785,7 @@ class SearchToolkit(BaseToolkit):
                 "query": query,
                 "freshness": freshness,
                 "summary": summary,
-                "count": count,
+                "count": number_of_result_pages,
                 "page": page,
             },
             ensure_ascii=False,
@@ -600,15 +803,19 @@ class SearchToolkit(BaseToolkit):
         except requests.exceptions.RequestException as e:
             return {"error": f"Bocha AI search failed: {e!s}"}
 
-    def search_baidu(self, query: str, max_results: int = 5) -> Dict[str, Any]:
+    def search_baidu(
+        self, query: str, number_of_result_pages: int = 10
+    ) -> Dict[str, Any]:
         r"""Search Baidu using web scraping to retrieve relevant search
         results. This method queries Baidu's search engine and extracts search
         results including titles, descriptions, and URLs.
 
         Args:
             query (str): Search query string to submit to Baidu.
-            max_results (int): Maximum number of results to return.
-                (default: :obj:`5`)
+            number_of_result_pages (int): The number of result pages to
+                retrieve. Adjust this based on your task - use fewer results
+                for focused searches and more for comprehensive searches.
+                (default: :obj:`10`)
 
         Returns:
             Dict[str, Any]: A dictionary containing search results or error
@@ -626,7 +833,7 @@ class SearchToolkit(BaseToolkit):
                 ),
                 "Referer": "https://www.baidu.com",
             }
-            params = {"wd": query, "rn": str(max_results)}
+            params = {"wd": query, "rn": str(number_of_result_pages)}
 
             response = requests.get(url, headers=headers, params=params)
             response.encoding = "utf-8"
@@ -655,7 +862,7 @@ class SearchToolkit(BaseToolkit):
                         "url": link,
                     }
                 )
-                if len(results) >= max_results:
+                if len(results) >= number_of_result_pages:
                     break
 
             if not results:
@@ -669,7 +876,9 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return {"error": f"Baidu scraping error: {e!s}"}
 
-    def search_bing(self, query: str, max_results: int = 5) -> Dict[str, Any]:
+    def search_bing(
+        self, query: str, number_of_result_pages: int = 10
+    ) -> Dict[str, Any]:
         r"""Use Bing search engine to search information for the given query.
 
         This function queries the Chinese version of Bing search engine (cn.
@@ -681,8 +890,10 @@ class SearchToolkit(BaseToolkit):
         Args:
             query (str): The search query string to submit to Bing. Works best
                 with Chinese queries or when Chinese results are preferred.
-            max_results (int): Maximum number of results to return.
-                (default: :obj:`5`)
+            number_of_result_pages (int): The number of result pages to
+                retrieve. Adjust this based on your task - use fewer results
+                for focused searches and more for comprehensive searches.
+                (default: :obj:`10`)
 
         Returns:
             Dict ([str, Any]): A dictionary containing either:
@@ -732,7 +943,7 @@ class SearchToolkit(BaseToolkit):
             result_items = b_results_tag.find_all("li")
 
             results: List[Dict[str, Any]] = []
-            for i in range(min(len(result_items), max_results)):
+            for i in range(min(len(result_items), number_of_result_pages)):
                 row = result_items[i]
                 if not isinstance(row, Tag):
                     continue
@@ -797,11 +1008,11 @@ class SearchToolkit(BaseToolkit):
                 "financial report",
             ]
         ] = None,
-        num_results: int = 10,
         include_text: Optional[List[str]] = None,
         exclude_text: Optional[List[str]] = None,
         use_autoprompt: bool = True,
         text: bool = False,
+        number_of_result_pages: int = 10,
     ) -> Dict[str, Any]:
         r"""Use Exa search API to perform intelligent web search with optional
         content extraction.
@@ -813,8 +1024,6 @@ class SearchToolkit(BaseToolkit):
                 and neural search. (default: :obj:`"auto"`)
             category (Optional[Literal]): Category to focus the search on, such
                 as "research paper" or "news". (default: :obj:`None`)
-            num_results (int): Number of results to return (max 100).
-                (default: :obj:`10`)
             include_text (Optional[List[str]]): Strings that must be present in
                 webpage text. Limited to 1 string of up to 5 words.
                 (default: :obj:`None`)
@@ -825,6 +1034,10 @@ class SearchToolkit(BaseToolkit):
                 enhance the query. (default: :obj:`True`)
             text (bool): Whether to include webpage contents in results.
                 (default: :obj:`False`)
+            number_of_result_pages (int): The number of result pages to
+                retrieve. Must be between 1 and 100. Adjust this based on
+                your task - use fewer results for focused searches and more
+                for comprehensive searches. (default: :obj:`10`)
 
         Returns:
             Dict[str, Any]: A dict containing search results and metadata:
@@ -843,7 +1056,10 @@ class SearchToolkit(BaseToolkit):
         try:
             exa = Exa(EXA_API_KEY)
 
-            if num_results is not None and not 0 < num_results <= 100:
+            if (
+                number_of_result_pages is not None
+                and not 0 < number_of_result_pages <= 100
+            ):
                 raise ValueError("num_results must be between 1 and 100")
 
             if include_text is not None:
@@ -870,7 +1086,7 @@ class SearchToolkit(BaseToolkit):
                         query=query,
                         type=search_type,
                         category=category,
-                        num_results=num_results,
+                        num_results=number_of_result_pages,
                         include_text=include_text,
                         exclude_text=exclude_text,
                         use_autoprompt=use_autoprompt,
@@ -884,7 +1100,7 @@ class SearchToolkit(BaseToolkit):
                         query=query,
                         type=search_type,
                         category=category,
-                        num_results=num_results,
+                        num_results=number_of_result_pages,
                         include_text=include_text,
                         exclude_text=exclude_text,
                         use_autoprompt=use_autoprompt,
@@ -914,10 +1130,10 @@ class SearchToolkit(BaseToolkit):
                 "news_center",
             ]
         ] = None,
-        page: int = 1,
         return_main_text: bool = False,
         return_markdown_text: bool = True,
         enable_rerank: bool = True,
+        number_of_result_pages: int = 10,
     ) -> Dict[str, Any]:
         r"""Query the Alibaba Tongxiao search API and return search results.
 
@@ -931,17 +1147,14 @@ class SearchToolkit(BaseToolkit):
 
         Args:
             query (str): The search query string (length >= 1 and <= 100).
-            time_range (Literal["OneDay", "OneWeek", "OneMonth", "OneYear",
-                "NoLimit"]): Time frame filter for search results.
+            time_range (Literal["OneDay", "OneWeek", "OneMonth", "OneYear", "NoLimit"]):
+                Time frame filter for search results.
                 (default: :obj:`"NoLimit"`)
-            industry (Optional[Literal["finance", "law", "medical",
-                "internet", "tax", "news_province", "news_center"]]):
+            industry (Optional[Literal["finance", "law", "medical", "internet", "tax", "news_province", "news_center"]]):
                 Industry-specific search filter. When specified, only returns
                 results from sites in the specified industries. Multiple
                 industries can be comma-separated.
                 (default: :obj:`None`)
-            page (int): Page number for results pagination.
-                (default: :obj:`1`)
             return_main_text (bool): Whether to include the main text of the
                 webpage in results. (default: :obj:`True`)
             return_markdown_text (bool): Whether to include markdown formatted
@@ -949,6 +1162,10 @@ class SearchToolkit(BaseToolkit):
             enable_rerank (bool): Whether to enable result reranking. If
                 response time is critical, setting this to False can reduce
                 response time by approximately 140ms. (default: :obj:`True`)
+            number_of_result_pages (int): The number of result pages to
+                retrieve. Adjust this based on your task - use fewer results
+                for focused searches and more for comprehensive searches.
+                (default: :obj:`10`)
 
         Returns:
             Dict[str, Any]: A dictionary containing either search results with
@@ -974,7 +1191,7 @@ class SearchToolkit(BaseToolkit):
         params: Dict[str, Union[str, int]] = {
             "query": query,
             "timeRange": time_range,
-            "page": page,
+            "page": number_of_result_pages,
             "returnMainText": str(return_main_text).lower(),
             "returnMarkdownText": str(return_markdown_text).lower(),
             "enableRerank": str(enable_rerank).lower(),
@@ -1062,6 +1279,73 @@ class SearchToolkit(BaseToolkit):
                 f"search: {e!s}"
             }
 
+    @api_keys_required([(None, 'METASO_API_KEY')])
+    def search_metaso(
+        self,
+        query: str,
+        page: int = 1,
+        include_summary: bool = False,
+        include_raw_content: bool = False,
+        concise_snippet: bool = False,
+        scope: Literal[
+            "webpage", "document", "scholar", "image", "video", "podcast"
+        ] = "webpage",
+    ) -> Dict[str, Any]:
+        r"""Perform a web search using the metaso.cn API.
+
+        Args:
+            query (str): The search query string.
+            page (int): Page number. (default: :obj:`1`)
+            include_summary (bool): Whether to include summary in the result.
+                (default: :obj:`False`)
+            include_raw_content (bool): Whether to include raw content in the
+                result. (default: :obj:`False`)
+            concise_snippet (bool): Whether to return concise snippet.
+                (default: :obj:`False`)
+            scope (Literal["webpage", "document", "scholar", "image", "video",
+                "podcast"]): Search scope. (default: :obj:`"webpage"`)
+
+        Returns:
+            Dict[str, Any]: Search results or error information.
+        """
+        import http.client
+        import json
+
+        # It is recommended to put the token in environment variable for
+        # security
+
+        METASO_API_KEY = os.getenv("METASO_API_KEY")
+
+        conn = http.client.HTTPSConnection("metaso.cn")
+        payload = json.dumps(
+            {
+                "q": query,
+                "scope": scope,
+                "includeSummary": include_summary,
+                "page": str(page),
+                "includeRawContent": include_raw_content,
+                "conciseSnippet": concise_snippet,
+            }
+        )
+        headers = {
+            'Authorization': f'Bearer {METASO_API_KEY}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        }
+        try:
+            conn.request("POST", "/api/v1/search", payload, headers)
+            res = conn.getresponse()
+            data = res.read()
+            result = data.decode("utf-8")
+            try:
+                return json.loads(result)
+            except Exception:
+                return {
+                    "error": f"Metaso returned content could not be parsed: {result}"
+                }
+        except Exception as e:
+            return {"error": f"Metaso search failed: {e}"}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -1075,11 +1359,22 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_linkup),
             FunctionTool(self.search_google),
             FunctionTool(self.search_duckduckgo),
-            FunctionTool(self.tavily_search),
+            FunctionTool(self.search_tavily),
             FunctionTool(self.search_brave),
             FunctionTool(self.search_bocha),
             FunctionTool(self.search_baidu),
             FunctionTool(self.search_bing),
             FunctionTool(self.search_exa),
             FunctionTool(self.search_alibaba_tongxiao),
+            FunctionTool(self.search_metaso),
         ]
+
+    # Deprecated method alias for backward compatibility
+    def tavily_search(self, *args, **kwargs):
+        r"""Deprecated: Use search_tavily instead for consistency with other search methods."""
+        warnings.warn(
+            "tavily_search is deprecated. Use search_tavily instead for consistency.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.search_tavily(*args, **kwargs)

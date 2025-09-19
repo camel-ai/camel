@@ -16,7 +16,7 @@ import inspect
 import json
 import os
 from functools import wraps
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -34,13 +34,13 @@ class DaytonaRuntime(BaseRuntime):
     Args:
         api_key (Optional[str]): The Daytona API key for authentication. If not
             provided, it will try to use the DAYTONA_API_KEY environment
-            variable. (default: :obj: `None`)
+            variable. (default: :obj:`None`)
         api_url (Optional[str]): The URL of the Daytona server. If not
             provided, it will try to use the DAYTONA_API_URL environment
             variable. If none is provided, it will use "http://localhost:8000".
-            (default: :obj: `None`)
+            (default: :obj:`None`)
         language (Optional[str]): The programming language for the sandbox.
-            (default: :obj: `"python"`)
+            (default: :obj:`"python"`)
     """
 
     def __init__(
@@ -49,7 +49,7 @@ class DaytonaRuntime(BaseRuntime):
         api_url: Optional[str] = None,
         language: Optional[str] = "python",
     ):
-        from daytona_sdk import Daytona, DaytonaConfig
+        from daytona_sdk import Daytona, DaytonaConfig, Sandbox
 
         super().__init__()
         self.api_key = api_key or os.environ.get('DAYTONA_API_KEY')
@@ -57,7 +57,7 @@ class DaytonaRuntime(BaseRuntime):
         self.language = language
         self.config = DaytonaConfig(api_key=self.api_key, api_url=self.api_url)
         self.daytona = Daytona(self.config)
-        self.sandbox = None
+        self.sandbox: Optional[Sandbox] = None
         self.entrypoint: Dict[str, str] = dict()
 
     def build(self) -> "DaytonaRuntime":
@@ -66,10 +66,10 @@ class DaytonaRuntime(BaseRuntime):
         Returns:
             DaytonaRuntime: The current runtime.
         """
-        from daytona_sdk import CreateSandboxParams
+        from daytona_sdk import CreateSandboxBaseParams
 
         try:
-            params = CreateSandboxParams(language=self.language)
+            params = CreateSandboxBaseParams(language=self.language)
             self.sandbox = self.daytona.create(params)
             if self.sandbox is None:
                 raise RuntimeError("Failed to create sandbox.")
@@ -83,7 +83,7 @@ class DaytonaRuntime(BaseRuntime):
         r"""Clean up the sandbox when exiting."""
         if self.sandbox:
             try:
-                self.daytona.remove(self.sandbox)
+                self.daytona.delete(self.sandbox)
                 logger.info(f"Sandbox {self.sandbox.id} removed")
                 self.sandbox = None
             except Exception as e:
@@ -102,7 +102,7 @@ class DaytonaRuntime(BaseRuntime):
                 list of functions to add.
             entrypoint (str): The entrypoint for the function.
             arguments (Optional[Dict[str, Any]]): The arguments for the
-                function. (default: :obj: `None`)
+                function. (default: :obj:`None`)
 
         Returns:
             DaytonaRuntime: The current runtime.
@@ -112,7 +112,7 @@ class DaytonaRuntime(BaseRuntime):
         if arguments is not None:
             entrypoint += json.dumps(arguments, ensure_ascii=False)
 
-        def make_wrapper(inner_func, func_name, func_code):
+        def make_wrapper(inner_func: Callable, func_name: str, func_code: str):
             r"""Creates a wrapper for a function to execute it in the
             Daytona sandbox.
 
@@ -208,12 +208,11 @@ class DaytonaRuntime(BaseRuntime):
             RuntimeError: If the sandbox is not initialized.
         """
         if self.sandbox is None:
-            raise RuntimeError("Failed to create sandbox.")
-        info = self.sandbox.info()
+            raise RuntimeError("Sandbox not initialized.")
         return (
-            f"Sandbox {info.name}:\n"
-            f"State: {info.state}\n"
-            f"Resources: {info.resources.cpu} CPU, {info.resources.memory} RAM"
+            f"Sandbox {self.sandbox.id}:\n"
+            f"State: {self.sandbox.state}\n"
+            f"Resources: {self.sandbox.cpu} CPU, {self.sandbox.memory} RAM"
         )
 
     def __del__(self):

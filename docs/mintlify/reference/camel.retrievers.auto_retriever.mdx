@@ -11,15 +11,12 @@ class AutoRetriever:
 Facilitates the automatic retrieval of information using a
 query-based approach with pre-defined elements.
 
-Attributes:
-url_and_api_key (Optional[Tuple[str, str]]): URL and API key for
-accessing the vector storage remotely.
-vector_storage_local_path (Optional[str]): Local path for vector
-storage, if applicable.
-storage_type (Optional[StorageType]): The type of vector storage to
-use. Defaults to `StorageType.QDRANT`.
-embedding_model (Optional[BaseEmbedding]): Model used for embedding
-queries and documents. Defaults to `OpenAIEmbedding()`.
+**Parameters:**
+
+- **url_and_api_key** (Optional[Tuple[str, str]]): URL and API key for accessing the vector storage remotely.
+- **vector_storage_local_path** (Optional[str]): Local path for vector storage, if applicable.
+- **storage_type** (Optional[StorageType]): The type of vector storage to use. Defaults to `StorageType.QDRANT`.
+- **embedding_model** (Optional[BaseEmbedding]): Model used for embedding queries and documents. Defaults to `OpenAIEmbedding()`.
 
 <a id="camel.retrievers.auto_retriever.AutoRetriever.__init__"></a>
 

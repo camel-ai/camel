@@ -34,7 +34,7 @@ class JinaRerankerToolkit(BaseToolkit):
     def __init__(
         self,
         timeout: Optional[float] = None,
-        model_name: Optional[str] = "jinaai/jina-reranker-m0",
+        model_name: str = "jinaai/jina-reranker-m0",
         device: Optional[str] = None,
         use_api: bool = True,
     ) -> None:
@@ -44,9 +44,8 @@ class JinaRerankerToolkit(BaseToolkit):
             timeout (Optional[float]): The timeout value for API requests
                 in seconds. If None, no timeout is applied.
                 (default: :obj:`None`)
-            model_name (Optional[str]): The reranker model name. If None,
-                will use the default model.
-                (default: :obj:`None`)
+            model_name (str): The reranker model name.
+                (default: :obj:`"jinaai/jina-reranker-m0"`)
             device (Optional[str]): Device to load the model on. If None,
                 will use CUDA if available, otherwise CPU.
                 Only effective when use_api=False.

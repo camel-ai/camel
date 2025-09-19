@@ -51,7 +51,9 @@ class ChatHistoryMemory(AgentMemory):
             raise ValueError("`window_size` must be non-negative.")
         self._context_creator = context_creator
         self._window_size = window_size
-        self._chat_history_block = ChatHistoryBlock(storage=storage)
+        self._chat_history_block = ChatHistoryBlock(
+            storage=storage,
+        )
         self._agent_id = agent_id
 
     @property
@@ -87,6 +89,45 @@ class ChatHistoryMemory(AgentMemory):
 
     def clear(self) -> None:
         self._chat_history_block.clear()
+
+    def clean_tool_calls(self) -> None:
+        r"""Removes tool call messages from memory.
+        This method removes all FUNCTION/TOOL role messages and any ASSISTANT
+        messages that contain tool_calls in their meta_dict to save token
+        usage.
+        """
+        from camel.types import OpenAIBackendRole
+
+        # Get all messages from storage
+        record_dicts = self._chat_history_block.storage.load()
+        if not record_dicts:
+            return
+
+        # Track indices to remove (reverse order for efficient deletion)
+        indices_to_remove = []
+
+        # Identify indices of tool-related messages
+        for i, record in enumerate(record_dicts):
+            role = record.get('role_at_backend')
+
+            # Mark FUNCTION messages for removal
+            if role == OpenAIBackendRole.FUNCTION.value:
+                indices_to_remove.append(i)
+            # Mark TOOL messages for removal
+            elif role == OpenAIBackendRole.TOOL.value:
+                indices_to_remove.append(i)
+            # Mark ASSISTANT messages with tool_calls for removal
+            elif role == OpenAIBackendRole.ASSISTANT.value:
+                meta_dict = record.get('meta_dict', {})
+                if meta_dict and 'tool_calls' in meta_dict:
+                    indices_to_remove.append(i)
+
+        # Remove records in-place
+        for i in reversed(indices_to_remove):
+            del record_dicts[i]
+
+        # Save the modified records back to storage
+        self._chat_history_block.storage.save(record_dicts)
 
 
 class VectorDBMemory(AgentMemory):

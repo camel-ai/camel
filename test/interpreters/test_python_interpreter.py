@@ -17,6 +17,8 @@ import torch
 
 from camel.interpreters import InternalPythonInterpreter, InterpreterError
 
+pytestmark = pytest.mark.heavy_dependency
+
 
 def action_function():
     return "access action function"
@@ -296,6 +298,12 @@ x += 1"""
     )
 
 
+def test_allow_builtins(interpreter: InternalPythonInterpreter):
+    code = "res = len([0, 1])"
+    execution_res = interpreter.execute(code)
+    assert execution_res == 2
+
+
 @pytest.fixture
 def unsafe_interpreter():
     interpreter = InternalPythonInterpreter()
@@ -372,3 +380,21 @@ print(f'Sum: {total}')
 """
     result = unsafe_interpreter.run(code, code_type="python")
     assert result == "Sum: 10\n"  # exec returns captured stdout
+
+
+@pytest.fixture()
+def not_allow_builtins_interpreter():
+    interpreter = InternalPythonInterpreter(
+        raise_error=True, allow_builtins=False
+    )
+    return interpreter
+
+
+def test_not_allow_builtins(
+    not_allow_builtins_interpreter: InternalPythonInterpreter,
+):
+    code = "res = len([0, 1])"
+    with pytest.raises(InterpreterError) as e:
+        not_allow_builtins_interpreter.execute(code)
+    exec_msg = e.value.args[0]
+    assert "The variable `len` is not defined." in exec_msg

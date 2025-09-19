@@ -1,66 +1,140 @@
-## 1. Concept
-Interpreters are tools that empower agents to execute given code snippets on the local machine or in isolated environments. CAMEL supports several types of interpreters to cater to different needs and security considerations.
+---
+title: "Interpreters"
+description: "Execute code safely and flexibly with CAMEL’s suite of interpreters: local, isolated, and cloud-based execution environments."
+icon: terminal
+---
 
-### 1.1. Internal Python Interpreter
-The Internal Python Interpreter executes Python code directly within the same process as the agent. This is the simplest interpreter and is suitable for trusted code execution. In its default (safe) mode, it evaluates expressions and executes statements in a controlled environment; `print()` is not directly available as a side effect, so code should evaluate to a string for output.
+Interpreters allow CAMEL agents to **execute code snippets** in various secure and flexible environments—from local safe execution to isolated Docker containers and managed cloud sandboxes.
 
-**Example Usage:**
-```python
-from camel.interpreters import InternalPythonInterpreter
+## What are Interpreters?
+
+<Note type="info" title="Interpreter Concept">
+  Interpreters empower agents to run code dynamically—enabling evaluation,
+  testing, task automation, and rich feedback loops. Choose your interpreter
+  based on trust, isolation, and supported languages.
+</Note>
+
+<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 my-6">
+
+{" "}
+<Card icon="python" title="Internal Python Interpreter">
+  <b>Fast, local, safe</b> execution for trusted Python code within the agent
+  process.
+  <br />
+  <small>
+    <b>Best for:</b> Trusted code, quick Python evaluation.
+  </small>
+</Card>
+
+{" "}
+<Card icon="code" title="Subprocess Interpreter">
+  <b>Isolated execution</b> in a subprocess. Supports Bash, Python, shell
+  scripts.
+  <br />
+  <small>
+    <b>Best for:</b> Shell commands, scripts, process isolation.
+  </small>
+</Card>
+
+{" "}
+<Card icon="docker" title="Docker Interpreter">
+  <b>Fully sandboxed</b> in Docker containers.
+  <br />
+  <small>
+    <b>Best for:</b> Untrusted code, dependency isolation, safe experimentation.
+  </small>
+  <br />
+  <a href="https://docs.docker.com/get-docker/" target="_blank" rel="noopener">
+    Install Docker
+  </a>
+</Card>
+
+{" "}
+<Card icon="book-open" title="IPython Interpreter">
+  <b>Interactive, stateful</b> execution via Jupyter/IPython kernel.
+  <br />
+  <small>
+    <b>Best for:</b> Multi-step reasoning, persistent variables, rich outputs.
+  </small>
+</Card>
+
+{" "}
+<Card icon="cloud" title="E2B Interpreter">
+  <b>Cloud-based sandboxing</b> for scalable, secure remote execution.
+  <br />
+  <small>
+    <b>Best for:</b> Managed, scalable tasks. No local setup needed.
+  </small>
+  <br />
+  <a href="https://e2b.dev/docs" target="_blank" rel="noopener">
+    E2B Docs
+  </a>
+</Card>
+
+</div>
+
+---
+
+<Card icon="python" title="Internal Python Interpreter" className="my-6">
+  <b>Fast, local, and safe</b>—executes trusted Python code directly within the CAMEL agent process.<br/>
+  <b>Note:</b> Only expressions (not statements) are allowed in strict safe mode; for output, your code should evaluate to a string.
+  <br/><br/>
+  ```python
+  from camel.interpreters import InternalPythonInterpreter
 
 # Initialize the interpreter
+
 interpreter = InternalPythonInterpreter()
 
-# Code to execute (must be an expression that evaluates to a string in safe mode)
+# Code to execute (should evaluate to a string)
+
 python_code = "'Hello from InternalPythonInterpreter!'"
 
-# Execute the code
+# Run code
+
 result_str = interpreter.run(code=python_code, code_type="python")
 print(f"Result: {result_str}")
-```
 
-### 1.2. Subprocess Interpreter
-The Subprocess Interpreter runs code in a separate subprocess. This provides a degree of isolation from the main agent process. It can execute various shell commands and scripts in addition to Python code.
+````
+</Card>
 
-**Example Usage:**
+<Card icon="code" title="Subprocess Interpreter" className="my-6">
+Execute shell commands or scripts in a separate process for isolation and flexibility.<br/>
+Supports multiple languages, including Bash and Python.
+<br/><br/>
 ```python
 from camel.interpreters import SubprocessInterpreter
 
-# Initialize the interpreter
 interpreter = SubprocessInterpreter()
-
-# Command to execute (e.g., bash)
 shell_command = "echo 'Hello from SubprocessInterpreter!'"
 
-# Execute the command
 result_str = interpreter.run(code=shell_command, code_type="bash")
 print(f"Result: {result_str.strip()}")
-```
+````
 
-### 1.3. Docker Interpreter
-The Docker Interpreter executes code snippets within a Docker container. This offers a high level of isolation, ensuring that code runs in a controlled and sandboxed environment. This is particularly useful for running untrusted code or code with specific dependencies.
+</Card>
 
-**To utilize this interpreter, you need to have Docker installed on your system.** For more information on Docker installation, visit [Docker's official website](https://docs.docker.com/get-docker/).
+<Card icon="docker" title="Docker Interpreter" className="my-6">
+  Provides full isolation—code runs in a Docker container, protecting your host system and supporting any dependencies.<br/>
+  <b>Requires Docker installed.</b>
+  <br/>
+  <a href="https://docs.docker.com/get-docker/" target="_blank">Install Docker</a>
+  <br/><br/>
+  ```python
+  from camel.interpreters import DockerInterpreter
 
-**Example Usage:**
-```python
-from camel.interpreters import DockerInterpreter
-
-# Initialize the interpreter (assumes a basic python image is available)
 interpreter = DockerInterpreter()
-
-# Code to execute in Docker
 python_code_in_docker = "print('Hello from DockerInterpreter!')"
 
-# Execute the code
 result_str = interpreter.run(code=python_code_in_docker, code_type="python")
 print(f"Result: {result_str.strip()}")
-```
 
-### 1.4. IPython Interpreter
-The IPython Interpreter (JupyterKernelInterpreter) leverages an IPython kernel to execute code. This allows for a rich, interactive execution environment, similar to using a Jupyter notebook. It supports features like state persistence across code executions within a session.
+````
+</Card>
 
-**Example Usage:**
+<Card icon="book-open" title="IPython Interpreter (JupyterKernel)" className="my-6">
+Interactive, stateful execution in a Jupyter-like Python kernel—maintains session state and supports rich outputs.
+<br/><br/>
 ```python
 from camel.interpreters import JupyterKernelInterpreter
 
@@ -68,25 +142,46 @@ interpreter = JupyterKernelInterpreter(
     require_confirm=False, print_stdout=True, print_stderr=True
 )
 
-
 python_code_in_jupyter_kernel = "print('Hello from JupyterKernelInterpreter!')"
 result = interpreter.run(code=python_code_in_jupyter_kernel, code_type="python")
 print(result)
-```
+````
 
-### 1.5. E2B Interpreter
-The E2B Interpreter utilizes the E2B cloud-based sandboxed environments for code execution. This provides a secure and managed environment for running code without requiring local setup of complex dependencies or risking local system integrity.
+</Card>
 
-For more information, visit the [E2B official documentation](https://e2b.dev/docs).
-
-**Example Usage:**
-```python
-from camel.interpreters import E2BInterpreter
+<Card icon="cloud" title="E2B Interpreter (Cloud Sandbox)" className="my-6">
+  Run code in a secure, scalable, cloud-based environment—no local setup needed, great for running untrusted or complex code.<br/>
+  <a href="https://e2b.dev/docs" target="_blank">E2B Documentation</a>
+  <br/><br/>
+  ```python
+  from camel.interpreters import E2BInterpreter
 
 interpreter = E2BInterpreter()
-
-
 python_code_in_e2b = "print('Hello from E2BInterpreter!')"
 result = interpreter.run(code=python_code_in_e2b, code_type="python")
 print(result)
+
+```
+</Card>
+
+<AccordionGroup>
+<Accordion title="Best Practices">
+  <ul>
+    <li>Use <b>InternalPythonInterpreter</b> only for trusted and simple Python code.</li>
+    <li><b>Subprocess</b> and <b>Docker</b> interpreters are better for code isolation and dependency management.</li>
+    <li>Prefer <b>Docker</b> for any untrusted code or when extra libraries are needed.</li>
+    <li><b>E2B Interpreter</b> is ideal for scalable, managed, and safe cloud execution—no local risk.</li>
+    <li>For interactive, multi-step logic, leverage <b>JupyterKernelInterpreter</b> for persistent session state.</li>
+    <li>Always validate and sanitize user inputs if agents dynamically construct code for execution.</li>
+  </ul>
+</Accordion>
+<Accordion title="Troubleshooting & Tips">
+  <ul>
+    <li>If Docker isn’t working, verify your Docker daemon is running and you have the correct permissions.</li>
+    <li>For E2B, check API key and account limits if code doesn’t execute.</li>
+    <li>Long-running scripts are best managed in <b>Subprocess</b> or <b>Docker</b> interpreters with timeout controls.</li>
+    <li>Use session resets (where supported) to avoid cross-task state bleed in Jupyter/IPython interpreters.</li>
+  </ul>
+</Accordion>
+</AccordionGroup>
 ```

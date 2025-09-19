@@ -25,7 +25,7 @@ from camel.utils import OpenAITokenCounter
 
 def test_score_based_context_creator():
     context_creator = ScoreBasedContextCreator(
-        OpenAITokenCounter(ModelType.GPT_4), 21
+        OpenAITokenCounter(ModelType.GPT_4), 15
     )
     context_records = [
         ContextRecord(
@@ -71,7 +71,9 @@ def test_score_based_context_creator():
 
     expected_output = [
         r.memory_record.to_openai_message()
-        for r in [context_records[1], context_records[2]]
+        for r in [
+            context_records[1]  # Only expect the highest scoring message
+        ]
     ]
     output, _ = context_creator.create_context(records=context_records)
     assert expected_output == output

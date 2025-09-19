@@ -10,14 +10,12 @@ class DeduplicationResult(BaseModel):
 
 The result of deduplication.
 
-Attributes:
-original_texts (List[str]): The original texts.
-unique_ids (List[int]): A list of ids that are unique (not duplicates).
-unique_embeddings_dict (Dict[int, List[float]]): A mapping from the
-index of each unique text to its embedding.
-duplicate_to_target_map (Dict[int, int]): A mapping from the index of
-the duplicate text to the index of the text it is considered a
-duplicate of.
+**Parameters:**
+
+- **original_texts** (List[str]): The original texts.
+- **unique_ids** (List[int]): A list of ids that are unique (not duplicates).
+- **unique_embeddings_dict** (Dict[int, List[float]]): A mapping from the index of each unique text to its embedding.
+- **duplicate_to_target_map** (Dict[int, int]): A mapping from the index of the duplicate text to the index of the text it is considered a duplicate of.
 
 <a id="camel.utils.deduplication.deduplicate_internally"></a>
 

@@ -16,7 +16,6 @@ import os
 from typing import Optional
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.logger import get_logger
 from camel.models import ModelFactory
 from camel.toolkits import SearxNGToolkit
@@ -67,7 +66,6 @@ def main() -> None:
     model = ModelFactory.create(
         model_type=ModelType.DEFAULT,
         model_platform=ModelPlatformType.DEFAULT,
-        model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
     )
 
     # Create chat agent

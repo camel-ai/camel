@@ -26,12 +26,13 @@ from camel.types import ModelPlatformType, ModelType
 
 load_dotenv()
 
+
 async def main():
     try:
         from create_config import create_config
-        
+
         rprint("[green]CAMEL AI Agent with MCP Toolkit[/green]")
-        
+
         # create config for mcp server
         create_config()
 
@@ -40,34 +41,40 @@ async def main():
         mcp_toolkit = MCPToolkit(config_path="config.json")
         await mcp_toolkit.connect()
         tools = mcp_toolkit.get_tools()
-        
-        rprint(f"Connected successfully. Found [cyan]{len(tools)}[/cyan] tools available")
+
+        rprint(
+            f"Connected successfully. Found [cyan]{len(tools)}[/cyan] "
+            "tools available"
+        )
 
         # setup gemini model
         model = ModelFactory.create(
             model_platform=ModelPlatformType.GEMINI,
-            model_type=ModelType.GEMINI_2_5_PRO_PREVIEW,
-            api_key=os.getenv("GOOGLE_API_KEY"),
-            model_config_dict={"temperature": 0.7, "max_tokens": 4000},
+            model_type=ModelType.GEMINI_2_5_PRO,
+            api_key=os.getenv("GEMINI_API_KEY"),
+            model_config_dict={"temperature": 0.7, "max_tokens": 40000},
         )
 
         system_message = BaseMessage.make_assistant_message(
             role_name="Assistant",
-            content="You are a helpful assistant with access to search, GitHub, and arXiv tools.",
+            content="You are a helpful assistant with access to search, "
+                   "GitHub, and arXiv tools.",
         )
 
         # create camel agent
         agent = ChatAgent(
-            system_message=system_message, 
-            model=model, 
-            tools=tools, 
+            system_message=system_message,
+            model=model,
+            tools=tools,
         )
 
         rprint("[green]Agent ready[/green]")
-        
+
         # get user query
         user_query = input("\nEnter your query: ")
-        user_message = BaseMessage.make_user_message(role_name="User", content=user_query)
+        user_message = BaseMessage.make_user_message(
+            role_name="User", content=user_query
+        )
 
         rprint("\n[yellow]Processing...[/yellow]")
         response = await agent.astep(user_message)
@@ -80,7 +87,7 @@ async def main():
         if response and hasattr(response, "msgs") and response.msgs:
             rprint(f"\nFound [cyan]{len(response.msgs)}[/cyan] messages:")
             for i, msg in enumerate(response.msgs):
-                rprint(f"Message {i+1}: {msg.content}")
+                rprint(f"Message {i + 1}: {msg.content}")
         elif response:
             rprint(f"Response content: {response}")
         else:
@@ -93,7 +100,9 @@ async def main():
     except Exception as e:
         rprint(f"[red]Error: {e}[/red]")
         import traceback
+
         rprint(f"[dim]{traceback.format_exc()}[/dim]")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

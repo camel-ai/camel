@@ -72,11 +72,10 @@ Subclasses should implement the :obj:`token_counter`,:obj: `token_limit`,
 and :obj:`create_context` methods to provide specific context creation
 logic.
 
-Attributes:
-token_counter (BaseTokenCounter): A token counter instance responsible
-for counting tokens in a message.
-token_limit (int): The maximum number of tokens allowed in the
-generated context.
+**Parameters:**
+
+- **token_counter** (BaseTokenCounter): A token counter instance responsible for counting tokens in a message.
+- **token_limit** (int): The maximum number of tokens allowed in the generated context.
 
 <a id="camel.memories.base.BaseContextCreator.token_counter"></a>
 
@@ -184,6 +183,19 @@ def get_context(self):
 
   (List[OpenAIMessage], int): A tuple containing the constructed
 context in OpenAIMessage format and the total token count.
+
+<a id="camel.memories.base.AgentMemory.clean_tool_calls"></a>
+
+### clean_tool_calls
+
+```python
+def clean_tool_calls(self):
+```
+
+Removes tool call messages from memory.
+This is an optional method that can be overridden by subclasses
+to implement cleaning of tool-related messages. By default, it
+does nothing, maintaining backward compatibility.
 
 <a id="camel.memories.base.AgentMemory.__repr__"></a>
 

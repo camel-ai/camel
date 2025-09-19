@@ -10,13 +10,12 @@ class DataPoint(BaseModel):
 
 A single data point in the dataset.
 
-Attributes:
-question (str): The primary question or issue to be addressed.
-final_answer (str): The final answer.
-rationale (Optional[str]): Logical reasoning or explanation behind the
-answer. (default: :obj:`None`)
-metadata (Optional[Dict[str, Any]]): Additional metadata about the data
-point. (default: :obj:`None`)
+**Parameters:**
+
+- **question** (str): The primary question or issue to be addressed.
+- **final_answer** (str): The final answer.
+- **rationale** (Optional[str]): Logical reasoning or explanation behind the answer. (default: :obj:`None`)
+- **metadata** (Optional[Dict[str, Any]]): Additional metadata about the data point. (default: :obj:`None`)
 
 <a id="camel.datasets.models.DataPoint.to_dict"></a>
 
