@@ -142,7 +142,7 @@ class StreamContentAccumulator:
 
     def __init__(self):
         self.base_content = ""  # Content before tool calls
-        self.current_content = ""  # Current streaming content
+        self.current_content = []  # Accumulated streaming fragments
         self.tool_status_messages = []  # Accumulated tool status messages
 
     def set_base_content(self, content: str):
@@ -151,7 +151,7 @@ class StreamContentAccumulator:
 
     def add_streaming_content(self, new_content: str):
         r"""Add new streaming content."""
-        self.current_content += new_content
+        self.current_content.append(new_content)
 
     def add_tool_status(self, status_message: str):
         r"""Add a tool status message."""
@@ -160,16 +160,18 @@ class StreamContentAccumulator:
     def get_full_content(self) -> str:
         r"""Get the complete accumulated content."""
         tool_messages = "".join(self.tool_status_messages)
-        return self.base_content + tool_messages + self.current_content
+        current = "".join(self.current_content)
+        return self.base_content + tool_messages + current
 
     def get_content_with_new_status(self, status_message: str) -> str:
         r"""Get content with a new status message appended."""
         tool_messages = "".join([*self.tool_status_messages, status_message])
-        return self.base_content + tool_messages + self.current_content
+        current = "".join(self.current_content)
+        return self.base_content + tool_messages + current
 
     def reset_streaming_content(self):
         r"""Reset only the streaming content, keep base and tool status."""
-        self.current_content = ""
+        self.current_content = []
 
 
 class StreamingChatAgentResponse:
@@ -397,6 +399,10 @@ class ChatAgent(BaseAgent):
         step_timeout (Optional[float], optional): Timeout in seconds for the
             entire step operation. If None, no timeout is applied.
             (default: :obj:`None`)
+        stream_accumulate (bool, optional): When True, partial streaming
+            updates return accumulated content (current behavior). When False,
+            partial updates return only the incremental delta. (default:
+            :obj:`True`)
     """
 
     def __init__(
@@ -440,6 +446,7 @@ class ChatAgent(BaseAgent):
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = None,
+        stream_accumulate: bool = True,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -528,6 +535,7 @@ class ChatAgent(BaseAgent):
         self.retry_attempts = max(1, retry_attempts)
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
+        self.stream_accumulate = stream_accumulate
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -3668,15 +3676,18 @@ class ChatAgent(BaseAgent):
     ) -> ChatAgentResponse:
         r"""Create a streaming response using content accumulator."""
 
-        # Add new content to accumulator and get full content
+        # Add new content; only build full content when needed
         accumulator.add_streaming_content(new_content)
-        full_content = accumulator.get_full_content()
+        if self.stream_accumulate:
+            message_content = accumulator.get_full_content()
+        else:
+            message_content = new_content
 
         message = BaseMessage(
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict={},
-            content=full_content,
+            content=message_content,
         )
 
         return ChatAgentResponse(
@@ -3686,7 +3697,7 @@ class ChatAgent(BaseAgent):
                 "id": response_id,
                 "usage": step_token_usage.copy(),
                 "finish_reasons": ["streaming"],
-                "num_tokens": self._get_token_count(full_content),
+                "num_tokens": self._get_token_count(message_content),
                 "tool_calls": tool_call_records or [],
                 "external_tool_requests": None,
                 "streaming": True,
@@ -3773,6 +3784,7 @@ class ChatAgent(BaseAgent):
             tool_execution_timeout=self.tool_execution_timeout,
             pause_event=self.pause_event,
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
+            stream_accumulate=self.stream_accumulate,
         )
 
         # Copy memory if requested

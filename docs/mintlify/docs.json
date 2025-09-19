@@ -533,6 +533,7 @@
               "reference/camel.toolkits.pulse_mcp_search_toolkit",
               "reference/camel.toolkits.pyautogui_toolkit",
               "reference/camel.toolkits.reddit_toolkit",
+              "reference/camel.toolkits.resend_toolkit",
               "reference/camel.toolkits.retrieval_toolkit",
               "reference/camel.toolkits.screenshot_toolkit",
               "reference/camel.toolkits.search_toolkit",
