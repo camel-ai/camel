@@ -45,7 +45,7 @@ The <b>Storage</b> module in CAMEL-AI gives you a **unified interface for saving
     - High scalability, real-time search
 
     **TiDBStorage**
-    - For [TiDB](https://ai.pingcap.com/) (hybrid vector/relational database)
+    - For [TiDB](https://pingcap.com/ai) (hybrid vector/relational database)
     - Handles embeddings, knowledge graphs, ops data
 
     **QdrantStorage**

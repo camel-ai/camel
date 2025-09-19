@@ -40,6 +40,8 @@ async def main():
     response = await chat_agent.astep(
         "what is the name of the file in the root of my drive?",
     )
+
+    print("=== Model Response ===")
     print(response.msg.content)
 
     # disconnect from google drive mcp
