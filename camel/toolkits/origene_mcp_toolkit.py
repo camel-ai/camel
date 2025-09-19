@@ -12,12 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
-from camel.toolkits import BaseToolkit, FunctionTool, MCPToolkit
+from .mcp_toolkit import MCPToolkit
 
 
-class OrigeneToolkit(BaseToolkit):
+class OrigeneToolkit(MCPToolkit):
     r"""OrigeneToolkit provides an interface for interacting with
     Origene MCP server.
 
@@ -43,55 +43,14 @@ class OrigeneToolkit(BaseToolkit):
 
         Args:
             config_dict (Optional[Dict]): Configuration dictionary for MCP
-                servers. If None, uses default configuration for chembl_mcp.
-                (default: :obj:`None`)
+                servers. If None, raises ValueError as configuration is
+                required. (default: :obj:`None`)
             timeout (Optional[float]): Connection timeout in seconds.
                 (default: :obj:`None`)
         """
-        super().__init__(timeout=timeout)
-
-        # Use default configuration if none provided
+        # Validate that config_dict is provided
         if config_dict is None:
             raise ValueError("config_dict must be provided")
 
-        self._mcp_toolkit = MCPToolkit(
-            config_dict=config_dict,
-            timeout=timeout,
-        )
-
-    async def connect(self):
-        r"""Explicitly connect to the Origene MCP server."""
-        await self._mcp_toolkit.connect()
-
-    async def disconnect(self):
-        r"""Explicitly disconnect from the Origene MCP server."""
-        await self._mcp_toolkit.disconnect()
-
-    async def __aenter__(self) -> "OrigeneToolkit":
-        r"""Async context manager entry point.
-
-        Returns:
-            OrigeneToolkit: The connected toolkit instance.
-
-        Example:
-            async with OrigeneToolkit(config_dict=config) as toolkit:
-                tools = toolkit.get_tools()
-        """
-        await self.connect()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        r"""Async context manager exit point.
-
-        Automatically disconnects from the Origene MCP server.
-        """
-        await self.disconnect()
-        return None
-
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of tools provided by the Origene MCP server.
-
-        Returns:
-            List[FunctionTool]: List of available tools.
-        """
-        return self._mcp_toolkit.get_tools()
+        # Initialize parent MCPToolkit with provided configuration
+        super().__init__(config_dict=config_dict, timeout=timeout)

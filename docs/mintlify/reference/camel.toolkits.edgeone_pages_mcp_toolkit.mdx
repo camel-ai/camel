@@ -5,7 +5,7 @@
 ## EdgeOnePagesMCPToolkit
 
 ```python
-class EdgeOnePagesMCPToolkit(BaseToolkit):
+class EdgeOnePagesMCPToolkit(MCPToolkit):
 ```
 
 EdgeOnePagesMCPToolkit provides an interface for interacting with
@@ -28,15 +28,3 @@ Initializes the EdgeOnePagesMCPToolkit.
 **Parameters:**
 
 - **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
-
-<a id="camel.toolkits.edgeone_pages_mcp_toolkit.EdgeOnePagesMCPToolkit.get_tools"></a>
-
-### get_tools
-
-```python
-def get_tools(self):
-```
-
-**Returns:**
-
-  List[FunctionTool]: List of available tools.

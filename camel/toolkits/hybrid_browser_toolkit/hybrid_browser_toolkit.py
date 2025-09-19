@@ -25,6 +25,66 @@ class HybridBrowserToolkit(BaseToolkit):
     This wrapper allows users to choose between:
     - 'typescript': WebSocket-based implementation using TypeScript/Node.js
     - 'python': Pure Python implementation using Playwright directly
+
+    Args:
+        mode (Literal["typescript", "python"]): Implementation mode. -
+            'typescript': Uses WebSocket-based TypeScript implementation -
+            'python': Uses pure Python Playwright implementation. Defaults to
+            "typescript".
+        headless (bool): Whether to run browser in headless mode.
+            Defaults to True.
+        user_data_dir (Optional[str]): Directory for user data
+            persistence. Defaults to None.
+        stealth (bool): Whether to enable stealth mode. Defaults to
+            False.
+        web_agent_model (Optional[BaseModelBackend]): Model for web
+            agent operations. Defaults to None.
+        cache_dir (str): Directory for caching. Defaults to "tmp/".
+        enabled_tools (Optional[List[str]]): List of enabled tools.
+            Defaults to None.
+        browser_log_to_file (bool): Whether to log browser actions to
+            file. Defaults to False.
+        log_dir (Optional[str]): Custom directory path for log files.
+            If None, defaults to "browser_log". Defaults to None.
+        session_id (Optional[str]): Session identifier. Defaults to None.
+        default_start_url (str): Default URL to start with. Defaults
+            to "https://google.com/".
+        default_timeout (Optional[int]): Default timeout in
+            milliseconds. Defaults to None.
+        short_timeout (Optional[int]): Short timeout in milliseconds.
+            Defaults to None.
+        navigation_timeout (Optional[int]): Navigation timeout in
+            milliseconds. Defaults to None.
+        network_idle_timeout (Optional[int]): Network idle timeout in
+            milliseconds. Defaults to None.
+        screenshot_timeout (Optional[int]): Screenshot timeout in
+            milliseconds. Defaults to None.
+        page_stability_timeout (Optional[int]): Page stability timeout
+            in milliseconds. Defaults to None.
+        dom_content_loaded_timeout (Optional[int]): DOM content loaded
+            timeout in milliseconds. Defaults to None.
+        viewport_limit (bool): Whether to filter page snapshot
+            elements to only those visible in the current viewport.
+            Defaults to False.
+        connect_over_cdp (bool): Whether to connect to an existing
+            browser via Chrome DevTools Protocol. Defaults to False.
+            (Only supported in TypeScript mode)
+        cdp_url (Optional[str]): WebSocket endpoint URL for CDP
+            connection. Required when connect_over_cdp is True.
+            Defaults to None. (Only supported in TypeScript mode)
+        cdp_keep_current_page (bool): When True and using CDP mode,
+        won't create new pages but use the existing one. Defaults to False.
+            (Only supported in TypeScript mode)
+        full_visual_mode (bool): When True, browser actions like click,
+            browser_open, visit_page, etc. will return 'full visual mode'
+            as snapshot instead of actual page content. The
+            browser_get_page_snapshot method will still return the actual
+            snapshot. Defaults to False.
+        **kwargs: Additional keyword arguments passed to the
+            implementation.
+
+    Returns:
+        HybridBrowserToolkit instance of the specified implementation.
     """
 
     def __new__(
@@ -35,11 +95,12 @@ class HybridBrowserToolkit(BaseToolkit):
         user_data_dir: Optional[str] = None,
         stealth: bool = False,
         web_agent_model: Optional[BaseModelBackend] = None,
-        cache_dir: str = "tmp/",
+        cache_dir: Optional[str] = None,
         enabled_tools: Optional[List[str]] = None,
         browser_log_to_file: bool = False,
+        log_dir: Optional[str] = None,
         session_id: Optional[str] = None,
-        default_start_url: str = "https://google.com/",
+        default_start_url: Optional[str] = None,
         default_timeout: Optional[int] = None,
         short_timeout: Optional[int] = None,
         navigation_timeout: Optional[int] = None,
@@ -50,6 +111,7 @@ class HybridBrowserToolkit(BaseToolkit):
         viewport_limit: bool = False,
         connect_over_cdp: bool = False,
         cdp_url: Optional[str] = None,
+        cdp_keep_current_page: bool = False,
         full_visual_mode: bool = False,
         **kwargs: Any,
     ) -> Any:
@@ -73,6 +135,8 @@ class HybridBrowserToolkit(BaseToolkit):
                 Defaults to None.
             browser_log_to_file (bool): Whether to log browser actions to
                 file. Defaults to False.
+            log_dir (Optional[str]): Custom directory path for log files.
+                If None, defaults to "browser_log". Defaults to None.
             session_id (Optional[str]): Session identifier. Defaults to None.
             default_start_url (str): Default URL to start with. Defaults
                 to "https://google.com/".
@@ -99,6 +163,9 @@ class HybridBrowserToolkit(BaseToolkit):
             cdp_url (Optional[str]): WebSocket endpoint URL for CDP
                 connection. Required when connect_over_cdp is True.
                 Defaults to None. (Only supported in TypeScript mode)
+            cdp_keep_current_page (bool): When True and using CDP mode,
+            won't create new pages but use the existing one. Defaults to False.
+                (Only supported in TypeScript mode)
             full_visual_mode (bool): When True, browser actions like click,
                 browser_open, visit_page, etc. will return 'full visual mode'
                 as snapshot instead of actual page content. The
@@ -123,6 +190,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 cache_dir=cache_dir,
                 enabled_tools=enabled_tools,
                 browser_log_to_file=browser_log_to_file,
+                log_dir=log_dir,
                 session_id=session_id,
                 default_start_url=default_start_url,
                 default_timeout=default_timeout,
@@ -135,6 +203,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 viewport_limit=viewport_limit,
                 connect_over_cdp=connect_over_cdp,
                 cdp_url=cdp_url,
+                cdp_keep_current_page=cdp_keep_current_page,
                 full_visual_mode=full_visual_mode,
                 **kwargs,
             )
@@ -167,6 +236,7 @@ class HybridBrowserToolkit(BaseToolkit):
                 cache_dir=cache_dir,
                 enabled_tools=enabled_tools,
                 browser_log_to_file=browser_log_to_file,
+                log_dir=log_dir,
                 session_id=session_id,
                 default_start_url=default_start_url,
                 default_timeout=default_timeout,

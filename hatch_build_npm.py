@@ -20,6 +20,7 @@ It gracefully handles cases where Node.js/npm is not available.
 """
 
 import json
+import platform
 import re
 import subprocess
 from pathlib import Path
@@ -59,7 +60,8 @@ class NpmBuildHook(BuildHookInterface):
         version_str = version_str.strip().lstrip('v')
         match = re.match(r'(\d+)\.(\d+)\.(\d+)', version_str)
         if match:
-            return tuple(map(int, match.groups()))
+            groups = match.groups()
+            return (int(groups[0]), int(groups[1]), int(groups[2]))
         return (0, 0, 0)
 
     def _check_version_requirement(self, current: str, required: str) -> bool:
@@ -111,6 +113,8 @@ class NpmBuildHook(BuildHookInterface):
         npm_version = None
         versions_ok = True
 
+        use_shell = platform.system() == "Windows"
+
         try:
             result = subprocess.run(
                 ["node", "--version"],
@@ -118,6 +122,7 @@ class NpmBuildHook(BuildHookInterface):
                 capture_output=True,
                 text=True,
                 timeout=30,
+                shell=use_shell,
             )
             node_version = result.stdout.strip()
             print(f"Found Node.js version: {node_version}")
@@ -132,6 +137,7 @@ class NpmBuildHook(BuildHookInterface):
                 capture_output=True,
                 text=True,
                 timeout=30,
+                shell=use_shell,
             )
             npm_version = result.stdout.strip()
             print(f"Found npm version: {npm_version}")
@@ -173,6 +179,8 @@ class NpmBuildHook(BuildHookInterface):
 
     def _run_npm_build_process(self, ts_dir: Path, dist_dir: Path) -> bool:
         r"""Run the npm build process."""
+        use_shell = platform.system() == "Windows"
+
         try:
             print("Installing npm dependencies...")
             subprocess.run(
@@ -181,6 +189,7 @@ class NpmBuildHook(BuildHookInterface):
                 check=True,
                 text=True,
                 timeout=300,
+                shell=use_shell,
             )
 
             print("Building TypeScript...")
@@ -190,6 +199,7 @@ class NpmBuildHook(BuildHookInterface):
                 check=True,
                 text=True,
                 timeout=300,
+                shell=use_shell,
             )
 
             print("Installing Playwright browsers...")
@@ -200,6 +210,7 @@ class NpmBuildHook(BuildHookInterface):
                     check=True,
                     text=True,
                     timeout=600,
+                    shell=use_shell,
                 )
                 print("Playwright browsers installed successfully")
             except subprocess.CalledProcessError as e:
