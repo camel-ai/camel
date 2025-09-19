@@ -357,8 +357,33 @@ def test_get_user_by_mobile(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.get_user_by_mobile('13800000000')
+        result = toolkit.dingtalk_get_user_by_mobile('13800000000')
         assert result == expected_data
+
+
+def test_get_user_by_mobile_validation():
+    """Test mobile number validation in get_user_by_mobile."""
+    with patch(
+        'camel.toolkits.dingtalk._get_dingtalk_access_token'
+    ) as mock_token:
+        mock_token.return_value = "test_access_token"
+        toolkit = DingtalkToolkit()
+
+        # Test invalid mobile numbers
+        invalid_mobiles = [
+            '1234567890',    # 10 digits
+            '123456789012',  # 12 digits
+            '23800000000',   # doesn't start with 1
+            '12800000000',   # second digit is 2 (invalid)
+            'abc1380000000', # contains letters
+            '138-0000-0000', # contains hyphens
+            '',              # empty string
+        ]
+
+        for invalid_mobile in invalid_mobiles:
+            result = toolkit.dingtalk_get_user_by_mobile(invalid_mobile)
+            assert 'error' in result
+            assert 'Invalid mobile number format' in result['error']
 
 
 @patch('camel.toolkits.dingtalk._make_dingtalk_request')

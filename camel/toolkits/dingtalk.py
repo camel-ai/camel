@@ -16,6 +16,7 @@ import base64
 import hashlib
 import hmac
 import os
+import re
 import time
 import urllib.parse
 from typing import Any, Dict, List, Literal, Optional
@@ -36,16 +37,10 @@ _dingtalk_access_token_expires_at = 0
 
 @retry_on_error()
 def _get_dingtalk_access_token() -> str:
-    r"""Retrieves or refreshes the Dingtalk access token.
+    r"""Gets access token for Dingtalk API.
 
     Returns:
-        str: The valid access token.
-
-    Raises:
-        ValueError: If credentials are missing or token retrieval fails.
-
-    References:
-        https://open.dingtalk.com/document/orgapp-server/obtain-identity-credentials
+        str: Access token for API requests.
     """
     global _dingtalk_access_token, _dingtalk_access_token_expires_at
 
@@ -81,19 +76,18 @@ def _get_dingtalk_access_token() -> str:
 def _make_dingtalk_request(
     method: Literal["GET", "POST"], endpoint: str, **kwargs
 ) -> Dict[str, Any]:
-    r"""Makes a request to Dingtalk API with proper error handling.
+    r"""Makes authenticated request to Dingtalk API.
 
     Args:
-        method (Literal["GET", "POST"]): HTTP method ('GET' or 'POST').
+        method (Literal["GET", "POST"]): HTTP method to use.
         endpoint (str): API endpoint path.
-        **kwargs: Additional arguments for requests.
+        **kwargs: Additional arguments passed to requests.
 
     Returns:
         Dict[str, Any]: API response data.
 
     Raises:
-        requests.exceptions.RequestException: If request fails.
-        ValueError: If API returns an error.
+        Exception: If API request fails or returns error.
     """
     global _dingtalk_access_token, _dingtalk_access_token_expires_at
     access_token = _get_dingtalk_access_token()
@@ -119,20 +113,18 @@ def _make_dingtalk_request(
 
 
 def _generate_signature(secret: str, timestamp: str) -> str:
-    r"""Generate signature for Dingtalk webhook.
+    r"""Generates signature for Dingtalk webhook.
 
     Args:
         secret (str): Webhook secret.
-        timestamp (str): Timestamp string.
+        timestamp (str): Current timestamp.
 
     Returns:
-        str: Base64 encoded signature.
+        str: Generated signature.
     """
     string_to_sign = f"{timestamp}\n{secret}"
     hmac_code = hmac.new(
-        secret.encode('utf-8'),
-        string_to_sign.encode('utf-8'),
-        digestmod=hashlib.sha256,
+        secret.encode("utf-8"), string_to_sign.encode("utf-8"), hashlib.sha256
     ).digest()
     return base64.b64encode(hmac_code).decode('utf-8')
 
@@ -144,14 +136,6 @@ class DingtalkToolkit(BaseToolkit):
     This toolkit provides methods to interact with the Dingtalk API,
     allowing users to send messages, manage users, departments, and handle
     webhook operations.
-
-    References:
-        - Documentation: https://open.dingtalk.com/document/
-        - Robot Webhook: https://open.dingtalk.com/document/robots/custom-robot-access
-
-    Notes:
-        Set environment variables: DINGTALK_APP_KEY, DINGTALK_APP_SECRET
-        For webhook operations: DINGTALK_WEBHOOK_URL, DINGTALK_WEBHOOK_SECRET
     """
 
     def __init__(self, timeout: Optional[float] = None):
@@ -177,24 +161,20 @@ class DingtalkToolkit(BaseToolkit):
         self._initialize_token_safely()
 
     def _initialize_token_safely(self):
-        r"""Initialize access token with enterprise-grade error handling.
+        r"""Safely initializes access token during toolkit setup.
 
-        This method attempts to fetch the access token during initialization
-        to ensure the first API call will succeed. If token initialization
-        fails, it logs a warning but doesn't raise an exception, allowing
-        the toolkit to be created. The error will be caught on the first
-        API call with a clear error message.
+        This method attempts to get an access token during initialization
+        but doesn't raise exceptions if it fails, allowing the toolkit
+        to be instantiated even if credentials are temporarily invalid.
         """
         try:
             _get_dingtalk_access_token()
-            logger.info("✅ Dingtalk access token initialized successfully.")
+            logger.info("Dingtalk toolkit initialized successfully.")
         except Exception as e:
+            logger.warning(f"Failed to initialize access token: {e}")
             logger.warning(
-                f"⚠️ Failed to initialize Dingtalk access token: {e}"
-            )
-            logger.warning(
-                "The first API call may fail. Please check your credentials "
-                "and network connection."
+                "Toolkit created but may fail on actual API calls. "
+                "Check your credentials."
             )
 
     @api_keys_required(
@@ -203,7 +183,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def send_text_message(
+    def dingtalk_send_text_message(
         self,
         userid: str,
         content: str,
@@ -242,7 +222,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def send_markdown_message(
+    def dingtalk_send_markdown_message(
         self,
         userid: str,
         title: str,
@@ -257,6 +237,9 @@ class DingtalkToolkit(BaseToolkit):
 
         Returns:
             str: Success or error message.
+
+        References:
+            https://open.dingtalk.com/document/orgapp-server/send-single-chat-message
         """
         payload = {
             "msg": {
@@ -283,7 +266,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def get_user_info(
+    def dingtalk_get_user_info(
         self,
         userid: str,
     ) -> Dict[str, Any]:
@@ -293,15 +276,19 @@ class DingtalkToolkit(BaseToolkit):
             userid (str): The user's userid.
 
         Returns:
-            Dict[str, Any]: User information as dictionary or error
-                information.
+            Dict[str, Any]: User information or error information.
 
         References:
             https://open.dingtalk.com/document/orgapp-server/query-user-details
         """
+        payload = {"userid": userid}
+
         try:
             data = _make_dingtalk_request(
-                "GET", f"/topapi/v2/user/get?userid={userid}"
+                "POST",
+                "/topapi/v2/user/get",
+                headers={"Content-Type": "application/json"},
+                json=payload,
             )
             return data
         except Exception as e:
@@ -313,7 +300,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def get_department_list(
+    def dingtalk_get_department_list(
         self,
         dept_id: Optional[int] = None,
     ) -> Dict[str, Any]:
@@ -324,16 +311,22 @@ class DingtalkToolkit(BaseToolkit):
                 departments.
 
         Returns:
-            Dict[str, Any]: Department list as dictionary or error information.
+            Dict[str, Any]: Department list or error information.
 
         References:
-            https://open.dingtalk.com/document/orgapp-server/obtain-the-department-list
+            https://open.dingtalk.com/document/orgapp-server/obtain-the-department-list-v2
         """
+        payload = {}
+        if dept_id is not None:
+            payload["dept_id"] = dept_id
+
         try:
-            endpoint = "/topapi/v2/department/listsub"
-            if dept_id is not None:
-                endpoint += f"?dept_id={dept_id}"
-            data = _make_dingtalk_request("GET", endpoint)
+            data = _make_dingtalk_request(
+                "POST",
+                "/topapi/v2/department/listsub",
+                headers={"Content-Type": "application/json"},
+                json=payload,
+            )
             return data
         except Exception as e:
             return {"error": f"Failed to get department list: {e!s}"}
@@ -344,7 +337,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def get_department_users(
+    def dingtalk_get_department_users(
         self,
         dept_id: int,
         offset: int = 0,
@@ -354,19 +347,23 @@ class DingtalkToolkit(BaseToolkit):
 
         Args:
             dept_id (int): Department ID.
-            offset (int): Starting position. (default: 0)
-            size (int): Number of users to retrieve (1-100). (default: 100)
+            offset (int): Offset for pagination (default: 0).
+            size (int): Number of users to retrieve (default: 100, max: 100).
 
         Returns:
-            Dict[str, Any]: User list as dictionary or error information.
+            Dict[str, Any]: Users list or error information.
 
         References:
-            https://open.dingtalk.com/document/orgapp-server/obtain-the-list-of-users-in-a-department
+            https://open.dingtalk.com/document/orgapp-server/queries-the-complete-information-of-a-department-user
         """
+        payload = {"dept_id": dept_id, "offset": offset, "size": size}
+
         try:
             data = _make_dingtalk_request(
-                "GET",
-                f"/topapi/v2/user/list?dept_id={dept_id}&offset={offset}&size={size}",
+                "POST",
+                "/topapi/v2/user/list",
+                headers={"Content-Type": "application/json"},
+                json=payload,
             )
             return data
         except Exception as e:
@@ -378,7 +375,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def search_users_by_name(
+    def dingtalk_search_users_by_name(
         self,
         name: str,
     ) -> Dict[str, Any]:
@@ -388,14 +385,19 @@ class DingtalkToolkit(BaseToolkit):
             name (str): User name to search for.
 
         Returns:
-            Dict[str, Any]: Search results as dictionary or error information.
+            Dict[str, Any]: Search results or error information.
 
         References:
-            https://open.dingtalk.com/document/orgapp-server/search-for-users
+            https://open.dingtalk.com/document/orgapp-server/query-users
         """
+        payload = {"name": name}
+
         try:
             data = _make_dingtalk_request(
-                "GET", f"/topapi/v2/user/list?name={urllib.parse.quote(name)}"
+                "POST",
+                "/topapi/user/search",
+                headers={"Content-Type": "application/json"},
+                json=payload,
             )
             return data
         except Exception as e:
@@ -403,7 +405,7 @@ class DingtalkToolkit(BaseToolkit):
 
     # Include more webhook methods if useful. Double check link implementation
     # is done correctly here.
-    def send_webhook_message(
+    def dingtalk_send_webhook_message(
         self,
         content: str,
         msgtype: Literal["text", "markdown", "link", "actionCard"] = "text",
@@ -414,111 +416,71 @@ class DingtalkToolkit(BaseToolkit):
         r"""Sends a message via Dingtalk webhook.
 
         Args:
-            content (str): Message content. For link messages, this should be
-                the URL.
-            msgtype (Literal["text", "markdown", "link", "actionCard"]):
-                Message type.
-            title (Optional[str]): Message title. For link messages, this is
-                the link title.
-            webhook_url (Optional[str]): Webhook URL. If None, uses
-                DINGTALK_WEBHOOK_URL.
-            webhook_secret (Optional[str]): Webhook secret. If None, uses
-                DINGTALK_WEBHOOK_SECRET.
+            content (str): Message content.
+            msgtype (Literal): Message type (text, markdown, link, actionCard).
+            title (Optional[str]): Message title (required for markdown).
+            webhook_url (Optional[str]): Webhook URL. If None, uses env var.
+            webhook_secret (Optional[str]): Webhook secret. If None, uses env var.
 
         Returns:
             str: Success or error message.
 
-        Examples:
-            # Text message
-            send_webhook_message("Hello World!")
-
-            # Markdown message
-            send_webhook_message(
-                "# Hello\nThis is **bold**", "markdown", "Important Update"
-            )
-
-            # Link message
-            send_webhook_message(
-                "https://example.com", "link", "Visit Our Website"
-            )
-
-            # ActionCard message
-            send_webhook_message(
-                "Click the button below to proceed", "actionCard",
-                "Action Required"
-            )
-
         References:
             https://open.dingtalk.com/document/robots/custom-robot-access
         """
-        if not webhook_url:
-            webhook_url = os.environ.get("DINGTALK_WEBHOOK_URL", "")
-        if not webhook_secret:
-            webhook_secret = os.environ.get("DINGTALK_WEBHOOK_SECRET", "")
+        # Get webhook configuration
+        url = webhook_url or os.environ.get("DINGTALK_WEBHOOK_URL", "")
+        secret = webhook_secret or os.environ.get("DINGTALK_WEBHOOK_SECRET", "")
 
-        if not webhook_url:
-            return (
-                "Webhook URL not provided. Set DINGTALK_WEBHOOK_URL "
-                "environment variable."
-            )
+        if not url:
+            return "Error: Webhook URL not provided or set in environment"
 
-        # Generate signature if secret is provided
-        timestamp = str(round(time.time() * 1000))
-        sign = ""
-        if webhook_secret:
-            sign = _generate_signature(webhook_secret, timestamp)
-
-        # Build webhook URL with parameters
-        url_params = {"timestamp": timestamp}
-        if sign:
-            url_params["sign"] = sign
-        webhook_url_with_params = f"{webhook_url}&" + "&".join(
-            [f"{k}={v}" for k, v in url_params.items()]
-        )
-
-        # Build message payload
+        # Prepare message payload
         payload: Dict[str, Any] = {"msgtype": msgtype}
 
         if msgtype == "text":
             payload["text"] = {"content": content}
         elif msgtype == "markdown":
-            payload["markdown"] = {
-                "title": title or "Message",
-                "text": content,
-            }
+            if not title:
+                return "Error: Title is required for markdown messages"
+            payload["markdown"] = {"title": title, "text": content}
         elif msgtype == "link":
-            # For link messages, content should be the URL, title is the
-            # link title
+            # For link messages, content should be structured differently
+            # This is a simplified implementation
             payload["link"] = {
-                "messageUrl": content,
-                "title": title or "Link",
-                "text": title or "Click to open link",
+                "text": content,
+                "title": title or "Link Message",
+                "messageUrl": "https://www.dingtalk.com/",
             }
         elif msgtype == "actionCard":
-            # For actionCard messages, content is the card text, title is the
-            # card title
             payload["actionCard"] = {
                 "title": title or "Action Card",
                 "text": content,
-                "btnOrientation": "0",  # Vertical button arrangement
+                "singleTitle": "Read More",
+                "singleURL": "https://www.dingtalk.com/",
             }
+
+        # Add signature if secret is provided
+        if secret:
+            timestamp = str(round(time.time() * 1000))
+            sign = _generate_signature(secret, timestamp)
+            url += f"&timestamp={timestamp}&sign={urllib.parse.quote(sign)}"
 
         try:
             response = requests.post(
-                webhook_url_with_params,
-                headers={"Content-Type": "application/json"},
+                url,
                 json=payload,
-                timeout=self.timeout or 30,
+                headers={"Content-Type": "application/json"},
+                timeout=self.timeout,
             )
             response.raise_for_status()
-            result = response.json()
 
+            result = response.json()
             if result.get("errcode") == 0:
-                return "Webhook message sent successfully."
+                return "Webhook message sent successfully"
             else:
-                return (
-                    f"Webhook error: {result.get('errmsg', 'Unknown error')}"
-                )
+                return f"Webhook error: {result.get('errmsg', 'Unknown error')}"
+
         except Exception as e:
             return f"Failed to send webhook message: {e!s}"
 
@@ -528,7 +490,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def create_group(
+    def dingtalk_create_group(
         self,
         name: str,
         owner: str,
@@ -538,21 +500,25 @@ class DingtalkToolkit(BaseToolkit):
 
         Args:
             name (str): Group name.
-            owner (str): Group owner userid.
+            owner (str): Group owner's userid.
             useridlist (List[str]): List of user IDs to add to the group.
 
         Returns:
-            Dict[str, Any]: Group creation result or error information.
+            Dict[str, Any]: Group creation result with chatid or error.
 
         References:
-            https://open.dingtalk.com/document/orgapp-server/create-a-group-chat
+            https://open.dingtalk.com/document/orgapp-server/create-group-session
         """
-        payload = {"name": name, "owner": owner, "useridlist": useridlist}
+        payload = {
+            "name": name,
+            "owner": owner,
+            "useridlist": useridlist,
+        }
 
         try:
             data = _make_dingtalk_request(
                 "POST",
-                "/topapi/im/chat/group/create",
+                "/topapi/im/chat/create",
                 headers={"Content-Type": "application/json"},
                 json=payload,
             )
@@ -566,7 +532,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def send_group_message(
+    def dingtalk_send_group_message(
         self,
         chatid: str,
         content: str,
@@ -583,33 +549,28 @@ class DingtalkToolkit(BaseToolkit):
             str: Success or error message.
 
         References:
-            https://open.dingtalk.com/document/orgapp-server/send-group-chat-messages
+            https://open.dingtalk.com/document/orgapp-server/send-group-messages
         """
-        payload: Dict[str, Any] = {
-            "chatid": chatid,
-            "msg": {
-                "msgtype": msgtype,
-                "text": {"content": content} if msgtype == "text" else None,
-                "markdown": (
-                    {"text": content} if msgtype == "markdown" else None
-                ),
-            },
-        }
+        msg_data: Dict[str, Any] = {"msgtype": msgtype}
 
-        # Remove None values
-        if payload["msg"]["text"] is None:
-            del payload["msg"]["text"]
-        if payload["msg"]["markdown"] is None:
-            del payload["msg"]["markdown"]
+        if msgtype == "text":
+            msg_data["text"] = {"content": content}
+        elif msgtype == "markdown":
+            msg_data["markdown"] = {"text": content}
+
+        payload = {
+            "msg": msg_data,
+            "chatid": chatid,
+        }
 
         try:
             _make_dingtalk_request(
                 "POST",
-                "/topapi/im/chat/send",
+                "/topapi/message/corpconversation/asyncsend_v2",
                 headers={"Content-Type": "application/json"},
                 json=payload,
             )
-            return f"Group message sent successfully to chat {chatid}."
+            return f"Message sent successfully to group {chatid}."
         except Exception as e:
             return f"Failed to send group message: {e!s}"
 
@@ -619,7 +580,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def send_link_message(
+    def dingtalk_send_link_message(
         self,
         userid: str,
         title: str,
@@ -633,8 +594,8 @@ class DingtalkToolkit(BaseToolkit):
             userid (str): The user's userid.
             title (str): Link title.
             text (str): Link description text.
-            message_url (str): The URL to link to.
-            pic_url (Optional[str]): Optional picture URL for the link.
+            message_url (str): URL to link to.
+            pic_url (Optional[str]): Picture URL for the link.
 
         Returns:
             str: Success or error message.
@@ -642,11 +603,12 @@ class DingtalkToolkit(BaseToolkit):
         References:
             https://open.dingtalk.com/document/orgapp-server/send-single-chat-message
         """
-        link_data = {
-            "messageUrl": message_url,
+        link_data: Dict[str, Any] = {
             "title": title,
             "text": text,
+            "messageUrl": message_url,
         }
+
         if pic_url:
             link_data["picUrl"] = pic_url
 
@@ -662,9 +624,7 @@ class DingtalkToolkit(BaseToolkit):
                 headers={"Content-Type": "application/json"},
                 json=payload,
             )
-            return (
-                f"Link message '{title}' sent successfully to user {userid}."
-            )
+            return f"Link message sent successfully to user {userid}."
         except Exception as e:
             return f"Failed to send link message: {e!s}"
 
@@ -674,7 +634,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def send_action_card_message(
+    def dingtalk_send_action_card_message(
         self,
         userid: str,
         title: str,
@@ -687,9 +647,9 @@ class DingtalkToolkit(BaseToolkit):
         Args:
             userid (str): The user's userid.
             title (str): Card title.
-            text (str): Card content (supports markdown).
-            single_title (str): Button text.
-            single_url (str): Button click URL.
+            text (str): Card content text.
+            single_title (str): Action button title.
+            single_url (str): Action button URL.
 
         Returns:
             str: Success or error message.
@@ -717,9 +677,9 @@ class DingtalkToolkit(BaseToolkit):
                 headers={"Content-Type": "application/json"},
                 json=payload,
             )
-            return f"Action card '{title}' sent successfully to user {userid}."
+            return f"Action card message sent successfully to user {userid}."
         except Exception as e:
-            return f"Failed to send action card: {e!s}"
+            return f"Failed to send action card message: {e!s}"
 
     @api_keys_required(
         [
@@ -727,24 +687,31 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def get_user_by_mobile(self, mobile: str) -> Dict[str, Any]:
+    def dingtalk_get_user_by_mobile(self, mobile: str) -> Dict[str, Any]:
         r"""Gets user information by mobile number.
 
         Args:
-            mobile (str): User's mobile number.
+            mobile (str): User's mobile number. Should be a valid Chinese 
+                mobile number format (11 digits starting with 1).
 
         Returns:
             Dict[str, Any]: User information or error information.
-
-        References:
-            https://open.dingtalk.com/document/orgapp-server/query-users-by-phone-number
         """
+        # Validate mobile number format (Chinese mobile number: 11 digits starting with 1)
+        mobile_pattern = r'^1[3-9]\d{9}$'
+        if not re.match(mobile_pattern, mobile):
+            return {
+                "error": "Invalid mobile number format. Expected 11 digits starting with 1 (e.g., 13800000000)."
+            }
+
+        payload = {"mobile": mobile}
+
         try:
             data = _make_dingtalk_request(
                 "POST",
                 "/topapi/v2/user/getbymobile",
                 headers={"Content-Type": "application/json"},
-                json={"mobile": mobile},
+                json=payload,
             )
             return data
         except Exception as e:
@@ -756,11 +723,14 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def get_user_by_unionid(self, unionid: str) -> Dict[str, Any]:
+    def dingtalk_get_user_by_unionid(self, unionid: str) -> Dict[str, Any]:
         r"""Gets user information by unionid.
 
         Args:
-            unionid (str): User's unionid.
+            unionid (str): User's unique identifier across all DingTalk 
+                organizations. This is a global identifier that remains 
+                consistent even if the user belongs to multiple DingTalk 
+                organizations, unlike userid which is organization-specific.
 
         Returns:
             Dict[str, Any]: User information or error information.
@@ -771,7 +741,7 @@ class DingtalkToolkit(BaseToolkit):
         try:
             data = _make_dingtalk_request(
                 "POST",
-                "/topapi/v2/user/getbyunionid",
+                "/topapi/user/getbyunionid",
                 headers={"Content-Type": "application/json"},
                 json={"unionid": unionid},
             )
@@ -785,7 +755,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def get_department_detail(self, dept_id: int) -> Dict[str, Any]:
+    def dingtalk_get_department_detail(self, dept_id: int) -> Dict[str, Any]:
         r"""Gets detailed information about a department.
 
         Args:
@@ -795,14 +765,16 @@ class DingtalkToolkit(BaseToolkit):
             Dict[str, Any]: Department details or error information.
 
         References:
-            https://open.dingtalk.com/document/orgapp-server/query-department-details
+            https://open.dingtalk.com/document/orgapp-server/query-department-details0-v2
         """
+        payload = {"dept_id": dept_id}
+
         try:
             data = _make_dingtalk_request(
                 "POST",
                 "/topapi/v2/department/get",
                 headers={"Content-Type": "application/json"},
-                json={"dept_id": dept_id},
+                json=payload,
             )
             return data
         except Exception as e:
@@ -814,7 +786,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def send_oa_message(
+    def dingtalk_send_oa_message(
         self,
         userid: str,
         message_url: str,
@@ -822,18 +794,16 @@ class DingtalkToolkit(BaseToolkit):
         head_text: str,
         body_title: str,
         body_content: str,
-        body_author: Optional[str] = None,
     ) -> str:
         r"""Sends an OA (Office Automation) message to a Dingtalk user.
 
         Args:
             userid (str): The user's userid.
-            message_url (str): URL to jump to when message is clicked.
-            head_bgcolor (str): Header background color (e.g., "FFBBBBBB").
+            message_url (str): URL for the message action.
+            head_bgcolor (str): Header background color (hex format).
             head_text (str): Header text.
             body_title (str): Body title.
             body_content (str): Body content.
-            body_author (Optional[str]): Message author.
 
         Returns:
             str: Success or error message.
@@ -843,14 +813,15 @@ class DingtalkToolkit(BaseToolkit):
         """
         oa_data: Dict[str, Any] = {
             "message_url": message_url,
-            "head": {"bgcolor": head_bgcolor, "text": head_text},
+            "head": {
+                "bgcolor": head_bgcolor,
+                "text": head_text,
+            },
             "body": {
                 "title": body_title,
-                "content": body_content,
+                "form": [{"key": "Content:", "value": body_content}],
             },
         }
-        if body_author:
-            oa_data["body"]["author"] = str(body_author)
 
         payload = {
             "msg": {"msgtype": "oa", "oa": oa_data},
@@ -874,7 +845,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def get_group_info(self, chatid: str) -> Dict[str, Any]:
+    def dingtalk_get_group_info(self, chatid: str) -> Dict[str, Any]:
         r"""Gets information about a group chat.
 
         Args:
@@ -886,12 +857,14 @@ class DingtalkToolkit(BaseToolkit):
         References:
             https://open.dingtalk.com/document/orgapp-server/query-group-session-information
         """
+        payload = {"chatid": chatid}
+
         try:
             data = _make_dingtalk_request(
                 "POST",
                 "/topapi/im/chat/get",
                 headers={"Content-Type": "application/json"},
-                json={"chatid": chatid},
+                json=payload,
             )
             return data
         except Exception as e:
@@ -903,7 +876,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def update_group(
+    def dingtalk_update_group(
         self,
         chatid: str,
         name: Optional[str] = None,
@@ -911,14 +884,18 @@ class DingtalkToolkit(BaseToolkit):
         add_useridlist: Optional[List[str]] = None,
         del_useridlist: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        r"""Updates a group chat (name, owner, or members).
+        r"""Updates a Dingtalk group configuration.
 
         Args:
             chatid (str): Group chat ID.
             name (Optional[str]): New group name.
             owner (Optional[str]): New group owner userid.
-            add_useridlist (Optional[List[str]]): User IDs to add.
-            del_useridlist (Optional[List[str]]): User IDs to remove.
+            add_useridlist (Optional[List[str]]): List of user IDs to add.
+                Note: Internally converted to comma-separated string as 
+                required by the DingTalk API.
+            del_useridlist (Optional[List[str]]): List of user IDs to remove.
+                Note: Internally converted to comma-separated string as 
+                required by the DingTalk API.
 
         Returns:
             Dict[str, Any]: Update result or error information.
@@ -926,12 +903,14 @@ class DingtalkToolkit(BaseToolkit):
         References:
             https://open.dingtalk.com/document/orgapp-server/modify-group-session
         """
-        payload = {"chatid": chatid}
+        payload: Dict[str, Any] = {"chatid": chatid}
 
         if name:
             payload["name"] = name
         if owner:
             payload["owner"] = owner
+        # Note: DingTalk update group API requires comma-separated string format
+        # This is different from send_work_notification which uses array format
         if add_useridlist:
             payload["add_useridlist"] = ",".join(add_useridlist)
         if del_useridlist:
@@ -954,7 +933,7 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def send_work_notification(
+    def dingtalk_send_work_notification(
         self,
         userid_list: List[str],
         msg_content: str,
@@ -964,6 +943,8 @@ class DingtalkToolkit(BaseToolkit):
 
         Args:
             userid_list (List[str]): List of user IDs to send to.
+                Note: This API accepts array format, unlike some other APIs
+                that require comma-separated strings.
             msg_content (str): Message content.
             msg_type (Literal["text", "markdown"]): Message type.
 
@@ -987,7 +968,7 @@ class DingtalkToolkit(BaseToolkit):
 
         payload = {
             "msg": msg_data,
-            "userid_list": userid_list,  # 应该是数组,不是逗号分隔的字符串
+            "userid_list": userid_list,  # Array format for this API
         }
 
         try:
@@ -1004,32 +985,153 @@ class DingtalkToolkit(BaseToolkit):
         except Exception as e:
             return f"Failed to send work notification: {e!s}"
 
+    @api_keys_required(
+        [
+            (None, "DINGTALK_APP_KEY"),
+            (None, "DINGTALK_APP_SECRET"),
+        ]
+    )
+    def dingtalk_get_userid_by_phone(
+        self, 
+        phone_number: str
+    ) -> str:
+        r"""Gets user ID by phone number for LLM agents.
+        
+        Args:
+            phone_number (str): User's phone number.
+            
+        Returns:
+            str: User ID or error message.
+            
+        References:
+            https://open.dingtalk.com/document/orgapp-server/query-user-details
+        """
+        try:
+            user_info = self.dingtalk_get_user_by_mobile(phone_number)
+            if 'result' in user_info and 'userid' in user_info['result']:
+                return user_info['result']['userid']
+            else:
+                return f"User not found for phone number: {phone_number}"
+        except Exception as e:
+            return f"Failed to get user ID by phone: {e!s}"
+
+    @api_keys_required(
+        [
+            (None, "DINGTALK_APP_KEY"),
+            (None, "DINGTALK_APP_SECRET"),
+        ]
+    )
+    def dingtalk_get_userid_by_name(
+        self, 
+        user_name: str
+    ) -> str:
+        r"""Gets user ID by user name for LLM agents.
+        
+        Args:
+            user_name (str): User's display name.
+            
+        Returns:
+            str: User ID or error message.
+            
+        References:
+            https://open.dingtalk.com/document/orgapp-server/query-users
+        """
+        try:
+            search_result = self.dingtalk_search_users_by_name(user_name)
+            if 'result' in search_result and search_result['result']:
+                # Return the first match
+                return search_result['result'][0].get('userid', 
+                    f"No userid found for user: {user_name}")
+            else:
+                return f"User not found with name: {user_name}"
+        except Exception as e:
+            return f"Failed to get user ID by name: {e!s}"
+
+    @api_keys_required(
+        [
+            (None, "DINGTALK_APP_KEY"),
+            (None, "DINGTALK_APP_SECRET"),
+        ]
+    )
+    def dingtalk_get_department_id_by_name(
+        self, 
+        department_name: str
+    ) -> str:
+        r"""Gets department ID by department name for LLM agents.
+        
+        Args:
+            department_name (str): Department name to search for.
+            
+        Returns:
+            str: Department ID or error message.
+        """
+        try:
+            dept_list = self.dingtalk_get_department_list()
+            if 'result' in dept_list:
+                for dept in dept_list['result']:
+                    if dept.get('name') == department_name:
+                        return str(dept.get('id', ''))
+                return f"Department not found: {department_name}"
+            else:
+                return f"Failed to get department list"
+        except Exception as e:
+            return f"Failed to get department ID by name: {e!s}"
+
+    def dingtalk_get_chatid_by_group_name(
+        self, 
+        group_name: str
+    ) -> str:
+        r"""Gets chat ID by group name for LLM agents.
+        
+        Note: This function provides guidance as Dingtalk API doesn't directly
+        support searching groups by name. Users should use the group creation
+        response or group management features to obtain chat IDs.
+        
+        Args:
+            group_name (str): Group name to search for.
+            
+        Returns:
+            str: Guidance message for obtaining chat ID.
+        """
+        return (
+            f"To get chat ID for group '{group_name}': "
+            "1. Use dingtalk_create_group() and save the returned chatid, or "
+            "2. Contact group admin to provide the chat ID, or "
+            "3. Use Dingtalk admin console to find the group ID. "
+            "Chat IDs are typically returned when creating groups."
+        )
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns toolkit functions as tools."""
         return [
             # Original message functions
-            FunctionTool(self.send_text_message),
-            FunctionTool(self.send_markdown_message),
-            FunctionTool(self.send_webhook_message),
+            FunctionTool(self.dingtalk_send_text_message),
+            FunctionTool(self.dingtalk_send_markdown_message),
+            FunctionTool(self.dingtalk_send_webhook_message),
             # New message types
-            FunctionTool(self.send_link_message),
-            FunctionTool(self.send_action_card_message),
-            FunctionTool(self.send_oa_message),
-            FunctionTool(self.send_work_notification),
+            FunctionTool(self.dingtalk_send_link_message),
+            FunctionTool(self.dingtalk_send_action_card_message),
+            FunctionTool(self.dingtalk_send_oa_message),
+            FunctionTool(self.dingtalk_send_work_notification),
             # User management functions
-            FunctionTool(self.get_user_info),
-            FunctionTool(self.get_user_by_mobile),
-            FunctionTool(self.get_user_by_unionid),
-            FunctionTool(self.search_users_by_name),
+            FunctionTool(self.dingtalk_get_user_info),
+            FunctionTool(self.dingtalk_get_user_by_mobile),
+            FunctionTool(self.dingtalk_get_user_by_unionid),
+            FunctionTool(self.dingtalk_search_users_by_name),
             # Department management functions
-            FunctionTool(self.get_department_list),
-            FunctionTool(self.get_department_users),
-            FunctionTool(self.get_department_detail),
+            FunctionTool(self.dingtalk_get_department_list),
+            FunctionTool(self.dingtalk_get_department_users),
+            FunctionTool(self.dingtalk_get_department_detail),
             # Group management functions
-            FunctionTool(self.create_group),
-            FunctionTool(self.send_group_message),
-            FunctionTool(self.get_group_info),
-            FunctionTool(self.update_group),
+            FunctionTool(self.dingtalk_create_group),
+            FunctionTool(self.dingtalk_send_group_message),
+            FunctionTool(self.dingtalk_get_group_info),
+            FunctionTool(self.dingtalk_update_group),
+            # Helper functions for LLM agents to get IDs
+            FunctionTool(self.dingtalk_get_userid_by_phone),
+            FunctionTool(self.dingtalk_get_userid_by_name),
+            FunctionTool(self.dingtalk_get_department_id_by_name),
+            FunctionTool(self.dingtalk_get_chatid_by_group_name),
         ]
 
 
