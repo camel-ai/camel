@@ -312,10 +312,14 @@ class TerminalToolkit(BaseToolkit):
             try:
                 if session["backend"] == "local":
                     # For local processes, read line by line from stdout
-                    for line in iter(session["process"].stdout.readline, ''):
-                        session["output_stream"].put(line)
-                        self._write_to_log(session["log_file"], line)
-                    session["process"].stdout.close()
+                    try:
+                        for line in iter(
+                            session["process"].stdout.readline, ''
+                        ):
+                            session["output_stream"].put(line)
+                            self._write_to_log(session["log_file"], line)
+                    finally:
+                        session["process"].stdout.close()
                 elif session["backend"] == "docker":
                     # For Docker, read from the raw socket
                     socket = session["process"]._sock
@@ -323,7 +327,11 @@ class TerminalToolkit(BaseToolkit):
                         # Check if the socket is still open before reading
                         if socket.fileno() == -1:
                             break
-                        ready, _, _ = select.select([socket], [], [], 0.1)
+                        try:
+                            ready, _, _ = select.select([socket], [], [], 0.1)
+                        except (ValueError, OSError):
+                            # Socket may have been closed by another thread
+                            break
                         if ready:
                             data = socket.recv(4096)
                             if not data:
