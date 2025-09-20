@@ -17,8 +17,9 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict
-from typing import Any, ClassVar, Dict
+from typing import Any, ClassVar, Dict, Optional, Set
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -66,18 +67,45 @@ class MemoryRecord(BaseModel):
     }
 
     @staticmethod
-    def _enum_to_value(obj: Any) -> Any:
-        r"""Recursively convert Enum instances to their raw values.
-
-        Ensures the returned object tree is JSON-serializable by converting
-        enums found in dicts/lists to their .value.
+    def _safe_enum_conversion(obj: Any, _seen: Optional[Set[int]] = None) -> Any:
+        r"""Convert Enum values safely for JSON serialization with path-based cycle protection.
+        
+        - Converts Enums to their .value for JSON compatibility
+        - Detects circular references along traversal paths and raises ValueError
+        - Allows the same object to appear in different branches (not a cycle)
+        - Supports dict, list, tuple, and other Mapping/Sequence containers
+        - Excludes string/bytes which are Sequences but shouldn't be traversed
+        
+        Note: This performs path-based cycle detection, not full graph-level detection.
+        The same object can safely appear in multiple branches of the data structure.
         """
         if isinstance(obj, Enum):
             return obj.value
-        if isinstance(obj, dict):
-            return {k: MemoryRecord._enum_to_value(v) for k, v in obj.items()}
-        if isinstance(obj, list):
-            return [MemoryRecord._enum_to_value(v) for v in obj]
+        
+        # Check for containers that could create cycles, excluding strings/bytes
+        if isinstance(obj, (Mapping, Sequence)) and not isinstance(obj, (str, bytes)):
+            if _seen is None:
+                _seen = set()
+            
+            obj_id = id(obj)
+            if obj_id in _seen:
+                raise ValueError(
+                    f"Circular reference detected in data structure. "
+                    f"MemoryRecord cannot serialize self-referencing objects."
+                )
+            
+            _seen.add(obj_id)
+            try:
+                if isinstance(obj, Mapping):
+                    return {k: MemoryRecord._safe_enum_conversion(v, _seen) for k, v in obj.items()}
+                else:  # Sequence (list, tuple, etc.)
+                    converted = [MemoryRecord._safe_enum_conversion(v, _seen) for v in obj]
+                    # JSON doesn't support tuples, convert to list for consistency
+                    return converted
+            finally:
+                # Remove from seen set to allow same object in different branches
+                _seen.discard(obj_id)
+        
         return obj
 
     @classmethod
@@ -148,7 +176,7 @@ class MemoryRecord(BaseModel):
         }
 
         # Normalize enums inside message payload (e.g., role_type)
-        message_dict = MemoryRecord._enum_to_value(message_dict)
+        message_dict = MemoryRecord._safe_enum_conversion(message_dict)
 
         out: Dict[str, Any] = {
             "uuid": str(self.uuid),
@@ -156,7 +184,7 @@ class MemoryRecord(BaseModel):
             "role_at_backend": self.role_at_backend.value
             if isinstance(self.role_at_backend, Enum)
             else self.role_at_backend,
-            "extra_info": MemoryRecord._enum_to_value(self.extra_info),
+            "extra_info": MemoryRecord._safe_enum_conversion(self.extra_info),
             "timestamp": self.timestamp,
             "agent_id": self.agent_id,
         }
