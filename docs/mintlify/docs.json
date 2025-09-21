@@ -742,5 +742,10 @@
       "github": "https://github.com/camel-ai/camel ",
       "twitter": "https://x.com/CamelAIOrg "
     }
+  },
+  "integrations": {
+    "ga4": {
+      "measurementId": "G-XV5VXFS2RG"
+    }
   }
 }
