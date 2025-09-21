@@ -574,7 +574,9 @@
               "reference/camel.toolkits.non_visual_browser_toolkit.agent",
               "reference/camel.toolkits.non_visual_browser_toolkit.browser_non_visual_toolkit",
               "reference/camel.toolkits.non_visual_browser_toolkit.nv_browser_session",
-              "reference/camel.toolkits.non_visual_browser_toolkit.snapshot"
+              "reference/camel.toolkits.non_visual_browser_toolkit.snapshot",
+              "reference/camel.toolkits.terminal_toolkit.terminal_toolkit",
+              "reference/camel.toolkits.terminal_toolkit.utils"
             ]
           },
           {
