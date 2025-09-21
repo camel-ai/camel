@@ -1440,6 +1440,21 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        import inspect
+
+        disable_tools = False
+        for frame_info in inspect.stack():
+            frame_locals = frame_info.frame.f_locals
+            if 'self' in frame_locals:
+                caller_self = frame_locals['self']
+                if hasattr(caller_self, '__class__'):
+                    # Check if caller inherits from RegisteredAgentToolkit
+                    from camel.toolkits.base import RegisteredAgentToolkit
+
+                    if isinstance(caller_self, RegisteredAgentToolkit):
+                        disable_tools = True
+                        break
+
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
         input_message, response_format, used_prompt_formatting = (
@@ -1487,7 +1502,9 @@ class ChatAgent(BaseAgent):
                 num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=self._get_full_tool_schemas(),
+                tool_schemas=[]
+                if disable_tools
+                else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
             prev_num_openai_messages = len(openai_messages)
@@ -1652,6 +1669,21 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        import inspect
+
+        disable_tools = False
+        for frame_info in inspect.stack():
+            frame_locals = frame_info.frame.f_locals
+            if 'self' in frame_locals:
+                caller_self = frame_locals['self']
+                if hasattr(caller_self, '__class__'):
+                    # Check if caller inherits from RegisteredAgentToolkit
+                    from camel.toolkits.base import RegisteredAgentToolkit
+
+                    if isinstance(caller_self, RegisteredAgentToolkit):
+                        disable_tools = True
+                        break
+
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
         input_message, response_format, used_prompt_formatting = (
@@ -1693,7 +1725,9 @@ class ChatAgent(BaseAgent):
                 num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=self._get_full_tool_schemas(),
+                tool_schemas=[]
+                if disable_tools
+                else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
             prev_num_openai_messages = len(openai_messages)
