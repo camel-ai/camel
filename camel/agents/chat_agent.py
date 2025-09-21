@@ -1687,7 +1687,6 @@ class ChatAgent(BaseAgent):
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-
             response = await self._aget_model_response(
                 openai_messages,
                 num_tokens=num_tokens,
@@ -3858,13 +3857,28 @@ class ChatAgent(BaseAgent):
                 method_name = tool.func.__name__
                 if hasattr(toolkit, method_name):
                     new_method = getattr(toolkit, method_name)
-                    cloned_tools.append(new_method)
+                    # Wrap cloned method into a new FunctionTool,
+                    # preserving schema
+                    try:
+                        new_tool = FunctionTool(
+                            func=new_method,
+                            openai_tool_schema=tool.get_openai_tool_schema(),
+                        )
+                        cloned_tools.append(new_tool)
+                    except Exception:
+                        # If wrapping fails, fallback to original behavior
+                        cloned_tools.append(new_method)
                 else:
                     # Fallback to original function
                     cloned_tools.append(tool.func)
             else:
-                # Not a toolkit method, just use the original function
-                cloned_tools.append(tool.func)
+                # Not a toolkit method, preserve FunctionTool schema directly
+                cloned_tools.append(
+                    FunctionTool(
+                        func=tool.func,
+                        openai_tool_schema=tool.get_openai_tool_schema(),
+                    )
+                )
 
         return cloned_tools, toolkits_to_register
 
