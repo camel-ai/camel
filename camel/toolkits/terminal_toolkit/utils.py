@@ -28,8 +28,9 @@ logger = get_logger(__name__)
 
 
 def contains_command_chaining(command: str) -> bool:
-    r"""Check if command contains chaining operators t
-    hat could be used to bypass security."""
+    r"""Check if command contains chaining operators that could be used to
+    bypass security.
+    """
     # Pattern to match command chaining operators: ;, &&, ||, |
     # But exclude cases where they are inside quotes or escaped
     chaining_pattern = r'''

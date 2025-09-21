@@ -116,6 +116,7 @@ class TerminalToolkit(BaseToolkit):
         # Environment management attributes
         self.clone_current_env = clone_current_env
         self.cloned_env_path: Optional[str] = None
+        self.initial_env_path: Optional[str] = None
         self.python_executable = sys.executable
 
         atexit.register(self.__del__)
