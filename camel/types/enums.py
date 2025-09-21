@@ -226,6 +226,8 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
     MISTRAL_MEDIUM_3_1 = "mistral-medium-2508"
     MISTRAL_SMALL_3_2 = "mistral-small-2506"
+    MAGISTRAL_SMALL_1_2 = "magistral-small-1.2"
+    MAGISTRAL_MEDIUM_1_2 = "magistral-medium-1.2"
 
     # Reka models
     REKA_CORE = "reka-core"
@@ -696,6 +698,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_3B,
             ModelType.MISTRAL_MEDIUM_3_1,
             ModelType.MISTRAL_SMALL_3_2,
+            ModelType.MAGISTRAL_SMALL_1_2,
+            ModelType.MAGISTRAL_MEDIUM_1_2,
         }
 
     @property
@@ -1223,6 +1227,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
             ModelType.MISTRAL_SMALL_3_2,
+            ModelType.MAGISTRAL_SMALL_1_2,
             ModelType.QWEN_2_5_CODER_32B,
             ModelType.QWEN_2_5_VL_72B,
             ModelType.QWEN_2_5_72B,
@@ -1257,6 +1262,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NETMIND_DEEPSEEK_V3,
             ModelType.NOVITA_DEEPSEEK_V3_0324,
             ModelType.MISTRAL_MEDIUM_3_1,
+            ModelType.MAGISTRAL_MEDIUM_1_2,
             ModelType.ERNIE_4_5_TURBO_128K,
             ModelType.DEEPSEEK_V3,
             ModelType.MOONSHOT_KIMI_K2,
