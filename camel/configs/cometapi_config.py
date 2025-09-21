@@ -19,8 +19,8 @@ from camel.configs.base_config import BaseConfig
 
 
 class CometAPIConfig(BaseConfig):
-    r"""Defines the parameters for generating chat completions using OpenAI
-    compatibility with CometAPI.
+    r"""Defines the parameters for generating chat completions using CometAPI's
+    OpenAI-compatible interface.
 
     Reference: https://api.cometapi.com/v1/
 
@@ -69,7 +69,7 @@ class CometAPIConfig(BaseConfig):
             likelihood to repeat the same line verbatim. See more information
             about frequency and presence penalties. (default: :obj:`None`)
         user (str, optional): A unique identifier representing your end-user,
-            which can help OpenAI to monitor and detect abuse.
+            which can help CometAPI to monitor and detect abuse.
             (default: :obj:`None`)
         tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
