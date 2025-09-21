@@ -15,12 +15,11 @@
 from .role_playing_worker import RolePlayingWorker
 from .single_agent_worker import SingleAgentWorker
 from .utils import PipelineTaskBuilder
-from .workforce import PipelineBuilder, Workforce, WorkforceMode
+from .workforce import Workforce, WorkforceMode
 
 __all__ = [
     "Workforce",
     "WorkforceMode",
-    "PipelineBuilder",
     "PipelineTaskBuilder",
     "SingleAgentWorker",
     "RolePlayingWorker",

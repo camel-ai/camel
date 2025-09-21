@@ -281,6 +281,7 @@ class Workforce(BaseNode):
         
         # Pipeline building state
         self._pipeline_builder: Optional[PipelineTaskBuilder] = None
+        self._pipeline_tasks_need_assignment: bool = False
         # Dictionary to track task start times
         self._task_start_times: Dict[str, float] = {}
         # Human intervention support
@@ -651,19 +652,6 @@ class Workforce(BaseNode):
         self._pipeline_builder.join(content, task_id)
         return self
     
-    def then_pipeline(self, content: str, task_id: Optional[str] = None) -> 'Workforce':
-        """Add a sequential task (alias for add_pipeline_task for better readability).
-        
-        Args:
-            content (str): Content of the task.
-            task_id (str, optional): ID for the task.
-            
-        Returns:
-            Workforce: Self for method chaining.
-        """
-        self._ensure_pipeline_builder()
-        self._pipeline_builder.then(content, task_id)
-        return self
 
     def finalize_pipeline(self) -> 'Workforce':
         """Finalize the pipeline and set up the tasks for execution.
@@ -724,6 +712,9 @@ class Workforce(BaseNode):
                 self._task_dependencies[task.id] = [dep.id for dep in task.dependencies]
             else:
                 self._task_dependencies[task.id] = []
+        
+        # Mark that pipeline tasks need assignment
+        self._pipeline_tasks_need_assignment = True
 
     def _collect_shared_memory(self) -> Dict[str, List]:
         r"""Collect memory from all SingleAgentWorker instances for sharing.
@@ -1975,6 +1966,7 @@ class Workforce(BaseNode):
         self._completed_tasks = []
         self._assignees.clear()
         self._in_flight_tasks = 0
+        self._pipeline_tasks_need_assignment = False
         self.coordinator_agent.reset()
         self.task_agent.reset()
         self._task_start_times.clear()
@@ -2687,11 +2679,22 @@ class Workforce(BaseNode):
         tasks whose dependencies have been met."""
 
         # Step 1: Identify and assign any new tasks in the pending queue
-        tasks_to_assign = [
-            task
-            for task in self._pending_tasks
-            if task.id not in self._task_dependencies
-        ]
+        # For pipeline mode, assign all tasks that don't have assignees yet
+        # For other modes, assign tasks that don't have dependencies tracked
+        if self.mode == WorkforceMode.PIPELINE and self._pipeline_tasks_need_assignment:
+            tasks_to_assign = [
+                task
+                for task in self._pending_tasks
+                if task.id not in self._assignees
+            ]
+            # Reset the flag after assignment
+            self._pipeline_tasks_need_assignment = False
+        else:
+            tasks_to_assign = [
+                task
+                for task in self._pending_tasks
+                if task.id not in self._task_dependencies
+            ]
         if tasks_to_assign:
             logger.debug(
                 f"Found {len(tasks_to_assign)} new tasks. "
@@ -2703,9 +2706,12 @@ class Workforce(BaseNode):
                 f"{json.dumps(batch_result.dict(), indent=2)}"
             )
             for assignment in batch_result.assignments:
-                self._task_dependencies[assignment.task_id] = (
-                    assignment.dependencies
-                )
+                # For pipeline mode, dependencies are already set, only update assignees
+                # For other modes, update both dependencies and assignees
+                if self.mode != WorkforceMode.PIPELINE:
+                    self._task_dependencies[assignment.task_id] = (
+                        assignment.dependencies
+                    )
                 self._assignees[assignment.task_id] = assignment.assignee_id
                 if self.metrics_logger:
                     # queue_time_seconds can be derived by logger if task

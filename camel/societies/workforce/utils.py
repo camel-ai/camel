@@ -300,26 +300,6 @@ class PipelineTaskBuilder:
             
         return self.add_task(content, task_id, dependencies=wait_for, auto_depend=False)
 
-    def add_sync_point(
-        self,
-        content: str,
-        wait_for: List[str],
-        task_id: Optional[str] = None,
-    ) -> 'PipelineTaskBuilder':
-        """Add a synchronization point task that waits for multiple tasks.
-        
-        This is an alias for add_sync_task() for backward compatibility.
-
-        Args:
-            content (str): Content of the synchronization task.
-            wait_for (List[str]): List of task IDs to wait for.
-            task_id (str, optional): ID for the sync task. If None, a unique
-                ID will be generated. (default: :obj:`None`)
-
-        Returns:
-            PipelineTaskBuilder: Self for method chaining.
-        """
-        return self.add_sync_task(content, wait_for, task_id)
 
     def build(self) -> List:
         """Build and return the complete task list with dependencies.
@@ -378,20 +358,6 @@ class PipelineTaskBuilder:
         """
         return self.add_sync_task(content, task_id=task_id)
     
-    def then(self, content: str, task_id: Optional[str] = None) -> 'PipelineTaskBuilder':
-        """Add a sequential task (alias for add_task for better readability).
-        
-        Args:
-            content (str): Content of the task.
-            task_id (str, optional): ID for the task.
-            
-        Returns:
-            PipelineTaskBuilder: Self for method chaining.
-            
-        Example:
-            >>> builder.add_task("Start").then("Middle").then("End")
-        """
-        return self.add_task(content, task_id)
         
     def _validate_dependencies(self) -> None:
         """Validate that there are no circular dependencies.
