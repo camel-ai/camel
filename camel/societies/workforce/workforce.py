@@ -50,7 +50,10 @@ from camel.societies.workforce.prompts import (
     TASK_DECOMPOSE_PROMPT,
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
-from camel.societies.workforce.single_agent_worker import SingleAgentWorker
+from camel.societies.workforce.single_agent_worker import (
+    SingleAgentWorker,
+    _create_workforce_workflows_context_utility,
+)
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
 )
@@ -1729,6 +1732,174 @@ class Workforce(BaseNode):
             self.metrics_logger.reset_task_data()
         else:
             self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
+
+    def save_workflows(self) -> Dict[str, str]:
+        r"""Save workflows for all SingleAgentWorker instances in the
+        workforce.
+
+        This method iterates through all child workers and triggers workflow
+        saving for SingleAgentWorker instances using their save_workflow()
+        method.
+        Other worker types are skipped.
+
+        Returns:
+            Dict[str, str]: Dictionary mapping worker node IDs to save results.
+                Values are either file paths (success) or error messages
+                (failure).
+
+        Example:
+            >>> workforce = Workforce("My Team")
+            >>> # ... add workers and process tasks ...
+            >>> results = workforce.save_workflows()
+            >>> print(results)
+            {'worker_123': '/path/to/data_analyst_workflow_20250122.md',
+             'worker_456': 'error: No conversation context available'}
+        """
+        results = {}
+
+        for child in self._children:
+            if isinstance(child, SingleAgentWorker):
+                try:
+                    result = child.save_workflow()
+                    if result.get("status") == "success":
+                        results[child.node_id] = result.get(
+                            "file_path", "unknown_path"
+                        )
+                    else:
+                        error_msg = result.get("message", "Unknown error")
+                        results[child.node_id] = f"error: {error_msg}"
+
+                except Exception as e:
+                    results[child.node_id] = f"error: {e!s}"
+            else:
+                # Skip non-SingleAgentWorker types
+                results[child.node_id] = (
+                    f"skipped: {type(child).__name__} not supported"
+                )
+
+        logger.info(f"Workflow save completed for {len(results)} workers")
+        return results
+
+    def load_workflows(self) -> Dict[str, bool]:
+        r"""Load workflows for all SingleAgentWorker instances in the
+        workforce.
+
+        This method iterates through all child workers and loads relevant
+        workflow files for SingleAgentWorker instances using their
+        load_workflow()
+        method. Workers match files based on their description names.
+
+        Returns:
+            Dict[str, bool]: Dictionary mapping worker node IDs to load
+                success status.
+                True indicates successful loading, False indicates failure.
+
+        Example:
+            >>> workforce = Workforce("My Team")
+            >>> workforce.add_single_agent_worker(
+            ...     "data_analyst", analyst_agent
+            ... )
+            >>> success_status = workforce.load_workflows()
+            >>> print(success_status)
+            {'worker_123': True}  # Successfully loaded workflows for
+            # data_analyst
+        """
+        results = {}
+
+        # First, load workflows for SingleAgentWorker instances
+        for child in self._children:
+            if isinstance(child, SingleAgentWorker):
+                try:
+                    success = child.load_workflow()
+                    results[child.node_id] = success
+
+                except Exception as e:
+                    logger.error(
+                        f"Failed to load workflow for {child.node_id}: {e!s}"
+                    )
+                    results[child.node_id] = False
+            else:
+                # Skip non-SingleAgentWorker types
+                results[child.node_id] = False
+
+        # Load aggregated workflow summaries for coordinator and task agents
+        self._load_management_agent_workflows()
+
+        logger.info(f"Workflow load completed for {len(results)} workers")
+        return results
+
+    def _load_management_agent_workflows(self) -> None:
+        r"""Load workflow summaries for coordinator and task planning agents.
+
+        This method loads aggregated workflow summaries to help:
+        - Coordinator agent: understand task assignment patterns and worker
+          capabilities
+        - Task agent: understand task decomposition patterns and
+          successful strategies
+        """
+        try:
+            import glob
+            import os
+
+            # Set up workforce_workflows directory
+            context_utility = _create_workforce_workflows_context_utility()
+
+            # Search for all workflow files
+            search_path = str(
+                context_utility.working_directory.parent
+                / "*/"
+                / "*_workflow*.md"
+            )
+            workflow_files = glob.glob(search_path)
+
+            if not workflow_files:
+                logger.info(
+                    "No workflow files found for management agent context"
+                )
+                return
+
+            # Sort by modification time (most recent first)
+            workflow_files.sort(
+                key=lambda x: os.path.getmtime(x), reverse=True
+            )
+
+            # Load workflows for coordinator agent (up to 5 most recent)
+            coordinator_loaded = 0
+            for file_path in workflow_files[:5]:
+                try:
+                    filename = os.path.basename(file_path).replace('.md', '')
+                    status = context_utility.load_markdown_context_to_memory(
+                        self.coordinator_agent, filename
+                    )
+                    if "Context appended" in status:
+                        coordinator_loaded += 1
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load coordinator workflow {file_path}: {e}"
+                    )
+
+            # Load workflows for task agent (up to 3 most recent)
+            task_agent_loaded = 0
+            for file_path in workflow_files[:3]:
+                try:
+                    filename = os.path.basename(file_path).replace('.md', '')
+                    status = context_utility.load_markdown_context_to_memory(
+                        self.task_agent, filename
+                    )
+                    if "Context appended" in status:
+                        task_agent_loaded += 1
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load task agent workflow {file_path}: {e}"
+                    )
+
+            logger.info(
+                f"Loaded {coordinator_loaded} workflows for coordinator, "
+                f"{task_agent_loaded} workflows for task agent"
+            )
+
+        except Exception as e:
+            logger.error(f"Error loading management agent workflows: {e}")
 
     @check_if_running(False)
     def set_channel(self, channel: TaskChannel) -> None:

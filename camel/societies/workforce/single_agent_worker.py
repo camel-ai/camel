@@ -15,9 +15,12 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import glob
+import os
+import re
 import time
 from collections import deque
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from colorama import Fore
 
@@ -30,6 +33,21 @@ from camel.societies.workforce.structured_output_handler import (
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, is_task_result_insufficient
+from camel.utils.context_utils import ContextUtility
+
+
+def _create_workforce_workflows_context_utility() -> ContextUtility:
+    """Create a ContextUtility instance for workforce workflows directory.
+
+    Returns:
+        ContextUtility: Configured for workforce_workflows directory.
+    """
+    camel_workdir = os.environ.get("CAMEL_WORKDIR")
+    if camel_workdir:
+        workflow_dir = os.path.join(camel_workdir, "workforce_workflows")
+    else:
+        workflow_dir = "workforce_workflows"
+    return ContextUtility(workflow_dir)
 
 
 class AgentPool:
@@ -496,3 +514,173 @@ class SingleAgentWorker(Worker):
         if self.use_agent_pool and self.agent_pool:
             return self.agent_pool.get_stats()
         return None
+
+    def save_workflow(
+        self, custom_title: Optional[str] = None
+    ) -> Dict[str, Any]:
+        r"""Save the worker's current workflow using agent summarization.
+
+        This method generates a workflow summary from the worker agent's
+        conversation history and saves it to a markdown file. The filename
+        is based on the worker's description for easy loading later.
+
+        Args:
+            custom_title (Optional[str]): Custom title for the workflow.
+                If None, generates title from worker description.
+
+        Returns:
+            Dict[str, Any]: Result dictionary with keys:
+                - status (str): "success" or "error"
+                - summary (str): Generated workflow summary
+                - file_path (str): Path to saved file
+                - worker_description (str): Worker description used
+        """
+        try:
+            # Ensure we have a ChatAgent worker
+            if not isinstance(self.worker, ChatAgent):
+                return {
+                    "status": "error",
+                    "summary": "",
+                    "file_path": None,
+                    "worker_description": self.description,
+                    "message": (
+                        "Worker must be a ChatAgent instance to save workflow"
+                    ),
+                }
+
+            # Create dedicated ContextUtility for workforce workflows
+            if not hasattr(self, '_workflow_context_utility'):
+                self._workflow_context_utility = (
+                    _create_workforce_workflows_context_utility()
+                )
+
+            # Generate filename from description
+            clean_desc = self.description.lower().replace(" ", "_")
+            clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
+            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"{clean_desc}_workflow_{timestamp}"
+
+            # Generate workflow summary using agent's summarize method
+            workflow_prompt = (
+                "Summarize this workflow focusing on:\n"
+                "- Task approach and methodology\n"
+                "- Tools and techniques used\n"
+                "- Problem-solving patterns\n"
+                "- Key decisions and reasoning\n"
+                "- Successful strategies\n\n"
+                "Format as a reusable workflow guide for similar tasks."
+            )
+
+            # Temporarily set the agent's context utility to use workforce
+            # directory
+            original_context_utility = getattr(
+                self.worker, '_context_utility', None
+            )
+            self.worker._context_utility = self._workflow_context_utility
+
+            try:
+                # Use agent's summarize method
+                result = self.worker.summarize(
+                    filename=filename, summary_prompt=workflow_prompt
+                )
+            finally:
+                # Restore original context utility
+                self.worker._context_utility = original_context_utility
+
+            # Add worker metadata to result
+            result["worker_description"] = self.description
+            return result
+
+        except Exception as e:
+            return {
+                "status": "error",
+                "summary": "",
+                "file_path": None,
+                "worker_description": self.description,
+                "message": f"Failed to save workflow: {e!s}",
+            }
+
+    def load_workflow(self, pattern: Optional[str] = None) -> bool:
+        r"""Load workflows matching worker description from saved files.
+
+        This method searches for workflow files that match the worker's
+        description and loads them into the agent's memory using
+        ContextUtility.
+
+        Args:
+            pattern (Optional[str]): Custom search pattern for workflow files.
+                If None, uses worker description to generate pattern.
+
+        Returns:
+            bool: True if workflows were successfully loaded, False otherwise.
+        """
+        try:
+            # Ensure we have a ChatAgent worker
+            if not isinstance(self.worker, ChatAgent):
+                print(
+                    f"Cannot load workflow: {self.description} worker is not "
+                    "a ChatAgent"
+                )
+                return False
+
+            # Ensure we have a dedicated workflow context utility
+            if not hasattr(self, '_workflow_context_utility'):
+                self._workflow_context_utility = (
+                    _create_workforce_workflows_context_utility()
+                )
+
+            # Generate search pattern from description if not provided
+            if pattern is None:
+                clean_desc = self.description.lower().replace(" ", "_")
+                clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
+                pattern = f"{clean_desc}_workflow*.md"
+
+            # Search for workflow files in the workforce_workflows directory
+            # structure
+            context_dir = (
+                self._workflow_context_utility.working_directory.parent
+            )
+            search_path = str(context_dir / "*/" / pattern)
+            workflow_files = glob.glob(search_path)
+
+            if not workflow_files:
+                print(f"No workflow files found for pattern: {pattern}")
+                return False
+
+            # Sort files by modification time (most recent first)
+            workflow_files.sort(
+                key=lambda x: os.path.getmtime(x), reverse=True
+            )
+
+            # Load the most recent workflow file(s) using ContextUtility
+            loaded_count = 0
+            for file_path in workflow_files[:3]:  # Load up to 3 most recent
+                try:
+                    filename = os.path.basename(file_path).replace('.md', '')
+
+                    # Use ContextUtility's load_markdown_context_to_memory
+                    # method with workflow context utility
+                    utility = self._workflow_context_utility
+                    status = utility.load_markdown_context_to_memory(
+                        self.worker, filename
+                    )
+
+                    if "Context appended" in status:
+                        loaded_count += 1
+                        print(f"Loaded workflow: {filename}")
+                    else:
+                        print(f"Failed to load workflow {filename}: {status}")
+
+                except Exception as e:
+                    print(f"Failed to load workflow file {file_path}: {e!s}")
+                    continue
+
+            print(
+                f"Successfully loaded {loaded_count} workflow file(s) for "
+                f"{self.description}"
+            )
+            return loaded_count > 0
+
+        except Exception as e:
+            print(f"Error loading workflows for {self.description}: {e!s}")
+            return False
