@@ -651,8 +651,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                             content=inst,
                             image_list=[img],
                         )
-
+                        logger.info(
+                            "[get_som_screenshot]: Entering inner `astep`"
+                        )
                         response = await self.agent.astep(message)
+                        logger.info(
+                            "[get_som_screenshot]: Leaving inner `astep`"
+                        )
                         agent_response = response.msgs[0].content
                         result_text += f". Agent analysis: {agent_response}"
                     except Exception as e:

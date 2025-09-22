@@ -1676,6 +1676,9 @@ class ChatAgent(BaseAgent):
                 openai_messages, num_tokens = self.memory.get_context()
                 accumulated_context_tokens += num_tokens
             except RuntimeError as e:
+                logger.info(
+                    f"[astep:tool_call_record] RuntimeError - tool_call_records: {len(tool_call_records)}"
+                )
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
@@ -1698,6 +1701,9 @@ class ChatAgent(BaseAgent):
 
             # Terminate Agent if stop_event is set
             if self.stop_event and self.stop_event.is_set():
+                logger.info(
+                    f"[astep:tool_call_record] Stop event - tool_call_records: {len(tool_call_records)}"
+                )
                 # Use the _step_terminate to terminate the agent with reason
                 logger.info(
                     f"Termination triggered at iteration " f"{iteration_count}"
@@ -1709,6 +1715,13 @@ class ChatAgent(BaseAgent):
                 )
 
             if tool_call_requests := response.tool_call_requests:
+                logger.info(
+                    f"[astep:tool_call_record] Processing {len(tool_call_requests)} tool call requests"
+                )
+                logger.info(
+                    f"[astep:tool_call_record] Current tool_call_records before processing: {len(tool_call_records)}"
+                )
+
                 # Process all tool calls
                 for tool_call_request in tool_call_requests:
                     if (
@@ -1727,7 +1740,13 @@ class ChatAgent(BaseAgent):
                         tool_call_record = await self._aexecute_tool(
                             tool_call_request
                         )
+                        logger.info(
+                            f"[astep:tool_call_record]: {tool_call_record}"
+                        )
                         tool_call_records.append(tool_call_record)
+                        logger.info(
+                            f"[astep:tool_call_record][AFTER_APPEND] tool_call_records count: {len(tool_call_records)}"
+                        )
 
                 # If we found an external tool call, break the loop
                 if external_tool_call_requests:
@@ -1738,11 +1757,21 @@ class ChatAgent(BaseAgent):
                     and iteration_count >= self.max_iteration
                 ):
                     break
-
+                logger.info(
+                    f"[astep:tool_call_record] Before continue - tool_call_records: {len(tool_call_records)}"
+                )
                 # If we're still here, continue the loop
                 continue
 
             break
+
+        logger.info(
+            f"[astep:tool_call_record] Final tool_call_records count before formatting: {len(tool_call_records)}"
+        )
+        for i, record in enumerate(tool_call_records):
+            logger.info(
+                f"[astep:tool_call_record] Final record[{i}]: {record.tool_name} - {record.tool_call_id}"
+            )
 
         await self._aformat_response_if_needed(response, response_format)
 
@@ -1756,9 +1785,15 @@ class ChatAgent(BaseAgent):
 
         # Clean tool call messages from memory after response generation
         if self.prune_tool_calls_from_memory and tool_call_records:
+            logger.info(
+                f"[astep:tool_call_record] Cleaning memory - tool_call_records before: {len(tool_call_records)}"
+            )
             self.memory.clean_tool_calls()
+            logger.info(
+                f"[astep:tool_call_record] Cleaning memory - tool_call_records after: {len(tool_call_records)}"
+            )
 
-        return self._convert_to_chatagent_response(
+        final_response = self._convert_to_chatagent_response(
             response,
             tool_call_records,
             accumulated_context_tokens,
@@ -1767,6 +1802,12 @@ class ChatAgent(BaseAgent):
             step_token_usage["completion_tokens"],
             step_token_usage["total_tokens"],
         )
+
+        logger.info(
+            f"[astep:tool_call_record] Final response tool_calls count: {len(final_response.info.get('tool_calls', []))}"
+        )
+
+        return final_response
 
     def _create_token_usage_tracker(self) -> Dict[str, int]:
         r"""Creates a fresh token usage tracker for a step.
