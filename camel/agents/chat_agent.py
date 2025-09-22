@@ -23,6 +23,7 @@ import textwrap
 import threading
 import time
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -93,6 +94,7 @@ from camel.utils import (
     model_from_json_schema,
 )
 from camel.utils.commons import dependencies_required
+from camel.utils.context_utils import ContextUtility
 
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
@@ -142,7 +144,7 @@ class StreamContentAccumulator:
 
     def __init__(self):
         self.base_content = ""  # Content before tool calls
-        self.current_content = ""  # Current streaming content
+        self.current_content = []  # Accumulated streaming fragments
         self.tool_status_messages = []  # Accumulated tool status messages
 
     def set_base_content(self, content: str):
@@ -151,7 +153,7 @@ class StreamContentAccumulator:
 
     def add_streaming_content(self, new_content: str):
         r"""Add new streaming content."""
-        self.current_content += new_content
+        self.current_content.append(new_content)
 
     def add_tool_status(self, status_message: str):
         r"""Add a tool status message."""
@@ -160,16 +162,18 @@ class StreamContentAccumulator:
     def get_full_content(self) -> str:
         r"""Get the complete accumulated content."""
         tool_messages = "".join(self.tool_status_messages)
-        return self.base_content + tool_messages + self.current_content
+        current = "".join(self.current_content)
+        return self.base_content + tool_messages + current
 
     def get_content_with_new_status(self, status_message: str) -> str:
         r"""Get content with a new status message appended."""
         tool_messages = "".join([*self.tool_status_messages, status_message])
-        return self.base_content + tool_messages + self.current_content
+        current = "".join(self.current_content)
+        return self.base_content + tool_messages + current
 
     def reset_streaming_content(self):
         r"""Reset only the streaming content, keep base and tool status."""
-        self.current_content = ""
+        self.current_content = []
 
 
 class StreamingChatAgentResponse:
@@ -397,6 +401,10 @@ class ChatAgent(BaseAgent):
         step_timeout (Optional[float], optional): Timeout in seconds for the
             entire step operation. If None, no timeout is applied.
             (default: :obj:`None`)
+        stream_accumulate (bool, optional): When True, partial streaming
+            updates return accumulated content (current behavior). When False,
+            partial updates return only the incremental delta. (default:
+            :obj:`True`)
     """
 
     def __init__(
@@ -440,6 +448,7 @@ class ChatAgent(BaseAgent):
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = None,
+        stream_accumulate: bool = True,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -528,6 +537,9 @@ class ChatAgent(BaseAgent):
         self.retry_attempts = max(1, retry_attempts)
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
+        self._context_utility: Optional[ContextUtility] = None
+        self._context_summary_agent: Optional["ChatAgent"] = None
+        self.stream_accumulate = stream_accumulate
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -1033,6 +1045,149 @@ class ChatAgent(BaseAgent):
         to_save = [cr.memory_record.to_dict() for cr in context_records]
         json_store.save(to_save)
         logger.info(f"Memory saved to {path}")
+
+    def summarize(
+        self,
+        filename: Optional[str] = None,
+        summary_prompt: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        r"""Summarize the agent's current conversation context and persist it
+        to a markdown file.
+
+        Args:
+            filename (Optional[str]): The base filename (without extension) to
+                use for the markdown file. Defaults to a timestamped name when
+                not provided.
+            summary_prompt (Optional[str]): Custom prompt for the summarizer.
+                When omitted, a default prompt highlighting key decisions,
+                action items, and open questions is used.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the summary text, file
+                path, and status message.
+        """
+
+        result: Dict[str, Any] = {
+            "summary": "",
+            "file_path": None,
+            "status": "",
+        }
+
+        try:
+            if self._context_utility is None:
+                self._context_utility = ContextUtility()
+
+            # Get conversation directly from agent's memory
+            messages, _ = self.memory.get_context()
+
+            if not messages:
+                status_message = (
+                    "No conversation context available to summarize."
+                )
+                result["status"] = status_message
+                return result
+
+            # Convert messages to conversation text
+            conversation_lines = []
+            for message in messages:
+                role = message.get('role', 'unknown')
+                content = message.get('content', '')
+                if content:
+                    conversation_lines.append(f"{role}: {content}")
+
+            conversation_text = "\n".join(conversation_lines).strip()
+
+            if not conversation_text:
+                status_message = (
+                    "Conversation context is empty; skipping summary."
+                )
+                result["status"] = status_message
+                return result
+
+            if self._context_summary_agent is None:
+                self._context_summary_agent = ChatAgent(
+                    system_message=(
+                        "You are a helpful assistant that summarizes "
+                        "conversations into concise markdown bullet lists."
+                    ),
+                    model=self.model_backend,
+                    agent_id=f"{self.agent_id}_context_summarizer",
+                )
+            else:
+                self._context_summary_agent.reset()
+
+            prompt_text = summary_prompt or (
+                "Summarize the following conversation in concise markdown "
+                "bullet points highlighting key decisions, action items, and "
+                "open questions.\n\n"
+                f"{conversation_text}"
+            )
+
+            try:
+                response = self._context_summary_agent.step(prompt_text)
+            except Exception as step_exc:
+                error_message = (
+                    f"Failed to generate summary using model: {step_exc}"
+                )
+                logger.error(error_message)
+                result["status"] = error_message
+                return result
+
+            if not response.msgs:
+                status_message = (
+                    "Failed to generate summary from model response."
+                )
+                result["status"] = status_message
+                return result
+
+            summary_content = response.msgs[-1].content.strip()
+            if not summary_content:
+                status_message = "Generated summary is empty."
+                result["status"] = status_message
+                return result
+
+            base_filename = (
+                filename
+                if filename
+                else f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
+            )
+            base_filename = Path(base_filename).with_suffix("").name
+
+            metadata = self._context_utility.get_session_metadata()
+            metadata.update(
+                {
+                    "agent_id": self.agent_id,
+                    "message_count": len(messages),
+                }
+            )
+
+            save_status = self._context_utility.save_markdown_file(
+                base_filename,
+                summary_content,
+                title="Conversation Summary",
+                metadata=metadata,
+            )
+
+            file_path = (
+                self._context_utility.get_working_directory()
+                / f"{base_filename}.md"
+            )
+
+            result.update(
+                {
+                    "summary": summary_content,
+                    "file_path": str(file_path),
+                    "status": save_status,
+                }
+            )
+            logger.info("Conversation summary saved to %s", file_path)
+            return result
+
+        except Exception as exc:
+            error_message = f"Failed to summarize conversation context: {exc}"
+            logger.error(error_message)
+            result["status"] = error_message
+            return result
 
     def clear_memory(self) -> None:
         r"""Clear the agent's memory and reset to initial state.
@@ -1679,7 +1834,6 @@ class ChatAgent(BaseAgent):
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-
             response = await self._aget_model_response(
                 openai_messages,
                 num_tokens=num_tokens,
@@ -3668,15 +3822,18 @@ class ChatAgent(BaseAgent):
     ) -> ChatAgentResponse:
         r"""Create a streaming response using content accumulator."""
 
-        # Add new content to accumulator and get full content
+        # Add new content; only build full content when needed
         accumulator.add_streaming_content(new_content)
-        full_content = accumulator.get_full_content()
+        if self.stream_accumulate:
+            message_content = accumulator.get_full_content()
+        else:
+            message_content = new_content
 
         message = BaseMessage(
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict={},
-            content=full_content,
+            content=message_content,
         )
 
         return ChatAgentResponse(
@@ -3686,7 +3843,7 @@ class ChatAgent(BaseAgent):
                 "id": response_id,
                 "usage": step_token_usage.copy(),
                 "finish_reasons": ["streaming"],
-                "num_tokens": self._get_token_count(full_content),
+                "num_tokens": self._get_token_count(message_content),
                 "tool_calls": tool_call_records or [],
                 "external_tool_requests": None,
                 "streaming": True,
@@ -3759,7 +3916,7 @@ class ChatAgent(BaseAgent):
                 self.memory.get_context_creator(), "token_limit", None
             ),
             output_language=self._output_language,
-            tools=cloned_tools,
+            tools=cast(List[Union[FunctionTool, Callable]], cloned_tools),
             toolkits_to_register_agent=toolkits_to_register,
             external_tools=[
                 schema for schema in self._external_tool_schemas.values()
@@ -3773,6 +3930,7 @@ class ChatAgent(BaseAgent):
             tool_execution_timeout=self.tool_execution_timeout,
             pause_event=self.pause_event,
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
+            stream_accumulate=self.stream_accumulate,
         )
 
         # Copy memory if requested
@@ -3787,9 +3945,7 @@ class ChatAgent(BaseAgent):
 
     def _clone_tools(
         self,
-    ) -> Tuple[
-        List[Union[FunctionTool, Callable]], List[RegisteredAgentToolkit]
-    ]:
+    ) -> Tuple[List[FunctionTool], List[RegisteredAgentToolkit]]:
         r"""Clone tools and return toolkits that need agent registration.
 
         This method handles stateful toolkits by cloning them if they have
@@ -3846,13 +4002,45 @@ class ChatAgent(BaseAgent):
                 method_name = tool.func.__name__
                 if hasattr(toolkit, method_name):
                     new_method = getattr(toolkit, method_name)
-                    cloned_tools.append(new_method)
+                    # Wrap cloned method into a new FunctionTool,
+                    # preserving schema
+                    try:
+                        new_tool = FunctionTool(
+                            func=new_method,
+                            openai_tool_schema=tool.get_openai_tool_schema(),
+                        )
+                        cloned_tools.append(new_tool)
+                    except Exception as e:
+                        # If wrapping fails, fallback to wrapping the original
+                        # function with its schema to maintain consistency
+                        logger.warning(
+                            f"Failed to wrap cloned toolkit "
+                            f"method '{method_name}' "
+                            f"with FunctionTool: {e}. Using original "
+                            f"function with preserved schema instead."
+                        )
+                        cloned_tools.append(
+                            FunctionTool(
+                                func=tool.func,
+                                openai_tool_schema=tool.get_openai_tool_schema(),
+                            )
+                        )
                 else:
-                    # Fallback to original function
-                    cloned_tools.append(tool.func)
+                    # Fallback to original function wrapped in FunctionTool
+                    cloned_tools.append(
+                        FunctionTool(
+                            func=tool.func,
+                            openai_tool_schema=tool.get_openai_tool_schema(),
+                        )
+                    )
             else:
-                # Not a toolkit method, just use the original function
-                cloned_tools.append(tool.func)
+                # Not a toolkit method, preserve FunctionTool schema directly
+                cloned_tools.append(
+                    FunctionTool(
+                        func=tool.func,
+                        openai_tool_schema=tool.get_openai_tool_schema(),
+                    )
+                )
 
         return cloned_tools, toolkits_to_register
 
