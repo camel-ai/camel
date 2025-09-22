@@ -1687,7 +1687,6 @@ class ChatAgent(BaseAgent):
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-
             response = await self._aget_model_response(
                 openai_messages,
                 num_tokens=num_tokens,
@@ -3770,7 +3769,7 @@ class ChatAgent(BaseAgent):
                 self.memory.get_context_creator(), "token_limit", None
             ),
             output_language=self._output_language,
-            tools=cloned_tools,
+            tools=cast(List[Union[FunctionTool, Callable]], cloned_tools),
             toolkits_to_register_agent=toolkits_to_register,
             external_tools=[
                 schema for schema in self._external_tool_schemas.values()
@@ -3799,9 +3798,7 @@ class ChatAgent(BaseAgent):
 
     def _clone_tools(
         self,
-    ) -> Tuple[
-        List[Union[FunctionTool, Callable]], List[RegisteredAgentToolkit]
-    ]:
+    ) -> Tuple[List[FunctionTool], List[RegisteredAgentToolkit]]:
         r"""Clone tools and return toolkits that need agent registration.
 
         This method handles stateful toolkits by cloning them if they have
@@ -3858,13 +3855,45 @@ class ChatAgent(BaseAgent):
                 method_name = tool.func.__name__
                 if hasattr(toolkit, method_name):
                     new_method = getattr(toolkit, method_name)
-                    cloned_tools.append(new_method)
+                    # Wrap cloned method into a new FunctionTool,
+                    # preserving schema
+                    try:
+                        new_tool = FunctionTool(
+                            func=new_method,
+                            openai_tool_schema=tool.get_openai_tool_schema(),
+                        )
+                        cloned_tools.append(new_tool)
+                    except Exception as e:
+                        # If wrapping fails, fallback to wrapping the original
+                        # function with its schema to maintain consistency
+                        logger.warning(
+                            f"Failed to wrap cloned toolkit "
+                            f"method '{method_name}' "
+                            f"with FunctionTool: {e}. Using original "
+                            f"function with preserved schema instead."
+                        )
+                        cloned_tools.append(
+                            FunctionTool(
+                                func=tool.func,
+                                openai_tool_schema=tool.get_openai_tool_schema(),
+                            )
+                        )
                 else:
-                    # Fallback to original function
-                    cloned_tools.append(tool.func)
+                    # Fallback to original function wrapped in FunctionTool
+                    cloned_tools.append(
+                        FunctionTool(
+                            func=tool.func,
+                            openai_tool_schema=tool.get_openai_tool_schema(),
+                        )
+                    )
             else:
-                # Not a toolkit method, just use the original function
-                cloned_tools.append(tool.func)
+                # Not a toolkit method, preserve FunctionTool schema directly
+                cloned_tools.append(
+                    FunctionTool(
+                        func=tool.func,
+                        openai_tool_schema=tool.get_openai_tool_schema(),
+                    )
+                )
 
         return cloned_tools, toolkits_to_register
 
