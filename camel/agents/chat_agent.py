@@ -1029,16 +1029,21 @@ class ChatAgent(BaseAgent):
                 )
         logger.info(f"Memory loaded from {path}")
 
-    def save_memory(self, path: str) -> None:
+    def save_memory(self, path: str, save_parsed: bool = False) -> None:
         r"""Retrieves the current conversation data from memory and writes it
         into a JSON file using JsonStorage.
 
         Args:
             path (str): Target file path to store JSON data.
+            save_parsed (bool): Whether to include the `parsed` snapshot in
+                saved JSON when available. Defaults to :obj:`False`.
         """
         json_store = JsonStorage(Path(path))
         context_records = self.memory.retrieve()
-        to_save = [cr.memory_record.to_dict() for cr in context_records]
+        to_save = [
+            cr.memory_record.to_dict(include_parsed=save_parsed)
+            for cr in context_records
+        ]
         json_store.save(to_save)
         logger.info(f"Memory saved to {path}")
 
@@ -1687,6 +1692,9 @@ class ChatAgent(BaseAgent):
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
+            tool_schemas = self._get_full_tool_schemas()
+            with open("tool_schemas.json", "w") as f:
+                json.dump(tool_schemas, f, indent=4)
             response = await self._aget_model_response(
                 openai_messages,
                 num_tokens=num_tokens,
@@ -3858,11 +3866,11 @@ class ChatAgent(BaseAgent):
                     # Wrap cloned method into a new FunctionTool,
                     # preserving schema
                     try:
-                        new_tool = FunctionTool(
-                            func=new_method,
-                            openai_tool_schema=tool.get_openai_tool_schema(),
-                        )
-                        cloned_tools.append(new_tool)
+                        # new_tool = FunctionTool(
+                        #     func=new_method,
+                        #     openai_tool_schema=tool.get_openai_tool_schema(),
+                        # )
+                        cloned_tools.append(new_method)
                     except Exception as e:
                         # If wrapping fails, fallback to wrapping the original
                         # function with its schema to maintain consistency
@@ -3872,28 +3880,13 @@ class ChatAgent(BaseAgent):
                             f"with FunctionTool: {e}. Using original "
                             f"function with preserved schema instead."
                         )
-                        cloned_tools.append(
-                            FunctionTool(
-                                func=tool.func,
-                                openai_tool_schema=tool.get_openai_tool_schema(),
-                            )
-                        )
+                        cloned_tools.append(tool.func)
                 else:
                     # Fallback to original function wrapped in FunctionTool
-                    cloned_tools.append(
-                        FunctionTool(
-                            func=tool.func,
-                            openai_tool_schema=tool.get_openai_tool_schema(),
-                        )
-                    )
+                    cloned_tools.append(tool.func)
             else:
                 # Not a toolkit method, preserve FunctionTool schema directly
-                cloned_tools.append(
-                    FunctionTool(
-                        func=tool.func,
-                        openai_tool_schema=tool.get_openai_tool_schema(),
-                    )
-                )
+                cloned_tools.append(tool.func)
 
         return cloned_tools, toolkits_to_register
 

@@ -83,15 +83,42 @@ class MemoryRecord(BaseModel):
             agent_id=record_dict["agent_id"],
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, include_parsed: bool = False) -> Dict[str, Any]:
         r"""Convert the :obj:`MemoryRecord` to a dict for serialization
         purposes.
+
+        Args:
+            include_parsed (bool): Whether to include the `parsed` field of the
+                message in a JSON-serializable form (if possible). Defaults to
+                :obj:`False`.
         """
+        # Start from dataclass dict and remove non-serializable heavy fields
+        message_dict = asdict(self.message)
+
+        parsed_value = message_dict.pop("parsed", None)
+
+        # Always drop binary/image buffers from persisted JSON
+        message_dict.pop("image_list", None)
+        message_dict.pop("video_bytes", None)
+
+        if include_parsed and parsed_value is not None:
+            try:
+                # pydantic model → dict
+                if hasattr(parsed_value, "model_dump"):
+                    message_dict["parsed"] = parsed_value.model_dump()  # type: ignore[attr-defined]
+                # dict → keep as is
+                elif isinstance(parsed_value, dict):
+                    message_dict["parsed"] = parsed_value
+                # Other types are skipped silently
+            except Exception:
+                # On any failure, omit parsed
+                pass
+
         return {
             "uuid": str(self.uuid),
             "message": {
                 "__class__": self.message.__class__.__name__,
-                **asdict(self.message),
+                **message_dict,
             },
             "role_at_backend": self.role_at_backend,
             "extra_info": self.extra_info,
