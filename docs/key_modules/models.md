@@ -1,6 +1,6 @@
 ---
 title: "Models"
-description: "CAMEL-AI: Flexible integration and deployment of top LLMs and multimodal models like [OpenAI](https://openai.com/), [Mistral](https://mistral.ai/), [Gemini](https://ai.google.dev/gemini-api/docs/models), [Llama](https://www.llama.com/), [Nebius](https://studio.nebius.com), and more."
+description: "CAMEL-AI: Flexible integration and deployment of top LLMs and multimodal models like [OpenAI](https://openai.com/), [Mistral](https://mistral.ai/), [Gemini](https://ai.google.dev/gemini-api/docs/models), [Llama](https://www.llama.com/), [Nebius](https://nebius.com/), and more."
 icon: gear-code
 ---
 
@@ -38,14 +38,15 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | :--------------  | :------------ |
 | **OpenAI**       | gpt-4.5-preview<br/>gpt-4o, gpt-4o-mini<br/>o1, o1-preview, o1-mini<br/>o3-mini, o3-pro<br/>gpt-4-turbo, gpt-4, gpt-3.5-turbo |
 | **Azure OpenAI** | gpt-4o, gpt-4-turbo<br/>gpt-4, gpt-3.5-turbo |
-| **Mistral AI**   | mistral-large-latest, pixtral-12b-2409<br/>ministral-8b-latest, ministral-3b-latest<br/>open-mistral-nemo, codestral-latest<br/>open-mistral-7b, open-mixtral-8x7b<br/>open-mixtral-8x22b, open-codestral-mamba<br/>mistral-small-2506, mistral-medium-2508 |
+| **Mistral AI**   | mistral-large-latest, pixtral-12b-2409<br/>ministral-8b-latest, ministral-3b-latest<br/>open-mistral-nemo, codestral-latest<br/>open-mistral-7b, open-mixtral-8x7b<br/>open-mixtral-8x22b, open-codestral-mamba<br/>mistral-small-2506, mistral-medium-2508<br/>magistral-small-1.2, magistral-medium-1.2 |
 | **Moonshot**     | moonshot-v1-8k<br/>moonshot-v1-32k<br/>moonshot-v1-128k |
 | **Anthropic**    | claude-2.1, claude-2.0, claude-instant-1.2<br/>claude-3-opus-latest, claude-3-sonnet-20240229, claude-3-haiku-20240307<br/>claude-3-5-sonnet-latest, claude-3-5-haiku-latest |
 | **Gemini**       | gemini-2.5-pro, gemini-2.5-flash<br/>gemini-2.0-flash, gemini-2.0-flash-thinking<br/> gemini-2.0-flash-lite|
 | **Lingyiwanwu**  | yi-lightning, yi-large, yi-medium<br/>yi-large-turbo, yi-vision, yi-medium-200k<br/>yi-spark, yi-large-rag, yi-large-fc |
 | **Qwen**         | qwen3-coder-plus,qwq-32b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long<br/>qwen-vl-max, qwen-vl-plus, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo<br/>qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
 | **DeepSeek**     | deepseek-chat<br/>deepseek-reasoner |
-| **Nebius**       | **All models available on [Nebius AI Studio](https://studio.nebius.com/)**<br/>Including: gpt-oss-120b, Kimi-K2-Instruct, GLM-4.5<br/>DeepSeek V3 & R1, LLaMA, Mistral, and more |
+| **CometAPI**     | **All models available on [CometAPI](https://api.cometapi.com/pricing)**<br/>Including: gpt-5-chat-latest, gpt-5, gpt-5-mini, gpt-5-nano<br/>claude-opus-4-1-20250805, claude-sonnet-4-20250514, claude-3-7-sonnet-latest<br/>gemini-2.5-pro, gemini-2.5-flash, grok-4-0709, grok-3<br/>deepseek-v3.1, deepseek-v3, deepseek-r1-0528, qwen3-30b-a3b |
+| **Nebius**       | **All models available on [Nebius AI Studio](https://studio.nebius.com/)**<br/>Including: gpt-oss-120b, gpt-oss-20b, GLM-4.5<br/>DeepSeek V3 & R1, LLaMA, Mistral, and more |
 | **ZhipuAI**      | glm-4, glm-4v, glm-4v-flash<br/>glm-4v-plus-0111, glm-4-plus, glm-4-air<br/>glm-4-air-0111, glm-4-airx, glm-4-long<br/>glm-4-flashx, glm-zero-preview, glm-4-flash, glm-3-turbo |
 | **InternLM**     | internlm3-latest, internlm3-8b-instruct<br/>internlm2.5-latest, internlm2-pro-chat |
 | **Reka**         | reka-core, reka-flash, reka-edge |
@@ -153,7 +154,7 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
 
   model = ModelFactory.create(
       model_platform=ModelPlatformType.MISTRAL,
-      model_type=ModelType.MISTRAL_MEDIUM_3_1,
+      model_type=ModelType.MAGISTRAL_MEDIUM_1_2,
       model_config_dict=MistralConfig(temperature=0.0).as_dict(),
   )
 
@@ -195,13 +196,87 @@ Integrate your favorite models into CAMEL-AI with straightforward Python calls. 
 
   </Tab>
 
+  <Tab title="CometAPI">
+    
+  Leverage [CometAPI](https://api.cometapi.com/)'s unified access to multiple frontier AI models:
+
+ - **CometAPI Platform** ([CometAPI](https://www.cometapi.com/?utm_source=camel-ai&utm_campaign=integration&utm_medium=integration&utm_content=integration)): 
+ - **API Key Setup**: Obtain your CometAPI key to start integration.
+ - **OpenAI Compatible**: Use familiar OpenAI API patterns with advanced frontier models.
+
+  ```python
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType, ModelType
+  from camel.configs import CometAPIConfig
+  from camel.agents import ChatAgent
+
+  model = ModelFactory.create(
+      model_platform=ModelPlatformType.COMETAPI,
+      model_type=ModelType.COMETAPI_GPT_5_CHAT_LATEST,
+      model_config_dict=CometAPIConfig(temperature=0.2).as_dict(),
+  )
+
+  agent = ChatAgent(
+      system_message="You are a helpful assistant.",
+      model=model
+  )
+
+  response = agent.step("Say hi to CAMEL AI community.")
+  print(response.msgs[0].content)
+  ```
+
+  <Note type="info">
+  **Flexible Model Access:** You can use any model available on CometAPI by passing the model name as a string to `model_type`, even if it's not in the predefined enums.
+  </Note>
+
+  **Environment Variables:**
+  ```bash
+  export COMETAPI_KEY="your_cometapi_key_here"
+  export COMETAPI_API_BASE_URL="https://api.cometapi.com/v1/" # Optional
+  ```
+
+  **Model Support:**
+  - **Complete Access:** All models available on [CometAPI](https://api.cometapi.com/) are supported
+  - **Predefined Enums:** Common models like `COMETAPI_GPT_5_CHAT_LATEST`, `COMETAPI_CLAUDE_OPUS_4_1_20250805`, etc.
+  - **String-based Access:** Use any model name directly as a string for maximum flexibility
+
+  **Example with different models:**
+  ```python
+  # Access multiple frontier models through CometAPI
+  models_to_try = [
+      ModelType.COMETAPI_GPT_5_CHAT_LATEST,
+      ModelType.COMETAPI_GPT_5,
+      ModelType.COMETAPI_GPT_5_MINI,
+      ModelType.COMETAPI_CLAUDE_OPUS_4_1_20250805,
+      ModelType.COMETAPI_CLAUDE_SONNET_4_20250514,
+      ModelType.COMETAPI_CLAUDE_3_7_SONNET_LATEST,
+      ModelType.COMETAPI_GEMINI_2_5_PRO,
+      ModelType.COMETAPI_GEMINI_2_5_FLASH,
+      ModelType.COMETAPI_GROK_4_0709,
+      ModelType.COMETAPI_GROK_3,
+      ModelType.COMETAPI_DEEPSEEK_V3_1,
+      ModelType.COMETAPI_DEEPSEEK_V3,
+      ModelType.COMETAPI_QWEN3_30B_A3B,
+      ModelType.COMETAPI_QWEN3_CODER_PLUS_2025_07_22
+  ]
+  
+  for model_type in models_to_try:
+      model = ModelFactory.create(
+          model_platform=ModelPlatformType.COMETAPI,
+          model_type=model_type
+      )
+      # Use the model...
+  ```
+
+  </Tab>
+
   <Tab title="Nebius">
     
-  Leverage [Nebius](https://studio.nebius.com)'s state-of-the-art inference models through an OpenAI-compatible API:
+  Leverage [Nebius AI Studio](https://nebius.com/)'s high-performance GPU cloud with OpenAI-compatible models:
 
  - **Nebius AI Studio** ([Platform](https://studio.nebius.com/)): Access powerful models through their cloud infrastructure.
  - **API Key Setup** ([Generate Key](https://studio.nebius.ai/settings/api-keys)): Obtain your Nebius API key to start integration.
- - **Nebius Docs** ([Documentation](https://docs.nebius.com/studio/inference)): Explore detailed Nebius API capabilities.
+ - **Nebius Docs** ([Documentation](https://nebius.com/docs/)): Explore detailed Nebius API capabilities.
 
   ```python
   from camel.models import ModelFactory

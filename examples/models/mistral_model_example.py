@@ -141,7 +141,7 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
+user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
     study of autonomous and communicative agents."""
 
 # Get response information
@@ -149,7 +149,59 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 """
 ===============================================================================
-Hello to CAMEL AI, an open-source community focused on the research of 
+Hello to CAMEL AI, an open-source community focused on the research of
+autonomous and communicative agents!
+===============================================================================
+"""
+
+# Example with Magistral Small 1.2
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.MISTRAL,
+    model_type=ModelType.MAGISTRAL_SMALL_1_2,
+    model_config_dict=MistralConfig(temperature=0.0).as_dict(),
+)
+
+# Define system message
+sys_msg = "You are a helpful assistant."
+
+# Set agent
+camel_agent = ChatAgent(system_message=sys_msg, model=model)
+
+user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
+    study of autonomous and communicative agents."""
+
+# Get response information
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+"""
+===============================================================================
+Hello to CAMEL AI, an open-source community focused on the research of
+autonomous and communicative agents!
+===============================================================================
+"""
+
+# Example with Magistral Medium 1.2
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.MISTRAL,
+    model_type=ModelType.MAGISTRAL_MEDIUM_1_2,
+    model_config_dict=MistralConfig(temperature=0.0).as_dict(),
+)
+
+# Define system message
+sys_msg = "You are a helpful assistant."
+
+# Set agent
+camel_agent = ChatAgent(system_message=sys_msg, model=model)
+
+user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
+    study of autonomous and communicative agents."""
+
+# Get response information
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+"""
+===============================================================================
+Hello to CAMEL AI, an open-source community focused on the research of
 autonomous and communicative agents!
 ===============================================================================
 """
