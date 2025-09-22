@@ -132,27 +132,7 @@ print(result['details'])  # Success/error status for each input
 
 ### Diff Snapshot Feature
 
-The toolkit includes intelligent diff detection for dropdown and menu interactions:
-
-```python
-# When typing into a combobox or search field
-result = await toolkit.browser_type(ref="search-box", text="laptop")
-
-# Check if dropdown options appeared
-if 'diffSnapshot' in result:
-    print("New options detected:")
-    print(result['diffSnapshot'])
-    # Output example:
-    # - option "Laptop Computers" [ref=45]
-    # - option "Laptop Accessories" [ref=46]
-    # - option "Laptop Bags" [ref=47]
-    
-    # Click on one of the options
-    await toolkit.browser_click(ref="45")
-else:
-    # No dropdown appeared, continue with regular snapshot
-    print(result['snapshot'])
-```
+[The intelligent diff detection feature for dropdowns is described in detail in hybrid_browser_toolkit_tools_reference.md under the browser_type section]
 
 ## Visual Mode
 
@@ -192,39 +172,7 @@ result = await toolkit.browser_get_som_screenshot(
 
 ### AI-Powered Analysis
 
-#### Setting Up AI Integration
-
-```python
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType
-
-# Create AI model for image analysis
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type="gpt-4-vision-preview"
-)
-
-# Initialize toolkit with AI model
-toolkit = HybridBrowserToolkit(
-    web_agent_model=model,
-    headless=False
-)
-
-# AI-assisted element finding
-async def find_element_by_description():
-    result = await toolkit.browser_get_som_screenshot(
-        read_image=True,
-        instruction="Find the blue 'Subscribe' button in the header"
-    )
-    
-    # AI response included in result
-    print(result)
-    # "Screenshot captured... Agent analysis: The blue 'Subscribe' 
-    # button is located at [ref=12] in the top-right header area."
-    
-    # Click the identified element
-    await toolkit.browser_click(ref="12")
-```
+[AI integration and the browser_get_som_screenshot tool with read_image parameter are detailed in hybrid_browser_toolkit_tools_reference.md]
 
 #### Complex Visual Tasks
 

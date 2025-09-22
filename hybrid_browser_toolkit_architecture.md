@@ -107,42 +107,7 @@ graph TB
 
 ### 1. Multi-Mode Operation System
 
-```mermaid
-graph TB
-    subgraph "Operating Modes - Unified ARIA Foundation"
-        A[User Request] --> B{Mode Selection}
-        
-        B -->|Text Mode| C[_snapshotForAI]
-        B -->|Visual Mode| D[_snapshotForAI]
-        B -->|Hybrid Mode| E[_snapshotForAI]
-        
-        C --> F[Text Snapshot Only]
-        D --> G[Text Snapshot]
-        E --> H[Adaptive Output]
-        
-        G --> I[Filter Elements]
-        I --> J[Generate SoM Screenshot]
-        J --> K[Visual Output with ARIA refs]
-        
-        F --> L[ARIA-based Interaction]
-        K --> L
-        H --> L
-        
-        style B fill:#ffd,stroke:#333,stroke-width:2px
-        style L fill:#9f9,stroke:#333,stroke-width:2px
-    end
-```
-
-**Legacy BrowserToolkit:**
-- Fixed screenshot-based approach
-- Always generates visual markers
-- Limited flexibility
-
-**HybridBrowserToolkit:**
-- **Text Mode**: Pure textual snapshot from _snapshotForAI
-- **Visual Mode**: Text snapshot filtered and visualized as SoM screenshot
-- **Hybrid Mode**: Intelligent switching between text and visual outputs
-- **Unified Foundation**: All modes use ARIA-based element identification
+[Detailed descriptions of Text Mode, Visual Mode, and Hybrid Mode are provided in hybrid_browser_toolkit_modes.md]
 
 ### 2. TypeScript Framework Integration
 
@@ -353,30 +318,7 @@ graph TB
 
 ### Connection Methods
 
-| Feature | Legacy BrowserToolkit | HybridBrowserToolkit |
-|---------|----------------------|---------------------|
-| Standard Launch | ✅ | ✅ |
-| CDP Connection | ❌ | ✅ |
-| Remote Browser | ❌ | ✅ |
-| Session Persistence | Limited | Full Support |
-| Multi-Tab Support | Basic | Advanced |
-
-### CDP Connection Architecture
-
-```mermaid
-graph TB
-    subgraph "CDP Connection Flow"
-        A[Existing Browser] -->|Port 9222| B[CDP Endpoint]
-        B --> C[WebSocket URL]
-        C --> D[HybridBrowserToolkit]
-        
-        D --> E[Connect Mode]
-        E --> F[Keep Current Page]
-        E --> G[New Tab Creation]
-        
-        style D fill:#9df,stroke:#333,stroke-width:2px
-    end
-```
+[CDP connection and standard connection details are comprehensively covered in hybrid_browser_toolkit_connection_modes.md]
 
 ### Element Interaction
 
@@ -409,37 +351,7 @@ sequenceDiagram
 
 ### 1. Injected SoM Screenshot
 
-**Legacy Approach:**
-- Server-side screenshot processing
-- Image stored in memory for agent access
-- Fixed resolution handling
-- Basic overlap detection
-
-**New Injected Script Approach:**
-```javascript
-// Injected directly into browser context
-window.__generateSoMScreenshot = function() {
-    // Advanced overlap detection
-    const overlaps = detectElementOverlaps();
-    
-    // Parent-child fusion
-    const fusedElements = fuseRelatedElements();
-    
-    // Adaptive positioning
-    const positions = calculateAdaptivePositions();
-    
-    // Generate optimized markers
-    return generateOptimizedMarkers(positions);
-}
-```
-
-**Key Improvements:**
-- Browser-native overlap detection
-- Resolution-independent rendering
-- Parent-child element fusion
-- **Tool Registration Pattern**: Returns text description with file path instead of storing image in memory
-- Screenshot saved to disk with structured naming
-- Agent can analyze via registered toolkit method
+[Technical details about SoM screenshot implementation are provided in hybrid_browser_toolkit_tools_reference.md under browser_get_som_screenshot section]
 
 ### 2. Form Filling Optimization
 
@@ -526,67 +438,7 @@ graph TB
 
 ### Stealth Mode Implementation Details
 
-The HybridBrowserToolkit's stealth mechanism is significantly more sophisticated than the legacy implementation:
-
-**Legacy Implementation:**
-```python
-# browser_toolkit.py
-browser_launch_args = [
-    "--disable-blink-features=AutomationControlled",  # Basic stealth
-]
-user_agent_string = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/91.0.4472.124 Safari/537.36"
-)
-```
-
-**HybridBrowserToolkit Implementation:**
-```python
-# Usage
-toolkit = HybridBrowserToolkit(
-    stealth=True,  # Enables comprehensive stealth configuration
-    # Or with custom configuration
-    stealth={
-        "enabled": True,
-        "userAgent": "Custom User Agent String",
-        "extraHTTPHeaders": {
-            "Accept-Language": "en-US,en;q=0.9",
-            "Accept-Encoding": "gzip, deflate, br"
-        }
-    }
-)
-```
-
-**Stealth Application Strategy:**
-
-```mermaid
-graph LR
-    subgraph "Stealth Application Flow"
-        A[Stealth Config] --> B{Connection Type}
-        B -->|Standard Launch| C[Apply at Browser Launch]
-        B -->|Persistent Context| D[Apply at Context Creation]
-        B -->|CDP Connection| E[Limited Application]
-        
-        C --> F[Full Stealth Support]
-        D --> F
-        E --> G[Headers Only<br/>No User Agent Change]
-        
-        F --> H[Undetectable Browser]
-        G --> I[Partial Stealth]
-        
-        style F fill:#9f9,stroke:#333,stroke-width:2px
-        style I fill:#ffd,stroke:#333,stroke-width:2px
-    end
-```
-
-**Anti-Detection Features:**
-1. **Browser Fingerprint Masking**: Removes automation indicators
-2. **WebDriver Property**: Hidden from JavaScript detection
-3. **Chrome DevTools Protocol**: Masked automation flags
-4. **Navigator Properties**: Normalized to match real browsers
-5. **Plugin Array**: Simulates real browser plugins
-6. **Permission Queries**: Handles like non-automated browser
+[Stealth mode configuration options are also mentioned in hybrid_browser_toolkit_connection_modes.md]
 
 ## Migration Guide
 

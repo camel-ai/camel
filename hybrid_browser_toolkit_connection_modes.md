@@ -26,9 +26,62 @@ HybridBrowserToolkit supports two primary connection modes:
 
 Each mode serves different purposes and offers unique advantages for various automation scenarios.
 
+```mermaid
+graph TB
+    subgraph "Connection Modes Overview"
+        A[HybridBrowserToolkit] --> B{Connection Mode}
+        
+        B -->|Standard| C[Playwright Connection]
+        B -->|CDP| D[DevTools Protocol]
+        
+        C --> C1[New Browser Instance]
+        C1 --> C2[Full Control]
+        C2 --> C3[Isolated Environment]
+        
+        D --> D1[Existing Browser]
+        D1 --> D2[Debug/Integration]
+        D2 --> D3[Shared Environment]
+        
+        style A fill:#9f9,stroke:#333,stroke-width:2px
+        style C fill:#9df,stroke:#333,stroke-width:2px
+        style D fill:#ffd,stroke:#333,stroke-width:2px
+    end
+```
+
+[Architectural details about the connection system are provided in hybrid_browser_toolkit_architecture.md]
+
 ## Standard Playwright Connection
 
 The standard mode creates a new browser instance managed entirely by the toolkit. This is the default and most common usage pattern.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Toolkit
+    participant WebSocket
+    participant Browser
+    
+    User->>Toolkit: HybridBrowserToolkit()
+    Note over Toolkit: Initialize with config
+    
+    User->>Toolkit: browser_open()
+    Toolkit->>WebSocket: Start server
+    WebSocket->>Browser: Launch new instance
+    Browser-->>WebSocket: Ready
+    WebSocket-->>Toolkit: Connected
+    Toolkit-->>User: Browser opened
+    
+    User->>Toolkit: browser_visit_page()
+    Toolkit->>WebSocket: Navigate command
+    WebSocket->>Browser: Load URL
+    Browser-->>WebSocket: Page loaded
+    WebSocket-->>Toolkit: Snapshot
+    Toolkit-->>User: Page snapshot
+    
+    User->>Toolkit: browser_close()
+    Toolkit->>Browser: Terminate
+    Browser-->>Toolkit: Closed
+```
 
 ### Basic Setup
 
@@ -103,17 +156,7 @@ async def persistent_session_example():
 
 #### Stealth Mode
 
-```python
-# Enable stealth mode to avoid detection
-toolkit_stealth = HybridBrowserToolkit(
-    stealth=True  # Applies stealth techniques
-)
-
-# Stealth mode is useful for:
-# - Avoiding bot detection
-# - Accessing sites that block automation
-# - More human-like browsing behavior
-```
+[Comprehensive stealth mode details and implementation are described in hybrid_browser_toolkit_architecture.md]
 
 #### Timeout Configuration
 
@@ -210,7 +253,51 @@ Chrome DevTools Protocol (CDP) connection allows the toolkit to connect to an al
 
 CDP (Chrome DevTools Protocol) is a protocol that allows tools to instrument, inspect, debug, and profile Chrome/Chromium browsers. The toolkit can connect to any browser that exposes a CDP endpoint.
 
+```mermaid
+graph LR
+    subgraph "CDP Architecture"
+        A[Chrome/Chromium Browser] -->|Port 9222| B[CDP Server]
+        B --> C[WebSocket Endpoint]
+        C --> D[JSON API]
+        
+        E[HybridBrowserToolkit] -->|Connect| C
+        F[Chrome DevTools] -->|Connect| C
+        G[Other Tools] -->|Connect| C
+        
+        style A fill:#f9f,stroke:#333,stroke-width:2px
+        style B fill:#ff9,stroke:#333,stroke-width:2px
+        style E fill:#9f9,stroke:#333,stroke-width:2px
+    end
+```
+
 ### Connecting to Existing Browser
+
+```mermaid
+flowchart TD
+    subgraph "CDP Connection Process"
+        A[Step 1: Launch Browser] --> A1[Add --remote-debugging-port=9222]
+        A1 --> A2[Browser starts with CDP server]
+        
+        A2 --> B[Step 2: Get Endpoint]
+        B --> B1[HTTP GET localhost:9222/json/version]
+        B1 --> B2[Receive WebSocket URL]
+        
+        B2 --> C[Step 3: Connect Toolkit]
+        C --> C1[HybridBrowserToolkit config]
+        C1 --> C2[connect_over_cdp=True]
+        C2 --> C3[cdp_url=ws://...]
+        
+        C3 --> D[Connected]
+        D --> D1[Can control browser]
+        D --> D2[Access all tabs]
+        D --> D3[Execute commands]
+        
+        style A fill:#ffd,stroke:#333,stroke-width:2px
+        style B fill:#9df,stroke:#333,stroke-width:2px
+        style C fill:#9f9,stroke:#333,stroke-width:2px
+        style D fill:#dfd,stroke:#333,stroke-width:2px
+    end
+```
 
 #### Step 1: Launch Browser with Remote Debugging
 
@@ -267,6 +354,32 @@ snapshot = await toolkit_cdp.browser_get_page_snapshot()
 
 ### CDP Configuration
 
+```mermaid
+graph TB
+    subgraph "CDP Configuration Options"
+        A[CDP Connection] --> B{Configuration}
+        
+        B --> C[cdp_keep_current_page]
+        C -->|True| C1[Work with existing tabs]
+        C -->|False| C2[Create new tab]
+        
+        B --> D[cdp_url]
+        D --> D1[Local: ws://localhost:9222/...]
+        D --> D2[Remote: ws://remote:9222/...]
+        
+        B --> E[Timeout Settings]
+        E --> E1[default_timeout]
+        E --> E2[navigation_timeout]
+        
+        B --> F[Mode Settings]
+        F --> F1[viewport_limit]
+        F --> F2[full_visual_mode]
+        
+        style A fill:#9df,stroke:#333,stroke-width:2px
+        style B fill:#ffd,stroke:#333,stroke-width:2px
+    end
+```
+
 #### Keep Current Page Mode
 
 ```python
@@ -298,6 +411,28 @@ toolkit_cdp_custom = HybridBrowserToolkit(
 ```
 
 ### CDP Use Cases
+
+```mermaid
+mindmap
+  root((CDP Use Cases))
+    Debugging
+      Inspect existing page
+      View console logs
+      Execute diagnostics
+      Capture screenshots
+    Remote Control
+      Control remote browser
+      Cross-machine automation
+      Cloud browser access
+    Integration
+      Manual + Automated testing
+      Existing session reuse
+      Multi-tool collaboration
+    Development
+      Live development
+      Hot reload testing
+      Interactive debugging
+```
 
 #### 1. Debugging Existing Sessions
 
@@ -373,6 +508,43 @@ async def assist_manual_testing():
 
 ## Connection Mode Comparison
 
+```mermaid
+graph TB
+    subgraph "Feature Comparison"
+        subgraph "Standard Playwright"
+            S1[Creates new browser]
+            S2[Full isolation]
+            S3[Complete control]
+            S4[Production ready]
+            S5[Clean state]
+            S6[Resource intensive]
+        end
+        
+        subgraph "CDP Connection"
+            C1[Uses existing browser]
+            C2[Shared environment]
+            C3[Limited control]
+            C4[Debug/Dev focused]
+            C5[Preserves state]
+            C6[Resource efficient]
+        end
+        
+        subgraph "Decision Factors"
+            D1{Need isolation?} -->|Yes| S1
+            D1 -->|No| C1
+            
+            D2{Need debugging?} -->|Yes| C1
+            D2 -->|No| S1
+            
+            D3{Remote browser?} -->|Yes| C1
+            D3 -->|No| S1
+            
+            D4{Clean state required?} -->|Yes| S1
+            D4 -->|No| C1
+        end
+    end
+```
+
 | Feature | Standard Playwright | CDP Connection |
 |---------|-------------------|----------------|
 | Browser Management | Toolkit creates and manages browser | Connects to existing browser |
@@ -385,6 +557,39 @@ async def assist_manual_testing():
 | Remote Control | Not supported | Supported |
 
 ## Advanced Scenarios
+
+```mermaid
+stateDiagram-v2
+    [*] --> CheckEnvironment
+    
+    CheckEnvironment --> Development: dev_mode=True
+    CheckEnvironment --> Production: dev_mode=False
+    
+    Development --> CDPConnection
+    CDPConnection --> ExistingBrowser
+    ExistingBrowser --> Debug
+    
+    Production --> StandardConnection
+    StandardConnection --> NewBrowser
+    NewBrowser --> Automate
+    
+    Debug --> [*]
+    Automate --> [*]
+    
+    note right of Development
+        Use CDP for:
+        - Live debugging
+        - Quick testing
+        - Integration
+    end note
+    
+    note left of Production
+        Use Standard for:
+        - Isolated runs
+        - CI/CD pipelines
+        - Reliable automation
+    end note
+```
 
 ### Hybrid Usage - Development to Production
 

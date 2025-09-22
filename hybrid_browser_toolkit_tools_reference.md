@@ -4,49 +4,7 @@ This document provides a comprehensive reference for all tools available in the 
 
 ## Architecture Overview
 
-```mermaid
-graph TB
-    subgraph "Python Layer"
-        A[HybridBrowserToolkit<br/>Main Entry Point] --> A1[Configuration]
-        A --> A2[Tool Methods]
-        A --> A3[WebSocket Wrapper]
-    end
-    
-    subgraph "Communication Layer"
-        A3 --> B[WebSocket Server<br/>Port: Dynamic]
-        B <--> C[JSON Messages]
-    end
-    
-    subgraph "TypeScript/Node.js Layer"
-        C <--> D[WebSocket Handler]
-        D --> E[Browser Session Manager]
-        E --> F[Playwright API]
-    end
-    
-    subgraph "Browser Layer"
-        F --> G[Chromium Browser]
-        G --> H[Page Context]
-        H --> I1[DOM Manipulation]
-        H --> I2[Screenshot Capture]
-        H --> I3[Event Handling]
-        
-        subgraph "Injected Scripts"
-            I2 --> J[SoM Injection<br/>Element Detection]
-            I1 --> K[Snapshot Extraction<br/>ref ID Mapping]
-        end
-    end
-    
-    subgraph "Web Content"
-        I1 & I2 & I3 --> L[Target Web Page]
-    end
-    
-    style A fill:#f9f,stroke:#333,stroke-width:4px
-    style B fill:#ff9,stroke:#333,stroke-width:2px
-    style F fill:#9ff,stroke:#333,stroke-width:2px
-    style G fill:#9f9,stroke:#333,stroke-width:2px
-    style J fill:#faa,stroke:#333,stroke-width:2px
-    style K fill:#faa,stroke:#333,stroke-width:2px
-```
+[Architecture details including multi-layer design and ARIA foundation are described in hybrid_browser_toolkit_architecture.md]
 
 ```mermaid
 flowchart TD
@@ -85,6 +43,8 @@ flowchart TD
         L[Visual Mode] --> L1[SoM screenshots<br/>AI analysis capable]
         M[Full Visual Mode] --> M1[No auto snapshots<br/>Maximum performance]
     end
+    
+    [Detailed mode descriptions and usage patterns are available in hybrid_browser_toolkit_modes.md]
     
     subgraph "Smart Features"
         N[Intelligent Dropdown Detection] --> N1[Returns only new options<br/>via diffSnapshot]
