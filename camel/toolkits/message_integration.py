@@ -466,7 +466,7 @@ class ToolkitMessageIntegration:
 
         # Mark this function as enhanced by message integration
         try:
-            wrapper.__message_integration_enhanced__ = True
+            wrapper.__message_integration_enhanced__ = True  # type: ignore[attr-defined]
         except Exception:
             pass
 
