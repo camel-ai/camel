@@ -24,8 +24,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from camel.agents import ChatAgent
-from camel.logger import get_logger
 from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
+from camel.logger import get_logger
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
@@ -417,8 +417,7 @@ class SingleAgentWorker(Worker):
 
         except Exception as e:
             logger.error(
-                f"Error processing task {task.id}: "
-                f"{type(e).__name__}: {e}"
+                f"Error processing task {task.id}: " f"{type(e).__name__}: {e}"
             )
             # Store error information in task result
             task.result = f"{type(e).__name__}: {e!s}"
@@ -609,68 +608,15 @@ class SingleAgentWorker(Worker):
             bool: True if workflows were successfully loaded, False otherwise.
         """
         try:
-            # Ensure we have a ChatAgent worker
-            if not isinstance(self.worker, ChatAgent):
-                logger.warning(
-                    f"Cannot load workflow: {self.description} worker is not "
-                    "a ChatAgent"
-                )
-                return False
-
-            # For loading, search across all existing session folders
-            # Generate search pattern from description if not provided
-            if pattern is None:
-                clean_desc = self.description.lower().replace(" ", "_")
-                clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
-                pattern = f"{clean_desc}_workflow*.md"
-
-            # Get the base workforce_workflows directory
-            camel_workdir = os.environ.get("CAMEL_WORKDIR")
-            if camel_workdir:
-                base_dir = os.path.join(camel_workdir, "workforce_workflows")
-            else:
-                base_dir = "workforce_workflows"
-
-            # Search across all session folders for matching workflows
-            search_path = str(Path(base_dir) / "*" / pattern)
-            workflow_files = glob.glob(search_path)
-
+            # Find workflow files matching the pattern
+            workflow_files = self._find_workflow_files(pattern)
             if not workflow_files:
-                logger.info(f"No workflow files found for pattern: {pattern}")
                 return False
 
-            # Sort files by modification time (most recent first)
-            workflow_files.sort(
-                key=lambda x: os.path.getmtime(x), reverse=True
-            )
+            # Load the workflow files
+            loaded_count = self._load_workflow_files(workflow_files)
 
-            # Load the most recent workflow file(s) by reading directly
-            loaded_count = 0
-            for file_path in workflow_files[:MAX_RECENT_WORKFLOWS_TO_LOAD]:
-                try:
-                    filename = os.path.basename(file_path).replace('.md', '')
-                    session_dir = os.path.dirname(file_path)
-                    session_id = os.path.basename(session_dir)
-
-                    # Use shared context utility with specific session
-                    temp_utility = ContextUtility.get_workforce_shared(
-                        session_id
-                    )
-
-                    status = temp_utility.load_markdown_context_to_memory(
-                        self.worker, filename
-                    )
-
-                    if "Context appended" in status:
-                        loaded_count += 1
-                        logger.info(f"Loaded workflow: {filename}")
-                    else:
-                        logger.warning(f"Failed to load workflow {filename}: {status}")
-
-                except Exception as e:
-                    logger.warning(f"Failed to load workflow file {file_path}: {e!s}")
-                    continue
-
+            # Report results
             logger.info(
                 f"Successfully loaded {loaded_count} workflow file(s) for "
                 f"{self.description}"
@@ -678,5 +624,89 @@ class SingleAgentWorker(Worker):
             return loaded_count > 0
 
         except Exception as e:
-            logger.error(f"Error loading workflows for {self.description}: {e!s}")
+            logger.error(
+                f"Error loading workflows for {self.description}: {e!s}"
+            )
             return False
+
+    def _find_workflow_files(self, pattern: Optional[str]) -> List[str]:
+        r"""Find and return sorted workflow files matching the pattern.
+
+        Args:
+            pattern (Optional[str]): Custom search pattern for workflow files.
+                If None, uses worker description to generate pattern.
+
+        Returns:
+            List[str]: Sorted list of workflow file paths (empty if validation fails).
+        """
+        # Ensure we have a ChatAgent worker
+        if not isinstance(self.worker, ChatAgent):
+            logger.warning(
+                f"Cannot load workflow: {self.description} worker is not "
+                "a ChatAgent"
+            )
+            return []
+
+        # Generate search pattern from description if not provided
+        if pattern is None:
+            clean_desc = self.description.lower().replace(" ", "_")
+            clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
+            pattern = f"{clean_desc}_workflow*.md"
+
+        # Get the base workforce_workflows directory
+        camel_workdir = os.environ.get("CAMEL_WORKDIR")
+        if camel_workdir:
+            base_dir = os.path.join(camel_workdir, "workforce_workflows")
+        else:
+            base_dir = "workforce_workflows"
+
+        # Search across all session folders for matching workflows
+        search_path = str(Path(base_dir) / "*" / pattern)
+        workflow_files = glob.glob(search_path)
+
+        if not workflow_files:
+            logger.info(f"No workflow files found for pattern: {pattern}")
+            return []
+
+        # Sort files by modification time (most recent first)
+        workflow_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+        return workflow_files
+
+    def _load_workflow_files(self, workflow_files: List[str]) -> int:
+        r"""Load workflow files and return count of successful loads.
+
+        Args:
+            workflow_files (List[str]): List of workflow file paths to load.
+
+        Returns:
+            int: Number of successfully loaded workflow files.
+        """
+        loaded_count = 0
+        for file_path in workflow_files[:MAX_RECENT_WORKFLOWS_TO_LOAD]:
+            try:
+                filename = os.path.basename(file_path).replace('.md', '')
+                session_dir = os.path.dirname(file_path)
+                session_id = os.path.basename(session_dir)
+
+                # Use shared context utility with specific session
+                temp_utility = ContextUtility.get_workforce_shared(session_id)
+
+                status = temp_utility.load_markdown_context_to_memory(
+                    self.worker, filename
+                )
+
+                if "Context appended" in status:
+                    loaded_count += 1
+                    logger.info(f"Loaded workflow: {filename}")
+                else:
+                    logger.warning(
+                        f"Failed to load workflow {filename}: {status}"
+                    )
+
+            except Exception as e:
+                logger.warning(
+                    f"Failed to load workflow file {file_path}: {e!s}"
+                )
+                continue
+
+        return loaded_count
