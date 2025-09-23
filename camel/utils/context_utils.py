@@ -15,7 +15,7 @@
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
 
 from camel.logger import get_logger
 
@@ -39,7 +39,12 @@ class ContextUtility:
     - Text-based search through files
     - File metadata handling
     - Agent memory record retrieval
+    - Shared session management for workforce workflows
     """
+
+    # Class variables for shared session management
+    _shared_sessions: ClassVar[Dict[str, 'ContextUtility']] = {}
+    _default_workforce_session: ClassVar[Optional['ContextUtility']] = None
 
     def __init__(
         self,
@@ -496,3 +501,65 @@ class ContextUtility:
             error_msg = f"Failed to load markdown context to memory: {e}"
             logger.error(error_msg)
             return error_msg
+
+    # ========= SHARED SESSION MANAGEMENT METHODS =========
+
+    @classmethod
+    def get_workforce_shared(
+        cls, session_id: Optional[str] = None
+    ) -> 'ContextUtility':
+        r"""Get or create shared workforce context utility with lazy init.
+
+        This method provides a centralized way to access shared context
+        utilities for workforce workflows, ensuring all workforce components
+        use the same session directory.
+
+        Args:
+            session_id (str, optional): Custom session ID. If None, uses the
+                default workforce session.
+
+        Returns:
+            ContextUtility: Shared context utility instance for workforce.
+        """
+        if session_id is None:
+            # Use default workforce session
+            if cls._default_workforce_session is None:
+                camel_workdir = os.environ.get("CAMEL_WORKDIR")
+                if camel_workdir:
+                    base_path = os.path.join(
+                        camel_workdir, "workforce_workflows"
+                    )
+                else:
+                    base_path = "workforce_workflows"
+
+                cls._default_workforce_session = cls(
+                    working_directory=base_path,
+                    create_folder=False,  # Don't create folder until needed
+                )
+            return cls._default_workforce_session
+
+        # Use specific session
+        if session_id not in cls._shared_sessions:
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                base_path = os.path.join(camel_workdir, "workforce_workflows")
+            else:
+                base_path = "workforce_workflows"
+
+            cls._shared_sessions[session_id] = cls(
+                working_directory=base_path,
+                session_id=session_id,
+                create_folder=False,  # Don't create folder until needed
+            )
+        return cls._shared_sessions[session_id]
+
+    @classmethod
+    def reset_shared_sessions(cls) -> None:
+        r"""Reset shared sessions (useful for testing).
+
+        This method clears all shared session instances, forcing new ones
+        to be created on next access. Primarily used for testing to ensure
+        clean state between tests.
+        """
+        cls._shared_sessions.clear()
+        cls._default_workforce_session = None

@@ -37,24 +37,6 @@ from camel.tasks.task import Task, TaskState, is_task_result_insufficient
 from camel.utils.context_utils import ContextUtility
 
 
-def _create_workforce_workflows_context_utility(create_folder: bool = True) -> ContextUtility:
-    """Create a ContextUtility instance for workforce workflows directory.
-
-    Args:
-        create_folder (bool): Whether to create the session folder immediately.
-            Defaults to True for backward compatibility.
-
-    Returns:
-        ContextUtility: Configured for workforce_workflows directory.
-    """
-    camel_workdir = os.environ.get("CAMEL_WORKDIR")
-    if camel_workdir:
-        workflow_dir = os.path.join(camel_workdir, "workforce_workflows")
-    else:
-        workflow_dir = "workforce_workflows"
-    return ContextUtility(workflow_dir, create_folder=create_folder)
-
-
 class AgentPool:
     r"""A pool of agent instances for efficient reuse.
 
@@ -256,8 +238,10 @@ class SingleAgentWorker(Worker):
         self.worker = worker
         self.use_agent_pool = use_agent_pool
         self._shared_context_utility = context_utility
+        self._context_utility = None  # Will be initialized when needed
 
-        # Note: Context utility is set on the worker agent during save/load operations
+        # Note: Context utility is set on the worker agent during save/load
+        # operations
         # to avoid creating session folders during initialization
 
         self.agent_pool: Optional[AgentPool] = None
@@ -300,6 +284,15 @@ class SingleAgentWorker(Worker):
         if self.use_agent_pool and self.agent_pool:
             await self.agent_pool.return_agent(agent)
         # If not using pool, agent will be garbage collected
+
+    def _get_context_utility(self) -> ContextUtility:
+        r"""Get context utility with lazy initialization."""
+        if self._context_utility is None:
+            self._context_utility = (
+                self._shared_context_utility
+                or ContextUtility.get_workforce_shared()
+            )
+        return self._context_utility
 
     async def _process_task(
         self, task: Task, dependencies: List[Task]
@@ -530,18 +523,12 @@ class SingleAgentWorker(Worker):
             return self.agent_pool.get_stats()
         return None
 
-    def save_workflow(
-        self, custom_title: Optional[str] = None  # noqa: F401
-    ) -> Dict[str, Any]:
+    def save_workflow(self) -> Dict[str, Any]:
         r"""Save the worker's current workflow using agent summarization.
 
         This method generates a workflow summary from the worker agent's
         conversation history and saves it to a markdown file. The filename
         is based on the worker's description for easy loading later.
-
-        Args:
-            custom_title (Optional[str]): Custom title for the workflow.
-                If None, generates title from worker description.
 
         Returns:
             Dict[str, Any]: Result dictionary with keys:
@@ -563,13 +550,11 @@ class SingleAgentWorker(Worker):
                     ),
                 }
 
-            # Use shared context utility if provided, otherwise create one
-            if self._shared_context_utility is not None:
-                self._workflow_context_utility = self._shared_context_utility
-            elif not hasattr(self, '_workflow_context_utility'):
-                self._workflow_context_utility = (
-                    _create_workforce_workflows_context_utility()
-                )
+            # Get context utility using lazy initialization
+            context_util = self._get_context_utility()
+
+            # Set context utility on the worker agent for summarization
+            self.worker.set_context_utility(context_util)
 
             # Generate filename from description
             clean_desc = self.description.lower().replace(" ", "_")
@@ -664,12 +649,9 @@ class SingleAgentWorker(Worker):
                     session_dir = os.path.dirname(file_path)
                     session_id = os.path.basename(session_dir)
 
-                    # Create temporary context utility for this specific session
-                    base_dir = os.path.dirname(session_dir)
-                    temp_utility = ContextUtility(
-                        working_directory=base_dir,
-                        session_id=session_id,
-                        create_folder=False  # Don't create, just read
+                    # Use shared context utility with specific session
+                    temp_utility = ContextUtility.get_workforce_shared(
+                        session_id
                     )
 
                     status = temp_utility.load_markdown_context_to_memory(

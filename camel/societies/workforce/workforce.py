@@ -52,7 +52,6 @@ from camel.societies.workforce.prompts import (
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import (
     SingleAgentWorker,
-    _create_workforce_workflows_context_utility,
 )
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
@@ -459,20 +458,21 @@ class Workforce(BaseNode):
         # Helper for propagating pause control to externally supplied agents
         # ------------------------------------------------------------------
 
-    def _get_or_create_shared_context_utility(self, create_folder: bool = True) -> ContextUtility:
+    def _get_or_create_shared_context_utility(self) -> "ContextUtility":
         r"""Get or create the shared context utility for workflow management.
 
         This method creates the context utility only when needed, avoiding
         unnecessary session folder creation during initialization.
 
-        Args:
-            create_folder (bool): Whether to create the session folder immediately.
-
         Returns:
             ContextUtility: The shared context utility instance.
         """
         if self._shared_context_utility is None:
-            self._shared_context_utility = _create_workforce_workflows_context_utility(create_folder)
+            from camel.utils.context_utils import ContextUtility
+
+            self._shared_context_utility = (
+                ContextUtility.get_workforce_shared()
+            )
         return self._shared_context_utility
 
     def _validate_agent_compatibility(
@@ -1833,7 +1833,8 @@ class Workforce(BaseNode):
         """
         results = {}
 
-        # For loading, we don't create a new session - instead we search existing ones
+        # For loading, we don't create a new session - instead we search
+        # existing ones
         # Each worker will search independently across all existing sessions
 
         # First, load workflows for SingleAgentWorker instances
@@ -1873,6 +1874,7 @@ class Workforce(BaseNode):
             import glob
             import os
             from pathlib import Path
+
             from camel.utils.context_utils import ContextUtility
 
             # For loading management workflows, search across all sessions
@@ -1905,11 +1907,9 @@ class Workforce(BaseNode):
                     session_dir = os.path.dirname(file_path)
                     session_id = os.path.basename(session_dir)
 
-                    # Create temporary context utility for this specific session
-                    temp_utility = ContextUtility(
-                        working_directory=os.path.dirname(session_dir),
-                        session_id=session_id,
-                        create_folder=False  # Don't create, just read
+                    # Use shared context utility with specific session
+                    temp_utility = ContextUtility.get_workforce_shared(
+                        session_id
                     )
 
                     status = temp_utility.load_markdown_context_to_memory(
@@ -1930,11 +1930,9 @@ class Workforce(BaseNode):
                     session_dir = os.path.dirname(file_path)
                     session_id = os.path.basename(session_dir)
 
-                    # Create temporary context utility for this specific session
-                    temp_utility = ContextUtility(
-                        working_directory=os.path.dirname(session_dir),
-                        session_id=session_id,
-                        create_folder=False  # Don't create, just read
+                    # Use shared context utility with specific session
+                    temp_utility = ContextUtility.get_workforce_shared(
+                        session_id
                     )
 
                     status = temp_utility.load_markdown_context_to_memory(

@@ -728,7 +728,9 @@ class ChatAgent(BaseAgent):
         # Ensure the new memory has the system message
         self.init_messages()
 
-    def set_context_utility(self, context_utility: Optional[ContextUtility]) -> None:
+    def set_context_utility(
+        self, context_utility: Optional[ContextUtility]
+    ) -> None:
         r"""Set the context utility for the agent.
 
         This allows external components (like SingleAgentWorker) to provide
@@ -1086,8 +1088,8 @@ class ChatAgent(BaseAgent):
         }
 
         try:
-            if self._context_utility is None:
-                self._context_utility = ContextUtility()
+            # Use external context if set, otherwise create local one
+            context_util = self._context_utility or ContextUtility()
 
             # Get conversation directly from agent's memory
             messages, _ = self.memory.get_context()
@@ -1165,7 +1167,7 @@ class ChatAgent(BaseAgent):
             )
             base_filename = Path(base_filename).with_suffix("").name
 
-            metadata = self._context_utility.get_session_metadata()
+            metadata = context_util.get_session_metadata()
             metadata.update(
                 {
                     "agent_id": self.agent_id,
@@ -1173,7 +1175,7 @@ class ChatAgent(BaseAgent):
                 }
             )
 
-            save_status = self._context_utility.save_markdown_file(
+            save_status = context_util.save_markdown_file(
                 base_filename,
                 summary_content,
                 title="Conversation Summary",
@@ -1181,8 +1183,7 @@ class ChatAgent(BaseAgent):
             )
 
             file_path = (
-                self._context_utility.get_working_directory()
-                / f"{base_filename}.md"
+                context_util.get_working_directory() / f"{base_filename}.md"
             )
 
             result.update(

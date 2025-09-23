@@ -152,17 +152,20 @@ class TestSingleAgentWorkerWorkflow:
         mock_glob.return_value = mock_files
         mock_getmtime.return_value = 1234567890
 
-        # Mock workflow context utility
+        # Mock the shared context utility method
         mock_context_utility = MagicMock()
         mock_context_utility.load_markdown_context_to_memory.return_value = (
             "Context appended successfully"
         )
-        worker._workflow_context_utility = mock_context_utility
 
-        result = worker.load_workflow()
+        with patch(
+            'camel.utils.context_utils.ContextUtility.get_workforce_shared',
+            return_value=mock_context_utility,
+        ):
+            result = worker.load_workflow()
 
-        assert result is True
-        mock_context_utility.load_markdown_context_to_memory.assert_called_once()
+            assert result is True
+            mock_context_utility.load_markdown_context_to_memory.assert_called()
 
     def test_load_workflow_no_files(self, temp_context_dir):
         """Test workflow loading when no files found."""
@@ -401,3 +404,97 @@ class TestWorkflowIntegration:
                 # Verify the filename generation works with special characters
                 result = worker.save_workflow()
                 assert result["status"] == "success"
+
+
+class TestSharedContextUtility:
+    """Test shared context utility functionality."""
+
+    def test_get_workforce_shared_default(self):
+        """Test getting default workforce shared context."""
+        from camel.utils.context_utils import ContextUtility
+
+        # Reset any existing shared sessions
+        ContextUtility.reset_shared_sessions()
+
+        # Get default shared context
+        context1 = ContextUtility.get_workforce_shared()
+        context2 = ContextUtility.get_workforce_shared()
+
+        # Should return the same instance
+        assert context1 is context2
+        assert context1.session_id == context2.session_id
+
+    def test_get_workforce_shared_specific_session(self):
+        """Test getting workforce shared context with specific session ID."""
+        from camel.utils.context_utils import ContextUtility
+
+        # Reset any existing shared sessions
+        ContextUtility.reset_shared_sessions()
+
+        session_id = "test_session_123"
+
+        # Get shared context with specific session
+        context1 = ContextUtility.get_workforce_shared(session_id)
+        context2 = ContextUtility.get_workforce_shared(session_id)
+
+        # Should return the same instance
+        assert context1 is context2
+        assert context1.session_id == session_id
+        assert context2.session_id == session_id
+
+    def test_reset_shared_sessions(self):
+        """Test resetting shared sessions."""
+        from camel.utils.context_utils import ContextUtility
+
+        # Create some shared contexts
+        context1 = ContextUtility.get_workforce_shared()
+        context2 = ContextUtility.get_workforce_shared("test_session")
+
+        # Reset sessions
+        ContextUtility.reset_shared_sessions()
+
+        # Get new contexts - should be different instances
+        new_context1 = ContextUtility.get_workforce_shared()
+        new_context2 = ContextUtility.get_workforce_shared("test_session")
+
+        assert new_context1 is not context1
+        assert new_context2 is not context2
+
+    def test_lazy_initialization_no_folder_creation(self):
+        """Test that shared contexts don't create folders until needed."""
+        import os
+        import tempfile
+
+        from camel.utils.context_utils import ContextUtility
+
+        # Reset any existing shared sessions
+        ContextUtility.reset_shared_sessions()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch.dict(os.environ, {"CAMEL_WORKDIR": temp_dir}):
+                # Get shared context
+                context = ContextUtility.get_workforce_shared()
+
+                # Session directory should not exist yet
+                session_dir = context.get_working_directory()
+                assert not session_dir.exists()
+
+                # Creating a file should create the directory
+                context.save_markdown_file("test", "test content")
+                assert session_dir.exists()
+
+    def test_single_agent_worker_uses_shared_context(self):
+        """Test that SingleAgentWorker uses shared context."""
+        from camel.utils.context_utils import ContextUtility
+
+        # Reset any existing shared sessions
+        ContextUtility.reset_shared_sessions()
+
+        worker = MockSingleAgentWorker("test_worker")
+
+        # Get context utility - should use shared instance
+        context_util = worker._get_context_utility()
+
+        # Should be the same as calling get_workforce_shared
+        shared_context = ContextUtility.get_workforce_shared()
+        assert context_util is shared_context

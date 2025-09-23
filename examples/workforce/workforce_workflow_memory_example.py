@@ -14,7 +14,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-import os
+from dotenv import load_dotenv
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -24,8 +24,9 @@ from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType
-from dotenv import load_dotenv
+
 load_dotenv()
+
 
 def create_math_agent() -> ChatAgent:
     """Create a math agent with math tools."""
@@ -94,7 +95,7 @@ def demonstrate_first_session():
             id="math_task",
         ),
         Task(
-            content="Write a short creative story about a robot learning to paint",
+            content="Write a one-paragraph creative story about a robot learning to paint",
             id="writing_task",
         ),
     ]
