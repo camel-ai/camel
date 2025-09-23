@@ -107,7 +107,7 @@ class MemoryRecord(BaseModel):
             try:
                 # pydantic model → dict
                 if hasattr(parsed_value, "model_dump"):
-                    message_dict["parsed"] = parsed_value.model_dump()  # type: ignore[attr-defined]
+                    message_dict["parsed"] = parsed_value.model_dump()
                 # dict → keep as is
                 elif isinstance(parsed_value, dict):
                     message_dict["parsed"] = parsed_value
