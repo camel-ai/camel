@@ -1050,6 +1050,7 @@ class ChatAgent(BaseAgent):
         self,
         filename: Optional[str] = None,
         summary_prompt: Optional[str] = None,
+        working_directory: Optional[Union[str, Path]] = None,
     ) -> Dict[str, Any]:
         r"""Summarize the agent's current conversation context and persist it
         to a markdown file.
@@ -1061,6 +1062,9 @@ class ChatAgent(BaseAgent):
             summary_prompt (Optional[str]): Custom prompt for the summarizer.
                 When omitted, a default prompt highlighting key decisions,
                 action items, and open questions is used.
+            working_directory (Optional[str|Path]): Optional directory to save
+                the markdown summary file. If provided, overrides the default
+                directory used by ContextUtility.
 
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
@@ -1075,7 +1079,12 @@ class ChatAgent(BaseAgent):
 
         try:
             if self._context_utility is None:
-                self._context_utility = ContextUtility()
+                if working_directory is not None:
+                    self._context_utility = ContextUtility(
+                        working_directory=str(working_directory)
+                    )
+                else:
+                    self._context_utility = ContextUtility()
 
             # Get conversation directly from agent's memory
             messages, _ = self.memory.get_context()
@@ -1116,12 +1125,17 @@ class ChatAgent(BaseAgent):
             else:
                 self._context_summary_agent.reset()
 
-            prompt_text = summary_prompt or (
-                "Summarize the following conversation in concise markdown "
-                "bullet points highlighting key decisions, action items, and "
-                "open questions.\n\n"
-                f"{conversation_text}"
-            )
+            if summary_prompt:
+                prompt_text = (
+                    f"{summary_prompt.rstrip()}\n\n"
+                    f"Context information:\n{conversation_text}"
+                )
+            else:
+                prompt_text = (
+                    "Summarize the context information in concise markdown "
+                    "bullet points highlighting key decisions, action items.\n"
+                    f"Context information:\n{conversation_text}"
+                )
 
             try:
                 response = self._context_summary_agent.step(prompt_text)
@@ -1394,6 +1408,35 @@ class ChatAgent(BaseAgent):
         # and True to indicate we used prompt formatting
         return modified_message, None, True
 
+    def _is_called_from_registered_toolkit(self) -> bool:
+        r"""Check if current step/astep call originates from a
+        RegisteredAgentToolkit.
+
+        This method uses stack inspection to detect if the current call
+        is originating from a toolkit that inherits from
+        RegisteredAgentToolkit. When detected, tools should be disabled to
+        prevent recursive calls.
+
+        Returns:
+            bool: True if called from a RegisteredAgentToolkit, False otherwise
+        """
+        import inspect
+
+        from camel.toolkits.base import RegisteredAgentToolkit
+
+        try:
+            for frame_info in inspect.stack():
+                frame_locals = frame_info.frame.f_locals
+                if 'self' in frame_locals:
+                    caller_self = frame_locals['self']
+                    if isinstance(caller_self, RegisteredAgentToolkit):
+                        return True
+
+        except Exception:
+            return False
+
+        return False
+
     def _apply_prompt_based_parsing(
         self,
         response: ModelResponse,
@@ -1587,6 +1630,10 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        # Check if this call is from a RegisteredAgentToolkit to prevent tool
+        # use
+        disable_tools = self._is_called_from_registered_toolkit()
+
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
         input_message, response_format, used_prompt_formatting = (
@@ -1634,7 +1681,9 @@ class ChatAgent(BaseAgent):
                 num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=self._get_full_tool_schemas(),
+                tool_schemas=[]
+                if disable_tools
+                else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
             prev_num_openai_messages = len(openai_messages)
@@ -1799,6 +1848,10 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        # Check if this call is from a RegisteredAgentToolkit to prevent tool
+        # use
+        disable_tools = self._is_called_from_registered_toolkit()
+
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
         input_message, response_format, used_prompt_formatting = (
@@ -1839,7 +1892,9 @@ class ChatAgent(BaseAgent):
                 num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=self._get_full_tool_schemas(),
+                tool_schemas=[]
+                if disable_tools
+                else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
             prev_num_openai_messages = len(openai_messages)
