@@ -1125,12 +1125,17 @@ class ChatAgent(BaseAgent):
             else:
                 self._context_summary_agent.reset()
 
-            prompt_text = summary_prompt or (
-                "Summarize the following conversation in concise markdown "
-                "bullet points highlighting key decisions, action items, and "
-                "open questions.\n\n"
-                f"{conversation_text}"
-            )
+            if summary_prompt:
+                prompt_text = (
+                    f"{summary_prompt.rstrip()}\n\n"
+                    f"Context information:\n{conversation_text}"
+                )
+            else:
+                prompt_text = (
+                    "Summarize the context information in concise markdown "
+                    "bullet points highlighting key decisions, action items.\n"
+                    f"Context information:\n{conversation_text}"
+                )
 
             try:
                 response = self._context_summary_agent.step(prompt_text)
