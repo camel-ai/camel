@@ -70,5 +70,5 @@ if __name__ == "__main__":
 Output:
 The video game "Portal" was released in 2007 as part of a bundle called The Orange Box for Windows, Xbox 360, and PlayStation 3.
 
-ChatCompletionMessageToolCall(id='call_U5Xju7vYtAQAEW4D1M8R1kgs', function=Function(arguments='{"a": 2007, "b": 1776}', name='sub'), type='function')
+ChatCompletionMessageFunctionToolCall(id='call_U5Xju7vYtAQAEW4D1M8R1kgs', function=Function(arguments='{"a": 2007, "b": 1776}', name='sub'), type='function')
 """

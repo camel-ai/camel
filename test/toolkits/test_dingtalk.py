@@ -82,7 +82,9 @@ def test_send_text_message(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.send_text_message('test_userid', 'Hello World')
+        result = toolkit.dingtalk_send_text_message(
+            'test_userid', 'Hello World'
+        )
         assert 'Message sent successfully' in result
 
 
@@ -96,7 +98,7 @@ def test_send_markdown_message(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.send_markdown_message(
+        result = toolkit.dingtalk_send_markdown_message(
             'test_userid', 'Test Title', '# Hello World'
         )
         assert 'Markdown message sent successfully' in result
@@ -117,7 +119,7 @@ def test_get_user_info(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.get_user_info('test_userid')
+        result = toolkit.dingtalk_get_user_info('test_userid')
         assert result == expected_data
 
 
@@ -133,7 +135,7 @@ def test_send_webhook_message(mock_post):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.send_webhook_message('Hello from webhook!')
+        result = toolkit.dingtalk_send_webhook_message('Hello from webhook!')
         assert 'Webhook message sent successfully' in result
 
 
@@ -154,7 +156,7 @@ def test_get_department_list(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.get_department_list()
+        result = toolkit.dingtalk_get_department_list()
         assert result == expected_data
 
 
@@ -175,7 +177,7 @@ def test_search_users_by_name(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.search_users_by_name('John')
+        result = toolkit.dingtalk_search_users_by_name('John')
         assert result == expected_data
 
 
@@ -197,7 +199,7 @@ def test_missing_webhook_url():
 
         # Test with no webhook URL in environment
         with patch.dict('os.environ', {}, clear=True):
-            result = toolkit.send_webhook_message('Hello')
+            result = toolkit.dingtalk_send_webhook_message('Hello')
             assert 'Webhook URL not provided' in result
 
 
@@ -231,7 +233,7 @@ def test_send_text_message_error_handling(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.send_text_message('test_userid', 'Hello')
+        result = toolkit.dingtalk_send_text_message('test_userid', 'Hello')
         assert 'Failed to send message' in result
 
 
@@ -245,7 +247,7 @@ def test_get_user_info_error_handling(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.get_user_info('test_userid')
+        result = toolkit.dingtalk_get_user_info('test_userid')
         assert 'error' in result
         assert 'Failed to get user info' in result['error']
 
@@ -277,7 +279,7 @@ def test_webhook_with_signature(mock_post):
         toolkit = DingtalkToolkit()
 
         # Test webhook with custom secret
-        result = toolkit.send_webhook_message(
+        result = toolkit.dingtalk_send_webhook_message(
             'Hello with signature!', webhook_secret='custom_secret'
         )
         assert 'Webhook message sent successfully' in result
@@ -315,7 +317,7 @@ def test_send_link_message(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.send_link_message(
+        result = toolkit.dingtalk_send_link_message(
             'test_userid', 'Test Link', 'Click to visit', 'https://example.com'
         )
         assert 'Link message' in result and 'sent successfully' in result
@@ -331,7 +333,7 @@ def test_send_action_card_message(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.send_action_card_message(
+        result = toolkit.dingtalk_send_action_card_message(
             'test_userid',
             'Action Required',
             'Please click the button below',
@@ -371,13 +373,13 @@ def test_get_user_by_mobile_validation():
 
         # Test invalid mobile numbers
         invalid_mobiles = [
-            '1234567890',    # 10 digits
+            '1234567890',  # 10 digits
             '123456789012',  # 12 digits
-            '23800000000',   # doesn't start with 1
-            '12800000000',   # second digit is 2 (invalid)
-            'abc1380000000', # contains letters
-            '138-0000-0000', # contains hyphens
-            '',              # empty string
+            '23800000000',  # doesn't start with 1
+            '12800000000',  # second digit is 2 (invalid)
+            'abc1380000000',  # contains letters
+            '138-0000-0000',  # contains hyphens
+            '',  # empty string
         ]
 
         for invalid_mobile in invalid_mobiles:
@@ -402,7 +404,7 @@ def test_get_user_by_unionid(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.get_user_by_unionid('test_unionid')
+        result = toolkit.dingtalk_get_user_by_unionid('test_unionid')
         assert result == expected_data
 
 
@@ -423,7 +425,7 @@ def test_get_department_detail(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.get_department_detail(1)
+        result = toolkit.dingtalk_get_department_detail(1)
         assert result == expected_data
 
 
@@ -437,7 +439,7 @@ def test_send_oa_message(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.send_oa_message(
+        result = toolkit.dingtalk_send_oa_message(
             'test_userid',
             'https://example.com',
             'FFBBBBBB',
@@ -465,7 +467,7 @@ def test_get_group_info(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.get_group_info('test_chatid')
+        result = toolkit.dingtalk_get_group_info('test_chatid')
         assert result == expected_data
 
 
@@ -480,7 +482,7 @@ def test_update_group(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.update_group(
+        result = toolkit.dingtalk_update_group(
             'test_chatid',
             name='New Group Name',
             add_useridlist=['user1', 'user2'],
@@ -498,7 +500,7 @@ def test_send_work_notification(mock_request):
     ) as mock_token:
         mock_token.return_value = "test_access_token"
         toolkit = DingtalkToolkit()
-        result = toolkit.send_work_notification(
+        result = toolkit.dingtalk_send_work_notification(
             ['user1', 'user2', 'user3'],
             'Important announcement for all team members.',
         )
@@ -514,12 +516,12 @@ def test_send_work_notification_validation():
         toolkit = DingtalkToolkit()
 
         # Test empty user list
-        result = toolkit.send_work_notification([], 'test message')
+        result = toolkit.dingtalk_send_work_notification([], 'test message')
         assert 'userid_list cannot be empty' in result
 
         # Test too many users
         large_user_list = [f'user{i}' for i in range(101)]
-        result = toolkit.send_work_notification(
+        result = toolkit.dingtalk_send_work_notification(
             large_user_list, 'test message'
         )
         assert 'Cannot send to more than 100 users' in result
@@ -534,12 +536,12 @@ def test_extended_tools_count():
         toolkit = DingtalkToolkit()
         tools = toolkit.get_tools()
 
-        # Should have original 9 tools + 9 new tools = 18 tools
-        assert len(tools) == 18
+        # Should have 22 tools total
+        assert len(tools) == 22
 
         # Check some specific new tools are present
         tool_names = [tool.func.__name__ for tool in tools]
-        assert 'send_link_message' in tool_names
-        assert 'send_action_card_message' in tool_names
-        assert 'get_user_by_mobile' in tool_names
-        assert 'send_work_notification' in tool_names
+        assert 'dingtalk_send_link_message' in tool_names
+        assert 'dingtalk_send_action_card_message' in tool_names
+        assert 'dingtalk_get_user_by_mobile' in tool_names
+        assert 'dingtalk_send_work_notification' in tool_names
