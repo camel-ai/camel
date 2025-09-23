@@ -97,6 +97,8 @@ class MemoryRecord(BaseModel):
 
         parsed_value = message_dict.pop("parsed", None)
 
+        # TODO: Implement some kind of storage for images and videos
+
         # Always drop binary/image buffers from persisted JSON
         message_dict.pop("image_list", None)
         message_dict.pop("video_bytes", None)
