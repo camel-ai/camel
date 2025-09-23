@@ -17,6 +17,7 @@
 [![Star][star-image]][star-url]
 [![Package License][package-license-image]][package-license-url]
 [![PyPI Download][package-download-image]][package-download-url]
+[![][join-us-image]][join-us]
 
 <a href="https://trendshift.io/repositories/649" target="_blank"><img src="https://trendshift.io/api/badge/repositories/649" alt="camel-ai/camel | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
@@ -60,6 +61,8 @@ Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.o
 </div>
 
 <br>
+
+[![][image-join-us]][join-us]
 
 <details>
 <summary><kbd>Table of contents</kbd></summary>
@@ -620,3 +623,6 @@ The source code is licensed under Apache 2.0.
 [reddit-image]: https://img.shields.io/reddit/subreddit-subscribers/CamelAI?style=plastic&logo=reddit&label=r%2FCAMEL&labelColor=white
 [ambassador-url]: https://www.camel-ai.org/community
 [package-download-url]: https://pypi.org/project/camel-ai
+[join-us]:https://eigent-ai.notion.site/eigent-ai-careers
+[join-us-image]:https://img.shields.io/badge/Join%20Us-yellow?style=plastic
+[image-join-us]: https://camel-ai.github.io/camel_asset/graphics/join_us.png
