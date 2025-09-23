@@ -4067,19 +4067,7 @@ class ChatAgent(BaseAgent):
                 toolkit = cloned_toolkits[toolkit_id]
                 method_name = tool.func.__name__
 
-                # If this tool.func is already an enhanced wrapper produced by
-                # register_functions (message integration), keep it as-is to
-                # preserve enhanced signature and behavior.
-                if getattr(
-                    tool.func, "__message_integration_enhanced__", False
-                ):
-                    cloned_tools.append(
-                        FunctionTool(
-                            func=tool.func,
-                            openai_tool_schema=tool.get_openai_tool_schema(),
-                        )
-                    )
-                elif hasattr(toolkit, method_name):
+                if hasattr(toolkit, method_name):
                     new_method = getattr(toolkit, method_name)
                     # Wrap cloned method into a new FunctionTool,
                     # preserving schema
