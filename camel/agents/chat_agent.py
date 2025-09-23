@@ -1029,21 +1029,16 @@ class ChatAgent(BaseAgent):
                 )
         logger.info(f"Memory loaded from {path}")
 
-    def save_memory(self, path: str, save_parsed: bool = False) -> None:
+    def save_memory(self, path: str) -> None:
         r"""Retrieves the current conversation data from memory and writes it
         into a JSON file using JsonStorage.
 
         Args:
             path (str): Target file path to store JSON data.
-            save_parsed (bool): Whether to include the `parsed` snapshot in
-                saved JSON when available. Defaults to :obj:`False`.
         """
         json_store = JsonStorage(Path(path))
         context_records = self.memory.retrieve()
-        to_save = [
-            cr.memory_record.to_dict(include_parsed=save_parsed)
-            for cr in context_records
-        ]
+        to_save = [cr.memory_record.to_dict() for cr in context_records]
         json_store.save(to_save)
         logger.info(f"Memory saved to {path}")
 
