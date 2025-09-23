@@ -1050,6 +1050,7 @@ class ChatAgent(BaseAgent):
         self,
         filename: Optional[str] = None,
         summary_prompt: Optional[str] = None,
+        working_directory: Optional[Union[str, Path]] = None,
     ) -> Dict[str, Any]:
         r"""Summarize the agent's current conversation context and persist it
         to a markdown file.
@@ -1061,6 +1062,9 @@ class ChatAgent(BaseAgent):
             summary_prompt (Optional[str]): Custom prompt for the summarizer.
                 When omitted, a default prompt highlighting key decisions,
                 action items, and open questions is used.
+            working_directory (Optional[str|Path]): Optional directory to save
+                the markdown summary file. If provided, overrides the default
+                directory used by ContextUtility.
 
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
@@ -1075,7 +1079,12 @@ class ChatAgent(BaseAgent):
 
         try:
             if self._context_utility is None:
-                self._context_utility = ContextUtility()
+                if working_directory is not None:
+                    self._context_utility = ContextUtility(
+                        working_directory=str(working_directory)
+                    )
+                else:
+                    self._context_utility = ContextUtility()
 
             # Get conversation directly from agent's memory
             messages, _ = self.memory.get_context()
@@ -1116,12 +1125,17 @@ class ChatAgent(BaseAgent):
             else:
                 self._context_summary_agent.reset()
 
-            prompt_text = summary_prompt or (
-                "Summarize the following conversation in concise markdown "
-                "bullet points highlighting key decisions, action items, and "
-                "open questions.\n\n"
-                f"{conversation_text}"
-            )
+            if summary_prompt:
+                prompt_text = (
+                    f"{summary_prompt.rstrip()}\n\n"
+                    f"Context information:\n{conversation_text}"
+                )
+            else:
+                prompt_text = (
+                    "Summarize the context information in concise markdown "
+                    "bullet points highlighting key decisions, action items.\n"
+                    f"Context information:\n{conversation_text}"
+                )
 
             try:
                 response = self._context_summary_agent.step(prompt_text)
