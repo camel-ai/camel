@@ -847,7 +847,7 @@ class ChatAgent(BaseAgent):
 
         # 3. Check if slicing is necessary
         try:
-            current_tokens = token_counter.extract_usage_from_response(
+            current_tokens = token_counter.count_tokens_from_messages(
                 [message.to_openai_message(role)]
             )
             import warnings

@@ -18,9 +18,18 @@ import base64
 from abc import ABC, abstractmethod
 from io import BytesIO
 from math import ceil
-from typing import TYPE_CHECKING, List, Optional, Any, Dict, Iterator, AsyncIterator, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Union,
+)
 
-from deprecation import deprecated
+from deprecation import deprecated  # type: ignore[import-untyped]
 from PIL import Image
 
 from camel.logger import get_logger
@@ -79,7 +88,9 @@ class BaseTokenCounter(ABC):
     r"""Base class for token counters of different kinds of models."""
 
     @abstractmethod
-    def extract_usage_from_response(self, response: Any) -> Optional[Dict[str, int]]:
+    def extract_usage_from_response(
+        self, response: Any
+    ) -> Optional[Dict[str, int]]:
         r"""Extract native usage data from model response.
 
         Args:
@@ -92,13 +103,12 @@ class BaseTokenCounter(ABC):
         pass
 
     def extract_usage_from_streaming_response(
-        self, 
-        stream: Union[Iterator[Any], AsyncIterator[Any]]
+        self, stream: Union[Iterator[Any], AsyncIterator[Any]]
     ) -> Optional[Dict[str, int]]:
         r"""Extract native usage data from streaming response.
-        
+
         This method processes a streaming response to find usage data,
-        typically available in the final chunk when stream_options 
+        typically available in the final chunk when stream_options
         include_usage is enabled.
 
         Args:
@@ -110,7 +120,9 @@ class BaseTokenCounter(ABC):
         """
         try:
             # For sync streams
-            if hasattr(stream, '__iter__') and not hasattr(stream, '__aiter__'):
+            if hasattr(stream, '__iter__') and not hasattr(
+                stream, '__aiter__'
+            ):
                 return self._extract_usage_from_sync_stream(stream)
             # For async streams
             elif hasattr(stream, '__aiter__'):
@@ -123,12 +135,13 @@ class BaseTokenCounter(ABC):
                 logger.debug("Unsupported stream type for usage extraction")
                 return None
         except Exception as e:
-            logger.debug(f"Failed to extract usage from streaming response: {e}")
+            logger.debug(
+                f"Failed to extract usage from streaming response: {e}"
+            )
             return None
 
     async def extract_usage_from_async_streaming_response(
-        self, 
-        stream: AsyncIterator[Any]
+        self, stream: AsyncIterator[Any]
     ) -> Optional[Dict[str, int]]:
         r"""Extract native usage data from async streaming response.
 
@@ -142,11 +155,22 @@ class BaseTokenCounter(ABC):
         try:
             return await self._extract_usage_from_async_stream(stream)
         except Exception as e:
-            logger.debug(f"Failed to extract usage from async streaming response: {e}")
+            logger.debug(
+                f"Failed to extract usage from async streaming response: {e}"
+            )
             return None
 
-    def _extract_usage_from_sync_stream(self, stream: Iterator[Any]) -> Optional[Dict[str, int]]:
-        r"""Extract usage from synchronous stream by consuming all chunks."""
+    def _extract_usage_from_sync_stream(
+        self, stream: Iterator[Any]
+    ) -> Optional[Dict[str, int]]:
+        r"""Extract usage from a synchronous streaming response.
+
+        Args:
+            stream (Iterator[Any]): Provider-specific synchronous stream iterator.
+        Returns:
+            Optional[Dict[str, int]]: Usage with `prompt_tokens`, `completion_tokens`,
+            `total_tokens`, or None if unavailable.
+        """
         final_chunk = None
         try:
             for chunk in stream:
@@ -154,16 +178,18 @@ class BaseTokenCounter(ABC):
                 usage = self.extract_usage_from_response(chunk)
                 if usage:
                     return usage
-            
+
             if final_chunk:
                 return self.extract_usage_from_response(final_chunk)
-                
+
         except Exception as e:
             logger.debug(f"Error processing sync stream: {e}")
-            
+
         return None
 
-    async def _extract_usage_from_async_stream(self, stream: AsyncIterator[Any]) -> Optional[Dict[str, int]]:
+    async def _extract_usage_from_async_stream(
+        self, stream: AsyncIterator[Any]
+    ) -> Optional[Dict[str, int]]:
         r"""Extract usage from asynchronous stream by consuming all chunks."""
         final_chunk = None
         try:
@@ -172,13 +198,13 @@ class BaseTokenCounter(ABC):
                 usage = self.extract_usage_from_response(chunk)
                 if usage:
                     return usage
-            
+
             if final_chunk:
                 return self.extract_usage_from_response(final_chunk)
-                
+
         except Exception as e:
             logger.debug(f"Error processing async stream: {e}")
-            
+
         return None
 
     @abstractmethod
@@ -266,7 +292,9 @@ class OpenAITokenCounter(BaseTokenCounter):
 
         self.encoding = get_model_encoding(self.model)
 
-    def extract_usage_from_response(self, response: Any) -> Optional[Dict[str, int]]:
+    def extract_usage_from_response(
+        self, response: Any
+    ) -> Optional[Dict[str, int]]:
         r"""Extract native usage data from OpenAI response.
 
         Args:
@@ -281,13 +309,15 @@ class OpenAITokenCounter(BaseTokenCounter):
                 usage = response.usage
                 return {
                     'prompt_tokens': getattr(usage, 'prompt_tokens', 0),
-                    'completion_tokens': getattr(usage, 'completion_tokens', 0),
+                    'completion_tokens': getattr(
+                        usage, 'completion_tokens', 0
+                    ),
                     'total_tokens': getattr(usage, 'total_tokens', 0),
                 }
-                    
+
         except Exception as e:
             logger.debug(f"Failed to extract usage from OpenAI response: {e}")
-            
+
         return None
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
@@ -435,7 +465,9 @@ class AnthropicTokenCounter(BaseTokenCounter):
         self.client = Anthropic(api_key=api_key, base_url=base_url)
         self.model = model
 
-    def extract_usage_from_response(self, response: Any) -> Optional[Dict[str, int]]:
+    def extract_usage_from_response(
+        self, response: Any
+    ) -> Optional[Dict[str, int]]:
         r"""Extract native usage data from Anthropic response.
 
         Args:
@@ -455,10 +487,12 @@ class AnthropicTokenCounter(BaseTokenCounter):
                     'completion_tokens': output_tokens,
                     'total_tokens': input_tokens + output_tokens,
                 }
-                    
+
         except Exception as e:
-            logger.debug(f"Failed to extract usage from Anthropic response: {e}")
-            
+            logger.debug(
+                f"Failed to extract usage from Anthropic response: {e}"
+            )
+
         return None
 
     @dependencies_required('anthropic')
@@ -514,7 +548,7 @@ class AnthropicTokenCounter(BaseTokenCounter):
         )
 
 
-class LiteLLMTokenCounter(BaseTokenCounter):
+class LiteLLMTokenCounter(OpenAITokenCounter):
     def __init__(self, model_type: UnifiedModelType):
         r"""Constructor for the token counter for LiteLLM models.
 
@@ -542,29 +576,8 @@ class LiteLLMTokenCounter(BaseTokenCounter):
             self._completion_cost = completion_cost
         return self._completion_cost
 
-    def extract_usage_from_response(self, response: Any) -> Optional[Dict[str, int]]:
-        r"""Extract native usage data from LiteLLM response.
-
-        Args:
-            response: LiteLLM response object
-
-        Returns:
-            Dict with keys: prompt_tokens, completion_tokens, total_tokens
-            None if usage data not available
-        """
-        try:
-            if hasattr(response, 'usage') and response.usage is not None:
-                usage = response.usage
-                return {
-                    'prompt_tokens': getattr(usage, 'prompt_tokens', 0),
-                    'completion_tokens': getattr(usage, 'completion_tokens', 0),
-                    'total_tokens': getattr(usage, 'total_tokens', 0),
-                }
-                    
-        except Exception as e:
-            logger.debug(f"Failed to extract usage from LiteLLM response: {e}")
-            
-        return None
+    # Inherit extract_usage_from_response from OpenAITokenCounter since
+    # LiteLLM standardizes usage format to OpenAI-compatible schema.
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
@@ -644,7 +657,9 @@ class MistralTokenCounter(BaseTokenCounter):
 
         self.tokenizer = MistralTokenizer.from_model(model_name)
 
-    def extract_usage_from_response(self, response: Any) -> Optional[Dict[str, int]]:
+    def extract_usage_from_response(
+        self, response: Any
+    ) -> Optional[Dict[str, int]]:
         r"""Extract native usage data from Mistral response.
 
         Args:
@@ -664,10 +679,10 @@ class MistralTokenCounter(BaseTokenCounter):
                     'completion_tokens': completion_tokens,
                     'total_tokens': prompt_tokens + completion_tokens,
                 }
-                    
+
         except Exception as e:
             logger.debug(f"Failed to extract usage from Mistral response: {e}")
-            
+
         return None
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:

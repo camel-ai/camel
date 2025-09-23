@@ -20,58 +20,61 @@ in streaming mode by leveraging provider-specific features like OpenAI's
 stream_options: {"include_usage": true}.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-def enable_streaming_usage_for_openai(model_config: Dict[str, Any]) -> Dict[str, Any]:
+def enable_streaming_usage_for_openai(
+    model_config: Dict[str, Any],
+) -> Dict[str, Any]:
     """
     Enable usage tracking for OpenAI streaming requests.
-    
+
     This function modifies the model configuration to include stream_options
     that enable usage data in the final chunk of streaming responses.
-    
+
     Args:
         model_config: The model configuration dictionary
-        
+
     Returns:
         Modified model configuration with streaming usage enabled
-        
+
     Example:
         >>> config = {"stream": True, "temperature": 0.7}
         >>> updated_config = enable_streaming_usage_for_openai(config)
         >>> print(updated_config)
         {
-            "stream": True, 
+            "stream": True,
             "temperature": 0.7,
             "stream_options": {"include_usage": True}
         }
     """
     config = model_config.copy()
-    
+
     if config.get("stream", False):
         if "stream_options" not in config:
             config["stream_options"] = {}
-        
+
         config["stream_options"]["include_usage"] = True
         logger.debug("Enabled streaming usage tracking for OpenAI model")
-    
+
     return config
 
 
 def get_streaming_usage_config_for_provider(
-    provider: str, 
-    model_config: Dict[str, Any]
+    provider: str, model_config: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
     Get provider-specific streaming configuration for usage tracking.
-    
+
     Args:
-        provider: The model provider name (e.g., "openai", "anthropic", "mistral")
+        provider: The model provider name (e.g., "openai", "anthropic",
+            "mistral")
         model_config: The base model configuration
-        
+
     Returns:
         Updated configuration with provider-specific streaming usage settings
     """
@@ -87,24 +90,28 @@ def get_streaming_usage_config_for_provider(
     elif provider.lower() == "litellm":
         return enable_streaming_usage_for_openai(config)
     else:
-        logger.warning(f"Unknown provider '{provider}' for streaming usage configuration")
+        logger.warning(
+            f"Unknown provider '{provider}' for streaming usage configuration"
+        )
         return config
 
 
-def validate_streaming_usage_support(provider: str, model_config: Dict[str, Any]) -> bool:
+def validate_streaming_usage_support(
+    provider: str, model_config: Dict[str, Any]
+) -> bool:
     """
     Validate if streaming usage tracking is properly configured for a provider.
-    
+
     Args:
         provider: The model provider name
         model_config: The model configuration
-        
+
     Returns:
         True if streaming usage is properly configured, False otherwise
     """
     if not model_config.get("stream", False):
         return True
-    
+
     if provider.lower() == "openai":
         stream_options = model_config.get("stream_options", {})
         return stream_options.get("include_usage", False)
@@ -114,8 +121,12 @@ def validate_streaming_usage_support(provider: str, model_config: Dict[str, Any]
         stream_options = model_config.get("stream_options", {})
         return stream_options.get("include_usage", False)
     else:
-        logger.warning(f"Cannot validate streaming usage support for provider '{provider}'")
+        logger.warning(
+            f"Cannot validate streaming usage support for provider "
+            f"'{provider}'"
+        )
         return False
+
 
 """
 STREAMING_USAGE_EXAMPLES = {
@@ -129,7 +140,8 @@ STREAMING_USAGE_EXAMPLES = {
         "usage_location": "Final chunk of stream"
     },
     "anthropic": {
-        "description": "Anthropic includes usage in streaming responses by default",
+        "description": "Anthropic includes usage in streaming responses by "
+        "default",
         "config": {
             "stream": True,
             "temperature": 0.7
@@ -137,7 +149,8 @@ STREAMING_USAGE_EXAMPLES = {
         "usage_location": "Each message event in stream"
     },
     "mistral": {
-        "description": "Mistral includes usage in streaming responses by default", 
+        "description": "Mistral includes usage in streaming responses by "
+        "default", 
         "config": {
             "stream": True,
             "temperature": 0.7
