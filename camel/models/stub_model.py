@@ -31,6 +31,19 @@ from camel.utils import BaseTokenCounter
 
 
 class StubTokenCounter(BaseTokenCounter):
+    def extract_usage_from_response(
+        self, response: Any
+    ) -> Optional[Dict[str, int]]:
+        r"""Stub implementation - always returns fixed usage
+        data for testing.
+
+        """
+        return {
+            "prompt_tokens": 10,
+            "completion_tokens": 5,
+            "total_tokens": 15,
+        }
+
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Token counting for STUB models, directly returning a constant.
 
