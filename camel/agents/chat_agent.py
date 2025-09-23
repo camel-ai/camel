@@ -1394,6 +1394,35 @@ class ChatAgent(BaseAgent):
         # and True to indicate we used prompt formatting
         return modified_message, None, True
 
+    def _is_called_from_registered_toolkit(self) -> bool:
+        r"""Check if current step/astep call originates from a
+        RegisteredAgentToolkit.
+
+        This method uses stack inspection to detect if the current call
+        is originating from a toolkit that inherits from
+        RegisteredAgentToolkit. When detected, tools should be disabled to
+        prevent recursive calls.
+
+        Returns:
+            bool: True if called from a RegisteredAgentToolkit, False otherwise
+        """
+        import inspect
+
+        from camel.toolkits.base import RegisteredAgentToolkit
+
+        try:
+            for frame_info in inspect.stack():
+                frame_locals = frame_info.frame.f_locals
+                if 'self' in frame_locals:
+                    caller_self = frame_locals['self']
+                    if isinstance(caller_self, RegisteredAgentToolkit):
+                        return True
+
+        except Exception:
+            return False
+
+        return False
+
     def _apply_prompt_based_parsing(
         self,
         response: ModelResponse,
@@ -1587,6 +1616,10 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        # Check if this call is from a RegisteredAgentToolkit to prevent tool
+        # use
+        disable_tools = self._is_called_from_registered_toolkit()
+
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
         input_message, response_format, used_prompt_formatting = (
@@ -1634,7 +1667,9 @@ class ChatAgent(BaseAgent):
                 num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=self._get_full_tool_schemas(),
+                tool_schemas=[]
+                if disable_tools
+                else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
             prev_num_openai_messages = len(openai_messages)
@@ -1799,6 +1834,10 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        # Check if this call is from a RegisteredAgentToolkit to prevent tool
+        # use
+        disable_tools = self._is_called_from_registered_toolkit()
+
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
         input_message, response_format, used_prompt_formatting = (
@@ -1839,7 +1878,9 @@ class ChatAgent(BaseAgent):
                 num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=self._get_full_tool_schemas(),
+                tool_schemas=[]
+                if disable_tools
+                else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
             prev_num_openai_messages = len(openai_messages)
