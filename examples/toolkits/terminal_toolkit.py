@@ -297,3 +297,13 @@ agent.reset()
 usr_msg = "list all files in the current directory"
 response = agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
+
+"""
+===============================================================================
+[ToolCallingRecord(tool_name='shell_exec', args={'id': 'sess1', 'command': 
+'ls -la', 'block': True}, result='total 12\ndrwxr-xr-x 3 root root 4096 Sep 
+23 16:48 .\ndrwxr-xr-x 1 root root 4096 Sep 23 16:47 ..\ndrwxr-xr-x 2 root 
+root 4096 Sep 23 16:49 logs', tool_call_id='call_YRYlz8KozpxXE2uGkcHIUnZU', 
+images=None)]
+===============================================================================
+"""
