@@ -17,205 +17,150 @@
 import os
 
 from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
+from camel.models import ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
+from camel.toolkits import MathToolkit
+from camel.types import ModelPlatformType, ModelType
+from dotenv import load_dotenv
+load_dotenv()
 
-
-def create_analyst_agent() -> ChatAgent:
-    """Create a data analyst agent."""
-    analyst_msg = BaseMessage.make_assistant_message(
-        role_name="Data Analyst",
+def create_math_agent() -> ChatAgent:
+    """Create a math agent with math tools."""
+    math_msg = BaseMessage.make_assistant_message(
+        role_name="Math Expert",
         content=(
-            "You are an expert data analyst. You excel at:\n"
-            "- Analyzing datasets and identifying trends\n"
-            "- Creating visualizations and reports\n"
-            "- Providing actionable business insights\n"
-            "- Working with various data formats (CSV, JSON, databases)\n"
-            "- Using statistical methods and data science techniques"
+            "You are a math expert specialized in solving mathematical problems. "
+            "You can perform calculations, solve equations, and work with various "
+            "mathematical concepts. Use the math tools available to you."
         ),
     )
-    return ChatAgent(analyst_msg)
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict=ChatGPTConfig().as_dict(),
+    )
+    return ChatAgent(
+        system_message=math_msg,
+        model=model,
+        tools=MathToolkit().get_tools(),
+    )
 
 
-def create_developer_agent() -> ChatAgent:
-    """Create a Python developer agent."""
-    developer_msg = BaseMessage.make_assistant_message(
-        role_name="Python Developer",
+def create_writer_agent() -> ChatAgent:
+    """Create a writer agent without tools."""
+    writer_msg = BaseMessage.make_assistant_message(
+        role_name="Content Writer",
         content=(
-            "You are a skilled Python developer. You specialize in:\n"
-            "- Writing clean, efficient Python code\n"
-            "- Building web applications and APIs\n"
-            "- Data processing and automation scripts\n"
-            "- Testing and debugging\n"
-            "- Following best practices and coding standards"
+            "You are a skilled content writer who specializes in creating "
+            "clear, engaging, and well-structured written content. You excel "
+            "at storytelling, technical writing, and adapting your tone to "
+            "different audiences."
         ),
     )
-    return ChatAgent(developer_msg)
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict=ChatGPTConfig().as_dict(),
+    )
+    return ChatAgent(system_message=writer_msg, model=model)
 
 
 def demonstrate_first_session():
     """Demonstrate first workforce session with workflow saving."""
-    print("=" * 60)
-    print("SESSION 1: Processing tasks and saving workflows")
-    print("=" * 60)
+    # Create workforce with two specialized agents
+    workforce = Workforce("Simple Demo Team")
 
-    # Create workforce with descriptive worker names
-    workforce = Workforce("Data Analysis Team")
-
-    # Add workers with descriptive names (used for workflow file matching)
-    analyst_agent = create_analyst_agent()
+    # Add math agent with math tools
+    math_agent = create_math_agent()
     workforce.add_single_agent_worker(
-        description="data_analyst",  # This becomes the workflow filename base
-        worker=analyst_agent,
+        description="math_expert",
+        worker=math_agent,
     )
 
-    developer_agent = create_developer_agent()
+    # Add writer agent without tools
+    writer_agent = create_writer_agent()
     workforce.add_single_agent_worker(
-        description="python_developer",  # This becomes the workflow filename
-        worker=developer_agent,
+        description="content_writer",
+        worker=writer_agent,
     )
 
-    print(f"Created workforce with {len(workforce._children)} workers")
-
-    # Process multiple tasks to build workflow experience
+    # Assign one task to each agent
     tasks = [
         Task(
-            content="Analyze quarterly sales data and identify top products",
-            id="task_1",
+            content="Calculate the compound interest on $1000 invested at 5% annual rate for 3 years",
+            id="math_task",
         ),
         Task(
-            content="Create a Python script to automate data cleaning for CSV",
-            id="task_2",
-        ),
-        Task(
-            content="Generate a summary report of customer behavior patterns",
-            id="task_3",
+            content="Write a short creative story about a robot learning to paint",
+            id="writing_task",
         ),
     ]
 
     for task in tasks:
-        print(f"\nProcessing task: {task.content}")
         try:
-            result = workforce.process_task(task)
-            print(f"Task result: {result.state}")
-        except Exception as e:
-            print(f"Task failed: {e}")
+            workforce.process_task(task)
+        except Exception:
+            pass
 
     # Save workflows after completing tasks
-    print("\nSaving workflows...")
     saved_workflows = workforce.save_workflows()
-
-    print("\nWorkflow save results:")
-    for worker_id, result in saved_workflows.items():
-        if result.startswith("error:"):
-            print(f"  Worker {worker_id}: ❌ {result}")
-        elif result.startswith("skipped:"):
-            print(f"  Worker {worker_id}: ⏭️ {result}")
-        else:
-            print(
-                f"  Worker {worker_id}: ✅ Saved to {os.path.basename(result)}"
-            )
 
     return saved_workflows
 
 
 def demonstrate_second_session():
     """Demonstrate second workforce session with workflow loading."""
-    print("\n" + "=" * 60)
-    print("SESSION 2: Loading previous workflows and processing new tasks")
-    print("=" * 60)
-
     # Create new workforce (simulating new session/process)
-    workforce = Workforce("Data Analysis Team - Session 2")
+    workforce = Workforce("Simple Demo Team - Session 2")
 
     # Add workers with same descriptive names as before
-    analyst_agent = create_analyst_agent()
+    math_agent = create_math_agent()
     workforce.add_single_agent_worker(
-        description="data_analyst",  # Same description = loads matching
-        worker=analyst_agent,
+        description="math_expert",  # Same description = loads matching workflow
+        worker=math_agent,
     )
 
-    developer_agent = create_developer_agent()
+    writer_agent = create_writer_agent()
     workforce.add_single_agent_worker(
-        description="python_developer",  # Same description = loads matching
-        worker=developer_agent,
+        description="content_writer",  # Same description = loads matching workflow
+        worker=writer_agent,
     )
 
     # Load previous workflows
-    print("Loading previous workflows...")
     loaded_workflows = workforce.load_workflows()
-
-    print("\nWorkflow load results:")
-    for worker_id, success in loaded_workflows.items():
-        status = "✅ Loaded successfully" if success else "❌ Failed to load"
-        print(f"  Worker {worker_id}: {status}")
 
     # Process new tasks with loaded workflow context
     new_tasks = [
         Task(
-            content="Analyze this month's marketing campaign effectiveness",
-            id="task_4",
+            content="Calculate the area of a circle with radius 7.5 meters",
+            id="new_math_task",
         ),
         Task(
-            content="Build a dashboard for real-time sales monitoring",
-            id="task_5",
+            content="Write a brief technical explanation of machine learning for beginners",
+            id="new_writing_task",
         ),
     ]
 
     for task in new_tasks:
-        print(f"\nProcessing task with workflow context: {task.content}")
         try:
-            result = workforce.process_task(task)
-            print(f"Task result: {result.state}")
-            print(
-                "✨ Workers now have access to previous workflow experiences!"
-            )
-        except Exception as e:
-            print(f"Task failed: {e}")
+            workforce.process_task(task)
+        except Exception:
+            pass
 
     return loaded_workflows
 
 
 def demonstrate_workflow_file_management():
     """Demonstrate workflow file management and inspection."""
-    print("\n" + "=" * 60)
-    print("WORKFLOW FILE MANAGEMENT")
-    print("=" * 60)
-
     # Show where workflow files are stored
-    import os
-
-    camel_workdir = os.environ.get("CAMEL_WORKDIR")
-    if camel_workdir:
-        workflow_dir = os.path.join(camel_workdir, "workforce_workflows")
-    else:
-        workflow_dir = "workforce_workflows"
-
-    print(f"Workflow files are stored in: {workflow_dir}")
-
-    # Demonstrate file naming pattern
-    print("\nWorkflow file naming pattern:")
-    print("  {worker_description}_workflow_{timestamp}.md")
-    print("  Examples:")
-    print("    - data_analyst_workflow_20250122_143022.md")
-    print("    - python_developer_workflow_20250122_143023.md")
-
-    print("\nWorkflow loading strategy:")
-    print("  1. Search for files matching worker description")
-    print("  2. Load up to 3 most recent workflow files")
-    print("  3. Inject workflow context into agent memory")
-    print("  4. Agent uses context for better task execution")
+    pass
 
 
 def main():
     """Main demonstration function."""
-    print("🚀 CAMEL Workforce Workflow Memory Demonstration")
-    print(
-        "This example shows how workforce agents can save and load "
-        "workflow experiences.\n"
-    )
-
     try:
         # Demonstrate first session with workflow saving
         demonstrate_first_session()
@@ -226,31 +171,9 @@ def main():
         # Show file management information
         demonstrate_workflow_file_management()
 
-        print("\n" + "=" * 60)
-        print("SUMMARY")
-        print("=" * 60)
-        print("✅ Workflow memory feature demonstrated successfully!")
-        print("📝 Key benefits:")
-        print("   - Agents learn from previous experiences")
-        print("   - Improved task execution over time")
-        print("   - Persistent memory across sessions")
-        print("   - Easy-to-use save/load API")
-        print("   - Automatic file management")
-
-        print("\n🔧 Usage in your code:")
-        print("   # Save workflows after task completion")
-        print("   workforce.save_workflows()")
-        print()
-        print("   # Load workflows when starting new session")
-        print("   workforce.load_workflows()")
-
     except Exception as e:
-        print(f"❌ Error during demonstration: {e}")
-        print(
-            "This may happen if API keys are not configured or models are "
-            "unavailable."
-        )
-        print("The workflow memory functionality itself is working correctly.")
+        print(e)
+        pass
 
 
 if __name__ == "__main__":
