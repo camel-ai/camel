@@ -452,9 +452,28 @@ class Workforce(BaseNode):
                 "better context continuity during task handoffs."
             )
 
+        # Shared context utility for workflow management (created lazily)
+        self._shared_context_utility = None
+
         # ------------------------------------------------------------------
         # Helper for propagating pause control to externally supplied agents
         # ------------------------------------------------------------------
+
+    def _get_or_create_shared_context_utility(self, create_folder: bool = True) -> ContextUtility:
+        r"""Get or create the shared context utility for workflow management.
+
+        This method creates the context utility only when needed, avoiding
+        unnecessary session folder creation during initialization.
+
+        Args:
+            create_folder (bool): Whether to create the session folder immediately.
+
+        Returns:
+            ContextUtility: The shared context utility instance.
+        """
+        if self._shared_context_utility is None:
+            self._shared_context_utility = _create_workforce_workflows_context_utility(create_folder)
+        return self._shared_context_utility
 
     def _validate_agent_compatibility(
         self, agent: ChatAgent, agent_context: str = "agent"
@@ -1558,6 +1577,7 @@ class Workforce(BaseNode):
             worker=worker,
             pool_max_size=pool_max_size,
             use_structured_output_handler=self.use_structured_output_handler,
+            context_utility=None,  # Will be set during save/load operations
         )
         self._children.append(worker_node)
 
@@ -1757,9 +1777,16 @@ class Workforce(BaseNode):
         """
         results = {}
 
+        # Get or create shared context utility for this save operation
+        shared_context_utility = self._get_or_create_shared_context_utility()
+
         for child in self._children:
             if isinstance(child, SingleAgentWorker):
                 try:
+                    # Set the shared context utility for this operation
+                    child._shared_context_utility = shared_context_utility
+                    child.worker.set_context_utility(shared_context_utility)
+
                     result = child.save_workflow()
                     if result.get("status") == "success":
                         results[child.node_id] = result.get(
@@ -1806,10 +1833,15 @@ class Workforce(BaseNode):
         """
         results = {}
 
+        # For loading, we don't create a new session - instead we search existing ones
+        # Each worker will search independently across all existing sessions
+
         # First, load workflows for SingleAgentWorker instances
         for child in self._children:
             if isinstance(child, SingleAgentWorker):
                 try:
+                    # For loading, don't set shared context utility
+                    # Let each worker search across existing sessions
                     success = child.load_workflow()
                     results[child.node_id] = success
 
@@ -1840,16 +1872,18 @@ class Workforce(BaseNode):
         try:
             import glob
             import os
+            from pathlib import Path
+            from camel.utils.context_utils import ContextUtility
 
-            # Set up workforce_workflows directory
-            context_utility = _create_workforce_workflows_context_utility()
+            # For loading management workflows, search across all sessions
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                base_dir = os.path.join(camel_workdir, "workforce_workflows")
+            else:
+                base_dir = "workforce_workflows"
 
-            # Search for all workflow files
-            search_path = str(
-                context_utility.working_directory.parent
-                / "*/"
-                / "*_workflow*.md"
-            )
+            # Search for workflow files across all session directories
+            search_path = str(Path(base_dir) / "*" / "*_workflow*.md")
             workflow_files = glob.glob(search_path)
 
             if not workflow_files:
@@ -1868,7 +1902,17 @@ class Workforce(BaseNode):
             for file_path in workflow_files[:5]:
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
-                    status = context_utility.load_markdown_context_to_memory(
+                    session_dir = os.path.dirname(file_path)
+                    session_id = os.path.basename(session_dir)
+
+                    # Create temporary context utility for this specific session
+                    temp_utility = ContextUtility(
+                        working_directory=os.path.dirname(session_dir),
+                        session_id=session_id,
+                        create_folder=False  # Don't create, just read
+                    )
+
+                    status = temp_utility.load_markdown_context_to_memory(
                         self.coordinator_agent, filename
                     )
                     if "Context appended" in status:
@@ -1883,7 +1927,17 @@ class Workforce(BaseNode):
             for file_path in workflow_files[:3]:
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
-                    status = context_utility.load_markdown_context_to_memory(
+                    session_dir = os.path.dirname(file_path)
+                    session_id = os.path.basename(session_dir)
+
+                    # Create temporary context utility for this specific session
+                    temp_utility = ContextUtility(
+                        working_directory=os.path.dirname(session_dir),
+                        session_id=session_id,
+                        create_folder=False  # Don't create, just read
+                    )
+
+                    status = temp_utility.load_markdown_context_to_memory(
                         self.task_agent, filename
                     )
                     if "Context appended" in status:

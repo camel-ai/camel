@@ -41,21 +41,39 @@ class ContextUtility:
     - Agent memory record retrieval
     """
 
-    def __init__(self, working_directory: Optional[str] = None):
+    def __init__(
+        self,
+        working_directory: Optional[str] = None,
+        session_id: Optional[str] = None,
+        create_folder: bool = True,
+    ):
         r"""Initialize the ContextUtility.
 
         Args:
             working_directory (str, optional): The directory path where files
                 will be stored. If not provided, a default directory will be
                 used.
+            session_id (str, optional): The session ID to use. If provided,
+                this instance will use the same session folder as other
+                instances with the same session_id. If not provided, a new
+                session ID will be generated.
+            create_folder (bool): Whether to create the session folder
+                immediately. If False, the folder will be created only when
+                needed (e.g., when saving files). Default is True for
+                backward compatibility.
         """
         self.working_directory_param = working_directory
-        self._setup_storage(working_directory)
+        self._setup_storage(working_directory, session_id, create_folder)
 
-    def _setup_storage(self, working_directory: Optional[str]) -> None:
-        r"""Initialize session-specific storage paths and create directory
-        structure for context file management."""
-        self.session_id = self._generate_session_id()
+    def _setup_storage(
+        self,
+        working_directory: Optional[str],
+        session_id: Optional[str] = None,
+        create_folder: bool = True,
+    ) -> None:
+        r"""Initialize session-specific storage paths and optionally create
+        directory structure for context file management."""
+        self.session_id = session_id or self._generate_session_id()
 
         if working_directory:
             self.working_directory = Path(working_directory).resolve()
@@ -68,7 +86,10 @@ class ContextUtility:
 
         # Create session-specific directory
         self.working_directory = self.working_directory / self.session_id
-        self.working_directory.mkdir(parents=True, exist_ok=True)
+
+        # Only create directory if requested
+        if create_folder:
+            self.working_directory.mkdir(parents=True, exist_ok=True)
 
     def _generate_session_id(self) -> str:
         r"""Create timestamp-based unique identifier for isolating
@@ -77,6 +98,10 @@ class ContextUtility:
         return f"session_{timestamp}"
 
     # ========= GENERIC FILE MANAGEMENT METHODS =========
+
+    def _ensure_directory_exists(self) -> None:
+        r"""Ensure the working directory exists, creating it if necessary."""
+        self.working_directory.mkdir(parents=True, exist_ok=True)
 
     def _create_or_update_note(self, note_name: str, content: str) -> str:
         r"""Write content to markdown file, creating new file or
@@ -90,6 +115,8 @@ class ContextUtility:
             str: Success message.
         """
         try:
+            # Ensure directory exists before writing
+            self._ensure_directory_exists()
             file_path = self.working_directory / f"{note_name}.md"
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
@@ -393,6 +420,30 @@ class ContextUtility:
             str: The session ID.
         """
         return self.session_id
+
+    def set_session_id(self, session_id: str) -> None:
+        r"""Set a new session ID and update the working directory accordingly.
+
+        This allows sharing session directories between multiple ContextUtility
+        instances by using the same session_id.
+
+        Args:
+            session_id (str): The session ID to use.
+        """
+        self.session_id = session_id
+
+        # Update working directory with new session_id
+        if self.working_directory_param:
+            base_dir = Path(self.working_directory_param).resolve()
+        else:
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                base_dir = Path(camel_workdir) / "context_files"
+            else:
+                base_dir = Path("context_files")
+
+        self.working_directory = base_dir / self.session_id
+        self.working_directory.mkdir(parents=True, exist_ok=True)
 
     def load_markdown_context_to_memory(
         self, agent: "ChatAgent", filename: str

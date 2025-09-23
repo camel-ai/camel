@@ -20,6 +20,7 @@ import os
 import re
 import time
 from collections import deque
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from colorama import Fore
@@ -36,8 +37,12 @@ from camel.tasks.task import Task, TaskState, is_task_result_insufficient
 from camel.utils.context_utils import ContextUtility
 
 
-def _create_workforce_workflows_context_utility() -> ContextUtility:
+def _create_workforce_workflows_context_utility(create_folder: bool = True) -> ContextUtility:
     """Create a ContextUtility instance for workforce workflows directory.
+
+    Args:
+        create_folder (bool): Whether to create the session folder immediately.
+            Defaults to True for backward compatibility.
 
     Returns:
         ContextUtility: Configured for workforce_workflows directory.
@@ -47,7 +52,7 @@ def _create_workforce_workflows_context_utility() -> ContextUtility:
         workflow_dir = os.path.join(camel_workdir, "workforce_workflows")
     else:
         workflow_dir = "workforce_workflows"
-    return ContextUtility(workflow_dir)
+    return ContextUtility(workflow_dir, create_folder=create_folder)
 
 
 class AgentPool:
@@ -219,6 +224,11 @@ class SingleAgentWorker(Worker):
             support native structured output. When disabled, the workforce
             uses the native response_format parameter.
             (default: :obj:`True`)
+        context_utility (ContextUtility, optional): Shared context utility
+            instance for workflow management. If provided, all workflow
+            operations will use this shared instance instead of creating
+            a new one. This ensures multiple workers share the same session
+            directory. (default: :obj:`None`)
     """
 
     def __init__(
@@ -230,6 +240,7 @@ class SingleAgentWorker(Worker):
         pool_max_size: int = 10,
         auto_scale_pool: bool = True,
         use_structured_output_handler: bool = True,
+        context_utility: Optional[ContextUtility] = None,
     ) -> None:
         node_id = worker.agent_id
         super().__init__(
@@ -244,6 +255,10 @@ class SingleAgentWorker(Worker):
         )
         self.worker = worker
         self.use_agent_pool = use_agent_pool
+        self._shared_context_utility = context_utility
+
+        # Note: Context utility is set on the worker agent during save/load operations
+        # to avoid creating session folders during initialization
 
         self.agent_pool: Optional[AgentPool] = None
         self._cleanup_task: Optional[asyncio.Task] = None
@@ -516,7 +531,7 @@ class SingleAgentWorker(Worker):
         return None
 
     def save_workflow(
-        self, custom_title: Optional[str] = None
+        self, custom_title: Optional[str] = None  # noqa: F401
     ) -> Dict[str, Any]:
         r"""Save the worker's current workflow using agent summarization.
 
@@ -548,8 +563,10 @@ class SingleAgentWorker(Worker):
                     ),
                 }
 
-            # Create dedicated ContextUtility for workforce workflows
-            if not hasattr(self, '_workflow_context_utility'):
+            # Use shared context utility if provided, otherwise create one
+            if self._shared_context_utility is not None:
+                self._workflow_context_utility = self._shared_context_utility
+            elif not hasattr(self, '_workflow_context_utility'):
                 self._workflow_context_utility = (
                     _create_workforce_workflows_context_utility()
                 )
@@ -571,21 +588,10 @@ class SingleAgentWorker(Worker):
                 "Format as a reusable workflow guide for similar tasks."
             )
 
-            # Temporarily set the agent's context utility to use workforce
-            # directory
-            original_context_utility = getattr(
-                self.worker, '_context_utility', None
+            # Use agent's summarize method with the shared context utility
+            result = self.worker.summarize(
+                filename=filename, summary_prompt=workflow_prompt
             )
-            self.worker._context_utility = self._workflow_context_utility
-
-            try:
-                # Use agent's summarize method
-                result = self.worker.summarize(
-                    filename=filename, summary_prompt=workflow_prompt
-                )
-            finally:
-                # Restore original context utility
-                self.worker._context_utility = original_context_utility
 
             # Add worker metadata to result
             result["worker_description"] = self.description
@@ -623,24 +629,22 @@ class SingleAgentWorker(Worker):
                 )
                 return False
 
-            # Ensure we have a dedicated workflow context utility
-            if not hasattr(self, '_workflow_context_utility'):
-                self._workflow_context_utility = (
-                    _create_workforce_workflows_context_utility()
-                )
-
+            # For loading, search across all existing session folders
             # Generate search pattern from description if not provided
             if pattern is None:
                 clean_desc = self.description.lower().replace(" ", "_")
                 clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
                 pattern = f"{clean_desc}_workflow*.md"
 
-            # Search for workflow files in the workforce_workflows directory
-            # structure
-            context_dir = (
-                self._workflow_context_utility.working_directory.parent
-            )
-            search_path = str(context_dir / "*/" / pattern)
+            # Get the base workforce_workflows directory
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                base_dir = os.path.join(camel_workdir, "workforce_workflows")
+            else:
+                base_dir = "workforce_workflows"
+
+            # Search across all session folders for matching workflows
+            search_path = str(Path(base_dir) / "*" / pattern)
             workflow_files = glob.glob(search_path)
 
             if not workflow_files:
@@ -652,16 +656,23 @@ class SingleAgentWorker(Worker):
                 key=lambda x: os.path.getmtime(x), reverse=True
             )
 
-            # Load the most recent workflow file(s) using ContextUtility
+            # Load the most recent workflow file(s) by reading directly
             loaded_count = 0
             for file_path in workflow_files[:3]:  # Load up to 3 most recent
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
+                    session_dir = os.path.dirname(file_path)
+                    session_id = os.path.basename(session_dir)
 
-                    # Use ContextUtility's load_markdown_context_to_memory
-                    # method with workflow context utility
-                    utility = self._workflow_context_utility
-                    status = utility.load_markdown_context_to_memory(
+                    # Create temporary context utility for this specific session
+                    base_dir = os.path.dirname(session_dir)
+                    temp_utility = ContextUtility(
+                        working_directory=base_dir,
+                        session_id=session_id,
+                        create_folder=False  # Don't create, just read
+                    )
+
+                    status = temp_utility.load_markdown_context_to_memory(
                         self.worker, filename
                     )
 

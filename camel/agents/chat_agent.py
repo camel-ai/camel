@@ -728,6 +728,18 @@ class ChatAgent(BaseAgent):
         # Ensure the new memory has the system message
         self.init_messages()
 
+    def set_context_utility(self, context_utility: Optional[ContextUtility]) -> None:
+        r"""Set the context utility for the agent.
+
+        This allows external components (like SingleAgentWorker) to provide
+        a shared context utility instance for workflow management.
+
+        Args:
+            context_utility (ContextUtility, optional): The context utility
+                to use. If None, the agent will create its own when needed.
+        """
+        self._context_utility = context_utility
+
     def _get_full_tool_schemas(self) -> List[Dict[str, Any]]:
         r"""Returns a list of tool schemas of all tools, including internal
         and external tools.
