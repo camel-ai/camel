@@ -102,8 +102,10 @@ class DockerInterpreter(BaseInterpreter):
         try:
             if self._container is not None:
                 self.cleanup()
-        except ImportError as e:
+        except (ImportError, AttributeError) as e:
             logger.warning(f"Error during container cleanup: {e}")
+        except Exception as e:
+            logger.warning(f"Unexpected error during container cleanup: {e}")
 
     def _initialize_if_needed(self) -> None:
         if self._container is not None:
@@ -199,11 +201,19 @@ class DockerInterpreter(BaseInterpreter):
         """
         try:
             if self._container is not None:
-                self._container.stop()
-                self._container.remove(force=True)
+                # Check if docker module is still available
+                import sys
+
+                if 'docker' in sys.modules:
+                    self._container.stop()
+                    self._container.remove(force=True)
                 self._container = None
+        except (ImportError, AttributeError, ModuleNotFoundError) as e:
+            logger.warning(f"Docker module unavailable during cleanup: {e}")
+            self._container = None
         except Exception as e:
             logger.error(f"Error during container cleanup: {e}")
+            self._container = None
 
     def run(
         self,
