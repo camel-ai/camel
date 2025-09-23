@@ -280,3 +280,20 @@ ToolCallingRecord(tool_name='shell_exec', args={'id': 'terminal_session_1',
 (.venv) enrei@192 camel % 
 ===============================================================================
 """
+
+# ------Docker backend------
+tools = TerminalToolkit(
+    use_docker_backend=True,
+    # use your own container name
+    docker_container_name="example_container",
+    safe_mode=False,
+).get_tools()
+
+sys_msg = "You are a helpful assistant."
+
+agent = ChatAgent(system_message=sys_msg, model=model, tools=tools)
+agent.reset()
+
+usr_msg = "list all files in the current directory"
+response = agent.step(usr_msg)
+print(str(response.info['tool_calls'])[:1000])
