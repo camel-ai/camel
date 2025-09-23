@@ -1394,6 +1394,40 @@ class ChatAgent(BaseAgent):
         # and True to indicate we used prompt formatting
         return modified_message, None, True
 
+    def _is_called_from_registered_toolkit(self) -> bool:
+        r"""Check if current step/astep call originates from a
+        RegisteredAgentToolkit.
+
+        This method uses stack inspection to detect if the current call
+        is originating from a toolkit that inherits from
+        RegisteredAgentToolkit. When detected, tools should be disabled to
+        prevent recursive calls.
+
+        Returns:
+            bool: True if called from a RegisteredAgentToolkit, False otherwise
+        """
+        import inspect
+
+        from camel.toolkits.base import RegisteredAgentToolkit
+
+        try:
+            # Only check a limited number of frames for performance
+            frames_to_check = 10
+            for i, frame_info in enumerate(inspect.stack()):
+                if i >= frames_to_check:
+                    break
+
+                frame_locals = frame_info.frame.f_locals
+                if 'self' in frame_locals:
+                    caller_self = frame_locals['self']
+                    if isinstance(caller_self, RegisteredAgentToolkit):
+                        return True
+        except Exception:
+            # If stack inspection fails, err on the side of caution
+            return False
+
+        return False
+
     def _apply_prompt_based_parsing(
         self,
         response: ModelResponse,
@@ -1587,20 +1621,9 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
-        import inspect
-
-        disable_tools = False
-        for frame_info in inspect.stack():
-            frame_locals = frame_info.frame.f_locals
-            if 'self' in frame_locals:
-                caller_self = frame_locals['self']
-                if hasattr(caller_self, '__class__'):
-                    # Check if caller inherits from RegisteredAgentToolkit
-                    from camel.toolkits.base import RegisteredAgentToolkit
-
-                    if isinstance(caller_self, RegisteredAgentToolkit):
-                        disable_tools = True
-                        break
+        # Check if this call is from a RegisteredAgentToolkit to prevent tool
+        # use
+        disable_tools = self._is_called_from_registered_toolkit()
 
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
@@ -1816,20 +1839,9 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
-        import inspect
-
-        disable_tools = False
-        for frame_info in inspect.stack():
-            frame_locals = frame_info.frame.f_locals
-            if 'self' in frame_locals:
-                caller_self = frame_locals['self']
-                if hasattr(caller_self, '__class__'):
-                    # Check if caller inherits from RegisteredAgentToolkit
-                    from camel.toolkits.base import RegisteredAgentToolkit
-
-                    if isinstance(caller_self, RegisteredAgentToolkit):
-                        disable_tools = True
-                        break
+        # Check if this call is from a RegisteredAgentToolkit to prevent tool
+        # use
+        disable_tools = self._is_called_from_registered_toolkit()
 
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
