@@ -420,7 +420,8 @@ class DingtalkToolkit(BaseToolkit):
             msgtype (Literal): Message type (text, markdown, link, actionCard).
             title (Optional[str]): Message title (required for markdown).
             webhook_url (Optional[str]): Webhook URL. If None, uses env var.
-            webhook_secret (Optional[str]): Webhook secret. If None, uses env var.
+            webhook_secret (Optional[str]): Webhook secret. If None, uses env
+                var.
 
         Returns:
             str: Success or error message.
@@ -430,7 +431,9 @@ class DingtalkToolkit(BaseToolkit):
         """
         # Get webhook configuration
         url = webhook_url or os.environ.get("DINGTALK_WEBHOOK_URL", "")
-        secret = webhook_secret or os.environ.get("DINGTALK_WEBHOOK_SECRET", "")
+        secret = webhook_secret or os.environ.get(
+            "DINGTALK_WEBHOOK_SECRET", ""
+        )
 
         if not url:
             return "Error: Webhook URL not provided or set in environment"
@@ -479,7 +482,9 @@ class DingtalkToolkit(BaseToolkit):
             if result.get("errcode") == 0:
                 return "Webhook message sent successfully"
             else:
-                return f"Webhook error: {result.get('errmsg', 'Unknown error')}"
+                return (
+                    f"Webhook error: {result.get('errmsg', 'Unknown error')}"
+                )
 
         except Exception as e:
             return f"Failed to send webhook message: {e!s}"
@@ -691,17 +696,19 @@ class DingtalkToolkit(BaseToolkit):
         r"""Gets user information by mobile number.
 
         Args:
-            mobile (str): User's mobile number. Should be a valid Chinese 
+            mobile (str): User's mobile number. Should be a valid Chinese
                 mobile number format (11 digits starting with 1).
 
         Returns:
             Dict[str, Any]: User information or error information.
         """
-        # Validate mobile number format (Chinese mobile number: 11 digits starting with 1)
+        # Validate mobile number format (Chinese mobile number: 11 digits
+        # starting with 1)
         mobile_pattern = r'^1[3-9]\d{9}$'
         if not re.match(mobile_pattern, mobile):
             return {
-                "error": "Invalid mobile number format. Expected 11 digits starting with 1 (e.g., 13800000000)."
+                "error": "Invalid mobile number format. Expected 11 digits "
+                "starting with 1 (e.g., 13800000000)."
             }
 
         payload = {"mobile": mobile}
@@ -727,9 +734,9 @@ class DingtalkToolkit(BaseToolkit):
         r"""Gets user information by unionid.
 
         Args:
-            unionid (str): User's unique identifier across all DingTalk 
-                organizations. This is a global identifier that remains 
-                consistent even if the user belongs to multiple DingTalk 
+            unionid (str): User's unique identifier across all DingTalk
+                organizations. This is a global identifier that remains
+                consistent even if the user belongs to multiple DingTalk
                 organizations, unlike userid which is organization-specific.
 
         Returns:
@@ -891,10 +898,10 @@ class DingtalkToolkit(BaseToolkit):
             name (Optional[str]): New group name.
             owner (Optional[str]): New group owner userid.
             add_useridlist (Optional[List[str]]): List of user IDs to add.
-                Note: Internally converted to comma-separated string as 
+                Note: Internally converted to comma-separated string as
                 required by the DingTalk API.
             del_useridlist (Optional[List[str]]): List of user IDs to remove.
-                Note: Internally converted to comma-separated string as 
+                Note: Internally converted to comma-separated string as
                 required by the DingTalk API.
 
         Returns:
@@ -909,7 +916,8 @@ class DingtalkToolkit(BaseToolkit):
             payload["name"] = name
         if owner:
             payload["owner"] = owner
-        # Note: DingTalk update group API requires comma-separated string format
+        # Note: DingTalk update group API requires comma-separated string
+        # format
         # This is different from send_work_notification which uses array format
         if add_useridlist:
             payload["add_useridlist"] = ",".join(add_useridlist)
@@ -991,18 +999,15 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def dingtalk_get_userid_by_phone(
-        self, 
-        phone_number: str
-    ) -> str:
+    def dingtalk_get_userid_by_phone(self, phone_number: str) -> str:
         r"""Gets user ID by phone number for LLM agents.
-        
+
         Args:
             phone_number (str): User's phone number.
-            
+
         Returns:
             str: User ID or error message.
-            
+
         References:
             https://open.dingtalk.com/document/orgapp-server/query-user-details
         """
@@ -1021,27 +1026,25 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def dingtalk_get_userid_by_name(
-        self, 
-        user_name: str
-    ) -> str:
+    def dingtalk_get_userid_by_name(self, user_name: str) -> str:
         r"""Gets user ID by user name for LLM agents.
-        
+
         Args:
             user_name (str): User's display name.
-            
+
         Returns:
             str: User ID or error message.
-            
+
         References:
             https://open.dingtalk.com/document/orgapp-server/query-users
         """
         try:
             search_result = self.dingtalk_search_users_by_name(user_name)
-            if 'result' in search_result and search_result['result']:
+            if search_result.get('result'):
                 # Return the first match
-                return search_result['result'][0].get('userid', 
-                    f"No userid found for user: {user_name}")
+                return search_result['result'][0].get(
+                    'userid', f"No userid found for user: {user_name}"
+                )
             else:
                 return f"User not found with name: {user_name}"
         except Exception as e:
@@ -1053,15 +1056,12 @@ class DingtalkToolkit(BaseToolkit):
             (None, "DINGTALK_APP_SECRET"),
         ]
     )
-    def dingtalk_get_department_id_by_name(
-        self, 
-        department_name: str
-    ) -> str:
+    def dingtalk_get_department_id_by_name(self, department_name: str) -> str:
         r"""Gets department ID by department name for LLM agents.
-        
+
         Args:
             department_name (str): Department name to search for.
-            
+
         Returns:
             str: Department ID or error message.
         """
@@ -1073,23 +1073,20 @@ class DingtalkToolkit(BaseToolkit):
                         return str(dept.get('id', ''))
                 return f"Department not found: {department_name}"
             else:
-                return f"Failed to get department list"
+                return "Failed to get department list"
         except Exception as e:
             return f"Failed to get department ID by name: {e!s}"
 
-    def dingtalk_get_chatid_by_group_name(
-        self, 
-        group_name: str
-    ) -> str:
+    def dingtalk_get_chatid_by_group_name(self, group_name: str) -> str:
         r"""Gets chat ID by group name for LLM agents.
-        
+
         Note: This function provides guidance as Dingtalk API doesn't directly
         support searching groups by name. Users should use the group creation
         response or group management features to obtain chat IDs.
-        
+
         Args:
             group_name (str): Group name to search for.
-            
+
         Returns:
             str: Guidance message for obtaining chat ID.
         """

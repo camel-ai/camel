@@ -99,7 +99,7 @@ def test_sglang_function_call(sglang_model_cleanup):
 
     # Create a mock response object
     from openai.types.chat.chat_completion_message_function_tool_call import (
-        ChatCompletionMessageToolCall,
+        ChatCompletionMessageFunctionToolCall,
     )
 
     from camel.types import (
@@ -122,7 +122,7 @@ def test_sglang_function_call(sglang_model_cleanup):
                     role="assistant",
                     content=None,
                     tool_calls=[
-                        ChatCompletionMessageToolCall(
+                        ChatCompletionMessageFunctionToolCall(
                             id="0",
                             type="function",
                             function={"name": "test_tool", "arguments": "{}"},
