@@ -146,6 +146,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_cometapi(self) -> bool:
+        r"""Returns whether the model is a CometAPI served model."""
+        return True
+
+    @property
     def is_yi(self) -> bool:
         r"""Returns whether the model is a Yi model."""
         return True

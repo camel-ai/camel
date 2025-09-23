@@ -23,6 +23,7 @@ from collections import deque
 from enum import Enum
 from typing import (
     Any,
+    Callable,
     Coroutine,
     Deque,
     Dict,
@@ -32,6 +33,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 from colorama import Fore
@@ -71,6 +73,7 @@ from camel.tasks.task import (
 )
 from camel.toolkits import (
     CodeExecutionToolkit,
+    FunctionTool,
     SearchToolkit,
     TaskPlanningToolkit,
     ThinkingToolkit,
@@ -345,10 +348,7 @@ class Workforce(BaseNode):
                     None,
                 ),
                 output_language=coordinator_agent.output_language,
-                tools=[
-                    tool.func
-                    for tool in coordinator_agent._internal_tools.values()
-                ],
+                tools=list(coordinator_agent._internal_tools.values()),
                 external_tools=[
                     schema
                     for schema in coordinator_agent._external_tool_schemas.values()  # noqa: E501
@@ -398,9 +398,11 @@ class Workforce(BaseNode):
 
             # Since ChatAgent constructor uses a dictionary with
             # function names as keys, we don't need to manually deduplicate.
-            combined_tools = [
-                tool.func for tool in task_agent._internal_tools.values()
-            ] + [tool.func for tool in task_planning_tools]
+            combined_tools: List[Union[FunctionTool, Callable]] = cast(
+                List[Union[FunctionTool, Callable]],
+                list(task_agent._internal_tools.values())
+                + task_planning_tools,
+            )
 
             # Create a new agent with the provided agent's configuration
             # but with the combined system message and tools

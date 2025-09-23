@@ -41,6 +41,7 @@ from .arxiv_toolkit import ArxivToolkit
 from .slack_toolkit import SlackToolkit
 from .whatsapp_toolkit import WhatsAppToolkit
 from .wechat_official_toolkit import WeChatOfficialToolkit
+from .dingtalk import DingtalkToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
@@ -108,6 +109,7 @@ __all__ = [
     'SlackToolkit',
     'WhatsAppToolkit',
     'WeChatOfficialToolkit',
+    'DingtalkToolkit',
     'ImageGenToolkit',
     'TwitterToolkit',
     'WeatherToolkit',

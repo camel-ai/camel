@@ -28,6 +28,14 @@ camel.models.base\_model module
    :undoc-members:
    :show-inheritance:
 
+camel.models.cometapi\_model module
+-----------------------------------
+
+.. automodule:: camel.models.cometapi_model
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.models.gemini\_model module
 ---------------------------------
 

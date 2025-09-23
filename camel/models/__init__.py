@@ -19,6 +19,7 @@ from .azure_openai_model import AzureOpenAIModel
 from .base_audio_model import BaseAudioModel
 from .base_model import BaseModelBackend
 from .cohere_model import CohereModel
+from .cometapi_model import CometAPIModel
 from .crynux_model import CrynuxModel
 from .deepseek_model import DeepSeekModel
 from .fish_audio_model import FishAudioModel
@@ -69,6 +70,7 @@ __all__ = [
     'StubModel',
     'ZhipuAIModel',
     'CohereModel',
+    'CometAPIModel',
     'ModelFactory',
     'ModelManager',
     'LiteLLMModel',
