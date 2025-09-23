@@ -51,6 +51,8 @@ from camel.societies.workforce.prompts import (
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import (
+    MAX_COORDINATOR_WORKFLOWS_TO_LOAD,
+    MAX_RECENT_WORKFLOWS_TO_LOAD,
     SingleAgentWorker,
 )
 from camel.societies.workforce.structured_output_handler import (
@@ -1901,7 +1903,7 @@ class Workforce(BaseNode):
 
             # Load workflows for coordinator agent (up to 5 most recent)
             coordinator_loaded = 0
-            for file_path in workflow_files[:5]:
+            for file_path in workflow_files[:MAX_COORDINATOR_WORKFLOWS_TO_LOAD]:
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
                     session_dir = os.path.dirname(file_path)
@@ -1924,7 +1926,7 @@ class Workforce(BaseNode):
 
             # Load workflows for task agent (up to 3 most recent)
             task_agent_loaded = 0
-            for file_path in workflow_files[:3]:
+            for file_path in workflow_files[:MAX_RECENT_WORKFLOWS_TO_LOAD]:
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
                     session_dir = os.path.dirname(file_path)

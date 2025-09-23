@@ -23,9 +23,8 @@ from collections import deque
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from colorama import Fore
-
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.structured_output_handler import (
@@ -35,6 +34,12 @@ from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, is_task_result_insufficient
 from camel.utils.context_utils import ContextUtility
+
+logger = get_logger(__name__)
+
+# Constants for workflow loading limits
+MAX_RECENT_WORKFLOWS_TO_LOAD = 3
+MAX_COORDINATOR_WORKFLOWS_TO_LOAD = 5
 
 
 class AgentPool:
@@ -240,9 +245,8 @@ class SingleAgentWorker(Worker):
         self._shared_context_utility = context_utility
         self._context_utility = None  # Will be initialized when needed
 
-        # Note: Context utility is set on the worker agent during save/load
-        # operations
-        # to avoid creating session folders during initialization
+        # note: context utility is set on the worker agent during save/load
+        # operations to avoid creating session folders during initialization
 
         self.agent_pool: Optional[AgentPool] = None
         self._cleanup_task: Optional[asyncio.Task] = None
@@ -412,9 +416,9 @@ class SingleAgentWorker(Worker):
             )
 
         except Exception as e:
-            print(
-                f"{Fore.RED}Error processing task {task.id}: "
-                f"{type(e).__name__}: {e}{Fore.RESET}"
+            logger.error(
+                f"Error processing task {task.id}: "
+                f"{type(e).__name__}: {e}"
             )
             # Store error information in task result
             task.result = f"{type(e).__name__}: {e!s}"
@@ -458,24 +462,23 @@ class SingleAgentWorker(Worker):
         # Store the actual token usage for this specific task
         task.additional_info["token_usage"] = {"total_tokens": total_tokens}
 
-        print(f"======\n{Fore.GREEN}Response from {self}:{Fore.RESET}")
+        logger.info(f"Response from {self}:")
 
         if not self.use_structured_output_handler:
             # Handle native structured output parsing
             if task_result is None:
-                print(
-                    f"{Fore.RED}Error in worker step execution: Invalid "
-                    f"task result{Fore.RESET}"
+                logger.error(
+                    "Error in worker step execution: Invalid task result"
                 )
                 task_result = TaskResult(
                     content="Failed to generate valid task result.",
                     failed=True,
                 )
 
-        color = Fore.RED if task_result.failed else Fore.GREEN  # type: ignore[union-attr]
-        print(
-            f"\n{color}{task_result.content}{Fore.RESET}\n======",  # type: ignore[union-attr]
-        )
+        if task_result.failed:  # type: ignore[union-attr]
+            logger.error(f"{task_result.content}")  # type: ignore[union-attr]
+        else:
+            logger.info(f"{task_result.content}")  # type: ignore[union-attr]
 
         task.result = task_result.content  # type: ignore[union-attr]
 
@@ -483,9 +486,9 @@ class SingleAgentWorker(Worker):
             return TaskState.FAILED
 
         if is_task_result_insufficient(task):
-            print(
-                f"{Fore.RED}Task {task.id}: Content validation failed - "
-                f"task marked as failed{Fore.RESET}"
+            logger.warning(
+                f"Task {task.id}: Content validation failed - "
+                f"task marked as failed"
             )
             return TaskState.FAILED
         return TaskState.DONE
@@ -515,7 +518,7 @@ class SingleAgentWorker(Worker):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                print(f"Error in pool cleanup: {e}")
+                logger.warning(f"Error in pool cleanup: {e}")
 
     def get_pool_stats(self) -> Optional[dict]:
         r"""Get agent pool statistics if pool is enabled."""
@@ -608,7 +611,7 @@ class SingleAgentWorker(Worker):
         try:
             # Ensure we have a ChatAgent worker
             if not isinstance(self.worker, ChatAgent):
-                print(
+                logger.warning(
                     f"Cannot load workflow: {self.description} worker is not "
                     "a ChatAgent"
                 )
@@ -633,7 +636,7 @@ class SingleAgentWorker(Worker):
             workflow_files = glob.glob(search_path)
 
             if not workflow_files:
-                print(f"No workflow files found for pattern: {pattern}")
+                logger.info(f"No workflow files found for pattern: {pattern}")
                 return False
 
             # Sort files by modification time (most recent first)
@@ -643,7 +646,7 @@ class SingleAgentWorker(Worker):
 
             # Load the most recent workflow file(s) by reading directly
             loaded_count = 0
-            for file_path in workflow_files[:3]:  # Load up to 3 most recent
+            for file_path in workflow_files[:MAX_RECENT_WORKFLOWS_TO_LOAD]:
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
                     session_dir = os.path.dirname(file_path)
@@ -660,20 +663,20 @@ class SingleAgentWorker(Worker):
 
                     if "Context appended" in status:
                         loaded_count += 1
-                        print(f"Loaded workflow: {filename}")
+                        logger.info(f"Loaded workflow: {filename}")
                     else:
-                        print(f"Failed to load workflow {filename}: {status}")
+                        logger.warning(f"Failed to load workflow {filename}: {status}")
 
                 except Exception as e:
-                    print(f"Failed to load workflow file {file_path}: {e!s}")
+                    logger.warning(f"Failed to load workflow file {file_path}: {e!s}")
                     continue
 
-            print(
+            logger.info(
                 f"Successfully loaded {loaded_count} workflow file(s) for "
                 f"{self.description}"
             )
             return loaded_count > 0
 
         except Exception as e:
-            print(f"Error loading workflows for {self.description}: {e!s}")
+            logger.error(f"Error loading workflows for {self.description}: {e!s}")
             return False

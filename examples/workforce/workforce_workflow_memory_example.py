@@ -14,9 +14,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
+import os
 from dotenv import load_dotenv
 
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
@@ -27,9 +29,15 @@ from camel.types import ModelPlatformType, ModelType
 
 load_dotenv()
 
+logger = get_logger(__name__)
+
 
 def create_math_agent() -> ChatAgent:
-    """Create a math agent with math tools."""
+    """Create a math agent with math tools.
+
+    Returns:
+        ChatAgent: A configured math expert agent with MathToolkit tools.
+    """
     math_msg = BaseMessage.make_assistant_message(
         role_name="Math Expert",
         content=(
@@ -51,7 +59,11 @@ def create_math_agent() -> ChatAgent:
 
 
 def create_writer_agent() -> ChatAgent:
-    """Create a writer agent without tools."""
+    """Create a writer agent without tools.
+
+    Returns:
+        ChatAgent: A configured content writer agent without additional tools.
+    """
     writer_msg = BaseMessage.make_assistant_message(
         role_name="Content Writer",
         content=(
@@ -70,7 +82,14 @@ def create_writer_agent() -> ChatAgent:
 
 
 def demonstrate_first_session():
-    """Demonstrate first workforce session with workflow saving."""
+    """Demonstrate first workforce session with workflow saving.
+
+    Creates a workforce with math and writer agents, processes tasks,
+    and saves the resulting workflows for future use.
+
+    Returns:
+        Dict[str, str]: Results of the workflow saving operation.
+    """
     # Create workforce with two specialized agents
     workforce = Workforce("Simple Demo Team")
 
@@ -103,8 +122,8 @@ def demonstrate_first_session():
     for task in tasks:
         try:
             workforce.process_task(task)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to process task {task.id}: {e}")
 
     # Save workflows after completing tasks
     saved_workflows = workforce.save_workflows()
@@ -113,7 +132,14 @@ def demonstrate_first_session():
 
 
 def demonstrate_second_session():
-    """Demonstrate second workforce session with workflow loading."""
+    """Demonstrate second workforce session with workflow loading.
+
+    Creates a new workforce instance, loads previously saved workflows,
+    and processes new tasks with the loaded workflow context.
+
+    Returns:
+        Dict[str, bool]: Results of the workflow loading operation.
+    """
     # Create new workforce (simulating new session/process)
     workforce = Workforce("Simple Demo Team - Session 2")
 
@@ -148,33 +174,71 @@ def demonstrate_second_session():
     for task in new_tasks:
         try:
             workforce.process_task(task)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to process task {task.id}: {e}")
 
     return loaded_workflows
 
 
-def demonstrate_workflow_file_management():
-    """Demonstrate workflow file management and inspection."""
-    # Show where workflow files are stored
-    pass
+def demonstrate_workflow_file_management() -> None:
+    """Demonstrate workflow file management and inspection.
+
+    Shows information about where workflow files are stored and how
+    to inspect the saved workflow data.
+    """
+
+    # Get the base directory for workforce workflows
+    camel_workdir = os.environ.get("CAMEL_WORKDIR")
+    if camel_workdir:
+        base_dir = os.path.join(camel_workdir, "workforce_workflows")
+    else:
+        base_dir = "workforce_workflows"
+
+    logger.info(f"Workforce workflows are stored in: {base_dir}")
+
+    # Show how to check for existing workflow files
+    if os.path.exists(base_dir):
+        session_dirs = [d for d in os.listdir(base_dir)
+                       if os.path.isdir(os.path.join(base_dir, d))]
+        logger.info(f"Found {len(session_dirs)} session directories")
+
+        for session_dir in session_dirs[:3]:  # Show first 3 sessions
+            session_path = os.path.join(base_dir, session_dir)
+            workflow_files = [f for f in os.listdir(session_path)
+                            if f.endswith('.md')]
+            logger.info(f"Session {session_dir}: {len(workflow_files)} workflow files")
+    else:
+        logger.info("No workflow directory found yet")
 
 
-def main():
-    """Main demonstration function."""
+def main() -> None:
+    """Main demonstration function.
+
+    Runs through the complete workflow memory demonstration,
+    showing how workflows can be saved and loaded across sessions.
+    """
     try:
+        logger.info("Starting workforce workflow memory demonstration")
+
         # Demonstrate first session with workflow saving
-        demonstrate_first_session()
+        logger.info("=== First Session: Saving Workflows ===")
+        saved_results = demonstrate_first_session()
+        logger.info(f"Workflow save results: {saved_results}")
 
         # Demonstrate second session with workflow loading
-        demonstrate_second_session()
+        logger.info("=== Second Session: Loading Workflows ===")
+        loaded_results = demonstrate_second_session()
+        logger.info(f"Workflow load results: {loaded_results}")
 
         # Show file management information
+        logger.info("=== Workflow File Management ===")
         demonstrate_workflow_file_management()
 
+        logger.info("Demonstration completed successfully")
+
     except Exception as e:
-        print(e)
-        pass
+        logger.error(f"Demonstration failed: {e}")
+        raise
 
 
 if __name__ == "__main__":
