@@ -1755,12 +1755,12 @@ class Workforce(BaseNode):
         else:
             self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
 
-    def save_workflows(self) -> Dict[str, str]:
-        r"""Save workflows for all SingleAgentWorker instances in the
+    def save_workflow_memories(self) -> Dict[str, str]:
+        r"""Save workflow memories for all SingleAgentWorker instances in the
         workforce.
 
         This method iterates through all child workers and triggers workflow
-        saving for SingleAgentWorker instances using their save_workflow()
+        saving for SingleAgentWorker instances using their save_workflow_memories()
         method.
         Other worker types are skipped.
 
@@ -1789,7 +1789,7 @@ class Workforce(BaseNode):
                     child._shared_context_utility = shared_context_utility
                     child.worker.set_context_utility(shared_context_utility)
 
-                    result = child.save_workflow()
+                    result = child.save_workflow_memories()
                     if result.get("status") == "success":
                         results[child.node_id] = result.get(
                             "file_path", "unknown_path"
@@ -1809,13 +1809,13 @@ class Workforce(BaseNode):
         logger.info(f"Workflow save completed for {len(results)} workers")
         return results
 
-    def load_workflows(self) -> Dict[str, bool]:
-        r"""Load workflows for all SingleAgentWorker instances in the
+    def load_workflow_memories(self) -> Dict[str, bool]:
+        r"""Load workflow memories for all SingleAgentWorker instances in the
         workforce.
 
         This method iterates through all child workers and loads relevant
         workflow files for SingleAgentWorker instances using their
-        load_workflow()
+        load_workflow_memories()
         method. Workers match files based on their description names.
 
         Returns:
@@ -1845,7 +1845,7 @@ class Workforce(BaseNode):
                 try:
                     # For loading, don't set shared context utility
                     # Let each worker search across existing sessions
-                    success = child.load_workflow()
+                    success = child.load_workflow_memories()
                     results[child.node_id] = success
 
                 except Exception as e:

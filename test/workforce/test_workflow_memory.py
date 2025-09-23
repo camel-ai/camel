@@ -100,7 +100,7 @@ class TestSingleAgentWorkerWorkflow:
         with patch.object(
             worker.worker, 'summarize', return_value=mock_result
         ):
-            result = worker.save_workflow()
+            result = worker.save_workflow_memories()
 
             assert result["status"] == "success"
             assert result["worker_description"] == "test_analyst"
@@ -117,7 +117,7 @@ class TestSingleAgentWorkerWorkflow:
         # Replace the worker with a non-ChatAgent object
         worker.worker = "not_a_chat_agent"
 
-        result = worker.save_workflow()
+        result = worker.save_workflow_memories()
 
         assert result["status"] == "error"
         assert "Worker must be a ChatAgent" in result["message"]
@@ -131,7 +131,7 @@ class TestSingleAgentWorkerWorkflow:
         with patch.object(
             worker.worker, 'summarize', side_effect=Exception("Test error")
         ):
-            result = worker.save_workflow()
+            result = worker.save_workflow_memories()
 
             assert result["status"] == "error"
             assert "Failed to save workflow: Test error" in result["message"]
@@ -162,7 +162,7 @@ class TestSingleAgentWorkerWorkflow:
             'camel.utils.context_utils.ContextUtility.get_workforce_shared',
             return_value=mock_context_utility,
         ):
-            result = worker.load_workflow()
+            result = worker.load_workflow_memories()
 
             assert result is True
             mock_context_utility.load_markdown_context_to_memory.assert_called()
@@ -172,7 +172,7 @@ class TestSingleAgentWorkerWorkflow:
         worker = MockSingleAgentWorker("data_analyst")
 
         with patch('glob.glob', return_value=[]):
-            result = worker.load_workflow()
+            result = worker.load_workflow_memories()
 
             assert result is False
 
@@ -187,15 +187,15 @@ class TestSingleAgentWorkerWorkflow:
         # Replace the worker with a non-ChatAgent object
         worker.worker = "not_a_chat_agent"
 
-        result = worker.load_workflow()
+        result = worker.load_workflow_memories()
 
         assert result is False
 
 
-class TestWorkforceWorkflowMethods:
+class TestWorkforceWorkflowMemoryMethods:
     """Test workflow functionality for Workforce."""
 
-    def test_save_workflows_success(self, mock_workforce):
+    def test_save_workflow_memories_success(self, mock_workforce):
         """Test successful workflow saving for all workers."""
         # Mock save_workflow for both workers
         mock_result_1 = {
@@ -219,12 +219,12 @@ class TestWorkforceWorkflowMethods:
                 return_value=mock_result_2,
             ),
         ):
-            results = mock_workforce.save_workflows()
+            results = mock_workforce.save_workflow_memories()
 
             assert len(results) == 2
             assert all("/path/to/" in path for path in results.values())
 
-    def test_save_workflows_mixed_results(self, mock_workforce):
+    def test_save_workflow_memories_mixed_results(self, mock_workforce):
         """Test workflow saving with mixed success/failure results."""
         # Mock one success, one failure
         mock_result_success = {
@@ -248,7 +248,7 @@ class TestWorkforceWorkflowMethods:
                 return_value=mock_result_error,
             ),
         ):
-            results = mock_workforce.save_workflows()
+            results = mock_workforce.save_workflow_memories()
 
             assert len(results) == 2
             assert (
@@ -260,21 +260,21 @@ class TestWorkforceWorkflowMethods:
                 in results[mock_workforce._children[1].node_id]
             )
 
-    def test_save_workflows_exception(self, mock_workforce):
+    def test_save_workflow_memories_exception(self, mock_workforce):
         """Test workflow saving when exception occurs."""
         with patch.object(
             mock_workforce._children[0],
             'save_workflow',
             side_effect=Exception("Test error"),
         ):
-            results = mock_workforce.save_workflows()
+            results = mock_workforce.save_workflow_memories()
 
             assert (
                 "error: Test error"
                 in results[mock_workforce._children[0].node_id]
             )
 
-    def test_load_workflows_success(self, mock_workforce):
+    def test_load_workflow_memories_success(self, mock_workforce):
         """Test successful workflow loading for all workers."""
         with (
             patch.object(
@@ -284,12 +284,12 @@ class TestWorkforceWorkflowMethods:
                 mock_workforce._children[1], 'load_workflow', return_value=True
             ),
         ):
-            results = mock_workforce.load_workflows()
+            results = mock_workforce.load_workflow_memories()
 
             assert len(results) == 2
             assert all(success for success in results.values())
 
-    def test_load_workflows_mixed_results(self, mock_workforce):
+    def test_load_workflow_memories_mixed_results(self, mock_workforce):
         """Test workflow loading with mixed success/failure results."""
         with (
             patch.object(
@@ -301,19 +301,19 @@ class TestWorkforceWorkflowMethods:
                 return_value=False,
             ),
         ):
-            results = mock_workforce.load_workflows()
+            results = mock_workforce.load_workflow_memories()
 
             assert results[mock_workforce._children[0].node_id] is True
             assert results[mock_workforce._children[1].node_id] is False
 
-    def test_load_workflows_exception(self, mock_workforce):
+    def test_load_workflow_memories_exception(self, mock_workforce):
         """Test workflow loading when exception occurs."""
         with patch.object(
             mock_workforce._children[0],
             'load_workflow',
             side_effect=Exception("Test error"),
         ):
-            results = mock_workforce.load_workflows()
+            results = mock_workforce.load_workflow_memories()
 
             assert results[mock_workforce._children[0].node_id] is False
 
@@ -402,7 +402,7 @@ class TestWorkflowIntegration:
                 worker.worker, 'summarize', return_value=mock_result
             ):
                 # Verify the filename generation works with special characters
-                result = worker.save_workflow()
+                result = worker.save_workflow_memories()
                 assert result["status"] == "success"
 
 

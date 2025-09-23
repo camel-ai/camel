@@ -126,7 +126,7 @@ def demonstrate_first_session():
             logger.warning(f"Failed to process task {task.id}: {e}")
 
     # Save workflows after completing tasks
-    saved_workflows = workforce.save_workflows()
+    saved_workflows = workforce.save_workflow_memories()
 
     return saved_workflows
 
@@ -157,7 +157,7 @@ def demonstrate_second_session():
     )
 
     # Load previous workflows
-    loaded_workflows = workforce.load_workflows()
+    loaded_workflows = workforce.load_workflow_memories()
 
     # Process new tasks with loaded workflow context
     new_tasks = [

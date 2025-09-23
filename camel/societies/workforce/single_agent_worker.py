@@ -525,8 +525,8 @@ class SingleAgentWorker(Worker):
             return self.agent_pool.get_stats()
         return None
 
-    def save_workflow(self) -> Dict[str, Any]:
-        r"""Save the worker's current workflow using agent summarization.
+    def save_workflow_memories(self) -> Dict[str, Any]:
+        r"""Save the worker's current workflow memories using agent summarization.
 
         This method generates a workflow summary from the worker agent's
         conversation history and saves it to a markdown file. The filename
@@ -548,7 +548,7 @@ class SingleAgentWorker(Worker):
                     "file_path": None,
                     "worker_description": self.description,
                     "message": (
-                        "Worker must be a ChatAgent instance to save workflow"
+                        "Worker must be a ChatAgent instance to save workflow memories"
                     ),
                 }
 
@@ -590,30 +590,30 @@ class SingleAgentWorker(Worker):
                 "summary": "",
                 "file_path": None,
                 "worker_description": self.description,
-                "message": f"Failed to save workflow: {e!s}",
+                "message": f"Failed to save workflow memories: {e!s}",
             }
 
-    def load_workflow(self, pattern: Optional[str] = None) -> bool:
-        r"""Load workflows matching worker description from saved files.
+    def load_workflow_memories(self, pattern: Optional[str] = None) -> bool:
+        r"""Load workflow memories matching worker description from saved files.
 
-        This method searches for workflow files that match the worker's
+        This method searches for workflow memory files that match the worker's
         description and loads them into the agent's memory using
         ContextUtility.
 
         Args:
-            pattern (Optional[str]): Custom search pattern for workflow files.
+            pattern (Optional[str]): Custom search pattern for workflow memory files.
                 If None, uses worker description to generate pattern.
 
         Returns:
-            bool: True if workflows were successfully loaded, False otherwise.
+            bool: True if workflow memories were successfully loaded, False otherwise.
         """
         try:
-            # Find workflow files matching the pattern
+            # Find workflow memory files matching the pattern
             workflow_files = self._find_workflow_files(pattern)
             if not workflow_files:
                 return False
 
-            # Load the workflow files
+            # Load the workflow memory files
             loaded_count = self._load_workflow_files(workflow_files)
 
             # Report results
@@ -625,7 +625,7 @@ class SingleAgentWorker(Worker):
 
         except Exception as e:
             logger.error(
-                f"Error loading workflows for {self.description}: {e!s}"
+                f"Error loading workflow memories for {self.description}: {e!s}"
             )
             return False
 
