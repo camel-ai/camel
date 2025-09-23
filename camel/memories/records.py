@@ -79,6 +79,12 @@ class MemoryRecord(BaseModel):
         kwargs: Dict = record_dict["message"].copy()
         kwargs.pop("__class__")
 
+        # BaseMessage.to_dict() spreads meta_dict contents, so we need to separate them
+        base_fields = {"role_name", "role_type", "content"}
+        meta_dict = {k: v for k, v in kwargs.items() if k not in base_fields}
+        kwargs = {k: v for k, v in kwargs.items() if k in base_fields}
+        kwargs["meta_dict"] = meta_dict if meta_dict else None
+
         # Convert role_type string back to RoleType enum if it's a string
         if "role_type" in kwargs and isinstance(kwargs["role_type"], str):
             kwargs["role_type"] = RoleType(kwargs["role_type"])
@@ -108,7 +114,7 @@ class MemoryRecord(BaseModel):
             "uuid": str(self.uuid),
             "message": {
                 "__class__": self.message.__class__.__name__,
-                **asdict(self.message),
+                **self.message.to_dict(),
             },
             "role_at_backend": self.role_at_backend.value
             if hasattr(self.role_at_backend, "value")
