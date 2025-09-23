@@ -583,7 +583,8 @@ into a JSON file using JsonStorage.
 def summarize(
     self,
     filename: Optional[str] = None,
-    summary_prompt: Optional[str] = None
+    summary_prompt: Optional[str] = None,
+    working_directory: Optional[Union[str, Path]] = None
 ):
 ```
 
@@ -594,6 +595,7 @@ to a markdown file.
 
 - **filename** (Optional[str]): The base filename (without extension) to use for the markdown file. Defaults to a timestamped name when not provided.
 - **summary_prompt** (Optional[str]): Custom prompt for the summarizer. When omitted, a default prompt highlighting key decisions, action items, and open questions is used.
+- **working_directory** (Optional[str|Path]): Optional directory to save the markdown summary file. If provided, overrides the default directory used by ContextUtility.
 
 **Returns:**
 
