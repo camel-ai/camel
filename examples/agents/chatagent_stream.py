@@ -12,7 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
+from camel.responses import ChatAgentResponse
 from camel.types import ModelPlatformType, ModelType
 
 # Create a streaming model
@@ -46,11 +48,19 @@ for chunk_response in streaming_response:
 
 print("\n\n---\nDelta streaming mode (stream_accumulate=False):\n")
 
+def stream_hook(message):
+    # do something like push message to Queue or else
+    if isinstance(message, ChatAgentResponse):
+        print("message chunk", message)
+    elif isinstance(message, BaseMessage):
+        print('message complete', message)
+
 # Create an agent that yields delta chunks instead of accumulated content
 agent_delta = ChatAgent(
     system_message="You are a helpful assistant that provides concise "
     "and informative responses.",
     model=streaming_model,
+    stream_hook=stream_hook,
     stream_accumulate=False,  # Only yield the delta part per chunk
 )
 
