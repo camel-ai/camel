@@ -16,7 +16,6 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import json
-import re
 import time
 import uuid
 from collections import deque
@@ -37,7 +36,6 @@ from typing import (
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import StreamingChatAgentResponse
 from camel.logger import get_logger
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
@@ -459,11 +457,11 @@ class Workforce(BaseNode):
                 use_structured_output_handler is False.
         """
         agent_has_tools = (
-            bool(agent.tool_dict) if hasattr(agent, "tool_dict") else False
+            bool(agent.tool_dict) if hasattr(agent, 'tool_dict') else False
         )
         agent_stream_mode = (
-            getattr(agent.model_backend, "stream", False)
-            if hasattr(agent, "model_backend")
+            getattr(agent.model_backend, 'stream', False)
+            if hasattr(agent, 'model_backend')
             else False
         )
 
@@ -530,21 +528,21 @@ class Workforce(BaseNode):
             return {}
 
         shared_memory: Dict[str, List] = {
-            "coordinator": [],
-            "task_agent": [],
-            "workers": [],
+            'coordinator': [],
+            'task_agent': [],
+            'workers': [],
         }
 
         try:
             # Collect coordinator agent memory
             coord_records = self.coordinator_agent.memory.retrieve()
-            shared_memory["coordinator"] = [
+            shared_memory['coordinator'] = [
                 record.memory_record.to_dict() for record in coord_records
             ]
 
             # Collect task agent memory
             task_records = self.task_agent.memory.retrieve()
-            shared_memory["task_agent"] = [
+            shared_memory['task_agent'] = [
                 record.memory_record.to_dict() for record in task_records
             ]
 
@@ -556,7 +554,7 @@ class Workforce(BaseNode):
                         record.memory_record.to_dict()
                         for record in worker_records
                     ]
-                    shared_memory["workers"].extend(worker_memory)
+                    shared_memory['workers'].extend(worker_memory)
 
         except Exception as e:
             logger.warning(f"Error collecting shared memory: {e}")
@@ -742,27 +740,14 @@ class Workforce(BaseNode):
             additional_info=task.additional_info,
         )
         self.task_agent.reset()
-
-        # Decompose the task
-        msg = BaseMessage.make_user_message(
-            role_name=self.task_agent.role_name,
-            content=decompose_prompt,
-        )
-        response = self.task_agent.step(msg)
-
-        # Auto-detect streaming based on response type
-        subtasks: Generator[List[Task], None, None] | List[Task]
-        if isinstance(response, StreamingChatAgentResponse):
-            subtasks = self._decompose_streaming(task, response)
-        else:
-            subtasks = self._decompose_non_streaming(task, response)
+        result = task.decompose(self.task_agent, decompose_prompt)
 
         # Handle both streaming and non-streaming results
-        if isinstance(subtasks, Generator):
+        if isinstance(result, Generator):
             # This is a generator (streaming mode)
             def streaming_with_dependencies():
                 all_subtasks = []
-                for new_tasks in subtasks:
+                for new_tasks in result:
                     all_subtasks.extend(new_tasks)
                     # Update dependency tracking for each batch of new tasks
                     if new_tasks:
@@ -773,6 +758,8 @@ class Workforce(BaseNode):
 
             return streaming_with_dependencies()
         else:
+            # This is a regular list (non-streaming mode)
+            subtasks = result
             # Update dependency tracking for decomposed task
             if subtasks:
                 self._update_dependencies_for_decomposition(task, subtasks)
@@ -795,11 +782,11 @@ class Workforce(BaseNode):
         if any(
             keyword in error_msg_lower
             for keyword in [
-                "connection",
-                "network",
-                "server disconnected",
-                "timeout",
-                "apiconnectionerror",
+                'connection',
+                'network',
+                'server disconnected',
+                'timeout',
+                'apiconnectionerror',
             ]
         ):
             return RecoveryDecision(
@@ -816,9 +803,9 @@ class Workforce(BaseNode):
             error_message=error_message,
             worker_id=task.assigned_worker_id,
             task_depth=task.get_depth(),
-            additional_info=(
-                str(task.additional_info) if task.additional_info else None
-            ),
+            additional_info=str(task.additional_info)
+            if task.additional_info
+            else None,
         )
 
         # Format the analysis prompt
@@ -1487,7 +1474,7 @@ class Workforce(BaseNode):
             start_coroutine: The coroutine to start (e.g., worker_node.start())
         """
         if self._state == WorkforceState.PAUSED and hasattr(
-            self, "_child_listening_tasks"
+            self, '_child_listening_tasks'
         ):
             if self._loop and not self._loop.is_closed():
                 # Use thread-safe coroutine execution for dynamic addition
@@ -1561,7 +1548,7 @@ class Workforce(BaseNode):
         self._children.append(worker_node)
 
         # If we have a channel set up, set it for the new worker
-        if hasattr(self, "_channel") and self._channel is not None:
+        if hasattr(self, '_channel') and self._channel is not None:
             worker_node.set_channel(self._channel)
 
         # If workforce is paused, start the worker's listening task
@@ -1570,7 +1557,7 @@ class Workforce(BaseNode):
         if self.metrics_logger:
             self.metrics_logger.log_worker_created(
                 worker_id=worker_node.node_id,
-                worker_type="SingleAgentWorker",
+                worker_type='SingleAgentWorker',
                 role=worker_node.description,
             )
         return self
@@ -1640,7 +1627,7 @@ class Workforce(BaseNode):
         self._children.append(worker_node)
 
         # If we have a channel set up, set it for the new worker
-        if hasattr(self, "_channel") and self._channel is not None:
+        if hasattr(self, '_channel') and self._channel is not None:
             worker_node.set_channel(self._channel)
 
         # If workforce is paused, start the worker's listening task
@@ -1649,7 +1636,7 @@ class Workforce(BaseNode):
         if self.metrics_logger:
             self.metrics_logger.log_worker_created(
                 worker_id=worker_node.node_id,
-                worker_type="RolePlayingWorker",
+                worker_type='RolePlayingWorker',
                 role=worker_node.description,
             )
         return self
@@ -1678,7 +1665,7 @@ class Workforce(BaseNode):
         self._children.append(workforce)
 
         # If we have a channel set up, set it for the new workforce
-        if hasattr(self, "_channel") and self._channel is not None:
+        if hasattr(self, '_channel') and self._channel is not None:
             workforce.set_channel(self._channel)
 
         # If workforce is paused, start the child workforce's listening task
@@ -1727,7 +1714,7 @@ class Workforce(BaseNode):
             # No active loop, directly set the event
             self._pause_event.set()
 
-        if hasattr(self, "metrics_logger") and self.metrics_logger is not None:
+        if hasattr(self, 'metrics_logger') and self.metrics_logger is not None:
             self.metrics_logger.reset_task_data()
         else:
             self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
@@ -1758,7 +1745,7 @@ class Workforce(BaseNode):
             return "Unknown node"
 
     def _get_single_agent_toolkit_info(
-        self, worker: "SingleAgentWorker"
+        self, worker: 'SingleAgentWorker'
     ) -> str:
         r"""Get formatted information for a SingleAgentWorker node."""
         toolkit_tools = self._group_tools_by_toolkit(worker.worker.tool_dict)
@@ -1768,7 +1755,7 @@ class Workforce(BaseNode):
 
         toolkit_info = []
         for toolkit_name, tools in sorted(toolkit_tools.items()):
-            tools_str = ", ".join(sorted(tools))
+            tools_str = ', '.join(sorted(tools))
             toolkit_info.append(f"{toolkit_name}({tools_str})")
 
         return ", ".join(toolkit_info)
@@ -1778,7 +1765,7 @@ class Workforce(BaseNode):
         toolkit_tools: dict[str, list[str]] = {}
 
         for tool_name, tool in tool_dict.items():
-            if hasattr(tool.func, "__self__"):
+            if hasattr(tool.func, '__self__'):
                 toolkit_name = tool.func.__self__.__class__.__name__
             else:
                 toolkit_name = "Standalone"
@@ -2279,9 +2266,9 @@ class Workforce(BaseNode):
         if self.metrics_logger:
             self.metrics_logger.log_worker_created(
                 worker_id=new_node.node_id,
-                worker_type="SingleAgentWorker",
+                worker_type='SingleAgentWorker',
                 role=new_node_conf.role,
-                metadata={"description": new_node_conf.description},
+                metadata={'description': new_node_conf.description},
             )
         self._child_listening_tasks.append(
             asyncio.create_task(new_node.start())
@@ -2450,9 +2437,9 @@ class Workforce(BaseNode):
                 worker_id=worker_id,
                 error_message=detailed_error,
                 metadata={
-                    "failure_count": task.failure_count,
-                    "task_content": task.content,
-                    "result_length": len(task.result) if task.result else 0,
+                    'failure_count': task.failure_count,
+                    'task_content': task.content,
+                    'result_length': len(task.result) if task.result else 0,
                 },
             )
 
@@ -2639,19 +2626,19 @@ class Workforce(BaseNode):
                 self._cleanup_task_tracking(task.id)
             elif (
                 task.additional_info is not None
-                and "processing_time_seconds" in task.additional_info
+                and 'processing_time_seconds' in task.additional_info
             ):
                 processing_time_seconds = task.additional_info[
-                    "processing_time_seconds"
+                    'processing_time_seconds'
                 ]
 
             # Get token usage from task additional info (preferred - actual
             # usage)
             if (
                 task.additional_info is not None
-                and "token_usage" in task.additional_info
+                and 'token_usage' in task.additional_info
             ):
-                token_usage = task.additional_info["token_usage"]
+                token_usage = task.additional_info['token_usage']
             else:
                 # Fallback: Try to get token usage from SingleAgentWorker
                 # memory
@@ -2668,7 +2655,7 @@ class Workforce(BaseNode):
                         _, total_tokens = (
                             assignee_node.worker.memory.get_context()
                         )
-                        token_usage = {"total_tokens": total_tokens}
+                        token_usage = {'total_tokens': total_tokens}
                     except Exception:
                         token_usage = None
 
@@ -2679,7 +2666,7 @@ class Workforce(BaseNode):
                 result_summary=task.result if task.result else "Completed",
                 processing_time_seconds=processing_time_seconds,
                 token_usage=token_usage,
-                metadata={"current_state": task.state.value},
+                metadata={'current_state': task.state.value},
             )
 
         # Find and remove the completed task from pending tasks
@@ -3007,7 +2994,7 @@ class Workforce(BaseNode):
         # shut down the whole workforce tree
         self.stop()
 
-    def _submit_coro_to_loop(self, coro: "Coroutine") -> None:
+    def _submit_coro_to_loop(self, coro: 'Coroutine') -> None:
         r"""Thread-safe submission of coroutine to the workforce loop."""
 
         loop = self._loop
@@ -3090,7 +3077,7 @@ class Workforce(BaseNode):
 
         self._running = False
 
-    def clone(self, with_memory: bool = False) -> "Workforce":
+    def clone(self, with_memory: bool = False) -> 'Workforce':
         r"""Creates a new instance of Workforce with the same configuration.
 
         Args:
@@ -3109,11 +3096,9 @@ class Workforce(BaseNode):
             description=self.description,
             coordinator_agent=self.coordinator_agent.clone(with_memory),
             task_agent=self.task_agent.clone(with_memory),
-            new_worker_agent=(
-                self.new_worker_agent.clone(with_memory)
-                if self.new_worker_agent
-                else None
-            ),
+            new_worker_agent=self.new_worker_agent.clone(with_memory)
+            if self.new_worker_agent
+            else None,
             graceful_shutdown_timeout=self.graceful_shutdown_timeout,
             share_memory=self.share_memory,
             use_structured_output_handler=self.use_structured_output_handler,
@@ -3537,139 +3522,3 @@ class Workforce(BaseNode):
         mcp_server.tool()(get_children_info)
 
         return mcp_server
-
-    def _parse_partial_tasks(
-        self, task: "Task", response: str
-    ) -> List["Task"]:
-        r"""Parse tasks from potentially incomplete response.
-
-        Args:
-            response: Partial response content
-
-        Returns:
-            List[Task]: Tasks parsed from complete <task></task> blocks
-        """
-        pattern = r"<task>(.*?)</task>"
-        tasks_content = re.findall(pattern, response, re.DOTALL)
-
-        tasks = []
-        task_id = task.id or "0"
-
-        for i, content in enumerate(tasks_content, 1):
-            stripped_content = content.strip()
-            if validate_task_content(stripped_content, f"{task_id}.{i}"):
-                tasks.append(
-                    Task(content=stripped_content, id=f"{task_id}.{i}")
-                )
-            else:
-                logger.warning(
-                    f"Skipping invalid subtask {task_id}.{i} "
-                    f"during streaming decomposition: "
-                    f"Content '{stripped_content}' failed validation"
-                )
-        return tasks
-
-    def _parse_response(
-        self, response: str, task_id: Optional[str] = None
-    ) -> List["Task"]:
-        r"""Parse Tasks from a response.
-
-        Args:
-            response (str): The model response.
-            task_id (str, optional): a parent task id,
-                the default value is "0"
-
-        Returns:
-            List[Task]: A list of tasks which is :obj:`Task` instance.
-        """
-        pattern = "<task>(.*?)</task>"
-        tasks_content = re.findall(pattern, response, re.DOTALL)
-
-        tasks = []
-        if task_id is None:
-            task_id = "0"
-        for i, content in enumerate(tasks_content, 1):
-            stripped_content = content.strip()
-            # validate subtask content before creating the task
-            if validate_task_content(stripped_content, f"{task_id}.{i}"):
-                tasks.append(
-                    Task(content=stripped_content, id=f"{task_id}.{i}")
-                )
-            else:
-                logger.warning(
-                    f"Skipping invalid subtask {task_id}.{i} "
-                    f"during decomposition: "
-                    f"Content '{stripped_content}' failed validation"
-                )
-        return tasks
-
-    def _decompose_streaming(
-        self,
-        task: "Task",
-        response: StreamingChatAgentResponse,
-    ) -> Generator[List["Task"], None, None]:
-        r"""Handle streaming response for task decomposition.
-
-        Args:
-            response: Streaming response from agent
-            task_parser: Function to parse tasks from response
-
-        Yields:
-            List[Task]: New tasks as they are parsed from streaming response
-        """
-        accumulated_content = ""
-        yielded_count = 0
-
-        # Process streaming response
-        for chunk in response:
-            accumulated_content = chunk.msg.content
-
-            # Try to parse partial tasks from accumulated content
-            try:
-                current_tasks = self._parse_partial_tasks(
-                    task, accumulated_content
-                )
-
-                # Yield new tasks if we have more than previously yielded
-                if len(current_tasks) > yielded_count:
-                    new_tasks = current_tasks[yielded_count:]
-                    for t in new_tasks:
-                        t.additional_info = task.additional_info
-                        t.parent = task
-                    yield new_tasks
-                    yielded_count = len(current_tasks)
-
-            except Exception as e:
-                # If parsing fails, continue accumulating
-                logger.error(
-                    f"Failed to parse tasks from streaming response: {e}"
-                )
-                continue
-
-        # Final complete parsing
-        final_tasks = self._parse_response(accumulated_content, task.id)
-        for t in final_tasks:
-            t.additional_info = task.additional_info
-            t.parent = task
-        task.subtasks = final_tasks
-
-    def _decompose_non_streaming(
-        self,
-        task: "Task",
-        response,
-    ) -> List["Task"]:
-        r"""Handle non-streaming response for task decomposition.
-
-        Args:
-            response: Regular response from agent
-            task_parser: Function to parse tasks from response
-
-        Returns:
-            List[Task]: All parsed tasks
-        """
-        tasks = self._parse_response(response.msg.content, task.id)
-        for task in tasks:
-            task.additional_info = task.additional_info
-            task.parent = task
-        task.subtasks = tasks
-        return tasks
