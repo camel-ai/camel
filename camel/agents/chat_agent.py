@@ -1411,19 +1411,14 @@ class ChatAgent(BaseAgent):
         from camel.toolkits.base import RegisteredAgentToolkit
 
         try:
-            # Only check a limited number of frames for performance
-            frames_to_check = 10
-            for i, frame_info in enumerate(inspect.stack()):
-                if i >= frames_to_check:
-                    break
-
+            for frame_info in inspect.stack():
                 frame_locals = frame_info.frame.f_locals
                 if 'self' in frame_locals:
                     caller_self = frame_locals['self']
                     if isinstance(caller_self, RegisteredAgentToolkit):
                         return True
+
         except Exception:
-            # If stack inspection fails, err on the side of caution
             return False
 
         return False
