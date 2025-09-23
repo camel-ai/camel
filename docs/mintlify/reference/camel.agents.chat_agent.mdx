@@ -575,6 +575,31 @@ into a JSON file using JsonStorage.
 
 - **path** (str): Target file path to store JSON data.
 
+<a id="camel.agents.chat_agent.ChatAgent.summarize"></a>
+
+### summarize
+
+```python
+def summarize(
+    self,
+    filename: Optional[str] = None,
+    summary_prompt: Optional[str] = None
+):
+```
+
+Summarize the agent's current conversation context and persist it
+to a markdown file.
+
+**Parameters:**
+
+- **filename** (Optional[str]): The base filename (without extension) to use for the markdown file. Defaults to a timestamped name when not provided.
+- **summary_prompt** (Optional[str]): Custom prompt for the summarizer. When omitted, a default prompt highlighting key decisions, action items, and open questions is used.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the summary text, file
+path, and status message.
+
 <a id="camel.agents.chat_agent.ChatAgent.clear_memory"></a>
 
 ### clear_memory
