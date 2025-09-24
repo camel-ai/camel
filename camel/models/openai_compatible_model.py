@@ -190,9 +190,6 @@ class OpenAICompatibleModel(BaseModelBackend):
         is_streaming = self.model_config_dict.get("stream", False)
 
         if response_format:
-            result: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
-                self._request_parse(messages, response_format, tools)
-            )
             if is_streaming:
                 # Use streaming parse for structured output
                 return self._request_stream_parse(
@@ -256,9 +253,6 @@ class OpenAICompatibleModel(BaseModelBackend):
         is_streaming = self.model_config_dict.get("stream", False)
 
         if response_format:
-            result: Union[
-                ChatCompletion, AsyncStream[ChatCompletionChunk]
-            ] = await self._arequest_parse(messages, response_format, tools)
             if is_streaming:
                 # Use streaming parse for structured output
                 return await self._arequest_stream_parse(
@@ -322,28 +316,28 @@ class OpenAICompatibleModel(BaseModelBackend):
         if tools is not None:
             request_config["tools"] = tools
 
+        # try:
+        #     return self._client.beta.chat.completions.parse(
+        #         messages=messages,
+        #         model=self.model_type,
+        #         **request_config,
+        #     )
+        # except (ValidationError, JSONDecodeError, BadRequestError) as e:
+        #     logger.warning(
+        #         f"Format validation error: {e}. "
+        #         f"Attempting fallback with JSON format."
+        #     )
+        try_modify_message_with_format(messages[-1], response_format)
+        request_config["response_format"] = {"type": "json_object"}
         try:
             return self._client.beta.chat.completions.parse(
                 messages=messages,
                 model=self.model_type,
                 **request_config,
             )
-        except (ValidationError, JSONDecodeError, BadRequestError) as e:
-            logger.warning(
-                f"Format validation error: {e}. "
-                f"Attempting fallback with JSON format."
-            )
-            try_modify_message_with_format(messages[-1], response_format)
-            request_config["response_format"] = {"type": "json_object"}
-            try:
-                return self._client.beta.chat.completions.parse(
-                    messages=messages,
-                    model=self.model_type,
-                    **request_config,
-                )
-            except Exception as e:
-                logger.error(f"Fallback attempt also failed: {e}")
-                raise
+        except Exception as e:
+            logger.error(f"Fallback attempt also failed: {e}")
+            raise
 
     async def _arequest_parse(
         self,
