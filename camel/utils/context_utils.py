@@ -611,7 +611,8 @@ class ContextUtility:
 
             prefix_prompt = (
                 "The following is the context from a previous "
-                "session or workflow. This information might help you "
+                "session or workflow which might be useful for "
+                "to the current task. This information might help you "
                 "understand the background, choose which tools to use, "
                 "and plan your next steps."
             )
