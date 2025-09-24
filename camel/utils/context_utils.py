@@ -17,6 +17,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
 
+from pydantic import BaseModel, Field
+
 from camel.logger import get_logger
 
 if TYPE_CHECKING:
@@ -24,6 +26,57 @@ if TYPE_CHECKING:
     from camel.memories.records import MemoryRecord
 
 logger = get_logger(__name__)
+
+
+class WorkflowSummary(BaseModel):
+    r"""Pydantic model for structured workflow summaries.
+
+    This model defines the schema for workflow memories that can be reused
+    by future agents for similar tasks.
+    """
+
+    task_title: str = Field(
+        description="A short, generic title of the main task (≤ 10 words). "
+        "Avoid product- or case-specific names."
+    )
+    task_description: str = Field(
+        description="One-paragraph summary of what the user asked for (≤ 80 words). "
+        "No implementation details; just the outcome the user wants."
+    )
+    tools: List[str] = Field(
+        description="Bullet list of tools/functions actually used. "
+        "For each: name → what it did → why it was useful (one line each).",
+        default=[],
+    )
+    steps: List[str] = Field(
+        description="Numbered, ordered actions the agent took to complete the task. "
+        "Each step starts with a verb and is specific enough to be repeatable.",
+        default=[],
+    )
+    failure_and_recovery_strategies: List[str] = Field(
+        description="Bullet each incident with symptom, cause (if known), "
+        "fix/workaround, verification of recovery. Leave empty if no failures.",
+        default=[],
+    )
+    notes_and_observations: str = Field(
+        description="Anything not covered in previous fields that is critical "
+        "to know for future executions of the task. Keep concise.",
+        default="",
+    )
+
+    @classmethod
+    def get_instruction_prompt(cls) -> str:
+        r"""Get the instruction prompt for this model.
+
+        Returns:
+            str: The instruction prompt that guides agents to produce
+                structured output matching this schema.
+        """
+        return (
+            'You are writing a compact "workflow memory" so future agents can reuse what you just did for future tasks. '
+            'Be concise, precise, and action-oriented. Analyze the conversation and extract the key workflow information '
+            'following the provided schema structure. If a field has no content, still include it per the schema, but keep it empty.'
+        )
 
 
 class ContextUtility:
@@ -175,6 +228,90 @@ class ContextUtility:
         except Exception as e:
             logger.error(f"Error saving markdown file {filename}: {e}")
             return f"Error saving markdown file: {e}"
+
+    def structured_output_to_markdown(
+        self,
+        structured_data: BaseModel,
+        metadata: Optional[Dict[str, Any]] = None,
+        title: Optional[str] = None,
+        field_mappings: Optional[Dict[str, str]] = None,
+    ) -> str:
+        r"""Convert any Pydantic BaseModel instance to markdown format.
+
+        Args:
+            structured_data: Any Pydantic BaseModel instance
+            metadata: Optional metadata to include in the markdown
+            title: Optional custom title, defaults to model class name
+            field_mappings: Optional mapping of field names to custom section titles
+
+        Returns:
+            str: Markdown formatted content
+        """
+        markdown_content = []
+
+        # Add metadata if provided
+        if metadata:
+            markdown_content.append("## Metadata\n")
+            for key, value in metadata.items():
+                markdown_content.append(f"- {key}: {value}")
+            markdown_content.append("")
+
+        # Add title
+        if title:
+            markdown_content.extend([f"## {title}", ""])
+        else:
+            model_name = structured_data.__class__.__name__
+            markdown_content.extend([f"## {model_name}", ""])
+
+        # Get model fields and values
+        model_dict = structured_data.model_dump()
+
+        for field_name, field_value in model_dict.items():
+            # Use custom mapping or convert field name to title case
+            if field_mappings and field_name in field_mappings:
+                section_title = field_mappings[field_name]
+            else:
+                # Convert snake_case to Title Case
+                section_title = field_name.replace('_', ' ').title()
+
+            markdown_content.append(f"### {section_title}")
+
+            # Handle different data types
+            if isinstance(field_value, list):
+                if field_value:
+                    for i, item in enumerate(field_value):
+                        if isinstance(item, str):
+                            # Check if it looks like a numbered item already
+                            if item.strip() and not item.strip()[0].isdigit():
+                                # For steps or numbered lists, add numbers
+                                if 'step' in field_name.lower():
+                                    markdown_content.append(f"{i+1}. {item}")
+                                else:
+                                    markdown_content.append(f"- {item}")
+                            else:
+                                markdown_content.append(f"- {item}")
+                        else:
+                            markdown_content.append(f"- {item!s}")
+                else:
+                    markdown_content.append(
+                        f"(No {section_title.lower()} recorded)"
+                    )
+            elif isinstance(field_value, str):
+                if field_value.strip():
+                    markdown_content.append(field_value)
+                else:
+                    markdown_content.append(
+                        f"(No {section_title.lower()} provided)"
+                    )
+            elif isinstance(field_value, dict):
+                for k, v in field_value.items():
+                    markdown_content.append(f"- **{k}**: {v}")
+            else:
+                markdown_content.append(str(field_value))
+
+            markdown_content.append("")
+
+        return "\n".join(markdown_content)
 
     def load_markdown_file(self, filename: str) -> str:
         r"""Generic method to load any markdown file.

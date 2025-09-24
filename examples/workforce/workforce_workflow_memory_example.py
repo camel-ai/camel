@@ -15,11 +15,12 @@
 
 
 import os
+
 from dotenv import load_dotenv
 
 from camel.agents import ChatAgent
-from camel.logger import get_logger
 from camel.configs import ChatGPTConfig
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce import Workforce
@@ -198,15 +199,21 @@ def demonstrate_workflow_file_management() -> None:
 
     # Show how to check for existing workflow files
     if os.path.exists(base_dir):
-        session_dirs = [d for d in os.listdir(base_dir)
-                       if os.path.isdir(os.path.join(base_dir, d))]
+        session_dirs = [
+            d
+            for d in os.listdir(base_dir)
+            if os.path.isdir(os.path.join(base_dir, d))
+        ]
         logger.info(f"Found {len(session_dirs)} session directories")
 
         for session_dir in session_dirs[:3]:  # Show first 3 sessions
             session_path = os.path.join(base_dir, session_dir)
-            workflow_files = [f for f in os.listdir(session_path)
-                            if f.endswith('.md')]
-            logger.info(f"Session {session_dir}: {len(workflow_files)} workflow files")
+            workflow_files = [
+                f for f in os.listdir(session_path) if f.endswith('.md')
+            ]
+            logger.info(
+                f"Session {session_dir}: {len(workflow_files)} workflow files"
+            )
     else:
         logger.info("No workflow directory found yet")
 

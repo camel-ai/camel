@@ -33,7 +33,7 @@ from camel.societies.workforce.structured_output_handler import (
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, is_task_result_insufficient
-from camel.utils.context_utils import ContextUtility
+from camel.utils.context_utils import ContextUtility, WorkflowSummary
 
 logger = get_logger(__name__)
 
@@ -564,21 +564,29 @@ class SingleAgentWorker(Worker):
             timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
             filename = f"{clean_desc}_workflow_{timestamp}"
 
-            # Generate workflow summary using agent's summarize method
-            workflow_prompt = (
-                "Summarize this workflow focusing on:\n"
-                "- Task approach and methodology\n"
-                "- Tools and techniques used\n"
-                "- Problem-solving patterns\n"
-                "- Key decisions and reasoning\n"
-                "- Successful strategies\n\n"
-                "Format as a reusable workflow guide for similar tasks."
+            # Use the WorkflowSummary model's embedded instruction prompt
+            # The model is self-contained and provides its own instructions
+            workflow_prompt = WorkflowSummary.get_instruction_prompt()
+
+            # Create structured prompt using StructuredOutputHandler
+            structured_prompt = (
+                StructuredOutputHandler.generate_structured_prompt(
+                    base_prompt=workflow_prompt, schema=WorkflowSummary
+                )
             )
 
-            # Use agent's summarize method with the shared context utility
+            # Use agent's enhanced summarize method with structured output
             result = self.worker.summarize(
-                filename=filename, summary_prompt=workflow_prompt
+                filename=filename,
+                summary_prompt=structured_prompt,
+                response_format=WorkflowSummary,
             )
+
+            # The ChatAgent.summarize method now handles everything:
+            # - Generates structured output when response_format is provided
+            # - Converts it to custom markdown using our method
+            # - Saves the markdown file
+            # - Returns both summary and structured_summary
 
             # Add worker metadata to result
             result["worker_description"] = self.description

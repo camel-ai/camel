@@ -1064,6 +1064,7 @@ class ChatAgent(BaseAgent):
         self,
         filename: Optional[str] = None,
         summary_prompt: Optional[str] = None,
+        response_format: Optional[Type[BaseModel]] = None,
     ) -> Dict[str, Any]:
         r"""Summarize the agent's current conversation context and persist it
         to a markdown file.
@@ -1075,10 +1076,15 @@ class ChatAgent(BaseAgent):
             summary_prompt (Optional[str]): Custom prompt for the summarizer.
                 When omitted, a default prompt highlighting key decisions,
                 action items, and open questions is used.
+            response_format (Optional[Type[BaseModel]]): A Pydantic model
+                defining the expected structure of the response. If provided,
+                the summary will be generated as structured output and included
+                in the result.
 
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
-                path, and status message.
+                path, status message, and optionally structured_summary if
+                response_format was provided.
         """
 
         result: Dict[str, Any] = {
@@ -1121,8 +1127,7 @@ class ChatAgent(BaseAgent):
             if self._context_summary_agent is None:
                 self._context_summary_agent = ChatAgent(
                     system_message=(
-                        "You are a helpful assistant that summarizes "
-                        "conversations into concise markdown bullet lists."
+                        "You are a helpful assistant that summarizes conversations"
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
@@ -1130,15 +1135,26 @@ class ChatAgent(BaseAgent):
             else:
                 self._context_summary_agent.reset()
 
-            prompt_text = summary_prompt or (
-                "Summarize the following conversation in concise markdown "
-                "bullet points highlighting key decisions, action items, and "
-                "open questions.\n\n"
-                f"{conversation_text}"
-            )
+            if summary_prompt:
+                prompt_text = (
+                    f"{summary_prompt.rstrip()}\n\n"
+                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n{conversation_text}"
+                )
+            else:
+                prompt_text = (
+                    "Summarize the context information in concise markdown "
+                    "bullet points highlighting key decisions, action items.\n"
+                    f"Context information:\n{conversation_text}"
+                )
 
             try:
-                response = self._context_summary_agent.step(prompt_text)
+                # Use structured output if response_format is provided
+                if response_format:
+                    response = self._context_summary_agent.step(
+                        prompt_text, response_format=response_format
+                    )
+                else:
+                    response = self._context_summary_agent.step(prompt_text)
             except Exception as step_exc:
                 error_message = (
                     f"Failed to generate summary using model: {step_exc}"
@@ -1175,24 +1191,38 @@ class ChatAgent(BaseAgent):
                 }
             )
 
+            # Handle structured output if response_format was provided
+            structured_output = None
+            if response_format and response.msgs[-1].parsed:
+                structured_output = response.msgs[-1].parsed
+                # Convert structured output to custom markdown
+                summary_content = context_util.structured_output_to_markdown(
+                    structured_data=structured_output, metadata=metadata
+                )
+
+            # Save the markdown (either custom structured or default)
             save_status = context_util.save_markdown_file(
                 base_filename,
                 summary_content,
-                title="Conversation Summary",
-                metadata=metadata,
+                title="Conversation Summary"
+                if not structured_output
+                else None,
+                metadata=metadata if not structured_output else None,
             )
 
             file_path = (
                 context_util.get_working_directory() / f"{base_filename}.md"
             )
 
-            result.update(
-                {
-                    "summary": summary_content,
-                    "file_path": str(file_path),
-                    "status": save_status,
-                }
-            )
+            # Prepare result dictionary
+            result_dict = {
+                "summary": summary_content,
+                "file_path": str(file_path),
+                "status": save_status,
+                "structured_summary": structured_output,
+            }
+
+            result.update(result_dict)
             logger.info("Conversation summary saved to %s", file_path)
             return result
 
