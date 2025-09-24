@@ -4052,9 +4052,21 @@ class ChatAgent(BaseAgent):
                         # Toolkit doesn't support cloning, use original
                         cloned_toolkits[toolkit_id] = toolkit_instance
 
+                if getattr(
+                    tool.func, "__message_integration_enhanced__", False
+                ):
+                    cloned_tools.append(
+                        FunctionTool(
+                            func=tool.func,
+                            openai_tool_schema=tool.get_openai_tool_schema(),
+                        )
+                    )
+                    continue
+
                 # Get the method from the cloned (or original) toolkit
                 toolkit = cloned_toolkits[toolkit_id]
                 method_name = tool.func.__name__
+
                 if hasattr(toolkit, method_name):
                     new_method = getattr(toolkit, method_name)
                     # Wrap cloned method into a new FunctionTool,
