@@ -15,11 +15,6 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncStream, Stream
-from openai.lib.streaming.chat import (
-    AsyncChatCompletionStreamManager,
-    ChatCompletionStreamManager,
-)
 from pydantic import BaseModel
 
 from camel.configs import ZhipuAIConfig
@@ -29,29 +24,12 @@ from camel.models._utils import try_modify_message_with_format
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.types import (
     ChatCompletion,
-    ChatCompletionChunk,
     ModelType,
 )
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
-    get_current_agent_session_id,
-    update_langfuse_trace,
 )
-
-if os.environ.get("LANGFUSE_ENABLED", "False").lower() == "true":
-    try:
-        from langfuse.decorators import observe
-    except ImportError:
-        from camel.utils import observe
-elif os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
-    try:
-        from traceroot import trace as observe  # type: ignore[import]
-    except ImportError:
-        from camel.utils import observe
-else:
-    from camel.utils import observe
-
 
 logger = get_logger(__name__)
 
@@ -116,165 +94,6 @@ class ZhipuAIModel(OpenAICompatibleModel):
             timeout=timeout,
             max_retries=max_retries,
             **kwargs,
-        )
-
-    @observe()
-    def _run(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[
-        ChatCompletion,
-        Stream[ChatCompletionChunk],
-        ChatCompletionStreamManager[BaseModel],
-    ]:
-        r"""Runs inference of OpenAI chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-            response_format (Optional[Type[BaseModel]]): The format of the
-                response.
-            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
-                use for the request.
-
-        Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
-                `ChatCompletionStreamManager[BaseModel]` for
-                structured output streaming.
-        """
-
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "agent_id": agent_session_id,
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
-
-        response_format = response_format or self.model_config_dict.get(
-            "response_format", None
-        )
-
-        # Check if streaming is enabled
-        is_streaming = self.model_config_dict.get("stream", False)
-
-        if response_format:
-            if is_streaming:
-                # Use streaming parse for structured output
-                return self._request_stream_parse(
-                    messages, response_format, tools
-                )
-            else:
-                # Use non-streaming parse for structured output
-                return self._request_parse(messages, response_format, tools)
-        else:
-            result = self._request_chat_completion(messages, tools)
-
-        return result
-
-    @observe()
-    async def _arun(
-        self,
-        messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[
-        ChatCompletion,
-        AsyncStream[ChatCompletionChunk],
-        AsyncChatCompletionStreamManager[BaseModel],
-    ]:
-        r"""Runs inference of OpenAI chat completion in async mode.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-            response_format (Optional[Type[BaseModel]]): The format of the
-                response.
-            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
-                use for the request.
-
-        Returns:
-            Union[ChatCompletion, AsyncStream[ChatCompletionChunk],
-                AsyncChatCompletionStreamManager[BaseModel]]:
-                `ChatCompletion` in the non-stream mode,
-                `AsyncStream[ChatCompletionChunk]` in the stream mode,
-                or `AsyncChatCompletionStreamManager[BaseModel]` for
-                structured output streaming.
-        """
-
-        # Update Langfuse trace with current agent session and metadata
-        agent_session_id = get_current_agent_session_id()
-        if agent_session_id:
-            update_langfuse_trace(
-                session_id=agent_session_id,
-                metadata={
-                    "agent_id": agent_session_id,
-                    "model_type": str(self.model_type),
-                },
-                tags=["CAMEL-AI", str(self.model_type)],
-            )
-
-        response_format = response_format or self.model_config_dict.get(
-            "response_format", None
-        )
-
-        # Check if streaming is enabled
-        is_streaming = self.model_config_dict.get("stream", False)
-
-        if response_format:
-            if is_streaming:
-                # Use streaming parse for structured output
-                return await self._arequest_stream_parse(
-                    messages, response_format, tools
-                )
-            else:
-                # Use non-streaming parse for structured output
-                return await self._arequest_parse(
-                    messages, response_format, tools
-                )
-        else:
-            result = await self._arequest_chat_completion(messages, tools)
-
-        return result
-
-    def _request_chat_completion(
-        self,
-        messages: List[OpenAIMessage],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
-
-        if tools:
-            request_config["tools"] = tools
-
-        return self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
-        )
-
-    async def _arequest_chat_completion(
-        self,
-        messages: List[OpenAIMessage],
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        request_config = self.model_config_dict.copy()
-
-        if tools:
-            request_config["tools"] = tools
-
-        return await self._async_client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **request_config,
         )
 
     def _request_parse(
