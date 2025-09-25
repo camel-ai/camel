@@ -134,7 +134,10 @@ class TestSingleAgentWorkerWorkflow:
             result = worker.save_workflow_memories()
 
             assert result["status"] == "error"
-            assert "Failed to save workflow: Test error" in result["message"]
+            assert (
+                "Failed to save workflow memories: Test error"
+                in result["message"]
+            )
 
     @patch('glob.glob')
     @patch('os.path.getmtime')
@@ -146,8 +149,7 @@ class TestSingleAgentWorkerWorkflow:
 
         # Mock file discovery
         mock_files = [
-            f"{temp_context_dir}/session_123/"
-            "data_analyst_workflow_20250122.md"
+            f"{temp_context_dir}/session_123/data_analyst_workflow_20250122.md"
         ]
         mock_glob.return_value = mock_files
         mock_getmtime.return_value = 1234567890
@@ -197,7 +199,7 @@ class TestWorkforceWorkflowMemoryMethods:
 
     def test_save_workflow_memories_success(self, mock_workforce):
         """Test successful workflow saving for all workers."""
-        # Mock save_workflow for both workers
+        # Mock save_workflow_memories for both workers
         mock_result_1 = {
             "status": "success",
             "file_path": "/path/to/data_analyst_workflow.md",
@@ -210,12 +212,12 @@ class TestWorkforceWorkflowMemoryMethods:
         with (
             patch.object(
                 mock_workforce._children[0],
-                'save_workflow',
+                'save_workflow_memories',
                 return_value=mock_result_1,
             ),
             patch.object(
                 mock_workforce._children[1],
-                'save_workflow',
+                'save_workflow_memories',
                 return_value=mock_result_2,
             ),
         ):
@@ -239,12 +241,12 @@ class TestWorkforceWorkflowMemoryMethods:
         with (
             patch.object(
                 mock_workforce._children[0],
-                'save_workflow',
+                'save_workflow_memories',
                 return_value=mock_result_success,
             ),
             patch.object(
                 mock_workforce._children[1],
-                'save_workflow',
+                'save_workflow_memories',
                 return_value=mock_result_error,
             ),
         ):
@@ -264,7 +266,7 @@ class TestWorkforceWorkflowMemoryMethods:
         """Test workflow saving when exception occurs."""
         with patch.object(
             mock_workforce._children[0],
-            'save_workflow',
+            'save_workflow_memories',
             side_effect=Exception("Test error"),
         ):
             results = mock_workforce.save_workflow_memories()
@@ -278,10 +280,14 @@ class TestWorkforceWorkflowMemoryMethods:
         """Test successful workflow loading for all workers."""
         with (
             patch.object(
-                mock_workforce._children[0], 'load_workflow', return_value=True
+                mock_workforce._children[0],
+                'load_workflow_memories',
+                return_value=True,
             ),
             patch.object(
-                mock_workforce._children[1], 'load_workflow', return_value=True
+                mock_workforce._children[1],
+                'load_workflow_memories',
+                return_value=True,
             ),
         ):
             results = mock_workforce.load_workflow_memories()
@@ -293,11 +299,13 @@ class TestWorkforceWorkflowMemoryMethods:
         """Test workflow loading with mixed success/failure results."""
         with (
             patch.object(
-                mock_workforce._children[0], 'load_workflow', return_value=True
+                mock_workforce._children[0],
+                'load_workflow_memories',
+                return_value=True,
             ),
             patch.object(
                 mock_workforce._children[1],
-                'load_workflow',
+                'load_workflow_memories',
                 return_value=False,
             ),
         ):
@@ -310,7 +318,7 @@ class TestWorkforceWorkflowMemoryMethods:
         """Test workflow loading when exception occurs."""
         with patch.object(
             mock_workforce._children[0],
-            'load_workflow',
+            'load_workflow_memories',
             side_effect=Exception("Test error"),
         ):
             results = mock_workforce.load_workflow_memories()
@@ -331,14 +339,14 @@ class TestWorkforceWorkflowMemoryMethods:
         workforce._children = [mock_role_playing_worker]
 
         # Test save_workflows
-        save_results = workforce.save_workflows()
+        save_results = workforce.save_workflow_memories()
         assert (
             "skipped: MagicMock not supported"
             in save_results[mock_role_playing_worker.node_id]
         )
 
         # Test load_workflows
-        load_results = workforce.load_workflows()
+        load_results = workforce.load_workflow_memories()
         assert load_results[mock_role_playing_worker.node_id] is False
 
 
@@ -362,7 +370,7 @@ class TestWorkflowIntegration:
         with patch.object(
             worker1.worker, 'summarize', return_value=mock_save_result
         ):
-            save_results = workforce1.save_workflows()
+            save_results = workforce1.save_workflow_memories()
             assert (
                 save_results[worker1.node_id] == mock_save_result["file_path"]
             )
@@ -373,8 +381,10 @@ class TestWorkflowIntegration:
         workforce2._children = [worker2]
 
         # Mock successful workflow loading
-        with patch.object(worker2, 'load_workflow', return_value=True):
-            load_results = workforce2.load_workflows()
+        with patch.object(
+            worker2, 'load_workflow_memories', return_value=True
+        ):
+            load_results = workforce2.load_workflow_memories()
             assert load_results[worker2.node_id] is True
 
     def test_filename_sanitization(self):

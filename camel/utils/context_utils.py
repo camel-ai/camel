@@ -292,7 +292,7 @@ class ContextUtility:
                             if item.strip() and not item.strip()[0].isdigit():
                                 # For steps or numbered lists, add numbers
                                 if 'step' in field_name.lower():
-                                    markdown_content.append(f"{i+1}. {item}")
+                                    markdown_content.append(f"{i + 1}. {item}")
                                 else:
                                     markdown_content.append(f"- {item}")
                             else:

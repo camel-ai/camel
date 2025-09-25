@@ -37,10 +37,6 @@ from camel.utils.context_utils import ContextUtility, WorkflowSummary
 
 logger = get_logger(__name__)
 
-# Constants for workflow loading limits
-MAX_RECENT_WORKFLOWS_TO_LOAD = 3
-MAX_COORDINATOR_WORKFLOWS_TO_LOAD = 5
-
 
 class AgentPool:
     r"""A pool of agent instances for efficient reuse.
@@ -247,7 +243,7 @@ class SingleAgentWorker(Worker):
             None  # Will be initialized when needed
         )
 
-        # accumulator agent for collecting conversations 
+        # accumulator agent for collecting conversations
         # from all task processing
         self._conversation_accumulator: Optional[ChatAgent] = None
 
@@ -430,7 +426,7 @@ class SingleAgentWorker(Worker):
                 usage_info.get("total_tokens", 0) if usage_info else 0
             )
 
-            # collect conversation from working agent to 
+            # collect conversation from working agent to
             # accumulator for workflow memory
             accumulator = self._get_conversation_accumulator()
 
@@ -457,7 +453,7 @@ class SingleAgentWorker(Worker):
 
         except Exception as e:
             logger.error(
-                f"Error processing task {task.id}: " f"{type(e).__name__}: {e}"
+                f"Error processing task {task.id}: {type(e).__name__}: {e}"
             )
             # Store error information in task result
             task.result = f"{type(e).__name__}: {e!s}"
@@ -581,88 +577,31 @@ class SingleAgentWorker(Worker):
                 - worker_description (str): Worker description used
         """
         try:
-            # Ensure we have a ChatAgent worker
-            if not isinstance(self.worker, ChatAgent):
-                return {
-                    "status": "error",
-                    "summary": "",
-                    "file_path": None,
-                    "worker_description": self.description,
-                    "message": (
-                        "Worker must be a ChatAgent instance to save workflow "
-                        "memories"
-                    ),
-                }
+            # validate requirements
+            validation_error = self._validate_workflow_save_requirements()
+            if validation_error:
+                return validation_error
 
-            # Get context utility using lazy initialization
+            # setup context utility and agent
             context_util = self._get_context_utility()
-
-            # Set context utility on the worker agent for summarization
             self.worker.set_context_utility(context_util)
 
-            # Generate filename from description
-            clean_desc = self.description.lower().replace(" ", "_")
-            clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
-            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"{clean_desc}_workflow_{timestamp}"
-
-            # Use the WorkflowSummary model's embedded instruction prompt
-            # The model is self-contained and provides its own instructions
-            workflow_prompt = WorkflowSummary.get_instruction_prompt()
-
-            # Create structured prompt using StructuredOutputHandler
-            structured_prompt = (
-                StructuredOutputHandler.generate_structured_prompt(
-                    base_prompt=workflow_prompt, schema=WorkflowSummary
-                )
+            # prepare workflow summarization components
+            filename = self._generate_workflow_filename()
+            structured_prompt = self._prepare_workflow_prompt()
+            agent_to_summarize = self._select_agent_for_summarization(
+                context_util
             )
 
-            # determine which agent to use for summarization
-            agent_to_summarize = self.worker
-            if self._conversation_accumulator is not None:
-                # check if accumulator has any conversations
-                accumulator_messages, _ = (
-                    self._conversation_accumulator.memory.get_context()
-                )
-                if accumulator_messages:
-                    # set context utility on accumulator for summarization
-                    self._conversation_accumulator.set_context_utility(
-                        context_util
-                    )
-                    agent_to_summarize = self._conversation_accumulator
-                    logger.info(
-                        f"Using conversation accumulator with "
-                        f"{len(accumulator_messages)} messages for workflow "
-                        f"summary"
-                    )
-                else:
-                    logger.info(
-                        "Using original worker for workflow summary (no "
-                        "accumulated conversations)"
-                    )
-            else:
-                logger.info(
-                    "Using original worker for workflow summary (no "
-                    "accumulator)"
-                )
-
-            # Use agent's enhanced summarize method with structured output
+            # generate and save workflow summary
             result = agent_to_summarize.summarize(
                 filename=filename,
                 summary_prompt=structured_prompt,
                 response_format=WorkflowSummary,
             )
 
-            # The ChatAgent.summarize method now handles everything:
-            # - Generates structured output when response_format is provided
-            # - Converts it to custom markdown using our method
-            # - Saves the markdown file
-            # - Returns both summary and structured_summary
-
-            # Add worker metadata to result
+            # add worker metadata and cleanup
             result["worker_description"] = self.description
-
-            # clean up conversation accumulator after successful summarization
             if self._conversation_accumulator is not None:
                 logger.info(
                     "Cleaning up conversation accumulator after workflow "
@@ -681,7 +620,9 @@ class SingleAgentWorker(Worker):
                 "message": f"Failed to save workflow memories: {e!s}",
             }
 
-    def load_workflow_memories(self, pattern: Optional[str] = None) -> bool:
+    def load_workflow_memories(
+        self, pattern: Optional[str] = None, max_files_to_load: int = 3
+    ) -> bool:
         r"""Load workflow memories matching worker description
         from saved files.
 
@@ -705,7 +646,9 @@ class SingleAgentWorker(Worker):
                 return False
 
             # Load the workflow memory files
-            loaded_count = self._load_workflow_files(workflow_files)
+            loaded_count = self._load_workflow_files(
+                workflow_files, max_files_to_load
+            )
 
             # Report results
             logger.info(
@@ -715,7 +658,7 @@ class SingleAgentWorker(Worker):
             return loaded_count > 0
 
         except Exception as e:
-            logger.error(
+            logger.warning(
                 f"Error loading workflow memories for {self.description}: "
                 f"{e!s}"
             )
@@ -740,8 +683,9 @@ class SingleAgentWorker(Worker):
             )
             return []
 
-        # Generate search pattern from description if not provided
+        # generate filename-safe search pattern from worker description
         if pattern is None:
+            # sanitize description: spaces to underscores, remove special chars
             clean_desc = self.description.lower().replace(" ", "_")
             clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
             pattern = f"{clean_desc}_workflow*.md"
@@ -753,7 +697,8 @@ class SingleAgentWorker(Worker):
         else:
             base_dir = "workforce_workflows"
 
-        # Search across all session folders for matching workflows
+        # search across all session directories using wildcard pattern
+        # this finds workflows from any previous workforce session
         search_path = str(Path(base_dir) / "*" / pattern)
         workflow_files = glob.glob(search_path)
 
@@ -761,11 +706,13 @@ class SingleAgentWorker(Worker):
             logger.info(f"No workflow files found for pattern: {pattern}")
             return []
 
-        # Sort files by modification time (most recent first)
+        # prioritize most recent workflows by modification time
         workflow_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
         return workflow_files
 
-    def _load_workflow_files(self, workflow_files: List[str]) -> int:
+    def _load_workflow_files(
+        self, workflow_files: List[str], max_files_to_load: int
+    ) -> int:
         r"""Load workflow files and return count of successful loads.
 
         Args:
@@ -775,13 +722,16 @@ class SingleAgentWorker(Worker):
             int: Number of successfully loaded workflow files.
         """
         loaded_count = 0
-        for file_path in workflow_files[:MAX_RECENT_WORKFLOWS_TO_LOAD]:
+        # limit loading to prevent context overflow
+        for file_path in workflow_files[:max_files_to_load]:
             try:
+                # extract file and session info from full path
                 filename = os.path.basename(file_path).replace('.md', '')
                 session_dir = os.path.dirname(file_path)
                 session_id = os.path.basename(session_dir)
 
-                # Use shared context utility with specific session
+                # create context utility for the specific session
+                # where file exists
                 temp_utility = ContextUtility.get_workforce_shared(session_id)
 
                 status = temp_utility.load_markdown_context_to_memory(
@@ -803,3 +753,84 @@ class SingleAgentWorker(Worker):
                 continue
 
         return loaded_count
+
+    def _validate_workflow_save_requirements(self) -> Optional[Dict[str, Any]]:
+        r"""Validate requirements for workflow saving.
+
+        Returns:
+            Optional[Dict[str, Any]]: Error result dict if validation fails,
+                None if validation passes.
+        """
+        if not isinstance(self.worker, ChatAgent):
+            return {
+                "status": "error",
+                "summary": "",
+                "file_path": None,
+                "worker_description": self.description,
+                "message": (
+                    "Worker must be a ChatAgent instance to save workflow "
+                    "memories"
+                ),
+            }
+        return None
+
+    def _generate_workflow_filename(self) -> str:
+        r"""Generate a filename for the workflow based on worker description.
+
+        Returns:
+            str: Sanitized filename without timestamp (session already has
+                timestamp).
+        """
+        clean_desc = self.description.lower().replace(" ", "_")
+        clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
+        return f"{clean_desc}_workflow"
+
+    def _prepare_workflow_prompt(self) -> str:
+        r"""Prepare the structured prompt for workflow summarization.
+
+        Returns:
+            str: Structured prompt for workflow summary.
+        """
+        workflow_prompt = WorkflowSummary.get_instruction_prompt()
+        return StructuredOutputHandler.generate_structured_prompt(
+            base_prompt=workflow_prompt, schema=WorkflowSummary
+        )
+
+    def _select_agent_for_summarization(
+        self, context_util: ContextUtility
+    ) -> ChatAgent:
+        r"""Select the best agent for workflow summarization.
+
+        Args:
+            context_util: Context utility to set on selected agent.
+
+        Returns:
+            ChatAgent: Agent to use for summarization.
+        """
+        agent_to_summarize = self.worker
+
+        if self._conversation_accumulator is not None:
+            accumulator_messages, _ = (
+                self._conversation_accumulator.memory.get_context()
+            )
+            if accumulator_messages:
+                self._conversation_accumulator.set_context_utility(
+                    context_util
+                )
+                agent_to_summarize = self._conversation_accumulator
+                logger.info(
+                    f"Using conversation accumulator with "
+                    f"{len(accumulator_messages)} messages for workflow "
+                    f"summary"
+                )
+            else:
+                logger.info(
+                    "Using original worker for workflow summary (no "
+                    "accumulated conversations)"
+                )
+        else:
+            logger.info(
+                "Using original worker for workflow summary (no accumulator)"
+            )
+
+        return agent_to_summarize

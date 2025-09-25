@@ -55,8 +55,6 @@ from camel.societies.workforce.prompts import (
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
 from camel.societies.workforce.single_agent_worker import (
-    MAX_COORDINATOR_WORKFLOWS_TO_LOAD,
-    MAX_RECENT_WORKFLOWS_TO_LOAD,
     SingleAgentWorker,
 )
 from camel.societies.workforce.structured_output_handler import (
@@ -331,8 +329,7 @@ class Workforce(BaseNode):
             if coordinator_agent.system_message is not None:
                 user_sys_msg_content = coordinator_agent.system_message.content
                 combined_content = (
-                    f"{user_sys_msg_content}\n\n"
-                    f"{coord_agent_sys_msg.content}"
+                    f"{user_sys_msg_content}\n\n{coord_agent_sys_msg.content}"
                 )
                 combined_sys_msg = BaseMessage.make_assistant_message(
                     role_name=coordinator_agent.system_message.role_name,
@@ -394,8 +391,7 @@ class Workforce(BaseNode):
             if task_agent.system_message is not None:
                 user_task_sys_msg_content = task_agent.system_message.content
                 combined_task_content = (
-                    f"{user_task_sys_msg_content}\n\n"
-                    f"{task_sys_msg.content}"
+                    f"{user_task_sys_msg_content}\n\n{task_sys_msg.content}"
                 )
                 combined_task_sys_msg = BaseMessage.make_assistant_message(
                     role_name=task_agent.system_message.role_name,
@@ -1814,7 +1810,9 @@ class Workforce(BaseNode):
         logger.info(f"Workflow save completed for {len(results)} workers")
         return results
 
-    def load_workflow_memories(self) -> Dict[str, bool]:
+    def load_workflow_memories(
+        self, max_files_to_load: int = 3
+    ) -> Dict[str, bool]:
         r"""Load workflow memories for all SingleAgentWorker instances in the
         workforce.
 
@@ -1850,7 +1848,9 @@ class Workforce(BaseNode):
                 try:
                     # For loading, don't set shared context utility
                     # Let each worker search across existing sessions
-                    success = child.load_workflow_memories()
+                    success = child.load_workflow_memories(
+                        max_files_to_load=max_files_to_load
+                    )
                     results[child.node_id] = success
 
                 except Exception as e:
@@ -1863,12 +1863,12 @@ class Workforce(BaseNode):
                 results[child.node_id] = False
 
         # Load aggregated workflow summaries for coordinator and task agents
-        self._load_management_agent_workflows()
+        self._load_management_agent_workflows(max_files_to_load)
 
         logger.info(f"Workflow load completed for {len(results)} workers")
         return results
 
-    def _load_management_agent_workflows(self) -> None:
+    def _load_management_agent_workflows(self, max_files_to_load: int) -> None:
         r"""Load workflow summaries for coordinator and task planning agents.
 
         This method loads aggregated workflow summaries to help:
@@ -1908,9 +1908,7 @@ class Workforce(BaseNode):
 
             # Load workflows for coordinator agent (up to 5 most recent)
             coordinator_loaded = 0
-            for file_path in workflow_files[
-                :MAX_COORDINATOR_WORKFLOWS_TO_LOAD
-            ]:
+            for file_path in workflow_files[:max_files_to_load]:
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
                     session_dir = os.path.dirname(file_path)
@@ -1933,7 +1931,7 @@ class Workforce(BaseNode):
 
             # Load workflows for task agent (up to 3 most recent)
             task_agent_loaded = 0
-            for file_path in workflow_files[:MAX_RECENT_WORKFLOWS_TO_LOAD]:
+            for file_path in workflow_files[:max_files_to_load]:
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
                     session_dir = os.path.dirname(file_path)
@@ -2471,8 +2469,7 @@ class Workforce(BaseNode):
                     "worker creation"
                 )
                 new_node_conf = WorkerConf(
-                    description=f"Fallback worker for task: "
-                    f"{task.content}",
+                    description=f"Fallback worker for task: {task.content}",
                     role="General Assistant",
                     sys_msg="You are a general assistant that can help "
                     "with various tasks.",
@@ -2482,7 +2479,7 @@ class Workforce(BaseNode):
                     response.msg.content,
                     schema=WorkerConf,
                     fallback_values={
-                        "description": f"Worker for task: " f"{task.content}",
+                        "description": f"Worker for task: {task.content}",
                         "role": "Task Specialist",
                         "sys_msg": f"You are a specialist for: {task.content}",
                     },
@@ -2510,8 +2507,7 @@ class Workforce(BaseNode):
                 )
                 # Create a fallback worker configuration
                 new_node_conf = WorkerConf(
-                    description=f"Fallback worker for "
-                    f"task: {task.content}",
+                    description=f"Fallback worker for task: {task.content}",
                     role="General Assistant",
                     sys_msg="You are a general assistant that can help "
                     "with various tasks.",

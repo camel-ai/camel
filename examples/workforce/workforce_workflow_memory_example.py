@@ -34,7 +34,7 @@ logger = get_logger(__name__)
 
 
 def create_math_agent() -> ChatAgent:
-    """Create a math agent with math tools.
+    r"""Create a math agent with math tools.
 
     Returns:
         ChatAgent: A configured math expert agent with MathToolkit tools.
@@ -43,7 +43,7 @@ def create_math_agent() -> ChatAgent:
         role_name="Math Expert",
         content=(
             "You are a math expert specialized in solving "
-            "mathematical problems.You can perform calculations, " 
+            "mathematical problems.You can perform calculations, "
             "solve equations, and work with various "
             "mathematical concepts. Use the math tools available to you."
         ),
@@ -61,7 +61,7 @@ def create_math_agent() -> ChatAgent:
 
 
 def create_writer_agent() -> ChatAgent:
-    """Create a writer agent without tools.
+    r"""Create a writer agent without tools.
 
     Returns:
         ChatAgent: A configured content writer agent without additional tools.
@@ -84,7 +84,7 @@ def create_writer_agent() -> ChatAgent:
 
 
 def demonstrate_first_session():
-    """Demonstrate first workforce session with workflow saving.
+    r"""Demonstrate first workforce session with workflow saving.
 
     Creates a workforce with math and writer agents, processes tasks,
     and saves the resulting workflows for future use.
@@ -136,7 +136,7 @@ def demonstrate_first_session():
 
 
 def demonstrate_second_session():
-    """Demonstrate second workforce session with workflow loading.
+    r"""Demonstrate second workforce session with workflow loading.
 
     Creates a new workforce instance, loads previously saved workflows,
     and processes new tasks with the loaded workflow context.
@@ -188,7 +188,7 @@ def demonstrate_second_session():
 
 
 def demonstrate_workflow_file_management() -> None:
-    """Demonstrate workflow file management and inspection.
+    r"""Demonstrate workflow file management and inspection.
 
     Shows information about where workflow files are stored and how
     to inspect the saved workflow data.
@@ -225,29 +225,14 @@ def demonstrate_workflow_file_management() -> None:
 
 
 def main() -> None:
-    """Main demonstration function.
-
-    Runs through the complete workflow memory demonstration,
-    showing how workflows can be saved and loaded across sessions.
-    """
     try:
-        logger.info("Starting workforce workflow memory demonstration")
-
-        # Demonstrate first session with workflow saving
-        logger.info("=== First Session: Saving Workflows ===")
+        # First session to execute tasks and save workflows
         saved_results = demonstrate_first_session()
-        logger.info(f"Workflow save results: {saved_results}")
+        print(f"Workflow save results: {saved_results}")
 
-        # Demonstrate second session with workflow loading
-        logger.info("=== Second Session: Loading Workflows ===")
+        # Second session to load workflows and execute new tasks
         loaded_results = demonstrate_second_session()
-        logger.info(f"Workflow load results: {loaded_results}")
-
-        # Show file management information
-        logger.info("=== Workflow File Management ===")
-        demonstrate_workflow_file_management()
-
-        logger.info("Demonstration completed successfully")
+        print(f"Workflow load results: {loaded_results}")
 
     except Exception as e:
         logger.error(f"Demonstration failed: {e}")
@@ -256,3 +241,71 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+"""
+===============================================================================
+Workflows saved: 
+workforce_workflows/session_20250925_150330_302341/content_writer_workflow.md
+workforce_workflows/session_20250925_150330_302341/math_expert_workflow.md
+
+Saved workflow in math_expert_workflow.md
+<MARKDOWN CONTENT>
+## Metadata
+
+- session_id: session_20250925_150330_302341
+- working_directory: .../camel/workforce_workflows/
+  session_20250925_150330_302341
+- created_at: ...
+- base_directory: .../Codebase/camel/workforce_workflows
+- agent_id: 687b2e57-11ce-4138-9990-4d5ab58d2acc
+- message_count: 3
+
+## WorkflowSummary
+
+### Task Title
+Calculate compound interest
+
+### Task Description
+Compute the final account balance and total compound interest for a principal
+of $1000 compounded annually at 5% for 3 years using A = P*(1 + r)^n. Provide
+the formula, substituted arithmetic steps, the unrounded result, the final
+amount rounded to 2 decimals in USD, and the total interest rounded to 2
+decimals.
+
+### Tools
+[Bullet point list of tools used]
+
+### Steps
+1. Identify the required formula: A = P*(1 + r)^n.
+2. Substitute given values into the formula: P = 1000, r = 0.05, n = 3.
+3. Compute the sum inside parentheses: calculate 1 + r = 1.05.
+4. Compute the exponentiation: calculate 1.05^3 = 1.157625.
+5. Multiply by principal: compute A = 1000 * 1.157625 = 1157.625 (unrounded).
+6. Compute total interest unrounded: Interest = A - P = 
+   1157.625 - 1000 = 157.625.
+7. Round results to 2 decimals and format as USD: A → $1157.63;
+   Interest → $157.63.
+8. Return deliverables: formula, each arithmetic step with numbers substituted,
+   unrounded A, rounded A in USD, and rounded interest in USD.
+
+### Failure And Recovery Strategies
+(No failure and recovery strategies recorded)
+
+### Notes And Observations
+No errors encountered.
+</MARKDOWN CONTENT>
+
+System message of math agent after loading workflow:
+You are a math expert specialized in solving mathematical problems. 
+You can perform calculations, solve equations, and work with various
+mathematical concepts. 
+Use the math tools available to you.
+
+--- Workflow Memory ---
+The following is the context from a previous session or workflow which might be
+useful for to the current task. This information might help you understand the
+background, choose which tools to use, and plan your next steps.
+
+## WorkflowSummary
+[The Workflow Summary from the above]
+"""
