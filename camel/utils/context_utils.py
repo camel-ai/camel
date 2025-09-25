@@ -37,33 +37,57 @@ class WorkflowSummary(BaseModel):
 
     task_title: str = Field(
         description="A short, generic title of the main task (≤ 10 words). "
-        "Avoid product- or case-specific names."
+        "Avoid product- or case-specific names. "
+        "Example: 'List GitHub stargazers', "
+        "'Remind weekly meetings on Slack', "
+        "'Find best leads and turn them into a table on Notion'."
     )
     task_description: str = Field(
         description="One-paragraph summary of what the user asked for "
         "(≤ 80 words). "
-        "No implementation details; just the outcome the user wants."
+        "No implementation details; just the outcome the user wants. "
+        "Example: Find academic professors who might be interested in the "
+        "upcoming research paper on Graph-based Agentic Memory, extract "
+        "their email addresses, affiliations, and research interests, "
+        "and create a table on Notion with this information."
     )
     tools: List[str] = Field(
-        description="Bullet list of tools/functions actually used. "
-        "For each: name → what it did → why it was useful (one line each).",
+        description="Bullet list of tool calls or functions calls used. "
+        "For each: name → what it did → why it was useful (one line each). "
+        "This field is explicitly for tool call messages or the MCP "
+        "servers used."
+        "Example: - ArxivToolkit: get authors from a paper title, "
+        "it helped find academic professors who authored a particular "
+        "paper, and then get their email addresses, affiliations, and "
+        "research interests.",
         default=[],
     )
     steps: List[str] = Field(
         description="Numbered, ordered actions the agent took to complete "
-        "the task. Each step starts with a verb and is specific "
-        "enough to be repeatable.",
+        "the task. Each step starts with a verb and is generic "
+        "enough to be repeatable. "
+        "Example: 1. Find the upcoming meetings on Google Calendar "
+        " today. 2. Send participants a reminder on Slack...",
         default=[],
     )
     failure_and_recovery_strategies: List[str] = Field(
-        description="Bullet each incident with symptom, cause (if known), "
-        "fix/workaround, verification of recovery. Leave empty if no "
-        "failures.",
+        description="[Optional] Bullet each incident with symptom, "
+        " cause (if known), fix/workaround, verification of "
+        "recovery. Leave empty if no failures. "
+        "failures. Example: Running the script for consumer data "
+        "analysis failed since Pandas package was not installed. "
+        "Fixed by running 'pip install pandas'.",
         default=[],
     )
     notes_and_observations: str = Field(
-        description="Anything not covered in previous fields that is critical "
-        "to know for future executions of the task. Keep concise.",
+        description="[Optional] Anything not covered in previous fields "
+        "that is critical to know for future executions of the task. "
+        "Leave empty if no notes. Do not repeat any information, or "
+        "mention trivial details. Only what is essential. "
+        "Example: The user likes to be in the "
+        "loop of the task execution, make sure to check with them the "
+        "plan before starting to work, and ask them for approval "
+        "mid-task by using the HumanToolkit.",
         default="",
     )
 
@@ -81,7 +105,13 @@ class WorkflowSummary(BaseModel):
             'Be concise, precise, and action-oriented. Analyze the '
             'conversation and extract the key workflow information '
             'following the provided schema structure. If a field has no '
-            'content, still include it per the schema, but keep it empty.'
+            'content, still include it per the schema, but keep it empty. '
+            'The length of your workflow must be proportional to the '
+            'complexity of the task. Example: If the task is simply '
+            'about a simple math problem, the workflow must be short, '
+            'e.g. <60 words. By contrast, if the task is complex and '
+            'multi-step, such as finding particular job applications based '
+            'on user CV, the workflow must be longer, e.g. about 120 words.'
         )
 
 

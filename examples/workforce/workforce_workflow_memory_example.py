@@ -266,11 +266,13 @@ Saved workflow in math_expert_workflow.md
 Calculate compound interest
 
 ### Task Description
-Compute the final account balance and total compound interest for a principal
-of $1000 compounded annually at 5% for 3 years using A = P*(1 + r)^n. Provide
-the formula, substituted arithmetic steps, the unrounded result, the final
-amount rounded to 2 decimals in USD, and the total interest rounded to 2
-decimals.
+Calculate the future value of $1000 at 5% annual interest compounded
+once per year for 3 years, and produce a plain-text result containing:
+the compound interest formula with symbol definitions and numeric
+substitution, balances at end of Years 1-3, the final amount,
+total interest earned (all rounded to 2 decimals), and a final
+one-line JSON object with numeric values to two decimals.
+
 
 ### Tools
 [Bullet point list of tools used]
