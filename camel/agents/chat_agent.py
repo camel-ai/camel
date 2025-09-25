@@ -1065,6 +1065,7 @@ class ChatAgent(BaseAgent):
         filename: Optional[str] = None,
         summary_prompt: Optional[str] = None,
         response_format: Optional[Type[BaseModel]] = None,
+        working_directory: Optional[Union[str, Path]] = None,
     ) -> Dict[str, Any]:
         r"""Summarize the agent's current conversation context and persist it
         to a markdown file.
@@ -1080,6 +1081,9 @@ class ChatAgent(BaseAgent):
                 defining the expected structure of the response. If provided,
                 the summary will be generated as structured output and included
                 in the result.
+            working_directory (Optional[str|Path]): Optional directory to save
+                the markdown summary file. If provided, overrides the default
+                directory used by ContextUtility.
 
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
@@ -1095,7 +1099,14 @@ class ChatAgent(BaseAgent):
 
         try:
             # Use external context if set, otherwise create local one
-            context_util = self._context_utility or ContextUtility()
+            if self._context_utility is None:
+                if working_directory is not None:
+                    self._context_utility = ContextUtility(
+                        working_directory=str(working_directory)
+                    )
+                else:
+                    self._context_utility = ContextUtility()
+            context_util = self._context_utility
 
             # Get conversation directly from agent's memory
             messages, _ = self.memory.get_context()
@@ -1439,6 +1450,35 @@ class ChatAgent(BaseAgent):
         # and True to indicate we used prompt formatting
         return modified_message, None, True
 
+    def _is_called_from_registered_toolkit(self) -> bool:
+        r"""Check if current step/astep call originates from a
+        RegisteredAgentToolkit.
+
+        This method uses stack inspection to detect if the current call
+        is originating from a toolkit that inherits from
+        RegisteredAgentToolkit. When detected, tools should be disabled to
+        prevent recursive calls.
+
+        Returns:
+            bool: True if called from a RegisteredAgentToolkit, False otherwise
+        """
+        import inspect
+
+        from camel.toolkits.base import RegisteredAgentToolkit
+
+        try:
+            for frame_info in inspect.stack():
+                frame_locals = frame_info.frame.f_locals
+                if 'self' in frame_locals:
+                    caller_self = frame_locals['self']
+                    if isinstance(caller_self, RegisteredAgentToolkit):
+                        return True
+
+        except Exception:
+            return False
+
+        return False
+
     def _apply_prompt_based_parsing(
         self,
         response: ModelResponse,
@@ -1631,6 +1671,10 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        # Check if this call is from a RegisteredAgentToolkit to prevent tool
+        # use
+        disable_tools = self._is_called_from_registered_toolkit()
+
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
         input_message, response_format, used_prompt_formatting = (
@@ -1678,7 +1722,9 @@ class ChatAgent(BaseAgent):
                 num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=self._get_full_tool_schemas(),
+                tool_schemas=[]
+                if disable_tools
+                else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
             prev_num_openai_messages = len(openai_messages)
@@ -1843,6 +1889,10 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        # Check if this call is from a RegisteredAgentToolkit to prevent tool
+        # use
+        disable_tools = self._is_called_from_registered_toolkit()
+
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
         input_message, response_format, used_prompt_formatting = (
@@ -1883,7 +1933,9 @@ class ChatAgent(BaseAgent):
                 num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=self._get_full_tool_schemas(),
+                tool_schemas=[]
+                if disable_tools
+                else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
             prev_num_openai_messages = len(openai_messages)
@@ -4041,9 +4093,21 @@ class ChatAgent(BaseAgent):
                         # Toolkit doesn't support cloning, use original
                         cloned_toolkits[toolkit_id] = toolkit_instance
 
+                if getattr(
+                    tool.func, "__message_integration_enhanced__", False
+                ):
+                    cloned_tools.append(
+                        FunctionTool(
+                            func=tool.func,
+                            openai_tool_schema=tool.get_openai_tool_schema(),
+                        )
+                    )
+                    continue
+
                 # Get the method from the cloned (or original) toolkit
                 toolkit = cloned_toolkits[toolkit_id]
                 method_name = tool.func.__name__
+
                 if hasattr(toolkit, method_name):
                     new_method = getattr(toolkit, method_name)
                     # Wrap cloned method into a new FunctionTool,
