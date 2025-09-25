@@ -59,7 +59,7 @@ def deduplicate_internally(
 
     strategy is used to specify different strategies, where 'top1' selects the
     one with highest similarity, and 'llm-supervise' uses LLM to determine if
-    texts are duplicates (not yet implemented).
+    texts are duplicates.
 
     Args:
         texts (List[str]): The list of texts to be deduplicated.
@@ -144,15 +144,9 @@ def deduplicate_internally(
             unique_embeddings_dict={
                 0: embeddings[0]
                 if embeddings
-                else embedding_instance.embed_list(texts)[0]  # type: ignore[union-attr]
+                else embedding_instance.embed_list(texts)[0] if embedding_instance else [0.0]  # type: ignore[union-attr]
             },
             duplicate_to_target_map={},
-        )
-
-    if strategy == "llm-supervise":
-        # TODO: Implement LLM-supervise deduplication.
-        raise NotImplementedError(
-            "LLM-supervise deduplication is not yet implemented."
         )
 
     # Check if the parameters are valid.
@@ -167,6 +161,15 @@ def deduplicate_internally(
         raise ValueError(
             "Cannot provide both 'embedding_instance' and 'embeddings'. "
             "Please choose only one way to supply embeddings."
+        )
+
+    if strategy == "llm-supervise":
+        return _deduplicate_with_llm_supervision(
+            texts=texts,
+            threshold=threshold,
+            embedding_instance=embedding_instance,
+            embeddings=embeddings,
+            batch_size=batch_size,
         )
 
     if embedding_instance is not None:
@@ -230,3 +233,156 @@ def deduplicate_internally(
         unique_embeddings_dict=unique_embeddings_dict,
         duplicate_to_target_map=duplicate_to_target_map,
     )
+
+
+def _deduplicate_with_llm_supervision(
+    texts: List[str],
+    threshold: float,
+    embedding_instance: Optional[BaseEmbedding[str]],
+    embeddings: Optional[List[List[float]]],
+    batch_size: int,
+) -> DeduplicationResult:
+    r"""Deduplicate texts using LLM supervision.
+    
+    This function uses embeddings to find potential duplicates, then uses an LLM
+    to determine if they are actually duplicates.
+    
+    Args:
+        texts: List of texts to deduplicate
+        threshold: Similarity threshold for initial filtering
+        embedding_instance: Embedding instance for computing embeddings
+        embeddings: Pre-computed embeddings
+        batch_size: Batch size for processing
+        
+    Returns:
+        DeduplicationResult with LLM-supervised deduplication results
+    """
+    import numpy as np
+    from sklearn.metrics.pairwise import cosine_similarity
+    
+    # First, get embeddings if not provided
+    if embedding_instance is not None:
+        embeddings = embedding_instance.embed_list(texts)
+    elif embeddings is None:
+        raise ValueError(
+            "Either 'embedding_instance' or 'embeddings' must be provided."
+        )
+    
+    if len(embeddings) != len(texts):
+        raise ValueError(
+            "The length of 'embeddings' does not match the length of 'texts'."
+        )
+    
+    # Convert embeddings to numpy array
+    embeddings_array = np.array(embeddings)
+    n = len(texts)
+    duplicate_to_target_map: Dict[int, int] = {}
+    
+    # Find potential duplicates using cosine similarity
+    potential_duplicates = []
+    
+    for i in range(0, n, batch_size):
+        batch_end = min(i + batch_size, n)
+        batch_similarities = cosine_similarity(
+            embeddings_array[i:batch_end], embeddings_array[:batch_end]
+        )
+        
+        # Create mask for lower triangle
+        tril_mask = np.tril(np.ones_like(batch_similarities), k=-1)
+        batch_similarities = batch_similarities * tril_mask
+        
+        # Find pairs above threshold
+        for j in range(batch_end - i):
+            for k in range(j):
+                if batch_similarities[j, k] > threshold:
+                    potential_duplicates.append((i + j, k))
+    
+    # Use LLM to determine actual duplicates
+    if potential_duplicates:
+        duplicate_pairs = _llm_judge_duplicates(texts, potential_duplicates)
+        
+        # Build duplicate map
+        for duplicate_idx, target_idx in duplicate_pairs:
+            duplicate_to_target_map[duplicate_idx] = target_idx
+    
+    # Get unique ids and embeddings
+    unique_ids = []
+    unique_embeddings_dict = {}
+    
+    for i, (_, emb) in enumerate(zip(texts, embeddings)):
+        if i not in duplicate_to_target_map:
+            unique_ids.append(i)
+            unique_embeddings_dict[i] = emb
+    
+    return DeduplicationResult(
+        original_texts=texts,
+        unique_ids=unique_ids,
+        unique_embeddings_dict=unique_embeddings_dict,
+        duplicate_to_target_map=duplicate_to_target_map,
+    )
+
+
+def _llm_judge_duplicates(
+    texts: List[str], 
+    potential_duplicates: List[tuple[int, int]]
+) -> List[tuple[int, int]]:
+    r"""Use LLM to judge if potential duplicate pairs are actually duplicates.
+    
+    Args:
+        texts: List of all texts
+        potential_duplicates: List of (duplicate_idx, target_idx) pairs
+        
+    Returns:
+        List of (duplicate_idx, target_idx) pairs that LLM judged as duplicates
+    """
+    try:
+        # Import here to avoid circular import issues
+        from camel.models import ModelFactory
+        from camel.types import ModelPlatformType
+        from camel.types.enums import ModelType
+        
+        # Create a simple LLM model for judgment
+        # Using a lightweight model for efficiency
+        llm_model = ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_3_5_TURBO,
+        )
+        
+        actual_duplicates = []
+        
+        for duplicate_idx, target_idx in potential_duplicates:
+            text1 = texts[duplicate_idx]
+            text2 = texts[target_idx]
+            
+            # Create prompt for LLM judgment
+            prompt = f"""You are a text deduplication expert. Your task is to determine if two texts are duplicates or near-duplicates.
+
+Text 1: "{text1}"
+Text 2: "{text2}"
+
+Are these texts duplicates or near-duplicates? Consider:
+- Semantic similarity
+- Information overlap
+- Whether they convey the same meaning
+
+Respond with only "YES" if they are duplicates, or "NO" if they are not duplicates."""
+
+            try:
+                # Get LLM response
+                response = llm_model.run([{"role": "user", "content": prompt}])
+                judgment = response.choices[0].message.content.strip().upper()
+                
+                if judgment == "YES":
+                    actual_duplicates.append((duplicate_idx, target_idx))
+                    
+            except Exception as e:
+                # If LLM fails, default to keeping both texts (no deduplication)
+                print(f"LLM judgment failed for pair {duplicate_idx}-{target_idx}: {e}")
+                continue
+                
+        return actual_duplicates
+        
+    except Exception as e:
+        print(f"Failed to initialize LLM for deduplication: {e}")
+        # Fallback: return empty list (no deduplication)
+        return []
