@@ -243,9 +243,12 @@ class SingleAgentWorker(Worker):
         self.worker = worker
         self.use_agent_pool = use_agent_pool
         self._shared_context_utility = context_utility
-        self._context_utility = None  # Will be initialized when needed
+        self._context_utility: Optional[ContextUtility] = (
+            None  # Will be initialized when needed
+        )
 
-        # accumulator agent for collecting conversations from all task processing
+        # accumulator agent for collecting conversations 
+        # from all task processing
         self._conversation_accumulator: Optional[ChatAgent] = None
 
         # note: context utility is set on the worker agent during save/load
@@ -305,7 +308,9 @@ class SingleAgentWorker(Worker):
         r"""Get or create the conversation accumulator agent."""
         if self._conversation_accumulator is None:
             # create a clone of the original worker to serve as accumulator
-            self._conversation_accumulator = self.worker.clone(with_memory=False)
+            self._conversation_accumulator = self.worker.clone(
+                with_memory=False
+            )
         return self._conversation_accumulator
 
     async def _process_task(
@@ -425,7 +430,8 @@ class SingleAgentWorker(Worker):
                 usage_info.get("total_tokens", 0) if usage_info else 0
             )
 
-            # collect conversation from working agent to accumulator for workflow memory
+            # collect conversation from working agent to 
+            # accumulator for workflow memory
             accumulator = self._get_conversation_accumulator()
 
             # transfer all memory records from working agent to accumulator
@@ -434,13 +440,20 @@ class SingleAgentWorker(Worker):
                 work_records = worker_agent.memory.retrieve()
 
                 # write these records to the accumulator's memory
-                memory_records = [record.memory_record for record in work_records]
+                memory_records = [
+                    record.memory_record for record in work_records
+                ]
                 accumulator.memory.write_records(memory_records)
 
-                logger.debug(f"Transferred {len(memory_records)} memory records to accumulator")
+                logger.debug(
+                    f"Transferred {len(memory_records)} memory records to "
+                    f"accumulator"
+                )
 
             except Exception as e:
-                logger.warning(f"Failed to transfer conversation to accumulator: {e}")
+                logger.warning(
+                    f"Failed to transfer conversation to accumulator: {e}"
+                )
 
         except Exception as e:
             logger.error(
@@ -553,7 +566,8 @@ class SingleAgentWorker(Worker):
         return None
 
     def save_workflow_memories(self) -> Dict[str, Any]:
-        r"""Save the worker's current workflow memories using agent summarization.
+        r"""Save the worker's current workflow memories using agent
+        summarization.
 
         This method generates a workflow summary from the worker agent's
         conversation history and saves it to a markdown file. The filename
@@ -575,7 +589,8 @@ class SingleAgentWorker(Worker):
                     "file_path": None,
                     "worker_description": self.description,
                     "message": (
-                        "Worker must be a ChatAgent instance to save workflow memories"
+                        "Worker must be a ChatAgent instance to save workflow "
+                        "memories"
                     ),
                 }
 
@@ -604,18 +619,32 @@ class SingleAgentWorker(Worker):
 
             # determine which agent to use for summarization
             agent_to_summarize = self.worker
-            if (self._conversation_accumulator is not None):
+            if self._conversation_accumulator is not None:
                 # check if accumulator has any conversations
-                accumulator_messages, _ = self._conversation_accumulator.memory.get_context()
+                accumulator_messages, _ = (
+                    self._conversation_accumulator.memory.get_context()
+                )
                 if accumulator_messages:
                     # set context utility on accumulator for summarization
-                    self._conversation_accumulator.set_context_utility(context_util)
+                    self._conversation_accumulator.set_context_utility(
+                        context_util
+                    )
                     agent_to_summarize = self._conversation_accumulator
-                    logger.info(f"Using conversation accumulator with {len(accumulator_messages)} messages for workflow summary")
+                    logger.info(
+                        f"Using conversation accumulator with "
+                        f"{len(accumulator_messages)} messages for workflow "
+                        f"summary"
+                    )
                 else:
-                    logger.info("Using original worker for workflow summary (no accumulated conversations)")
+                    logger.info(
+                        "Using original worker for workflow summary (no "
+                        "accumulated conversations)"
+                    )
             else:
-                logger.info("Using original worker for workflow summary (no accumulator)")
+                logger.info(
+                    "Using original worker for workflow summary (no "
+                    "accumulator)"
+                )
 
             # Use agent's enhanced summarize method with structured output
             result = agent_to_summarize.summarize(
@@ -635,7 +664,10 @@ class SingleAgentWorker(Worker):
 
             # clean up conversation accumulator after successful summarization
             if self._conversation_accumulator is not None:
-                logger.info("Cleaning up conversation accumulator after workflow summarization")
+                logger.info(
+                    "Cleaning up conversation accumulator after workflow "
+                    "summarization"
+                )
                 self._conversation_accumulator = None
 
             return result
@@ -650,18 +682,21 @@ class SingleAgentWorker(Worker):
             }
 
     def load_workflow_memories(self, pattern: Optional[str] = None) -> bool:
-        r"""Load workflow memories matching worker description from saved files.
+        r"""Load workflow memories matching worker description
+        from saved files.
 
         This method searches for workflow memory files that match the worker's
         description and loads them into the agent's memory using
         ContextUtility.
 
         Args:
-            pattern (Optional[str]): Custom search pattern for workflow memory files.
+            pattern (Optional[str]): Custom search pattern for workflow
+                memory files.
                 If None, uses worker description to generate pattern.
 
         Returns:
-            bool: True if workflow memories were successfully loaded, False otherwise.
+            bool: True if workflow memories were successfully loaded, False
+                otherwise.
         """
         try:
             # Find workflow memory files matching the pattern
@@ -681,7 +716,8 @@ class SingleAgentWorker(Worker):
 
         except Exception as e:
             logger.error(
-                f"Error loading workflow memories for {self.description}: {e!s}"
+                f"Error loading workflow memories for {self.description}: "
+                f"{e!s}"
             )
             return False
 
@@ -693,7 +729,8 @@ class SingleAgentWorker(Worker):
                 If None, uses worker description to generate pattern.
 
         Returns:
-            List[str]: Sorted list of workflow file paths (empty if validation fails).
+            List[str]: Sorted list of workflow file paths (empty if
+                validation fails).
         """
         # Ensure we have a ChatAgent worker
         if not isinstance(self.worker, ChatAgent):

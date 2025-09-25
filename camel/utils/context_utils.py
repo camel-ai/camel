@@ -40,7 +40,8 @@ class WorkflowSummary(BaseModel):
         "Avoid product- or case-specific names."
     )
     task_description: str = Field(
-        description="One-paragraph summary of what the user asked for (≤ 80 words). "
+        description="One-paragraph summary of what the user asked for "
+        "(≤ 80 words). "
         "No implementation details; just the outcome the user wants."
     )
     tools: List[str] = Field(
@@ -49,13 +50,15 @@ class WorkflowSummary(BaseModel):
         default=[],
     )
     steps: List[str] = Field(
-        description="Numbered, ordered actions the agent took to complete the task. "
-        "Each step starts with a verb and is specific enough to be repeatable.",
+        description="Numbered, ordered actions the agent took to complete "
+        "the task. Each step starts with a verb and is specific "
+        "enough to be repeatable.",
         default=[],
     )
     failure_and_recovery_strategies: List[str] = Field(
         description="Bullet each incident with symptom, cause (if known), "
-        "fix/workaround, verification of recovery. Leave empty if no failures.",
+        "fix/workaround, verification of recovery. Leave empty if no "
+        "failures.",
         default=[],
     )
     notes_and_observations: str = Field(
@@ -73,9 +76,12 @@ class WorkflowSummary(BaseModel):
                 structured output matching this schema.
         """
         return (
-            'You are writing a compact "workflow memory" so future agents can reuse what you just did for future tasks. '
-            'Be concise, precise, and action-oriented. Analyze the conversation and extract the key workflow information '
-            'following the provided schema structure. If a field has no content, still include it per the schema, but keep it empty.'
+            'You are writing a compact "workflow memory" so future agents '
+            'can reuse what you just did for future tasks. '
+            'Be concise, precise, and action-oriented. Analyze the '
+            'conversation and extract the key workflow information '
+            'following the provided schema structure. If a field has no '
+            'content, still include it per the schema, but keep it empty.'
         )
 
 
@@ -242,7 +248,8 @@ class ContextUtility:
             structured_data: Any Pydantic BaseModel instance
             metadata: Optional metadata to include in the markdown
             title: Optional custom title, defaults to model class name
-            field_mappings: Optional mapping of field names to custom section titles
+            field_mappings: Optional mapping of field names to custom
+                section titles
 
         Returns:
             str: Markdown formatted content
@@ -588,7 +595,7 @@ class ContextUtility:
         self.working_directory.mkdir(parents=True, exist_ok=True)
 
     def load_markdown_context_to_memory(
-        self, agent: "ChatAgent", filename: str
+        self, agent: "ChatAgent", filename: str, include_metadata: bool = False
     ) -> str:
         r"""Load context from a markdown file and append it to agent memory.
         Preserves existing conversation history without wiping it.
@@ -596,6 +603,8 @@ class ContextUtility:
         Args:
             agent (ChatAgent): The agent to append context to.
             filename (str): Name of the markdown file (without .md extension).
+            include_metadata (bool): Whether to include metadata section in the
+                loaded content. Defaults to False.
 
         Returns:
             str: Status message indicating success or failure with details.
@@ -606,7 +615,10 @@ class ContextUtility:
             if not content.strip():
                 return f"Context file not found or empty: {filename}"
 
-            from camel.messages import BaseMessage
+            # Filter out metadata section if not requested
+            if not include_metadata:
+                content = self._filter_metadata_from_content(content)
+
             from camel.types import OpenAIBackendRole
 
             prefix_prompt = (
@@ -617,14 +629,45 @@ class ContextUtility:
                 "and plan your next steps."
             )
 
-            # TODO: change to system message once multi-system-message
-            # is supported
-            context_message = BaseMessage.make_assistant_message(
-                role_name="Assistant",
-                content=f"{prefix_prompt}\n\n{content}",
+            # Append workflow content to the agent's system message
+            # This ensures the context persists when agents are cloned
+            workflow_content = (
+                f"\n\n--- Workflow Memory ---\n{prefix_prompt}\n\n{content}"
             )
 
-            agent.update_memory(context_message, OpenAIBackendRole.USER)
+            # Update the original system message to include workflow
+            if agent._original_system_message is None:
+                logger.error(
+                    f"Agent {agent.agent_id} has no system message. "
+                    "Cannot append workflow memory to system message."
+                )
+                return (
+                    "Error: Agent has no system message to append workflow to"
+                )
+
+            # Append to existing system message
+            current_content = agent._original_system_message.content
+            new_content = current_content + workflow_content
+            agent._original_system_message = (
+                agent._original_system_message.create_new_instance(new_content)
+            )
+
+            # Update the system message in memory
+            current_system_message = agent.system_message
+            if current_system_message is not None:
+                new_sys_content = (
+                    current_system_message.content + workflow_content
+                )
+                updated_system_message = (
+                    current_system_message.create_new_instance(new_sys_content)
+                )
+
+                # Replace the system message in memory
+                # Clear and re-initialize with updated system message
+                agent.memory.clear()
+                agent.update_memory(
+                    updated_system_message, OpenAIBackendRole.SYSTEM
+                )
 
             char_count = len(content)
             log_msg = (
@@ -639,6 +682,41 @@ class ContextUtility:
             error_msg = f"Failed to load markdown context to memory: {e}"
             logger.error(error_msg)
             return error_msg
+
+    def _filter_metadata_from_content(self, content: str) -> str:
+        r"""Filter out metadata section from markdown content.
+
+        Args:
+            content (str): The full markdown content including metadata.
+
+        Returns:
+            str: Content with metadata section removed.
+        """
+        lines = content.split('\n')
+        filtered_lines = []
+        skip_metadata = False
+
+        for line in lines:
+            # Check if we're starting a metadata section
+            if line.strip() == "## Metadata":
+                skip_metadata = True
+                continue
+
+            # Check if we're starting a new section after metadata
+            if (
+                skip_metadata
+                and line.startswith("## ")
+                and "Metadata" not in line
+            ):
+                skip_metadata = False
+
+            # Add line if we're not in metadata section
+            if not skip_metadata:
+                filtered_lines.append(line)
+
+        # Clean up any extra whitespace at the beginning
+        result = '\n'.join(filtered_lines).strip()
+        return result
 
     # ========= SHARED SESSION MANAGEMENT METHODS =========
 

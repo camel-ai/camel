@@ -22,6 +22,7 @@ import uuid
 from collections import deque
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Coroutine,
@@ -35,6 +36,9 @@ from typing import (
     Union,
     cast,
 )
+
+if TYPE_CHECKING:
+    from camel.utils.context_utils import ContextUtility
 
 from colorama import Fore
 
@@ -454,7 +458,7 @@ class Workforce(BaseNode):
             )
 
         # Shared context utility for workflow management (created lazily)
-        self._shared_context_utility = None
+        self._shared_context_utility: Optional["ContextUtility"] = None
 
         # ------------------------------------------------------------------
         # Helper for propagating pause control to externally supplied agents
@@ -1760,7 +1764,8 @@ class Workforce(BaseNode):
         workforce.
 
         This method iterates through all child workers and triggers workflow
-        saving for SingleAgentWorker instances using their save_workflow_memories()
+        saving for SingleAgentWorker instances using their
+        save_workflow_memories()
         method.
         Other worker types are skipped.
 
@@ -1903,7 +1908,9 @@ class Workforce(BaseNode):
 
             # Load workflows for coordinator agent (up to 5 most recent)
             coordinator_loaded = 0
-            for file_path in workflow_files[:MAX_COORDINATOR_WORKFLOWS_TO_LOAD]:
+            for file_path in workflow_files[
+                :MAX_COORDINATOR_WORKFLOWS_TO_LOAD
+            ]:
                 try:
                     filename = os.path.basename(file_path).replace('.md', '')
                     session_dir = os.path.dirname(file_path)

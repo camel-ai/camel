@@ -1127,7 +1127,8 @@ class ChatAgent(BaseAgent):
             if self._context_summary_agent is None:
                 self._context_summary_agent = ChatAgent(
                     system_message=(
-                        "You are a helpful assistant that summarizes conversations"
+                        "You are a helpful assistant that summarizes "
+                        "conversations"
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
@@ -1138,7 +1139,8 @@ class ChatAgent(BaseAgent):
             if summary_prompt:
                 prompt_text = (
                     f"{summary_prompt.rstrip()}\n\n"
-                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n{conversation_text}"
+                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
+                    f"{conversation_text}"
                 )
             else:
                 prompt_text = (

@@ -42,8 +42,9 @@ def create_math_agent() -> ChatAgent:
     math_msg = BaseMessage.make_assistant_message(
         role_name="Math Expert",
         content=(
-            "You are a math expert specialized in solving mathematical problems. "
-            "You can perform calculations, solve equations, and work with various "
+            "You are a math expert specialized in solving "
+            "mathematical problems.You can perform calculations, " 
+            "solve equations, and work with various "
             "mathematical concepts. Use the math tools available to you."
         ),
     )
@@ -111,11 +112,13 @@ def demonstrate_first_session():
     # Assign one task to each agent
     tasks = [
         Task(
-            content="Calculate the compound interest on $1000 invested at 5% annual rate for 3 years",
+            content="Calculate the compound interest on $1000 invested at 5% "
+            "annual rate for 3 years",
             id="math_task",
         ),
         Task(
-            content="Write a one-paragraph creative story about a robot learning to paint",
+            content="Write a one-paragraph creative story about a robot "
+            "learning to paint",
             id="writing_task",
         ),
     ]
@@ -147,13 +150,15 @@ def demonstrate_second_session():
     # Add workers with same descriptive names as before
     math_agent = create_math_agent()
     workforce.add_single_agent_worker(
-        description="math_expert",  # Same description = loads matching workflow
+        description="math_expert",  # Same description = loads matching
+        # workflow
         worker=math_agent,
     )
 
     writer_agent = create_writer_agent()
     workforce.add_single_agent_worker(
-        description="content_writer",  # Same description = loads matching workflow
+        description="content_writer",  # Same description = loads
+        # matching workflow
         worker=writer_agent,
     )
 
@@ -167,7 +172,8 @@ def demonstrate_second_session():
             id="new_math_task",
         ),
         Task(
-            content="Write a brief technical explanation of machine learning for beginners",
+            content="Write a brief technical explanation of machine "
+            "learning for beginners",
             id="new_writing_task",
         ),
     ]
