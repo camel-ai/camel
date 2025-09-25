@@ -396,7 +396,7 @@ We believe that studying these agents on a large scale offers valuable insights 
 
 ### 1. Utilize Various LLMs as Backends
 
-For more details, please see our [`Models Documentation`](https://docs.camel-ai.org/key_modules/models.html#).
+For more details, please see our [`Models Documentation`](https://docs.camel-ai.org/key_modules/models#).
 
 > **Data (Hosted on Hugging Face)**
 
