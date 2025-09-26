@@ -21,7 +21,8 @@ from typing import Any, Dict, List, Optional
 from typing_extensions import TypeGuard
 
 from camel.logger import get_logger
-from camel.toolkits import BaseToolkit, FunctionTool
+from camel.toolkits.base import BaseToolkit
+from camel.toolkits.function_tool import FunctionTool
 from camel.utils.commons import run_async
 from camel.utils.mcp_client import MCPClient, create_mcp_client
 
