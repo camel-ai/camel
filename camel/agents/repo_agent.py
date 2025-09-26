@@ -360,7 +360,7 @@ class RepoAgent(ChatAgent):
             int: The number of tokens
         """
         counter = self.model_backend.token_counter
-        content_token_count = counter.count_tokens_from_messages(
+        content_token_count = counter.extract_usage_from_response(
             messages=[
                 BaseMessage.make_user_message(
                     role_name=RoleType.USER.value,
