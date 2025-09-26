@@ -17,28 +17,30 @@ import tempfile
 import pytest
 from PIL import Image
 
-from camel.tasks import Task, TaskManager
+from camel.tasks import Task, TaskState
 
 
 def test_task():
+    """Test basic Task functionality."""
     task = Task(content="a start task", id="0")
     sub_task_1 = Task(content="a sub task 1", id="1")
     sub_task_2 = Task(content="a sub task 2", id="2")
     task.add_subtask(sub_task_1)
     task.add_subtask(sub_task_2)
-    task.set_state("DONE")
+    task.set_state(TaskState.DONE)
 
     print(task.to_string())
-    assert task.state == "DONE"
+    assert task.state == TaskState.DONE
 
-    task.set_state("RUNNING")
+    task.set_state(TaskState.RUNNING)
     print(task.to_string(state=True))
 
     print(task.get_result())
 
 
-def test_task_management():
+def test_task_hierarchy():
     """
+    Test Task hierarchy management:
     Task 0: a start task
         Task 1: a sub task 1
         Task 2: a sub task 2
@@ -52,6 +54,7 @@ def test_task_management():
     sub_task_3 = Task(content="a sub task 3", id="3")
     sub_task_2_1 = Task(content="a sub task of task 2", id="2.1")
     sub_task_2_2 = Task(content="a sub task of task 2", id="2.2")
+
     root_task.add_subtask(sub_task_1)
     root_task.add_subtask(sub_task_2)
     root_task.add_subtask(sub_task_3)
@@ -60,30 +63,52 @@ def test_task_management():
 
     print("\n===\n" + root_task.to_string() + "\n===\n")
 
-    manager = TaskManager(root_task)
-    new_tasks = [
-        sub_task_1,
-        sub_task_2,
-        sub_task_2_1,
-        sub_task_2_2,
-        sub_task_3,
-    ]
+    # Test task hierarchy structure
+    assert len(root_task.subtasks) == 3
+    assert len(sub_task_2.subtasks) == 2
+    assert sub_task_2_1.parent == sub_task_2
+    assert sub_task_2_2.parent == sub_task_2
+    assert sub_task_1.parent == root_task
 
-    sorted_tasks = manager.topological_sort(new_tasks)
-    sorted_tasks_ids = [task.id for task in sorted_tasks]
-    print(sorted_tasks_ids)
-    assert sorted_tasks_ids == ["1", "2.1", "2.2", "2", "3"]
+    # Test task depth
+    assert root_task.get_depth() == 1
+    assert sub_task_1.get_depth() == 2
+    assert sub_task_2_1.get_depth() == 3
 
-    manager.add_tasks(new_tasks)
-    print([task.id for task in manager.tasks])
-    assert [task.id for task in manager.tasks] == [
-        "1",
-        "2.1",
-        "2.2",
-        "2",
-        "3",
-        "0",
-    ]
+
+def test_task_state_management():
+    """Test Task state management and propagation."""
+    root_task = Task(content="root task", id="0")
+    sub_task = Task(content="sub task", id="1")
+    root_task.add_subtask(sub_task)
+
+    # Test state propagation to parent
+    sub_task.set_state(TaskState.RUNNING)
+    assert root_task.state == TaskState.RUNNING
+
+    # Test state propagation to children
+    root_task.set_state(TaskState.DONE)
+    assert sub_task.state == TaskState.DONE
+
+
+def test_task_operations():
+    """Test basic Task operations like add, remove, and result management."""
+    task = Task(content="test task", id="0")
+
+    # Test result management
+    assert task.result == ""
+    task.update_result("test result")
+    assert task.result == "test result"
+    assert task.state == TaskState.DONE
+
+    # Test subtask operations
+    sub_task = Task(content="sub task", id="1")
+    task.add_subtask(sub_task)
+    assert len(task.subtasks) == 1
+    assert sub_task.parent == task
+
+    task.remove_subtask("1")
+    assert len(task.subtasks) == 0
 
 
 @pytest.fixture
@@ -113,6 +138,7 @@ def temp_video_bytes():
 
 def test_image_task_management(temp_image):
     """
+    Test Task with image support:
     Task 0: Analyze image
         Task 1: Detect objects in image
         Task 2: Recognize text in image
@@ -140,34 +166,16 @@ def test_image_task_management(temp_image):
 
     print("\n===\n" + root_task.to_string() + "\n===\n")
 
-    manager = TaskManager(root_task)
-    new_tasks = [
-        sub_task_1,
-        sub_task_2,
-        sub_task_2_1,
-        sub_task_2_2,
-        sub_task_3,
-    ]
-
-    sorted_tasks = manager.topological_sort(new_tasks)
-    sorted_tasks_ids = [task.id for task in sorted_tasks]
-    print(sorted_tasks_ids)
-    assert sorted_tasks_ids == ["1", "2.1", "2.2", "2", "3"]
-
-    manager.add_tasks(new_tasks)
-    print([task.id for task in manager.tasks])
-    assert [task.id for task in manager.tasks] == [
-        "1",
-        "2.1",
-        "2.2",
-        "2",
-        "3",
-        "0",
-    ]
+    # Test image-related attributes
+    assert root_task.image_list == [temp_image]
+    assert root_task.image_detail == "high"
+    assert len(root_task.subtasks) == 3
+    assert len(sub_task_2.subtasks) == 2
 
 
 def test_video_task_management(temp_video_bytes):
     """
+    Test Task with video support:
     Task 0: Analyze video
         Task 1: Detect people in video
         Task 2: Recognize speech in video
@@ -195,27 +203,21 @@ def test_video_task_management(temp_video_bytes):
 
     print("\n===\n" + root_task.to_string() + "\n===\n")
 
-    manager = TaskManager(root_task)
-    new_tasks = [
-        sub_task_1,
-        sub_task_2,
-        sub_task_2_1,
-        sub_task_2_2,
-        sub_task_3,
-    ]
+    # Test video-related attributes
+    assert root_task.video_bytes == temp_video_bytes
+    assert root_task.video_detail == "high"
+    assert len(root_task.subtasks) == 3
+    assert len(sub_task_2.subtasks) == 2
 
-    sorted_tasks = manager.topological_sort(new_tasks)
-    sorted_tasks_ids = [task.id for task in sorted_tasks]
-    print(sorted_tasks_ids)
-    assert sorted_tasks_ids == ["1", "2.1", "2.2", "2", "3"]
 
-    manager.add_tasks(new_tasks)
-    print([task.id for task in manager.tasks])
-    assert [task.id for task in manager.tasks] == [
-        "1",
-        "2.1",
-        "2.2",
-        "2",
-        "3",
-        "0",
-    ]
+def test_task_from_message():
+    """Test creating Task from BaseMessage."""
+    from camel.messages import BaseMessage
+
+    message = BaseMessage.make_user_message(
+        role_name="user", content="test message content"
+    )
+    task = Task.from_message(message)
+
+    assert task.content == "test message content"
+    assert task.id == "0"
