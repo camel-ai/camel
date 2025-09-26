@@ -175,6 +175,51 @@ class BaseMessage:
             OpenAIVisionDetailType(video_detail).value,
         )
 
+    @classmethod
+    def make_system_message(
+        cls,
+        role_name: str,
+        content: str,
+        meta_dict: Optional[Dict[str, str]] = None,
+        video_bytes: Optional[bytes] = None,
+        image_list: Optional[List[Image.Image]] = None,
+        image_detail: Union[
+            OpenAIVisionDetailType, str
+        ] = OpenAIVisionDetailType.AUTO,
+        video_detail: Union[
+            OpenAIVisionDetailType, str
+        ] = OpenAIVisionDetailType.LOW,
+    ) -> "BaseMessage":
+        r"""Create a new system message.
+
+        Args:
+            role_name (str): The name of the system role.
+            content (str): The content of the new system message.
+            meta_dict (Optional[Dict[str, str]]): Additional metadata
+                dictionary for the message.
+            video_bytes (Optional[bytes]): Optional bytes of a video
+                associated with the message.
+            image_list (Optional[List[Image.Image]]): Optional list of PIL
+                Image objects associated with the message.
+            image_detail (Union[OpenAIVisionDetailType, str]): Detail level of
+                the images associated with the message.
+            video_detail (Union[OpenAIVisionDetailType, str]): Detail level of
+                the videos associated with the message.
+
+        Returns:
+            BaseMessage: The new system message.
+        """
+        return cls(
+            role_name,
+            RoleType.DEFAULT,
+            meta_dict,
+            content,
+            video_bytes,
+            image_list,
+            OpenAIVisionDetailType(image_detail).value,
+            OpenAIVisionDetailType(video_detail).value,
+        )
+
     def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
         content.
