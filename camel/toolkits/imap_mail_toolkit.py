@@ -1,0 +1,641 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+import email
+import imaplib
+import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Any, Dict, List, Optional
+
+from camel.logger import get_logger
+from camel.toolkits import FunctionTool
+from camel.toolkits.base import BaseToolkit
+from camel.utils import MCPServer, dependencies_required
+
+logger = get_logger(__name__)
+
+
+@MCPServer()
+class IMAPMailToolkit(BaseToolkit):
+    r"""A toolkit for IMAP email operations.
+
+    This toolkit provides comprehensive email functionality including:
+    - Fetching emails with filtering options
+    - Retrieving specific emails by ID
+    - Sending emails via SMTP
+    - Replying to emails
+    - Moving emails to folders
+    - Deleting emails
+
+    Args:
+        imap_server (str, optional): IMAP server hostname. If not provided,
+            will be obtained from environment variables.
+        imap_port (int, optional): IMAP server port. Defaults to 993.
+        smtp_server (str, optional): SMTP server hostname. If not provided,
+            will be obtained from environment variables.
+        smtp_port (int, optional): SMTP server port. Defaults to 587.
+        username (str, optional): Email username. If not provided, will be
+            obtained from environment variables.
+        password (str, optional): Email password. If not provided, will be
+            obtained from environment variables.
+        timeout (Optional[float]): The timeout for the toolkit operations.
+    """
+
+    @dependencies_required('imaplib', 'smtplib', 'email')
+    def __init__(
+        self,
+        imap_server: Optional[str] = None,
+        imap_port: int = 993,
+        smtp_server: Optional[str] = None,
+        smtp_port: int = 587,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        timeout: Optional[float] = None,
+    ) -> None:
+        r"""Initialize the IMAP Mail Toolkit.
+
+        Args:
+            imap_server: IMAP server hostname
+            imap_port: IMAP server port (default: 993)
+            smtp_server: SMTP server hostname
+            smtp_port: SMTP server port (default: 587)
+            username: Email username
+            password: Email password
+            timeout: Timeout for operations
+        """
+        super().__init__(timeout=timeout)
+
+        # Get credentials from environment if not provided
+        self.imap_server = imap_server or os.environ.get("IMAP_SERVER")
+        self.imap_port = imap_port
+        self.smtp_server = smtp_server or os.environ.get("SMTP_SERVER")
+        self.smtp_port = smtp_port
+        self.username = username or os.environ.get("EMAIL_USERNAME")
+        self.password = password or os.environ.get("EMAIL_PASSWORD")
+
+        # Validate required parameters
+        if not self.imap_server:
+            raise ValueError(
+                "IMAP server must be provided or set via IMAP_SERVER"
+                "environment variable"
+            )
+        if not self.smtp_server:
+            raise ValueError(
+                "SMTP server must be provided or set via SMTP_SERVER"
+                "environment variable"
+            )
+        if not self.username:
+            raise ValueError(
+                "Username must be provided or set via EMAIL_USERNAME"
+                "environment variable"
+            )
+        if not self.password:
+            raise ValueError(
+                "Password must be provided or set via EMAIL_PASSWORD"
+                "environment variable"
+            )
+
+    def _get_imap_connection(self) -> imaplib.IMAP4_SSL:
+        r"""Establish IMAP connection.
+
+        Returns:
+            imaplib.IMAP4_SSL: Connected IMAP client
+        """
+        if not self.imap_server or not self.username or not self.password:
+            raise ValueError(
+                "IMAP server, username, and password must be provided"
+            )
+
+        try:
+            imap = imaplib.IMAP4_SSL(self.imap_server, self.imap_port)
+            imap.login(self.username, self.password)
+            logger.info(
+                "Successfully connected to IMAP server %s", self.imap_server
+            )
+            return imap
+        except Exception as e:
+            logger.error("Failed to connect to IMAP server: %s", e)
+            raise
+
+    def _get_smtp_connection(self) -> smtplib.SMTP:
+        r"""Establish SMTP connection.
+
+        Returns:
+            smtplib.SMTP: Connected SMTP client
+        """
+        if not self.smtp_server or not self.username or not self.password:
+            raise ValueError(
+                "SMTP server, username, and password must be provided"
+            )
+
+        try:
+            smtp = smtplib.SMTP(self.smtp_server, self.smtp_port)
+            smtp.starttls()
+            smtp.login(self.username, self.password)
+            logger.info(
+                "Successfully connected to SMTP server %s", self.smtp_server
+            )
+            return smtp
+        except Exception as e:
+            logger.error("Failed to connect to SMTP server: %s", e)
+            raise
+
+    def fetch_emails(
+        self,
+        folder: str = "INBOX",
+        limit: int = 10,
+        unread_only: bool = False,
+        sender_filter: Optional[str] = None,
+        subject_filter: Optional[str] = None,
+    ) -> List[Dict]:
+        r"""Fetch emails from a folder with optional filtering.
+
+        Args:
+            folder (str): Email folder to search in (default: "INBOX")
+            limit (int): Maximum number of emails to retrieve (default: 10)
+            unread_only (bool): If True, only fetch unread
+                emails (default: False)
+            sender_filter (str, optional): Filter emails by
+                sender email address
+            subject_filter (str, optional): Filter emails by subject content
+
+        Returns:
+            List[Dict]: List of email dictionaries with metadata
+        """
+        imap = None
+        try:
+            imap = self._get_imap_connection()
+            imap.select(folder)
+
+            # Build search criteria
+            search_criteria = []
+            if unread_only:
+                search_criteria.append("UNSEEN")
+            if sender_filter:
+                search_criteria.append(f'FROM "{sender_filter}"')
+            if subject_filter:
+                search_criteria.append(f'SUBJECT "{subject_filter}"')
+
+            # If no specific criteria, get recent emails
+            if not search_criteria:
+                search_criteria.append("ALL")
+
+            search_string = " ".join(search_criteria)
+            status, messages = imap.search(None, search_string)
+
+            if status != "OK":
+                raise ConnectionError("Failed to search emails")
+
+            email_ids = messages[0].split()
+
+            # Limit results
+            if len(email_ids) > limit:
+                email_ids = email_ids[-limit:]  # Get most recent emails
+
+            emails: List[Dict[str, Any]] = []
+            for email_id in email_ids:
+                try:
+                    status, msg_data = imap.fetch(email_id, "(RFC822)")
+                    if status == "OK" and msg_data and len(msg_data) > 0:
+                        # msg_data is a list of tuples, get the first one
+                        msg_tuple = msg_data[0]
+                        if (
+                            isinstance(msg_tuple, tuple)
+                            and len(msg_tuple) >= 2
+                        ):
+                            email_body = msg_tuple[1]
+                            # Handle different email body formats
+                            if isinstance(email_body, bytes):
+                                email_message = email.message_from_bytes(
+                                    email_body
+                                )
+                                email_size = len(email_body)
+                            elif isinstance(email_body, str):
+                                email_message = email.message_from_string(
+                                    email_body
+                                )
+                                email_size = len(email_body.encode('utf-8'))
+                            else:
+                                logger.warning(
+                                    "Email body is incorrect %s: %s",
+                                    email_id,
+                                    type(email_body),
+                                )
+                                continue
+
+                        email_dict = {
+                            "id": (
+                                email_id.decode()
+                                if isinstance(email_id, bytes)
+                                else str(email_id)
+                            ),
+                            "subject": email_message.get("Subject", ""),
+                            "from": email_message.get("From", ""),
+                            "to": email_message.get("To", ""),
+                            "date": email_message.get("Date", ""),
+                            "size": email_size,
+                        }
+                        # Get email body content
+                        body_content = self._extract_email_body(email_message)
+                        email_dict["body"] = body_content
+
+                        emails.append(email_dict)
+
+                except (ValueError, UnicodeDecodeError) as e:
+                    logger.warning(
+                        "Failed to process email %s: %s", email_id, e
+                    )
+                    continue
+
+            logger.info(
+                "Successfully fetched %d emails from %s", len(emails), folder
+            )
+            return emails
+
+        except (ConnectionError, imaplib.IMAP4.error) as e:
+            logger.error("Error fetching emails: %s", e)
+            raise
+        finally:
+            if imap:
+                try:
+                    imap.close()
+                    imap.logout()
+                except imaplib.IMAP4.error:
+                    pass
+
+    def get_email_by_id(self, email_id: str, folder: str = "INBOX") -> Dict:
+        r"""Retrieve a specific email by ID with full metadata.
+
+        Args:
+            email_id (str): ID of the email to retrieve
+            folder (str): Folder containing the email (default: "INBOX")
+
+        Returns:
+            Dict: Email dictionary with complete metadata
+        """
+        imap = None
+        try:
+            imap = self._get_imap_connection()
+            imap.select(folder)
+
+            status, msg_data = imap.fetch(email_id, "(RFC822)")
+            if status != "OK":
+                raise ConnectionError(f"Failed to fetch email {email_id}")
+
+            msg_tuple = msg_data[0]
+            if not isinstance(msg_tuple, tuple) or len(msg_tuple) < 2:
+                raise ConnectionError(
+                    f"Invalid message data format for email {email_id}"
+                )
+
+            email_body = msg_tuple[1]
+            if not isinstance(email_body, bytes):
+                raise ConnectionError(
+                    f"Email body is not bytes for email {email_id}"
+                )
+
+            email_message = email.message_from_bytes(email_body)
+
+            email_dict = {
+                "id": email_id,
+                "subject": email_message.get("Subject", ""),
+                "from": email_message.get("From", ""),
+                "to": email_message.get("To", ""),
+                "cc": email_message.get("Cc", ""),
+                "bcc": email_message.get("Bcc", ""),
+                "date": email_message.get("Date", ""),
+                "message_id": email_message.get("Message-ID", ""),
+                "reply_to": email_message.get("Reply-To", ""),
+                "in_reply_to": email_message.get("In-Reply-To", ""),
+                "references": email_message.get("References", ""),
+                "priority": email_message.get("X-Priority", ""),
+                "size": len(email_body)
+                if isinstance(email_body, bytes)
+                else 0,
+            }
+
+            # Get email body content
+            email_dict["body"] = self._extract_email_body(email_message)
+
+            logger.info("Successfully retrieved email %s", email_id)
+            return email_dict
+
+        except (ConnectionError, imaplib.IMAP4.error) as e:
+            logger.error("Error retrieving email %s: %s", email_id, e)
+            raise
+        finally:
+            if imap:
+                try:
+                    imap.close()
+                    imap.logout()
+                except imaplib.IMAP4.error:
+                    pass
+
+    def send_email(
+        self,
+        to_recipients: List[str],
+        subject: str,
+        body: str,
+        cc_recipients: Optional[List[str]] = None,
+        bcc_recipients: Optional[List[str]] = None,
+        html_body: Optional[str] = None,
+    ) -> str:
+        r"""Send an email via SMTP.
+
+        Args:
+            to_recipients (List[str]): List of recipient email addresses
+            subject (str): Email subject line
+            body (str): Plain text email body
+            cc_recipients (List[str], optional): List of CC
+                recipient email addresses
+            bcc_recipients (List[str], optional): List of BCC
+                recipient email addresses
+            html_body (str, optional): HTML version of email body
+
+        Returns:
+            str: Success message
+        """
+        if not self.username:
+            raise ValueError("Username must be provided for sending emails")
+
+        smtp = None
+        try:
+            smtp = self._get_smtp_connection()
+
+            msg = MIMEMultipart('alternative')
+            msg['From'] = self.username
+            msg['To'] = ", ".join(to_recipients)
+            msg['Subject'] = subject
+
+            if cc_recipients:
+                msg['Cc'] = ", ".join(cc_recipients)
+            if bcc_recipients:
+                msg['Bcc'] = ", ".join(bcc_recipients)
+
+            # Add plain text body
+            msg.attach(MIMEText(body, 'plain'))
+
+            # Add HTML body if provided
+            if html_body:
+                msg.attach(MIMEText(html_body, 'html'))
+
+            # Send email
+            recipients = (
+                to_recipients + (cc_recipients or []) + (bcc_recipients or [])
+            )
+            smtp.send_message(
+                msg, from_addr=self.username, to_addrs=recipients
+            )
+
+            logger.info(
+                "Email sent successfully to %s", ", ".join(to_recipients)
+            )
+            return "Email sent successfully. Message ID: Unknown"
+
+        except (ConnectionError, smtplib.SMTPException) as e:
+            logger.error("Error sending email: %s", e)
+            raise
+        finally:
+            if smtp:
+                try:
+                    smtp.quit()
+                except smtplib.SMTPException:
+                    pass
+
+    def reply_to_email(
+        self,
+        original_email_id: str,
+        reply_body: str,
+        folder: str = "INBOX",
+        html_body: Optional[str] = None,
+    ) -> str:
+        r"""Send a reply to an existing email.
+
+        Args:
+            original_email_id (str): ID of the email to reply to
+            reply_body (str): Reply message body
+            folder (str): Folder containing the original
+                email (default: "INBOX")
+            html_body (str, optional): HTML version of reply body
+
+        Returns:
+            str: Success message
+        """
+        try:
+            # Get original email details
+            original_email = self.get_email_by_id(original_email_id, folder)
+
+            # Extract sender from original email
+            original_from = original_email.get("from", "")
+
+            # Create reply subject
+            original_subject = original_email.get("subject", "")
+            if not original_subject.startswith("Re: "):
+                reply_subject = f"Re: {original_subject}"
+            else:
+                reply_subject = original_subject
+
+            # Send reply
+            result = self.send_email(
+                to_recipients=[original_from],
+                subject=reply_subject,
+                body=reply_body,
+                html_body=html_body,
+            )
+
+            logger.info("Successfully replied to email %s", original_email_id)
+            return f"Reply sent successfully. {result}"
+
+        except (
+            ConnectionError,
+            imaplib.IMAP4.error,
+            smtplib.SMTPException,
+        ) as e:
+            logger.error(
+                "Error replying to email %s: %s", original_email_id, e
+            )
+            raise
+
+    def move_email_to_folder(
+        self, email_id: str, target_folder: str, source_folder: str = "INBOX"
+    ) -> str:
+        r"""Move an email to a different folder.
+
+        Args:
+            email_id (str): ID of the email to move
+            target_folder (str): Destination folder name
+            source_folder (str): Source folder name (default: "INBOX")
+
+        Returns:
+            str: Success message
+        """
+        imap = None
+        try:
+            imap = self._get_imap_connection()
+
+            # Select source folder
+            imap.select(source_folder)
+
+            # Copy email to target folder
+            imap.copy(email_id, target_folder)
+
+            # Mark email as deleted in source folder
+            imap.store(email_id, '+FLAGS', '\\Deleted')
+            imap.expunge()
+
+            logger.info(
+                "Successfully moved email %s from %s to %s",
+                email_id,
+                source_folder,
+                target_folder,
+            )
+            return (
+                f"Email {email_id} moved from {source_folder} to "
+                f"{target_folder}"
+            )
+
+        except (ConnectionError, imaplib.IMAP4.error) as e:
+            logger.error("Error moving email %s: %s", email_id, e)
+            raise
+        finally:
+            if imap:
+                try:
+                    imap.close()
+                    imap.logout()
+                except imaplib.IMAP4.error:
+                    pass
+
+    def delete_email(
+        self, email_id: str, folder: str = "INBOX", permanent: bool = False
+    ) -> str:
+        r"""Delete an email.
+
+        Args:
+            email_id (str): ID of the email to delete
+            folder (str): Folder containing the email (default: "INBOX")
+            permanent (bool): If True, permanently
+                delete the email (default: False)
+
+        Returns:
+            str: Success message
+        """
+        imap = None
+        try:
+            imap = self._get_imap_connection()
+            imap.select(folder)
+
+            if permanent:
+                # Permanently delete
+                imap.store(email_id, '+FLAGS', '\\Deleted')
+                imap.expunge()
+                action = "permanently deleted"
+            else:
+                # Move to trash (soft delete)
+                try:
+                    imap.copy(email_id, "Trash")
+                    imap.store(email_id, '+FLAGS', '\\Deleted')
+                    imap.expunge()
+                    action = "moved to trash"
+                except imaplib.IMAP4.error:
+                    # If Trash folder doesn't exist, just mark as deleted
+                    imap.store(email_id, '+FLAGS', '\\Deleted')
+                    imap.expunge()
+                    action = "marked as deleted"
+
+            logger.info("Successfully %s email %s", action, email_id)
+            return f"Email {email_id} {action}"
+
+        except (ConnectionError, imaplib.IMAP4.error) as e:
+            logger.error("Error deleting email %s: %s", email_id, e)
+            raise
+        finally:
+            if imap:
+                try:
+                    imap.close()
+                    imap.logout()
+                except imaplib.IMAP4.error:
+                    pass
+
+    def _extract_email_body(
+        self, email_message: email.message.Message
+    ) -> Dict[str, str]:
+        r"""Extract plain text and HTML body from email message.
+
+        Args:
+            email_message: Email message object
+
+        Returns:
+            Dict[str, str]: Dictionary with 'plain' and 'html' body content
+        """
+        body_content = {"plain": "", "html": ""}
+
+        if email_message.is_multipart():
+            for part in email_message.walk():
+                content_type = part.get_content_type()
+                content_disposition = str(part.get("Content-Disposition"))
+
+                # Skip attachments
+                # Skip attachments
+                if "attachment" not in content_disposition:
+                    payload = part.get_payload(decode=True)
+                    if isinstance(payload, bytes):
+                        if content_type == "text/plain":
+                            body_content["plain"] += payload.decode(
+                                'utf-8', errors='ignore'
+                            )
+                        elif content_type == "text/html":
+                            body_content["html"] += payload.decode(
+                                'utf-8', errors='ignore'
+                            )
+                    elif isinstance(payload, str):
+                        if content_type == "text/plain":
+                            body_content["plain"] += payload
+                        elif content_type == "text/html":
+                            body_content["html"] += payload
+        else:
+            content_type = email_message.get_content_type()
+            payload = email_message.get_payload(decode=True)
+            if isinstance(payload, bytes):
+                if content_type == "text/plain":
+                    body_content["plain"] = payload.decode(
+                        'utf-8', errors='ignore'
+                    )
+                elif content_type == "text/html":
+                    body_content["html"] = payload.decode(
+                        'utf-8', errors='ignore'
+                    )
+            elif isinstance(payload, str):
+                if content_type == "text/plain":
+                    body_content["plain"] = payload
+                elif content_type == "text/html":
+                    body_content["html"] = payload
+
+        return body_content
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Get list of tools provided by this toolkit.
+
+        Returns:
+            List[FunctionTool]: List of available tools
+        """
+        return [
+            FunctionTool(self.fetch_emails),
+            FunctionTool(self.get_email_by_id),
+            FunctionTool(self.send_email),
+            FunctionTool(self.reply_to_email),
+            FunctionTool(self.move_email_to_folder),
+            FunctionTool(self.delete_email),
+        ]
