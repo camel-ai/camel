@@ -197,12 +197,6 @@ class Workforce(BaseNode):
             support native structured output. When disabled, the workforce
             uses the native response_format parameter.
             (default: :obj:`True`)
-        on_subtask_completed (Optional[Callable[[Task], None]], optional):
-            Callback function to be called when a subtask is completed.
-            (default: :obj:`None`)
-        on_subtask_failed (Optional[Callable[[Task], None]], optional):
-            Callback function to be called when a subtask fails.
-            (default: :obj:`None`)
 
     Example:
         >>> import asyncio
@@ -255,8 +249,6 @@ class Workforce(BaseNode):
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
         task_timeout_seconds: Optional[float] = None,
-        on_subtask_completed: Optional[Callable[[Task], None]] = None,
-        on_subtask_failed: Optional[Callable[[Task], None]] = None,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[
@@ -273,9 +265,6 @@ class Workforce(BaseNode):
         if self.use_structured_output_handler:
             self.structured_handler = StructuredOutputHandler()
         self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
-        # Optional user callbacks for subtask lifecycle notifications
-        self.on_subtask_completed = on_subtask_completed
-        self.on_subtask_failed = on_subtask_failed
         self._task: Optional[Task] = None
         self._pending_tasks: Deque[Task] = deque()
         self._task_dependencies: Dict[str, List[str]] = {}
@@ -2528,14 +2517,6 @@ class Workforce(BaseNode):
             self._completed_tasks.append(task)
             if task.id in self._assignees:
                 await self._channel.archive_task(task.id)
-            # Invoke failure callback before halting
-            if self.on_subtask_failed is not None:
-                try:
-                    self.on_subtask_failed(task)
-                except Exception as cb_err:
-                    logger.warning(
-                        f"on_subtask_failed callback raised: {cb_err}"
-                    )
             return True
 
         # If too many tasks are failing rapidly, also halt to prevent infinite
@@ -2673,15 +2654,6 @@ class Workforce(BaseNode):
             self._completed_tasks.append(task)
             return False
 
-        # Notify failure after bookkeeping, before scheduling next work
-        if self.on_subtask_failed is not None:
-            try:
-                self.on_subtask_failed(task)
-            except Exception as cb_err:
-                logger.warning(
-                    f"on_subtask_failed callback raised: {cb_err}"
-                )
-
         logger.debug(
             f"Task {task.id} failed and was {action_taken}. "
             f"Updating dependency state."
@@ -2784,14 +2756,6 @@ class Workforce(BaseNode):
         # Archive the task and update dependency tracking
         if task.id in self._assignees:
             await self._channel.archive_task(task.id)
-
-        if self.on_subtask_completed is not None:
-            try:
-                self.on_subtask_completed(task)
-            except Exception as cb_err:
-                logger.warning(
-                    f"on_subtask_completed callback raised: {cb_err}"
-                )
 
         # Ensure it's in completed tasks set by updating if it exists or
         # appending if it's new.
