@@ -113,18 +113,18 @@ class OceanBaseStorage(BaseVectorStorage):
             # Create vector index
             index_params: IndexParams = IndexParams()
             index_params.add_index(
-                IndexParam(
-                    index_name="embedding_idx",
-                    field_name="embedding",
-                    distance=self.distance,
-                    type="hnsw",
-                    m=16,
-                    ef_construction=256,
-                )
+                field_name="embedding",
+                index_type="hnsw",
+                index_name="embedding_idx",
+                distance=self.distance,
+                m=16,
+                ef_construction=256,
             )
 
+            # Get the first index parameter
+            first_index_param = next(iter(index_params))
             self._client.create_vidx_with_vec_index_param(
-                table_name=self.table_name, vidx_param=index_params.params[0]
+                table_name=self.table_name, vidx_param=first_index_param
             )
 
             logger.info(f"Created table {self.table_name} with vector index")
