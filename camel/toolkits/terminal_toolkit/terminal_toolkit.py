@@ -15,6 +15,7 @@ import atexit
 import os
 import platform
 import select
+import shlex
 import subprocess
 import sys
 import threading
@@ -65,17 +66,27 @@ class TerminalToolkit(BaseToolkit):
     in either a local or a sandboxed Docker environment.
 
     Args:
-    use_docker_backend (bool): If True, all commands are executed in a
-        Docker container. Defaults to False.
-    docker_container_name (Optional[str]): The name of the Docker
-        container to use. Required if use_docker_backend is True.
-    working_dir (str): The base directory for all operations.
-        For the local backend, this acts as a security sandbox.
-    session_logs_dir (Optional[str]): The directory to store session
-        logs. Defaults to a 'terminal_logs' subfolder in the
-        working_dir.
-    timeout (int): The default timeout in seconds for blocking
-        commands. Defaults to 60.
+        timeout (Optional[float]): The default timeout in seconds for blocking
+            commands. Defaults to 20.0.
+        working_directory (Optional[str]): The base directory for operations.
+            For the local backend, this acts as a security sandbox.
+            For the Docker backend, this sets the working directory inside
+            the container.
+            If not specified, defaults to "./workspace" for local and
+            "/workspace" for Docker.
+        use_docker_backend (bool): If True, all commands are executed in a
+            Docker container. Defaults to False.
+        docker_container_name (Optional[str]): The name of the Docker
+            container to use. Required if use_docker_backend is True.
+        session_logs_dir (Optional[str]): The directory to store session
+            logs. Defaults to a 'terminal_logs' subfolder in the
+            working directory.
+        safe_mode (bool): Whether to apply security checks to commands.
+            Defaults to True.
+        allowed_commands (Optional[List[str]]): List of allowed commands
+            when safe_mode is True. If None, uses default safety rules.
+        clone_current_env (bool): Whether to clone the current Python
+            environment for local execution. Defaults to False.
     """
 
     def __init__(
@@ -95,15 +106,34 @@ class TerminalToolkit(BaseToolkit):
         # Thread-safe guard for concurrent access to
         # shell_sessions and session state
         self._session_lock = threading.RLock()
-        if working_directory:
-            self.working_dir = os.path.abspath(working_directory)
-        else:
+
+        # Initialize docker_workdir with proper type
+        self.docker_workdir: Optional[str] = None
+
+        if self.use_docker_backend:
+            # For Docker backend, working_directory is path inside container
+            if working_directory:
+                self.docker_workdir = working_directory
+            else:
+                self.docker_workdir = "/workspace"
+            # For logs and local file operations, use a local workspace
             camel_workdir = os.environ.get("CAMEL_WORKDIR")
             if camel_workdir:
                 self.working_dir = os.path.abspath(camel_workdir)
             else:
                 self.working_dir = os.path.abspath("./workspace")
+        else:
+            # For local backend, working_directory is the local path
+            if working_directory:
+                self.working_dir = os.path.abspath(working_directory)
+            else:
+                camel_workdir = os.environ.get("CAMEL_WORKDIR")
+                if camel_workdir:
+                    self.working_dir = os.path.abspath(camel_workdir)
+                else:
+                    self.working_dir = os.path.abspath("./workspace")
 
+        # Only create local directory for logs and local backend operations
         if not os.path.exists(self.working_dir):
             os.makedirs(self.working_dir, exist_ok=True)
         self.safe_mode = safe_mode
@@ -162,6 +192,20 @@ class TerminalToolkit(BaseToolkit):
                     f"Successfully attached to Docker container "
                     f"'{docker_container_name}'."
                 )
+                # Ensure the working directory exists inside the container
+                if self.docker_workdir:
+                    try:
+                        quoted_dir = shlex.quote(self.docker_workdir)
+                        mkdir_cmd = f'sh -lc "mkdir -p -- {quoted_dir}"'
+                        _init = self.docker_api_client.exec_create(
+                            self.container.id, mkdir_cmd
+                        )
+                        self.docker_api_client.exec_start(_init['Id'])
+                    except Exception as e:
+                        logger.warning(
+                            f"[Docker] Failed to ensure workdir "
+                            f"'{self.docker_workdir}': {e}"
+                        )
             except NotFound:
                 raise RuntimeError(
                     f"Docker container '{docker_container_name}' not found."
@@ -506,8 +550,11 @@ class TerminalToolkit(BaseToolkit):
                     )
                 else:
                     # DOCKER BLOCKING
+                    assert (
+                        self.docker_workdir is not None
+                    )  # Docker backend always has workdir
                     exec_instance = self.docker_api_client.exec_create(
-                        self.container.id, command, workdir="/workspace"
+                        self.container.id, command, workdir=self.docker_workdir
                     )
                     exec_output = self.docker_api_client.exec_start(
                         exec_instance['Id']
@@ -574,12 +621,15 @@ class TerminalToolkit(BaseToolkit):
                     with self._session_lock:
                         self.shell_sessions[session_id]["process"] = process
                 else:
+                    assert (
+                        self.docker_workdir is not None
+                    )  # Docker backend always has workdir
                     exec_instance = self.docker_api_client.exec_create(
                         self.container.id,
                         command,
                         stdin=True,
                         tty=True,
-                        workdir="/workspace",
+                        workdir=self.docker_workdir,
                     )
                     exec_id = exec_instance['Id']
                     exec_socket = self.docker_api_client.exec_start(

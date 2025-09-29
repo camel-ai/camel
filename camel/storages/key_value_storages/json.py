@@ -17,6 +17,8 @@ from enum import EnumMeta
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional
 
+from pydantic import BaseModel
+
 from camel.storages.key_value_storages import BaseKeyValueStorage
 from camel.types import (
     ModelType,
@@ -27,8 +29,13 @@ from camel.types import (
 
 
 class CamelJSONEncoder(json.JSONEncoder):
-    r"""A custom JSON encoder for serializing specifically enumerated types.
-    Ensures enumerated types can be stored in and retrieved from JSON format.
+    r"""A custom JSON encoder for serializing CAMEL-specific types.
+
+    Handles serialization of:
+    - Enumerated types (RoleType, TaskType, ModelType, OpenAIBackendRole)
+    - Pydantic BaseModel objects (from structured outputs)
+
+    Ensures these types can be stored in and retrieved from JSON format.
     """
 
     CAMEL_ENUMS: ClassVar[Dict[str, EnumMeta]] = {
@@ -39,8 +46,14 @@ class CamelJSONEncoder(json.JSONEncoder):
     }
 
     def default(self, obj) -> Any:
+        # Handle CAMEL enum types
         if type(obj) in self.CAMEL_ENUMS.values():
             return {"__enum__": str(obj)}
+
+        # Handle Pydantic BaseModel objects (e.g., from structured outputs)
+        if isinstance(obj, BaseModel):
+            return obj.model_dump()
+
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, obj)
 

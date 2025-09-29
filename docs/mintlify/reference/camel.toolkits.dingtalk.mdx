@@ -1,0 +1,650 @@
+<a id="camel.toolkits.dingtalk"></a>
+
+<a id="camel.toolkits.dingtalk._get_dingtalk_access_token"></a>
+
+## _get_dingtalk_access_token
+
+```python
+def _get_dingtalk_access_token():
+```
+
+**Returns:**
+
+  str: Access token for API requests.
+
+<a id="camel.toolkits.dingtalk._make_dingtalk_request"></a>
+
+## _make_dingtalk_request
+
+```python
+def _make_dingtalk_request(method: Literal['GET', 'POST'], endpoint: str, **kwargs):
+```
+
+Makes authenticated request to Dingtalk API.
+
+**Parameters:**
+
+- **method** (`Literal["GET", "POST"]`): HTTP method to use.
+- **endpoint** (str): API endpoint path. **kwargs: Additional arguments passed to requests.
+
+**Returns:**
+
+  Dict[str, Any]: API response data.
+
+**Raises:**
+
+- **Exception**: If API request fails or returns error.
+
+<a id="camel.toolkits.dingtalk._generate_signature"></a>
+
+## _generate_signature
+
+```python
+def _generate_signature(secret: str, timestamp: str):
+```
+
+Generates signature for Dingtalk webhook.
+
+**Parameters:**
+
+- **secret** (str): Webhook secret.
+- **timestamp** (str): Current timestamp.
+
+**Returns:**
+
+  str: Generated signature.
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit"></a>
+
+## DingtalkToolkit
+
+```python
+class DingtalkToolkit(BaseToolkit):
+```
+
+A toolkit for Dingtalk operations.
+
+This toolkit provides methods to interact with the Dingtalk API,
+allowing users to send messages, manage users, departments, and handle
+webhook operations.
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.__init__"></a>
+
+### __init__
+
+```python
+def __init__(self, timeout: Optional[float] = None):
+```
+
+Initializes the DingtalkToolkit.
+
+**Parameters:**
+
+- **timeout** (Optional[float]): Timeout for API requests in seconds.
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit._initialize_token_safely"></a>
+
+### _initialize_token_safely
+
+```python
+def _initialize_token_safely(self):
+```
+
+Safely initializes access token during toolkit setup.
+
+This method attempts to get an access token during initialization
+but doesn't raise exceptions if it fails, allowing the toolkit
+to be instantiated even if credentials are temporarily invalid.
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_send_text_message"></a>
+
+### dingtalk_send_text_message
+
+```python
+def dingtalk_send_text_message(self, userid: str, content: str):
+```
+
+Sends a text message to a Dingtalk user.
+
+**Parameters:**
+
+- **userid** (str): The user's userid.
+- **content** (str): Message content.
+
+**Returns:**
+
+  str: Success or error message.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/send-single-chat-message
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_send_markdown_message"></a>
+
+### dingtalk_send_markdown_message
+
+```python
+def dingtalk_send_markdown_message(
+    self,
+    userid: str,
+    title: str,
+    markdown_content: str
+):
+```
+
+Sends a markdown message to a Dingtalk user.
+
+**Parameters:**
+
+- **userid** (str): The user's userid.
+- **title** (str): Message title.
+- **markdown_content** (str): Markdown formatted content.
+
+**Returns:**
+
+  str: Success or error message.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/send-single-chat-message
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_get_user_info"></a>
+
+### dingtalk_get_user_info
+
+```python
+def dingtalk_get_user_info(self, userid: str):
+```
+
+Retrieves Dingtalk user information.
+
+**Parameters:**
+
+- **userid** (str): The user's userid.
+
+**Returns:**
+
+  Dict[str, Any]: User information or error information.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/query-user-details
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_get_department_list"></a>
+
+### dingtalk_get_department_list
+
+```python
+def dingtalk_get_department_list(self, dept_id: Optional[int] = None):
+```
+
+Retrieves list of departments.
+
+**Parameters:**
+
+- **dept_id** (Optional[int]): Department ID. If None, gets root departments.
+
+**Returns:**
+
+  Dict[str, Any]: Department list or error information.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/obtain-the-department-list-v2
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_get_department_users"></a>
+
+### dingtalk_get_department_users
+
+```python
+def dingtalk_get_department_users(
+    self,
+    dept_id: int,
+    offset: int = 0,
+    size: int = 100
+):
+```
+
+Retrieves users in a department.
+
+**Parameters:**
+
+- **dept_id** (int): Department ID.
+- **offset** (int): Offset for pagination (default: 0). (default: 0)
+- **size** (int): Number of users to retrieve (default: 100, max: 100). (default: 100, max: 100)
+
+**Returns:**
+
+  Dict[str, Any]: Users list or error information.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/queries-the-complete-information-of-a-department-user
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_search_users_by_name"></a>
+
+### dingtalk_search_users_by_name
+
+```python
+def dingtalk_search_users_by_name(self, name: str):
+```
+
+Searches for users by name.
+
+**Parameters:**
+
+- **name** (str): User name to search for.
+
+**Returns:**
+
+  Dict[str, Any]: Search results or error information.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/query-users
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_send_webhook_message"></a>
+
+### dingtalk_send_webhook_message
+
+```python
+def dingtalk_send_webhook_message(
+    self,
+    content: str,
+    msgtype: Literal['text', 'markdown', 'link', 'actionCard'] = 'text',
+    title: Optional[str] = None,
+    webhook_url: Optional[str] = None,
+    webhook_secret: Optional[str] = None
+):
+```
+
+Sends a message via Dingtalk webhook.
+
+**Parameters:**
+
+- **content** (str): Message content.
+- **msgtype** (Literal): Message type (text, markdown, link, actionCard).
+- **title** (Optional[str]): Message title (required for markdown).
+- **webhook_url** (Optional[str]): Webhook URL. If None, uses env var.
+- **webhook_secret** (Optional[str]): Webhook secret. If None, uses env var.
+
+**Returns:**
+
+  str: Success or error message.
+
+References:
+https://open.dingtalk.com/document/robots/custom-robot-access
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_create_group"></a>
+
+### dingtalk_create_group
+
+```python
+def dingtalk_create_group(
+    self,
+    name: str,
+    owner: str,
+    useridlist: List[str]
+):
+```
+
+Creates a Dingtalk group.
+
+**Parameters:**
+
+- **name** (str): Group name.
+- **owner** (str): Group owner's userid.
+- **useridlist** (List[str]): List of user IDs to add to the group.
+
+**Returns:**
+
+  Dict[str, Any]: Group creation result with chatid or error.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/create-group-session
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_send_group_message"></a>
+
+### dingtalk_send_group_message
+
+```python
+def dingtalk_send_group_message(
+    self,
+    chatid: str,
+    content: str,
+    msgtype: Literal['text', 'markdown'] = 'text'
+):
+```
+
+Sends a message to a Dingtalk group.
+
+**Parameters:**
+
+- **chatid** (str): Group chat ID.
+- **content** (str): Message content.
+- **msgtype** (`Literal["text", "markdown"]`): Message type.
+
+**Returns:**
+
+  str: Success or error message.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/send-group-messages
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_send_link_message"></a>
+
+### dingtalk_send_link_message
+
+```python
+def dingtalk_send_link_message(
+    self,
+    userid: str,
+    title: str,
+    text: str,
+    message_url: str,
+    pic_url: Optional[str] = None
+):
+```
+
+Sends a link message to a Dingtalk user.
+
+**Parameters:**
+
+- **userid** (str): The user's userid.
+- **title** (str): Link title.
+- **text** (str): Link description text.
+- **message_url** (str): URL to link to.
+- **pic_url** (Optional[str]): Picture URL for the link.
+
+**Returns:**
+
+  str: Success or error message.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/send-single-chat-message
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_send_action_card_message"></a>
+
+### dingtalk_send_action_card_message
+
+```python
+def dingtalk_send_action_card_message(
+    self,
+    userid: str,
+    title: str,
+    text: str,
+    single_title: str,
+    single_url: str
+):
+```
+
+Sends an action card message to a Dingtalk user.
+
+**Parameters:**
+
+- **userid** (str): The user's userid.
+- **title** (str): Card title.
+- **text** (str): Card content text.
+- **single_title** (str): Action button title.
+- **single_url** (str): Action button URL.
+
+**Returns:**
+
+  str: Success or error message.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/send-single-chat-message
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_get_user_by_mobile"></a>
+
+### dingtalk_get_user_by_mobile
+
+```python
+def dingtalk_get_user_by_mobile(self, mobile: str):
+```
+
+Gets user information by mobile number.
+
+**Parameters:**
+
+- **mobile** (str): User's mobile number. Should be a valid Chinese mobile number format (11 digits starting with 1).
+
+**Returns:**
+
+  Dict[str, Any]: User information or error information.
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_get_user_by_unionid"></a>
+
+### dingtalk_get_user_by_unionid
+
+```python
+def dingtalk_get_user_by_unionid(self, unionid: str):
+```
+
+Gets user information by unionid.
+
+**Parameters:**
+
+- **unionid** (str): User's unique identifier across all DingTalk organizations. This is a global identifier that remains consistent even if the user belongs to multiple DingTalk organizations, unlike userid which is organization-specific.
+
+**Returns:**
+
+  Dict[str, Any]: User information or error information.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/query-a-user-by-the-union-id
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_get_department_detail"></a>
+
+### dingtalk_get_department_detail
+
+```python
+def dingtalk_get_department_detail(self, dept_id: int):
+```
+
+Gets detailed information about a department.
+
+**Parameters:**
+
+- **dept_id** (int): Department ID.
+
+**Returns:**
+
+  Dict[str, Any]: Department details or error information.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/query-department-details0-v2
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_send_oa_message"></a>
+
+### dingtalk_send_oa_message
+
+```python
+def dingtalk_send_oa_message(
+    self,
+    userid: str,
+    message_url: str,
+    head_bgcolor: str,
+    head_text: str,
+    body_title: str,
+    body_content: str
+):
+```
+
+Sends an OA (Office Automation) message to a Dingtalk user.
+
+**Parameters:**
+
+- **userid** (str): The user's userid.
+- **message_url** (str): URL for the message action.
+- **head_bgcolor** (str): Header background color (hex format).
+- **head_text** (str): Header text.
+- **body_title** (str): Body title.
+- **body_content** (str): Body content.
+
+**Returns:**
+
+  str: Success or error message.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/send-single-chat-message
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_get_group_info"></a>
+
+### dingtalk_get_group_info
+
+```python
+def dingtalk_get_group_info(self, chatid: str):
+```
+
+Gets information about a group chat.
+
+**Parameters:**
+
+- **chatid** (str): Group chat ID.
+
+**Returns:**
+
+  Dict[str, Any]: Group information or error information.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/query-group-session-information
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_update_group"></a>
+
+### dingtalk_update_group
+
+```python
+def dingtalk_update_group(
+    self,
+    chatid: str,
+    name: Optional[str] = None,
+    owner: Optional[str] = None,
+    add_useridlist: Optional[List[str]] = None,
+    del_useridlist: Optional[List[str]] = None
+):
+```
+
+Updates a Dingtalk group configuration.
+
+**Parameters:**
+
+- **chatid** (str): Group chat ID.
+- **name** (Optional[str]): New group name.
+- **owner** (Optional[str]): New group owner userid.
+- **add_useridlist** (Optional[List[str]]): List of user IDs to add.
+
+**Returns:**
+
+  Dict[str, Any]: Update result or error information.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/modify-group-session
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_send_work_notification"></a>
+
+### dingtalk_send_work_notification
+
+```python
+def dingtalk_send_work_notification(
+    self,
+    userid_list: List[str],
+    msg_content: str,
+    msg_type: Literal['text', 'markdown'] = 'text'
+):
+```
+
+Sends work notification to multiple users.
+
+**Parameters:**
+
+- **userid_list** (List[str]): List of user IDs to send to.
+
+**Returns:**
+
+  str: Success or error message.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/asynchronous-sending-of-enterprise-session-messages
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_get_userid_by_phone"></a>
+
+### dingtalk_get_userid_by_phone
+
+```python
+def dingtalk_get_userid_by_phone(self, phone_number: str):
+```
+
+Gets user ID by phone number for LLM agents.
+
+**Parameters:**
+
+- **phone_number** (str): User's phone number.
+
+**Returns:**
+
+  str: User ID or error message.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/query-user-details
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_get_userid_by_name"></a>
+
+### dingtalk_get_userid_by_name
+
+```python
+def dingtalk_get_userid_by_name(self, user_name: str):
+```
+
+Gets user ID by user name for LLM agents.
+
+**Parameters:**
+
+- **user_name** (str): User's display name.
+
+**Returns:**
+
+  str: User ID or error message.
+
+References:
+https://open.dingtalk.com/document/orgapp-server/query-users
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_get_department_id_by_name"></a>
+
+### dingtalk_get_department_id_by_name
+
+```python
+def dingtalk_get_department_id_by_name(self, department_name: str):
+```
+
+Gets department ID by department name for LLM agents.
+
+**Parameters:**
+
+- **department_name** (str): Department name to search for.
+
+**Returns:**
+
+  str: Department ID or error message.
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.dingtalk_get_chatid_by_group_name"></a>
+
+### dingtalk_get_chatid_by_group_name
+
+```python
+def dingtalk_get_chatid_by_group_name(self, group_name: str):
+```
+
+Gets chat ID by group name for LLM agents.
+
+**Parameters:**
+
+- **group_name** (str): Group name to search for.
+
+**Returns:**
+
+  str: Guidance message for obtaining chat ID.
+
+<a id="camel.toolkits.dingtalk.DingtalkToolkit.get_tools"></a>
+
+### get_tools
+
+```python
+def get_tools(self):
+```
+
+Returns toolkit functions as tools.

@@ -13,15 +13,25 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
+
+from pydantic import BaseModel
 
 from camel.configs import ZhipuAIConfig
+from camel.logger import get_logger
+from camel.messages import OpenAIMessage
+from camel.models._utils import try_modify_message_with_format
 from camel.models.openai_compatible_model import OpenAICompatibleModel
-from camel.types import ModelType
+from camel.types import (
+    ChatCompletion,
+    ModelType,
+)
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
 )
+
+logger = get_logger(__name__)
 
 
 class ZhipuAIModel(OpenAICompatibleModel):
@@ -85,3 +95,52 @@ class ZhipuAIModel(OpenAICompatibleModel):
             max_retries=max_retries,
             **kwargs,
         )
+
+    def _request_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+
+        try_modify_message_with_format(messages[-1], response_format)
+        request_config["response_format"] = {"type": "json_object"}
+        try:
+            return self._client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except Exception as e:
+            logger.error(f"Fallback attempt also failed: {e}")
+            raise
+
+    async def _arequest_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        import copy
+
+        request_config = copy.deepcopy(self.model_config_dict)
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+        try_modify_message_with_format(messages[-1], response_format)
+        request_config["response_format"] = {"type": "json_object"}
+        try:
+            return await self._async_client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **request_config,
+            )
+        except Exception as e:
+            logger.error(f"Fallback attempt also failed: {e}")
+            raise
