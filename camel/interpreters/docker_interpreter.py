@@ -12,12 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import atexit
 import io
 import shlex
 import tarfile
 import uuid
+import weakref
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Set
 
 from colorama import Fore
 
@@ -30,6 +32,45 @@ if TYPE_CHECKING:
     from docker.models.containers import Container
 
 logger = get_logger(__name__)
+
+_LIVE_CONTAINER_IDS: Set[str] = set()
+
+
+def _finalize_container(container_id: str) -> None:
+    try:
+        import docker
+
+        client = docker.from_env()
+        try:
+            container = client.containers.get(container_id)
+        except Exception:
+            return
+        try:
+            container.stop()
+        except Exception:
+            pass
+        try:
+            container.remove(force=True)
+        except Exception:
+            pass
+        try:
+            _LIVE_CONTAINER_IDS.discard(container_id)
+        except Exception:
+            pass
+    except Exception:
+        # Finalizers must never raise
+        pass
+
+
+def _atexit_cleanup() -> None:
+    # Make a snapshot to avoid mutation during iteration
+    pending_ids = list(_LIVE_CONTAINER_IDS)
+    for cid in pending_ids:
+        _finalize_container(cid)
+        _LIVE_CONTAINER_IDS.discard(cid)
+
+
+atexit.register(_atexit_cleanup)
 
 
 class DockerInterpreter(BaseInterpreter):
@@ -102,10 +143,20 @@ class DockerInterpreter(BaseInterpreter):
         try:
             if self._container is not None:
                 self.cleanup()
-        except (ImportError, AttributeError) as e:
-            logger.warning(f"Error during container cleanup: {e}")
         except Exception as e:
-            logger.warning(f"Unexpected error during container cleanup: {e}")
+            logger.warning(f"Error during interpreter __del__ cleanup: {e}")
+
+    def __enter__(self) -> "DockerInterpreter":
+        self._initialize_if_needed()
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        try:
+            self.cleanup()
+        except Exception as e:
+            logger.warning(f"Error during interpreter context cleanup: {e}")
+        # Do not suppress exceptions
+        return False
 
     def _initialize_if_needed(self) -> None:
         if self._container is not None:
@@ -139,7 +190,17 @@ class DockerInterpreter(BaseInterpreter):
             detach=True,
             name=f"camel-interpreter-{uuid.uuid4()}",
             command="tail -f /dev/null",
+            auto_remove=True,
         )
+
+        try:
+            container_id = self._container.id
+            _LIVE_CONTAINER_IDS.add(container_id)
+            # Weakref finalizer to ensure cleanup if object is GC'ed
+            weakref.finalize(self, _finalize_container, container_id)
+        except Exception:
+            # Best-effort bookkeeping only
+            pass
 
     def _create_file_in_container(self, content: str) -> Path:
         # get a random name for the file
@@ -201,16 +262,19 @@ class DockerInterpreter(BaseInterpreter):
         """
         try:
             if self._container is not None:
-                # Check if docker module is still available
-                import sys
-
-                if 'docker' in sys.modules:
+                container_id = getattr(self._container, "id", None)
+                try:
                     self._container.stop()
+                except Exception:
+                    pass
+                try:
+                    # If auto_remove=True, this may already be gone
                     self._container.remove(force=True)
+                except Exception:
+                    pass
                 self._container = None
-        except (ImportError, AttributeError, ModuleNotFoundError) as e:
-            logger.warning(f"Docker module unavailable during cleanup: {e}")
-            self._container = None
+                if container_id:
+                    _LIVE_CONTAINER_IDS.discard(container_id)
         except Exception as e:
             logger.error(f"Error during container cleanup: {e}")
             self._container = None
@@ -275,7 +339,7 @@ class DockerInterpreter(BaseInterpreter):
         except docker.errors.DockerException as e:
             self.cleanup()  # Clean up even if there's an error
             raise InterpreterError(
-                f"Execution halted due to docker exceptoin: {e}. "
+                f"Execution halted due to docker exception: {e}. "
                 "This choice stops the current operation and any "
                 "further code execution."
             ) from e
