@@ -575,6 +575,33 @@ into a JSON file using JsonStorage.
 
 - **path** (str): Target file path to store JSON data.
 
+<a id="camel.agents.chat_agent.ChatAgent.summarize"></a>
+
+### summarize
+
+```python
+def summarize(
+    self,
+    filename: Optional[str] = None,
+    summary_prompt: Optional[str] = None,
+    working_directory: Optional[Union[str, Path]] = None
+):
+```
+
+Summarize the agent's current conversation context and persist it
+to a markdown file.
+
+**Parameters:**
+
+- **filename** (Optional[str]): The base filename (without extension) to use for the markdown file. Defaults to a timestamped name when not provided.
+- **summary_prompt** (Optional[str]): Custom prompt for the summarizer. When omitted, a default prompt highlighting key decisions, action items, and open questions is used.
+- **working_directory** (Optional[str|Path]): Optional directory to save the markdown summary file. If provided, overrides the default directory used by ContextUtility.
+
+**Returns:**
+
+  Dict[str, Any]: A dictionary containing the summary text, file
+path, and status message.
+
 <a id="camel.agents.chat_agent.ChatAgent.clear_memory"></a>
 
 ### clear_memory
@@ -693,6 +720,18 @@ Handle response format when tools are not strict mode compatible.
 
   Tuple: (modified_message, modified_response_format,
 used_prompt_formatting)
+
+<a id="camel.agents.chat_agent.ChatAgent._is_called_from_registered_toolkit"></a>
+
+### _is_called_from_registered_toolkit
+
+```python
+def _is_called_from_registered_toolkit(self):
+```
+
+**Returns:**
+
+  bool: True if called from a RegisteredAgentToolkit, False otherwise
 
 <a id="camel.agents.chat_agent.ChatAgent._apply_prompt_based_parsing"></a>
 
