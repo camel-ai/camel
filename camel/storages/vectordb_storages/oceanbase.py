@@ -112,7 +112,7 @@ class OceanBaseStorage(BaseVectorStorage):
 
             # Create vector index
             index_params: IndexParams = IndexParams()
-            index_params.add_index_param(
+            index_params.add_index(
                 IndexParam(
                     index_name="embedding_idx",
                     field_name="embedding",
