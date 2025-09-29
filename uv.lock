@@ -1253,7 +1253,7 @@ requires-dist = [
     { name = "pandasai", marker = "extra == 'rag'", specifier = ">=2.3.0,<3" },
     { name = "pgvector", marker = "extra == 'all'", specifier = ">=0.2.4,<0.3" },
     { name = "pgvector", marker = "extra == 'storage'", specifier = ">=0.2.4,<0.3" },
-    { name = "pillow", specifier = ">=10.1.0,<12.0.0" },
+    { name = "pillow", specifier = ">=10.1.0,<11.0.0" },
     { name = "playwright", marker = "extra == 'all'", specifier = ">=1.50.0" },
     { name = "playwright", marker = "extra == 'owl'", specifier = ">=1.50.0" },
     { name = "playwright", marker = "extra == 'web-tools'", specifier = ">=1.50.0" },
