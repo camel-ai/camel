@@ -919,7 +919,7 @@ class ChatAgent(BaseAgent):
             return
 
         # TODO: Research more about how to set a more appropriate chunk size
-        chunk_size = int(effective_limit * 0.05)
+        chunk_size = int(effective_limit * 0.2)
 
         # Calculate number of chunks needed
         num_chunks = math.ceil(len(all_token_ids) / chunk_size)
