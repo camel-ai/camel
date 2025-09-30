@@ -12,14 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import base64
 import os
 import re
-from email import encoders
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union
 
 if TYPE_CHECKING:
     from googleapiclient.discovery import Resource
@@ -65,6 +60,9 @@ class GmailToolkit(BaseToolkit):
                 (default: :obj:`None`)
         """
         super().__init__(timeout=timeout)
+
+        self._credentials = self._authenticate()
+
         self.gmail_service: Any = self._get_gmail_service()
         self.people_service: Any = self._get_people_service()
 
@@ -614,6 +612,8 @@ class GmailToolkit(BaseToolkit):
                 save result.
         """
         try:
+            import base64
+
             attachment = (
                 self.gmail_service.users()
                 .messages()
@@ -785,8 +785,8 @@ class GmailToolkit(BaseToolkit):
     def create_label(
         self,
         name: str,
-        label_list_visibility: str = "labelShow",
-        message_list_visibility: str = "show",
+        label_list_visibility: Literal["labelShow", "labelHide"] = "labelShow",
+        message_list_visibility: Literal["show", "hide"] = "show",
     ) -> Dict[str, Any]:
         r"""Create a new Gmail label.
 
@@ -1034,8 +1034,7 @@ class GmailToolkit(BaseToolkit):
         from googleapiclient.discovery import build
 
         try:
-            creds = self._authenticate()
-            service = build('gmail', 'v1', credentials=creds)
+            service = build('gmail', 'v1', credentials=self._credentials)
             return service
         except Exception as e:
             raise ValueError(f"Failed to build Gmail service: {e}") from e
@@ -1045,8 +1044,7 @@ class GmailToolkit(BaseToolkit):
         from googleapiclient.discovery import build
 
         try:
-            creds = self._authenticate()
-            service = build('people', 'v1', credentials=creds)
+            service = build('people', 'v1', credentials=self._credentials)
             return service
         except Exception as e:
             raise ValueError(f"Failed to build People service: {e}") from e
@@ -1113,6 +1111,13 @@ class GmailToolkit(BaseToolkit):
         is_html: bool = False,
     ) -> Dict[str, str]:
         r"""Create a message object for sending."""
+
+        import base64
+        from email import encoders
+        from email.mime.base import MIMEBase
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+
         message = MIMEMultipart()
         message['to'] = ', '.join(to_list)
         message['subject'] = subject
@@ -1192,6 +1197,8 @@ class GmailToolkit(BaseToolkit):
 
     def _extract_message_body(self, message: Dict[str, Any]) -> str:
         r"""Extract message body from message payload."""
+        import base64
+
         payload = message.get('payload', {})
 
         # Handle multipart messages
