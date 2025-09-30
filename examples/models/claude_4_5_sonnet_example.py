@@ -46,8 +46,8 @@ print(f"Is Anthropic: {model.model_type.is_anthropic}")
 print(f"Token Limit: {model.model_type.token_limit}")
 
 # Test basic conversation
-user_msg = """Hello Claude Sonnet 4.5! Can you tell me about your capabilities and 
-how you differ from previous versions?"""
+user_msg = """Hello Claude Sonnet 4.5! Can you tell me about your \
+capabilities and how you differ from previous versions?"""
 
 print(f"\nUser: {user_msg}")
 print("Assistant:", end=" ")
@@ -64,6 +64,7 @@ except Exception as e:
 def calculate_circle_area(radius: float) -> float:
     """Calculate the area of a circle given its radius."""
     import math
+
     return math.pi * radius * radius
 
 
@@ -74,10 +75,13 @@ tool_agent = ChatAgent(
     tools=[FunctionTool(calculate_circle_area)],
 )
 
-print("\n" + "="*50)
+print("\n" + "=" * 50)
 print("Testing Claude Sonnet 4.5 with tool calling:")
 
-user_msg = "Please use the calculate_circle_area tool to find the area of a circle with radius 5."
+user_msg = (
+    "Please use the calculate_circle_area tool to find the area "
+    "of a circle with radius 5."
+)
 
 print(f"\nUser: {user_msg}")
 print("Assistant:", end=" ")
@@ -85,17 +89,22 @@ print("Assistant:", end=" ")
 try:
     response = tool_agent.step(user_msg)
     print(response.msgs[0].content)
-    
+
     # Check if tool was called
     if response.info and response.info.get("tool_calls"):
         print("\n✅ Tool calling test PASSED")
         print(f"Tool calls: {response.info['tool_calls']}")
     else:
-        print("\n⚠️  Tool calling may not have been used (expected for this test)")
-        
+        print(
+            "\n⚠️  Tool calling may not have been used (expected for this test)"
+        )
+
 except Exception as e:
     print(f"\n❌ Tool calling test FAILED: {e}")
 
-print("\n" + "="*50)
+print("\n" + "=" * 50)
 print("Claude Sonnet 4.5 integration test completed!")
-print("If you see this message without errors, the integration is working correctly.")
+print(
+    "If you see this message without errors, "
+    "the integration is working correctly."
+)
