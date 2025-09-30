@@ -151,21 +151,27 @@ class RolePlaying:
             **(sys_msg_generator_kwargs or {}),
         )
 
-        (
-            init_assistant_sys_msg,
-            init_user_sys_msg,
-            sys_msg_meta_dicts,
-        ) = self._get_sys_message_info(
-            assistant_role_name,
-            user_role_name,
-            sys_msg_generator,
-            extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
-        )
-
         self.assistant_agent: ChatAgent
         self.user_agent: ChatAgent
         self.assistant_sys_msg: Optional[BaseMessage]
         self.user_sys_msg: Optional[BaseMessage]
+
+        # Do not regenerate sys_msg when using custom agents
+        if self.assistant_agent is not None and self.user_agent is not None:
+            (
+                init_assistant_sys_msg,
+                init_user_sys_msg,
+                sys_msg_meta_dicts,
+            ) = self._get_sys_message_info(
+                assistant_role_name,
+                user_role_name,
+                sys_msg_generator,
+                extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
+            )
+        else:
+            init_assistant_sys_msg = assistant_agent.system_message
+            init_user_sys_msg = user_agent.system_message
+    
         self._init_agents(
             init_assistant_sys_msg,
             init_user_sys_msg,
@@ -374,7 +380,11 @@ class RolePlaying:
         
         # Use provided assistant agent if available, otherwise create a new one
         if assistant_agent is not None:
+            # Ensure functionality consistent
+            assistant_agent.output_language = output_language
+            assistant_agent.stop_event = stop_event
             self.assistant_agent = assistant_agent
+
             self.assistant_sys_msg = assistant_agent.system_message
         else:
             self.assistant_agent = ChatAgent(
