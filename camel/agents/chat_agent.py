@@ -43,6 +43,7 @@ from typing import (
 
 from openai import (
     AsyncStream,
+    BadRequestError,
     RateLimitError,
     Stream,
 )
@@ -858,11 +859,23 @@ class ChatAgent(BaseAgent):
 
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=EmptyMemoryWarning)
-                _, ctx_tokens = self.memory.get_context()
+                context_messages, _ = self.memory.get_context()
 
-            remaining_budget = max(0, token_limit - ctx_tokens)
+            # Calculate system prompt tokens
+            sys_prompt_tokens = 0
+            for msg in context_messages:
+                if msg.get('role') in {'system'}:
+                    sys_prompt_tokens += (
+                        token_counter.count_tokens_from_messages([msg])
+                    )
+                else:
+                    break  # Stop after first non-system message
 
-            if current_tokens <= remaining_budget:
+            # Effective limit = total limit - system prompt tokens
+            effective_limit = token_limit - sys_prompt_tokens
+
+            # Only chunk if message exceeds effective limit
+            if current_tokens <= effective_limit:
                 _write_single_record(message, role, base_ts)
                 return
         except Exception as e:
@@ -875,8 +888,8 @@ class ChatAgent(BaseAgent):
 
         # 4. Perform slicing
         logger.warning(
-            f"Message with {current_tokens} tokens exceeds remaining budget "
-            f"of {remaining_budget}. Slicing into smaller chunks."
+            f"Message with {current_tokens} tokens exceeds effective limit "
+            f"of {effective_limit}, Slicing into smaller chunks."
         )
 
         text_to_chunk: Optional[str] = None
@@ -905,40 +918,19 @@ class ChatAgent(BaseAgent):
             _write_single_record(message, role, base_ts)  # Nothing to chunk
             return
 
-        # 1.  Base chunk size: one-tenth of the smaller of (a) total token
-        # limit and (b) current remaining budget.  This prevents us from
-        # creating chunks that are guaranteed to overflow the
-        # immediate context window.
-        base_chunk_size = max(1, remaining_budget) // 10
+        # TODO: Research more about how to set a more appropriate chunk size
+        chunk_size = int(effective_limit * 0.05)
 
-        # 2.  Each chunk gets a textual prefix such as:
-        #        "[chunk 3/12 of a long message]\n"
-        #     The prefix itself consumes tokens, so if we do not subtract its
-        #     length the *total* tokens of the outgoing message (prefix + body)
-        #     can exceed the intended bound.  We estimate the prefix length
-        #     with a representative example that is safely long enough for the
-        #     vast majority of cases (three-digit indices).
-        sample_prefix = "[chunk 1/1000 of a long message]\n"
-        prefix_token_len = len(token_counter.encode(sample_prefix))
-
-        # 3.  The real capacity for the message body is therefore the base
-        #     chunk size minus the prefix length.  Fallback to at least one
-        #     token to avoid zero or negative sizes.
-        chunk_body_limit = max(1, base_chunk_size - prefix_token_len)
-
-        # 4.  Calculate how many chunks we will need with this body size.
-        num_chunks = math.ceil(len(all_token_ids) / chunk_body_limit)
+        # Calculate number of chunks needed
+        num_chunks = math.ceil(len(all_token_ids) / chunk_size)
         group_id = str(_uuid.uuid4())
 
         for i in range(num_chunks):
-            start_idx = i * chunk_body_limit
-            end_idx = start_idx + chunk_body_limit
+            start_idx = i * chunk_size
+            end_idx = start_idx + chunk_size
             chunk_token_ids = all_token_ids[start_idx:end_idx]
 
             chunk_body = token_counter.decode(chunk_token_ids)
-
-            prefix = f"[chunk {i + 1}/{num_chunks} of a long message]\n"
-            new_body = prefix + chunk_body
 
             if is_function_result and isinstance(
                 message, FunctionCallingMessage
@@ -950,11 +942,11 @@ class ChatAgent(BaseAgent):
                     content=message.content,
                     func_name=message.func_name,
                     args=message.args,
-                    result=new_body,
+                    result=chunk_body,
                     tool_call_id=message.tool_call_id,
                 )
             else:
-                new_msg = message.create_new_instance(new_body)
+                new_msg = message.create_new_instance(chunk_body)
 
             meta = (new_msg.meta_dict or {}).copy()
             meta.update(
@@ -1662,6 +1654,8 @@ class ChatAgent(BaseAgent):
         step_token_usage = self._create_token_usage_tracker()
         iteration_count: int = 0
         prev_num_openai_messages: int = 0
+        # Track if we've already retried due to token limit
+        token_limit_retry_attempted: bool = False
 
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
@@ -1675,17 +1669,82 @@ class ChatAgent(BaseAgent):
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            # Get response from model backend
-            response = self._get_model_response(
-                openai_messages,
-                num_tokens=num_tokens,
-                current_iteration=iteration_count,
-                response_format=response_format,
-                tool_schemas=[]
-                if disable_tools
-                else self._get_full_tool_schemas(),
-                prev_num_openai_messages=prev_num_openai_messages,
-            )
+            # Get response from model backend with token limit error handling
+            try:
+                response = self._get_model_response(
+                    openai_messages,
+                    num_tokens=num_tokens,
+                    current_iteration=iteration_count,
+                    response_format=response_format,
+                    tool_schemas=[]
+                    if disable_tools
+                    else self._get_full_tool_schemas(),
+                    prev_num_openai_messages=prev_num_openai_messages,
+                )
+            except (BadRequestError, Exception) as e:
+                # Check if this is a token limit error
+                error_message = str(e).lower()
+                is_token_limit_error = (
+                    'context_length_exceeded' in error_message
+                    or 'maximum context length' in error_message
+                    or 'context length' in error_message
+                    or 'context limit' in error_message
+                )
+
+                if is_token_limit_error and not token_limit_retry_attempted:
+                    logger.warning(
+                        "Token limit exceeded error detected. "
+                        "Removing first non-system message and retrying once."
+                    )
+                    token_limit_retry_attempted = True
+
+                    # Find and remove first non-system message
+                    modified_messages = None
+                    for i, msg in enumerate(openai_messages):
+                        msg_role = msg.get('role', '')
+                        # Skip system and developer messages
+                        if msg_role not in {'system'}:
+                            # Found first non-system message, create new list
+                            modified_messages = (
+                                openai_messages[:i] + openai_messages[i + 1 :]
+                            )
+                            logger.info(
+                                "Removed first non-system message "
+                                "and retrying."
+                            )
+                            break
+
+                    if modified_messages is not None:
+                        # Retry with modified messages
+                        try:
+                            response = self._get_model_response(
+                                modified_messages,
+                                num_tokens=num_tokens,
+                                current_iteration=iteration_count,
+                                response_format=response_format,
+                                tool_schemas=[]
+                                if disable_tools
+                                else self._get_full_tool_schemas(),
+                                prev_num_openai_messages=prev_num_openai_messages,
+                            )
+                            # Success! Continue with the response
+                        except Exception:
+                            # Retry also failed, re-raise the original error
+                            logger.warning(
+                                "Retry with reduced context also failed. "
+                                "Re-raising original error."
+                            )
+                            raise e
+                    else:
+                        # No non-system message to remove
+                        logger.warning(
+                            "No non-system message to remove. "
+                            "Re-raising the error."
+                        )
+                        raise
+                else:
+                    raise
+
             prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
 
@@ -1877,6 +1936,9 @@ class ChatAgent(BaseAgent):
         step_token_usage = self._create_token_usage_tracker()
         iteration_count: int = 0
         prev_num_openai_messages: int = 0
+        # Track if we've already retried due to token limit
+        token_limit_retry_attempted: bool = False
+
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
                 await self.pause_event.wait()
@@ -1887,16 +1949,82 @@ class ChatAgent(BaseAgent):
                 return self._step_terminate(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            response = await self._aget_model_response(
-                openai_messages,
-                num_tokens=num_tokens,
-                current_iteration=iteration_count,
-                response_format=response_format,
-                tool_schemas=[]
-                if disable_tools
-                else self._get_full_tool_schemas(),
-                prev_num_openai_messages=prev_num_openai_messages,
-            )
+            # Get response from model backend with token limit error handling
+            try:
+                response = await self._aget_model_response(
+                    openai_messages,
+                    num_tokens=num_tokens,
+                    current_iteration=iteration_count,
+                    response_format=response_format,
+                    tool_schemas=[]
+                    if disable_tools
+                    else self._get_full_tool_schemas(),
+                    prev_num_openai_messages=prev_num_openai_messages,
+                )
+            except (BadRequestError, Exception) as e:
+                # Check if this is a token limit error
+                error_message = str(e).lower()
+                is_token_limit_error = (
+                    'context_length_exceeded' in error_message
+                    or 'maximum context length' in error_message
+                    or 'context length' in error_message
+                    or 'context limit' in error_message
+                )
+
+                if is_token_limit_error and not token_limit_retry_attempted:
+                    logger.warning(
+                        "Token limit exceeded error detected. "
+                        "Removing first non-system message and retrying once."
+                    )
+                    token_limit_retry_attempted = True
+
+                    # Find and remove first non-system message
+                    modified_messages = None
+                    for i, msg in enumerate(openai_messages):
+                        msg_role = msg.get('role', '')
+                        # Skip system and developer messages
+                        if msg_role not in {'system'}:
+                            # Found first non-system message, create new list
+                            modified_messages = (
+                                openai_messages[:i] + openai_messages[i + 1 :]
+                            )
+                            logger.info(
+                                "Removed first non-system message "
+                                "and retrying."
+                            )
+                            break
+
+                    if modified_messages is not None:
+                        # Retry with modified messages
+                        try:
+                            response = await self._aget_model_response(
+                                modified_messages,
+                                num_tokens=num_tokens,
+                                current_iteration=iteration_count,
+                                response_format=response_format,
+                                tool_schemas=[]
+                                if disable_tools
+                                else self._get_full_tool_schemas(),
+                                prev_num_openai_messages=prev_num_openai_messages,
+                            )
+                            # Success! Continue with the response
+                        except Exception:
+                            # Retry also failed, re-raise the original error
+                            logger.warning(
+                                "Retry with reduced context also failed. "
+                                "Re-raising original error."
+                            )
+                            raise e
+                    else:
+                        # No non-system message to remove
+                        logger.warning(
+                            "No non-system message to remove. "
+                            "Re-raising the error."
+                        )
+                        raise
+                else:
+                    raise
+
             prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
 
