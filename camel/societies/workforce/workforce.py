@@ -116,6 +116,7 @@ class WorkforceSnapshot:
         self,
         main_task: Optional[Task] = None,
         pending_tasks: Optional[Deque[Task]] = None,
+        independent_task_queue: Optional[Deque[Task]] = None,
         completed_tasks: Optional[List[Task]] = None,
         task_dependencies: Optional[Dict[str, List[str]]] = None,
         assignees: Optional[Dict[str, str]] = None,
@@ -124,6 +125,11 @@ class WorkforceSnapshot:
     ):
         self.main_task = main_task
         self.pending_tasks = pending_tasks.copy() if pending_tasks else deque()
+        self.independent_task_queue = (
+            independent_task_queue.copy()
+            if independent_task_queue
+            else deque()
+        )
         self.completed_tasks = (
             completed_tasks.copy() if completed_tasks else []
         )
@@ -986,6 +992,7 @@ class Workforce(BaseNode):
         snapshot = WorkforceSnapshot(
             main_task=self._task,
             pending_tasks=self._pending_tasks,
+            independent_task_queue=self._independent_task_queue,
             completed_tasks=self._completed_tasks,
             task_dependencies=self._task_dependencies,
             assignees=self._assignees,
@@ -1205,6 +1212,7 @@ class Workforce(BaseNode):
         snapshot = self._snapshots[snapshot_index]
         self._task = snapshot.main_task
         self._pending_tasks = snapshot.pending_tasks.copy()
+        self._independent_task_queue = snapshot.independent_task_queue.copy()
         self._completed_tasks = snapshot.completed_tasks.copy()
         self._task_dependencies = snapshot.task_dependencies.copy()
         self._assignees = snapshot.assignees.copy()
