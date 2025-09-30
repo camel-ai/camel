@@ -24,7 +24,7 @@ else:
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import MCPServer, api_keys_required
+from camel.utils import MCPServer
 
 logger = get_logger(__name__)
 
@@ -1049,56 +1049,97 @@ class GmailToolkit(BaseToolkit):
         except Exception as e:
             raise ValueError(f"Failed to build People service: {e}") from e
 
-    @api_keys_required(
-        [
-            (None, "GOOGLE_CLIENT_ID"),
-            (None, "GOOGLE_CLIENT_SECRET"),
-        ]
-    )
     def _authenticate(self):
-        r"""Authenticate with Google APIs."""
-        client_id = os.environ.get('GOOGLE_CLIENT_ID')
-        client_secret = os.environ.get('GOOGLE_CLIENT_SECRET')
-        refresh_token = os.environ.get('GOOGLE_REFRESH_TOKEN')
-        token_uri = os.environ.get(
-            'GOOGLE_TOKEN_URI', 'https://oauth2.googleapis.com/token'
-        )
+        r"""Authenticate with Google APIs using OAuth2.
 
+        Automatically saves and loads credentials from
+        ~/.camel/gmail_token.json to avoid repeated
+        browser logins.
+        """
+        import json
+        from pathlib import Path
+
+        from dotenv import load_dotenv
         from google.auth.transport.requests import Request
         from google.oauth2.credentials import Credentials
         from google_auth_oauthlib.flow import InstalledAppFlow
 
-        # For first-time authentication
-        if not refresh_token:
-            client_config = {
-                "installed": {
-                    "client_id": client_id,
-                    "client_secret": client_secret,
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": token_uri,
-                    "redirect_uris": ["http://localhost"],
-                }
-            }
+        # Look for .env file in the project root (camel/)
+        env_file = Path(__file__).parent.parent.parent / '.env'
+        load_dotenv(env_file)
 
-            flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-            creds = flow.run_local_server(port=0)
-            return creds
-        else:
-            # If we have a refresh token, use it to get credentials
-            creds = Credentials(
-                None,
-                refresh_token=refresh_token,
-                token_uri=token_uri,
-                client_id=client_id,
-                client_secret=client_secret,
-                scopes=SCOPES,
-            )
+        client_id = os.environ.get('GOOGLE_CLIENT_ID')
+        client_secret = os.environ.get('GOOGLE_CLIENT_SECRET')
 
-            # Refresh token if expired
-            if creds.expired:
+        token_file = Path.home() / '.camel' / 'gmail_token.json'
+        creds = None
+
+        # COMPONENT 1: Load saved credentials
+        if token_file.exists():
+            try:
+                with open(token_file, 'r') as f:
+                    data = json.load(f)
+                creds = Credentials(
+                    token=data.get('token'),
+                    refresh_token=data.get('refresh_token'),
+                    token_uri=data.get(
+                        'token_uri', 'https://oauth2.googleapis.com/token'
+                    ),
+                    client_id=client_id,
+                    client_secret=client_secret,
+                    scopes=SCOPES,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to load saved token: {e}")
+                creds = None
+
+        # COMPONENT 2: Refresh if expired
+        if creds and creds.expired and creds.refresh_token:
+            try:
                 creds.refresh(Request())
+                logger.info("Access token refreshed")
+                return creds
+            except Exception as e:
+                logger.warning(f"Token refresh failed: {e}")
+                creds = None
 
+        # COMPONENT 3: Return if valid
+        if creds and creds.valid:
             return creds
+
+        # COMPONENT 4: Browser OAuth (first-time or invalid credentials)
+        client_config = {
+            "installed": {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": ["http://localhost"],
+            }
+        }
+
+        flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+        creds = flow.run_local_server(port=0)
+
+        # Save new credentials
+        token_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(token_file, 'w') as f:
+            json.dump(
+                {
+                    'token': creds.token,
+                    'refresh_token': creds.refresh_token,
+                    'token_uri': creds.token_uri,
+                    'scopes': creds.scopes,
+                },
+                f,
+            )
+        try:
+            os.chmod(token_file, 0o600)
+        except Exception:
+            pass
+        logger.info(f"Credentials saved to {token_file}")
+
+        return creds
 
     def _create_message(
         self,
