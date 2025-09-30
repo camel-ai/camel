@@ -34,6 +34,10 @@ class ChunkrReaderConfig:
         high_resolution (bool, optional): Whether to use high resolution OCR.
             (default: :obj:`True`)
         ocr_strategy (str, optional): The OCR strategy. Defaults to 'Auto'.
+        **kwargs: Additional keyword arguments to pass to the Chunkr Configuration.
+            This accepts all other Configuration parameters such as expires_in,
+            pipeline, segment_processing, segmentation_strategy, etc.
+            See: https://github.com/lumina-ai-inc/chunkr/blob/main/core/src/models/task.rs#L749
     """
 
     def __init__(
@@ -41,10 +45,12 @@ class ChunkrReaderConfig:
         chunk_processing: int = 512,
         high_resolution: bool = True,
         ocr_strategy: str = "Auto",
+        **kwargs,
     ):
         self.chunk_processing = chunk_processing
         self.high_resolution = high_resolution
         self.ocr_strategy = ocr_strategy
+        self.kwargs = kwargs
 
 
 class ChunkrReader:
@@ -175,11 +181,7 @@ class ChunkrReader:
         Returns:
             Configuration: Chunkr SDK configuration.
         """
-        from chunkr_ai.models import (
-            ChunkProcessing,
-            Configuration,
-            OcrStrategy,
-        )
+        from chunkr_ai.models import ChunkProcessing, Configuration, OcrStrategy
 
         return Configuration(
             chunk_processing=ChunkProcessing(
@@ -190,4 +192,5 @@ class ChunkrReader:
                 "Auto": OcrStrategy.AUTO,
                 "All": OcrStrategy.ALL,
             }.get(chunkr_config.ocr_strategy, OcrStrategy.ALL),
+            **chunkr_config.kwargs,
         )

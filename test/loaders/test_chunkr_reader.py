@@ -14,7 +14,7 @@
 
 import json
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from chunkr_ai.models import Status
 
@@ -119,6 +119,92 @@ class TestChunkrReader(unittest.TestCase):
         mock_chunkr_instance.get_task.assert_called_once_with("test_task_id")
         mock_task.poll.assert_called_once()
 
+    def test_chunkr_reader_config_defaults(self):
+        """Test ChunkrReaderConfig with default values."""
+        config = ChunkrReaderConfig()
+
+        self.assertEqual(config.chunk_processing, 512)
+        self.assertEqual(config.high_resolution, True)
+        self.assertEqual(config.ocr_strategy, "Auto")
+        self.assertEqual(config.kwargs, {})
+
+    def test_chunkr_reader_config_custom_values(self):
+        """Test ChunkrReaderConfig with custom values."""
+        config = ChunkrReaderConfig(
+            chunk_processing=1024,
+            high_resolution=False,
+            ocr_strategy="All",
+        )
+
+        self.assertEqual(config.chunk_processing, 1024)
+        self.assertEqual(config.high_resolution, False)
+        self.assertEqual(config.ocr_strategy, "All")
+
+    def test_chunkr_reader_config_with_kwargs(self):
+        """Test ChunkrReaderConfig with additional kwargs."""
+        config = ChunkrReaderConfig(
+            chunk_processing=2048,
+            expires_in=3600,
+            pipeline="custom_pipeline",
+        )
+
+        self.assertEqual(config.chunk_processing, 2048)
+        self.assertEqual(config.kwargs["expires_in"], 3600)
+        self.assertEqual(config.kwargs["pipeline"], "custom_pipeline")
+
+    @patch('chunkr_ai.models.Configuration')
+    @patch('chunkr_ai.models.ChunkProcessing')
+    @patch('chunkr_ai.models.OcrStrategy')
+    def test_to_chunkr_configuration_auto_strategy(
+        self, mock_ocr_strategy, mock_chunk_processing, mock_configuration
+    ):
+        """Test _to_chunkr_configuration with Auto OCR strategy."""
+        config = ChunkrReaderConfig(
+            chunk_processing=512, high_resolution=True, ocr_strategy="Auto"
+        )
+
+        mock_chunk_processing_instance = MagicMock()
+        mock_chunk_processing.return_value = mock_chunk_processing_instance
+        mock_ocr_strategy.AUTO = "AUTO"
+
+        self.reader._to_chunkr_configuration(config)
+
+        mock_chunk_processing.assert_called_once_with(target_length=512)
+        mock_configuration.assert_called_once_with(
+            chunk_processing=mock_chunk_processing_instance,
+            high_resolution=True,
+            ocr_strategy="AUTO",
+        )
+
+    @patch('chunkr_ai.models.Configuration')
+    @patch('chunkr_ai.models.ChunkProcessing')
+    @patch('chunkr_ai.models.OcrStrategy')
+    def test_to_chunkr_configuration_with_kwargs(
+        self, mock_ocr_strategy, mock_chunk_processing, mock_configuration
+    ):
+        """Test _to_chunkr_configuration with additional kwargs."""
+        config = ChunkrReaderConfig(
+            chunk_processing=512,
+            high_resolution=True,
+            ocr_strategy="Auto",
+            expires_in=7200,
+            pipeline="test_pipeline",
+        )
+
+        mock_chunk_processing_instance = MagicMock()
+        mock_chunk_processing.return_value = mock_chunk_processing_instance
+        mock_ocr_strategy.AUTO = "AUTO"
+
+        result = self.reader._to_chunkr_configuration(config)
+
+        mock_chunk_processing.assert_called_once_with(target_length=512)
+        mock_configuration.assert_called_once_with(
+            chunk_processing=mock_chunk_processing_instance,
+            high_resolution=True,
+            ocr_strategy="AUTO",
+            expires_in=7200,
+            pipeline="test_pipeline",
+        )
 
 if __name__ == "__main__":
     unittest.main()
