@@ -267,6 +267,7 @@ class Workforce(BaseNode):
         self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
         self._task: Optional[Task] = None
         self._pending_tasks: Deque[Task] = deque()
+        self._independent_task_queue: Deque[Task] = deque()
         self._task_dependencies: Dict[str, List[str]] = {}
         self._assignees: Dict[str, str] = {}
         self._in_flight_tasks: int = 0
@@ -449,10 +450,6 @@ class Workforce(BaseNode):
                 "better context continuity during task handoffs."
             )
 
-        # ------------------------------------------------------------------
-        # Helper for propagating pause control to externally supplied agents
-        # ------------------------------------------------------------------
-
     def _validate_agent_compatibility(
         self, agent: ChatAgent, agent_context: str = "agent"
     ) -> None:
@@ -489,6 +486,9 @@ class Workforce(BaseNode):
                 "the Workforce."
             )
 
+    # ------------------------------------------------------------------
+    # Helper for propagating pause control to externally supplied agents
+    # ------------------------------------------------------------------
     def _attach_pause_event_to_agent(self, agent: ChatAgent) -> None:
         r"""Ensure the given ChatAgent shares this workforce's pause_event.
 
@@ -1035,41 +1035,80 @@ class Workforce(BaseNode):
         logger.warning(f"Task {task_id} not found in pending tasks.")
         return False
 
+    def get_independent_tasks(self) -> List[Task]:
+        r"""Get current independent tasks for human review."""
+        return list(self._independent_task_queue)
+
     def add_task(
         self,
         content: str,
         task_id: Optional[str] = None,
+        is_independent: bool = False,
         additional_info: Optional[Dict[str, Any]] = None,
         insert_position: int = -1,
     ) -> Task:
-        r"""Add a new task to the pending queue."""
+        r"""Add a new task to the pending queue.
+        Args:
+            content (str): The content of the new task.
+            task_id (Optional[str], optional): Optional ID for the new task.
+                If not provided, a unique ID will be generated.
+                Defaults to None.
+            additional_info (Optional[Dict[str, Any]], optional): Optional
+                additional metadata for the task. Defaults to None.
+            insert_position (int, optional): Position to insert the new task
+                in the pending queue. Defaults to -1 (append to end).
+            is_independent (bool, optional): If True, the task is treated as a
+                completely new task with no dependencies. Defaults to False.
+        """
         new_task = Task(
             content=content,
             id=task_id or f"human_added_{len(self._pending_tasks)}",
             additional_info=additional_info,
         )
-        if insert_position == -1:
-            self._pending_tasks.append(new_task)
-        else:
-            # Convert deque to list, insert, then back to deque
-            tasks_list = list(self._pending_tasks)
-            tasks_list.insert(insert_position, new_task)
-            self._pending_tasks = deque(tasks_list)
 
-        logger.info(f"New task added: {new_task.id}")
+        if is_independent:
+            # Add the new task to independent queue
+            self._independent_task_queue.append(new_task)
+            logger.info(f"New independent task added: {new_task.id}")
+        else:
+            if insert_position == -1:
+                self._pending_tasks.append(new_task)
+            else:
+                # Convert deque to list, insert, then back to deque
+                tasks_list = list(self._pending_tasks)
+                tasks_list.insert(insert_position, new_task)
+                self._pending_tasks = deque(tasks_list)
+
+            logger.info(f"New task added: {new_task.id}")
+
         return new_task
 
     def remove_task(self, task_id: str) -> bool:
         r"""Remove a task from the pending queue."""
-        # Convert to list to find and remove
-        tasks_list = list(self._pending_tasks)
-        for i, task in enumerate(tasks_list):
+        # Check independent queue first
+        if len(self._independent_task_queue) != 0:
+            independent_tasks_list = list(self._independent_task_queue)
+            for i, task in enumerate(independent_tasks_list):
+                if task.id == task_id:
+                    independent_tasks_list.pop(i)
+                    self._independent_task_queue = deque(
+                        independent_tasks_list
+                    )
+                    logger.info(
+                        f"Task {task_id} removed from independent queue."
+                    )
+                    return True
+
+        # Check pending tasks queue
+        pending_tasks_list = list(self._pending_tasks)
+        for i, task in enumerate(pending_tasks_list):
             if task.id == task_id:
-                tasks_list.pop(i)
-                self._pending_tasks = deque(tasks_list)
-                logger.info(f"Task {task_id} removed.")
+                pending_tasks_list.pop(i)
+                self._pending_tasks = deque(pending_tasks_list)
+                logger.info(f"Task {task_id} removed from pending queue.")
                 return True
-        logger.warning(f"Task {task_id} not found in pending tasks.")
+
+        logger.warning(f"Task {task_id} not found in any task queue.")
         return False
 
     def reorder_tasks(self, task_ids: List[str]) -> bool:
@@ -1178,6 +1217,7 @@ class Workforce(BaseNode):
         return {
             "state": self._state.value,
             "pending_tasks_count": len(self._pending_tasks),
+            "independent_tasks_count": len(self._independent_task_queue),
             "completed_tasks_count": len(self._completed_tasks),
             "snapshots_count": len(self._snapshots),
             "children_count": len(self._children),
@@ -1695,6 +1735,7 @@ class Workforce(BaseNode):
         super().reset()
         self._task = None
         self._pending_tasks.clear()
+        self._independent_task_queue.clear()
         self._child_listening_tasks.clear()
         # Clear dependency tracking
         self._task_dependencies.clear()
@@ -2892,11 +2933,6 @@ class Workforce(BaseNode):
                 # Check for pause request at the beginning of each loop
                 # iteration
                 await self._pause_event.wait()
-
-                # Check for stop request after potential pause
-                if self._stop_requested:
-                    logger.info("Stop requested, breaking execution loop.")
-                    break
 
                 # Save snapshot before processing next task
                 if self._pending_tasks:
