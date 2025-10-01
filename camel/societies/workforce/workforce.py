@@ -1315,6 +1315,46 @@ class Workforce(BaseNode):
 
         return subtasks
 
+    async def handle_independent_tasks(self) -> None:
+        r"""Pop one task from the independent task queue and decompose it.
+        Processes only one task at a time so the listener can handle it
+        and its subtasks first. The task is transferred to completed task
+        if decomposed successfully.
+        """
+
+        if not self._independent_task_queue:
+            return
+
+        # Process only one independent task at a time - remove as well
+        independent_task = self._independent_task_queue.popleft()
+        logger.info(f"Decomposing independent task: {independent_task.id}")
+
+        try:
+            # Decompose the independent task
+            await self.handle_decompose_append_task(
+                independent_task, reset=False
+            )
+
+            # Mark parent task as completed
+            await self._handle_completed_task(independent_task)
+            logger.info(
+                f"Independent task {independent_task.id} decomposed and ready "
+                f"for processing"
+            )
+        except Exception as e:
+            logger.error(
+                f"Error decomposing independent task {independent_task.id}: "
+                f"{e}"
+            )
+            # Revert back to the queue for retry later if not decomposed to
+            # _pending_tasks
+            if not self._pending_tasks:
+                self._independent_task_queue.appendleft(independent_task)
+            else:
+                logger.warning(
+                    "Pending tasks exist, this error should not happen."
+                )
+
     @check_if_running(False)
     async def process_task_async(
         self, task: Task, interactive: bool = False
@@ -2937,6 +2977,7 @@ class Workforce(BaseNode):
         while (
             self._task is None
             or self._pending_tasks
+            or self._independent_task_queue
             or self._in_flight_tasks > 0
         ) and not self._stop_requested:
             try:
@@ -2948,6 +2989,29 @@ class Workforce(BaseNode):
                 if self._stop_requested:
                     logger.info("Stop requested, breaking execution loop.")
                     break
+
+                # Check if all current pending tasks are completed and we have
+                # independent tasks to process
+                if not self._pending_tasks and self._in_flight_tasks == 0:
+                    # Check if the independent task that generated these
+                    # subtasks is complete
+                    if self._independent_task_queue:
+                        # Decompose the next independent task if available
+                        logger.info(
+                            "Decomposing next independent task in queue"
+                        )
+                        try:
+                            # Decompose the latest task then append to
+                            # _pending_tasks
+                            await self.handle_independent_tasks()
+                        except Exception as e:
+                            logger.error(
+                                f"Error handling next independent task: {e}",
+                                exc_info=True,
+                            )
+
+                        # Immediately assign and post the transferred tasks
+                        await self._post_ready_tasks()
 
                 # Save snapshot before processing next task
                 if self._pending_tasks:
