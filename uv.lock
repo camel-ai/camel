@@ -661,6 +661,7 @@ dependencies = [
     { name = "psutil" },
     { name = "pydantic" },
     { name = "tiktoken" },
+    { name = "websockets" },
 ]
 
 [package.optional-dependencies]
@@ -1410,6 +1411,7 @@ requires-dist = [
     { name = "weaviate-client", marker = "extra == 'all'", specifier = ">=4.15.0" },
     { name = "weaviate-client", marker = "extra == 'rag'", specifier = ">=4.15.0" },
     { name = "weaviate-client", marker = "extra == 'storage'", specifier = ">=4.15.0" },
+    { name = "websockets", specifier = ">=13.0,<15.1" },
     { name = "websockets", marker = "extra == 'all'", specifier = ">=13.0,<15.1" },
     { name = "websockets", marker = "extra == 'eigent'", specifier = ">=13.0,<15.1" },
     { name = "websockets", marker = "extra == 'owl'", specifier = ">=13.0,<15.1" },
