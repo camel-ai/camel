@@ -302,10 +302,7 @@ class Task(BaseModel):
         return cls(content=message.content, id="0")
 
     @staticmethod
-    def to_message():
-        r"""Convert a Task to a Message."""
-        # TODO
-        pass
+    
 
     def reset(self):
         r"""Reset Task to initial state."""
