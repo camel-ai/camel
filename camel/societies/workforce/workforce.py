@@ -2539,6 +2539,27 @@ class Workforce(BaseNode):
         for task in self._pending_tasks:
             # A task must be assigned to be considered for posting
             if task.id in self._task_dependencies:
+                # Skip if task has already been posted to prevent duplicates
+                try:
+                    task_from_channel = await self._channel.get_task_by_id(
+                        task.id
+                    )
+                    # Check if task is already assigned to a worker
+                    if (
+                        task_from_channel
+                        and task_from_channel.assigned_worker_id
+                    ):
+                        logger.debug(
+                            f"Task {task.id} already assigned to "
+                            f"{task_from_channel.assigned_worker_id}, "
+                            f"skipping to prevent duplicate"
+                        )
+                        continue
+                except Exception as e:
+                    logger.info(
+                        f"Task {task.id} non existent in channel. "
+                        f"Assigning task: {e}"
+                    )
                 dependencies = self._task_dependencies[task.id]
                 # Check if all dependencies for this task are in the completed
                 # set and their state is DONE
