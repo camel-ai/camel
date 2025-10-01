@@ -1050,9 +1050,9 @@ class Workforce(BaseNode):
         self,
         content: str,
         task_id: Optional[str] = None,
-        is_independent: bool = False,
         additional_info: Optional[Dict[str, Any]] = None,
         insert_position: int = -1,
+        is_independent: bool = False,
     ) -> Task:
         r"""Add a new task to the pending queue.
         Args:
@@ -1065,7 +1065,8 @@ class Workforce(BaseNode):
             insert_position (int, optional): Position to insert the new task
                 in the pending queue. Defaults to -1 (append to end).
             is_independent (bool, optional): If True, the task is treated as a
-                completely new task with no dependencies. Defaults to False.
+                completely new task with no dependencies and added to the
+                queue. Defaults to False.
         """
         new_task = Task(
             content=content,
@@ -1077,7 +1078,9 @@ class Workforce(BaseNode):
             # Add the new task to independent queue
             self._independent_task_queue.append(new_task)
             logger.info(f"New independent task added: {new_task.id}")
+
         else:
+            # For regular tasks, append to current subtasks
             if insert_position == -1:
                 self._pending_tasks.append(new_task)
             else:
@@ -1232,26 +1235,21 @@ class Workforce(BaseNode):
             "main_task_id": self._task.id if self._task else None,
         }
 
-    @check_if_running(False)
-    async def process_task_async(
-        self, task: Task, interactive: bool = False
-    ) -> Task:
-        r"""Main entry point to process a task asynchronously.
+    async def handle_decompose_append_task(
+        self, task: Task, reset: bool = True
+    ) -> List[Task]:
+        r"""Handle task decomposition and validation with
+        workforce environment functions. Then append to
+        pending tasks if decomposition happened.
 
         Args:
             task (Task): The task to be processed.
-            interactive (bool, optional): If True, enables human-intervention
-                workflow (pause/resume/snapshot). Defaults to False, which
-                runs the task in a blocking one-shot manner.
+            reset (Bool): Should trigger workforce reset (Workforce must not
+                be running). Default: True
 
         Returns:
-            Task: The updated task.
+            List[Task]: The decomposed subtasks or the original task.
         """
-        # Delegate to intervention pipeline when requested to keep
-        # backward-compat.
-        if interactive:
-            return await self._process_task_with_snapshot(task)
-
         if not validate_task_content(task.content, task.id):
             task.state = TaskState.FAILED
             task.result = "Task failed: Invalid or empty content provided"
@@ -1259,10 +1257,16 @@ class Workforce(BaseNode):
                 f"Task {task.id} rejected: Invalid or empty content. "
                 f"Content preview: '{task.content}'"
             )
-            return task
+            return [task]
 
-        self.reset()
+        if reset and self._state is not WorkforceState.RUNNING:
+            self.reset()
+            logger.info("Workforce reset before handling task.")
+
+        # Focus on the new task
         self._task = task
+        task.state = TaskState.FAILED
+
         if self.metrics_logger:
             self.metrics_logger.log_task_created(
                 task_id=task.id,
@@ -1270,7 +1274,6 @@ class Workforce(BaseNode):
                 task_type=task.type,
                 metadata=task.additional_info,
             )
-        task.state = TaskState.FAILED
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
         subtasks_result = self._decompose_task(task)
@@ -1296,13 +1299,43 @@ class Workforce(BaseNode):
                     task_type=subtask.type,
                     metadata=subtask.additional_info,
                 )
+
         if subtasks:
             # If decomposition happened, the original task becomes a container.
             # We only execute its subtasks.
-            self._pending_tasks.extendleft(reversed(subtasks))
+            if not self._pending_tasks:
+                self._pending_tasks.extendleft(reversed(subtasks))
+            else:
+                logger.warning(
+                    "Pending tasks exist, this error should not happen."
+                )
         else:
             # If no decomposition, execute the original task.
             self._pending_tasks.append(task)
+
+        return subtasks
+
+    @check_if_running(False)
+    async def process_task_async(
+        self, task: Task, interactive: bool = False
+    ) -> Task:
+        r"""Main entry point to process a task asynchronously.
+
+        Args:
+            task (Task): The task to be processed.
+            interactive (bool, optional): If True, enables human-intervention
+                workflow (pause/resume/snapshot). Defaults to False, which
+                runs the task in a blocking one-shot manner.
+
+        Returns:
+            Task: The updated task.
+        """
+        # Delegate to intervention pipeline when requested to keep
+        # backward-compat.
+        if interactive:
+            return await self._process_task_with_snapshot(task)
+
+        subtasks = await self.handle_decompose_append_task(task)
 
         self.set_channel(TaskChannel())
 
@@ -1385,39 +1418,8 @@ class Workforce(BaseNode):
             Task: The updated task.
         """
 
-        if not validate_task_content(task.content, task.id):
-            task.state = TaskState.FAILED
-            task.result = "Task failed: Invalid or empty content provided"
-            logger.warning(
-                f"Task {task.id} rejected: Invalid or empty content. "
-                f"Content preview: '{task.content}'"
-            )
-            return task
+        await self.handle_decompose_append_task(task)
 
-        self.reset()
-        self._task = task
-        self._state = WorkforceState.RUNNING
-        task.state = TaskState.FAILED  # TODO: Add logic for OPEN
-
-        # Decompose the task into subtasks first
-        subtasks_result = self._decompose_task(task)
-
-        # Handle both streaming and non-streaming results
-        if isinstance(subtasks_result, Generator):
-            # This is a generator (streaming mode)
-            subtasks = []
-            for new_tasks in subtasks_result:
-                subtasks.extend(new_tasks)
-        else:
-            # This is a regular list (non-streaming mode)
-            subtasks = subtasks_result
-        if subtasks:
-            # If decomposition happened, the original task becomes a container.
-            # We only execute its subtasks.
-            self._pending_tasks.extendleft(reversed(subtasks))
-        else:
-            # If no decomposition, execute the original task.
-            self._pending_tasks.append(task)
         self.set_channel(TaskChannel())
 
         # Save initial snapshot
@@ -2941,7 +2943,7 @@ class Workforce(BaseNode):
                 # Check for pause request at the beginning of each loop
                 # iteration
                 await self._pause_event.wait()
-                
+
                 # Check for stop request after potential pause
                 if self._stop_requested:
                     logger.info("Stop requested, breaking execution loop.")
