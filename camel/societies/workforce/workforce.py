@@ -2941,6 +2941,11 @@ class Workforce(BaseNode):
                 # Check for pause request at the beginning of each loop
                 # iteration
                 await self._pause_event.wait()
+                
+                # Check for stop request after potential pause
+                if self._stop_requested:
+                    logger.info("Stop requested, breaking execution loop.")
+                    break
 
                 # Save snapshot before processing next task
                 if self._pending_tasks:
