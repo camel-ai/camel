@@ -405,6 +405,9 @@ class ChatAgent(BaseAgent):
             updates return accumulated content (current behavior). When False,
             partial updates return only the incremental delta. (default:
             :obj:`True`)
+        stream_hook (Optional[Callable[[Union[ChatAgentResponse, BaseMessage]], None]],
+            optional): Function that will be called when  streaming chunk message come.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -449,6 +452,7 @@ class ChatAgent(BaseAgent):
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = None,
         stream_accumulate: bool = True,
+        stream_hook: Optional[Callable[[Union[ChatAgentResponse, BaseMessage]], None]] = None,
     ) -> None:
         if isinstance(model, ModelManager):
             self.model_backend = model
@@ -540,6 +544,7 @@ class ChatAgent(BaseAgent):
         self._context_utility: Optional[ContextUtility] = None
         self._context_summary_agent: Optional["ChatAgent"] = None
         self.stream_accumulate = stream_accumulate
+        self.stream_hook = stream_hook
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -2664,13 +2669,19 @@ class ChatAgent(BaseAgent):
         try:
             openai_messages, num_tokens = self.memory.get_context()
         except RuntimeError as e:
-            yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
+            error = self._step_terminate(e.args[1], [], "max_tokens_exceeded")
+
+            if self.stream_hook is not None: self.stream_hook(error)
+
+            yield error
             return
 
         # Start streaming response
-        yield from self._stream_response(
+        for response in self._stream_response(
             openai_messages, num_tokens, response_format
-        )
+        ):
+            if self.stream_hook is not None: self.stream_hook(response)
+            yield response
 
     def _get_token_count(self, content: str) -> int:
         r"""Get token count for content with fallback."""
@@ -2816,6 +2827,7 @@ class ChatAgent(BaseAgent):
                             ),  # type: ignore[arg-type]
                         )
 
+                        if self.stream_hook is not None: self.stream_hook(final_message)
                         self.record_message(final_message)
 
                         # Create final response
@@ -2943,6 +2955,9 @@ class ChatAgent(BaseAgent):
                             self._try_format_message(
                                 final_message, response_format
                             )
+
+                        if self.stream_hook is not None:
+                            self.stream_hook(final_message)
 
                         self.record_message(final_message)
             elif chunk.usage and not chunk.choices:
@@ -3405,7 +3420,11 @@ class ChatAgent(BaseAgent):
         try:
             openai_messages, num_tokens = self.memory.get_context()
         except RuntimeError as e:
-            yield self._step_terminate(e.args[1], [], "max_tokens_exceeded")
+            result = self._step_terminate(e.args[1], [], "max_tokens_exceeded")
+
+            if self.stream_hook is not None: self.stream_hook(result)
+            yield result
+
             return
 
         # Start async streaming response
@@ -3414,6 +3433,8 @@ class ChatAgent(BaseAgent):
             openai_messages, num_tokens, response_format
         ):
             last_response = response
+
+            if self.stream_hook is not None: self.stream_hook(response)
             yield response
 
         # Clean tool call messages from memory after response generation
@@ -3573,6 +3594,7 @@ class ChatAgent(BaseAgent):
                             ),  # type: ignore[arg-type]
                         )
 
+                        if self.stream_hook is not None: self.stream_hook(final_message)
                         self.record_message(final_message)
 
                         # Create final response
@@ -3740,6 +3762,8 @@ class ChatAgent(BaseAgent):
                             self._try_format_message(
                                 final_message, response_format
                             )
+
+                        if self.stream_hook is not None: self.stream_hook(final_message)
 
                         self.record_message(final_message)
             elif chunk.usage and not chunk.choices:
