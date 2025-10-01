@@ -34,7 +34,40 @@ else:
 from camel.logger import get_logger
 from camel.utils.tool_result import ToolResult
 
+from .installer import check_and_install_dependencies
+
 logger = get_logger(__name__)
+
+
+def _create_memory_aware_error(base_msg: str) -> str:
+    import psutil
+
+    mem = psutil.virtual_memory()
+    if mem.available < 1024**3:
+        return (
+            f"{base_msg} "
+            f"(likely due to insufficient memory). "
+            f"Available memory: {mem.available / 1024**3:.2f}GB "
+            f"({mem.percent}% used)"
+        )
+    return base_msg
+
+
+async def _cleanup_process_and_tasks(process, log_reader_task, ts_log_file):
+    if process:
+        with contextlib.suppress(ProcessLookupError, Exception):
+            process.kill()
+        with contextlib.suppress(Exception):
+            process.wait(timeout=2)
+
+    if log_reader_task and not log_reader_task.done():
+        log_reader_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await log_reader_task
+
+    if ts_log_file:
+        with contextlib.suppress(Exception):
+            ts_log_file.close()
 
 
 def action_logger(func):
@@ -192,192 +225,12 @@ class WebSocketBrowserWrapper:
         """Start the WebSocket server and connect to it."""
         await self._cleanup_existing_processes()
 
+        npm_cmd, node_cmd = await check_and_install_dependencies(self.ts_dir)
+
         import platform
-        import shutil
 
-        is_windows = platform.system() == 'Windows'
-        use_shell = is_windows
+        use_shell = platform.system() == 'Windows'
 
-        # Helper function to find command
-        def find_command(cmd_base, windows_variants=None, unix_variant=None):
-            """Find command across platforms."""
-            if is_windows and windows_variants:
-                for variant in windows_variants:
-                    if shutil.which(variant):
-                        return variant
-            else:
-                variant = unix_variant or cmd_base
-                if shutil.which(variant):
-                    return variant
-
-            # Try base command as fallback
-            if shutil.which(cmd_base):
-                return cmd_base
-            return None
-
-        # Find npm command
-        npm_cmd = find_command('npm', windows_variants=['npm.cmd', 'npm.exe'])
-        if not npm_cmd:
-            raise RuntimeError(
-                "npm is not installed or not in PATH. "
-                "Please install Node.js and npm from https://nodejs.org/ "
-                "to use the hybrid browser toolkit. "
-                "If already installed, ensure the Node.js installation "
-                "directory (e.g., C:\\Program Files\\nodejs on Windows) is "
-                "in your system PATH."
-            )
-
-        try:
-            npm_check = subprocess.run(
-                [npm_cmd, '--version'],
-                capture_output=True,
-                text=True,
-                shell=use_shell,
-            )
-            if npm_check.returncode != 0:
-                raise RuntimeError(
-                    f"npm command failed with error: {npm_check.stderr}. "
-                    "Please ensure Node.js and npm are properly installed."
-                )
-        except (FileNotFoundError, OSError) as e:
-            raise RuntimeError(
-                "npm is not installed or not in PATH. "
-                "Please install Node.js and npm from https://nodejs.org/ "
-                "to use the hybrid browser toolkit. "
-                f"Error details: {e!s}"
-            )
-
-        # Find node command
-        node_cmd = find_command('node', windows_variants=['node.exe'])
-        if not node_cmd:
-            raise RuntimeError(
-                "node is not installed or not in PATH. "
-                "Please install Node.js from https://nodejs.org/ "
-                "to use the hybrid browser toolkit. "
-                "If already installed, ensure the Node.js installation "
-                "directory (e.g., C:\\Program Files\\nodejs on Windows) is "
-                "in your system PATH."
-            )
-
-        try:
-            node_check = subprocess.run(
-                [node_cmd, '--version'],
-                capture_output=True,
-                text=True,
-                shell=use_shell,
-            )
-            if node_check.returncode != 0:
-                raise RuntimeError(
-                    f"node command failed with error: {node_check.stderr}. "
-                    "Please ensure Node.js is properly installed."
-                )
-        except (FileNotFoundError, OSError) as e:
-            raise RuntimeError(
-                "node is not installed or not in PATH. "
-                "Please install Node.js from https://nodejs.org/ "
-                "to use the hybrid browser toolkit. "
-                f"Error details: {e!s}"
-            )
-
-        node_modules_path = os.path.join(self.ts_dir, 'node_modules')
-        if not os.path.exists(node_modules_path):
-            logger.warning("Node modules not found. Running npm install...")
-            try:
-                install_result = subprocess.run(
-                    [npm_cmd, 'install'],
-                    cwd=self.ts_dir,
-                    capture_output=True,
-                    text=True,
-                    shell=use_shell,
-                )
-                if install_result.returncode != 0:
-                    logger.error(
-                        f"npm install failed: {install_result.stderr}"
-                    )
-                    raise RuntimeError(
-                        f"Failed to install npm dependencies: {install_result.stderr}\n"  # noqa:E501
-                        f"Please run 'npm install' in {self.ts_dir} manually."
-                    )
-            except (FileNotFoundError, OSError) as e:
-                raise RuntimeError(
-                    f"Failed to run npm install: {e!s}. "
-                    f"Please ensure npm is properly installed and in PATH."
-                )
-            logger.info("npm dependencies installed successfully")
-
-        # Check if already built
-        dist_dir = os.path.join(self.ts_dir, 'dist')
-        if not os.path.exists(dist_dir) or not os.listdir(dist_dir):
-            logger.info("Building TypeScript...")
-            try:
-                build_result = subprocess.run(
-                    [npm_cmd, 'run', 'build'],
-                    cwd=self.ts_dir,
-                    capture_output=True,
-                    text=True,
-                    shell=use_shell,
-                )
-                if build_result.returncode != 0:
-                    logger.error(
-                        f"TypeScript build failed: {build_result.stderr}"
-                    )
-                    raise RuntimeError(
-                        f"TypeScript build failed: {build_result.stderr}"
-                    )
-                logger.info("TypeScript build completed successfully")
-            except (FileNotFoundError, OSError) as e:
-                raise RuntimeError(
-                    f"Failed to run npm build: {e!s}. "
-                    f"Please ensure npm is properly installed and in PATH."
-                )
-        else:
-            logger.info("TypeScript already built, skipping build")
-
-        # Check if Playwright browsers are installed
-        playwright_marker = os.path.join(self.ts_dir, '.playwright_installed')
-        if not os.path.exists(playwright_marker):
-            logger.info("Installing Playwright browsers...")
-            npx_cmd = find_command(
-                'npx', windows_variants=['npx.cmd', 'npx.exe']
-            )
-            if not npx_cmd:
-                logger.warning(
-                    "npx not found. Skipping Playwright browser installation. "
-                    "Users may need to run 'npx playwright install' manually."
-                )
-            else:
-                try:
-                    playwright_install = subprocess.run(
-                        [npx_cmd, 'playwright', 'install'],
-                        cwd=self.ts_dir,
-                        capture_output=True,
-                        text=True,
-                        shell=use_shell,
-                    )
-                    if playwright_install.returncode == 0:
-                        logger.info(
-                            "Playwright browsers installed successfully"
-                        )
-                        # Create marker file to avoid reinstalling
-                        with open(playwright_marker, 'w') as f:
-                            f.write('installed')
-                    else:
-                        logger.warning(
-                            f"Playwright browser installation failed: "
-                            f"{playwright_install.stderr}"
-                        )
-                        logger.warning(
-                            "Users may need to run 'npx playwright install' "
-                            "manually"
-                        )
-                except (FileNotFoundError, OSError) as e:
-                    logger.warning(
-                        f"Failed to install Playwright browsers: {e!s}. "
-                        f"Users may need to run 'npx playwright install' "
-                        f"manually"
-                    )
-
-        # use_shell already defined above
         self.process = subprocess.Popen(
             [node_cmd, 'websocket-server.js'],
             cwd=self.ts_dir,
@@ -411,32 +264,17 @@ class WebSocketBrowserWrapper:
             server_ready = False
 
         if not server_ready:
-            with contextlib.suppress(ProcessLookupError, Exception):
-                self.process.kill()
-            with contextlib.suppress(Exception):
-                self.process.wait(timeout=2)
-            if self._log_reader_task and not self._log_reader_task.done():
-                self._log_reader_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await self._log_reader_task
-            if getattr(self, 'ts_log_file', None):
-                with contextlib.suppress(Exception):
-                    self.ts_log_file.close()
-                self.ts_log_file = None
+            await _cleanup_process_and_tasks(
+                self.process,
+                self._log_reader_task,
+                getattr(self, 'ts_log_file', None),
+            )
+            self.ts_log_file = None
             self.process = None
 
-            error_msg = "WebSocket server failed to start within timeout"
-            import psutil
-
-            mem = psutil.virtual_memory()
-            if mem.available < 1024**3:
-                error_msg = (
-                    f"WebSocket server failed to start"
-                    f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB "
-                    f"({mem.percent}% used)"
-                )
-
+            error_msg = _create_memory_aware_error(
+                "WebSocket server failed to start within timeout"
+            )
             raise RuntimeError(error_msg)
 
         max_retries = 3
@@ -492,35 +330,17 @@ class WebSocketBrowserWrapper:
                     break
 
         if not self.websocket:
-            with contextlib.suppress(ProcessLookupError, Exception):
-                self.process.kill()
-            with contextlib.suppress(Exception):
-                self.process.wait(timeout=2)
-            if self._log_reader_task and not self._log_reader_task.done():
-                self._log_reader_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await self._log_reader_task
-            if getattr(self, 'ts_log_file', None):
-                with contextlib.suppress(Exception):
-                    self.ts_log_file.close()
-                self.ts_log_file = None
+            await _cleanup_process_and_tasks(
+                self.process,
+                self._log_reader_task,
+                getattr(self, 'ts_log_file', None),
+            )
+            self.ts_log_file = None
             self.process = None
 
-            import psutil
-
-            mem = psutil.virtual_memory()
-
-            error_msg = (
+            error_msg = _create_memory_aware_error(
                 "Failed to connect to WebSocket server after multiple attempts"
             )
-            if mem.available < 1024**3:
-                error_msg = (
-                    f"Failed to connect to WebSocket server "
-                    f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB "
-                    f"({mem.percent}% used)"
-                )
-
             raise RuntimeError(error_msg)
 
         self._receive_task = asyncio.create_task(self._receive_loop())
@@ -726,18 +546,7 @@ class WebSocketBrowserWrapper:
     async def _ensure_connection(self) -> None:
         """Ensure WebSocket connection is alive."""
         if not self.websocket:
-            error_msg = "WebSocket not connected"
-            import psutil
-
-            mem = psutil.virtual_memory()
-            if mem.available < 1024**3:
-                error_msg = (
-                    f"WebSocket not connected "
-                    f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB "
-                    f"({mem.percent}% used)"
-                )
-
+            error_msg = _create_memory_aware_error("WebSocket not connected")
             raise RuntimeError(error_msg)
 
         # Check if connection is still alive
@@ -749,18 +558,7 @@ class WebSocketBrowserWrapper:
             logger.warning(f"WebSocket ping failed: {e}")
             self.websocket = None
 
-            error_msg = "WebSocket connection lost"
-            import psutil
-
-            mem = psutil.virtual_memory()
-            if mem.available < 1024**3:
-                error_msg = (
-                    f"WebSocket connection lost "
-                    f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB "
-                    f"({mem.percent}% used)"
-                )
-
+            error_msg = _create_memory_aware_error("WebSocket connection lost")
             raise RuntimeError(error_msg)
 
     async def _send_command(
