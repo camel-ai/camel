@@ -284,6 +284,7 @@ class Workforce(BaseNode):
         self._pause_event = asyncio.Event()
         self._pause_event.set()  # Initially not paused
         self._stop_requested = False
+        self._skip_requested = False
         self._snapshots: List[WorkforceSnapshot] = []
         self._completed_tasks: List[Task] = []
         self._loop: Optional[asyncio.AbstractEventLoop] = None
@@ -987,6 +988,39 @@ class Workforce(BaseNode):
                 f"(event-loop not yet started)."
             )
 
+    async def _async_skip_gracefully(self) -> None:
+        r"""Async implementation of skip_gracefully to run on the event
+        loop.
+        """
+        self._skip_requested = True
+        if self._pause_event.is_set() is False:
+            self._pause_event.set()  # Resume if paused to process skip
+        logger.info(f"Workforce {self.node_id} skip requested.")
+
+    def skip_gracefully(self) -> None:
+        r"""Request workforce to skip current pending tasks and move to next
+        independent task from the queue. If no independent tasks exist, acts
+        like stop_gracefully.
+
+        This method empties the current pending tasks and adds a new task
+        from the independent queue if available. Works both when the internal
+        event-loop is alive and when it has not yet been started.
+        """
+
+        if self._loop and not self._loop.is_closed():
+            self._submit_coro_to_loop(self._async_skip_gracefully())
+        else:
+            # Loop not yet created, set the flag synchronously so later
+            # startup will respect it.
+            self._skip_requested = True
+            # Ensure any pending pause is released so that when the loop does
+            # start it can see the skip request and exit.
+            self._pause_event.set()
+            logger.info(
+                f"Workforce {self.node_id} skip requested "
+                f"(event-loop not yet started)."
+            )
+
     def save_snapshot(self, description: str = "") -> None:
         r"""Save current state as a snapshot."""
         snapshot = WorkforceSnapshot(
@@ -1094,7 +1128,7 @@ class Workforce(BaseNode):
         return new_task
 
     def remove_task(self, task_id: str) -> bool:
-        r"""Remove a task from the pending queue."""
+        r"""Remove a task from the pending or independent queue."""
         # Check independent queue first
         if len(self._independent_task_queue) != 0:
             independent_tasks_list = list(self._independent_task_queue)
@@ -1801,6 +1835,7 @@ class Workforce(BaseNode):
         # Reset intervention state
         self._state = WorkforceState.IDLE
         self._stop_requested = False
+        self._skip_requested = False
         # Handle asyncio.Event in a thread-safe way
         if self._loop and not self._loop.is_closed():
             # If we have a loop, use it to set the event safely
@@ -2982,6 +3017,95 @@ class Workforce(BaseNode):
         # Use logger.info or print, consistent with existing style
         logger.info(f"Workforce logs dumped to {file_path}")
 
+    async def _handle_skip_task(self) -> bool:
+        r"""Handle skip request by marking pending and in-flight tasks
+        as completed.
+
+        Returns:
+            bool: True if workforce should stop (no independent tasks),
+            False to continue.
+        """
+        logger.info("Skip requested, processing skip logic.")
+
+        # Mark all pending tasks as completed instead of just clearing
+        pending_tasks_to_complete = list(self._pending_tasks)
+        if pending_tasks_to_complete:
+            logger.info(
+                f"Marking {len(pending_tasks_to_complete)} pending tasks"
+                f" as completed."
+            )
+            for task in pending_tasks_to_complete:
+                # Set task state to DONE and add a completion message
+                task.state = TaskState.DONE
+                task.result = "Task marked as completed due to skip request"
+
+                # Use the existing handle completed task function
+                await self._handle_completed_task(task)
+
+        # Handle in-flight tasks if they exist
+        if self._in_flight_tasks > 0:
+            logger.info(
+                f"Found {self._in_flight_tasks} in-flight tasks."
+                f"Retrieving and completing them."
+            )
+            try:
+                # Get all in-flight tasks for this publisher from the channel
+                in_flight_tasks = await self._channel.get_in_flight_tasks(
+                    self.node_id
+                )
+                logger.info(
+                    f"Retrieved {len(in_flight_tasks)} in-flight "
+                    f"tasks from channel."
+                )
+
+                for task in in_flight_tasks:
+                    # Set task state to DONE and add a completion message
+                    task.state = TaskState.DONE
+                    task.result = (
+                        "Task marked as completed due to skip request"
+                    )
+
+                    # Remove the task from the channel to avoid hanging
+                    await self._channel.remove_task(task.id)
+
+                    # Decrement in-flight counter
+                    self._decrement_in_flight_tasks(
+                        task.id, "skip request - removed from channel"
+                    )
+
+                    # Handle as completed task to update dependencies
+                    await self._handle_completed_task(task)
+
+                    logger.info(
+                        f"Completed in-flight task {task.id} due "
+                        f"to skip request."
+                    )
+
+            except Exception as e:
+                logger.error(
+                    f"Error handling in-flight tasks during skip: {e}",
+                    exc_info=True,
+                )
+                # Reset in-flight counter to prevent hanging
+                self._in_flight_tasks = 0
+
+        # Try to add a new task from independent queue
+        if self._independent_task_queue:
+            logger.info("Processing next independent task after skip.")
+            try:
+                await self.handle_independent_tasks()
+                await self._post_ready_tasks()
+            except Exception as e:
+                logger.error(
+                    f"Error handling independent task after skip: {e}",
+                    exc_info=True,
+                )
+            return False  # Continue processing
+        else:
+            # No independent tasks available, act like stop
+            logger.info("No independent tasks available, acting like stop.")
+            return True  # Stop processing
+
     @check_if_running(False)
     async def _listen_to_channel(self) -> None:
         r"""Continuously listen to the channel, post task to the channel and
@@ -3010,6 +3134,17 @@ class Workforce(BaseNode):
                 if self._stop_requested:
                     logger.info("Stop requested, breaking execution loop.")
                     break
+
+                # Check for skip request after potential pause
+                if self._skip_requested:
+                    should_stop = await self._handle_skip_task()
+                    if should_stop:
+                        self._stop_requested = True
+                        break
+
+                    # Reset skip flag
+                    self._skip_requested = False
+                    continue
 
                 # Check if all current pending tasks are completed and we have
                 # independent tasks to process
