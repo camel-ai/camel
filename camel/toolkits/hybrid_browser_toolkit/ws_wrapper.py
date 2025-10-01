@@ -193,68 +193,193 @@ class WebSocketBrowserWrapper:
         await self._cleanup_existing_processes()
 
         import platform
+        import shutil
 
-        use_shell = platform.system() == 'Windows'
-        npm_check = subprocess.run(
-            ['npm', '--version'],
-            capture_output=True,
-            text=True,
-            shell=use_shell,
-        )
-        if npm_check.returncode != 0:
+        is_windows = platform.system() == 'Windows'
+        use_shell = is_windows
+
+        # Helper function to find command
+        def find_command(cmd_base, windows_variants=None, unix_variant=None):
+            """Find command across platforms."""
+            if is_windows and windows_variants:
+                for variant in windows_variants:
+                    if shutil.which(variant):
+                        return variant
+            else:
+                variant = unix_variant or cmd_base
+                if shutil.which(variant):
+                    return variant
+
+            # Try base command as fallback
+            if shutil.which(cmd_base):
+                return cmd_base
+            return None
+
+        # Find npm command
+        npm_cmd = find_command('npm', windows_variants=['npm.cmd', 'npm.exe'])
+        if not npm_cmd:
             raise RuntimeError(
                 "npm is not installed or not in PATH. "
                 "Please install Node.js and npm from https://nodejs.org/ "
-                "to use the hybrid browser toolkit."
+                "to use the hybrid browser toolkit. "
+                "If already installed, ensure the Node.js installation "
+                "directory (e.g., C:\\Program Files\\nodejs on Windows) is "
+                "in your system PATH."
             )
 
-        node_check = subprocess.run(
-            ['node', '--version'],
-            capture_output=True,
-            text=True,
-            shell=use_shell,
-        )
-        if node_check.returncode != 0:
+        try:
+            npm_check = subprocess.run(
+                [npm_cmd, '--version'],
+                capture_output=True,
+                text=True,
+                shell=use_shell,
+            )
+            if npm_check.returncode != 0:
+                raise RuntimeError(
+                    f"npm command failed with error: {npm_check.stderr}. "
+                    "Please ensure Node.js and npm are properly installed."
+                )
+        except (FileNotFoundError, OSError) as e:
+            raise RuntimeError(
+                "npm is not installed or not in PATH. "
+                "Please install Node.js and npm from https://nodejs.org/ "
+                "to use the hybrid browser toolkit. "
+                f"Error details: {e!s}"
+            )
+
+        # Find node command
+        node_cmd = find_command('node', windows_variants=['node.exe'])
+        if not node_cmd:
             raise RuntimeError(
                 "node is not installed or not in PATH. "
                 "Please install Node.js from https://nodejs.org/ "
-                "to use the hybrid browser toolkit."
+                "to use the hybrid browser toolkit. "
+                "If already installed, ensure the Node.js installation "
+                "directory (e.g., C:\\Program Files\\nodejs on Windows) is "
+                "in your system PATH."
+            )
+
+        try:
+            node_check = subprocess.run(
+                [node_cmd, '--version'],
+                capture_output=True,
+                text=True,
+                shell=use_shell,
+            )
+            if node_check.returncode != 0:
+                raise RuntimeError(
+                    f"node command failed with error: {node_check.stderr}. "
+                    "Please ensure Node.js is properly installed."
+                )
+        except (FileNotFoundError, OSError) as e:
+            raise RuntimeError(
+                "node is not installed or not in PATH. "
+                "Please install Node.js from https://nodejs.org/ "
+                "to use the hybrid browser toolkit. "
+                f"Error details: {e!s}"
             )
 
         node_modules_path = os.path.join(self.ts_dir, 'node_modules')
         if not os.path.exists(node_modules_path):
             logger.warning("Node modules not found. Running npm install...")
-            install_result = subprocess.run(
-                ['npm', 'install'],
-                cwd=self.ts_dir,
-                capture_output=True,
-                text=True,
-                shell=use_shell,
-            )
-            if install_result.returncode != 0:
-                logger.error(f"npm install failed: {install_result.stderr}")
+            try:
+                install_result = subprocess.run(
+                    [npm_cmd, 'install'],
+                    cwd=self.ts_dir,
+                    capture_output=True,
+                    text=True,
+                    shell=use_shell,
+                )
+                if install_result.returncode != 0:
+                    logger.error(
+                        f"npm install failed: {install_result.stderr}"
+                    )
+                    raise RuntimeError(
+                        f"Failed to install npm dependencies: {install_result.stderr}\n"  # noqa:E501
+                        f"Please run 'npm install' in {self.ts_dir} manually."
+                    )
+            except (FileNotFoundError, OSError) as e:
                 raise RuntimeError(
-                    f"Failed to install npm dependencies: {install_result.stderr}\n"  # noqa:E501
-                    f"Please run 'npm install' in {self.ts_dir} manually."
+                    f"Failed to run npm install: {e!s}. "
+                    f"Please ensure npm is properly installed and in PATH."
                 )
             logger.info("npm dependencies installed successfully")
 
-        build_result = subprocess.run(
-            ['npm', 'run', 'build'],
-            cwd=self.ts_dir,
-            capture_output=True,
-            text=True,
-            shell=use_shell,
-        )
-        if build_result.returncode != 0:
-            logger.error(f"TypeScript build failed: {build_result.stderr}")
-            raise RuntimeError(
-                f"TypeScript build failed: {build_result.stderr}"
+        # Check if already built
+        dist_dir = os.path.join(self.ts_dir, 'dist')
+        if not os.path.exists(dist_dir) or not os.listdir(dist_dir):
+            logger.info("Building TypeScript...")
+            try:
+                build_result = subprocess.run(
+                    [npm_cmd, 'run', 'build'],
+                    cwd=self.ts_dir,
+                    capture_output=True,
+                    text=True,
+                    shell=use_shell,
+                )
+                if build_result.returncode != 0:
+                    logger.error(
+                        f"TypeScript build failed: {build_result.stderr}"
+                    )
+                    raise RuntimeError(
+                        f"TypeScript build failed: {build_result.stderr}"
+                    )
+                logger.info("TypeScript build completed successfully")
+            except (FileNotFoundError, OSError) as e:
+                raise RuntimeError(
+                    f"Failed to run npm build: {e!s}. "
+                    f"Please ensure npm is properly installed and in PATH."
+                )
+        else:
+            logger.info("TypeScript already built, skipping build")
+
+        # Check if Playwright browsers are installed
+        playwright_marker = os.path.join(self.ts_dir, '.playwright_installed')
+        if not os.path.exists(playwright_marker):
+            logger.info("Installing Playwright browsers...")
+            npx_cmd = find_command(
+                'npx', windows_variants=['npx.cmd', 'npx.exe']
             )
+            if not npx_cmd:
+                logger.warning(
+                    "npx not found. Skipping Playwright browser installation. "
+                    "Users may need to run 'npx playwright install' manually."
+                )
+            else:
+                try:
+                    playwright_install = subprocess.run(
+                        [npx_cmd, 'playwright', 'install'],
+                        cwd=self.ts_dir,
+                        capture_output=True,
+                        text=True,
+                        shell=use_shell,
+                    )
+                    if playwright_install.returncode == 0:
+                        logger.info(
+                            "Playwright browsers installed successfully"
+                        )
+                        # Create marker file to avoid reinstalling
+                        with open(playwright_marker, 'w') as f:
+                            f.write('installed')
+                    else:
+                        logger.warning(
+                            f"Playwright browser installation failed: "
+                            f"{playwright_install.stderr}"
+                        )
+                        logger.warning(
+                            "Users may need to run 'npx playwright install' "
+                            "manually"
+                        )
+                except (FileNotFoundError, OSError) as e:
+                    logger.warning(
+                        f"Failed to install Playwright browsers: {e!s}. "
+                        f"Users may need to run 'npx playwright install' "
+                        f"manually"
+                    )
 
         # use_shell already defined above
         self.process = subprocess.Popen(
-            ['node', 'websocket-server.js'],
+            [node_cmd, 'websocket-server.js'],
             cwd=self.ts_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
