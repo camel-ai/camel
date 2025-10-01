@@ -13,16 +13,16 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-from camel.loaders import JinaURLReader
+from camel.loaders import JinaURLLoader
 from camel.types.enums import JinaReturnFormat
 
 
 def read_with_different_format(return_format, json_response):
     URL = "https://en.wikipedia.org/wiki/Miss_Meyers"
-    jina_url_reader = JinaURLReader(
+    jina_url_loader = JinaURLLoader(
         return_format=return_format, json_response=json_response
     )
-    content = jina_url_reader.read_content(URL)
+    content = jina_url_loader.load(URL)[URL]
     print(content)
 
 

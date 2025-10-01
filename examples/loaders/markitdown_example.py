@@ -37,7 +37,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
 
     # Convert a single file
     try:
-        markdown_text = converter.convert_file(file_paths["demo.html"])
+        markdown_text = converter.load(file_paths["demo.html"])["demo.html"]
         print(markdown_text)
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -48,7 +48,8 @@ with tempfile.TemporaryDirectory() as temp_dir:
         file_paths["presentation.pptx"],
         file_paths["data.xlsx"],
     ]
-    converted = converter.convert_files(files, parallel=True, skip_failed=True)
+
+    converted = converter.load(files, parallel=True, skip_failed=True)
     for path, md in converted.items():
         print(f"Markdown for {path}:\n{md}\n")
 
