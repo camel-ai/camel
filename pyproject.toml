@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.76a9"
+version = "0.2.76a10"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -300,6 +300,8 @@ eigent = [
     "onnxruntime<=1.19.2",
     "slack-sdk>=3.27.2,<4",
     "google-api-python-client==2.166.0",
+    "google-auth-httplib2==0.2.0",
+    "google-auth-oauthlib==1.2.1",
 ]
 all = [
     "numpy>=1.2,<=2.2",
