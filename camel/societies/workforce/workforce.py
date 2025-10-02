@@ -116,6 +116,7 @@ class WorkforceSnapshot:
         self,
         main_task: Optional[Task] = None,
         pending_tasks: Optional[Deque[Task]] = None,
+        independent_task_queue: Optional[Deque[Task]] = None,
         completed_tasks: Optional[List[Task]] = None,
         task_dependencies: Optional[Dict[str, List[str]]] = None,
         assignees: Optional[Dict[str, str]] = None,
@@ -124,6 +125,11 @@ class WorkforceSnapshot:
     ):
         self.main_task = main_task
         self.pending_tasks = pending_tasks.copy() if pending_tasks else deque()
+        self.independent_task_queue = (
+            independent_task_queue.copy()
+            if independent_task_queue
+            else deque()
+        )
         self.completed_tasks = (
             completed_tasks.copy() if completed_tasks else []
         )
@@ -267,6 +273,7 @@ class Workforce(BaseNode):
         self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
         self._task: Optional[Task] = None
         self._pending_tasks: Deque[Task] = deque()
+        self._independent_task_queue: Deque[Task] = deque()
         self._task_dependencies: Dict[str, List[str]] = {}
         self._assignees: Dict[str, str] = {}
         self._in_flight_tasks: int = 0
@@ -277,6 +284,7 @@ class Workforce(BaseNode):
         self._pause_event = asyncio.Event()
         self._pause_event.set()  # Initially not paused
         self._stop_requested = False
+        self._skip_requested = False
         self._snapshots: List[WorkforceSnapshot] = []
         self._completed_tasks: List[Task] = []
         self._loop: Optional[asyncio.AbstractEventLoop] = None
@@ -449,10 +457,6 @@ class Workforce(BaseNode):
                 "better context continuity during task handoffs."
             )
 
-        # ------------------------------------------------------------------
-        # Helper for propagating pause control to externally supplied agents
-        # ------------------------------------------------------------------
-
     def _validate_agent_compatibility(
         self, agent: ChatAgent, agent_context: str = "agent"
     ) -> None:
@@ -489,6 +493,9 @@ class Workforce(BaseNode):
                 "the Workforce."
             )
 
+    # ------------------------------------------------------------------
+    # Helper for propagating pause control to externally supplied agents
+    # ------------------------------------------------------------------
     def _attach_pause_event_to_agent(self, agent: ChatAgent) -> None:
         r"""Ensure the given ChatAgent shares this workforce's pause_event.
 
@@ -981,11 +988,45 @@ class Workforce(BaseNode):
                 f"(event-loop not yet started)."
             )
 
+    async def _async_skip_gracefully(self) -> None:
+        r"""Async implementation of skip_gracefully to run on the event
+        loop.
+        """
+        self._skip_requested = True
+        if self._pause_event.is_set() is False:
+            self._pause_event.set()  # Resume if paused to process skip
+        logger.info(f"Workforce {self.node_id} skip requested.")
+
+    def skip_gracefully(self) -> None:
+        r"""Request workforce to skip current pending tasks and move to next
+        independent task from the queue. If no independent tasks exist, acts
+        like stop_gracefully.
+
+        This method empties the current pending tasks and adds a new task
+        from the independent queue if available. Works both when the internal
+        event-loop is alive and when it has not yet been started.
+        """
+
+        if self._loop and not self._loop.is_closed():
+            self._submit_coro_to_loop(self._async_skip_gracefully())
+        else:
+            # Loop not yet created, set the flag synchronously so later
+            # startup will respect it.
+            self._skip_requested = True
+            # Ensure any pending pause is released so that when the loop does
+            # start it can see the skip request and exit.
+            self._pause_event.set()
+            logger.info(
+                f"Workforce {self.node_id} skip requested "
+                f"(event-loop not yet started)."
+            )
+
     def save_snapshot(self, description: str = "") -> None:
         r"""Save current state as a snapshot."""
         snapshot = WorkforceSnapshot(
             main_task=self._task,
             pending_tasks=self._pending_tasks,
+            independent_task_queue=self._independent_task_queue,
             completed_tasks=self._completed_tasks,
             task_dependencies=self._task_dependencies,
             assignees=self._assignees,
@@ -1035,41 +1076,83 @@ class Workforce(BaseNode):
         logger.warning(f"Task {task_id} not found in pending tasks.")
         return False
 
+    def get_independent_tasks(self) -> List[Task]:
+        r"""Get current independent tasks for human review."""
+        return list(self._independent_task_queue)
+
     def add_task(
         self,
         content: str,
         task_id: Optional[str] = None,
         additional_info: Optional[Dict[str, Any]] = None,
         insert_position: int = -1,
+        is_independent: bool = False,
     ) -> Task:
-        r"""Add a new task to the pending queue."""
+        r"""Add a new task to the pending queue.
+        Args:
+            content (str): The content of the new task.
+            task_id (Optional[str], optional): Optional ID for the new task.
+                If not provided, a unique ID will be generated.
+                Defaults to None.
+            additional_info (Optional[Dict[str, Any]], optional): Optional
+                additional metadata for the task. Defaults to None.
+            insert_position (int, optional): Position to insert the new task
+                in the pending queue. Defaults to -1 (append to end).
+            is_independent (bool, optional): If True, the task is treated as a
+                completely new task with no dependencies and added to the
+                queue. Defaults to False.
+        """
         new_task = Task(
             content=content,
             id=task_id or f"human_added_{len(self._pending_tasks)}",
             additional_info=additional_info,
         )
-        if insert_position == -1:
-            self._pending_tasks.append(new_task)
-        else:
-            # Convert deque to list, insert, then back to deque
-            tasks_list = list(self._pending_tasks)
-            tasks_list.insert(insert_position, new_task)
-            self._pending_tasks = deque(tasks_list)
 
-        logger.info(f"New task added: {new_task.id}")
+        if is_independent:
+            # Add the new task to independent queue
+            self._independent_task_queue.append(new_task)
+            logger.info(f"New independent task added: {new_task.id}")
+
+        else:
+            # For regular tasks, append to current subtasks
+            if insert_position == -1:
+                self._pending_tasks.append(new_task)
+            else:
+                # Convert deque to list, insert, then back to deque
+                tasks_list = list(self._pending_tasks)
+                tasks_list.insert(insert_position, new_task)
+                self._pending_tasks = deque(tasks_list)
+
+            logger.info(f"New task added: {new_task.id}")
+
         return new_task
 
     def remove_task(self, task_id: str) -> bool:
-        r"""Remove a task from the pending queue."""
-        # Convert to list to find and remove
-        tasks_list = list(self._pending_tasks)
-        for i, task in enumerate(tasks_list):
+        r"""Remove a task from the pending or independent queue."""
+        # Check independent queue first
+        if len(self._independent_task_queue) != 0:
+            independent_tasks_list = list(self._independent_task_queue)
+            for i, task in enumerate(independent_tasks_list):
+                if task.id == task_id:
+                    independent_tasks_list.pop(i)
+                    self._independent_task_queue = deque(
+                        independent_tasks_list
+                    )
+                    logger.info(
+                        f"Task {task_id} removed from independent queue."
+                    )
+                    return True
+
+        # Check pending tasks queue
+        pending_tasks_list = list(self._pending_tasks)
+        for i, task in enumerate(pending_tasks_list):
             if task.id == task_id:
-                tasks_list.pop(i)
-                self._pending_tasks = deque(tasks_list)
-                logger.info(f"Task {task_id} removed.")
+                pending_tasks_list.pop(i)
+                self._pending_tasks = deque(pending_tasks_list)
+                logger.info(f"Task {task_id} removed from pending queue.")
                 return True
-        logger.warning(f"Task {task_id} not found in pending tasks.")
+
+        logger.warning(f"Task {task_id} not found in any task queue.")
         return False
 
     def reorder_tasks(self, task_ids: List[str]) -> bool:
@@ -1166,6 +1249,7 @@ class Workforce(BaseNode):
         snapshot = self._snapshots[snapshot_index]
         self._task = snapshot.main_task
         self._pending_tasks = snapshot.pending_tasks.copy()
+        self._independent_task_queue = snapshot.independent_task_queue.copy()
         self._completed_tasks = snapshot.completed_tasks.copy()
         self._task_dependencies = snapshot.task_dependencies.copy()
         self._assignees = snapshot.assignees.copy()
@@ -1178,32 +1262,28 @@ class Workforce(BaseNode):
         return {
             "state": self._state.value,
             "pending_tasks_count": len(self._pending_tasks),
+            "independent_tasks_count": len(self._independent_task_queue),
             "completed_tasks_count": len(self._completed_tasks),
             "snapshots_count": len(self._snapshots),
             "children_count": len(self._children),
             "main_task_id": self._task.id if self._task else None,
         }
 
-    @check_if_running(False)
-    async def process_task_async(
-        self, task: Task, interactive: bool = False
-    ) -> Task:
-        r"""Main entry point to process a task asynchronously.
+    async def handle_decompose_append_task(
+        self, task: Task, reset: bool = True
+    ) -> List[Task]:
+        r"""Handle task decomposition and validation with
+        workforce environment functions. Then append to
+        pending tasks if decomposition happened.
 
         Args:
             task (Task): The task to be processed.
-            interactive (bool, optional): If True, enables human-intervention
-                workflow (pause/resume/snapshot). Defaults to False, which
-                runs the task in a blocking one-shot manner.
+            reset (Bool): Should trigger workforce reset (Workforce must not
+                be running). Default: True
 
         Returns:
-            Task: The updated task.
+            List[Task]: The decomposed subtasks or the original task.
         """
-        # Delegate to intervention pipeline when requested to keep
-        # backward-compat.
-        if interactive:
-            return await self._process_task_with_snapshot(task)
-
         if not validate_task_content(task.content, task.id):
             task.state = TaskState.FAILED
             task.result = "Task failed: Invalid or empty content provided"
@@ -1211,10 +1291,16 @@ class Workforce(BaseNode):
                 f"Task {task.id} rejected: Invalid or empty content. "
                 f"Content preview: '{task.content}'"
             )
-            return task
+            return [task]
 
-        self.reset()
+        if reset and self._state is not WorkforceState.RUNNING:
+            self.reset()
+            logger.info("Workforce reset before handling task.")
+
+        # Focus on the new task
         self._task = task
+        task.state = TaskState.FAILED
+
         if self.metrics_logger:
             self.metrics_logger.log_task_created(
                 task_id=task.id,
@@ -1222,7 +1308,6 @@ class Workforce(BaseNode):
                 task_type=task.type,
                 metadata=task.additional_info,
             )
-        task.state = TaskState.FAILED
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
         subtasks_result = self._decompose_task(task)
@@ -1248,13 +1333,83 @@ class Workforce(BaseNode):
                     task_type=subtask.type,
                     metadata=subtask.additional_info,
                 )
+
         if subtasks:
             # If decomposition happened, the original task becomes a container.
             # We only execute its subtasks.
-            self._pending_tasks.extendleft(reversed(subtasks))
+            if not self._pending_tasks:
+                self._pending_tasks.extendleft(reversed(subtasks))
+            else:
+                logger.warning(
+                    "Pending tasks exist, this error should not happen."
+                )
         else:
             # If no decomposition, execute the original task.
             self._pending_tasks.append(task)
+
+        return subtasks
+
+    async def handle_independent_tasks(self) -> None:
+        r"""Pop one task from the independent task queue and decompose it.
+        Processes only one task at a time so the listener can handle it
+        and its subtasks first. The task is transferred to completed task
+        if decomposed successfully.
+        """
+
+        if not self._independent_task_queue:
+            return
+
+        # Process only one independent task at a time - remove as well
+        independent_task = self._independent_task_queue.popleft()
+        logger.info(f"Decomposing independent task: {independent_task.id}")
+
+        try:
+            # Decompose the independent task
+            await self.handle_decompose_append_task(
+                independent_task, reset=False
+            )
+
+            # Mark parent task as completed
+            await self._handle_completed_task(independent_task)
+            logger.info(
+                f"Independent task {independent_task.id} decomposed and ready "
+                f"for processing"
+            )
+        except Exception as e:
+            logger.error(
+                f"Error decomposing independent task {independent_task.id}: "
+                f"{e}"
+            )
+            # Revert back to the queue for retry later if not decomposed to
+            # _pending_tasks
+            if not self._pending_tasks:
+                self._independent_task_queue.appendleft(independent_task)
+            else:
+                logger.warning(
+                    "Pending tasks exist, this error should not happen."
+                )
+
+    @check_if_running(False)
+    async def process_task_async(
+        self, task: Task, interactive: bool = False
+    ) -> Task:
+        r"""Main entry point to process a task asynchronously.
+
+        Args:
+            task (Task): The task to be processed.
+            interactive (bool, optional): If True, enables human-intervention
+                workflow (pause/resume/snapshot). Defaults to False, which
+                runs the task in a blocking one-shot manner.
+
+        Returns:
+            Task: The updated task.
+        """
+        # Delegate to intervention pipeline when requested to keep
+        # backward-compat.
+        if interactive:
+            return await self._process_task_with_snapshot(task)
+
+        subtasks = await self.handle_decompose_append_task(task)
 
         self.set_channel(TaskChannel())
 
@@ -1337,39 +1492,8 @@ class Workforce(BaseNode):
             Task: The updated task.
         """
 
-        if not validate_task_content(task.content, task.id):
-            task.state = TaskState.FAILED
-            task.result = "Task failed: Invalid or empty content provided"
-            logger.warning(
-                f"Task {task.id} rejected: Invalid or empty content. "
-                f"Content preview: '{task.content}'"
-            )
-            return task
+        await self.handle_decompose_append_task(task)
 
-        self.reset()
-        self._task = task
-        self._state = WorkforceState.RUNNING
-        task.state = TaskState.FAILED  # TODO: Add logic for OPEN
-
-        # Decompose the task into subtasks first
-        subtasks_result = self._decompose_task(task)
-
-        # Handle both streaming and non-streaming results
-        if isinstance(subtasks_result, Generator):
-            # This is a generator (streaming mode)
-            subtasks = []
-            for new_tasks in subtasks_result:
-                subtasks.extend(new_tasks)
-        else:
-            # This is a regular list (non-streaming mode)
-            subtasks = subtasks_result
-        if subtasks:
-            # If decomposition happened, the original task becomes a container.
-            # We only execute its subtasks.
-            self._pending_tasks.extendleft(reversed(subtasks))
-        else:
-            # If no decomposition, execute the original task.
-            self._pending_tasks.append(task)
         self.set_channel(TaskChannel())
 
         # Save initial snapshot
@@ -1695,6 +1819,7 @@ class Workforce(BaseNode):
         super().reset()
         self._task = None
         self._pending_tasks.clear()
+        self._independent_task_queue.clear()
         self._child_listening_tasks.clear()
         # Clear dependency tracking
         self._task_dependencies.clear()
@@ -1710,6 +1835,7 @@ class Workforce(BaseNode):
         # Reset intervention state
         self._state = WorkforceState.IDLE
         self._stop_requested = False
+        self._skip_requested = False
         # Handle asyncio.Event in a thread-safe way
         if self._loop and not self._loop.is_closed():
             # If we have a loop, use it to set the event safely
@@ -2448,6 +2574,27 @@ class Workforce(BaseNode):
         for task in self._pending_tasks:
             # A task must be assigned to be considered for posting
             if task.id in self._task_dependencies:
+                # Skip if task has already been posted to prevent duplicates
+                try:
+                    task_from_channel = await self._channel.get_task_by_id(
+                        task.id
+                    )
+                    # Check if task is already assigned to a worker
+                    if (
+                        task_from_channel
+                        and task_from_channel.assigned_worker_id
+                    ):
+                        logger.debug(
+                            f"Task {task.id} already assigned to "
+                            f"{task_from_channel.assigned_worker_id}, "
+                            f"skipping to prevent duplicate"
+                        )
+                        continue
+                except Exception as e:
+                    logger.info(
+                        f"Task {task.id} non existent in channel. "
+                        f"Assigning task: {e}"
+                    )
                 dependencies = self._task_dependencies[task.id]
                 # Check if all dependencies for this task are in the completed
                 # set and their state is DONE
@@ -2870,6 +3017,95 @@ class Workforce(BaseNode):
         # Use logger.info or print, consistent with existing style
         logger.info(f"Workforce logs dumped to {file_path}")
 
+    async def _handle_skip_task(self) -> bool:
+        r"""Handle skip request by marking pending and in-flight tasks
+        as completed.
+
+        Returns:
+            bool: True if workforce should stop (no independent tasks),
+            False to continue.
+        """
+        logger.info("Skip requested, processing skip logic.")
+
+        # Mark all pending tasks as completed instead of just clearing
+        pending_tasks_to_complete = list(self._pending_tasks)
+        if pending_tasks_to_complete:
+            logger.info(
+                f"Marking {len(pending_tasks_to_complete)} pending tasks"
+                f" as completed."
+            )
+            for task in pending_tasks_to_complete:
+                # Set task state to DONE and add a completion message
+                task.state = TaskState.DONE
+                task.result = "Task marked as completed due to skip request"
+
+                # Use the existing handle completed task function
+                await self._handle_completed_task(task)
+
+        # Handle in-flight tasks if they exist
+        if self._in_flight_tasks > 0:
+            logger.info(
+                f"Found {self._in_flight_tasks} in-flight tasks."
+                f"Retrieving and completing them."
+            )
+            try:
+                # Get all in-flight tasks for this publisher from the channel
+                in_flight_tasks = await self._channel.get_in_flight_tasks(
+                    self.node_id
+                )
+                logger.info(
+                    f"Retrieved {len(in_flight_tasks)} in-flight "
+                    f"tasks from channel."
+                )
+
+                for task in in_flight_tasks:
+                    # Set task state to DONE and add a completion message
+                    task.state = TaskState.DONE
+                    task.result = (
+                        "Task marked as completed due to skip request"
+                    )
+
+                    # Remove the task from the channel to avoid hanging
+                    await self._channel.remove_task(task.id)
+
+                    # Decrement in-flight counter
+                    self._decrement_in_flight_tasks(
+                        task.id, "skip request - removed from channel"
+                    )
+
+                    # Handle as completed task to update dependencies
+                    await self._handle_completed_task(task)
+
+                    logger.info(
+                        f"Completed in-flight task {task.id} due "
+                        f"to skip request."
+                    )
+
+            except Exception as e:
+                logger.error(
+                    f"Error handling in-flight tasks during skip: {e}",
+                    exc_info=True,
+                )
+                # Reset in-flight counter to prevent hanging
+                self._in_flight_tasks = 0
+
+        # Try to add a new task from independent queue
+        if self._independent_task_queue:
+            logger.info("Processing next independent task after skip.")
+            try:
+                await self.handle_independent_tasks()
+                await self._post_ready_tasks()
+            except Exception as e:
+                logger.error(
+                    f"Error handling independent task after skip: {e}",
+                    exc_info=True,
+                )
+            return False  # Continue processing
+        else:
+            # No independent tasks available, act like stop
+            logger.info("No independent tasks available, acting like stop.")
+            return True  # Stop processing
+
     @check_if_running(False)
     async def _listen_to_channel(self) -> None:
         r"""Continuously listen to the channel, post task to the channel and
@@ -2886,6 +3122,7 @@ class Workforce(BaseNode):
         while (
             self._task is None
             or self._pending_tasks
+            or self._independent_task_queue
             or self._in_flight_tasks > 0
         ) and not self._stop_requested:
             try:
@@ -2897,6 +3134,40 @@ class Workforce(BaseNode):
                 if self._stop_requested:
                     logger.info("Stop requested, breaking execution loop.")
                     break
+
+                # Check for skip request after potential pause
+                if self._skip_requested:
+                    should_stop = await self._handle_skip_task()
+                    if should_stop:
+                        self._stop_requested = True
+                        break
+
+                    # Reset skip flag
+                    self._skip_requested = False
+                    continue
+
+                # Check if all current pending tasks are completed and we have
+                # independent tasks to process
+                if not self._pending_tasks and self._in_flight_tasks == 0:
+                    # Check if the independent task that generated these
+                    # subtasks is complete
+                    if self._independent_task_queue:
+                        # Decompose the next independent task if available
+                        logger.info(
+                            "Decomposing next independent task in queue"
+                        )
+                        try:
+                            # Decompose the latest task then append to
+                            # _pending_tasks
+                            await self.handle_independent_tasks()
+                        except Exception as e:
+                            logger.error(
+                                f"Error handling next independent task: {e}",
+                                exc_info=True,
+                            )
+
+                        # Immediately assign and post the transferred tasks
+                        await self._post_ready_tasks()
 
                 # Save snapshot before processing next task
                 if self._pending_tasks:

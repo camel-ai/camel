@@ -269,6 +269,35 @@ class TaskChannel:
         async with self._condition:
             return list(self._task_by_status[PacketStatus.ARCHIVED])
 
+    async def get_in_flight_tasks(self, publisher_id: str) -> List[Task]:
+        r"""Get all tasks that are currently in-flight (SENT, RETURNED
+        or PROCESSING) published by the given publisher.
+
+        Args:
+            publisher_id (str): The ID of the publisher whose
+            in-flight tasks to retrieve.
+
+        Returns:
+            List[Task]: List of tasks that are currently in-flight.
+        """
+        async with self._condition:
+            in_flight_tasks = []
+
+            # Get tasks with SENT, RETURNED or PROCESSING
+            # status published by this publisher
+            for status in [
+                PacketStatus.SENT,
+                PacketStatus.PROCESSING,
+                PacketStatus.RETURNED,
+            ]:
+                for task_id in self._task_by_status[status]:
+                    if task_id in self._task_dict:
+                        packet = self._task_dict[task_id]
+                        if packet.publisher_id == publisher_id:
+                            in_flight_tasks.append(packet.task)
+
+            return in_flight_tasks
+
     async def get_task_by_id(self, task_id: str) -> Task:
         r"""Get a task from the channel by its ID."""
         async with self._condition:
