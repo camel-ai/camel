@@ -31,6 +31,7 @@ dependencies = [
     "psutil>=5.9.8,<6",
     "pillow>=10.1.0,<11.0.0",
     "openai>=1.86.0,<2",
+    "websockets>=13.0,<15.1",
 ]
 
 
@@ -446,7 +447,6 @@ include = [
     "camel/toolkits/hybrid_browser_toolkit/ts/tsconfig.json",
     "camel/toolkits/hybrid_browser_toolkit/ts/src/**/*",
     "camel/toolkits/hybrid_browser_toolkit/ts/websocket-server.js",
-    "hatch_build_npm.py",
 ]
 exclude = ["camel/toolkits/hybrid_browser_toolkit/ts/node_modules/**/*"]
 
@@ -462,11 +462,6 @@ include = [
 ]
 exclude = ["camel/toolkits/hybrid_browser_toolkit/ts/node_modules/**/*"]
 
-[tool.hatch.build.targets.wheel.hooks.custom]
-path = "hatch_build_npm.py"
-
-[tool.hatch.build.targets.sdist.hooks.custom]
-path = "hatch_build_npm.py"
 
 [tool.hatch.metadata]
 allow-direct-references = true
