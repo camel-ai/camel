@@ -158,7 +158,7 @@ async def check_and_install_dependencies(ts_dir: str) -> Tuple[str, str]:
                 )
             logger.info("TypeScript build completed successfully")
         except (FileNotFoundError, OSError) as e:
-            raise create_npm_command_error("npm build", e)
+            raise create_npm_command_error("npm run build", e)
     else:
         logger.info("TypeScript already built, skipping build")
 
