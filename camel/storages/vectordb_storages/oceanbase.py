@@ -74,7 +74,6 @@ class OceanBaseStorage(BaseVectorStorage):
             ObVecClient,
         )
         from pyobvector.client.index_param import (
-            IndexParam,
             IndexParams,
         )
         from pyobvector.schema import VECTOR
