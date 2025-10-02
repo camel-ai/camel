@@ -280,3 +280,30 @@ ToolCallingRecord(tool_name='shell_exec', args={'id': 'terminal_session_1',
 (.venv) enrei@192 camel % 
 ===============================================================================
 """
+
+# ------Docker backend------
+tools = TerminalToolkit(
+    use_docker_backend=True,
+    # use your own container name
+    docker_container_name="example_container",
+    safe_mode=False,
+).get_tools()
+
+sys_msg = "You are a helpful assistant."
+
+agent = ChatAgent(system_message=sys_msg, model=model, tools=tools)
+agent.reset()
+
+usr_msg = "list all files in the current directory"
+response = agent.step(usr_msg)
+print(str(response.info['tool_calls'])[:1000])
+
+"""
+===============================================================================
+[ToolCallingRecord(tool_name='shell_exec', args={'id': 'sess1', 'command': 
+'ls -la', 'block': True}, result='total 12\ndrwxr-xr-x 3 root root 4096 Sep 
+23 16:48 .\ndrwxr-xr-x 1 root root 4096 Sep 23 16:47 ..\ndrwxr-xr-x 2 root 
+root 4096 Sep 23 16:49 logs', tool_call_id='call_YRYlz8KozpxXE2uGkcHIUnZU', 
+images=None)]
+===============================================================================
+"""

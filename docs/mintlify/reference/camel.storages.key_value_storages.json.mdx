@@ -8,8 +8,13 @@
 class CamelJSONEncoder(JSONEncoder):
 ```
 
-A custom JSON encoder for serializing specifically enumerated types.
-Ensures enumerated types can be stored in and retrieved from JSON format.
+A custom JSON encoder for serializing CAMEL-specific types.
+
+Handles serialization of:
+- Enumerated types (RoleType, TaskType, ModelType, OpenAIBackendRole)
+- Pydantic BaseModel objects (from structured outputs)
+
+Ensures these types can be stored in and retrieved from JSON format.
 
 <a id="camel.storages.key_value_storages.json.CamelJSONEncoder.default"></a>
 

@@ -96,7 +96,10 @@ class ChatHistoryBlock(MemoryBlock):
                 if (
                     record_dicts
                     and record_dicts[0]['role_at_backend']
-                    in {OpenAIBackendRole.SYSTEM, OpenAIBackendRole.DEVELOPER}
+                    in {
+                        OpenAIBackendRole.SYSTEM.value,
+                        OpenAIBackendRole.DEVELOPER.value,
+                    }
                 )
                 else 0
             )

@@ -554,7 +554,7 @@ class BaseMessage:
         """
         return {
             "role_name": self.role_name,
-            "role_type": self.role_type.name,
+            "role_type": self.role_type.value,
             **(self.meta_dict or {}),
             "content": self.content,
         }

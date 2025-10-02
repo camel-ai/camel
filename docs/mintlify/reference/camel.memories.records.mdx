@@ -19,6 +19,16 @@ The basic message storing unit in the CAMEL memory system.
 - **timestamp** (float, optional): The timestamp when the record was created.
 - **agent_id** (str): The identifier of the agent associated with this memory.
 
+<a id="camel.memories.records.MemoryRecord._get_constructor_params"></a>
+
+### _get_constructor_params
+
+```python
+def _get_constructor_params(cls, message_cls):
+```
+
+Get constructor parameters for a message class with caching.
+
 <a id="camel.memories.records.MemoryRecord.from_dict"></a>
 
 ### from_dict

@@ -34,7 +34,40 @@ else:
 from camel.logger import get_logger
 from camel.utils.tool_result import ToolResult
 
+from .installer import check_and_install_dependencies
+
 logger = get_logger(__name__)
+
+
+def _create_memory_aware_error(base_msg: str) -> str:
+    import psutil
+
+    mem = psutil.virtual_memory()
+    if mem.available < 1024**3:
+        return (
+            f"{base_msg} "
+            f"(likely due to insufficient memory). "
+            f"Available memory: {mem.available / 1024**3:.2f}GB "
+            f"({mem.percent}% used)"
+        )
+    return base_msg
+
+
+async def _cleanup_process_and_tasks(process, log_reader_task, ts_log_file):
+    if process:
+        with contextlib.suppress(ProcessLookupError, Exception):
+            process.kill()
+        with contextlib.suppress(Exception):
+            process.wait(timeout=2)
+
+    if log_reader_task and not log_reader_task.done():
+        log_reader_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await log_reader_task
+
+    if ts_log_file:
+        with contextlib.suppress(Exception):
+            ts_log_file.close()
 
 
 def action_logger(func):
@@ -192,69 +225,14 @@ class WebSocketBrowserWrapper:
         """Start the WebSocket server and connect to it."""
         await self._cleanup_existing_processes()
 
+        npm_cmd, node_cmd = await check_and_install_dependencies(self.ts_dir)
+
         import platform
 
         use_shell = platform.system() == 'Windows'
-        npm_check = subprocess.run(
-            ['npm', '--version'],
-            capture_output=True,
-            text=True,
-            shell=use_shell,
-        )
-        if npm_check.returncode != 0:
-            raise RuntimeError(
-                "npm is not installed or not in PATH. "
-                "Please install Node.js and npm from https://nodejs.org/ "
-                "to use the hybrid browser toolkit."
-            )
 
-        node_check = subprocess.run(
-            ['node', '--version'],
-            capture_output=True,
-            text=True,
-            shell=use_shell,
-        )
-        if node_check.returncode != 0:
-            raise RuntimeError(
-                "node is not installed or not in PATH. "
-                "Please install Node.js from https://nodejs.org/ "
-                "to use the hybrid browser toolkit."
-            )
-
-        node_modules_path = os.path.join(self.ts_dir, 'node_modules')
-        if not os.path.exists(node_modules_path):
-            logger.warning("Node modules not found. Running npm install...")
-            install_result = subprocess.run(
-                ['npm', 'install'],
-                cwd=self.ts_dir,
-                capture_output=True,
-                text=True,
-                shell=use_shell,
-            )
-            if install_result.returncode != 0:
-                logger.error(f"npm install failed: {install_result.stderr}")
-                raise RuntimeError(
-                    f"Failed to install npm dependencies: {install_result.stderr}\n"  # noqa:E501
-                    f"Please run 'npm install' in {self.ts_dir} manually."
-                )
-            logger.info("npm dependencies installed successfully")
-
-        build_result = subprocess.run(
-            ['npm', 'run', 'build'],
-            cwd=self.ts_dir,
-            capture_output=True,
-            text=True,
-            shell=use_shell,
-        )
-        if build_result.returncode != 0:
-            logger.error(f"TypeScript build failed: {build_result.stderr}")
-            raise RuntimeError(
-                f"TypeScript build failed: {build_result.stderr}"
-            )
-
-        # use_shell already defined above
         self.process = subprocess.Popen(
-            ['node', 'websocket-server.js'],
+            [node_cmd, 'websocket-server.js'],
             cwd=self.ts_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -286,32 +264,17 @@ class WebSocketBrowserWrapper:
             server_ready = False
 
         if not server_ready:
-            with contextlib.suppress(ProcessLookupError, Exception):
-                self.process.kill()
-            with contextlib.suppress(Exception):
-                self.process.wait(timeout=2)
-            if self._log_reader_task and not self._log_reader_task.done():
-                self._log_reader_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await self._log_reader_task
-            if getattr(self, 'ts_log_file', None):
-                with contextlib.suppress(Exception):
-                    self.ts_log_file.close()
-                self.ts_log_file = None
+            await _cleanup_process_and_tasks(
+                self.process,
+                self._log_reader_task,
+                getattr(self, 'ts_log_file', None),
+            )
+            self.ts_log_file = None
             self.process = None
 
-            error_msg = "WebSocket server failed to start within timeout"
-            import psutil
-
-            mem = psutil.virtual_memory()
-            if mem.available < 1024**3:
-                error_msg = (
-                    f"WebSocket server failed to start"
-                    f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB "
-                    f"({mem.percent}% used)"
-                )
-
+            error_msg = _create_memory_aware_error(
+                "WebSocket server failed to start within timeout"
+            )
             raise RuntimeError(error_msg)
 
         max_retries = 3
@@ -367,35 +330,17 @@ class WebSocketBrowserWrapper:
                     break
 
         if not self.websocket:
-            with contextlib.suppress(ProcessLookupError, Exception):
-                self.process.kill()
-            with contextlib.suppress(Exception):
-                self.process.wait(timeout=2)
-            if self._log_reader_task and not self._log_reader_task.done():
-                self._log_reader_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await self._log_reader_task
-            if getattr(self, 'ts_log_file', None):
-                with contextlib.suppress(Exception):
-                    self.ts_log_file.close()
-                self.ts_log_file = None
+            await _cleanup_process_and_tasks(
+                self.process,
+                self._log_reader_task,
+                getattr(self, 'ts_log_file', None),
+            )
+            self.ts_log_file = None
             self.process = None
 
-            import psutil
-
-            mem = psutil.virtual_memory()
-
-            error_msg = (
+            error_msg = _create_memory_aware_error(
                 "Failed to connect to WebSocket server after multiple attempts"
             )
-            if mem.available < 1024**3:
-                error_msg = (
-                    f"Failed to connect to WebSocket server "
-                    f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB "
-                    f"({mem.percent}% used)"
-                )
-
             raise RuntimeError(error_msg)
 
         self._receive_task = asyncio.create_task(self._receive_loop())
@@ -601,18 +546,7 @@ class WebSocketBrowserWrapper:
     async def _ensure_connection(self) -> None:
         """Ensure WebSocket connection is alive."""
         if not self.websocket:
-            error_msg = "WebSocket not connected"
-            import psutil
-
-            mem = psutil.virtual_memory()
-            if mem.available < 1024**3:
-                error_msg = (
-                    f"WebSocket not connected "
-                    f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB "
-                    f"({mem.percent}% used)"
-                )
-
+            error_msg = _create_memory_aware_error("WebSocket not connected")
             raise RuntimeError(error_msg)
 
         # Check if connection is still alive
@@ -624,18 +558,7 @@ class WebSocketBrowserWrapper:
             logger.warning(f"WebSocket ping failed: {e}")
             self.websocket = None
 
-            error_msg = "WebSocket connection lost"
-            import psutil
-
-            mem = psutil.virtual_memory()
-            if mem.available < 1024**3:
-                error_msg = (
-                    f"WebSocket connection lost "
-                    f"(likely due to insufficient memory). "
-                    f"Available memory: {mem.available / 1024**3:.2f}GB "
-                    f"({mem.percent}% used)"
-                )
-
+            error_msg = _create_memory_aware_error("WebSocket connection lost")
             raise RuntimeError(error_msg)
 
     async def _send_command(
