@@ -108,8 +108,15 @@ def mock_ob_client():
 
 def test_oceanbase_storage_initialization(mock_ob_client):
     with patch('pyobvector.schema.VECTOR'):
-        with patch('pyobvector.client.index_param.IndexParams'):
-            with patch('pyobvector.client.index_param.IndexParam'):
+        with patch('pyobvector.client.index_param.IndexParams') as MockIndexParams:
+            with patch('pyobvector.client.index_param.IndexParam') as MockIndexParam:
+                # Setup mock IndexParams to be iterable
+                mock_index_param_instance = MagicMock()
+                mock_index_params = MagicMock()
+                mock_index_params.add_index.return_value = None
+                mock_index_params.__iter__.return_value = iter([mock_index_param_instance])
+                MockIndexParams.return_value = mock_index_params
+                
                 # Test initialization with default parameters
                 storage = OceanBaseStorage(
                     vector_dim=64,
@@ -142,9 +149,16 @@ def test_oceanbase_storage_initialization(mock_ob_client):
 
 def test_oceanbase_storage_operations(mock_ob_client):
     with patch('pyobvector.schema.VECTOR'):
-        with patch('pyobvector.client.index_param.IndexParams'):
-            with patch('pyobvector.client.index_param.IndexParam'):
+        with patch('pyobvector.client.index_param.IndexParams') as MockIndexParams:
+            with patch('pyobvector.client.index_param.IndexParam') as MockIndexParam:
                 with patch('sqlalchemy.func'):
+                    # Setup mock IndexParams to be iterable
+                    mock_index_param_instance = MagicMock()
+                    mock_index_params = MagicMock()
+                    mock_index_params.add_index.return_value = None
+                    mock_index_params.__iter__.return_value = iter([mock_index_param_instance])
+                    MockIndexParams.return_value = mock_index_params
+                    
                     # Setup mock for query results
                     mock_result = MagicMock()
                     mock_result._mapping = {
@@ -189,8 +203,15 @@ def test_oceanbase_storage_operations(mock_ob_client):
 def test_distance_to_similarity_conversion():
     with patch('pyobvector.client.ObVecClient'):
         with patch('pyobvector.schema.VECTOR'):
-            with patch('pyobvector.client.index_param.IndexParams'):
-                with patch('pyobvector.client.index_param.IndexParam'):
+            with patch('pyobvector.client.index_param.IndexParams') as MockIndexParams:
+                with patch('pyobvector.client.index_param.IndexParam') as MockIndexParam:
+                    # Setup mock IndexParams to be iterable
+                    mock_index_param_instance = MagicMock()
+                    mock_index_params = MagicMock()
+                    mock_index_params.add_index.return_value = None
+                    mock_index_params.__iter__.return_value = iter([mock_index_param_instance])
+                    MockIndexParams.return_value = mock_index_params
+                    
                     # Test cosine distance conversion
                     cosine_storage = OceanBaseStorage(
                         vector_dim=4,
