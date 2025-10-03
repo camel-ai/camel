@@ -1796,7 +1796,11 @@ class Workforce(BaseNode):
                             "file_path", "unknown_path"
                         )
                     else:
-                        error_msg = result.get("message", "Unknown error")
+                        # Error: check if there's a separate message field,
+                        # otherwise use the status itself
+                        error_msg = result.get(
+                            "message", result.get("status", "Unknown error")
+                        )
                         results[child.node_id] = f"error: {error_msg}"
 
                 except Exception as e:

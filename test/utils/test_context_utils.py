@@ -248,7 +248,7 @@ def test_save_and_load_markdown_file(context_utility_fixture):
         filename="test_file", content=test_content, title="Test Title"
     )
 
-    assert "saved successfully" in result
+    assert result == "success"
 
     # Load file
     loaded_content = context_util.load_markdown_file("test_file")

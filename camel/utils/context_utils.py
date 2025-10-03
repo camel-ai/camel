@@ -235,7 +235,8 @@ class ContextUtility:
             metadata (Dict, optional): Additional metadata to include.
 
         Returns:
-            str: Success message or error message.
+            str: "success" on success, error message starting with "Error:"
+                on failure.
         """
         try:
             markdown_content = ""
@@ -256,14 +257,14 @@ class ContextUtility:
 
             self._create_or_update_note(filename, markdown_content)
             logger.info(
-                f"Markdown file saved to "
+                f"Markdown file '{filename}.md' saved successfully to "
                 f"{self.working_directory / f'{filename}.md'}"
             )
-            return f"Markdown file '{filename}.md' saved successfully"
+            return "success"
 
         except Exception as e:
             logger.error(f"Error saving markdown file {filename}: {e}")
-            return f"Error saving markdown file: {e}"
+            return f"Error: {e}"
 
     def structured_output_to_markdown(
         self,
