@@ -41,6 +41,9 @@ class ScoreBasedContextCreator(BaseContextCreator):
     the context does not exceed a specified limit. It prunes messages based
     on their score if the total token count exceeds the limit.
 
+    Supports multiple system messages that are always preserved and placed
+    at the beginning of the conversation context in their original order.
+
     Args:
         token_counter (BaseTokenCounter): An instance responsible for counting
             tokens in a message.
@@ -70,13 +73,13 @@ class ScoreBasedContextCreator(BaseContextCreator):
         token limits.
 
         Key strategies:
-        1. System message is always prioritized and preserved
+        1. All system messages are always prioritized and preserved
         2. Truncation removes low-score messages first
         3. Final output maintains chronological order and in history memory,
-           the score of each message decreases according to keep_rate. The
-           newer the message, the higher the score.
+        the score of each message decreases according to keep_rate. The
+        newer the message, the higher the score.
         4. Tool calls and their responses are kept together to maintain
-           API compatibility
+        API compatibility
 
         Args:
             records (List[ContextRecord]): List of context records with scores
@@ -88,18 +91,18 @@ class ScoreBasedContextCreator(BaseContextCreator):
             - Total token count of the final context
 
         Raises:
-            RuntimeError: If system message alone exceeds token limit
+            RuntimeError: If system messages alone exceed token limit
         """
         # ======================
         # 1. System Message Handling
         # ======================
-        system_unit, regular_units = self._extract_system_message(records)
-        system_tokens = system_unit.num_tokens if system_unit else 0
+        system_units, regular_units = self._extract_system_messages(records)
+        system_tokens = sum(unit.num_tokens for unit in system_units)
 
-        # Check early if system message alone exceeds token limit
+        # Check early if system messages alone exceed token limit
         if system_tokens > self.token_limit:
             raise RuntimeError(
-                f"System message alone exceeds token limit"
+                f"System messages alone exceeds token limit"
                 f": {system_tokens} > {self.token_limit}",
                 system_tokens,
             )
@@ -108,7 +111,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # 2. Deduplication & Initial Processing
         # ======================
         seen_uuids = set()
-        if system_unit:
+        for system_unit in system_units:
             seen_uuids.add(system_unit.record.memory_record.uuid)
 
         # Process non-system messages with deduplication
@@ -150,7 +153,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
             sorted_units = sorted(
                 regular_units, key=self._conversation_sort_key
             )
-            return self._assemble_output(sorted_units, system_unit)
+            return self._assemble_output(sorted_units, system_units)
 
         # ======================
         # 6. Truncation Logic with Tool Call Awareness
@@ -174,17 +177,21 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # 7. Output Assembly
         # ======================
 
-        # In case system message is the only message in memory when sorted
+        # In case system messages are the only messages in memory when sorted
         # units are empty, raise an error
-        if system_unit and len(remaining_units) == 0 and len(records) > 1:
+        if (
+            system_units
+            and len(remaining_units) == 0
+            and len(records) > len(system_units)
+        ):
             raise RuntimeError(
-                "System message and current message exceeds token limit ",
+                "System messages and current message exceed token limit ",
                 total_tokens,
             )
 
         # Sort remaining units chronologically
         final_units = sorted(remaining_units, key=self._conversation_sort_key)
-        return self._assemble_output(final_units, system_unit)
+        return self._assemble_output(final_units, system_units)
 
     def _group_tool_calls_and_responses(
         self, units: List[_ContextUnit]
@@ -350,40 +357,48 @@ class ScoreBasedContextCreator(BaseContextCreator):
 
         return remaining_units
 
-    def _extract_system_message(
+    def _extract_system_messages(
         self, records: List[ContextRecord]
-    ) -> Tuple[Optional[_ContextUnit], List[_ContextUnit]]:
-        r"""Extracts the system message from records and validates it.
+    ) -> Tuple[List[_ContextUnit], List[_ContextUnit]]:
+        r"""Extracts all system messages from records and validates them.
 
         Args:
             records (List[ContextRecord]): List of context records
                 representing conversation history.
 
         Returns:
-            Tuple[Optional[_ContextUnit], List[_ContextUnit]]: containing:
-            - The system message as a `_ContextUnit`, if valid; otherwise,
-                `None`.
+            Tuple[List[_ContextUnit], List[_ContextUnit]]: containing:
+            - A list of system messages as `_ContextUnit` objects.
             - An empty list, serving as the initial container for regular
                 messages.
         """
         if not records:
-            return None, []
+            return [], []
 
-        first_record = records[0]
-        if (
-            first_record.memory_record.role_at_backend
-            != OpenAIBackendRole.SYSTEM
-        ):
-            return None, []
+        system_units = []
 
-        message = first_record.memory_record.to_openai_message()
-        tokens = self.token_counter.count_tokens_from_messages([message])
-        system_message_unit = _ContextUnit(
-            idx=0,
-            record=first_record,
-            num_tokens=tokens,
-        )
-        return system_message_unit, []
+        for idx, record in enumerate(records):
+            if (
+                record.memory_record.role_at_backend
+                == OpenAIBackendRole.SYSTEM
+            ):
+                message = record.memory_record.to_openai_message()
+                tokens = self.token_counter.count_tokens_from_messages(
+                    [message]
+                )
+                system_unit = _ContextUnit(
+                    idx=idx,
+                    record=record,
+                    num_tokens=tokens,
+                )
+                system_units.append(system_unit)
+            else:
+                # Once a non-system message is encountered, stop looking for
+                # system messages (assuming all system messages are at the
+                # beginning of the conversation)
+                break
+
+        return system_units, []
 
     def _conversation_sort_key(
         self, unit: _ContextUnit
@@ -409,15 +424,14 @@ class ScoreBasedContextCreator(BaseContextCreator):
     def _assemble_output(
         self,
         context_units: List[_ContextUnit],
-        system_unit: Optional[_ContextUnit],
+        system_units: List[_ContextUnit],
     ) -> Tuple[List[OpenAIMessage], int]:
         r"""Assembles final message list with proper ordering and token count.
 
         Args:
             context_units (List[_ContextUnit]): Sorted list of regular message
                 units.
-            system_unit (Optional[_ContextUnit]): System message unit (if
-                present).
+            system_units (List[_ContextUnit]): List of system message units.
 
         Returns:
             Tuple[List[OpenAIMessage], int]: Tuple of (ordered messages, total
@@ -426,8 +440,8 @@ class ScoreBasedContextCreator(BaseContextCreator):
         messages = []
         total_tokens = 0
 
-        # Add system message first if present
-        if system_unit:
+        # Add all system messages first in their original order
+        for system_unit in system_units:
             messages.append(
                 system_unit.record.memory_record.to_openai_message()
             )
