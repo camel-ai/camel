@@ -2590,7 +2590,15 @@ class Workforce(BaseNode):
         tasks_to_assign = [
             task
             for task in self._pending_tasks
-            if task.id not in self._task_dependencies
+            if (
+                task.id not in self._task_dependencies
+                and (
+                    task.additional_info is None
+                    or not task.additional_info.get(
+                        "_needs_decomposition", False
+                    )
+                )
+            )
         ]
         if tasks_to_assign:
             logger.debug(
@@ -3087,6 +3095,11 @@ class Workforce(BaseNode):
                 f"as completed."
             )
             for task in pending_tasks_to_complete:
+                # Don't remove tasks that need decomposition
+                if task.additional_info and task.additional_info.get(
+                    '_needs_decomposition', False
+                ):
+                    continue
                 # Set task state to DONE and add a completion message
                 task.state = TaskState.DONE
                 task.result = "Task marked as completed due to skip request"
