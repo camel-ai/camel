@@ -60,7 +60,7 @@ class WorkflowSummary(BaseModel):
         "it helped find academic professors who authored a particular "
         "paper, and then get their email addresses, affiliations, and "
         "research interests.",
-        default=[],
+        default_factory=list,
     )
     steps: List[str] = Field(
         description="Numbered, ordered actions the agent took to complete "
@@ -68,7 +68,7 @@ class WorkflowSummary(BaseModel):
         "enough to be repeatable. "
         "Example: 1. Find the upcoming meetings on Google Calendar "
         " today. 2. Send participants a reminder on Slack...",
-        default=[],
+        default_factory=list,
     )
     failure_and_recovery_strategies: List[str] = Field(
         description="[Optional] Bullet each incident with symptom, "
@@ -77,7 +77,7 @@ class WorkflowSummary(BaseModel):
         "failures. Example: Running the script for consumer data "
         "analysis failed since Pandas package was not installed. "
         "Fixed by running 'pip install pandas'.",
-        default=[],
+        default_factory=list,
     )
     notes_and_observations: str = Field(
         description="[Optional] Anything not covered in previous fields "
