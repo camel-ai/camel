@@ -1302,6 +1302,17 @@ class ChatAgent(BaseAgent):
                 )
             )
 
+    def reset_to_original_system_message(self) -> None:
+        r"""Reset system message to original, removing any appended context.
+
+        This method reverts the agent's system message back to its original
+        state, removing any workflow context or other modifications that may
+        have been appended. Useful for resetting agent state in multi-turn
+        scenarios.
+        """
+        self._system_message = self._original_system_message
+        self.init_messages()
+
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
         it were an answer of the :obj:`ChatAgent` from the backend. Currently,
@@ -3995,10 +4006,12 @@ class ChatAgent(BaseAgent):
                 configuration.
         """
         # Create a new instance with the same configuration
-        # If with_memory is True, set system_message to None
-        # If with_memory is False, use the original system message
+        # If with_memory is True, set system_message to None (it will be
+        # copied from memory below, including any workflow context)
+        # If with_memory is False, use the current system message
+        # (which may include appended workflow context)
         # To avoid duplicated system memory.
-        system_message = None if with_memory else self._original_system_message
+        system_message = None if with_memory else self._system_message
 
         # Clone tools and collect toolkits that need registration
         cloned_tools, toolkits_to_register = self._clone_tools()

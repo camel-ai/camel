@@ -676,20 +676,13 @@ class ContextUtility:
                     "Error: Agent has no system message to append workflow to"
                 )
 
-            # Append to existing system message
-            current_content = agent._original_system_message.content
-            new_content = current_content + workflow_content
-            agent._original_system_message = (
-                agent._original_system_message.create_new_instance(new_content)
-            )
-
-            # Update the system message in memory
-            current_system_message = agent.system_message
+            # Update the current system message
+            current_system_message = agent._system_message
             if current_system_message is not None:
                 new_sys_content = (
                     current_system_message.content + workflow_content
                 )
-                updated_system_message = (
+                agent._system_message = (
                     current_system_message.create_new_instance(new_sys_content)
                 )
 
@@ -697,7 +690,7 @@ class ContextUtility:
                 # Clear and re-initialize with updated system message
                 agent.memory.clear()
                 agent.update_memory(
-                    updated_system_message, OpenAIBackendRole.SYSTEM
+                    agent._system_message, OpenAIBackendRole.SYSTEM
                 )
 
             char_count = len(content)
