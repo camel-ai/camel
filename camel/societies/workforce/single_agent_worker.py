@@ -706,8 +706,13 @@ class SingleAgentWorker(Worker):
             logger.info(f"No workflow files found for pattern: {pattern}")
             return []
 
-        # prioritize most recent workflows by modification time
-        workflow_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+        # prioritize most recent sessions by session timestamp in
+        # directory name
+        def extract_session_timestamp(filepath: str) -> str:
+            match = re.search(r'session_(\d{8}_\d{6}_\d{6})', filepath)
+            return match.group(1) if match else ""
+
+        workflow_files.sort(key=extract_session_timestamp, reverse=True)
         return workflow_files
 
     def _load_workflow_files(

@@ -193,6 +193,63 @@ class TestSingleAgentWorkerWorkflow:
 
         assert result is False
 
+    @patch('glob.glob')
+    def test_load_workflow_prioritizes_newest_session(
+        self, mock_glob, temp_context_dir
+    ):
+        """Test that workflow loading prioritizes files from newest sessions.
+
+        This test verifies that when multiple workflow files exist across
+        different sessions, files from the newest session (by session
+        timestamp) are loaded first, regardless of file modification times.
+        """
+        worker = MockSingleAgentWorker("data_analyst")
+
+        # Simulate realistic scenario: multiple workforce sessions over time
+        # Each session has workflows from different agents
+        # Session 1 (older): 17:23:56
+        # Session 2 (newer): 17:46:50
+        mock_files = [
+            # Newer session files (data_analyst and other agents)
+            f"{temp_context_dir}/workforce_workflows/session_20251002_174650_470517/data_analyst_workflow.md",
+            f"{temp_context_dir}/workforce_workflows/session_20251002_174650_470517/developer_workflow.md",
+            # Older session files (data_analyst and other agents)
+            f"{temp_context_dir}/workforce_workflows/session_20251002_172356_365242/data_analyst_workflow.md",
+            f"{temp_context_dir}/workforce_workflows/session_20251002_172356_365242/researcher_workflow.md",
+        ]
+        mock_glob.return_value = mock_files
+
+        # Mock the shared context utility method
+        mock_context_utility = MagicMock()
+        mock_context_utility.load_markdown_context_to_memory.return_value = (
+            "Context appended successfully"
+        )
+
+        with patch(
+            'camel.utils.context_utils.ContextUtility.get_workforce_shared',
+            return_value=mock_context_utility,
+        ):
+            result = worker.load_workflow_memories(max_files_to_load=1)
+
+            assert result is True
+
+            # Verify load was called once
+            assert (
+                mock_context_utility.load_markdown_context_to_memory.call_count
+                == 1
+            )
+
+            # Get the filename that was loaded (second argument)
+            loaded_filename = (
+                mock_context_utility.load_markdown_context_to_memory.call_args[0][
+                    1
+                ]
+            )
+
+            # The loaded file should be 'data_analyst_workflow' (without .md)
+            # from the newer session (verified by it being loaded first)
+            assert loaded_filename == "data_analyst_workflow"
+
 
 class TestWorkforceWorkflowMemoryMethods:
     """Test workflow functionality for Workforce."""
