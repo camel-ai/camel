@@ -728,6 +728,20 @@ class ChatAgent(BaseAgent):
         # Ensure the new memory has the system message
         self.init_messages()
 
+    def set_context_utility(
+        self, context_utility: Optional[ContextUtility]
+    ) -> None:
+        r"""Set the context utility for the agent.
+
+        This allows external components (like SingleAgentWorker) to provide
+        a shared context utility instance for workflow management.
+
+        Args:
+            context_utility (ContextUtility, optional): The context utility
+                to use. If None, the agent will create its own when needed.
+        """
+        self._context_utility = context_utility
+
     def _get_full_tool_schemas(self) -> List[Dict[str, Any]]:
         r"""Returns a list of tool schemas of all tools, including internal
         and external tools.
@@ -1050,6 +1064,7 @@ class ChatAgent(BaseAgent):
         self,
         filename: Optional[str] = None,
         summary_prompt: Optional[str] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         working_directory: Optional[Union[str, Path]] = None,
     ) -> Dict[str, Any]:
         r"""Summarize the agent's current conversation context and persist it
@@ -1062,13 +1077,18 @@ class ChatAgent(BaseAgent):
             summary_prompt (Optional[str]): Custom prompt for the summarizer.
                 When omitted, a default prompt highlighting key decisions,
                 action items, and open questions is used.
+            response_format (Optional[Type[BaseModel]]): A Pydantic model
+                defining the expected structure of the response. If provided,
+                the summary will be generated as structured output and included
+                in the result.
             working_directory (Optional[str|Path]): Optional directory to save
                 the markdown summary file. If provided, overrides the default
                 directory used by ContextUtility.
 
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
-                path, and status message.
+                path, status message, and optionally structured_summary if
+                response_format was provided.
         """
 
         result: Dict[str, Any] = {
@@ -1078,6 +1098,7 @@ class ChatAgent(BaseAgent):
         }
 
         try:
+            # Use external context if set, otherwise create local one
             if self._context_utility is None:
                 if working_directory is not None:
                     self._context_utility = ContextUtility(
@@ -1085,6 +1106,7 @@ class ChatAgent(BaseAgent):
                     )
                 else:
                     self._context_utility = ContextUtility()
+            context_util = self._context_utility
 
             # Get conversation directly from agent's memory
             messages, _ = self.memory.get_context()
@@ -1117,7 +1139,7 @@ class ChatAgent(BaseAgent):
                 self._context_summary_agent = ChatAgent(
                     system_message=(
                         "You are a helpful assistant that summarizes "
-                        "conversations into concise markdown bullet lists."
+                        "conversations"
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
@@ -1128,7 +1150,8 @@ class ChatAgent(BaseAgent):
             if summary_prompt:
                 prompt_text = (
                     f"{summary_prompt.rstrip()}\n\n"
-                    f"Context information:\n{conversation_text}"
+                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
+                    f"{conversation_text}"
                 )
             else:
                 prompt_text = (
@@ -1138,7 +1161,13 @@ class ChatAgent(BaseAgent):
                 )
 
             try:
-                response = self._context_summary_agent.step(prompt_text)
+                # Use structured output if response_format is provided
+                if response_format:
+                    response = self._context_summary_agent.step(
+                        prompt_text, response_format=response_format
+                    )
+                else:
+                    response = self._context_summary_agent.step(prompt_text)
             except Exception as step_exc:
                 error_message = (
                     f"Failed to generate summary using model: {step_exc}"
@@ -1167,7 +1196,7 @@ class ChatAgent(BaseAgent):
             )
             base_filename = Path(base_filename).with_suffix("").name
 
-            metadata = self._context_utility.get_session_metadata()
+            metadata = context_util.get_session_metadata()
             metadata.update(
                 {
                     "agent_id": self.agent_id,
@@ -1175,25 +1204,38 @@ class ChatAgent(BaseAgent):
                 }
             )
 
-            save_status = self._context_utility.save_markdown_file(
+            # Handle structured output if response_format was provided
+            structured_output = None
+            if response_format and response.msgs[-1].parsed:
+                structured_output = response.msgs[-1].parsed
+                # Convert structured output to custom markdown
+                summary_content = context_util.structured_output_to_markdown(
+                    structured_data=structured_output, metadata=metadata
+                )
+
+            # Save the markdown (either custom structured or default)
+            save_status = context_util.save_markdown_file(
                 base_filename,
                 summary_content,
-                title="Conversation Summary",
-                metadata=metadata,
+                title="Conversation Summary"
+                if not structured_output
+                else None,
+                metadata=metadata if not structured_output else None,
             )
 
             file_path = (
-                self._context_utility.get_working_directory()
-                / f"{base_filename}.md"
+                context_util.get_working_directory() / f"{base_filename}.md"
             )
 
-            result.update(
-                {
-                    "summary": summary_content,
-                    "file_path": str(file_path),
-                    "status": save_status,
-                }
-            )
+            # Prepare result dictionary
+            result_dict = {
+                "summary": summary_content,
+                "file_path": str(file_path),
+                "status": save_status,
+                "structured_summary": structured_output,
+            }
+
+            result.update(result_dict)
             logger.info("Conversation summary saved to %s", file_path)
             return result
 
@@ -1260,6 +1302,17 @@ class ChatAgent(BaseAgent):
                 )
             )
 
+    def reset_to_original_system_message(self) -> None:
+        r"""Reset system message to original, removing any appended context.
+
+        This method reverts the agent's system message back to its original
+        state, removing any workflow context or other modifications that may
+        have been appended. Useful for resetting agent state in multi-turn
+        scenarios.
+        """
+        self._system_message = self._original_system_message
+        self.init_messages()
+
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
         it were an answer of the :obj:`ChatAgent` from the backend. Currently,
@@ -1321,7 +1374,7 @@ class ChatAgent(BaseAgent):
 
             # Create a prompt based on the schema
             format_instruction = (
-                "\n\nPlease respond in the following JSON format:\n" "{\n"
+                "\n\nPlease respond in the following JSON format:\n{\n"
             )
 
             properties = schema.get("properties", {})
@@ -1492,8 +1545,7 @@ class ChatAgent(BaseAgent):
 
                     if not message.parsed:
                         logger.warning(
-                            f"Failed to parse JSON from response: "
-                            f"{content}"
+                            f"Failed to parse JSON from response: {content}"
                         )
 
                 except Exception as e:
@@ -1698,7 +1750,7 @@ class ChatAgent(BaseAgent):
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
                 logger.info(
-                    f"Termination triggered at iteration " f"{iteration_count}"
+                    f"Termination triggered at iteration {iteration_count}"
                 )
                 return self._step_terminate(
                     accumulated_context_tokens,
@@ -1909,7 +1961,7 @@ class ChatAgent(BaseAgent):
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
                 logger.info(
-                    f"Termination triggered at iteration " f"{iteration_count}"
+                    f"Termination triggered at iteration {iteration_count}"
                 )
                 return self._step_terminate(
                     accumulated_context_tokens,
@@ -2698,7 +2750,7 @@ class ChatAgent(BaseAgent):
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
                 logger.info(
-                    f"Termination triggered at iteration " f"{iteration_count}"
+                    f"Termination triggered at iteration {iteration_count}"
                 )
                 yield self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
@@ -3442,7 +3494,7 @@ class ChatAgent(BaseAgent):
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
                 logger.info(
-                    f"Termination triggered at iteration " f"{iteration_count}"
+                    f"Termination triggered at iteration {iteration_count}"
                 )
                 yield self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
@@ -3954,10 +4006,12 @@ class ChatAgent(BaseAgent):
                 configuration.
         """
         # Create a new instance with the same configuration
-        # If with_memory is True, set system_message to None
-        # If with_memory is False, use the original system message
+        # If with_memory is True, set system_message to None (it will be
+        # copied from memory below, including any workflow context)
+        # If with_memory is False, use the current system message
+        # (which may include appended workflow context)
         # To avoid duplicated system memory.
-        system_message = None if with_memory else self._original_system_message
+        system_message = None if with_memory else self._system_message
 
         # Clone tools and collect toolkits that need registration
         cloned_tools, toolkits_to_register = self._clone_tools()

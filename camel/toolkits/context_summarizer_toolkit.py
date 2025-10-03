@@ -191,7 +191,7 @@ class ContextSummarizerToolkit(BaseToolkit):
             summary (str): The summary text to save.
 
         Returns:
-            str: Success message or error message.
+            str: "success" or error message starting with "Error:".
         """
         try:
             # prepare metadata for unified markdown saving
@@ -221,7 +221,7 @@ class ContextSummarizerToolkit(BaseToolkit):
                 to save.
 
         Returns:
-            str: Success message or error message.
+            str: "success" or error message starting with "Error:".
         """
         try:
             # prepare metadata for markdown saving
