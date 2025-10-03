@@ -24,12 +24,14 @@ This example shows how to:
 
 import asyncio
 
-from camel import logger
+from camel.logger import get_logger
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.workforce import Workforce
 from camel.types import ModelPlatformType, ModelType
+
+logger = get_logger(__name__)
 
 
 def log_workforce_metrics(workforce, stage=""):
