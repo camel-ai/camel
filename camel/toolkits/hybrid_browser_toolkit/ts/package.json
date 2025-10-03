@@ -20,7 +20,6 @@
   "license": "Apache-2.0",
   "dependencies": {
     "playwright": "^1.40.0",
-    "sharp": "^0.32.0",
     "ws": "^8.14.0"
   },
   "devDependencies": {
