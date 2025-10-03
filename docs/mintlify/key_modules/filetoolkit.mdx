@@ -1,0 +1,638 @@
+---
+title: "File Toolkit"
+icon: "file-lines"
+---
+
+<Note type="info" title="What is the File Toolkit?">
+  The <b>File Toolkit</b> provides comprehensive file operations including reading, writing, and editing files across multiple formats. It offers seamless conversion between formats and automatic file management with backup support.
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="Multi-Format Support" icon="file-circle-check">
+    Read and write PDF, DOCX, XLSX, PPTX, images, JSON, YAML, CSV, HTML, Markdown, and more with unified interfaces.
+  </Card>
+  <Card title="Automatic Conversion" icon="arrows-rotate">
+    Automatically converts various file formats to Markdown for easy processing using MarkItDown technology.
+  </Card>
+  <Card title="Safe File Operations" icon="shield">
+    Built-in backup system creates automatic backups before modifying existing files, preventing data loss.
+  </Card>
+  <Card title="Cross-Platform" icon="desktop">
+    Works seamlessly across macOS, Linux, and Windows with consistent behavior and encoding support.
+  </Card>
+</CardGroup>
+
+## Initialization
+
+Initialize the `FileToolkit` with optional configuration for working directory, encoding, and backup settings.
+
+<Tabs>
+<Tab title="Default">
+```python
+from camel.toolkits import FileToolkit
+
+# Initialize with default settings
+file_toolkit = FileToolkit()
+```
+</Tab>
+<Tab title="Custom Directory">
+```python
+from camel.toolkits import FileToolkit
+
+# Specify a custom working directory
+file_toolkit = FileToolkit(
+    working_directory='./my_files',
+    default_encoding='utf-8',
+    backup_enabled=True
+)
+```
+</Tab>
+<Tab title="No Backups">
+```python
+from camel.toolkits import FileToolkit
+
+# Disable automatic backups
+file_toolkit = FileToolkit(
+    backup_enabled=False
+)
+```
+</Tab>
+</Tabs>
+
+## Core Features
+
+### Reading Files
+
+The `read_file` method supports reading a wide variety of file formats with automatic conversion to Markdown.
+
+<Tabs>
+<Tab title="Single File">
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+# Read a PDF file
+content = toolkit.read_file(file_paths='document.pdf')
+print(content)
+
+# Read a Word document
+content = toolkit.read_file(file_paths='report.docx')
+print(content)
+
+# Read an image with OCR
+content = toolkit.read_file(file_paths='scanned_doc.png')
+print(content)
+```
+</Tab>
+<Tab title="Multiple Files">
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+# Read multiple files at once
+files = ['document1.pdf', 'document2.docx', 'spreadsheet.xlsx']
+results = toolkit.read_file(file_paths=files)
+
+# Results is a dictionary: {file_path: content}
+for file_path, content in results.items():
+    print(f"Content from {file_path}:")
+    print(content[:200])  # First 200 characters
+    print("---")
+```
+</Tab>
+<Tab title="Different Formats">
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+# Read various formats
+formats = [
+    'data.json',      # JSON files
+    'config.yaml',    # YAML files
+    'table.csv',      # CSV files
+    'page.html',      # HTML files
+    'notes.md',       # Markdown files
+    'audio.mp3',      # Audio files (transcription)
+]
+
+for file_path in formats:
+    content = toolkit.read_file(file_paths=file_path)
+    print(f"{file_path}: {len(content)} characters")
+```
+</Tab>
+</Tabs>
+
+### Supported Read Formats
+
+The FileToolkit can read and convert the following formats:
+
+- **Documents**: PDF, DOC, DOCX, EPUB, TXT, MD
+- **Spreadsheets**: XLS, XLSX, CSV
+- **Presentations**: PPT, PPTX
+- **Images**: JPG, JPEG, PNG (with OCR)
+- **Audio**: MP3, WAV (with transcription)
+- **Data**: JSON, YAML, XML
+- **Web**: HTML, HTM
+- **Archives**: ZIP
+
+### Writing Files
+
+The `write_to_file` method creates files in various formats with automatic format detection based on file extension.
+
+<Tabs>
+<Tab title="Markdown Files">
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+# Write a Markdown file (default format)
+content = """
+# My Document
+
+This is a **bold** statement and this is *italic*.
+
+## Section 1
+
+- Item 1
+- Item 2
+- Item 3
+"""
+
+result = toolkit.write_to_file(
+    title='My Document',
+    content=content,
+    filename='document.md'
+)
+
+print(result)
+```
+</Tab>
+<Tab title="Word Documents">
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+# Write a DOCX file
+content = """
+Professional Report
+
+This document will be formatted in Word.
+Multiple paragraphs are supported.
+Fonts and spacing are automatically configured.
+"""
+
+result = toolkit.write_to_file(
+    title='Professional Report',
+    content=content,
+    filename='report.docx'
+)
+
+print(result)
+```
+</Tab>
+<Tab title="PDF Files">
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+# Write a PDF file with LaTeX support
+content = """
+# Mathematical Document
+
+This PDF includes mathematical equations.
+
+The quadratic formula is: $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$
+
+## More Examples
+
+- Inline math: $E = mc^2$
+- Display math: $$\\int_{0}^{\\infty} e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}$$
+"""
+
+result = toolkit.write_to_file(
+    title='Mathematics',
+    content=content,
+    filename='math_doc.pdf',
+    use_latex=True  # Enable LaTeX rendering
+)
+
+print(result)
+```
+</Tab>
+<Tab title="Data Files">
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+# Write JSON file
+json_content = """
+{
+    "name": "CAMEL-AI",
+    "version": "1.0",
+    "features": ["agents", "toolkits", "models"]
+}
+"""
+
+toolkit.write_to_file(
+    title='Config',
+    content=json_content,
+    filename='config.json'
+)
+
+# Write YAML file
+yaml_content = """
+name: CAMEL-AI
+version: 1.0
+features:
+  - agents
+  - toolkits
+  - models
+"""
+
+toolkit.write_to_file(
+    title='Config',
+    content=yaml_content,
+    filename='config.yaml'
+)
+
+# Write CSV file
+csv_content = [
+    ['Name', 'Age', 'Role'],
+    ['Alice', '30', 'Developer'],
+    ['Bob', '25', 'Designer'],
+]
+
+toolkit.write_to_file(
+    title='Team Data',
+    content=csv_content,
+    filename='team.csv'
+)
+```
+</Tab>
+</Tabs>
+
+### Supported Write Formats
+
+- **Markdown**: `.md`, `.markdown` (default)
+- **Text**: `.txt`
+- **Documents**: `.doc`, `.docx`
+- **PDF**: `.pdf` (with optional LaTeX support)
+- **Data**: `.json`, `.yaml`, `.yml`, `.csv`
+- **Web**: `.html`, `.htm`
+
+### Editing Files
+
+The `edit_file` method allows you to modify existing files by replacing specific content.
+
+<Tabs>
+<Tab title="Basic Text Replacement">
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+# Replace text in a file
+result = toolkit.edit_file(
+    file_path='document.md',
+    old_text='original text',
+    new_text='updated text'
+)
+
+print(result)
+```
+</Tab>
+<Tab title="Multiple Replacements">
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+# Replace multiple occurrences
+result = toolkit.edit_file(
+    file_path='config.yaml',
+    old_text='version: 1.0',
+    new_text='version: 2.0'
+)
+
+# The toolkit automatically creates a backup before editing
+print(result)
+```
+</Tab>
+<Tab title="With Custom Encoding">
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+# Edit file with specific encoding
+result = toolkit.edit_file(
+    file_path='international.txt',
+    old_text='Hello',
+    new_text='你好',
+    encoding='utf-8'
+)
+
+print(result)
+```
+</Tab>
+</Tabs>
+
+## Advanced Usage
+
+### Batch File Processing
+
+<Card title="Process Multiple Files" icon="layer-group">
+```python
+from camel.toolkits import FileToolkit
+import os
+
+toolkit = FileToolkit()
+
+# Read all PDFs in a directory
+pdf_dir = './documents'
+pdf_files = [f for f in os.listdir(pdf_dir) if f.endswith('.pdf')]
+pdf_paths = [os.path.join(pdf_dir, f) for f in pdf_files]
+
+# Read all PDFs at once (parallel processing)
+results = toolkit.read_file(file_paths=pdf_paths)
+
+# Process results
+for file_path, content in results.items():
+    # Extract key information
+    word_count = len(content.split())
+    print(f"{file_path}: {word_count} words")
+    
+    # Save as Markdown
+    md_filename = file_path.replace('.pdf', '.md')
+    toolkit.write_to_file(
+        title=os.path.basename(file_path),
+        content=content,
+        filename=md_filename
+    )
+```
+</Card>
+
+### File Format Conversion
+
+<Card title="Convert Between Formats" icon="repeat">
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+# Convert PDF to Markdown
+pdf_content = toolkit.read_file(file_paths='document.pdf')
+toolkit.write_to_file(
+    title='Converted Document',
+    content=pdf_content,
+    filename='document.md'
+)
+
+# Convert Markdown to DOCX
+md_content = toolkit.read_file(file_paths='document.md')
+toolkit.write_to_file(
+    title='Word Document',
+    content=md_content,
+    filename='document.docx'
+)
+
+# Convert to PDF
+toolkit.write_to_file(
+    title='PDF Document',
+    content=md_content,
+    filename='document.pdf',
+    use_latex=True
+)
+```
+</Card>
+
+### With ChatAgent
+
+Use the File Toolkit with a `ChatAgent` for intelligent file operations.
+
+<Card title="AI-Powered File Processing" icon="robot">
+```python
+from camel.agents import ChatAgent
+from camel.toolkits import FileToolkit
+
+# Initialize toolkit
+toolkit = FileToolkit()
+
+# Create agent with file tools
+agent = ChatAgent(
+    tools=toolkit.get_tools(),
+)
+
+# Let the agent process files
+response = agent.step(
+    "Read the file 'research_paper.pdf' and create a summary in 'summary.md'"
+)
+
+print(response.msgs[0].content)
+
+# Agent can also edit files
+response = agent.step(
+    "In the file 'config.yaml', change the version from 1.0 to 2.0"
+)
+
+print(response.msgs[0].content)
+```
+</Card>
+
+## Working Directory Management
+
+The FileToolkit manages a default working directory for all file operations.
+
+<Card title="Understanding Working Directories" icon="folder">
+```python
+from camel.toolkits import FileToolkit
+import os
+
+# By default, uses './camel_working_dir'
+toolkit = FileToolkit()
+
+# Custom working directory
+toolkit = FileToolkit(working_directory='./my_project/files')
+
+# Or use environment variable
+os.environ['CAMEL_WORKDIR'] = './project_files'
+toolkit = FileToolkit()  # Will use './project_files'
+
+# Relative paths are resolved to working directory
+toolkit.write_to_file(
+    title='Document',
+    content='Content here',
+    filename='doc.md'  # Saved to working_directory/doc.md
+)
+
+# Absolute paths work too
+toolkit.write_to_file(
+    title='Document',
+    content='Content here',
+    filename='/tmp/absolute_path_doc.md'
+)
+```
+</Card>
+
+## Backup System
+
+The FileToolkit automatically creates backups before overwriting files.
+
+<Card title="Automatic Backups" icon="clock-rotate-left">
+```python
+from camel.toolkits import FileToolkit
+
+# Enable backups (default)
+toolkit = FileToolkit(backup_enabled=True)
+
+# When you edit or overwrite a file, a backup is created
+# Example: editing config.yaml
+# Original: config.yaml
+# Backup: config.yaml.20250103_120530.bak
+
+toolkit.edit_file(
+    file_path='config.yaml',
+    old_text='old value',
+    new_text='new value'
+)
+
+# The backup file is timestamped and saved in the same directory
+```
+</Card>
+
+## Error Handling
+
+<Card title="Robust Error Handling" icon="triangle-exclamation">
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+try:
+    # Read a file that might not exist
+    content = toolkit.read_file(file_paths='nonexistent.pdf')
+    print(content)
+except Exception as e:
+    print(f"Error reading file: {e}")
+
+# Write with validation
+try:
+    result = toolkit.write_to_file(
+        title='Test',
+        content='Content',
+        filename='output.pdf',
+        use_latex=True
+    )
+    if 'successfully' in result.lower():
+        print("File written successfully!")
+    else:
+        print(f"Warning: {result}")
+except Exception as e:
+    print(f"Error writing file: {e}")
+```
+</Card>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Appropriate Formats" icon="file-check">
+    Choose the right format for your data: Markdown for documentation, PDF for final output, JSON/YAML for configuration.
+  </Card>
+  <Card title="Enable Backups" icon="floppy-disk">
+    Keep backups enabled in production to prevent accidental data loss when editing files.
+  </Card>
+  <Card title="Batch Operations" icon="boxes-stacked">
+    When processing multiple files, use the list input to `read_file` for parallel processing and better performance.
+  </Card>
+  <Card title="Organize with Directories" icon="folder-tree">
+    Use the working directory feature to keep related files organized and simplify path management.
+  </Card>
+</CardGroup>
+
+## Common Use Cases
+
+### Document Conversion Pipeline
+
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit(working_directory='./conversions')
+
+# Read PDF, extract text
+pdf_content = toolkit.read_file(file_paths='input.pdf')
+
+# Save as Markdown for editing
+toolkit.write_to_file(
+    title='Editable Version',
+    content=pdf_content,
+    filename='editable.md'
+)
+
+# Convert to Word for sharing
+toolkit.write_to_file(
+    title='Final Document',
+    content=pdf_content,
+    filename='final.docx'
+)
+```
+
+### Configuration Management
+
+```python
+from camel.toolkits import FileToolkit
+
+toolkit = FileToolkit()
+
+# Read current config
+config = toolkit.read_file(file_paths='app_config.yaml')
+
+# Update a value
+toolkit.edit_file(
+    file_path='app_config.yaml',
+    old_text='debug: false',
+    new_text='debug: true'
+)
+
+# Backup is automatically created
+```
+
+### Data Extraction and Reporting
+
+```python
+from camel.toolkits import FileToolkit
+from camel.agents import ChatAgent
+
+toolkit = FileToolkit()
+agent = ChatAgent(tools=toolkit.get_tools())
+
+# Extract data from multiple sources
+files = ['report1.pdf', 'report2.docx', 'data.xlsx']
+contents = toolkit.read_file(file_paths=files)
+
+# Use agent to create summary report
+response = agent.step(
+    f"Create a summary report combining insights from these documents"
+)
+
+# Save the report
+toolkit.write_to_file(
+    title='Summary Report',
+    content=response.msgs[0].content,
+    filename='summary_report.md'
+)
+```
+
+## Additional Resources
+
+- 💻 [FileToolkit Source Code](https://github.com/camel-ai/camel/blob/master/camel/toolkits/file_toolkit.py)
+- 📖 [MarkItDown Documentation](https://github.com/microsoft/markitdown) - Powers file conversion
+- 🎯 [Example Scripts](https://github.com/camel-ai/camel/tree/master/examples/toolkits)
+- 📚 [CAMEL Documentation](https://docs.camel-ai.org)
+

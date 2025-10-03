@@ -77,7 +77,8 @@
             "pages": [
               "key_modules/browsertoolkit",
               "key_modules/pptxtoolkit",
-              "key_modules/terminaltoolkit"
+              "key_modules/terminaltoolkit",
+              "key_modules/filetoolkit"
             ]
           },
           {
