@@ -136,4 +136,280 @@ answer = browser_toolkit.browser.ask_question_about_video(question=question)
 
 print(answer)
 ```
-</Card> 
+</Card>
+
+---
+
+## Hybrid Browser Toolkit
+
+<Note type="info" title="What is the Hybrid Browser Toolkit?">
+  The <b>Hybrid Browser Toolkit</b> is an advanced browser automation toolkit that combines non-visual, DOM-based browser automation with visual, screenshot-based capabilities. It offers flexibility by supporting both TypeScript/Node.js and pure Python implementations.
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="Dual Implementation" icon="code-branch">
+    Switch between TypeScript (using WebSocket) and Python (using Playwright directly) implementations based on your needs.
+  </Card>
+  <Card title="Stealth Mode" icon="user-secret">
+    Built-in stealth mode to avoid detection by anti-bot systems, with customizable user agents and browser profiles.
+  </Card>
+  <Card title="CDP Support" icon="network-wired">
+    Chrome DevTools Protocol (CDP) integration for advanced debugging and network monitoring.
+  </Card>
+  <Card title="Screenshot Analysis" icon="camera">
+    Visual reasoning with Set-of-Marks (SoM) screenshots for complex interactions with web elements.
+  </Card>
+</CardGroup>
+
+### Key Features
+
+- **Multiple browser actions**: Navigate, click, type, scroll, select, and more
+- **Tab management**: Create, switch, and close browser tabs
+- **Console interaction**: Execute JavaScript and view console logs
+- **Mouse control**: Advanced mouse operations including drag-and-drop
+- **Session persistence**: Save and restore browser sessions with cookies and user data
+- **Headless mode**: Run browsers in the background without UI
+- **Custom timeouts**: Configure page load, action, and navigation timeouts
+
+### Initialization
+
+Initialize the Hybrid Browser Toolkit with your preferred implementation mode.
+
+<Tabs>
+<Tab title="Python Mode (Default)">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+# Initialize with Python implementation (pure Playwright)
+toolkit = HybridBrowserToolkit(mode='python')
+
+# Get available tools
+tools = toolkit.get_tools()
+```
+</Tab>
+<Tab title="TypeScript Mode">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+# Initialize with TypeScript implementation (WebSocket-based)
+toolkit = HybridBrowserToolkit(mode='typescript')
+
+# Get available tools
+tools = toolkit.get_tools()
+```
+</Tab>
+<Tab title="Advanced Configuration">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+# Initialize with advanced options
+toolkit = HybridBrowserToolkit(
+    mode='python',
+    headless=False,              # Show browser UI
+    stealth=True,                # Enable stealth mode
+    user_data_dir='./browser',   # Persist browser data
+    cdp=True,                    # Enable CDP for debugging
+    page_load_timeout=60000,     # 60 seconds page load timeout
+    action_timeout=30000,        # 30 seconds action timeout
+)
+```
+</Tab>
+</Tabs>
+
+### Usage Examples
+
+#### Basic Navigation and Interaction
+
+<Tabs>
+<Tab title="Navigate and Click">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+toolkit = HybridBrowserToolkit()
+
+# Open browser
+toolkit.browser_open()
+
+# Visit a page
+toolkit.browser_visit_page(url='https://www.example.com')
+
+# Click an element
+toolkit.browser_click(element_description='Search button')
+
+# Type text
+toolkit.browser_type(
+    element_description='Search input',
+    text='CAMEL-AI framework'
+)
+
+# Press Enter
+toolkit.browser_enter()
+
+# Close browser
+toolkit.browser_close()
+```
+</Tab>
+<Tab title="Tab Management">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+toolkit = HybridBrowserToolkit()
+
+# Open browser
+toolkit.browser_open()
+
+# Visit multiple pages in tabs
+toolkit.browser_visit_page(url='https://www.example1.com')
+toolkit.browser_visit_page(url='https://www.example2.com')  # Opens in new tab
+
+# Get tab information
+tab_info = toolkit.browser_get_tab_info()
+print(f"Open tabs: {tab_info}")
+
+# Switch to a specific tab
+toolkit.browser_switch_tab(tab_index=0)
+
+# Close current tab
+toolkit.browser_close_tab()
+
+# Close browser
+toolkit.browser_close()
+```
+</Tab>
+<Tab title="Screenshot Analysis">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+toolkit = HybridBrowserToolkit()
+
+# Open browser and visit page
+toolkit.browser_open()
+toolkit.browser_visit_page(url='https://www.camel-ai.org')
+
+# Get page snapshot (text-based representation)
+snapshot = toolkit.browser_get_page_snapshot()
+print(snapshot)
+
+# Get Set-of-Marks screenshot (visual with element markers)
+som_screenshot = toolkit.browser_get_som_screenshot()
+
+# Get all clickable links
+links = toolkit.browser_get_page_links()
+print(f"Available links: {links}")
+
+# Close browser
+toolkit.browser_close()
+```
+</Tab>
+</Tabs>
+
+#### Advanced Operations
+
+<Tabs>
+<Tab title="Mouse Operations">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+toolkit = HybridBrowserToolkit()
+
+# Open browser and visit page
+toolkit.browser_open()
+toolkit.browser_visit_page(url='https://www.example.com')
+
+# Mouse control
+toolkit.browser_mouse_control(
+    operation='move',
+    x=100,
+    y=200
+)
+
+# Drag and drop
+toolkit.browser_mouse_drag(
+    start_element='Draggable item',
+    end_element='Drop zone'
+)
+
+# Close browser
+toolkit.browser_close()
+```
+</Tab>
+<Tab title="Console Interaction">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+toolkit = HybridBrowserToolkit()
+
+# Open browser and visit page
+toolkit.browser_open()
+toolkit.browser_visit_page(url='https://www.example.com')
+
+# View console logs
+console_output = toolkit.browser_console_view()
+print(console_output)
+
+# Execute JavaScript in console
+result = toolkit.browser_console_exec(
+    code="return document.title;"
+)
+print(f"Page title: {result}")
+
+# Close browser
+toolkit.browser_close()
+```
+</Tab>
+<Tab title="Scrolling and Waiting">
+```python
+from camel.toolkits import HybridBrowserToolkit
+
+toolkit = HybridBrowserToolkit()
+
+# Open browser and visit page
+toolkit.browser_open()
+toolkit.browser_visit_page(url='https://www.example.com')
+
+# Scroll down the page
+toolkit.browser_scroll(direction='down', amount=500)
+
+# Wait for user interaction (if needed)
+toolkit.browser_wait_user(
+    message='Please complete the CAPTCHA',
+    wait_seconds=30
+)
+
+# Close browser
+toolkit.browser_close()
+```
+</Tab>
+</Tabs>
+
+### With ChatAgent
+
+Use the Hybrid Browser Toolkit with a `ChatAgent` for autonomous web automation.
+
+<Card title="Agent-Driven Web Browsing" icon="robot">
+```python
+from camel.agents import ChatAgent
+from camel.toolkits import HybridBrowserToolkit
+
+# Initialize toolkit
+toolkit = HybridBrowserToolkit(headless=False)
+
+# Create agent with browser tools
+agent = ChatAgent(
+    tools=toolkit.get_tools(),
+)
+
+# Let the agent browse autonomously
+response = agent.step(
+    "Go to CAMEL-AI website and find information about the framework"
+)
+
+print(response.msgs[0].content)
+```
+</Card>
+
+### Additional Resources
+
+- 📖 [Official Blog Post](https://www.camel-ai.org/blogs/camel-browser-toolkit-blog)
+- 💻 [Source Code on GitHub](https://github.com/camel-ai/camel/tree/master/camel/toolkits/hybrid_browser_toolkit)
+- 🎯 [Example Scripts](https://github.com/camel-ai/camel/tree/master/examples/toolkits) 
