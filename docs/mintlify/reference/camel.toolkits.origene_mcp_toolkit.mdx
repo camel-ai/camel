@@ -5,7 +5,7 @@
 ## OrigeneToolkit
 
 ```python
-class OrigeneToolkit(BaseToolkit):
+class OrigeneToolkit(MCPToolkit):
 ```
 
 OrigeneToolkit provides an interface for interacting with
@@ -39,17 +39,5 @@ Initializes the OrigeneToolkit.
 
 **Parameters:**
 
-- **config_dict** (Optional[Dict]): Configuration dictionary for MCP servers. If None, uses default configuration for chembl_mcp. (default: :obj:`None`)
+- **config_dict** (Optional[Dict]): Configuration dictionary for MCP servers. If None, raises ValueError as configuration is required. (default: :obj:`None`)
 - **timeout** (Optional[float]): Connection timeout in seconds. (default: :obj:`None`)
-
-<a id="camel.toolkits.origene_mcp_toolkit.OrigeneToolkit.get_tools"></a>
-
-### get_tools
-
-```python
-def get_tools(self):
-```
-
-**Returns:**
-
-  List[FunctionTool]: List of available tools.

@@ -28,7 +28,7 @@ from camel.toolkits import (
     AgentCommunicationToolkit,
     AudioAnalysisToolkit,
     ExcelToolkit,
-    FileWriteToolkit,
+    FileToolkit,
     # GoogleDriveMCPToolkit,
     HumanToolkit,
     HybridBrowserToolkit,
@@ -324,7 +324,6 @@ def search_agent_factory(
         "browser_get_som_screenshot",
     ]
     web_toolkit_custom = HybridBrowserToolkit(
-        mode="python",
         headless=False,
         enabled_tools=custom_tools,
         browser_log_to_file=True,
@@ -486,7 +485,7 @@ def document_agent_factory(
     )
 
     # Initialize toolkits
-    file_write_toolkit = FileWriteToolkit(working_directory=WORKING_DIRECTORY)
+    file_write_toolkit = FileToolkit(working_directory=WORKING_DIRECTORY)
     pptx_toolkit = PPTXToolkit(working_directory=WORKING_DIRECTORY)
     mark_it_down_toolkit = MarkItDownToolkit()
     excel_toolkit = ExcelToolkit(working_directory=WORKING_DIRECTORY)

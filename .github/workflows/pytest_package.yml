@@ -81,6 +81,7 @@ jobs:
         BOHRIUM_API_KEY: "${{ secrets.BOHRIUM_API_KEY }}"
         CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
+        COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -167,6 +168,7 @@ jobs:
         CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
+        COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"
@@ -251,6 +253,7 @@ jobs:
         CRYNUX_API_KEY: "${{ secrets.CRYNUX_API_KEY }}"
         NEBIUS_API_KEY: "${{ secrets.NEBIUS_API_KEY }}"
         AMD_API_KEY: "${{ secrets.AMD_API_KEY }}"
+        COMETAPI_KEY: "${{ secrets.COMETAPI_KEY }}"
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev, docs]"

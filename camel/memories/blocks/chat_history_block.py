@@ -21,6 +21,17 @@ from camel.storages.key_value_storages.in_memory import InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole
 
 
+class EmptyMemoryWarning(UserWarning):
+    """Warning raised when attempting to access an empty memory.
+
+    This warning is raised when operations are performed on memory
+    that contains no records. It can be safely caught and suppressed
+    in contexts where empty memory is expected.
+    """
+
+    pass
+
+
 class ChatHistoryBlock(MemoryBlock):
     r"""An implementation of the :obj:`MemoryBlock` abstract base class for
     maintaining a record of chat histories.
@@ -39,7 +50,7 @@ class ChatHistoryBlock(MemoryBlock):
             last message is 1.0, and with each step taken backward, the score
             of the message is multiplied by the `keep_rate`. Higher `keep_rate`
             leads to high possibility to keep history messages during context
-            creation.
+            creation. (default: :obj:`0.9`)
     """
 
     def __init__(
@@ -70,7 +81,11 @@ class ChatHistoryBlock(MemoryBlock):
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
-            warnings.warn("The `ChatHistoryMemory` is empty.")
+            warnings.warn(
+                "The `ChatHistoryMemory` is empty.",
+                EmptyMemoryWarning,
+                stacklevel=1,
+            )
             return list()
 
         if window_size is not None and window_size >= 0:
@@ -81,7 +96,10 @@ class ChatHistoryBlock(MemoryBlock):
                 if (
                     record_dicts
                     and record_dicts[0]['role_at_backend']
-                    in {OpenAIBackendRole.SYSTEM, OpenAIBackendRole.DEVELOPER}
+                    in {
+                        OpenAIBackendRole.SYSTEM.value,
+                        OpenAIBackendRole.DEVELOPER.value,
+                    }
                 )
                 else 0
             )
