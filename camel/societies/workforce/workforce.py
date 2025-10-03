@@ -1428,14 +1428,10 @@ class Workforce(BaseNode):
                 )
 
         if subtasks:
-            # If decomposition happened, the original task becomes a container.
-            # We only execute its subtasks.
-            if not self._pending_tasks:
-                self._pending_tasks.extendleft(reversed(subtasks))
-            else:
-                logger.warning(
-                    "Pending tasks exist, this error should not happen."
-                )
+            # _pending_tasks will contain both undecomposed
+            # and decomposed tasks, so we use additional_info
+            # to mark the tasks that need decomposition instead
+            self._pending_tasks.extendleft(reversed(subtasks))
         else:
             # If no decomposition, execute the original task.
             self._pending_tasks.append(task)
@@ -3207,7 +3203,7 @@ class Workforce(BaseNode):
                 # Only decompose when no tasks are in flight and pending queue is empty
                 if not self._pending_tasks and self._in_flight_tasks == 0:
                     # All tasks completed, will exit loop
-                    pass
+                    break
 
                 # Check if the first pending task needs decomposition
                 # This happens when add_task(as_subtask=False) was called
@@ -3215,8 +3211,6 @@ class Workforce(BaseNode):
                     next_task = self._pending_tasks[0]
                     if (next_task.additional_info and
                         next_task.additional_info.get('_needs_decomposition')):
-                        # Remove the task needing decomposition
-                        self._pending_tasks.popleft()
                         logger.info(
                             f"Decomposing main task: {next_task.id}"
                         )
@@ -3228,6 +3222,7 @@ class Workforce(BaseNode):
                             await self.handle_decompose_append_task(next_task, reset=False)
 
                             # Mark the main task as completed (decomposition successful)
+                            # and Remove it from pending tasks
                             await self._handle_completed_task(next_task)
                             logger.info(
                                 f"Main task {next_task.id} decomposed and ready for processing"
