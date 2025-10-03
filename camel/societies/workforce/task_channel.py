@@ -16,7 +16,10 @@ from collections import defaultdict, deque
 from enum import Enum
 from typing import Dict, List, Optional, Set
 
+from camel.logger import get_logger
 from camel.tasks import Task
+
+logger = get_logger(__name__)
 
 
 class PacketStatus(Enum):
@@ -282,6 +285,7 @@ class TaskChannel:
         """
         async with self._condition:
             in_flight_tasks = []
+            seen_task_ids = set()  # Track seen IDs for duplicate detection
 
             # Get tasks with SENT, RETURNED or PROCESSING
             # status published by this publisher
@@ -294,7 +298,17 @@ class TaskChannel:
                     if task_id in self._task_dict:
                         packet = self._task_dict[task_id]
                         if packet.publisher_id == publisher_id:
+                            # Defensive check: detect if task appears in
+                            # multiple status sets (should never happen)
+                            if task_id in seen_task_ids:
+                                logger.warning(
+                                    f"Task {task_id} found in multiple "
+                                    f"status sets. This indicates a bug in "
+                                    f"status management."
+                                )
+                                continue
                             in_flight_tasks.append(packet.task)
+                            seen_task_ids.add(task_id)
 
             return in_flight_tasks
 
