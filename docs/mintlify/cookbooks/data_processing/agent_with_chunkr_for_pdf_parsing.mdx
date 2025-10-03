@@ -133,9 +133,9 @@ with open('local_data/camel_paper.pdf', 'wb') as file:
      file.write(response.content)
 ```
 
-Using only first page of the research paper to save api usage
-
 ```python
+# Extract the first page of the PDF and save it as a new PDF file to be used for the example.
+# This is done simply to reduce the size of the PDF to reduce api usage
 import PyPDF2
 
 input_path = "local_data/camel_paper.pdf"
