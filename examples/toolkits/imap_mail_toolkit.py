@@ -23,13 +23,15 @@ from camel.types import ModelPlatformType, ModelType
 def main() -> None:
     r"""Simple example using IMAP Mail Toolkit with a chat agent."""
 
-    # Initialize toolkit with credentials
-    # Replace the placeholder values below with your actual email credentials
+    # Example 1: Basic usage (connections auto-managed with idle timeout)
+    # The toolkit will automatically close idle connections after 5 minutes
+    # and clean up on object destruction
     mail_toolkit = IMAPMailToolkit(
         imap_server="imap.gmail.com",
         smtp_server="smtp.gmail.com",
         username="your.email@gmail.com",
         password="your_app_password",
+        connection_idle_timeout=300.0,  # 5 minutes (default)
     )
     tools = mail_toolkit.get_tools()
 
@@ -48,7 +50,7 @@ def main() -> None:
         tools=tools,
     )
 
-    # Example 1: Fetch emails
+    # Fetch emails
     print("Fetching recent emails...")
     response = agent.step(
         BaseMessage.make_user_message(
@@ -57,16 +59,57 @@ def main() -> None:
     )
     print(f"Assistant: {response.msgs[0].content}\n")
 
-    # Example 2: Send email
+    # Send email
     print("Sending test email...")
     response = agent.step(
         BaseMessage.make_user_message(
             role_name="User",
-            content="""Send an email to yourself with 
+            content="""Send an email to yourself with
             subject 'Test' and body 'Hello from CAMEL'""",
         )
     )
     print(f"Assistant: {response.msgs[0].content}")
+
+    # Connections will be auto-closed after idle timeout or when
+    # mail_toolkit is destroyed
+
+
+def main_with_context_manager() -> None:
+    r"""Example using context manager for explicit cleanup."""
+
+    # Example 2: Using context manager (recommended for long-running tasks)
+    # Connections are guaranteed to close when exiting the context
+    with IMAPMailToolkit(
+        imap_server="imap.gmail.com",
+        smtp_server="smtp.gmail.com",
+        username="your.email@gmail.com",
+        password="your_app_password",
+    ) as mail_toolkit:
+        tools = mail_toolkit.get_tools()
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        )
+
+        agent = ChatAgent(
+            model=model,
+            system_message=BaseMessage.make_assistant_message(
+                role_name="Email Assistant",
+                content="You are an email assistant.",
+            ),
+            tools=tools,
+        )
+
+        # Use the agent
+        response = agent.step(
+            BaseMessage.make_user_message(
+                role_name="User", content="Get my recent emails"
+            )
+        )
+        print(f"Assistant: {response.msgs[0].content}")
+
+    # Connections automatically closed here
 
 
 if __name__ == "__main__":

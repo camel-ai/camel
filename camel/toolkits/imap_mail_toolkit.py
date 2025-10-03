@@ -16,6 +16,7 @@ import email
 import imaplib
 import os
 import smtplib
+import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Any, Dict, List, Optional
@@ -40,6 +41,9 @@ class IMAPMailToolkit(BaseToolkit):
     - Moving emails to folders
     - Deleting emails
 
+    The toolkit implements connection pooling with automatic idle timeout
+    to prevent resource leaks when used by LLM agents.
+
     Args:
         imap_server (str, optional): IMAP server hostname. If not provided,
             will be obtained from environment variables.
@@ -52,6 +56,8 @@ class IMAPMailToolkit(BaseToolkit):
         password (str, optional): Email password. If not provided, will be
             obtained from environment variables.
         timeout (Optional[float]): The timeout for the toolkit operations.
+        connection_idle_timeout (float): Maximum idle time (in seconds)
+            before auto-closing connections. Defaults to 300 (5 minutes).
     """
 
     @dependencies_required('imaplib', 'smtplib', 'email')
@@ -64,6 +70,7 @@ class IMAPMailToolkit(BaseToolkit):
         username: Optional[str] = None,
         password: Optional[str] = None,
         timeout: Optional[float] = None,
+        connection_idle_timeout: float = 300.0,
     ) -> None:
         r"""Initialize the IMAP Mail Toolkit.
 
@@ -75,6 +82,8 @@ class IMAPMailToolkit(BaseToolkit):
             username: Email username
             password: Email password
             timeout: Timeout for operations
+            connection_idle_timeout: Max idle time before auto-close (default:
+            300s)
         """
         super().__init__(timeout=timeout)
 
@@ -86,52 +95,70 @@ class IMAPMailToolkit(BaseToolkit):
         self.username = username or os.environ.get("EMAIL_USERNAME")
         self.password = password or os.environ.get("EMAIL_PASSWORD")
 
-        # Validate required parameters
-        if not self.imap_server:
-            raise ValueError(
-                "IMAP server must be provided or set via IMAP_SERVER"
-                "environment variable"
-            )
-        if not self.smtp_server:
-            raise ValueError(
-                "SMTP server must be provided or set via SMTP_SERVER"
-                "environment variable"
-            )
-        if not self.username:
-            raise ValueError(
-                "Username must be provided or set via EMAIL_USERNAME"
-                "environment variable"
-            )
-        if not self.password:
-            raise ValueError(
-                "Password must be provided or set via EMAIL_PASSWORD"
-                "environment variable"
-            )
+        # Persistent connections
+        self._imap_connection: Optional[imaplib.IMAP4_SSL] = None
+        self._smtp_connection: Optional[smtplib.SMTP] = None
+
+        # Connection idle timeout management
+        self._connection_idle_timeout = connection_idle_timeout
+        self._imap_last_used: float = 0.0
+        self._smtp_last_used: float = 0.0
 
     def _get_imap_connection(self) -> imaplib.IMAP4_SSL:
-        r"""Establish IMAP connection.
+        r"""Establish or reuse IMAP connection with idle timeout.
 
         Returns:
             imaplib.IMAP4_SSL: Connected IMAP client
         """
-        if not self.imap_server or not self.username or not self.password:
-            raise ValueError(
-                "IMAP server, username, and password must be provided"
-            )
+        current_time = time.time()
 
+        # Check if existing connection has exceeded idle timeout
+        if self._imap_connection is not None:
+            idle_time = current_time - self._imap_last_used
+            if idle_time > self._connection_idle_timeout:
+                logger.info(
+                    "IMAP connection idle for %.1f seconds, closing",
+                    idle_time,
+                )
+                try:
+                    self._imap_connection.logout()
+                except (imaplib.IMAP4.error, OSError) as e:
+                    logger.debug("Error closing idle IMAP connection: %s", e)
+                self._imap_connection = None
+
+        # Check if existing connection is still alive
+        if self._imap_connection is not None:
+            try:
+                # Test connection with NOOP command
+                self._imap_connection.noop()
+                logger.debug("Reusing existing IMAP connection")
+                self._imap_last_used = current_time
+                return self._imap_connection
+            except (imaplib.IMAP4.error, OSError):
+                # Connection is dead, close it and create new one
+                logger.debug("IMAP connection is dead, creating new one")
+                try:
+                    self._imap_connection.logout()
+                except (imaplib.IMAP4.error, OSError) as e:
+                    logger.debug("Error closing dead IMAP connection: %s", e)
+                self._imap_connection = None
+
+        # Create new connection
         try:
             imap = imaplib.IMAP4_SSL(self.imap_server, self.imap_port)
             imap.login(self.username, self.password)
+            self._imap_connection = imap
+            self._imap_last_used = current_time
             logger.info(
                 "Successfully connected to IMAP server %s", self.imap_server
             )
-            return imap
+            return self._imap_connection
         except Exception as e:
             logger.error("Failed to connect to IMAP server: %s", e)
             raise
 
     def _get_smtp_connection(self) -> smtplib.SMTP:
-        r"""Establish SMTP connection.
+        r"""Establish or reuse SMTP connection with idle timeout.
 
         Returns:
             smtplib.SMTP: Connected SMTP client
@@ -141,14 +168,51 @@ class IMAPMailToolkit(BaseToolkit):
                 "SMTP server, username, and password must be provided"
             )
 
+        current_time = time.time()
+
+        # Check if existing connection has exceeded idle timeout
+        if self._smtp_connection is not None:
+            idle_time = current_time - self._smtp_last_used
+            if idle_time > self._connection_idle_timeout:
+                logger.info(
+                    "SMTP connection idle for %.1f seconds, closing",
+                    idle_time,
+                )
+                try:
+                    self._smtp_connection.quit()
+                except (smtplib.SMTPException, OSError) as e:
+                    logger.debug("Error closing idle SMTP connection: %s", e)
+                self._smtp_connection = None
+
+        # Check if existing connection is still alive
+        if self._smtp_connection is not None:
+            try:
+                # Test connection with NOOP command
+                status = self._smtp_connection.noop()
+                if status[0] == 250:
+                    logger.debug("Reusing existing SMTP connection")
+                    self._smtp_last_used = current_time
+                    return self._smtp_connection
+            except (smtplib.SMTPException, OSError):
+                # Connection is dead, close it and create new one
+                logger.debug("SMTP connection is dead, creating new one")
+                try:
+                    self._smtp_connection.quit()
+                except (smtplib.SMTPException, OSError) as e:
+                    logger.debug("Error closing dead SMTP connection: %s", e)
+                self._smtp_connection = None
+
+        # Create new connection
         try:
             smtp = smtplib.SMTP(self.smtp_server, self.smtp_port)
             smtp.starttls()
             smtp.login(self.username, self.password)
+            self._smtp_connection = smtp
+            self._smtp_last_used = current_time
             logger.info(
                 "Successfully connected to SMTP server %s", self.smtp_server
             )
-            return smtp
+            return self._smtp_connection
         except Exception as e:
             logger.error("Failed to connect to SMTP server: %s", e)
             raise
@@ -175,7 +239,6 @@ class IMAPMailToolkit(BaseToolkit):
         Returns:
             List[Dict]: List of email dictionaries with metadata
         """
-        imap = None
         try:
             imap = self._get_imap_connection()
             imap.select(folder)
@@ -236,23 +299,25 @@ class IMAPMailToolkit(BaseToolkit):
                                 )
                                 continue
 
-                        email_dict = {
-                            "id": (
-                                email_id.decode()
-                                if isinstance(email_id, bytes)
-                                else str(email_id)
-                            ),
-                            "subject": email_message.get("Subject", ""),
-                            "from": email_message.get("From", ""),
-                            "to": email_message.get("To", ""),
-                            "date": email_message.get("Date", ""),
-                            "size": email_size,
-                        }
-                        # Get email body content
-                        body_content = self._extract_email_body(email_message)
-                        email_dict["body"] = body_content
+                            email_dict = {
+                                "id": (
+                                    email_id.decode()
+                                    if isinstance(email_id, bytes)
+                                    else str(email_id)
+                                ),
+                                "subject": email_message.get("Subject", ""),
+                                "from": email_message.get("From", ""),
+                                "to": email_message.get("To", ""),
+                                "date": email_message.get("Date", ""),
+                                "size": email_size,
+                            }
+                            # Get email body content
+                            body_content = self._extract_email_body(
+                                email_message
+                            )
+                            email_dict["body"] = body_content
 
-                        emails.append(email_dict)
+                            emails.append(email_dict)
 
                 except (ValueError, UnicodeDecodeError) as e:
                     logger.warning(
@@ -268,13 +333,6 @@ class IMAPMailToolkit(BaseToolkit):
         except (ConnectionError, imaplib.IMAP4.error) as e:
             logger.error("Error fetching emails: %s", e)
             raise
-        finally:
-            if imap:
-                try:
-                    imap.close()
-                    imap.logout()
-                except imaplib.IMAP4.error:
-                    pass
 
     def get_email_by_id(self, email_id: str, folder: str = "INBOX") -> Dict:
         r"""Retrieve a specific email by ID with full metadata.
@@ -286,7 +344,6 @@ class IMAPMailToolkit(BaseToolkit):
         Returns:
             Dict: Email dictionary with complete metadata
         """
-        imap = None
         try:
             imap = self._get_imap_connection()
             imap.select(folder)
@@ -336,13 +393,6 @@ class IMAPMailToolkit(BaseToolkit):
         except (ConnectionError, imaplib.IMAP4.error) as e:
             logger.error("Error retrieving email %s: %s", email_id, e)
             raise
-        finally:
-            if imap:
-                try:
-                    imap.close()
-                    imap.logout()
-                except imaplib.IMAP4.error:
-                    pass
 
     def send_email(
         self,
@@ -371,7 +421,6 @@ class IMAPMailToolkit(BaseToolkit):
         if not self.username:
             raise ValueError("Username must be provided for sending emails")
 
-        smtp = None
         try:
             smtp = self._get_smtp_connection()
 
@@ -408,12 +457,6 @@ class IMAPMailToolkit(BaseToolkit):
         except (ConnectionError, smtplib.SMTPException) as e:
             logger.error("Error sending email: %s", e)
             raise
-        finally:
-            if smtp:
-                try:
-                    smtp.quit()
-                except smtplib.SMTPException:
-                    pass
 
     def reply_to_email(
         self,
@@ -482,7 +525,6 @@ class IMAPMailToolkit(BaseToolkit):
         Returns:
             str: Success message
         """
-        imap = None
         try:
             imap = self._get_imap_connection()
 
@@ -510,13 +552,6 @@ class IMAPMailToolkit(BaseToolkit):
         except (ConnectionError, imaplib.IMAP4.error) as e:
             logger.error("Error moving email %s: %s", email_id, e)
             raise
-        finally:
-            if imap:
-                try:
-                    imap.close()
-                    imap.logout()
-                except imaplib.IMAP4.error:
-                    pass
 
     def delete_email(
         self, email_id: str, folder: str = "INBOX", permanent: bool = False
@@ -532,7 +567,6 @@ class IMAPMailToolkit(BaseToolkit):
         Returns:
             str: Success message
         """
-        imap = None
         try:
             imap = self._get_imap_connection()
             imap.select(folder)
@@ -561,13 +595,6 @@ class IMAPMailToolkit(BaseToolkit):
         except (ConnectionError, imaplib.IMAP4.error) as e:
             logger.error("Error deleting email %s: %s", email_id, e)
             raise
-        finally:
-            if imap:
-                try:
-                    imap.close()
-                    imap.logout()
-                except imaplib.IMAP4.error:
-                    pass
 
     def _extract_email_body(
         self, email_message: email.message.Message
@@ -587,7 +614,6 @@ class IMAPMailToolkit(BaseToolkit):
                 content_type = part.get_content_type()
                 content_disposition = str(part.get("Content-Disposition"))
 
-                # Skip attachments
                 # Skip attachments
                 if "attachment" not in content_disposition:
                     payload = part.get_payload(decode=True)
@@ -624,6 +650,57 @@ class IMAPMailToolkit(BaseToolkit):
                     body_content["html"] = payload
 
         return body_content
+
+    def close(self) -> None:
+        r"""Close all open connections.
+
+        This method should be called when the toolkit is no longer needed
+        to properly clean up network connections.
+        """
+        if self._imap_connection is not None:
+            try:
+                self._imap_connection.logout()
+                logger.info("IMAP connection closed")
+            except (imaplib.IMAP4.error, OSError) as e:
+                logger.warning("Error closing IMAP connection: %s", e)
+            finally:
+                self._imap_connection = None
+
+        if self._smtp_connection is not None:
+            try:
+                self._smtp_connection.quit()
+                logger.info("SMTP connection closed")
+            except (smtplib.SMTPException, OSError) as e:
+                logger.warning("Error closing SMTP connection: %s", e)
+            finally:
+                self._smtp_connection = None
+
+    def __del__(self) -> None:
+        r"""Destructor to ensure connections are closed."""
+        try:
+            self.close()
+        except Exception:
+            # Silently ignore errors during cleanup to avoid issues
+            # during interpreter shutdown
+            pass
+
+    def __enter__(self) -> 'IMAPMailToolkit':
+        r"""Context manager entry.
+
+        Returns:
+            IMAPMailToolkit: Self instance
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        r"""Context manager exit, ensuring connections are closed.
+
+        Args:
+            exc_type: Exception type if an exception occurred
+            exc_val: Exception value if an exception occurred
+            exc_tb: Exception traceback if an exception occurred
+        """
+        self.close()
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Get list of tools provided by this toolkit.
