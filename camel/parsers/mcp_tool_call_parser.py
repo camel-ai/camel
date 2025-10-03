@@ -26,8 +26,20 @@ except ImportError:  # pragma: no cover
 
 
 CODE_BLOCK_PATTERN = re.compile(
-    r"```(?:json)?\s*([\s\S]+?)\s*```",
+    r"```(?:[a-z0-9_-]+)?\s*([\s\S]+?)\s*```",
     re.IGNORECASE,
+)
+
+JSON_START_PATTERN = re.compile(r"[{\[]")
+JSON_TOKEN_PATTERN = re.compile(
+    r"""
+    (?P<double>"(?:\\.|[^"\\])*")
+    |
+    (?P<single>'(?:\\.|[^'\\])*')
+    |
+    (?P<brace>[{}\[\]])
+    """,
+    re.VERBOSE,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,7 +52,6 @@ def extract_tool_calls_from_text(content: str) -> List[Dict[str, Any]]:
         return []
 
     tool_calls: List[Dict[str, Any]] = []
-    candidates: List[Any] = []
     seen_ranges: List[tuple[int, int]] = []
 
     for match in CODE_BLOCK_PATTERN.finditer(content):
@@ -56,46 +67,33 @@ def extract_tool_calls_from_text(content: str) -> List[Dict[str, Any]]:
             )
             continue
 
-        candidates.append(parsed)
+        _collect_tool_calls(parsed, tool_calls)
         seen_ranges.append((match.start(1), match.end(1)))
 
-    decoder = json.JSONDecoder()
-    idx = 0
-    text_length = len(content)
-    while idx < text_length:
-        char = content[idx]
-        if char not in "{[":
-            idx += 1
+    for start_match in JSON_START_PATTERN.finditer(content):
+        start_idx = start_match.start()
+
+        if any(start <= start_idx < stop for start, stop in seen_ranges):
             continue
 
-        try:
-            parsed, end = decoder.raw_decode(content, idx)
-        except json.JSONDecodeError:
-            segment = _extract_enclosed_segment(content, idx)
-            if segment is None:
-                idx += 1
-                continue
-
-            if any(start <= idx < stop for start, stop in seen_ranges):
-                idx += len(segment)
-                continue
-
-            parsed = _try_parse_json_like(segment)
-            if parsed is None:
-                idx += 1
-                continue
-
-            end = idx + len(segment)
-
-        if any(start <= idx < stop for start, stop in seen_ranges):
-            idx = end
+        segment = _find_json_candidate(content, start_idx)
+        if segment is None:
             continue
 
-        candidates.append(parsed)
-        idx = end
+        end_idx = start_idx + len(segment)
+        if any(start <= start_idx < stop for start, stop in seen_ranges):
+            continue
 
-    for candidate in candidates:
-        _collect_tool_calls(candidate, tool_calls)
+        parsed = _try_parse_json_like(segment)
+        if parsed is None:
+            logger.debug(
+                "Unable to parse JSON-like candidate: %s",
+                _truncate_snippet(segment),
+            )
+            continue
+
+        _collect_tool_calls(parsed, tool_calls)
+        seen_ranges.append((start_idx, end_idx))
 
     return tool_calls
 
@@ -119,8 +117,12 @@ def _try_parse_json_like(snippet: str) -> Optional[Any]:
 
     try:
         return json.loads(snippet)
-    except json.JSONDecodeError:
-        pass
+    except json.JSONDecodeError as exc:
+        logger.debug(
+            "json.loads failed: %s | snippet=%s",
+            exc,
+            _truncate_snippet(snippet),
+        )
 
     if yaml is not None:
         try:
@@ -134,47 +136,41 @@ def _try_parse_json_like(snippet: str) -> Optional[Any]:
         return None
 
 
-def _extract_enclosed_segment(content: str, start: int) -> Optional[str]:
-    """Extract a substring with balanced braces or brackets."""
+def _find_json_candidate(content: str, start_idx: int) -> Optional[str]:
+    """Locate a balanced JSON-like segment starting at ``start_idx``."""
 
-    if content[start] not in "{[":
+    opening = content[start_idx]
+    if opening not in "{[":
         return None
 
-    opening = content[start]
-    closing = "}" if opening == "{" else "]"
-    stack = [closing]
-    quote_char: Optional[str] = None
-    escape = False
+    stack = ["}" if opening == "{" else "]"]
 
-    for idx in range(start + 1, len(content)):
-        char = content[idx]
-
-        if quote_char is not None:
-            if escape:
-                escape = False
-                continue
-            if char == "\\":
-                escape = True
-                continue
-            if char == quote_char:
-                quote_char = None
+    for token in JSON_TOKEN_PATTERN.finditer(content, start_idx + 1):
+        if token.lastgroup in {"double", "single"}:
             continue
 
-        if char in {'"', "'"}:
-            quote_char = char
+        brace = token.group("brace")
+        if brace in "{[":
+            stack.append("}" if brace == "{" else "]")
             continue
 
-        if char in "{[":
-            stack.append("}" if char == "{" else "]")
-            continue
+        if not stack:
+            return None
 
-        if char in "}]":
-            if not stack:
-                return None
-            expected = stack.pop()
-            if char != expected:
-                return None
-            if not stack:
-                return content[start : idx + 1]
+        expected = stack.pop()
+        if brace != expected:
+            return None
+
+        if not stack:
+            return content[start_idx : token.end()]
 
     return None
+
+
+def _truncate_snippet(snippet: str, limit: int = 120) -> str:
+    """Return a truncated representation suitable for logging."""
+
+    compact = " ".join(snippet.strip().split())
+    if len(compact) <= limit:
+        return compact
+    return f"{compact[: limit - 3]}..."

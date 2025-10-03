@@ -90,3 +90,28 @@ def test_extract_tool_calls_from_text(
 
 def test_extract_tool_calls_without_payload() -> None:
     assert extract_tool_calls_from_text("No calls available") == []
+
+
+def test_extract_tool_calls_from_yaml_block() -> None:
+    pytest.importorskip("yaml")
+
+    content = (
+        "Here is the YAML call:\n"
+        "```yaml\n"
+        "server_idx: 2\n"
+        "tool_name: yaml_tool\n"
+        "tool_args:\n"
+        "  prompt: Hello\n"
+        "```\n"
+    )
+
+    expected = {
+        "server_idx": 2,
+        "tool_name": "yaml_tool",
+        "tool_args": {"prompt": "Hello"},
+    }
+
+    tool_calls = extract_tool_calls_from_text(content)
+
+    assert len(tool_calls) == 1
+    assert tool_calls[0] == expected
