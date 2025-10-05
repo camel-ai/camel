@@ -32,6 +32,11 @@ from camel.utils import OpenAITokenCounter
         ModelType.CLAUDE_3_HAIKU,
         ModelType.CLAUDE_3_5_SONNET,
         ModelType.CLAUDE_3_5_HAIKU,
+        ModelType.CLAUDE_3_7_SONNET,
+        ModelType.CLAUDE_4_5_SONNET,
+        ModelType.CLAUDE_SONNET_4,
+        ModelType.CLAUDE_OPUS_4,
+        ModelType.CLAUDE_OPUS_4_1,
     ],
 )
 def test_anthropic_model(model_type: ModelType):
