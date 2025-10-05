@@ -13,22 +13,22 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 """
-Quick WebVoyager Test - TypeScript Version
+Quick WebVoyager Test - TypeScript Original Version
 
-This script provides a lightweight way to test the TypeScript version of the
-Hybrid Browser Toolkit with reflection capabilities on a few WebVoyager
+This script provides a lightweight way to test the ORIGINAL TypeScript version
+of the Hybrid Browser Toolkit (without reflection capabilities) on WebVoyager
 tasks.
 
 Usage:
-    python WebVoyager_wrapper_ts.py [num_tasks]
+    python WebVoyager_wrapper_ts_o.py [num_tasks]
 
     num_tasks: Number of tasks to run (default: 10)
                Use -1 to run all tasks in the dataset
 
 Examples:
-    python WebVoyager_wrapper_ts.py      # Run 10 tasks
-    python WebVoyager_wrapper_ts.py 5    # Run 5 tasks
-    python WebVoyager_wrapper_ts.py -1   # Run all tasks
+    python WebVoyager_wrapper_ts_o.py      # Run 10 tasks
+    python WebVoyager_wrapper_ts_o.py 5    # Run 5 tasks
+    python WebVoyager_wrapper_ts_o.py -1   # Run all tasks
 """
 
 import argparse
@@ -47,7 +47,9 @@ try:
     from camel.agents import ChatAgent
     from camel.messages import BaseMessage
     from camel.models import ModelFactory
-    from camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts import (  # noqa: E501
+
+    # Import the ORIGINAL version without reflection
+    from camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts_o import (  # noqa: E501
         HybridBrowserToolkit,
     )
     from camel.types import ModelPlatformType, ModelType
@@ -60,7 +62,7 @@ except ImportError as e:
 def setup_logging():
     """Setup logging configuration."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_filename = f"webvoyager_test_ts_{timestamp}.log"
+    log_filename = f"webvoyager_test_ts_o_{timestamp}.log"
 
     # Configure logging
     logging.basicConfig(
@@ -86,10 +88,10 @@ async def quick_test(num_tasks: int = 10):
     log_filename = setup_logging()
     logger = logging.getLogger(__name__)
 
-    print("🚀 Starting WebVoyager Test - TypeScript Version")
-    print("📦 Using HybridBrowserToolkit (TypeScript implementation)")
-    logger.info("Starting WebVoyager Test - TypeScript Version")
-    logger.info("Using HybridBrowserToolkit (TypeScript implementation)")
+    print("🚀 Starting WebVoyager Test - TypeScript ORIGINAL Version")
+    print("📦 Using HybridBrowserToolkit (WITHOUT reflection parameters)")
+    logger.info("Starting WebVoyager Test - TypeScript ORIGINAL Version")
+    logger.info("Using HybridBrowserToolkit (WITHOUT reflection parameters)")
 
     # Load dataset - fix the path to use relative path
     dataset_path = os.path.join(
@@ -128,10 +130,10 @@ async def quick_test(num_tasks: int = 10):
 
     total_tasks = len(tasks)
 
-    # Initialize TypeScript toolkit
+    # Initialize TypeScript toolkit (original version)
     toolkit = HybridBrowserToolkit(
         headless=True,  # Set to False if you want to see the browser
-        user_data_dir="User_Data_TS",
+        user_data_dir="User_Data_TS_Original",
     )
 
     model = ModelFactory.create(
@@ -141,6 +143,8 @@ async def quick_test(num_tasks: int = 10):
     )
 
     # Create agent with proper toolkit integration
+    # NOTE: No reflection parameters in system message since toolkit doesn't
+    # support them
     agent = ChatAgent(
         model=model,
         system_message=BaseMessage.make_assistant_message(
@@ -148,15 +152,9 @@ async def quick_test(num_tasks: int = 10):
             content=(
                 "You are a web automation expert. Your job is to complete web "
                 "tasks autonomously using browser tools.\n\n"
-                "IMPORTANT:\n"
-                "• When you call ANY `browser_*` tool, ALWAYS include two "
-                "keyword args:\n"
-                "  - thinking: one short sentence explaining why this action\n"
-                "  - next_goal: one short sentence describing your next planned "  # noqa: E501
-                "action\n"
-                "• Work independently until the task is complete. Do not ask "
-                "for next steps.\n"
-                "• Steps: navigate → search → click → extract → answer.\n"
+                "Work independently until the task is complete. Do not ask "
+                "for next steps.\n\n"
+                "Workflow: navigate → search → click → extract → answer.\n"
             ),
         ),
         tools=toolkit.get_tools(),
@@ -181,17 +179,13 @@ async def quick_test(num_tasks: int = 10):
         try:
             # Create generic task prompt for evaluation
             task_prompt = f"""
-        Use the browser to complete this task: {task['ques']}
-        Website: {task['web']}
-        Instructions:
-        - Navigate to the website and complete the task
-        - Use the reasoning parameters (thinking and next_goal) for 
-            each browser action, use the reasoning parameters 
-            from the previous tool calls to guide your decision
-            making process
-        - If you notice repetitive tool calls break out of the loop and choose
-            a different approach
-        - Provide a complete answer when finished
+Use the browser to complete this task: {task['ques']}
+
+Website: {task['web']}
+
+Instructions:
+- Navigate to the website and complete the task
+- Provide a complete answer when finished
 """
 
             # Single step call - let CAMEL handle iterations internally
@@ -242,9 +236,7 @@ async def quick_test(num_tasks: int = 10):
 
     # Clean up browser at the end
     try:
-        await toolkit.browser_close(
-            "Cleaning up browser after all tasks", "Task completed"
-        )
+        await toolkit.browser_close()
     except Exception:
         pass
 
@@ -264,7 +256,7 @@ async def quick_test(num_tasks: int = 10):
 
     # Write detailed results to JSON file
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    results_filename = f"webvoyager_results_ts_{timestamp}.json"
+    results_filename = f"webvoyager_results_ts_o_{timestamp}.json"
     with open(results_filename, 'w', encoding='utf-8') as f:
         json.dump(
             {
@@ -274,6 +266,7 @@ async def quick_test(num_tasks: int = 10):
                     'failed_tasks': len(task_results) - successful,
                     'success_rate': successful / len(task_results) * 100,
                     'timestamp': datetime.now().isoformat(),
+                    'version': 'original_typescript',
                 },
                 'results': task_results,
             },
@@ -293,14 +286,16 @@ async def quick_test(num_tasks: int = 10):
 if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(
-        description='Run WebVoyager tasks with TypeScript Browser Toolkit',
+        description=(
+            'Run WebVoyager tasks with TypeScript Browser Toolkit (Original)'
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python WebVoyager_wrapper_ts.py         # Run 10 tasks (default)
-  python WebVoyager_wrapper_ts.py 5       # Run 5 tasks
-  python WebVoyager_wrapper_ts.py -1      # Run all tasks
-  python WebVoyager_wrapper_ts.py 100     # Run 100 tasks
+  python WebVoyager_wrapper_ts_o.py         # Run 10 tasks (default)
+  python WebVoyager_wrapper_ts_o.py 5       # Run 5 tasks
+  python WebVoyager_wrapper_ts_o.py -1      # Run all tasks
+  python WebVoyager_wrapper_ts_o.py 100     # Run 100 tasks
         """,
     )
     parser.add_argument(
@@ -316,6 +311,7 @@ Examples:
     num_tasks = args.num_tasks
 
     print("🧪 Starting WebVoyager Test with TypeScript Implementation...")
+    print("📝 Using ORIGINAL version (no reflection parameters)")
     if num_tasks == -1:
         print("🎯 Running ALL WebVoyager tasks...")
     elif num_tasks == 1:
