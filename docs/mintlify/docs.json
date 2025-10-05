@@ -705,6 +705,12 @@
             ]
           },
           {
+            "group": "Parsers",
+            "pages": [
+              "reference/camel.parsers.mcp_tool_call_parser"
+            ]
+          },
+          {
             "group": "Runtimes",
             "pages": [
               "reference/camel.runtimes.base",
