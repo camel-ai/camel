@@ -237,8 +237,9 @@ class Task(BaseModel):
             (default: :obj:`[]`)
         additional_info (Optional[Dict[str, Any]]): Additional information for
             the task. (default: :obj:`None`)
-        image_list (Optional[List[Image.Image]]): Optional list of PIL Image
-            objects associated with the task. (default: :obj:`None`)
+        image_list (Optional[List[Union[Image.Image, str]]]): Optional list
+            of PIL Image objects or image URLs (strings) associated with the
+            task. (default: :obj:`None`)
         image_detail (Literal["auto", "low", "high"]): Detail level of the
             images associated with the task. (default: :obj:`auto`)
         video_bytes (Optional[bytes]): Optional bytes of a video associated
@@ -271,7 +272,7 @@ class Task(BaseModel):
 
     additional_info: Optional[Dict[str, Any]] = None
 
-    image_list: Optional[List[Image.Image]] = None
+    image_list: Optional[List[Union[Image.Image, str]]] = None
 
     image_detail: Literal["auto", "low", "high"] = "auto"
 
