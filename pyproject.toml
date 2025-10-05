@@ -31,6 +31,7 @@ dependencies = [
     "psutil>=5.9.8,<6",
     "pillow>=10.1.0,<11.0.0",
     "openai>=1.86.0,<2",
+    "websockets>=13.0,<15.1",
     "deprecation>=2.1.0,<3",
 ]
 
