@@ -600,7 +600,7 @@ class VideoAnalysisToolkit(BaseToolkit):
             msg = BaseMessage.make_user_message(
                 role_name="User",
                 content=prompt,
-                image_list=video_frames,
+                image_list=video_frames,  # type: ignore[arg-type]
             )
             # Reset the agent to clear previous state
             self.vl_agent.reset()

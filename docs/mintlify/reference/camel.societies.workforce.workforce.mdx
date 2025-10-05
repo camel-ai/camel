@@ -301,6 +301,22 @@ yet been started.  In the latter case we simply mark the stop flag so
 that the loop (when it eventually starts) will exit immediately after
 initialisation.
 
+<a id="camel.societies.workforce.workforce.Workforce.skip_gracefully"></a>
+
+### skip_gracefully
+
+```python
+def skip_gracefully(self):
+```
+
+Request workforce to skip current pending tasks and move to next
+main task from the queue. If no main tasks exist, acts like
+stop_gracefully.
+
+This method clears the current pending subtasks and moves to the next
+main task in the queue if available. Works both when the internal
+event-loop is alive and when it has not yet been started.
+
 <a id="camel.societies.workforce.workforce.Workforce.save_snapshot"></a>
 
 ### save_snapshot
@@ -361,11 +377,84 @@ def add_task(
     content: str,
     task_id: Optional[str] = None,
     additional_info: Optional[Dict[str, Any]] = None,
+    as_subtask: bool = False,
     insert_position: int = -1
 ):
 ```
 
-Add a new task to the pending queue.
+Add a new task to the workforce.
+
+By default, this method adds a main task that will be decomposed into
+subtasks. Set `as_subtask=True` to add a task directly to the pending
+subtask queue without decomposition.
+
+**Parameters:**
+
+- **content** (str): The content of the task.
+- **task_id** (Optional[str], optional): Optional ID for the task. If not provided, a unique ID will be generated.
+- **additional_info** (Optional[Dict[str, Any]], optional): Optional additional metadata for the task.
+- **as_subtask** (bool, optional): If True, adds the task directly to the pending subtask queue. If False, adds as a main task that will be decomposed. Defaults to False.
+- **insert_position** (int, optional): Position to insert the task in the pending queue. Only applies when as_subtask=True. Defaults to -1 (append to end).
+
+**Returns:**
+
+  Task: The created task object.
+
+<a id="camel.societies.workforce.workforce.Workforce.add_main_task"></a>
+
+### add_main_task
+
+```python
+def add_main_task(
+    self,
+    content: str,
+    task_id: Optional[str] = None,
+    additional_info: Optional[Dict[str, Any]] = None
+):
+```
+
+Add a new main task that will be decomposed into subtasks.
+
+This is an alias for :meth:`add_task` with `as_subtask=False`.
+
+**Parameters:**
+
+- **content** (str): The content of the main task.
+- **task_id** (Optional[str], optional): Optional ID for the task.
+- **additional_info** (Optional[Dict[str, Any]], optional): Optional additional metadata.
+
+**Returns:**
+
+  Task: The created main task object.
+
+<a id="camel.societies.workforce.workforce.Workforce.add_subtask"></a>
+
+### add_subtask
+
+```python
+def add_subtask(
+    self,
+    content: str,
+    task_id: Optional[str] = None,
+    additional_info: Optional[Dict[str, Any]] = None,
+    insert_position: int = -1
+):
+```
+
+Add a new subtask to the current pending queue.
+
+This is an alias for :meth:`add_task` with `as_subtask=True`.
+
+**Parameters:**
+
+- **content** (str): The content of the subtask.
+- **task_id** (Optional[str], optional): Optional ID for the task.
+- **additional_info** (Optional[Dict[str, Any]], optional): Optional additional metadata.
+- **insert_position** (int, optional): Position to insert the task. Defaults to -1 (append to end).
+
+**Returns:**
+
+  Task: The created subtask object.
 
 <a id="camel.societies.workforce.workforce.Workforce.remove_task"></a>
 
@@ -375,7 +464,15 @@ Add a new task to the pending queue.
 def remove_task(self, task_id: str):
 ```
 
-Remove a task from the pending queue.
+Remove a task from the pending queue or main task queue.
+
+**Parameters:**
+
+- **task_id** (str): The ID of the task to remove.
+
+**Returns:**
+
+  bool: True if task was found and removed, False otherwise.
 
 <a id="camel.societies.workforce.workforce.Workforce.reorder_tasks"></a>
 

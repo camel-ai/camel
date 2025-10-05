@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.76a9"
+version = "0.2.76a11"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -31,6 +31,7 @@ dependencies = [
     "psutil>=5.9.8,<6",
     "pillow>=10.1.0,<11.0.0",
     "openai>=1.86.0,<2",
+    "websockets>=13.0,<15.1",
 ]
 
 
@@ -299,6 +300,8 @@ eigent = [
     "onnxruntime<=1.19.2",
     "slack-sdk>=3.27.2,<4",
     "google-api-python-client==2.166.0",
+    "google-auth-httplib2==0.2.0",
+    "google-auth-oauthlib==1.2.1",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -444,7 +447,6 @@ include = [
     "camel/toolkits/hybrid_browser_toolkit/ts/tsconfig.json",
     "camel/toolkits/hybrid_browser_toolkit/ts/src/**/*",
     "camel/toolkits/hybrid_browser_toolkit/ts/websocket-server.js",
-    "hatch_build_npm.py",
 ]
 exclude = ["camel/toolkits/hybrid_browser_toolkit/ts/node_modules/**/*"]
 
@@ -460,11 +462,6 @@ include = [
 ]
 exclude = ["camel/toolkits/hybrid_browser_toolkit/ts/node_modules/**/*"]
 
-[tool.hatch.build.targets.wheel.hooks.custom]
-path = "hatch_build_npm.py"
-
-[tool.hatch.build.targets.sdist.hooks.custom]
-path = "hatch_build_npm.py"
 
 [tool.hatch.metadata]
 allow-direct-references = true

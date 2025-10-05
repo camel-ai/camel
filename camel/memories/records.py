@@ -94,6 +94,42 @@ class MemoryRecord(BaseModel):
         if "role_type" in data and isinstance(data["role_type"], str):
             data["role_type"] = RoleType(data["role_type"])
 
+        # Deserialize image_list from base64 strings/URLs back to PIL Images/
+        # URLs
+        if "image_list" in data and data["image_list"] is not None:
+            import base64
+            from io import BytesIO
+
+            from PIL import Image
+
+            image_objects = []
+            for img_item in data["image_list"]:
+                if isinstance(img_item, dict):
+                    # New format with type indicator
+                    if img_item["type"] == "url":
+                        # URL string, keep as-is
+                        image_objects.append(img_item["data"])
+                    else:  # type == "base64"
+                        # Base64 encoded image, convert to PIL Image
+                        img_bytes = base64.b64decode(img_item["data"])
+                        img = Image.open(BytesIO(img_bytes))
+                        # Restore the format attribute if it was saved
+                        if "format" in img_item:
+                            img.format = img_item["format"]
+                        image_objects.append(img)
+                else:
+                    # Legacy format: assume it's a base64 string
+                    img_bytes = base64.b64decode(img_item)
+                    img = Image.open(BytesIO(img_bytes))
+                    image_objects.append(img)
+            data["image_list"] = image_objects
+
+        # Deserialize video_bytes from base64 string
+        if "video_bytes" in data and data["video_bytes"] is not None:
+            import base64
+
+            data["video_bytes"] = base64.b64decode(data["video_bytes"])
+
         # Get valid constructor parameters (cached)
         valid_params = cls._get_constructor_params(message_cls)
 
