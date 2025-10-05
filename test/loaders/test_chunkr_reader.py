@@ -21,14 +21,15 @@ from chunkr_ai.models import Status
 from camel.loaders import ChunkrReader, ChunkrReaderConfig
 
 
-class TestChunkrReader(unittest.TestCase):
-    def setUp(self):
-        with patch('chunkr_ai.Chunkr'):
-            self.reader = ChunkrReader(api_key="fake_api_key")
+class TestChunkrReader(unittest.IsolatedAsyncioTestCase):
+    @patch('chunkr_ai.Chunkr')
+    def setUp(self, mock_chunkr_class):
+        self.reader = ChunkrReader(api_key="fake_api_key")
+        self.mock_chunkr = self.reader._chunkr
 
     @patch('chunkr_ai.Chunkr')
     async def test_submit_task_success(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
+        mock_chunkr_instance = self.mock_chunkr
         mock_task = AsyncMock()
         mock_task.task_id = "12345"
         mock_chunkr_instance.create_task = AsyncMock(return_value=mock_task)
@@ -40,7 +41,7 @@ class TestChunkrReader(unittest.TestCase):
 
     @patch('chunkr_ai.Chunkr')
     async def test_submit_task_with_config(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
+        mock_chunkr_instance = self.mock_chunkr
         mock_task = AsyncMock()
         mock_task.task_id = "12345"
         mock_chunkr_instance.create_task = AsyncMock(return_value=mock_task)
@@ -55,7 +56,7 @@ class TestChunkrReader(unittest.TestCase):
 
     @patch('chunkr_ai.Chunkr')
     async def test_submit_task_failure(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
+        mock_chunkr_instance = self.mock_chunkr
         mock_chunkr_instance.create_task = AsyncMock(side_effect=Exception())
 
         with self.assertRaises(ValueError) as context:
@@ -66,10 +67,10 @@ class TestChunkrReader(unittest.TestCase):
 
     @patch('chunkr_ai.Chunkr')
     async def test_get_task_output_success(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
+        mock_chunkr_instance = self.mock_chunkr
         mock_task = AsyncMock()
         mock_task.status = Status.SUCCEEDED
-        mock_task.json.return_value = {"status": "Succeeded"}
+        mock_task.json = MagicMock(return_value={"status": "Succeeded"})
         mock_task.poll = AsyncMock()
         mock_chunkr_instance.get_task = AsyncMock(return_value=mock_task)
 
@@ -82,7 +83,7 @@ class TestChunkrReader(unittest.TestCase):
 
     @patch('chunkr_ai.Chunkr')
     async def test_get_task_output_failed(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
+        mock_chunkr_instance = self.mock_chunkr
         mock_task = AsyncMock()
         mock_task.status = Status.FAILED
         mock_task.poll = AsyncMock()
@@ -96,7 +97,7 @@ class TestChunkrReader(unittest.TestCase):
 
     @patch('chunkr_ai.Chunkr')
     async def test_get_task_output_get_task_error(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
+        mock_chunkr_instance = self.mock_chunkr
         mock_chunkr_instance.get_task = AsyncMock(side_effect=Exception())
 
         with self.assertRaises(ValueError) as context:
@@ -107,7 +108,7 @@ class TestChunkrReader(unittest.TestCase):
 
     @patch('chunkr_ai.Chunkr')
     async def test_get_task_output_poll_error(self, mock_chunkr_class):
-        mock_chunkr_instance = mock_chunkr_class.return_value
+        mock_chunkr_instance = self.mock_chunkr
         mock_task = AsyncMock()
         mock_task.poll = AsyncMock(side_effect=Exception())
         mock_chunkr_instance.get_task = AsyncMock(return_value=mock_task)
@@ -195,7 +196,7 @@ class TestChunkrReader(unittest.TestCase):
         mock_chunk_processing.return_value = mock_chunk_processing_instance
         mock_ocr_strategy.AUTO = "AUTO"
 
-        result = self.reader._to_chunkr_configuration(config)
+        self.reader._to_chunkr_configuration(config)
 
         mock_chunk_processing.assert_called_once_with(target_length=512)
         mock_configuration.assert_called_once_with(
@@ -205,6 +206,7 @@ class TestChunkrReader(unittest.TestCase):
             expires_in=7200,
             pipeline="test_pipeline",
         )
+
 
 if __name__ == "__main__":
     unittest.main()
