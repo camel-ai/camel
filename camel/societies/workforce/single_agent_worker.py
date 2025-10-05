@@ -227,6 +227,11 @@ class SingleAgentWorker(Worker):
         self.worker = worker
         self.use_agent_pool = use_agent_pool
 
+        # Store pool configuration for cloning
+        self.pool_initial_size = pool_initial_size
+        self.pool_max_size = pool_max_size
+        self.auto_scale_pool = auto_scale_pool
+
         self.agent_pool: Optional[AgentPool] = None
         self._cleanup_task: Optional[asyncio.Task] = None
         # Initialize agent pool if enabled

@@ -98,6 +98,11 @@ MAX_TASK_RETRIES = 3
 MAX_PENDING_TASKS_LIMIT = 20
 TASK_TIMEOUT_SECONDS = 600.0
 DEFAULT_WORKER_POOL_SIZE = 10
+# Worker readiness check constants
+WORKER_READINESS_TIMEOUT = 2.0
+WORKER_READINESS_CHECK_INTERVAL = 0.05
+BACKOFF_MULTIPLIER = 1.5
+MAX_CHECK_INTERVAL = 0.5
 
 
 class WorkforceState(Enum):
@@ -272,6 +277,11 @@ class Workforce(BaseNode):
         self._in_flight_tasks: int = 0
         # Dictionary to track task start times
         self._task_start_times: Dict[str, float] = {}
+        # Track which tasks have been added to completed to prevent duplicates
+        self._completed_task_ids: Set[str] = set()
+        # Track which tasks have been posted to channel to prevent duplicate
+        # posts
+        self._posted_task_ids: Set[str] = set()
         # Human intervention support
         self._state = WorkforceState.IDLE
         self._pause_event = asyncio.Event()
@@ -735,6 +745,9 @@ class Workforce(BaseNode):
         if task_id in self._assignees:
             del self._assignees[task_id]
 
+        # Clean up posted task tracking to prevent memory leak
+        self._posted_task_ids.discard(task_id)
+
     def _decompose_task(
         self, task: Task
     ) -> Union[List[Task], Generator[List[Task], None, None]]:
@@ -1016,12 +1029,19 @@ class Workforce(BaseNode):
 
     def save_snapshot(self, description: str = "") -> None:
         r"""Save current state as a snapshot."""
+        # Create deep copies to avoid shared references
         snapshot = WorkforceSnapshot(
-            main_task=self._task,
-            pending_tasks=self._pending_tasks,
-            completed_tasks=self._completed_tasks,
-            task_dependencies=self._task_dependencies,
-            assignees=self._assignees,
+            main_task=self._task.model_copy(deep=True) if self._task else None,
+            pending_tasks=deque(
+                [t.model_copy(deep=True) for t in self._pending_tasks]
+            ),
+            completed_tasks=[
+                t.model_copy(deep=True) for t in self._completed_tasks
+            ],
+            task_dependencies={
+                k: v.copy() for k, v in self._task_dependencies.items()
+            },
+            assignees=self._assignees.copy(),
             current_task_index=len(self._completed_tasks),
             description=description or f"Snapshot at {time.time()}",
         )
@@ -1310,10 +1330,17 @@ class Workforce(BaseNode):
 
         snapshot = self._snapshots[snapshot_index]
         self._task = snapshot.main_task
-        self._pending_tasks = snapshot.pending_tasks.copy()
-        self._completed_tasks = snapshot.completed_tasks.copy()
+        # Deep copy using model_copy to preserve all task fields
+        self._pending_tasks = deque(
+            [t.model_copy(deep=True) for t in snapshot.pending_tasks]
+        )
+        self._completed_tasks = [
+            t.model_copy(deep=True) for t in snapshot.completed_tasks
+        ]
         self._task_dependencies = snapshot.task_dependencies.copy()
         self._assignees = snapshot.assignees.copy()
+        # Rebuild completed task IDs set from completed tasks
+        self._completed_task_ids = {t.id for t in self._completed_tasks}
 
         logger.info(f"Workforce state restored from snapshot {snapshot_index}")
         return True
@@ -1839,6 +1866,8 @@ class Workforce(BaseNode):
         # Clear dependency tracking
         self._task_dependencies.clear()
         self._completed_tasks = []
+        self._completed_task_ids.clear()
+        self._posted_task_ids.clear()
         self._assignees.clear()
         self._in_flight_tasks = 0
         self.coordinator_agent.reset()
@@ -2220,14 +2249,10 @@ class Workforce(BaseNode):
         """
         # Wait for workers to be ready before assignment with exponential
         # backoff
-        worker_readiness_timeout = 2.0  # Maximum wait time in seconds
-        worker_readiness_check_interval = 0.05  # Initial check interval
         start_time = time.time()
-        check_interval = worker_readiness_check_interval
-        backoff_multiplier = 1.5  # Exponential backoff factor
-        max_interval = 0.5  # Cap the maximum interval
+        check_interval = WORKER_READINESS_CHECK_INTERVAL
 
-        while (time.time() - start_time) < worker_readiness_timeout:
+        while (time.time() - start_time) < WORKER_READINESS_TIMEOUT:
             valid_worker_ids = self._get_valid_worker_ids()
             if len(valid_worker_ids) > 0:
                 elapsed = time.time() - start_time
@@ -2240,13 +2265,13 @@ class Workforce(BaseNode):
             await asyncio.sleep(check_interval)
             # Exponential backoff with cap
             check_interval = min(
-                check_interval * backoff_multiplier, max_interval
+                check_interval * BACKOFF_MULTIPLIER, MAX_CHECK_INTERVAL
             )
         else:
             # Timeout reached, log warning but continue
             logger.warning(
                 f"Worker readiness timeout after "
-                f"{worker_readiness_timeout}s, "
+                f"{WORKER_READINESS_TIMEOUT}s, "
                 f"proceeding with {len(self._children)} children"
             )
             valid_worker_ids = self._get_valid_worker_ids()
@@ -2323,6 +2348,8 @@ class Workforce(BaseNode):
         try:
             await self._channel.post_task(task, self.node_id, assignee_id)
             self._increment_in_flight_tasks(task.id)
+            # Track that this task has been posted
+            self._posted_task_ids.add(task.id)
             logger.debug(
                 f"Posted task {task.id} to {assignee_id}. "
                 f"In-flight tasks: {self._in_flight_tasks}"
@@ -2594,30 +2621,20 @@ class Workforce(BaseNode):
         # Pre-compute completed task IDs and their states for O(1) lookups
         completed_tasks_info = {t.id: t.state for t in self._completed_tasks}
 
-        for task in self._pending_tasks:
+        # Create a copy to avoid modification during iteration
+        pending_tasks_snapshot = list(self._pending_tasks)
+        for task in pending_tasks_snapshot:
             # A task must be assigned to be considered for posting
             if task.id in self._task_dependencies:
                 # Skip if task has already been posted to prevent duplicates
-                try:
-                    task_from_channel = await self._channel.get_task_by_id(
-                        task.id
+                # Use local tracking set instead of expensive channel query
+                if task.id in self._posted_task_ids:
+                    logger.debug(
+                        f"Task {task.id} already posted, skipping to prevent "
+                        f"duplicate"
                     )
-                    # Check if task is already assigned to a worker
-                    if (
-                        task_from_channel
-                        and task_from_channel.assigned_worker_id
-                    ):
-                        logger.debug(
-                            f"Task {task.id} already assigned to "
-                            f"{task_from_channel.assigned_worker_id}, "
-                            f"skipping to prevent duplicate"
-                        )
-                        continue
-                except Exception as e:
-                    logger.info(
-                        f"Task {task.id} non existent in channel. "
-                        f"Assigning task: {e}"
-                    )
+                    continue
+
                 dependencies = self._task_dependencies[task.id]
                 # Check if all dependencies for this task are in the completed
                 # set and their state is DONE
@@ -2682,11 +2699,15 @@ class Workforce(BaseNode):
                 f"reason: {detailed_error}. "
                 f"Task content: '{task.content}'"
             )
-            self._cleanup_task_tracking(task.id)
-            # Mark task as completed for dependency tracking before halting
-            self._completed_tasks.append(task)
+            # Clean up and archive before adding to completed
             if task.id in self._assignees:
                 await self._channel.archive_task(task.id)
+            self._cleanup_task_tracking(task.id)
+            # Mark task as completed for dependency tracking before halting
+            # Use set to prevent duplicates
+            if task.id not in self._completed_task_ids:
+                self._completed_tasks.append(task)
+                self._completed_task_ids.add(task.id)
             return True
 
         # If too many tasks are failing rapidly, also halt to prevent infinite
@@ -2697,11 +2718,15 @@ class Workforce(BaseNode):
                 f"{MAX_PENDING_TASKS_LIMIT}). Halting to prevent task "
                 f"explosion. Last failed task: {task.id}"
             )
-            self._cleanup_task_tracking(task.id)
-            # Mark task as completed for dependency tracking before halting
-            self._completed_tasks.append(task)
+            # Clean up and archive before adding to completed
             if task.id in self._assignees:
                 await self._channel.archive_task(task.id)
+            self._cleanup_task_tracking(task.id)
+            # Mark task as completed for dependency tracking before halting
+            # Use set to prevent duplicates
+            if task.id not in self._completed_task_ids:
+                self._completed_tasks.append(task)
+                self._completed_task_ids.add(task.id)
             return True
 
         # Use intelligent failure analysis to decide recovery strategy
@@ -2819,9 +2844,13 @@ class Workforce(BaseNode):
             logger.error(f"Recovery strategy failed for task {task.id}: {e}")
             # If max retries reached, halt the workforce
             if task.failure_count >= MAX_TASK_RETRIES:
-                self._completed_tasks.append(task)
+                if task.id not in self._completed_task_ids:
+                    self._completed_tasks.append(task)
+                    self._completed_task_ids.add(task.id)
                 return True
-            self._completed_tasks.append(task)
+            if task.id not in self._completed_task_ids:
+                self._completed_tasks.append(task)
+                self._completed_task_ids.add(task.id)
             return False
 
         logger.debug(
@@ -2829,7 +2858,10 @@ class Workforce(BaseNode):
             f"Updating dependency state."
         )
         # Mark task as completed for dependency tracking
-        self._completed_tasks.append(task)
+        # Use set to prevent duplicates
+        if task.id not in self._completed_task_ids:
+            self._completed_tasks.append(task)
+            self._completed_task_ids.add(task.id)
 
         # Sync shared memory after task completion to share knowledge
         if self.share_memory:
@@ -2929,38 +2961,32 @@ class Workforce(BaseNode):
 
         # Ensure it's in completed tasks set by updating if it exists or
         # appending if it's new.
-        task_found_in_completed = False
-        for i, t in enumerate(self._completed_tasks):
-            if t.id == task.id:
-                self._completed_tasks[i] = task
-                task_found_in_completed = True
-                break
-        if not task_found_in_completed:
+        if task.id not in self._completed_task_ids:
             self._completed_tasks.append(task)
+            self._completed_task_ids.add(task.id)
+        else:
+            # Update existing task in completed list
+            for i, t in enumerate(self._completed_tasks):
+                if t.id == task.id:
+                    self._completed_tasks[i] = task
+                    break
 
         # Handle parent task completion logic
         parent = task.parent
         if parent:
+            completed_tasks_dict = {t.id: t for t in self._completed_tasks}
+
             # Check if all subtasks are completed and successful
             all_subtasks_done = all(
-                any(
-                    t.id == sub.id and t.state == TaskState.DONE
-                    for t in self._completed_tasks
-                )
+                sub.id in completed_tasks_dict
+                and completed_tasks_dict[sub.id].state == TaskState.DONE
                 for sub in parent.subtasks
             )
             if all_subtasks_done:
                 # Collect results from successful subtasks only
                 successful_results = []
                 for sub in parent.subtasks:
-                    completed_subtask = next(
-                        (
-                            t
-                            for t in self._completed_tasks
-                            if t.id == sub.id and t.state == TaskState.DONE
-                        ),
-                        None,
-                    )
+                    completed_subtask = completed_tasks_dict.get(sub.id)
                     if completed_subtask and completed_subtask.result:
                         successful_results.append(
                             f"--- Subtask {sub.id} Result ---\n"
@@ -3010,8 +3036,15 @@ class Workforce(BaseNode):
             f"seconds due to failure. You can use this time to inspect the "
             f"current state of the workforce."
         )
-        # Wait for the full timeout period
-        await asyncio.sleep(self.graceful_shutdown_timeout)
+        # Wait for the timeout period with ability to interrupt
+        try:
+            await asyncio.wait_for(
+                self._pause_event.wait(),
+                timeout=self.graceful_shutdown_timeout,
+            )
+        except asyncio.TimeoutError:
+            # Normal timeout - proceed with shutdown
+            pass
 
     def get_workforce_log_tree(self) -> str:
         r"""Returns an ASCII tree representation of the task hierarchy and
@@ -3058,7 +3091,7 @@ class Workforce(BaseNode):
                 f"as completed."
             )
             for task in pending_tasks_to_complete:
-                # Don't remove tasks that need decomposition
+                # Skip tasks that need decomposition - handle separately
                 if task.additional_info and task.additional_info.get(
                     '_needs_decomposition', False
                 ):
@@ -3149,6 +3182,8 @@ class Workforce(BaseNode):
                         f"after skip: {e}",
                         exc_info=True,
                     )
+                    # Remove the task from pending to avoid infinite loop
+                    self._pending_tasks.remove(next_task)
 
             logger.info("Pending tasks available after skip, continuing.")
             await self._post_ready_tasks()
@@ -3271,7 +3306,10 @@ class Workforce(BaseNode):
                 # Get returned task
                 try:
                     returned_task = await self._get_returned_task()
+                    # Track that we successfully got a task
+                    task_was_retrieved = True
                 except asyncio.TimeoutError:
+                    task_was_retrieved = False
                     # Handle timeout - check if we have tasks stuck in flight
                     if self._in_flight_tasks > 0:
                         logger.warning(
@@ -3279,7 +3317,7 @@ class Workforce(BaseNode):
                             f"in-flight tasks. Breaking to prevent hanging."
                         )
                         # Break the loop to prevent indefinite hanging
-                        # The finally block will handle cleanup
+                        # Cleanup will happen after the loop exits
                         break
                     else:
                         # No tasks in flight, safe to continue
@@ -3287,7 +3325,7 @@ class Workforce(BaseNode):
                         continue
 
                 # If no task was returned (other errors), continue
-                if returned_task is None:
+                if not task_was_retrieved or returned_task is None:
                     logger.debug(
                         f"No task returned in workforce {self.node_id}. "
                         f"Pending: {len(self._pending_tasks)}, "
@@ -3382,10 +3420,14 @@ class Workforce(BaseNode):
                     )
 
             except Exception as e:
-                # Decrement in-flight counter to prevent hanging
-                self._decrement_in_flight_tasks(
-                    "unknown", "exception in task processing loop"
-                )
+                # Only decrement if we actually retrieved a task
+                if 'task_was_retrieved' in locals() and task_was_retrieved:
+                    self._decrement_in_flight_tasks(
+                        returned_task.id
+                        if 'returned_task' in locals() and returned_task
+                        else "unknown",
+                        "exception in task processing loop",
+                    )
 
                 logger.error(
                     f"Error processing task in workforce {self.node_id}: {e}"
@@ -3528,7 +3570,7 @@ class Workforce(BaseNode):
                 new_instance.add_single_agent_worker(
                     child.description,
                     cloned_worker,
-                    pool_max_size=10,
+                    pool_max_size=child.pool_max_size,
                 )
             elif isinstance(child, RolePlayingWorker):
                 new_instance.add_role_playing_worker(
