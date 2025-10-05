@@ -32,6 +32,7 @@ dependencies = [
     "pillow>=10.1.0,<11.0.0",
     "openai>=1.86.0,<2",
     "websockets>=13.0,<15.1",
+    "deprecation>=2.1.0,<3",
 ]
 
 
@@ -185,6 +186,7 @@ dev_tools = [
 model_platforms = [
     "litellm>=1.38.1,<2",
     "mistralai>=1.1.0,<2",
+    "mistral-common>=0.1.0",
     "reka-api>=3.0.8,<4",
     "anthropic>=0.47.0,<0.50.0",
     "cohere>=5.11.0,<6",
@@ -374,6 +376,7 @@ all = [
     "rank-bm25>=0.2.2,<0.3",
     "litellm>=1.38.1,<2",
     "mistralai>=1.1.0,<2",
+    "mistral-common>=0.1.0",
     "fish-audio-sdk>=2024.12.5,<2025",
     "anthropic>=0.47.0,<0.50.0",
     "reka-api>=3.0.8,<4",
