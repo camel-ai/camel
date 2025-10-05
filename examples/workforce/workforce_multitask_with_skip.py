@@ -18,30 +18,32 @@ in the Workforce class.
 This example shows how to:
 1. Set up a workforce with multiple tasks
 2. Use the skip_gracefully function to empty pending tasks
-3. Move to the next independent task from the queue
-4. Handle the case when no independent tasks exist
+3. Move to the next main task from the queue
+4. Handle the case when no main tasks exist
 """
 
 import asyncio
 
-from camel import logger
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.models import ModelFactory
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.workforce import Workforce
 from camel.types import ModelPlatformType, ModelType
+
+logger = get_logger(__name__)
 
 
 def log_workforce_metrics(workforce, stage=""):
     r"""Helper function to log current workforce metrics including
     completed tasks"""
     pending_tasks = workforce.get_pending_tasks()
-    independent_tasks = workforce.get_independent_tasks()
+    main_tasks = workforce.get_main_task_queue()
     completed_tasks = workforce.get_completed_tasks()
 
     logger.info(f"\n--- Workforce Metrics {stage} ---")
     logger.info(f"  Pending: {len(pending_tasks)}")
-    logger.info(f"  Independent: {len(independent_tasks)}")
+    logger.info(f"  Main Task Queue: {len(main_tasks)}")
     logger.info(f"  Completed: {len(completed_tasks)}")
     logger.info(f"  Workforce state: {workforce._state.value}")
 
@@ -81,14 +83,10 @@ async def interactive_skip_demo():
 
     # Add multiple tasks
     logger.info("Adding tasks...")
-    workforce.add_task("Long running task 1", "long_1")
-    workforce.add_task("Long running task 2", "long_2")
-    workforce.add_task(
-        "Independent backup task A", "backup_A", is_independent=True
-    )
-    workforce.add_task(
-        "Independent backup task B", "backup_B", is_independent=True
-    )
+    workforce.add_main_task("Long running task 1", "long_1")
+    workforce.add_main_task("Long running task 2", "long_2")
+    workforce.add_main_task("Main backup task A", "backup_A")
+    workforce.add_main_task("Main backup task B", "backup_B")
 
     log_workforce_metrics(workforce, "(Initial Setup)")
 
@@ -123,7 +121,7 @@ async def interactive_skip_demo():
 
     log_workforce_metrics(workforce, "(Final State)")
 
-    # Workforce for
+    # Wait for workforce to complete or timeout
     try:
         await asyncio.wait_for(workforce_task, timeout=LOOP_TIMEOUT)
     except asyncio.TimeoutError:

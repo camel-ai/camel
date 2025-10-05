@@ -116,7 +116,6 @@ class WorkforceSnapshot:
         self,
         main_task: Optional[Task] = None,
         pending_tasks: Optional[Deque[Task]] = None,
-        independent_task_queue: Optional[Deque[Task]] = None,
         completed_tasks: Optional[List[Task]] = None,
         task_dependencies: Optional[Dict[str, List[str]]] = None,
         assignees: Optional[Dict[str, str]] = None,
@@ -125,11 +124,6 @@ class WorkforceSnapshot:
     ):
         self.main_task = main_task
         self.pending_tasks = pending_tasks.copy() if pending_tasks else deque()
-        self.independent_task_queue = (
-            independent_task_queue.copy()
-            if independent_task_queue
-            else deque()
-        )
         self.completed_tasks = (
             completed_tasks.copy() if completed_tasks else []
         )
@@ -273,7 +267,6 @@ class Workforce(BaseNode):
         self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
         self._task: Optional[Task] = None
         self._pending_tasks: Deque[Task] = deque()
-        self._independent_task_queue: Deque[Task] = deque()
         self._task_dependencies: Dict[str, List[str]] = {}
         self._assignees: Dict[str, str] = {}
         self._in_flight_tasks: int = 0
@@ -999,11 +992,11 @@ class Workforce(BaseNode):
 
     def skip_gracefully(self) -> None:
         r"""Request workforce to skip current pending tasks and move to next
-        independent task from the queue. If no independent tasks exist, acts
-        like stop_gracefully.
+        main task from the queue. If no main tasks exist, acts like
+        stop_gracefully.
 
-        This method empties the current pending tasks and adds a new task
-        from the independent queue if available. Works both when the internal
+        This method clears the current pending subtasks and moves to the next
+        main task in the queue if available. Works both when the internal
         event-loop is alive and when it has not yet been started.
         """
 
@@ -1026,7 +1019,6 @@ class Workforce(BaseNode):
         snapshot = WorkforceSnapshot(
             main_task=self._task,
             pending_tasks=self._pending_tasks,
-            independent_task_queue=self._independent_task_queue,
             completed_tasks=self._completed_tasks,
             task_dependencies=self._task_dependencies,
             assignees=self._assignees,
@@ -1076,45 +1068,44 @@ class Workforce(BaseNode):
         logger.warning(f"Task {task_id} not found in pending tasks.")
         return False
 
-    def get_independent_tasks(self) -> List[Task]:
-        r"""Get current independent tasks for human review."""
-        return list(self._independent_task_queue)
-
     def add_task(
         self,
         content: str,
         task_id: Optional[str] = None,
         additional_info: Optional[Dict[str, Any]] = None,
+        as_subtask: bool = False,
         insert_position: int = -1,
-        is_independent: bool = False,
     ) -> Task:
-        r"""Add a new task to the pending queue.
+        r"""Add a new task to the workforce.
+
+        By default, this method adds a main task that will be decomposed into
+        subtasks. Set `as_subtask=True` to add a task directly to the pending
+        subtask queue without decomposition.
+
         Args:
-            content (str): The content of the new task.
-            task_id (Optional[str], optional): Optional ID for the new task.
+            content (str): The content of the task.
+            task_id (Optional[str], optional): Optional ID for the task.
                 If not provided, a unique ID will be generated.
-                Defaults to None.
             additional_info (Optional[Dict[str, Any]], optional): Optional
-                additional metadata for the task. Defaults to None.
-            insert_position (int, optional): Position to insert the new task
-                in the pending queue. Defaults to -1 (append to end).
-            is_independent (bool, optional): If True, the task is treated as a
-                completely new task with no dependencies and added to the
-                queue. Defaults to False.
+                additional metadata for the task.
+            as_subtask (bool, optional): If True, adds the task directly to
+                the pending subtask queue. If False, adds as a main task that
+                will be decomposed. Defaults to False.
+            insert_position (int, optional): Position to insert the task in
+                the pending queue. Only applies when as_subtask=True.
+                Defaults to -1 (append to end).
+
+        Returns:
+            Task: The created task object.
         """
-        new_task = Task(
-            content=content,
-            id=task_id or f"human_added_{len(self._pending_tasks)}",
-            additional_info=additional_info,
-        )
+        if as_subtask:
+            new_task = Task(
+                content=content,
+                id=task_id or f"human_added_{len(self._pending_tasks)}",
+                additional_info=additional_info,
+            )
 
-        if is_independent:
-            # Add the new task to independent queue
-            self._independent_task_queue.append(new_task)
-            logger.info(f"New independent task added: {new_task.id}")
-
-        else:
-            # For regular tasks, append to current subtasks
+            # Add directly to current pending subtasks
             if insert_position == -1:
                 self._pending_tasks.append(new_task)
             else:
@@ -1123,27 +1114,98 @@ class Workforce(BaseNode):
                 tasks_list.insert(insert_position, new_task)
                 self._pending_tasks = deque(tasks_list)
 
-            logger.info(f"New task added: {new_task.id}")
+            logger.info(f"New subtask added to pending queue: {new_task.id}")
+            return new_task
+        else:
+            # Add as main task that needs decomposition
+            # Use additional_info to mark this task needs decomposition
+            # Make a copy to avoid modifying user's dict
+            info = additional_info.copy() if additional_info else {}
+            info['_needs_decomposition'] = True
 
-        return new_task
+            task_count = sum(
+                1
+                for t in self._pending_tasks
+                if t.additional_info
+                and t.additional_info.get('_needs_decomposition')
+            )
+
+            new_task = Task(
+                content=content,
+                id=task_id or f"main_task_{task_count}",
+                additional_info=info,
+            )
+
+            self._pending_tasks.append(new_task)
+            logger.info(f"New main task added to pending queue: {new_task.id}")
+            return new_task
+
+    def add_main_task(
+        self,
+        content: str,
+        task_id: Optional[str] = None,
+        additional_info: Optional[Dict[str, Any]] = None,
+    ) -> Task:
+        r"""Add a new main task that will be decomposed into subtasks.
+
+        This is an alias for :meth:`add_task` with `as_subtask=False`.
+
+        Args:
+            content (str): The content of the main task.
+            task_id (Optional[str], optional): Optional ID for the task.
+            additional_info (Optional[Dict[str, Any]], optional): Optional
+                additional metadata.
+
+        Returns:
+            Task: The created main task object.
+        """
+        return self.add_task(
+            content=content,
+            task_id=task_id,
+            additional_info=additional_info,
+            as_subtask=False,
+        )
+
+    def add_subtask(
+        self,
+        content: str,
+        task_id: Optional[str] = None,
+        additional_info: Optional[Dict[str, Any]] = None,
+        insert_position: int = -1,
+    ) -> Task:
+        r"""Add a new subtask to the current pending queue.
+
+        This is an alias for :meth:`add_task` with `as_subtask=True`.
+
+        Args:
+            content (str): The content of the subtask.
+            task_id (Optional[str], optional): Optional ID for the task.
+            additional_info (Optional[Dict[str, Any]], optional): Optional
+                additional metadata.
+            insert_position (int, optional): Position to insert the task.
+                Defaults to -1 (append to end).
+
+        Returns:
+            Task: The created subtask object.
+        """
+        return self.add_task(
+            content=content,
+            task_id=task_id,
+            additional_info=additional_info,
+            as_subtask=True,
+            insert_position=insert_position,
+        )
 
     def remove_task(self, task_id: str) -> bool:
-        r"""Remove a task from the pending or independent queue."""
-        # Check independent queue first
-        if len(self._independent_task_queue) != 0:
-            independent_tasks_list = list(self._independent_task_queue)
-            for i, task in enumerate(independent_tasks_list):
-                if task.id == task_id:
-                    independent_tasks_list.pop(i)
-                    self._independent_task_queue = deque(
-                        independent_tasks_list
-                    )
-                    logger.info(
-                        f"Task {task_id} removed from independent queue."
-                    )
-                    return True
+        r"""Remove a task from the pending queue or main task queue.
 
-        # Check pending tasks queue
+        Args:
+            task_id (str): The ID of the task to remove.
+
+        Returns:
+            bool: True if task was found and removed, False otherwise.
+        """
+        # Check main task queue first
         pending_tasks_list = list(self._pending_tasks)
         for i, task in enumerate(pending_tasks_list):
             if task.id == task_id:
@@ -1249,7 +1311,6 @@ class Workforce(BaseNode):
         snapshot = self._snapshots[snapshot_index]
         self._task = snapshot.main_task
         self._pending_tasks = snapshot.pending_tasks.copy()
-        self._independent_task_queue = snapshot.independent_task_queue.copy()
         self._completed_tasks = snapshot.completed_tasks.copy()
         self._task_dependencies = snapshot.task_dependencies.copy()
         self._assignees = snapshot.assignees.copy()
@@ -1262,7 +1323,6 @@ class Workforce(BaseNode):
         return {
             "state": self._state.value,
             "pending_tasks_count": len(self._pending_tasks),
-            "independent_tasks_count": len(self._independent_task_queue),
             "completed_tasks_count": len(self._completed_tasks),
             "snapshots_count": len(self._snapshots),
             "children_count": len(self._children),
@@ -1293,7 +1353,7 @@ class Workforce(BaseNode):
             )
             return [task]
 
-        if reset and self._state is not WorkforceState.RUNNING:
+        if reset and self._state != WorkforceState.RUNNING:
             self.reset()
             logger.info("Workforce reset before handling task.")
 
@@ -1335,59 +1395,15 @@ class Workforce(BaseNode):
                 )
 
         if subtasks:
-            # If decomposition happened, the original task becomes a container.
-            # We only execute its subtasks.
-            if not self._pending_tasks:
-                self._pending_tasks.extendleft(reversed(subtasks))
-            else:
-                logger.warning(
-                    "Pending tasks exist, this error should not happen."
-                )
+            # _pending_tasks will contain both undecomposed
+            # and decomposed tasks, so we use additional_info
+            # to mark the tasks that need decomposition instead
+            self._pending_tasks.extendleft(reversed(subtasks))
         else:
             # If no decomposition, execute the original task.
             self._pending_tasks.append(task)
 
         return subtasks
-
-    async def handle_independent_tasks(self) -> None:
-        r"""Pop one task from the independent task queue and decompose it.
-        Processes only one task at a time so the listener can handle it
-        and its subtasks first. The task is transferred to completed task
-        if decomposed successfully.
-        """
-
-        if not self._independent_task_queue:
-            return
-
-        # Process only one independent task at a time - remove as well
-        independent_task = self._independent_task_queue.popleft()
-        logger.info(f"Decomposing independent task: {independent_task.id}")
-
-        try:
-            # Decompose the independent task
-            await self.handle_decompose_append_task(
-                independent_task, reset=False
-            )
-
-            # Mark parent task as completed
-            await self._handle_completed_task(independent_task)
-            logger.info(
-                f"Independent task {independent_task.id} decomposed and ready "
-                f"for processing"
-            )
-        except Exception as e:
-            logger.error(
-                f"Error decomposing independent task {independent_task.id}: "
-                f"{e}"
-            )
-            # Revert back to the queue for retry later if not decomposed to
-            # _pending_tasks
-            if not self._pending_tasks:
-                self._independent_task_queue.appendleft(independent_task)
-            else:
-                logger.warning(
-                    "Pending tasks exist, this error should not happen."
-                )
 
     @check_if_running(False)
     async def process_task_async(
@@ -1819,7 +1835,6 @@ class Workforce(BaseNode):
         super().reset()
         self._task = None
         self._pending_tasks.clear()
-        self._independent_task_queue.clear()
         self._child_listening_tasks.clear()
         # Clear dependency tracking
         self._task_dependencies.clear()
@@ -2538,7 +2553,15 @@ class Workforce(BaseNode):
         tasks_to_assign = [
             task
             for task in self._pending_tasks
-            if task.id not in self._task_dependencies
+            if (
+                task.id not in self._task_dependencies
+                and (
+                    task.additional_info is None
+                    or not task.additional_info.get(
+                        "_needs_decomposition", False
+                    )
+                )
+            )
         ]
         if tasks_to_assign:
             logger.debug(
@@ -3031,10 +3054,15 @@ class Workforce(BaseNode):
         pending_tasks_to_complete = list(self._pending_tasks)
         if pending_tasks_to_complete:
             logger.info(
-                f"Marking {len(pending_tasks_to_complete)} pending tasks"
-                f" as completed."
+                f"Marking {len(pending_tasks_to_complete)} pending tasks "
+                f"as completed."
             )
             for task in pending_tasks_to_complete:
+                # Don't remove tasks that need decomposition
+                if task.additional_info and task.additional_info.get(
+                    '_needs_decomposition', False
+                ):
+                    continue
                 # Set task state to DONE and add a completion message
                 task.state = TaskState.DONE
                 task.result = "Task marked as completed due to skip request"
@@ -3045,7 +3073,7 @@ class Workforce(BaseNode):
         # Handle in-flight tasks if they exist
         if self._in_flight_tasks > 0:
             logger.info(
-                f"Found {self._in_flight_tasks} in-flight tasks."
+                f"Found {self._in_flight_tasks} in-flight tasks. "
                 f"Retrieving and completing them."
             )
             try:
@@ -3089,21 +3117,45 @@ class Workforce(BaseNode):
                 # Reset in-flight counter to prevent hanging
                 self._in_flight_tasks = 0
 
-        # Try to add a new task from independent queue
-        if self._independent_task_queue:
-            logger.info("Processing next independent task after skip.")
-            try:
-                await self.handle_independent_tasks()
-                await self._post_ready_tasks()
-            except Exception as e:
-                logger.error(
-                    f"Error handling independent task after skip: {e}",
-                    exc_info=True,
+        # Check if there are any pending tasks (including those needing
+        # decomposition)
+        if self._pending_tasks:
+            # Check if the first pending task needs decomposition
+            next_task = self._pending_tasks[0]
+            if next_task.additional_info and next_task.additional_info.get(
+                '_needs_decomposition'
+            ):
+                logger.info(
+                    f"Decomposing main task {next_task.id} after skip request."
                 )
+                try:
+                    # Remove the decomposition flag to avoid re-decomposition
+                    next_task.additional_info['_needs_decomposition'] = False
+
+                    # Decompose the task and append subtasks to _pending_tasks
+                    await self.handle_decompose_append_task(
+                        next_task, reset=False
+                    )
+
+                    # Mark the main task as completed and remove from pending
+                    await self._handle_completed_task(next_task)
+                    logger.info(
+                        f"Main task {next_task.id} decomposed after "
+                        f"skip request"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Error decomposing main task {next_task.id} "
+                        f"after skip: {e}",
+                        exc_info=True,
+                    )
+
+            logger.info("Pending tasks available after skip, continuing.")
+            await self._post_ready_tasks()
             return False  # Continue processing
         else:
-            # No independent tasks available, act like stop
-            logger.info("No independent tasks available, acting like stop.")
+            # No pending tasks available, act like stop
+            logger.info("No pending tasks available, acting like stop.")
             return True  # Stop processing
 
     @check_if_running(False)
@@ -3122,7 +3174,6 @@ class Workforce(BaseNode):
         while (
             self._task is None
             or self._pending_tasks
-            or self._independent_task_queue
             or self._in_flight_tasks > 0
         ) and not self._stop_requested:
             try:
@@ -3146,28 +3197,63 @@ class Workforce(BaseNode):
                     self._skip_requested = False
                     continue
 
-                # Check if all current pending tasks are completed and we have
-                # independent tasks to process
+                # Check if we should decompose a main task
+                # Only decompose when no tasks are in flight and pending queue
+                # is empty
                 if not self._pending_tasks and self._in_flight_tasks == 0:
-                    # Check if the independent task that generated these
-                    # subtasks is complete
-                    if self._independent_task_queue:
-                        # Decompose the next independent task if available
-                        logger.info(
-                            "Decomposing next independent task in queue"
+                    # All tasks completed, will exit loop
+                    break
+
+                # Check if the first pending task needs decomposition
+                # This happens when add_task(as_subtask=False) was called
+                if self._pending_tasks and self._in_flight_tasks == 0:
+                    next_task = self._pending_tasks[0]
+                    if (
+                        next_task.additional_info
+                        and next_task.additional_info.get(
+                            '_needs_decomposition'
                         )
+                    ):
+                        logger.info(f"Decomposing main task: {next_task.id}")
                         try:
-                            # Decompose the latest task then append to
+                            # Remove the decomposition flag to avoid
+                            # re-decomposition
+                            next_task.additional_info[
+                                '_needs_decomposition'
+                            ] = False
+
+                            # Decompose the task and append subtasks to
                             # _pending_tasks
-                            await self.handle_independent_tasks()
+                            await self.handle_decompose_append_task(
+                                next_task, reset=False
+                            )
+
+                            # Mark the main task as completed (decomposition
+                            # successful) and Remove it from pending tasks
+                            await self._handle_completed_task(next_task)
+                            logger.info(
+                                f"Main task {next_task.id} decomposed and "
+                                f"ready for processing"
+                            )
                         except Exception as e:
                             logger.error(
-                                f"Error handling next independent task: {e}",
+                                f"Error decomposing main task {next_task.id}: "
+                                f"{e}",
                                 exc_info=True,
                             )
+                            # Revert back to the queue for retry later if
+                            # decomposition failed
+                            if not self._pending_tasks:
+                                self._pending_tasks.appendleft(next_task)
+                            else:
+                                logger.warning(
+                                    "Pending tasks exist after decomposition "
+                                    "error."
+                                )
 
                         # Immediately assign and post the transferred tasks
                         await self._post_ready_tasks()
+                        continue
 
                 # Save snapshot before processing next task
                 if self._pending_tasks:
