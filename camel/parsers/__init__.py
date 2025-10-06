@@ -11,14 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+"""Helper parsers used across the CAMEL project."""
 
-from camel.logger import disable_logging, enable_logging, set_log_level
+from .mcp_tool_call_parser import extract_tool_calls_from_text
 
-__version__ = '0.2.76a13'
-
-__all__ = [
-    '__version__',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+__all__ = ["extract_tool_calls_from_text"]
