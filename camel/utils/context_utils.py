@@ -629,7 +629,6 @@ class ContextUtility:
         self, agent: "ChatAgent", filename: str, include_metadata: bool = False
     ) -> str:
         r"""Load context from a markdown file and append it to agent memory.
-        Preserves existing conversation history without wiping it.
 
         Args:
             agent (ChatAgent): The agent to append context to.
