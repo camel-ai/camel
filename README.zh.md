@@ -17,11 +17,13 @@
 [![Star][star-image]][star-url]
 [![Package License][package-license-image]][package-license-url]
 [![PyPI Download][package-download-image]][package-download-url]
+[![][join-us-image]][join-us]
 
 <a href="https://trendshift.io/repositories/649" target="_blank"><img src="https://trendshift.io/api/badge/repositories/649" alt="camel-ai/camel | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
 [English](README.md) |
-[简体中文](README.zh.md)
+[简体中文](README.zh.md) |
+[日本語](README.ja.md)
 
 </div>
 
@@ -60,6 +62,8 @@
 </div>
 
 <br>
+
+[![][image-join-us]][join-us]
 
 
 ## CAMEL 框架设计原则
@@ -171,7 +175,7 @@
 </div>
 
 <div align="center">
-  <a href="https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag.html">
+  <a href="https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag">
     <img src="docs/images/rag_pipeline.png" alt="RAG Pipeline">
   </a>
 </div>
@@ -249,10 +253,10 @@ pip install camel-ai
 
 探索不同类型的智能体、它们的角色以及应用场景。
 
-- **[创建你的第一个 Agent](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent.html)**
-- **[创建你的第一个 Agent 社区](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society.html)**
-- **[具身智能体](https://docs.camel-ai.org/cookbooks/advanced_features/embodied_agents.html)**
-- **[评审智能体](https://docs.camel-ai.org/cookbooks/advanced_features/critic_agents_and_tree_search.html)**
+- **[创建你的第一个 Agent](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent)**
+- **[创建你的第一个 Agent 社区](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society)**
+- **[具身智能体](https://docs.camel-ai.org/cookbooks/advanced_features/embodied_agents)**
+- **[评审智能体](https://docs.camel-ai.org/cookbooks/advanced_features/critic_agents_and_tree_search)**
 
 ### 寻求帮助
 
@@ -274,19 +278,19 @@ pip install camel-ai
 
 | 模块                                                                                                                              | 描述                   |
 | :------------------------------------------------------------------------------------------------------------------------------ | :------------------- |
-| **[Agents](https://docs.camel-ai.org/key_modules/agents.html)**                                                                 | 核心智能体架构与行为，用于自主运行。   |
-| **[Agent Societies](https://docs.camel-ai.org/key_modules/society.html)**                                                       | 构建和管理多智能体系统及协作的组件。   |
-| **[Data Generation](https://docs.camel-ai.org/key_modules/datagen.html)**                                                       | 合成数据创建与增强的工具和方法。     |
-| **[Models](https://docs.camel-ai.org/key_modules/models.html)**                                                                 | 智能体模型架构及定制选项。        |
-| **[Tools](https://docs.camel-ai.org/key_modules/tools.html)**                                                                   | 用于智能体专用任务的工具集成。      |
-| **[Memory](https://docs.camel-ai.org/key_modules/memory.html)**                                                                 | 智能体状态管理的记忆存储与检索机制。   |
-| **[Storage](https://docs.camel-ai.org/key_modules/storages.html)**                                                              | 智能体数据和状态的持久化存储方案。    |
+| **[Agents](https://docs.camel-ai.org/key_modules/agents)**                                                                 | 核心智能体架构与行为，用于自主运行。   |
+| **[Agent Societies](https://docs.camel-ai.org/key_modules/society)**                                                       | 构建和管理多智能体系统及协作的组件。   |
+| **[Data Generation](https://docs.camel-ai.org/key_modules/datagen)**                                                       | 合成数据创建与增强的工具和方法。     |
+| **[Models](https://docs.camel-ai.org/key_modules/models)**                                                                 | 智能体模型架构及定制选项。        |
+| **[Tools](https://docs.camel-ai.org/key_modules/tools)**                                                                   | 用于智能体专用任务的工具集成。      |
+| **[Memory](https://docs.camel-ai.org/key_modules/memory)**                                                                 | 智能体状态管理的记忆存储与检索机制。   |
+| **[Storage](https://docs.camel-ai.org/key_modules/storages)**                                                              | 智能体数据和状态的持久化存储方案。    |
 | **[Benchmarks](https://github.com/camel-ai/camel/tree/master/camel/benchmarks)**                                                | 性能评估与测试框架。           |
-| **[Interpreters](https://docs.camel-ai.org/key_modules/interpreters.html)**                                                     | 代码与指令解释能力。           |
-| **[Data Loaders](https://docs.camel-ai.org/key_modules/loaders.html)**                                                          | 数据导入与预处理工具。          |
-| **[Retrievers](https://docs.camel-ai.org/key_modules/retrievers.html)**                                                         | 知识检索与 RAG（检索增强生成）组件。 |
+| **[Interpreters](https://docs.camel-ai.org/key_modules/interpreters)**                                                     | 代码与指令解释能力。           |
+| **[Data Loaders](https://docs.camel-ai.org/key_modules/loaders)**                                                          | 数据导入与预处理工具。          |
+| **[Retrievers](https://docs.camel-ai.org/key_modules/retrievers)**                                                         | 知识检索与 RAG（检索增强生成）组件。 |
 | **[Runtime](https://github.com/camel-ai/camel/tree/master/camel/runtime)**                                                      | 执行环境与进程管理。           |
-| **[Human-in-the-Loop](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html)** | 支持人工监督与干预的交互组件。      |
+| **[Human-in-the-Loop](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval)** | 支持人工监督与干预的交互组件。      |
 ---
 
 ## 研究
@@ -335,7 +339,7 @@ pip install camel-ai
 
 ### 1. 使用多种 LLM 作为后端
 
-更多详情请参阅我们的 [`模型文档`](https://docs.camel-ai.org/key_modules/models.html#)。
+更多详情请参阅我们的 [`模型文档`](https://docs.camel-ai.org/key_modules/models#)。
 
 > **数据（托管于 Hugging Face）**
 
@@ -366,46 +370,46 @@ pip install camel-ai
 
 | 手册                                                                                                           | 描述             |
 | :----------------------------------------------------------------------------------------------------------- | :------------- |
-| **[创建您的第一个智能体](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent.html)**            | 构建第一个智能体的逐步指南。 |
-| **[创建您的第一个智能体社会](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society.html)** | 学习构建协作型智能体社会。  |
-| **[消息手册](https://docs.camel-ai.org/cookbooks/basic_concepts/agents_message.html)**                           | 智能体消息处理的最佳实践。  |
+| **[创建您的第一个智能体](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent)**            | 构建第一个智能体的逐步指南。 |
+| **[创建您的第一个智能体社会](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society)** | 学习构建协作型智能体社会。  |
+| **[消息手册](https://docs.camel-ai.org/cookbooks/basic_concepts/agents_message)**                           | 智能体消息处理的最佳实践。  |
 
 ### 2. 高级功能
 
 | 手册                                                                                                         | 描述                |
 | :--------------------------------------------------------------------------------------------------------- | :---------------- |
-| **[工具手册](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_tools.html)**                   | 集成工具以增强功能。        |
-| **[记忆手册](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_memory.html)**                  | 在智能体中实现记忆系统。      |
-| **[RAG 手册](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag.html)**                   | 检索增强生成（RAG）的操作指南。 |
-| **[图谱 RAG 手册](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_graph_rag.html)**          | 利用知识图谱实现 RAG。     |
-| **[使用 AgentOps 跟踪 CAMEL 智能体](https://docs.camel-ai.org/cookbooks/advanced_features/agents_tracking.html)** | 管理与跟踪智能体操作的工具。    |
+| **[工具手册](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_tools)**                   | 集成工具以增强功能。        |
+| **[记忆手册](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_memory)**                  | 在智能体中实现记忆系统。      |
+| **[RAG 手册](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag)**                   | 检索增强生成（RAG）的操作指南。 |
+| **[图谱 RAG 手册](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_graph_rag)**          | 利用知识图谱实现 RAG。     |
+| **[使用 AgentOps 跟踪 CAMEL 智能体](https://docs.camel-ai.org/cookbooks/advanced_features/agents_tracking)** | 管理与跟踪智能体操作的工具。    |
 
 ### 3. 模型训练与数据生成
 
 | 手册                                                                                                                                                    | 描述                                                                      |
 | :---------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- |
-| **[使用 CAMEL 生成数据并用 Unsloth 微调](https://docs.camel-ai.org/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html)**      | 学习如何使用 CAMEL 生成数据，并用 Unsloth 高效微调模型。                                    |
-| **[使用真实函数调用与 Hermes 格式生成数据](https://docs.camel-ai.org/cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html)**           | 探索如何通过真实函数调用和 Hermes 格式生成数据。                                            |
-| **[CoT 数据生成并上传至 Huggingface](https://docs.camel-ai.org/cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html)**                 | 学习如何生成 CoT 数据并无缝上传到 Huggingface。                                        |
-| **[使用 CAMEL 和 Unsolth 生成 CoT 数据并微调 Qwen](https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html)** | 探索如何使用 CAMEL 生成 CoT 数据，并结合 Unsolth 对 Qwen 进行微调，同时将数据和模型上传至 Huggingface。 |
+| **[使用 CAMEL 生成数据并用 Unsloth 微调](https://docs.camel-ai.org/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B)**      | 学习如何使用 CAMEL 生成数据，并用 Unsloth 高效微调模型。                                    |
+| **[使用真实函数调用与 Hermes 格式生成数据](https://docs.camel-ai.org/cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format)**           | 探索如何通过真实函数调用和 Hermes 格式生成数据。                                            |
+| **[CoT 数据生成并上传至 Huggingface](https://docs.camel-ai.org/cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1)**                 | 学习如何生成 CoT 数据并无缝上传到 Huggingface。                                        |
+| **[使用 CAMEL 和 Unsolth 生成 CoT 数据并微调 Qwen](https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface)** | 探索如何使用 CAMEL 生成 CoT 数据，并结合 Unsolth 对 Qwen 进行微调，同时将数据和模型上传至 Huggingface。 |
 
 ### 4. 多智能体系统与应用
 
 | 手册                                                                                                                                                         | 描述                                                                     |
 | :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------- |
-| **[报告与知识图谱生成的角色扮演爬虫](https://docs.camel-ai.org/cookbooks/applications/roleplaying_scraper.html)**                                                          | 创建角色扮演智能体进行数据爬取与报告生成。                                                  |
-| **[使用 Workforce 构建黑客松评审委员会](https://docs.camel-ai.org/cookbooks/multi_agent_society/workforce_judge_committee.html)**                                      | 构建协作评审团队的智能体系统。                                                        |
-| **[动态知识图谱角色扮演：多智能体系统](https://docs.camel-ai.org/cookbooks/applications/dyamic_knowledge_graph.html)**                                                      | 构建动态、时序感知的金融知识图谱，处理财报、新闻与论文，帮助交易员分析数据、识别关系并发现市场洞察，同时通过多样化元素节点去重优化图谱结构。 |
-| **[使用 Agentic RAG 构建 Discord 客服机器人](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html)** | 学习如何使用 Agentic RAG 构建强大的 Discord 客服机器人。                                |
-| **[使用本地模型构建 Discord 客服机器人](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html)**        | 学习如何使用支持本地部署的 Agentic RAG 构建 Discord 客服机器人。                            |
+| **[报告与知识图谱生成的角色扮演爬虫](https://docs.camel-ai.org/cookbooks/applications/roleplaying_scraper)**                                                          | 创建角色扮演智能体进行数据爬取与报告生成。                                                  |
+| **[使用 Workforce 构建黑客松评审委员会](https://docs.camel-ai.org/cookbooks/multi_agent_society/workforce_judge_committee)**                                      | 构建协作评审团队的智能体系统。                                                        |
+| **[动态知识图谱角色扮演：多智能体系统](https://docs.camel-ai.org/cookbooks/applications/dyamic_knowledge_graph)**                                                      | 构建动态、时序感知的金融知识图谱，处理财报、新闻与论文，帮助交易员分析数据、识别关系并发现市场洞察，同时通过多样化元素节点去重优化图谱结构。 |
+| **[使用 Agentic RAG 构建 Discord 客服机器人](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG)** | 学习如何使用 Agentic RAG 构建强大的 Discord 客服机器人。                                |
+| **[使用本地模型构建 Discord 客服机器人](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG)**        | 学习如何使用支持本地部署的 Agentic RAG 构建 Discord 客服机器人。                            |
 
 ### 5. 数据处理
 
 | 手册                                                                                                                                 | 描述                                         |
 | :--------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------- |
-| **[视频分析](https://docs.camel-ai.org/cookbooks/data_processing/video_analysis.html)**                                                | 智能体在视频数据分析中的技术与方法。                         |
-| **[使用 Firecrawl 从网站获取数据的三种方法](https://docs.camel-ai.org/cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html)** | 探索通过 Firecrawl 从网站提取和处理数据的三种方法。            |
-| **[创建可处理 PDF 的 AI 智能体](https://docs.camel-ai.org/cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html)**               | 学习如何使用 Chunkr 和 Mistral AI 创建可处理 PDF 的智能体。 |
+| **[视频分析](https://docs.camel-ai.org/cookbooks/data_processing/video_analysis)**                                                | 智能体在视频数据分析中的技术与方法。                         |
+| **[使用 Firecrawl 从网站获取数据的三种方法](https://docs.camel-ai.org/cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl)** | 探索通过 Firecrawl 从网站提取和处理数据的三种方法。            |
+| **[创建可处理 PDF 的 AI 智能体](https://docs.camel-ai.org/cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing)**               | 学习如何使用 Chunkr 和 Mistral AI 创建可处理 PDF 的智能体。 |
 
 <br>
 
@@ -518,7 +522,7 @@ pip install camel-ai
 <br>
 
 [docs-image]: https://img.shields.io/badge/Documentation-EB3ECC
-[docs-url]: https://camel-ai.github.io/camel/index.html
+[docs-url]: https://camel-ai.github.io/camel/index
 [star-image]: https://img.shields.io/github/stars/camel-ai/camel?label=stars&logo=github&color=brightgreen
 [star-url]: https://github.com/camel-ai/camel/stargazers
 [package-license-image]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
@@ -540,3 +544,6 @@ pip install camel-ai
 [reddit-image]: https://img.shields.io/reddit/subreddit-subscribers/CamelAI?style=plastic&logo=reddit&label=r%2FCAMEL&labelColor=white
 [ambassador-url]: https://www.camel-ai.org/community
 [package-download-url]: https://pypi.org/project/camel-ai
+[join-us]:https://eigent-ai.notion.site/eigent-ai-careers
+[join-us-image]:https://img.shields.io/badge/Join%20Us-yellow?style=plastic
+[image-join-us]: https://camel-ai.github.io/camel_asset/graphics/join_us.png

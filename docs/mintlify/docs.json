@@ -496,6 +496,7 @@
               "reference/camel.toolkits.dalle_toolkit",
               "reference/camel.toolkits.dappier_toolkit",
               "reference/camel.toolkits.data_commons_toolkit",
+              "reference/camel.toolkits.dingtalk",
               "reference/camel.toolkits.edgeone_pages_mcp_toolkit",
               "reference/camel.toolkits.excel_toolkit",
               "reference/camel.toolkits.file_toolkit",
@@ -563,6 +564,7 @@
               "reference/camel.toolkits.hybrid_browser_toolkit.config_loader",
               "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit",
               "reference/camel.toolkits.hybrid_browser_toolkit.hybrid_browser_toolkit_ts",
+              "reference/camel.toolkits.hybrid_browser_toolkit.installer",
               "reference/camel.toolkits.hybrid_browser_toolkit.snapshot",
               "reference/camel.toolkits.hybrid_browser_toolkit.stealth_config",
               "reference/camel.toolkits.hybrid_browser_toolkit.ws_wrapper",
@@ -700,6 +702,12 @@
               "reference/camel.loaders.pandas_reader",
               "reference/camel.loaders.scrapegraph_reader",
               "reference/camel.loaders.unstructured_io"
+            ]
+          },
+          {
+            "group": "Parsers",
+            "pages": [
+              "reference/camel.parsers.mcp_tool_call_parser"
             ]
           },
           {

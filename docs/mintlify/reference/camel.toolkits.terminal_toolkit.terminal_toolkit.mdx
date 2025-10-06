@@ -23,11 +23,14 @@ in either a local or a sandboxed Docker environment.
 
 **Parameters:**
 
+- **timeout** (Optional[float]): The default timeout in seconds for blocking commands. Defaults to 20.0.
+- **working_directory** (Optional[str]): The base directory for operations. For the local backend, this acts as a security sandbox. For the Docker backend, this sets the working directory inside the container. If not specified, defaults to "./workspace" for local and "/workspace" for Docker.
 - **use_docker_backend** (bool): If True, all commands are executed in a Docker container. Defaults to False.
 - **docker_container_name** (Optional[str]): The name of the Docker container to use. Required if use_docker_backend is True.
-- **working_dir** (str): The base directory for all operations. For the local backend, this acts as a security sandbox.
-- **session_logs_dir** (Optional[str]): The directory to store session logs. Defaults to a 'terminal_logs' subfolder in the working_dir.
-- **timeout** (int): The default timeout in seconds for blocking commands. Defaults to 60.
+- **session_logs_dir** (Optional[str]): The directory to store session logs. Defaults to a 'terminal_logs' subfolder in the working directory.
+- **safe_mode** (bool): Whether to apply security checks to commands. Defaults to True.
+- **allowed_commands** (Optional[List[str]]): List of allowed commands when safe_mode is True. If None, uses default safety rules.
+- **clone_current_env** (bool): Whether to clone the current Python environment for local execution. Defaults to False.
 
 <a id="camel.toolkits.terminal_toolkit.terminal_toolkit.TerminalToolkit.__init__"></a>
 

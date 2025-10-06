@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.76a4"
+version = "0.2.76a13"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -31,6 +31,7 @@ dependencies = [
     "psutil>=5.9.8,<6",
     "pillow>=10.1.0,<11.0.0",
     "openai>=1.86.0,<2",
+    "websockets>=13.0,<15.1",
 ]
 
 
@@ -78,7 +79,6 @@ rag = [
     "rank-bm25>=0.2.2,<0.3",
     "cohere>=5.11.0,<6",
     "unstructured==0.16.20",
-    "pandasai>=2.3.0,<3",
     "crawl4ai>=0.3.745",
     "pyobvector>=0.1.18",
     "google-genai>=1.13.0",
@@ -115,7 +115,6 @@ document_tools = [
     "docx2txt>=0.8,<0.9",
     "PyMuPDF>=1.22.5,<2",
     "unstructured==0.16.20",
-    "pandasai>=2.3.0,<3",
     "prance>=23.6.21.0,<24",
     "openapi-spec-validator>=0.7.1,<0.8",
     "xls2xlsx>=0.2.0",
@@ -151,7 +150,7 @@ communication_tools = [
 ]
 data_tools = [
     "numpy>=1.2,<=2.2",
-    "pandas>=1.5.3,<2",
+    "pandas>=2",
     "textblob>=0.17.1,<0.18",
     "datacommons>=1.4.3,<2",
     "datacommons_pandas>=0.0.3,<0.0.4",
@@ -238,7 +237,6 @@ owl = [
     "docx2txt>=0.8,<0.9",
     "PyMuPDF>=1.22.5,<2",
     "unstructured==0.16.20",
-    "pandasai>=2.3.0,<3",
     "prance>=23.6.21.0,<24",
     "openapi-spec-validator>=0.7.1,<0.8",
     "xls2xlsx>=0.2.0",
@@ -255,7 +253,7 @@ owl = [
     "typer>=0.15.2",
     "tree-sitter-python>=0.23.6,<0.24",
     "tree-sitter>=0.23.2,<0.24",
-    "pandas>=1.5.3,<2",
+    "pandas>=2",
     "rouge>=1.0.1,<2",
     "crawl4ai>=0.3.745",
     "scrapegraph-py>=1.12.0,<2",
@@ -289,7 +287,7 @@ eigent = [
     "wikipedia>=1,<2",
     "requests_oauthlib>=1.3.1,<2",
     "websockets>=13.0,<15.1",
-    "pandas>=1.5.3,<2",
+    "pandas>=2",
     "pylatex>=1.4.2",
     "python-pptx>=1.0.2",
     "pytesseract>=0.3.13",
@@ -299,6 +297,8 @@ eigent = [
     "onnxruntime<=1.19.2",
     "slack-sdk>=3.27.2,<4",
     "google-api-python-client==2.166.0",
+    "google-auth-httplib2==0.2.0",
+    "google-auth-oauthlib==1.2.1",
 ]
 all = [
     "numpy>=1.2,<=2.2",
@@ -311,7 +311,6 @@ all = [
     "docx2txt>=0.8,<0.9",
     "PyMuPDF>=1.22.5,<2",
     "unstructured==0.16.20",
-    "pandasai>=2.3.0,<3",
     "wikipedia>=1,<2",
     "linkup-sdk>=0.2.1,<0.3",
     "duckduckgo-search>=6.3.5,<7",
@@ -356,7 +355,7 @@ all = [
     "tavily-python>=0.5.0,<0.6",
     "apify_client>=1.8.1,<2",
     "stripe>=11.3.0,<12",
-    "pandas>=1.5.3,<2",
+    "pandas>=2",
     "tree-sitter-python>=0.23.6,<0.24",
     "tree-sitter>=0.23.2,<0.24",
     "networkx>=3.4.2,<4",
@@ -444,7 +443,6 @@ include = [
     "camel/toolkits/hybrid_browser_toolkit/ts/tsconfig.json",
     "camel/toolkits/hybrid_browser_toolkit/ts/src/**/*",
     "camel/toolkits/hybrid_browser_toolkit/ts/websocket-server.js",
-    "hatch_build_npm.py",
 ]
 exclude = ["camel/toolkits/hybrid_browser_toolkit/ts/node_modules/**/*"]
 
@@ -460,11 +458,6 @@ include = [
 ]
 exclude = ["camel/toolkits/hybrid_browser_toolkit/ts/node_modules/**/*"]
 
-[tool.hatch.build.targets.wheel.hooks.custom]
-path = "hatch_build_npm.py"
-
-[tool.hatch.build.targets.sdist.hooks.custom]
-path = "hatch_build_npm.py"
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -613,7 +606,6 @@ module = [
     "tree-sitter-python",
     "tree-sitter",
     "networkx",
-    "pandasai",
     "sklearn.metrics.pairwise",
     "sympy.*",
     "astor",

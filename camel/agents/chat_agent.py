@@ -23,6 +23,7 @@ import textwrap
 import threading
 import time
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -93,6 +94,7 @@ from camel.utils import (
     model_from_json_schema,
 )
 from camel.utils.commons import dependencies_required
+from camel.utils.context_utils import ContextUtility
 
 if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
@@ -535,6 +537,8 @@ class ChatAgent(BaseAgent):
         self.retry_attempts = max(1, retry_attempts)
         self.retry_delay = max(0.0, retry_delay)
         self.step_timeout = step_timeout
+        self._context_utility: Optional[ContextUtility] = None
+        self._context_summary_agent: Optional["ChatAgent"] = None
         self.stream_accumulate = stream_accumulate
 
     def reset(self):
@@ -1042,6 +1046,163 @@ class ChatAgent(BaseAgent):
         json_store.save(to_save)
         logger.info(f"Memory saved to {path}")
 
+    def summarize(
+        self,
+        filename: Optional[str] = None,
+        summary_prompt: Optional[str] = None,
+        working_directory: Optional[Union[str, Path]] = None,
+    ) -> Dict[str, Any]:
+        r"""Summarize the agent's current conversation context and persist it
+        to a markdown file.
+
+        Args:
+            filename (Optional[str]): The base filename (without extension) to
+                use for the markdown file. Defaults to a timestamped name when
+                not provided.
+            summary_prompt (Optional[str]): Custom prompt for the summarizer.
+                When omitted, a default prompt highlighting key decisions,
+                action items, and open questions is used.
+            working_directory (Optional[str|Path]): Optional directory to save
+                the markdown summary file. If provided, overrides the default
+                directory used by ContextUtility.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the summary text, file
+                path, and status message.
+        """
+
+        result: Dict[str, Any] = {
+            "summary": "",
+            "file_path": None,
+            "status": "",
+        }
+
+        try:
+            if self._context_utility is None:
+                if working_directory is not None:
+                    self._context_utility = ContextUtility(
+                        working_directory=str(working_directory)
+                    )
+                else:
+                    self._context_utility = ContextUtility()
+
+            # Get conversation directly from agent's memory
+            messages, _ = self.memory.get_context()
+
+            if not messages:
+                status_message = (
+                    "No conversation context available to summarize."
+                )
+                result["status"] = status_message
+                return result
+
+            # Convert messages to conversation text
+            conversation_lines = []
+            for message in messages:
+                role = message.get('role', 'unknown')
+                content = message.get('content', '')
+                if content:
+                    conversation_lines.append(f"{role}: {content}")
+
+            conversation_text = "\n".join(conversation_lines).strip()
+
+            if not conversation_text:
+                status_message = (
+                    "Conversation context is empty; skipping summary."
+                )
+                result["status"] = status_message
+                return result
+
+            if self._context_summary_agent is None:
+                self._context_summary_agent = ChatAgent(
+                    system_message=(
+                        "You are a helpful assistant that summarizes "
+                        "conversations into concise markdown bullet lists."
+                    ),
+                    model=self.model_backend,
+                    agent_id=f"{self.agent_id}_context_summarizer",
+                )
+            else:
+                self._context_summary_agent.reset()
+
+            if summary_prompt:
+                prompt_text = (
+                    f"{summary_prompt.rstrip()}\n\n"
+                    f"Context information:\n{conversation_text}"
+                )
+            else:
+                prompt_text = (
+                    "Summarize the context information in concise markdown "
+                    "bullet points highlighting key decisions, action items.\n"
+                    f"Context information:\n{conversation_text}"
+                )
+
+            try:
+                response = self._context_summary_agent.step(prompt_text)
+            except Exception as step_exc:
+                error_message = (
+                    f"Failed to generate summary using model: {step_exc}"
+                )
+                logger.error(error_message)
+                result["status"] = error_message
+                return result
+
+            if not response.msgs:
+                status_message = (
+                    "Failed to generate summary from model response."
+                )
+                result["status"] = status_message
+                return result
+
+            summary_content = response.msgs[-1].content.strip()
+            if not summary_content:
+                status_message = "Generated summary is empty."
+                result["status"] = status_message
+                return result
+
+            base_filename = (
+                filename
+                if filename
+                else f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
+            )
+            base_filename = Path(base_filename).with_suffix("").name
+
+            metadata = self._context_utility.get_session_metadata()
+            metadata.update(
+                {
+                    "agent_id": self.agent_id,
+                    "message_count": len(messages),
+                }
+            )
+
+            save_status = self._context_utility.save_markdown_file(
+                base_filename,
+                summary_content,
+                title="Conversation Summary",
+                metadata=metadata,
+            )
+
+            file_path = (
+                self._context_utility.get_working_directory()
+                / f"{base_filename}.md"
+            )
+
+            result.update(
+                {
+                    "summary": summary_content,
+                    "file_path": str(file_path),
+                    "status": save_status,
+                }
+            )
+            logger.info("Conversation summary saved to %s", file_path)
+            return result
+
+        except Exception as exc:
+            error_message = f"Failed to summarize conversation context: {exc}"
+            logger.error(error_message)
+            result["status"] = error_message
+            return result
+
     def clear_memory(self) -> None:
         r"""Clear the agent's memory and reset to initial state.
 
@@ -1247,6 +1408,35 @@ class ChatAgent(BaseAgent):
         # and True to indicate we used prompt formatting
         return modified_message, None, True
 
+    def _is_called_from_registered_toolkit(self) -> bool:
+        r"""Check if current step/astep call originates from a
+        RegisteredAgentToolkit.
+
+        This method uses stack inspection to detect if the current call
+        is originating from a toolkit that inherits from
+        RegisteredAgentToolkit. When detected, tools should be disabled to
+        prevent recursive calls.
+
+        Returns:
+            bool: True if called from a RegisteredAgentToolkit, False otherwise
+        """
+        import inspect
+
+        from camel.toolkits.base import RegisteredAgentToolkit
+
+        try:
+            for frame_info in inspect.stack():
+                frame_locals = frame_info.frame.f_locals
+                if 'self' in frame_locals:
+                    caller_self = frame_locals['self']
+                    if isinstance(caller_self, RegisteredAgentToolkit):
+                        return True
+
+        except Exception:
+            return False
+
+        return False
+
     def _apply_prompt_based_parsing(
         self,
         response: ModelResponse,
@@ -1440,6 +1630,10 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        # Check if this call is from a RegisteredAgentToolkit to prevent tool
+        # use
+        disable_tools = self._is_called_from_registered_toolkit()
+
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
         input_message, response_format, used_prompt_formatting = (
@@ -1487,7 +1681,9 @@ class ChatAgent(BaseAgent):
                 num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=self._get_full_tool_schemas(),
+                tool_schemas=[]
+                if disable_tools
+                else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
             prev_num_openai_messages = len(openai_messages)
@@ -1652,6 +1848,10 @@ class ChatAgent(BaseAgent):
         except ImportError:
             pass  # Langfuse not available
 
+        # Check if this call is from a RegisteredAgentToolkit to prevent tool
+        # use
+        disable_tools = self._is_called_from_registered_toolkit()
+
         # Handle response format compatibility with non-strict tools
         original_response_format = response_format
         input_message, response_format, used_prompt_formatting = (
@@ -1692,7 +1892,9 @@ class ChatAgent(BaseAgent):
                 num_tokens=num_tokens,
                 current_iteration=iteration_count,
                 response_format=response_format,
-                tool_schemas=self._get_full_tool_schemas(),
+                tool_schemas=[]
+                if disable_tools
+                else self._get_full_tool_schemas(),
                 prev_num_openai_messages=prev_num_openai_messages,
             )
             prev_num_openai_messages = len(openai_messages)
@@ -3850,9 +4052,21 @@ class ChatAgent(BaseAgent):
                         # Toolkit doesn't support cloning, use original
                         cloned_toolkits[toolkit_id] = toolkit_instance
 
+                if getattr(
+                    tool.func, "__message_integration_enhanced__", False
+                ):
+                    cloned_tools.append(
+                        FunctionTool(
+                            func=tool.func,
+                            openai_tool_schema=tool.get_openai_tool_schema(),
+                        )
+                    )
+                    continue
+
                 # Get the method from the cloned (or original) toolkit
                 toolkit = cloned_toolkits[toolkit_id]
                 method_name = tool.func.__name__
+
                 if hasattr(toolkit, method_name):
                     new_method = getattr(toolkit, method_name)
                     # Wrap cloned method into a new FunctionTool,
