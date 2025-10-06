@@ -640,6 +640,11 @@ class SingleAgentWorker(Worker):
                 otherwise.
         """
         try:
+            # reset system message to original state before loading
+            # this prevents duplicate workflow context on multiple calls
+            if isinstance(self.worker, ChatAgent):
+                self.worker.reset_to_original_system_message()
+
             # Find workflow memory files matching the pattern
             workflow_files = self._find_workflow_files(pattern)
             if not workflow_files:

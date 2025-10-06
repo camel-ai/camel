@@ -250,6 +250,64 @@ class TestSingleAgentWorkerWorkflow:
             # from the newer session (verified by it being loaded first)
             assert loaded_filename == "data_analyst_workflow"
 
+    @patch('glob.glob')
+    def test_load_workflow_memories_resets_system_message(
+        self, mock_glob, temp_context_dir
+    ):
+        """Test that multiple calls to load_workflow_memories reset system
+        message.
+
+        This test verifies that calling load_workflow_memories multiple times
+        doesn't accumulate workflow context but instead resets to original
+        system message each time.
+        """
+        worker = MockSingleAgentWorker("data_analyst")
+
+        # get original system message content
+        original_content = worker.worker._original_system_message.content
+
+        # mock workflow files
+        mock_files = [
+            f"{temp_context_dir}/workforce_workflows/session_1/data_analyst_workflow.md"
+        ]
+        mock_glob.return_value = mock_files
+
+        # mock the shared context utility method
+        mock_context_utility = MagicMock()
+        mock_context_utility.load_markdown_context_to_memory.return_value = (
+            "Context appended successfully"
+        )
+
+        with patch(
+            'camel.utils.context_utils.ContextUtility.get_workforce_shared',
+            return_value=mock_context_utility,
+        ):
+            # first call to load_workflow_memories
+            worker.load_workflow_memories(max_files_to_load=1)
+
+            # verify reset was called (system message matches original)
+            first_call_system_content = worker.worker._system_message.content
+
+            # second call to load_workflow_memories
+            worker.load_workflow_memories(max_files_to_load=1)
+
+            # after second call, system message should still be based on
+            # original (not accumulating from first call)
+            second_call_system_content = worker.worker._system_message.content
+
+            # verify both calls resulted in same base system message
+            # (indicating reset happened before each load)
+            assert first_call_system_content == second_call_system_content
+
+            # verify the system message contains original content
+            assert original_content in second_call_system_content
+
+            # verify load was called twice (once per load_workflow_memories)
+            assert (
+                mock_context_utility.load_markdown_context_to_memory.call_count
+                == 2
+            )
+
 
 class TestWorkforceWorkflowMemoryMethods:
     """Test workflow functionality for Workforce."""
