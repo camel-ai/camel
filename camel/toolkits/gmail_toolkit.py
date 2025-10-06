@@ -14,12 +14,7 @@
 
 import os
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union
-
-if TYPE_CHECKING:
-    from googleapiclient.discovery import Resource
-else:
-    Resource = Any
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
@@ -87,7 +82,9 @@ class GmailToolkit(BaseToolkit):
             bcc (Optional[Union[str, List[str]]]): BCC recipient email
                 address(es).
             attachments (Optional[List[str]]): List of file paths to attach.
-            is_html (bool): Whether the body is HTML format.
+            is_html (bool): Whether the body is HTML format. Set to True when
+                sending formatted emails with HTML tags (e.g., bold,
+                links, images). Use False (default) for plain text emails.
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the
@@ -142,7 +139,9 @@ class GmailToolkit(BaseToolkit):
             message_id (str): The ID of the message to reply to.
             reply_body (str): The reply message body.
             reply_all (bool): Whether to reply to all recipients.
-            is_html (bool): Whether the reply body is HTML format.
+            is_html (bool): Whether the body is HTML format. Set to True when
+                sending formatted emails with HTML tags (e.g., bold,
+                links, images). Use False (default) for plain text emails.
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the
@@ -237,6 +236,7 @@ class GmailToolkit(BaseToolkit):
         forward_body: Optional[str] = None,
         cc: Optional[Union[str, List[str]]] = None,
         bcc: Optional[Union[str, List[str]]] = None,
+        include_attachments: bool = True,
     ) -> Dict[str, Any]:
         r"""Forward an email message.
 
@@ -248,12 +248,17 @@ class GmailToolkit(BaseToolkit):
                 address(es).
             bcc (Optional[Union[str, List[str]]]): BCC recipient email
                 address(es).
+            include_attachments (bool): Whether to include original
+                attachments. Defaults to True. Only includes real
+                attachments, not inline images.
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the
-                operation.
+                operation, including the number of attachments forwarded.
         """
         try:
+            import tempfile
+
             # Get the original message
             original_message = (
                 self.gmail_service.users()
@@ -290,9 +295,45 @@ class GmailToolkit(BaseToolkit):
             cc_list = [cc] if isinstance(cc, str) else (cc or [])
             bcc_list = [bcc] if isinstance(bcc, str) else (bcc or [])
 
-            # Create forward message
+            # Handle attachments
+            attachment_paths = []
+            temp_files: List[str] = []
+
+            if include_attachments:
+                # Extract attachment metadata
+                attachments = self._extract_attachments(original_message)
+                for att in attachments:
+                    try:
+                        # Create temp file
+                        temp_file = tempfile.NamedTemporaryFile(
+                            delete=False, suffix=f"_{att['filename']}"
+                        )
+                        temp_files.append(temp_file.name)
+
+                        # Download attachment
+                        result = self.get_attachment(
+                            message_id=message_id,
+                            attachment_id=att['attachment_id'],
+                            save_path=temp_file.name,
+                        )
+
+                        if result.get('success'):
+                            attachment_paths.append(temp_file.name)
+
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to download attachment "
+                            f"{att['filename']}: {e}"
+                        )
+
+            # Create forward message (now with attachments!)
             message = self._create_message(
-                to_list, subject, body, cc_list, bcc_list
+                to_list,
+                subject,
+                body,
+                cc_list,
+                bcc_list,
+                attachments=attachment_paths if attachment_paths else None,
             )
 
             # Send forward
@@ -303,11 +344,21 @@ class GmailToolkit(BaseToolkit):
                 .execute()
             )
 
+            # Clean up temp files
+            for temp_file_path in temp_files:
+                try:
+                    os.unlink(temp_file_path)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to delete temp file {temp_file}: {e}"
+                    )
+
             return {
                 "success": True,
                 "message_id": sent_message.get('id'),
                 "thread_id": sent_message.get('threadId'),
                 "message": "Email forwarded successfully",
+                "attachments_forwarded": len(attachment_paths),
             }
 
         except Exception as e:
@@ -335,7 +386,9 @@ class GmailToolkit(BaseToolkit):
             bcc (Optional[Union[str, List[str]]]): BCC recipient email
                 address(es).
             attachments (Optional[List[str]]): List of file paths to attach.
-            is_html (bool): Whether the body is HTML format.
+            is_html (bool): Whether the body is HTML format. Set to True when
+                sending formatted emails with HTML tags (e.g., bold,
+                links, images). Use False (default) for plain text emails.
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the
@@ -420,7 +473,13 @@ class GmailToolkit(BaseToolkit):
             query (str): Gmail search query string.
             max_results (int): Maximum number of emails to fetch.
             include_spam_trash (bool): Whether to include spam and trash.
-            label_ids (Optional[List[str]]): List of label IDs to filter by.
+            label_ids (Optional[List[str]]): List of label IDs to filter
+                emails by. Only emails with ALL of the specified
+                labels will be returned.
+                Label IDs can be:
+                - System labels: 'INBOX', 'SENT', 'DRAFT', 'SPAM', 'TRASH',
+                  'UNREAD', 'STARRED', 'IMPORTANT', 'CATEGORY_PERSONAL', etc.
+                - Custom label IDs: Retrieved from list_gmail_labels() method.
 
         Returns:
             Dict[str, Any]: A dictionary containing the fetched emails.
@@ -466,26 +525,6 @@ class GmailToolkit(BaseToolkit):
             logger.error("Failed to fetch emails: %s", e)
             return {"error": f"Failed to fetch emails: {e!s}"}
 
-    def fetch_message_by_id(self, message_id: str) -> Dict[str, Any]:
-        r"""Fetch a specific message by ID.
-
-        Args:
-            message_id (str): The ID of the message to fetch.
-
-        Returns:
-            Dict[str, Any]: A dictionary containing the message details.
-        """
-        try:
-            message_detail = self._get_message_details(message_id)
-            if message_detail:
-                return {"success": True, "message": message_detail}
-            else:
-                return {"error": "Message not found"}
-
-        except Exception as e:
-            logger.error("Failed to fetch message: %s", e)
-            return {"error": f"Failed to fetch message: {e!s}"}
-
     def fetch_thread_by_id(self, thread_id: str) -> Dict[str, Any]:
         r"""Fetch a thread by ID.
 
@@ -530,8 +569,17 @@ class GmailToolkit(BaseToolkit):
 
         Args:
             message_id (str): The ID of the message to modify.
-            add_labels (Optional[List[str]]): Labels to add.
-            remove_labels (Optional[List[str]]): Labels to remove.
+            add_labels (Optional[List[str]]): List of label IDs to add to
+                the message.
+                Label IDs can be:
+                - System labels: 'INBOX', 'STARRED', 'IMPORTANT',
+                    'UNREAD', etc.
+                - Custom label IDs: Retrieved from list_gmail_labels() method.
+                    Example: ['STARRED', 'IMPORTANT'] marks email as starred
+                    and important.
+            remove_labels (Optional[List[str]]): List of label IDs to
+                remove from the message. Uses the same format as add_labels.
+                Example: ['UNREAD'] marks the email as read.
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the
@@ -657,7 +705,13 @@ class GmailToolkit(BaseToolkit):
             query (str): Gmail search query string.
             max_results (int): Maximum number of threads to fetch.
             include_spam_trash (bool): Whether to include spam and trash.
-            label_ids (Optional[List[str]]): List of label IDs to filter by.
+            label_ids (Optional[List[str]]): List of label IDs to filter
+                threads by. Only threads with ALL of the specified labels
+                will be returned.
+                Label IDs can be:
+                - System labels: 'INBOX', 'SENT', 'DRAFT', 'SPAM', 'TRASH',
+                  'UNREAD', 'STARRED', 'IMPORTANT', 'CATEGORY_PERSONAL', etc.
+                - Custom label IDs: Retrieved from list_gmail_labels() method.
 
         Returns:
             Dict[str, Any]: A dictionary containing the thread list.
@@ -828,7 +882,12 @@ class GmailToolkit(BaseToolkit):
         r"""Delete a Gmail label.
 
         Args:
-            label_id (str): The ID of the label to delete.
+            label_id (str): List of label IDs to filter emails by.
+                Only emails with ALL of the specified labels will be returned.
+                Label IDs can be:
+                - System labels: 'INBOX', 'SENT', 'DRAFT', 'SPAM', 'TRASH',
+                  'UNREAD', 'STARRED', 'IMPORTANT', 'CATEGORY_PERSONAL', etc.
+                - Custom label IDs: Retrieved from list_gmail_labels() method.
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the
@@ -859,8 +918,18 @@ class GmailToolkit(BaseToolkit):
 
         Args:
             thread_id (str): The ID of the thread to modify.
-            add_labels (Optional[List[str]]): Labels to add.
-            remove_labels (Optional[List[str]]): Labels to remove.
+            add_labels (Optional[List[str]]): List of label IDs to add to all
+                messages in the thread.
+                Label IDs can be:
+                - System labels: 'INBOX', 'STARRED', 'IMPORTANT',
+                  'UNREAD', etc.
+                - Custom label IDs: Retrieved from list_gmail_labels().
+                Example: ['STARRED', 'IMPORTANT'] marks thread as
+                starred and important.
+            remove_labels (Optional[List[str]]): List of label IDs to
+                remove from all messages in the thread. Uses the same
+                format as add_labels.
+                Example: ['UNREAD'] marks the entire thread as read.
 
         Returns:
             Dict[str, Any]: A dictionary containing the result of the
@@ -1123,21 +1192,24 @@ class GmailToolkit(BaseToolkit):
 
         # Save new credentials
         token_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(token_file, 'w') as f:
-            json.dump(
-                {
-                    'token': creds.token,
-                    'refresh_token': creds.refresh_token,
-                    'token_uri': creds.token_uri,
-                    'scopes': creds.scopes,
-                },
-                f,
-            )
         try:
+            with open(token_file, 'w') as f:
+                json.dump(
+                    {
+                        'token': creds.token,
+                        'refresh_token': creds.refresh_token,
+                        'token_uri': creds.token_uri,
+                        'scopes': creds.scopes,
+                    },
+                    f,
+                )
             os.chmod(token_file, 0o600)
-        except Exception:
-            pass
-        logger.info(f"Credentials saved to {token_file}")
+            logger.info(f"Credentials saved to {token_file}")
+        except Exception as e:
+            logger.warning(
+                f"Failed to save credentials to {token_file}: {e}. "
+                "You may need to re-authenticate next time."
+            )
 
         return creds
 
@@ -1220,6 +1292,7 @@ class GmailToolkit(BaseToolkit):
                 "bcc": self._get_header_value(headers, 'Bcc'),
                 "date": self._get_header_value(headers, 'Date'),
                 "body": self._extract_message_body(message),
+                "attachments": self._extract_attachments(message),
                 "label_ids": message.get('labelIds', []),
                 "size_estimate": message.get('sizeEstimate', 0),
             }
@@ -1237,34 +1310,274 @@ class GmailToolkit(BaseToolkit):
         return ""
 
     def _extract_message_body(self, message: Dict[str, Any]) -> str:
-        r"""Extract message body from message payload."""
+        r"""Extract message body from message payload.
+
+        Recursively traverses the entire message tree and collects all text
+        content from text/plain and text/html parts. Special handling for
+        multipart/alternative containers: recursively searches for one format
+        (preferring plain text) to avoid duplication when both formats contain
+        the same content. All other text parts are collected to ensure no
+        information is lost.
+
+        Args:
+            message (Dict[str, Any]): The Gmail message dictionary containing
+                the payload to extract text from.
+
+        Returns:
+            str: The extracted message body text with multiple parts separated
+                by double newlines, or an empty string if no text content is
+                found.
+        """
         import base64
+        import re
 
+        text_parts = []
+
+        def decode_text_data(data: str, mime_type: str) -> str | None:
+            """Helper to decode base64 text data.
+
+            Args:
+                data: Base64 encoded text data.
+                mime_type: MIME type for logging purposes.
+
+            Returns:
+                Decoded text string, or None if decoding fails or text
+                is empty.
+            """
+            if not data:
+                return None
+            try:
+                text = base64.urlsafe_b64decode(data).decode('utf-8')
+                return text if text.strip() else None
+            except Exception as e:
+                logger.warning(f"Failed to decode {mime_type}: {e}")
+                return None
+
+        def strip_html_tags(html_content: str) -> str:
+            """Strip HTML tags and convert to readable plain text.
+
+            Uses regex to remove tags and clean up formatting while preserving
+            basic document structure.
+
+            Args:
+                html_content: HTML content to strip.
+
+            Returns:
+                Plain text version of HTML content.
+            """
+            if not html_content or not html_content.strip():
+                return ""
+
+            text = html_content
+
+            # Remove script and style elements completely
+            text = re.sub(
+                r'<script[^>]*>.*?</script>',
+                '',
+                text,
+                flags=re.DOTALL | re.IGNORECASE,
+            )
+            text = re.sub(
+                r'<style[^>]*>.*?</style>',
+                '',
+                text,
+                flags=re.DOTALL | re.IGNORECASE,
+            )
+
+            # Convert common HTML entities
+            text = text.replace('&nbsp;', ' ')
+            text = text.replace('&amp;', '&')
+            text = text.replace('&lt;', '<')
+            text = text.replace('&gt;', '>')
+            text = text.replace('&quot;', '"')
+            text = text.replace('&#39;', "'")
+            text = text.replace('&rsquo;', "'")
+            text = text.replace('&lsquo;', "'")
+            text = text.replace('&rdquo;', '"')
+            text = text.replace('&ldquo;', '"')
+            text = text.replace('&mdash;', '—')
+            text = text.replace('&ndash;', '-')
+
+            # Convert <br> and <br/> to newlines
+            text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
+
+            # Convert block-level closing tags to newlines
+            text = re.sub(
+                r'</(p|div|h[1-6]|tr|li)>', '\n', text, flags=re.IGNORECASE
+            )
+
+            # Convert <hr> to separator
+            text = re.sub(r'<hr\s*/?>', '\n---\n', text, flags=re.IGNORECASE)
+
+            # Remove all remaining HTML tags
+            text = re.sub(r'<[^>]+>', '', text)
+
+            # Clean up whitespace
+            text = re.sub(
+                r'\n\s*\n\s*\n+', '\n\n', text
+            )  # Multiple blank lines to double newline
+            text = re.sub(r' +', ' ', text)  # Multiple spaces to single space
+            text = re.sub(r'\n ', '\n', text)  # Remove leading spaces on lines
+            text = re.sub(
+                r' \n', '\n', text
+            )  # Remove trailing spaces on lines
+
+            return text.strip()
+
+        def find_text_recursive(
+            part: Dict[str, Any], target_mime: str
+        ) -> str | None:
+            """Recursively search for text content of a specific MIME type.
+
+            Args:
+                part: Message part to search in.
+                target_mime: Target MIME type ('text/plain' or 'text/html').
+
+            Returns:
+                Decoded text string if found, None otherwise.
+            """
+            mime = part.get('mimeType', '')
+
+            # Found the target type at this level
+            if mime == target_mime:
+                data = part.get('body', {}).get('data', '')
+                decoded = decode_text_data(data, target_mime)
+                # Strip HTML tags if this is HTML content
+                if decoded and target_mime == 'text/html':
+                    return strip_html_tags(decoded)
+                return decoded
+
+            # Not found, but has nested parts? Search recursively
+            if 'parts' in part:
+                for nested_part in part['parts']:
+                    result = find_text_recursive(nested_part, target_mime)
+                    if result:
+                        return result
+
+            return None
+
+        def extract_from_part(part: Dict[str, Any]):
+            """Recursively collect all text from message parts."""
+            mime_type = part.get('mimeType', '')
+
+            # Special handling for multipart/alternative
+            if mime_type == 'multipart/alternative' and 'parts' in part:
+                # Recursively search for one format (prefer plain text)
+                plain_text = None
+                html_text = None
+
+                # Search each alternative branch recursively
+                for nested_part in part['parts']:
+                    if not plain_text:
+                        plain_text = find_text_recursive(
+                            nested_part, 'text/plain'
+                        )
+                    if not html_text:
+                        html_text = find_text_recursive(
+                            nested_part, 'text/html'
+                        )
+
+                # Prefer plain text, fall back to HTML
+                chosen_text = plain_text if plain_text else html_text
+                if chosen_text:
+                    text_parts.append(chosen_text)
+
+            # If this part has nested parts (but not multipart/alternative)
+            elif 'parts' in part:
+                for nested_part in part['parts']:
+                    extract_from_part(nested_part)
+
+            # If this is a text leaf, extract and collect it
+            elif mime_type == 'text/plain':
+                data = part.get('body', {}).get('data', '')
+                text = decode_text_data(data, 'plain text body')
+                if text:
+                    text_parts.append(text)
+
+            # Lines 1458-1462
+            elif mime_type == 'text/html':
+                data = part.get('body', {}).get('data', '')
+                html_text = decode_text_data(data, 'HTML body')
+                if html_text:
+                    text = strip_html_tags(html_text)
+                    if text:
+                        text_parts.append(text)
+
+        # Traverse the entire tree and collect all text parts
         payload = message.get('payload', {})
+        extract_from_part(payload)
 
-        # Handle multipart messages
-        if 'parts' in payload:
-            for part in payload['parts']:
-                if part['mimeType'] == 'text/plain':
-                    data = part['body'].get('data', '')
-                    if data:
-                        return base64.urlsafe_b64decode(data).decode('utf-8')
-                elif part['mimeType'] == 'text/html':
-                    data = part['body'].get('data', '')
-                    if data:
-                        return base64.urlsafe_b64decode(data).decode('utf-8')
-        else:
-            # Handle single part messages
-            if payload.get('mimeType') == 'text/plain':
-                data = payload['body'].get('data', '')
-                if data:
-                    return base64.urlsafe_b64decode(data).decode('utf-8')
-            elif payload.get('mimeType') == 'text/html':
-                data = payload['body'].get('data', '')
-                if data:
-                    return base64.urlsafe_b64decode(data).decode('utf-8')
+        if not text_parts:
+            return ""
 
-        return ""
+        # Return all text parts combined
+        return '\n\n'.join(text_parts)
+
+    def _extract_attachments(
+        self, message: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        r"""Extract attachment information from message payload.
+
+        Recursively traverses the message tree to find all attachments
+        and extracts their metadata. Distinguishes between regular attachments
+        and inline images embedded in HTML content.
+
+        Args:
+            message (Dict[str, Any]): The Gmail message dictionary containing
+                the payload to extract attachments from.
+
+        Returns:
+            List[Dict[str, Any]]: List of attachment dictionaries, each
+                containing:
+                - attachment_id: Gmail's unique identifier for the attachment
+                - filename: Name of the attached file
+                - mime_type: MIME type of the attachment
+                - size: Size of the attachment in bytes
+                - is_inline: Whether this is an inline image (embedded in HTML)
+        """
+        attachments = []
+
+        def is_inline_image(part: Dict[str, Any]) -> bool:
+            """Check if this part is an inline image."""
+            headers = part.get('headers', [])
+            for header in headers:
+                name = header.get('name', '').lower()
+                value = header.get('value', '').lower()
+                # Check for Content-Disposition: inline
+                if name == 'content-disposition' and 'inline' in value:
+                    return True
+                # Check for Content-ID (usually indicates inline)
+                if name == 'content-id':
+                    return True
+            return False
+
+        def find_attachments(part: Dict[str, Any]):
+            """Recursively find attachments in message parts."""
+            # Check if this part has an attachmentId (indicates it's an
+            # attachment)
+            if 'body' in part and 'attachmentId' in part['body']:
+                attachment_info = {
+                    'attachment_id': part['body']['attachmentId'],
+                    'filename': part.get('filename', 'unnamed'),
+                    'mime_type': part.get(
+                        'mimeType', 'application/octet-stream'
+                    ),
+                    'size': part['body'].get('size', 0),
+                    'is_inline': is_inline_image(part),
+                }
+                attachments.append(attachment_info)
+
+            # Recurse into nested parts
+            if 'parts' in part:
+                for nested_part in part['parts']:
+                    find_attachments(nested_part)
+
+        # Start traversal from the message payload
+        payload = message.get('payload', {})
+        if payload:
+            find_attachments(payload)
+
+        return attachments
 
     def _is_valid_email(self, email: str) -> bool:
         r"""Validate email address format."""
@@ -1286,7 +1599,6 @@ class GmailToolkit(BaseToolkit):
             FunctionTool(self.create_email_draft),
             FunctionTool(self.send_draft),
             FunctionTool(self.fetch_emails),
-            FunctionTool(self.fetch_message_by_id),
             FunctionTool(self.fetch_thread_by_id),
             FunctionTool(self.modify_email_labels),
             FunctionTool(self.move_to_trash),

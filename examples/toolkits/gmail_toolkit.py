@@ -12,20 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import sys
-from pathlib import Path
 
-# Add camel to path - find the camel package directory
-current_file = Path(__file__).resolve()
-camel_root = current_file.parent.parent.parent
-sys.path.insert(0, str(camel_root))
-
-# Import after path modification
-from camel.agents import ChatAgent  # noqa: E402
-from camel.models import ModelFactory  # noqa: E402
-from camel.toolkits import GmailToolkit  # noqa: E402
-from camel.types import ModelPlatformType  # noqa: E402
-from camel.types.enums import ModelType  # noqa: E402
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.toolkits import GmailToolkit
+from camel.types import ModelPlatformType
+from camel.types.enums import ModelType
 
 # Create a model instance
 model = ModelFactory.create(

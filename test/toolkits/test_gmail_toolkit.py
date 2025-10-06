@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from camel.toolkits import FunctionTool, GmailToolkit
+from camel.toolkits import GmailToolkit
 
 
 @pytest.fixture
@@ -296,34 +296,6 @@ def test_fetch_emails(gmail_toolkit, mock_gmail_service):
     assert len(result['emails']) == 2
     assert result['total_count'] == 2
     assert result['next_page_token'] == 'next_token'
-
-
-def test_fetch_message_by_id(gmail_toolkit, mock_gmail_service):
-    """Test fetching a specific message by ID."""
-    get_mock = MagicMock()
-    mock_gmail_service.users().messages().get.return_value = get_mock
-    get_mock.execute.return_value = {
-        'id': 'msg123',
-        'threadId': 'thread123',
-        'snippet': 'Test snippet',
-        'payload': {
-            'headers': [
-                {'name': 'Subject', 'value': 'Test Subject'},
-                {'name': 'From', 'value': 'sender@example.com'},
-                {'name': 'To', 'value': 'recipient@example.com'},
-                {'name': 'Date', 'value': 'Mon, 1 Jan 2024 12:00:00 +0000'},
-            ],
-            'body': {'data': base64.urlsafe_b64encode(b'Test body').decode()},
-        },
-        'labelIds': ['INBOX'],
-        'sizeEstimate': 1024,
-    }
-
-    result = gmail_toolkit.fetch_message_by_id(message_id='msg123')
-
-    assert result['success'] is True
-    assert result['message']['message_id'] == 'msg123'
-    assert result['message']['subject'] == 'Test Subject'
 
 
 def test_fetch_thread_by_id(gmail_toolkit, mock_gmail_service):
@@ -643,37 +615,6 @@ def test_search_people(gmail_toolkit, mock_people_service):
     assert result['total_count'] == 1
 
 
-def test_get_tools(gmail_toolkit):
-    """Test getting all tools from the toolkit."""
-    tools = gmail_toolkit.get_tools()
-
-    assert len(tools) == 21  # All the tools we implemented
-    assert all(isinstance(tool, FunctionTool) for tool in tools)
-
-    # Check that all expected tools are present
-    tool_functions = [tool.func for tool in tools]
-    assert gmail_toolkit.send_email in tool_functions
-    assert gmail_toolkit.reply_to_email in tool_functions
-    assert gmail_toolkit.forward_email in tool_functions
-    assert gmail_toolkit.create_email_draft in tool_functions
-    assert gmail_toolkit.send_draft in tool_functions
-    assert gmail_toolkit.fetch_emails in tool_functions
-    assert gmail_toolkit.fetch_message_by_id in tool_functions
-    assert gmail_toolkit.fetch_thread_by_id in tool_functions
-    assert gmail_toolkit.modify_email_labels in tool_functions
-    assert gmail_toolkit.move_to_trash in tool_functions
-    assert gmail_toolkit.get_attachment in tool_functions
-    assert gmail_toolkit.list_threads in tool_functions
-    assert gmail_toolkit.list_drafts in tool_functions
-    assert gmail_toolkit.list_gmail_labels in tool_functions
-    assert gmail_toolkit.create_label in tool_functions
-    assert gmail_toolkit.delete_label in tool_functions
-    assert gmail_toolkit.modify_thread_labels in tool_functions
-    assert gmail_toolkit.get_profile in tool_functions
-    assert gmail_toolkit.get_contacts in tool_functions
-    assert gmail_toolkit.search_people in tool_functions
-
-
 def test_error_handling(gmail_toolkit, mock_gmail_service):
     """Test error handling in various methods."""
     # Test send_email error
@@ -740,3 +681,216 @@ def test_message_creation_helpers(gmail_toolkit):
 
     body = gmail_toolkit._extract_message_body(message)
     assert body == 'Test body content'
+
+
+def test_extract_attachments_regular_attachment(gmail_toolkit):
+    """Test extracting a regular attachment (not inline)."""
+    message = {
+        'payload': {
+            'parts': [
+                {
+                    'mimeType': 'text/plain',
+                    'body': {
+                        'data': base64.urlsafe_b64encode(
+                            b'Email body'
+                        ).decode()
+                    },
+                },
+                {
+                    'filename': 'document.pdf',
+                    'mimeType': 'application/pdf',
+                    'headers': [
+                        {
+                            'name': 'Content-Disposition',
+                            'value': 'attachment; filename="document.pdf"',
+                        }
+                    ],
+                    'body': {'attachmentId': 'ANGjdJ123', 'size': 102400},
+                },
+            ]
+        }
+    }
+
+    attachments = gmail_toolkit._extract_attachments(message)
+
+    assert len(attachments) == 1
+    assert attachments[0]['attachment_id'] == 'ANGjdJ123'
+    assert attachments[0]['filename'] == 'document.pdf'
+    assert attachments[0]['mime_type'] == 'application/pdf'
+    assert attachments[0]['size'] == 102400
+    assert attachments[0]['is_inline'] is False
+
+
+def test_extract_attachments_inline_image(gmail_toolkit):
+    """Test extracting inline images with Content-ID."""
+    message = {
+        'payload': {
+            'parts': [
+                {
+                    'mimeType': 'text/html',
+                    'body': {
+                        'data': base64.urlsafe_b64encode(
+                            b'<html><img src="cid:logo"></html>'
+                        ).decode()
+                    },
+                },
+                {
+                    'filename': 'logo.png',
+                    'mimeType': 'image/png',
+                    'headers': [
+                        {'name': 'Content-ID', 'value': '<logo@example.com>'}
+                    ],
+                    'body': {'attachmentId': 'ANGjdJ456', 'size': 2048},
+                },
+                {
+                    'filename': 'signature.jpg',
+                    'mimeType': 'image/jpeg',
+                    'headers': [
+                        {
+                            'name': 'Content-Disposition',
+                            'value': 'inline; filename="signature.jpg"',
+                        }
+                    ],
+                    'body': {'attachmentId': 'ANGjdJ789', 'size': 3072},
+                },
+            ]
+        }
+    }
+
+    attachments = gmail_toolkit._extract_attachments(message)
+
+    assert len(attachments) == 2
+    # First inline image (Content-ID)
+    assert attachments[0]['attachment_id'] == 'ANGjdJ456'
+    assert attachments[0]['filename'] == 'logo.png'
+    assert attachments[0]['is_inline'] is True
+    # Second inline image (Content-Disposition: inline)
+    assert attachments[1]['attachment_id'] == 'ANGjdJ789'
+    assert attachments[1]['filename'] == 'signature.jpg'
+    assert attachments[1]['is_inline'] is True
+
+
+def test_extract_message_body_multipart_alternative(gmail_toolkit):
+    """Test extracting body from multipart/alternative (prefers plain text)."""
+    message = {
+        'payload': {
+            'mimeType': 'multipart/alternative',
+            'parts': [
+                {
+                    'mimeType': 'text/plain',
+                    'body': {
+                        'data': base64.urlsafe_b64encode(
+                            b'Plain text version'
+                        ).decode()
+                    },
+                },
+                {
+                    'mimeType': 'text/html',
+                    'body': {
+                        'data': base64.urlsafe_b64encode(
+                            b'<html><b>HTML version</b></html>'
+                        ).decode()
+                    },
+                },
+            ],
+        }
+    }
+
+    body = gmail_toolkit._extract_message_body(message)
+
+    # Should prefer plain text over HTML
+    assert body == 'Plain text version'
+    assert '<html>' not in body
+
+
+def test_extract_message_body_nested_multipart_mixed(gmail_toolkit):
+    """Test extracting body from nested multipart/mixed structure."""
+    message = {
+        'payload': {
+            'mimeType': 'multipart/mixed',
+            'parts': [
+                {
+                    'mimeType': 'multipart/alternative',
+                    'parts': [
+                        {
+                            'mimeType': 'text/plain',
+                            'body': {
+                                'data': base64.urlsafe_b64encode(
+                                    b'Main content'
+                                ).decode()
+                            },
+                        },
+                        {
+                            'mimeType': 'text/html',
+                            'body': {
+                                'data': base64.urlsafe_b64encode(
+                                    b'<html>Main content HTML</html>'
+                                ).decode()
+                            },
+                        },
+                    ],
+                },
+                {
+                    'filename': 'attachment.pdf',
+                    'mimeType': 'application/pdf',
+                    'body': {'attachmentId': 'ANGjdJ999', 'size': 5000},
+                },
+            ],
+        }
+    }
+
+    body = gmail_toolkit._extract_message_body(message)
+
+    # Should extract plain text from nested structure
+    assert 'Main content' in body
+    # Should not include HTML tags
+    assert '<html>' not in body
+
+
+def test_extract_message_body_multiple_text_parts(gmail_toolkit):
+    """Test extracting body when multiple text parts exist."""
+    message = {
+        'payload': {
+            'mimeType': 'multipart/mixed',
+            'parts': [
+                {
+                    'mimeType': 'text/plain',
+                    'body': {
+                        'data': base64.urlsafe_b64encode(
+                            b'First part'
+                        ).decode()
+                    },
+                },
+                {
+                    'mimeType': 'multipart/alternative',
+                    'parts': [
+                        {
+                            'mimeType': 'text/plain',
+                            'body': {
+                                'data': base64.urlsafe_b64encode(
+                                    b'Second part'
+                                ).decode()
+                            },
+                        }
+                    ],
+                },
+                {
+                    'mimeType': 'text/plain',
+                    'body': {
+                        'data': base64.urlsafe_b64encode(
+                            b'Third part'
+                        ).decode()
+                    },
+                },
+            ],
+        }
+    }
+
+    body = gmail_toolkit._extract_message_body(message)
+
+    # Should collect all text parts
+    assert 'First part' in body
+    assert 'Second part' in body
+    assert 'Third part' in body
+    # Parts should be separated by double newlines
+    assert '\n\n' in body
