@@ -333,6 +333,88 @@ class TestWorkforceWorkflowMemoryMethods:
                 in results[mock_workforce._children[0].node_id]
             )
 
+    def test_save_workflow_memories_real_execution(self, temp_context_dir):
+        """Test save_workflow_memories with real internal execution.
+
+        This test exercises the actual save_workflow_memories() implementation,
+        only mocking the ChatAgent.summarize() method to avoid LLM API calls.
+
+        Tests the following internal behavior:
+        - Workforce iteration through child workers
+        - SingleAgentWorker validation logic (_validate_workflow_save_requirements)
+        - Context utility setup and agent configuration
+        - Filename generation from worker description (_generate_workflow_filename)
+        - Workflow prompt preparation (_prepare_workflow_prompt)
+        - Agent selection for summarization (_select_agent_for_summarization)
+        - Worker metadata addition to results
+        - Result processing and error handling in Workforce
+        - Shared context utility setup between Workforce and workers
+        """
+        workforce = Workforce("Test Workforce")
+        worker = MockSingleAgentWorker("data_analyst")
+        workforce._children = [worker]
+
+        # Simulate some conversation history
+        user_msg = BaseMessage.make_user_message(
+            role_name="User", content="Analyze the sales data"
+        )
+        assistant_msg = BaseMessage.make_assistant_message(
+            role_name="Assistant", content="Analysis complete"
+        )
+        worker.worker.record_message(user_msg)
+        worker.worker.record_message(assistant_msg)
+
+        # Store initial conversation accumulator state
+        initial_accumulator = worker._conversation_accumulator
+
+        # Mock only the ChatAgent.summarize() method (which makes LLM calls)
+        mock_summary_result = {
+            "status": "success",
+            "summary": "Completed data analysis workflow",
+            "file_path": (
+                f"{temp_context_dir}/workforce_workflows/"
+                "session_test/data_analyst_workflow.md"
+            ),
+            "worker_description": "data_analyst",
+        }
+
+        with patch.object(
+            ChatAgent, 'summarize', return_value=mock_summary_result
+        ) as mock_summarize:
+            # This executes the real save_workflow_memories() logic
+            results = workforce.save_workflow_memories()
+
+            # Verify Workforce correctly processes worker results
+            assert len(results) == 1
+            assert worker.node_id in results
+            assert "data_analyst_workflow" in results[worker.node_id]
+            assert results[worker.node_id] == mock_summary_result["file_path"]
+
+            # Verify shared context utility was set up correctly
+            assert worker.worker._context_utility is not None
+
+            # Verify ChatAgent.summarize was called with correct parameters
+            # (validates filename generation, prompt preparation, agent selection)
+            mock_summarize.assert_called_once()
+            call_kwargs = mock_summarize.call_args[1]
+
+            # Verify filename generation includes worker description
+            assert 'filename' in call_kwargs
+            assert 'data_analyst_workflow' in call_kwargs['filename']
+
+            # Verify structured output format is set (WorkflowSummary)
+            assert 'response_format' in call_kwargs
+            assert call_kwargs['response_format'] is not None
+
+            # Verify summary prompt was prepared
+            assert 'summary_prompt' in call_kwargs
+            assert call_kwargs['summary_prompt'] is not None
+
+            # Verify conversation accumulator cleanup
+            # (it should be None after successful save)
+            if initial_accumulator is not None:
+                assert worker._conversation_accumulator is None
+
     def test_load_workflow_memories_success(self, mock_workforce):
         """Test successful workflow loading for all workers."""
         with (
