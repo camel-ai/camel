@@ -1544,6 +1544,7 @@ class Workforce(BaseNode):
         description: str,
         worker: ChatAgent,
         pool_max_size: int = DEFAULT_WORKER_POOL_SIZE,
+        enable_workflow_memory: bool = False,
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses a single agent.
         Can be called when workforce is paused to dynamically add workers.
@@ -1553,6 +1554,9 @@ class Workforce(BaseNode):
             worker (ChatAgent): The agent to be added.
             pool_max_size (int): Maximum size of the agent pool.
                 (default: :obj:`10`)
+            enable_workflow_memory (bool): Whether to enable workflow memory
+                accumulation. Set to True if you plan to call
+                save_workflow_memories(). (default: :obj:`False`)
 
         Returns:
             Workforce: The workforce node itself.
@@ -1580,6 +1584,7 @@ class Workforce(BaseNode):
             pool_max_size=pool_max_size,
             use_structured_output_handler=self.use_structured_output_handler,
             context_utility=None,  # Will be set during save/load operations
+            enable_workflow_memory=enable_workflow_memory,
         )
         self._children.append(worker_node)
 

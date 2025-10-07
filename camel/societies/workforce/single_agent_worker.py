@@ -214,6 +214,11 @@ class SingleAgentWorker(Worker):
             operations will use this shared instance instead of creating
             a new one. This ensures multiple workers share the same session
             directory. (default: :obj:`None`)
+        enable_workflow_memory (bool, optional): Whether to enable workflow
+            memory accumulation during task execution. When enabled,
+            conversations from all task executions are accumulated for
+            potential workflow saving. Set to True if you plan to call
+            save_workflow_memories(). (default: :obj:`False`)
     """
 
     def __init__(
@@ -226,6 +231,7 @@ class SingleAgentWorker(Worker):
         auto_scale_pool: bool = True,
         use_structured_output_handler: bool = True,
         context_utility: Optional[ContextUtility] = None,
+        enable_workflow_memory: bool = False,
     ) -> None:
         node_id = worker.agent_id
         super().__init__(
@@ -240,6 +246,7 @@ class SingleAgentWorker(Worker):
         )
         self.worker = worker
         self.use_agent_pool = use_agent_pool
+        self.enable_workflow_memory = enable_workflow_memory
         self._shared_context_utility = context_utility
         self._context_utility: Optional[ContextUtility] = (
             None  # Will be initialized when needed
@@ -430,8 +437,8 @@ class SingleAgentWorker(Worker):
 
             # collect conversation from working agent to
             # accumulator for workflow memory
-            # Only transfer memory if context_utility was explicitly provided
-            if self._shared_context_utility is not None:
+            # Only transfer memory if workflow memory is enabled
+            if self.enable_workflow_memory:
                 accumulator = self._get_conversation_accumulator()
 
                 # transfer all memory records from working agent to accumulator
