@@ -244,7 +244,10 @@ def test_conversation_history_removal_and_summary_push(
         backend_role = call_args[0][1]  # Second argument (role)
 
         # Verify the summary message content
-        assert "[Context Summary from Previous Conversation]" in summary_message.content
+        assert (
+            "[Context Summary from Previous Conversation]"
+            in summary_message.content
+        )
         assert summary_text in summary_message.content
         assert backend_role == OpenAIBackendRole.USER
 
