@@ -71,7 +71,7 @@ class TerminalBench(Harness):  # type: ignore[misc]
         global_test_timeout_sec: Optional[float] = None,
         **kwargs,
     ):
-        self.chat_agent = ChatAgent
+        self.chat_agent = chat_agent
         super().__init__(
             output_path,
             run_id,
