@@ -50,7 +50,7 @@ def create_math_agent() -> ChatAgent:
     )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_5_MINI,
+        model_type=ModelType.DEFAULT,
         model_config_dict=ChatGPTConfig().as_dict(),
     )
     return ChatAgent(
@@ -76,8 +76,8 @@ def create_writer_agent() -> ChatAgent:
         ),
     )
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_5_MINI,
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
         model_config_dict=ChatGPTConfig().as_dict(),
     )
     return ChatAgent(system_message=writer_msg, model=model)
@@ -100,6 +100,7 @@ def demonstrate_first_session():
     workforce.add_single_agent_worker(
         description="math_expert",
         worker=math_agent,
+        enable_workflow_memory=True,  # Enable to save workflows later
     )
 
     # Add writer agent without tools
@@ -107,6 +108,7 @@ def demonstrate_first_session():
     workforce.add_single_agent_worker(
         description="content_writer",
         worker=writer_agent,
+        enable_workflow_memory=True,  # Enable to save workflows later
     )
 
     # Assign one task to each agent
@@ -153,6 +155,7 @@ def demonstrate_second_session():
         description="math_expert",  # Same description = loads matching
         # workflow
         worker=math_agent,
+        enable_workflow_memory=False,  # Not saving in this session
     )
 
     writer_agent = create_writer_agent()
@@ -160,6 +163,7 @@ def demonstrate_second_session():
         description="content_writer",  # Same description = loads
         # matching workflow
         worker=writer_agent,
+        enable_workflow_memory=False,  # Not saving in this session
     )
 
     # Load previous workflows
