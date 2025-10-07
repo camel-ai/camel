@@ -12,70 +12,18 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-"""
-Comprehensive tests for streaming token counting functionality.
-
-This module tests the streaming token counting capabilities across different
-providers, including OpenAI's stream_options feature and other "
-        "provider-specific
-streaming usage extraction methods.
-"""
-
 from typing import AsyncIterator, Iterator
 from unittest.mock import Mock
 
 import pytest
 
-# Import token counters with conditional availability
-try:
-    from camel.utils import OpenAITokenCounter
-
-    OPENAI_AVAILABLE = True
-except ImportError:
-    OPENAI_AVAILABLE = False
-
-    class MockOpenAITokenCounter:
-        def __init__(self, *args, **kwargs):
-            pass
-
-
-try:
-    from camel.utils import AnthropicTokenCounter
-
-    ANTHROPIC_AVAILABLE = True
-except ImportError:
-    ANTHROPIC_AVAILABLE = False
-
-    class MockAnthropicTokenCounter:
-        def __init__(self, *args, **kwargs):
-            pass
-
-
-try:
-    from camel.utils import LiteLLMTokenCounter
-
-    LITELLM_AVAILABLE = True
-except ImportError:
-    LITELLM_AVAILABLE = False
-
-    class MockLiteLLMTokenCounter:
-        def __init__(self, *args, **kwargs):
-            pass
-
-
-try:
-    from camel.utils import MistralTokenCounter
-
-    MISTRAL_AVAILABLE = True
-except ImportError:
-    MISTRAL_AVAILABLE = False
-
-    class MockMistralTokenCounter:
-        def __init__(self, *args, **kwargs):
-            pass
-
-
 from camel.types import ModelType
+from camel.utils import (
+    AnthropicTokenCounter,
+    LiteLLMTokenCounter,
+    MistralTokenCounter,
+    OpenAITokenCounter,
+)
 
 
 class TestOpenAIStreamingTokenCounter:
@@ -83,8 +31,6 @@ class TestOpenAIStreamingTokenCounter:
 
     def test_extract_usage_from_sync_streaming_response(self):
         """Test extracting usage from synchronous OpenAI streaming response."""
-        if not OPENAI_AVAILABLE:
-            pytest.skip("OpenAI not available")
 
         counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
 
@@ -120,8 +66,6 @@ class TestOpenAIStreamingTokenCounter:
     @pytest.mark.asyncio
     async def test_extract_usage_from_async_streaming_response(self):
         """Test extracting usage from async OpenAI streaming response."""
-        if not OPENAI_AVAILABLE:
-            pytest.skip("OpenAI not available")
 
         counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
 
@@ -158,8 +102,6 @@ class TestOpenAIStreamingTokenCounter:
 
     def test_extract_usage_from_streaming_response_no_usage(self):
         """Test streaming response without usage data."""
-        if not OPENAI_AVAILABLE:
-            pytest.skip("OpenAI not available")
 
         counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
 
@@ -181,8 +123,6 @@ class TestOpenAIStreamingTokenCounter:
 
     def test_extract_usage_from_streaming_response_early_usage(self):
         """Test streaming response with usage data in middle chunk."""
-        if not OPENAI_AVAILABLE:
-            pytest.skip("OpenAI not available")
 
         counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
 
@@ -221,8 +161,6 @@ class TestAnthropicStreamingTokenCounter:
 
     def test_extract_usage_from_sync_streaming_response(self):
         """Test extracting usage from sync Anthropic streaming response."""
-        if not ANTHROPIC_AVAILABLE:
-            pytest.skip("Anthropic not available")
 
         counter = AnthropicTokenCounter("claude-3-sonnet-20240229")
 
@@ -250,8 +188,6 @@ class TestAnthropicStreamingTokenCounter:
     @pytest.mark.asyncio
     async def test_extract_usage_from_async_streaming_response(self):
         """Test extracting usage from async Anthropic streaming response."""
-        if not ANTHROPIC_AVAILABLE:
-            pytest.skip("Anthropic not available")
 
         counter = AnthropicTokenCounter("claude-3-sonnet-20240229")
 
@@ -271,14 +207,63 @@ class TestAnthropicStreamingTokenCounter:
         assert usage['completion_tokens'] == 12
         assert usage['total_tokens'] == 20
 
+    def test_extract_usage_from_streaming_response_no_usage(self):
+        """Test Anthropic streaming response without usage data."""
+
+        counter = AnthropicTokenCounter("claude-3-sonnet-20240229")
+
+        def mock_anthropic_stream_no_usage() -> Iterator[Mock]:
+            chunk1 = Mock()
+            chunk1.usage = None
+            yield chunk1
+
+            chunk2 = Mock()
+            chunk2.usage = None
+            yield chunk2
+
+        usage = counter.extract_usage_from_streaming_response(
+            mock_anthropic_stream_no_usage()
+        )
+        assert usage is None
+
+    def test_extract_usage_from_streaming_response_early_usage(self):
+        """Test Anthropic streaming response with usage
+        data in middle chunk.
+        """
+
+        counter = AnthropicTokenCounter("claude-3-sonnet-20240229")
+
+        def mock_anthropic_stream_early_usage() -> Iterator[Mock]:
+            chunk1 = Mock()
+            chunk1.usage = None
+            yield chunk1
+
+            # Usage in middle chunk
+            chunk2 = Mock()
+            chunk2.usage = Mock()
+            chunk2.usage.input_tokens = 25
+            chunk2.usage.output_tokens = 35
+            yield chunk2
+
+            chunk3 = Mock()
+            chunk3.usage = None
+            yield chunk3
+
+        usage = counter.extract_usage_from_streaming_response(
+            mock_anthropic_stream_early_usage()
+        )
+
+        assert usage is not None
+        assert usage['prompt_tokens'] == 25
+        assert usage['completion_tokens'] == 35
+        assert usage['total_tokens'] == 60
+
 
 class TestLiteLLMStreamingTokenCounter:
     """Test streaming token counting for LiteLLM models."""
 
     def test_extract_usage_from_sync_streaming_response(self):
         """Test extracting usage from sync LiteLLM streaming response."""
-        if not LITELLM_AVAILABLE:
-            pytest.skip("LiteLLM not available")
 
         counter = LiteLLMTokenCounter(ModelType.GPT_4O_MINI)
 
@@ -310,8 +295,6 @@ class TestMistralStreamingTokenCounter:
 
     def test_extract_usage_from_sync_streaming_response(self):
         """Test extracting usage from sync Mistral streaming response."""
-        if not MISTRAL_AVAILABLE:
-            pytest.skip("Mistral not available")
 
         counter = MistralTokenCounter(ModelType.MISTRAL_LARGE)
 
@@ -336,14 +319,83 @@ class TestMistralStreamingTokenCounter:
         assert usage['completion_tokens'] == 27
         assert usage['total_tokens'] == 45  # Should be calculated
 
+    @pytest.mark.asyncio
+    async def test_extract_usage_from_async_streaming_response(self):
+        """Test extracting usage from async Mistral streaming response."""
+
+        counter = MistralTokenCounter(ModelType.MISTRAL_LARGE)
+
+        async def mock_mistral_async_stream() -> AsyncIterator[Mock]:
+            chunk1 = Mock()
+            chunk1.usage = Mock()
+            chunk1.usage.prompt_tokens = 40
+            chunk1.usage.completion_tokens = 20
+            yield chunk1
+
+        usage = await counter.extract_usage_from_async_streaming_response(
+            mock_mistral_async_stream()
+        )
+
+        assert usage is not None
+        assert usage['prompt_tokens'] == 40
+        assert usage['completion_tokens'] == 20
+        assert usage['total_tokens'] == 60
+
+    def test_extract_usage_from_streaming_response_no_usage(self):
+        """Test Mistral streaming response without usage data."""
+
+        counter = MistralTokenCounter(ModelType.MISTRAL_LARGE)
+
+        def mock_mistral_stream_no_usage() -> Iterator[Mock]:
+            chunk1 = Mock()
+            chunk1.usage = None
+            yield chunk1
+
+            chunk2 = Mock()
+            chunk2.usage = None
+            yield chunk2
+
+        usage = counter.extract_usage_from_streaming_response(
+            mock_mistral_stream_no_usage()
+        )
+        assert usage is None
+
+    def test_extract_usage_from_streaming_response_early_usage(self):
+        """Test Mistral streaming response with usage data in middle chunk."""
+
+        counter = MistralTokenCounter(ModelType.MISTRAL_LARGE)
+
+        def mock_mistral_stream_early_usage() -> Iterator[Mock]:
+            chunk1 = Mock()
+            chunk1.usage = None
+            yield chunk1
+
+            # Usage in middle chunk
+            chunk2 = Mock()
+            chunk2.usage = Mock()
+            chunk2.usage.prompt_tokens = 32
+            chunk2.usage.completion_tokens = 28
+            yield chunk2
+
+            chunk3 = Mock()
+            chunk3.usage = None
+            yield chunk3
+
+        usage = counter.extract_usage_from_streaming_response(
+            mock_mistral_stream_early_usage()
+        )
+
+        assert usage is not None
+        assert usage['prompt_tokens'] == 32
+        assert usage['completion_tokens'] == 28
+        assert usage['total_tokens'] == 60
+
 
 class TestStreamingTokenCountingEdgeCases:
     """Test edge cases and error handling for streaming token counting."""
 
     def test_empty_stream(self):
         """Test handling of empty streams."""
-        if not OPENAI_AVAILABLE:
-            pytest.skip("OpenAI not available")
 
         counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
 
@@ -356,8 +408,6 @@ class TestStreamingTokenCountingEdgeCases:
 
     def test_stream_with_exception(self):
         """Test handling of streams that raise exceptions."""
-        if not OPENAI_AVAILABLE:
-            pytest.skip("OpenAI not available")
 
         counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
 
@@ -374,8 +424,6 @@ class TestStreamingTokenCountingEdgeCases:
     @pytest.mark.asyncio
     async def test_async_stream_with_exception(self):
         """Test handling of async streams that raise exceptions."""
-        if not OPENAI_AVAILABLE:
-            pytest.skip("OpenAI not available")
 
         counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
 
@@ -393,8 +441,6 @@ class TestStreamingTokenCountingEdgeCases:
 
     def test_mixed_stream_types(self):
         """Test handling of unsupported stream types."""
-        if not OPENAI_AVAILABLE:
-            pytest.skip("OpenAI not available")
 
         counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
 
@@ -402,88 +448,5 @@ class TestStreamingTokenCountingEdgeCases:
         assert usage is None
 
 
-class TestStreamingUsageUtils:
-    """Test streaming usage utility functions."""
-
-    def test_enable_streaming_usage_for_openai(self):
-        """Test enabling streaming usage for OpenAI configuration."""
-        from examples.token_counter.streaming_token_counting_utils import (
-            enable_streaming_usage_for_openai,
-        )
-
-        config = {"stream": True, "temperature": 0.7}
-        updated_config = enable_streaming_usage_for_openai(config)
-
-        assert updated_config["stream"] is True
-        assert updated_config["temperature"] == 0.7
-        assert updated_config["stream_options"]["include_usage"] is True
-
-    def test_enable_streaming_usage_for_openai_no_stream(self):
-        """Test that stream_options is not added when streaming is disabled."""
-        from examples.token_counter.streaming_token_counting_utils import (
-            enable_streaming_usage_for_openai,
-        )
-
-        config = {"stream": False, "temperature": 0.7}
-        updated_config = enable_streaming_usage_for_openai(config)
-
-        assert "stream_options" not in updated_config
-
-    def test_get_streaming_usage_config_for_provider(self):
-        """Test provider-specific streaming configuration."""
-        from examples.token_counter.streaming_token_counting_utils import (
-            get_streaming_usage_config_for_provider,
-        )
-
-        base_config = {"stream": True, "temperature": 0.5}
-
-        openai_config = get_streaming_usage_config_for_provider(
-            "openai", base_config
-        )
-        assert openai_config["stream_options"]["include_usage"] is True
-
-        anthropic_config = get_streaming_usage_config_for_provider(
-            "anthropic", base_config
-        )
-        assert "stream_options" not in anthropic_config
-
-        unknown_config = get_streaming_usage_config_for_provider(
-            "unknown", base_config
-        )
-        assert unknown_config == base_config
-
-    def test_validate_streaming_usage_support(self):
-        """Test validation of streaming usage support."""
-        from examples.token_counter.streaming_token_counting_utils import (
-            validate_streaming_usage_support,
-        )
-
-        openai_config = {
-            "stream": True,
-            "stream_options": {"include_usage": True},
-        }
-        assert (
-            validate_streaming_usage_support("openai", openai_config) is True
-        )
-
-        openai_config_bad = {"stream": True}
-        assert (
-            validate_streaming_usage_support("openai", openai_config_bad)
-            is False
-        )
-
-        anthropic_config = {"stream": True}
-        assert (
-            validate_streaming_usage_support("anthropic", anthropic_config)
-            is True
-        )
-
-        non_streaming_config = {"stream": False}
-        assert (
-            validate_streaming_usage_support("openai", non_streaming_config)
-            is True
-        )
-
-
 if __name__ == "__main__":
-    pytest.main([__file__])
+    pytest.main([__file__, "-v"])

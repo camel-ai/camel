@@ -29,7 +29,6 @@ from typing import (
     Union,
 )
 
-from deprecation import deprecated  # type: ignore[import-untyped]
 from PIL import Image
 
 from camel.logger import get_logger
@@ -97,7 +96,9 @@ class BaseTokenCounter(ABC):
             response: The response object from the model API call.
 
         Returns:
-            Dict with keys: prompt_tokens, completion_tokens, total_tokens
+            Dict with keys: prompt_tokens, completion_tokens, total_tokens,
+            and optionally cached_tokens or cache-related fields if supported
+            by the provider.
             None if usage data not available
         """
         pass
@@ -208,9 +209,13 @@ class BaseTokenCounter(ABC):
         return None
 
     @abstractmethod
-    @deprecated('Use extract_usage_from_response when possible')
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list.
+
+        .. note::
+            This method provides estimation-based token counting.
+            For more accurate token counts from actual API responses,
+            use :meth:`extract_usage_from_response` when possible.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
@@ -301,19 +306,28 @@ class OpenAITokenCounter(BaseTokenCounter):
             response: OpenAI response object (ChatCompletion or similar)
 
         Returns:
-            Dict with keys: prompt_tokens, completion_tokens, total_tokens
+            Dict with keys: prompt_tokens, completion_tokens, total_tokens,
+            cached_tokens (if available)
             None if usage data not available
         """
         try:
             if hasattr(response, 'usage') and response.usage is not None:
                 usage = response.usage
-                return {
+                result = {
                     'prompt_tokens': getattr(usage, 'prompt_tokens', 0),
                     'completion_tokens': getattr(
                         usage, 'completion_tokens', 0
                     ),
                     'total_tokens': getattr(usage, 'total_tokens', 0),
                 }
+                # Include cached_tokens if available (for prompt caching)
+                if hasattr(usage, 'prompt_tokens_details'):
+                    details = usage.prompt_tokens_details
+                    if hasattr(details, 'cached_tokens'):
+                        result['cached_tokens'] = getattr(
+                            details, 'cached_tokens', 0
+                        )
+                return result
 
         except Exception as e:
             logger.debug(f"Failed to extract usage from OpenAI response: {e}")
@@ -482,7 +496,8 @@ class AnthropicTokenCounter(BaseTokenCounter):
             response: Anthropic response object (Message or similar)
 
         Returns:
-            Dict with keys: prompt_tokens, completion_tokens, total_tokens
+            Dict with keys: prompt_tokens, completion_tokens, total_tokens,
+            cache_creation_input_tokens, cache_read_input_tokens (if available)
             None if usage data not available
         """
         try:
@@ -490,11 +505,21 @@ class AnthropicTokenCounter(BaseTokenCounter):
                 usage = response.usage
                 input_tokens = getattr(usage, 'input_tokens', 0)
                 output_tokens = getattr(usage, 'output_tokens', 0)
-                return {
+                result = {
                     'prompt_tokens': input_tokens,
                     'completion_tokens': output_tokens,
                     'total_tokens': input_tokens + output_tokens,
                 }
+                # Include Anthropic prompt caching fields if available
+                cache_creation = getattr(
+                    usage, 'cache_creation_input_tokens', None
+                )
+                cache_read = getattr(usage, 'cache_read_input_tokens', None)
+                if cache_creation is not None:
+                    result['cache_creation_input_tokens'] = cache_creation
+                if cache_read is not None:
+                    result['cache_read_input_tokens'] = cache_read
+                return result
 
         except Exception as e:
             logger.debug(
@@ -682,11 +707,21 @@ class MistralTokenCounter(BaseTokenCounter):
                 usage = response.usage
                 prompt_tokens = getattr(usage, 'prompt_tokens', 0)
                 completion_tokens = getattr(usage, 'completion_tokens', 0)
-                return {
+                total_tokens = getattr(
+                    usage, 'total_tokens', prompt_tokens + completion_tokens
+                )
+                result = {
                     'prompt_tokens': prompt_tokens,
                     'completion_tokens': completion_tokens,
-                    'total_tokens': prompt_tokens + completion_tokens,
+                    'total_tokens': total_tokens,
                 }
+                # Include cached tokens if available (for prompt caching)
+                if hasattr(usage, 'prompt_tokens_details'):
+                    details = usage.prompt_tokens_details
+                    cached = getattr(details, 'cached_tokens', None)
+                    if cached is not None:
+                        result['cached_tokens'] = cached
+                return result
 
         except Exception as e:
             logger.debug(f"Failed to extract usage from Mistral response: {e}")
