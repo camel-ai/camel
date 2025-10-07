@@ -67,6 +67,7 @@ def mock_agent():
 
     # Set up required attributes
     agent._original_system_message = mock_system_message
+    agent._system_message = mock_system_message
     agent.system_message = mock_system_message
 
     # Create mock memory with clear method

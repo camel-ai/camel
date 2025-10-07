@@ -83,7 +83,7 @@ parametrize = pytest.mark.parametrize(
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_5_MINI,
+            model_type=ModelType.DEFAULT,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
