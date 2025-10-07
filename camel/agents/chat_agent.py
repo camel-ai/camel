@@ -1130,7 +1130,58 @@ class ChatAgent(BaseAgent):
             for message in messages:
                 role = message.get('role', 'unknown')
                 content = message.get('content', '')
-                if content:
+
+                # Handle tool call messages (assistant calling tools)
+                tool_calls = message.get('tool_calls')
+                if tool_calls and isinstance(tool_calls, (list, tuple)):
+                    for tool_call in tool_calls:
+                        # Handle both dict and object formats
+                        if isinstance(tool_call, dict):
+                            func_name = tool_call.get('function', {}).get(
+                                'name', 'unknown_tool'
+                            )
+                            func_args_str = tool_call.get('function', {}).get(
+                                'arguments', '{}'
+                            )
+                        else:
+                            # Handle object format (Pydantic or similar)
+                            func_name = getattr(
+                                getattr(tool_call, 'function', None),
+                                'name',
+                                'unknown_tool',
+                            )
+                            func_args_str = getattr(
+                                getattr(tool_call, 'function', None),
+                                'arguments',
+                                '{}',
+                            )
+
+                        # Parse and format arguments for readability
+                        try:
+                            import json
+
+                            args_dict = json.loads(func_args_str)
+                            args_formatted = ', '.join(
+                                f"{k}={v}" for k, v in args_dict.items()
+                            )
+                        except (json.JSONDecodeError, ValueError, TypeError):
+                            args_formatted = func_args_str
+
+                        conversation_lines.append(
+                            f"[TOOL CALL] {func_name}({args_formatted})"
+                        )
+
+                # Handle tool response messages
+                elif role == 'tool':
+                    tool_name = message.get('name', 'unknown_tool')
+                    if not content:
+                        content = str(message.get('content', ''))
+                    conversation_lines.append(
+                        f"[TOOL RESULT] {tool_name} → {content}"
+                    )
+
+                # Handle regular content messages (user/assistant/system)
+                elif content:
                     conversation_lines.append(f"{role}: {content}")
 
             conversation_text = "\n".join(conversation_lines).strip()
