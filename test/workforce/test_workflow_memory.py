@@ -241,9 +241,9 @@ class TestSingleAgentWorkerWorkflow:
 
             # Get the filename that was loaded (second argument)
             loaded_filename = (
-                mock_context_utility.load_markdown_context_to_memory.call_args[0][
-                    1
-                ]
+                mock_context_utility.load_markdown_context_to_memory.call_args[
+                    0
+                ][1]
             )
 
             # The loaded file should be 'data_analyst_workflow' (without .md)
@@ -399,9 +399,11 @@ class TestWorkforceWorkflowMemoryMethods:
 
         Tests the following internal behavior:
         - Workforce iteration through child workers
-        - SingleAgentWorker validation logic (_validate_workflow_save_requirements)
+        - SingleAgentWorker validation logic
+        (_validate_workflow_save_requirements)
         - Context utility setup and agent configuration
-        - Filename generation from worker description (_generate_workflow_filename)
+        - Filename generation from worker description
+        (_generate_workflow_filename)
         - Workflow prompt preparation (_prepare_workflow_prompt)
         - Agent selection for summarization (_select_agent_for_summarization)
         - Worker metadata addition to results
@@ -452,7 +454,8 @@ class TestWorkforceWorkflowMemoryMethods:
             assert worker.worker._context_utility is not None
 
             # Verify ChatAgent.summarize was called with correct parameters
-            # (validates filename generation, prompt preparation, agent selection)
+            # (validates filename generation, prompt preparation, agent
+            # selection)
             mock_summarize.assert_called_once()
             call_kwargs = mock_summarize.call_args[1]
 
