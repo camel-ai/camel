@@ -103,11 +103,11 @@ def test_chat_agent(model, step_call_count=3):
     assistant_without_sys_msg = ChatAgent(model=model)
 
     assert str(assistant_with_sys_msg) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_5_MINI})"
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.DEFAULT})"
     )
     assert str(assistant_without_sys_msg) == (
         "ChatAgent(assistant, "
-        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_5_MINI)})"
+        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.DEFAULT)})"
     )
 
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
