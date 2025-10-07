@@ -23,6 +23,8 @@ from collections import deque
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from colorama import Fore
+
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
 from camel.logger import get_logger
@@ -428,28 +430,30 @@ class SingleAgentWorker(Worker):
 
             # collect conversation from working agent to
             # accumulator for workflow memory
-            accumulator = self._get_conversation_accumulator()
+            # Only transfer memory if context_utility was explicitly provided
+            if self._shared_context_utility is not None:
+                accumulator = self._get_conversation_accumulator()
 
-            # transfer all memory records from working agent to accumulator
-            try:
-                # retrieve all context records from the working agent
-                work_records = worker_agent.memory.retrieve()
+                # transfer all memory records from working agent to accumulator
+                try:
+                    # retrieve all context records from the working agent
+                    work_records = worker_agent.memory.retrieve()
 
-                # write these records to the accumulator's memory
-                memory_records = [
-                    record.memory_record for record in work_records
-                ]
-                accumulator.memory.write_records(memory_records)
+                    # write these records to the accumulator's memory
+                    memory_records = [
+                        record.memory_record for record in work_records
+                    ]
+                    accumulator.memory.write_records(memory_records)
 
-                logger.debug(
-                    f"Transferred {len(memory_records)} memory records to "
-                    f"accumulator"
-                )
+                    logger.debug(
+                        f"Transferred {len(memory_records)} memory records to "
+                        f"accumulator"
+                    )
 
-            except Exception as e:
-                logger.warning(
-                    f"Failed to transfer conversation to accumulator: {e}"
-                )
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to transfer conversation to accumulator: {e}"
+                    )
 
         except Exception as e:
             logger.error(
@@ -497,6 +501,7 @@ class SingleAgentWorker(Worker):
         # Store the actual token usage for this specific task
         task.additional_info["token_usage"] = {"total_tokens": total_tokens}
 
+        print(f"======\n{Fore.GREEN}Response from {self}:{Fore.RESET}")
         logger.info(f"Response from {self}:")
 
         if not self.use_structured_output_handler:
@@ -510,6 +515,10 @@ class SingleAgentWorker(Worker):
                     failed=True,
                 )
 
+        color = Fore.RED if task_result.failed else Fore.GREEN  # type: ignore[union-attr]
+        print(
+            f"\n{color}{task_result.content}{Fore.RESET}\n======",  # type: ignore[union-attr]
+        )
         if task_result.failed:  # type: ignore[union-attr]
             logger.error(f"{task_result.content}")  # type: ignore[union-attr]
         else:
@@ -621,7 +630,10 @@ class SingleAgentWorker(Worker):
             }
 
     def load_workflow_memories(
-        self, pattern: Optional[str] = None, max_files_to_load: int = 3
+        self,
+        pattern: Optional[str] = None,
+        max_files_to_load: int = 3,
+        session_id: Optional[str] = None,
     ) -> bool:
         r"""Load workflow memories matching worker description
         from saved files.
@@ -634,6 +646,11 @@ class SingleAgentWorker(Worker):
             pattern (Optional[str]): Custom search pattern for workflow
                 memory files.
                 If None, uses worker description to generate pattern.
+            max_files_to_load (int): Maximum number of workflow files to load.
+                (default: :obj:`3`)
+            session_id (Optional[str]): Specific workforce session ID to load
+                from. If None, searches across all sessions.
+                (default: :obj:`None`)
 
         Returns:
             bool: True if workflow memories were successfully loaded, False
@@ -646,7 +663,7 @@ class SingleAgentWorker(Worker):
                 self.worker.reset_to_original_system_message()
 
             # Find workflow memory files matching the pattern
-            workflow_files = self._find_workflow_files(pattern)
+            workflow_files = self._find_workflow_files(pattern, session_id)
             if not workflow_files:
                 return False
 
@@ -669,12 +686,16 @@ class SingleAgentWorker(Worker):
             )
             return False
 
-    def _find_workflow_files(self, pattern: Optional[str]) -> List[str]:
+    def _find_workflow_files(
+        self, pattern: Optional[str], session_id: Optional[str] = None
+    ) -> List[str]:
         r"""Find and return sorted workflow files matching the pattern.
 
         Args:
             pattern (Optional[str]): Custom search pattern for workflow files.
                 If None, uses worker description to generate pattern.
+            session_id (Optional[str]): Specific session ID to search in.
+                If None, searches across all sessions.
 
         Returns:
             List[str]: Sorted list of workflow file paths (empty if
@@ -702,9 +723,12 @@ class SingleAgentWorker(Worker):
         else:
             base_dir = "workforce_workflows"
 
-        # search across all session directories using wildcard pattern
-        # this finds workflows from any previous workforce session
-        search_path = str(Path(base_dir) / "*" / pattern)
+        # search for workflow files in specified or all session directories
+        if session_id:
+            search_path = str(Path(base_dir) / session_id / pattern)
+        else:
+            # search across all session directories using wildcard pattern
+            search_path = str(Path(base_dir) / "*" / pattern)
         workflow_files = glob.glob(search_path)
 
         if not workflow_files:
