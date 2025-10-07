@@ -34,7 +34,7 @@ from camel.types import (
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_5_MINI,
+    model_type=ModelType.DEFAULT,
 )
 
 model_backend_rsp = ChatCompletion(
