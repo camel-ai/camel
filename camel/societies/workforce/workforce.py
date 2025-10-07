@@ -283,6 +283,7 @@ class Workforce(BaseNode):
         self._pause_event = asyncio.Event()
         self._pause_event.set()  # Initially not paused
         self._stop_requested = False
+        self._skip_requested = False
         self._snapshots: List[WorkforceSnapshot] = []
         self._completed_tasks: List[Task] = []
         self._loop: Optional[asyncio.AbstractEventLoop] = None
@@ -513,6 +514,9 @@ class Workforce(BaseNode):
                 "the Workforce."
             )
 
+    # ------------------------------------------------------------------
+    # Helper for propagating pause control to externally supplied agents
+    # ------------------------------------------------------------------
     def _attach_pause_event_to_agent(self, agent: ChatAgent) -> None:
         r"""Ensure the given ChatAgent shares this workforce's pause_event.
 
@@ -1005,6 +1009,39 @@ class Workforce(BaseNode):
                 f"(event-loop not yet started)."
             )
 
+    async def _async_skip_gracefully(self) -> None:
+        r"""Async implementation of skip_gracefully to run on the event
+        loop.
+        """
+        self._skip_requested = True
+        if self._pause_event.is_set() is False:
+            self._pause_event.set()  # Resume if paused to process skip
+        logger.info(f"Workforce {self.node_id} skip requested.")
+
+    def skip_gracefully(self) -> None:
+        r"""Request workforce to skip current pending tasks and move to next
+        main task from the queue. If no main tasks exist, acts like
+        stop_gracefully.
+
+        This method clears the current pending subtasks and moves to the next
+        main task in the queue if available. Works both when the internal
+        event-loop is alive and when it has not yet been started.
+        """
+
+        if self._loop and not self._loop.is_closed():
+            self._submit_coro_to_loop(self._async_skip_gracefully())
+        else:
+            # Loop not yet created, set the flag synchronously so later
+            # startup will respect it.
+            self._skip_requested = True
+            # Ensure any pending pause is released so that when the loop does
+            # start it can see the skip request and exit.
+            self._pause_event.set()
+            logger.info(
+                f"Workforce {self.node_id} skip requested "
+                f"(event-loop not yet started)."
+            )
+
     def save_snapshot(self, description: str = "") -> None:
         r"""Save current state as a snapshot."""
         snapshot = WorkforceSnapshot(
@@ -1064,36 +1101,148 @@ class Workforce(BaseNode):
         content: str,
         task_id: Optional[str] = None,
         additional_info: Optional[Dict[str, Any]] = None,
+        as_subtask: bool = False,
         insert_position: int = -1,
     ) -> Task:
-        r"""Add a new task to the pending queue."""
-        new_task = Task(
-            content=content,
-            id=task_id or f"human_added_{len(self._pending_tasks)}",
-            additional_info=additional_info,
-        )
-        if insert_position == -1:
-            self._pending_tasks.append(new_task)
-        else:
-            # Convert deque to list, insert, then back to deque
-            tasks_list = list(self._pending_tasks)
-            tasks_list.insert(insert_position, new_task)
-            self._pending_tasks = deque(tasks_list)
+        r"""Add a new task to the workforce.
 
-        logger.info(f"New task added: {new_task.id}")
-        return new_task
+        By default, this method adds a main task that will be decomposed into
+        subtasks. Set `as_subtask=True` to add a task directly to the pending
+        subtask queue without decomposition.
+
+        Args:
+            content (str): The content of the task.
+            task_id (Optional[str], optional): Optional ID for the task.
+                If not provided, a unique ID will be generated.
+            additional_info (Optional[Dict[str, Any]], optional): Optional
+                additional metadata for the task.
+            as_subtask (bool, optional): If True, adds the task directly to
+                the pending subtask queue. If False, adds as a main task that
+                will be decomposed. Defaults to False.
+            insert_position (int, optional): Position to insert the task in
+                the pending queue. Only applies when as_subtask=True.
+                Defaults to -1 (append to end).
+
+        Returns:
+            Task: The created task object.
+        """
+        if as_subtask:
+            new_task = Task(
+                content=content,
+                id=task_id or f"human_added_{len(self._pending_tasks)}",
+                additional_info=additional_info,
+            )
+
+            # Add directly to current pending subtasks
+            if insert_position == -1:
+                self._pending_tasks.append(new_task)
+            else:
+                # Convert deque to list, insert, then back to deque
+                tasks_list = list(self._pending_tasks)
+                tasks_list.insert(insert_position, new_task)
+                self._pending_tasks = deque(tasks_list)
+
+            logger.info(f"New subtask added to pending queue: {new_task.id}")
+            return new_task
+        else:
+            # Add as main task that needs decomposition
+            # Use additional_info to mark this task needs decomposition
+            # Make a copy to avoid modifying user's dict
+            info = additional_info.copy() if additional_info else {}
+            info['_needs_decomposition'] = True
+
+            task_count = sum(
+                1
+                for t in self._pending_tasks
+                if t.additional_info
+                and t.additional_info.get('_needs_decomposition')
+            )
+
+            new_task = Task(
+                content=content,
+                id=task_id or f"main_task_{task_count}",
+                additional_info=info,
+            )
+
+            self._pending_tasks.append(new_task)
+            logger.info(f"New main task added to pending queue: {new_task.id}")
+            return new_task
+
+    def add_main_task(
+        self,
+        content: str,
+        task_id: Optional[str] = None,
+        additional_info: Optional[Dict[str, Any]] = None,
+    ) -> Task:
+        r"""Add a new main task that will be decomposed into subtasks.
+
+        This is an alias for :meth:`add_task` with `as_subtask=False`.
+
+        Args:
+            content (str): The content of the main task.
+            task_id (Optional[str], optional): Optional ID for the task.
+            additional_info (Optional[Dict[str, Any]], optional): Optional
+                additional metadata.
+
+        Returns:
+            Task: The created main task object.
+        """
+        return self.add_task(
+            content=content,
+            task_id=task_id,
+            additional_info=additional_info,
+            as_subtask=False,
+        )
+
+    def add_subtask(
+        self,
+        content: str,
+        task_id: Optional[str] = None,
+        additional_info: Optional[Dict[str, Any]] = None,
+        insert_position: int = -1,
+    ) -> Task:
+        r"""Add a new subtask to the current pending queue.
+
+        This is an alias for :meth:`add_task` with `as_subtask=True`.
+
+        Args:
+            content (str): The content of the subtask.
+            task_id (Optional[str], optional): Optional ID for the task.
+            additional_info (Optional[Dict[str, Any]], optional): Optional
+                additional metadata.
+            insert_position (int, optional): Position to insert the task.
+                Defaults to -1 (append to end).
+
+        Returns:
+            Task: The created subtask object.
+        """
+        return self.add_task(
+            content=content,
+            task_id=task_id,
+            additional_info=additional_info,
+            as_subtask=True,
+            insert_position=insert_position,
+        )
 
     def remove_task(self, task_id: str) -> bool:
-        r"""Remove a task from the pending queue."""
-        # Convert to list to find and remove
-        tasks_list = list(self._pending_tasks)
-        for i, task in enumerate(tasks_list):
+        r"""Remove a task from the pending queue or main task queue.
+
+        Args:
+            task_id (str): The ID of the task to remove.
+
+        Returns:
+            bool: True if task was found and removed, False otherwise.
+        """
+        # Check main task queue first
+        pending_tasks_list = list(self._pending_tasks)
+        for i, task in enumerate(pending_tasks_list):
             if task.id == task_id:
-                tasks_list.pop(i)
-                self._pending_tasks = deque(tasks_list)
-                logger.info(f"Task {task_id} removed.")
+                pending_tasks_list.pop(i)
+                self._pending_tasks = deque(pending_tasks_list)
+                logger.info(f"Task {task_id} removed from pending queue.")
                 return True
-        logger.warning(f"Task {task_id} not found in pending tasks.")
+
+        logger.warning(f"Task {task_id} not found in any task queue.")
         return False
 
     def reorder_tasks(self, task_ids: List[str]) -> bool:
@@ -1208,26 +1357,21 @@ class Workforce(BaseNode):
             "main_task_id": self._task.id if self._task else None,
         }
 
-    @check_if_running(False)
-    async def process_task_async(
-        self, task: Task, interactive: bool = False
-    ) -> Task:
-        r"""Main entry point to process a task asynchronously.
+    async def handle_decompose_append_task(
+        self, task: Task, reset: bool = True
+    ) -> List[Task]:
+        r"""Handle task decomposition and validation with
+        workforce environment functions. Then append to
+        pending tasks if decomposition happened.
 
         Args:
             task (Task): The task to be processed.
-            interactive (bool, optional): If True, enables human-intervention
-                workflow (pause/resume/snapshot). Defaults to False, which
-                runs the task in a blocking one-shot manner.
+            reset (Bool): Should trigger workforce reset (Workforce must not
+                be running). Default: True
 
         Returns:
-            Task: The updated task.
+            List[Task]: The decomposed subtasks or the original task.
         """
-        # Delegate to intervention pipeline when requested to keep
-        # backward-compat.
-        if interactive:
-            return await self._process_task_with_snapshot(task)
-
         if not validate_task_content(task.content, task.id):
             task.state = TaskState.FAILED
             task.result = "Task failed: Invalid or empty content provided"
@@ -1235,10 +1379,16 @@ class Workforce(BaseNode):
                 f"Task {task.id} rejected: Invalid or empty content. "
                 f"Content preview: '{task.content}'"
             )
-            return task
+            return [task]
 
-        self.reset()
+        if reset and self._state != WorkforceState.RUNNING:
+            self.reset()
+            logger.info("Workforce reset before handling task.")
+
+        # Focus on the new task
         self._task = task
+        task.state = TaskState.FAILED
+
         if self.metrics_logger:
             self.metrics_logger.log_task_created(
                 task_id=task.id,
@@ -1246,7 +1396,6 @@ class Workforce(BaseNode):
                 task_type=task.type,
                 metadata=task.additional_info,
             )
-        task.state = TaskState.FAILED
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
         subtasks_result = self._decompose_task(task)
@@ -1272,13 +1421,39 @@ class Workforce(BaseNode):
                     task_type=subtask.type,
                     metadata=subtask.additional_info,
                 )
+
         if subtasks:
-            # If decomposition happened, the original task becomes a container.
-            # We only execute its subtasks.
+            # _pending_tasks will contain both undecomposed
+            # and decomposed tasks, so we use additional_info
+            # to mark the tasks that need decomposition instead
             self._pending_tasks.extendleft(reversed(subtasks))
         else:
             # If no decomposition, execute the original task.
             self._pending_tasks.append(task)
+
+        return subtasks
+
+    @check_if_running(False)
+    async def process_task_async(
+        self, task: Task, interactive: bool = False
+    ) -> Task:
+        r"""Main entry point to process a task asynchronously.
+
+        Args:
+            task (Task): The task to be processed.
+            interactive (bool, optional): If True, enables human-intervention
+                workflow (pause/resume/snapshot). Defaults to False, which
+                runs the task in a blocking one-shot manner.
+
+        Returns:
+            Task: The updated task.
+        """
+        # Delegate to intervention pipeline when requested to keep
+        # backward-compat.
+        if interactive:
+            return await self._process_task_with_snapshot(task)
+
+        subtasks = await self.handle_decompose_append_task(task)
 
         self.set_channel(TaskChannel())
 
@@ -1361,39 +1536,8 @@ class Workforce(BaseNode):
             Task: The updated task.
         """
 
-        if not validate_task_content(task.content, task.id):
-            task.state = TaskState.FAILED
-            task.result = "Task failed: Invalid or empty content provided"
-            logger.warning(
-                f"Task {task.id} rejected: Invalid or empty content. "
-                f"Content preview: '{task.content}'"
-            )
-            return task
+        await self.handle_decompose_append_task(task)
 
-        self.reset()
-        self._task = task
-        self._state = WorkforceState.RUNNING
-        task.state = TaskState.FAILED  # TODO: Add logic for OPEN
-
-        # Decompose the task into subtasks first
-        subtasks_result = self._decompose_task(task)
-
-        # Handle both streaming and non-streaming results
-        if isinstance(subtasks_result, Generator):
-            # This is a generator (streaming mode)
-            subtasks = []
-            for new_tasks in subtasks_result:
-                subtasks.extend(new_tasks)
-        else:
-            # This is a regular list (non-streaming mode)
-            subtasks = subtasks_result
-        if subtasks:
-            # If decomposition happened, the original task becomes a container.
-            # We only execute its subtasks.
-            self._pending_tasks.extendleft(reversed(subtasks))
-        else:
-            # If no decomposition, execute the original task.
-            self._pending_tasks.append(task)
         self.set_channel(TaskChannel())
 
         # Save initial snapshot
@@ -1740,6 +1884,7 @@ class Workforce(BaseNode):
         # Reset intervention state
         self._state = WorkforceState.IDLE
         self._stop_requested = False
+        self._skip_requested = False
         # Handle asyncio.Event in a thread-safe way
         if self._loop and not self._loop.is_closed():
             # If we have a loop, use it to set the event safely
@@ -2671,7 +2816,15 @@ class Workforce(BaseNode):
         tasks_to_assign = [
             task
             for task in self._pending_tasks
-            if task.id not in self._task_dependencies
+            if (
+                task.id not in self._task_dependencies
+                and (
+                    task.additional_info is None
+                    or not task.additional_info.get(
+                        "_needs_decomposition", False
+                    )
+                )
+            )
         ]
         if tasks_to_assign:
             logger.debug(
@@ -2707,6 +2860,27 @@ class Workforce(BaseNode):
         for task in self._pending_tasks:
             # A task must be assigned to be considered for posting
             if task.id in self._task_dependencies:
+                # Skip if task has already been posted to prevent duplicates
+                try:
+                    task_from_channel = await self._channel.get_task_by_id(
+                        task.id
+                    )
+                    # Check if task is already assigned to a worker
+                    if (
+                        task_from_channel
+                        and task_from_channel.assigned_worker_id
+                    ):
+                        logger.debug(
+                            f"Task {task.id} already assigned to "
+                            f"{task_from_channel.assigned_worker_id}, "
+                            f"skipping to prevent duplicate"
+                        )
+                        continue
+                except Exception as e:
+                    logger.info(
+                        f"Task {task.id} non existent in channel. "
+                        f"Assigning task: {e}"
+                    )
                 dependencies = self._task_dependencies[task.id]
                 # Check if all dependencies for this task are in the completed
                 # set and their state is DONE
@@ -3129,6 +3303,124 @@ class Workforce(BaseNode):
         # Use logger.info or print, consistent with existing style
         logger.info(f"Workforce logs dumped to {file_path}")
 
+    async def _handle_skip_task(self) -> bool:
+        r"""Handle skip request by marking pending and in-flight tasks
+        as completed.
+
+        Returns:
+            bool: True if workforce should stop (no independent tasks),
+            False to continue.
+        """
+        logger.info("Skip requested, processing skip logic.")
+
+        # Mark all pending tasks as completed instead of just clearing
+        pending_tasks_to_complete = list(self._pending_tasks)
+        if pending_tasks_to_complete:
+            logger.info(
+                f"Marking {len(pending_tasks_to_complete)} pending tasks "
+                f"as completed."
+            )
+            for task in pending_tasks_to_complete:
+                # Don't remove tasks that need decomposition
+                if task.additional_info and task.additional_info.get(
+                    '_needs_decomposition', False
+                ):
+                    continue
+                # Set task state to DONE and add a completion message
+                task.state = TaskState.DONE
+                task.result = "Task marked as completed due to skip request"
+
+                # Use the existing handle completed task function
+                await self._handle_completed_task(task)
+
+        # Handle in-flight tasks if they exist
+        if self._in_flight_tasks > 0:
+            logger.info(
+                f"Found {self._in_flight_tasks} in-flight tasks. "
+                f"Retrieving and completing them."
+            )
+            try:
+                # Get all in-flight tasks for this publisher from the channel
+                in_flight_tasks = await self._channel.get_in_flight_tasks(
+                    self.node_id
+                )
+                logger.info(
+                    f"Retrieved {len(in_flight_tasks)} in-flight "
+                    f"tasks from channel."
+                )
+
+                for task in in_flight_tasks:
+                    # Set task state to DONE and add a completion message
+                    task.state = TaskState.DONE
+                    task.result = (
+                        "Task marked as completed due to skip request"
+                    )
+
+                    # Remove the task from the channel to avoid hanging
+                    await self._channel.remove_task(task.id)
+
+                    # Decrement in-flight counter
+                    self._decrement_in_flight_tasks(
+                        task.id, "skip request - removed from channel"
+                    )
+
+                    # Handle as completed task to update dependencies
+                    await self._handle_completed_task(task)
+
+                    logger.info(
+                        f"Completed in-flight task {task.id} due "
+                        f"to skip request."
+                    )
+
+            except Exception as e:
+                logger.error(
+                    f"Error handling in-flight tasks during skip: {e}",
+                    exc_info=True,
+                )
+                # Reset in-flight counter to prevent hanging
+                self._in_flight_tasks = 0
+
+        # Check if there are any pending tasks (including those needing
+        # decomposition)
+        if self._pending_tasks:
+            # Check if the first pending task needs decomposition
+            next_task = self._pending_tasks[0]
+            if next_task.additional_info and next_task.additional_info.get(
+                '_needs_decomposition'
+            ):
+                logger.info(
+                    f"Decomposing main task {next_task.id} after skip request."
+                )
+                try:
+                    # Remove the decomposition flag to avoid re-decomposition
+                    next_task.additional_info['_needs_decomposition'] = False
+
+                    # Decompose the task and append subtasks to _pending_tasks
+                    await self.handle_decompose_append_task(
+                        next_task, reset=False
+                    )
+
+                    # Mark the main task as completed and remove from pending
+                    await self._handle_completed_task(next_task)
+                    logger.info(
+                        f"Main task {next_task.id} decomposed after "
+                        f"skip request"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Error decomposing main task {next_task.id} "
+                        f"after skip: {e}",
+                        exc_info=True,
+                    )
+
+            logger.info("Pending tasks available after skip, continuing.")
+            await self._post_ready_tasks()
+            return False  # Continue processing
+        else:
+            # No pending tasks available, act like stop
+            logger.info("No pending tasks available, acting like stop.")
+            return True  # Stop processing
+
     @check_if_running(False)
     async def _listen_to_channel(self) -> None:
         r"""Continuously listen to the channel, post task to the channel and
@@ -3156,6 +3448,75 @@ class Workforce(BaseNode):
                 if self._stop_requested:
                     logger.info("Stop requested, breaking execution loop.")
                     break
+
+                # Check for skip request after potential pause
+                if self._skip_requested:
+                    should_stop = await self._handle_skip_task()
+                    if should_stop:
+                        self._stop_requested = True
+                        break
+
+                    # Reset skip flag
+                    self._skip_requested = False
+                    continue
+
+                # Check if we should decompose a main task
+                # Only decompose when no tasks are in flight and pending queue
+                # is empty
+                if not self._pending_tasks and self._in_flight_tasks == 0:
+                    # All tasks completed, will exit loop
+                    break
+
+                # Check if the first pending task needs decomposition
+                # This happens when add_task(as_subtask=False) was called
+                if self._pending_tasks and self._in_flight_tasks == 0:
+                    next_task = self._pending_tasks[0]
+                    if (
+                        next_task.additional_info
+                        and next_task.additional_info.get(
+                            '_needs_decomposition'
+                        )
+                    ):
+                        logger.info(f"Decomposing main task: {next_task.id}")
+                        try:
+                            # Remove the decomposition flag to avoid
+                            # re-decomposition
+                            next_task.additional_info[
+                                '_needs_decomposition'
+                            ] = False
+
+                            # Decompose the task and append subtasks to
+                            # _pending_tasks
+                            await self.handle_decompose_append_task(
+                                next_task, reset=False
+                            )
+
+                            # Mark the main task as completed (decomposition
+                            # successful) and Remove it from pending tasks
+                            await self._handle_completed_task(next_task)
+                            logger.info(
+                                f"Main task {next_task.id} decomposed and "
+                                f"ready for processing"
+                            )
+                        except Exception as e:
+                            logger.error(
+                                f"Error decomposing main task {next_task.id}: "
+                                f"{e}",
+                                exc_info=True,
+                            )
+                            # Revert back to the queue for retry later if
+                            # decomposition failed
+                            if not self._pending_tasks:
+                                self._pending_tasks.appendleft(next_task)
+                            else:
+                                logger.warning(
+                                    "Pending tasks exist after decomposition "
+                                    "error."
+                                )
+
+                        # Immediately assign and post the transferred tasks
+                        await self._post_ready_tasks()
+                        continue
 
                 # Save snapshot before processing next task
                 if self._pending_tasks:

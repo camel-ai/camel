@@ -213,7 +213,7 @@ We are a community-driven research collective comprising over 100 researchers de
 </div>
 
 <div align="center">
-  <a href="https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag.html">
+  <a href="https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag">
     <img src="docs/images/rag_pipeline.png" alt="RAG Pipeline">
   </a>
 </div>
@@ -601,7 +601,7 @@ The source code is licensed under Apache 2.0.
 <br>
 
 [docs-image]: https://img.shields.io/badge/Documentation-EB3ECC
-[docs-url]: https://camel-ai.github.io/camel/index.html
+[docs-url]: https://camel-ai.github.io/camel/index
 [star-image]: https://img.shields.io/github/stars/camel-ai/camel?label=stars&logo=github&color=brightgreen
 [star-url]: https://github.com/camel-ai/camel/stargazers
 [package-license-image]: https://img.shields.io/badge/License-Apache_2.0-blue.svg

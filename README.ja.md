@@ -213,7 +213,7 @@
 </div>
 
 <div align="center">
-  <a href="https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag.html">
+  <a href="https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag">
     <img src="docs/images/rag_pipeline.png" alt="RAGパイプライン">
   </a>
 </div>
@@ -299,10 +299,10 @@ pip install camel-ai
 
 さまざまなタイプのエージェント、その役割、およびそれらのアプリケーションを探索してください。
 
-- **[初めてのエージェントを作成](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent.html)**
-- **[初めてのエージェント社会を作成](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society.html)**
-- **[具現化されたエージェント](https://docs.camel-ai.org/cookbooks/advanced_features/embodied_agents.html)**
-- **[批評エージェント](https://docs.camel-ai.org/cookbooks/advanced_features/critic_agents_and_tree_search.html)**
+- **[初めてのエージェントを作成](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent)**
+- **[初めてのエージェント社会を作成](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society)**
+- **[具現化されたエージェント](https://docs.camel-ai.org/cookbooks/advanced_features/embodied_agents)**
+- **[批評エージェント](https://docs.camel-ai.org/cookbooks/advanced_features/critic_agents_and_tree_search)**
 
 ### ヘルプを求める
 
@@ -323,19 +323,19 @@ CAMEL-AIエージェントと社会を構築、運用、強化するためのコ
 
 | モジュール | 説明 |
 |:---|:---|
-| **[エージェント](https://docs.camel-ai.org/key_modules/agents.html)** | 自律運用のためのコアエージェントアーキテクチャと動作。 |
-| **[エージェント社会](https://docs.camel-ai.org/key_modules/society.html)** | マルチエージェントシステムと協力の構築と管理のためのコンポーネント。 |
-| **[データ生成](https://docs.camel-ai.org/key_modules/datagen.html)** | 合成データの作成と拡張のためのツールと方法。 |
-| **[モデル](https://docs.camel-ai.org/key_modules/models.html)** | エージェントインテリジェンスのためのモデルアーキテクチャとカスタマイズオプション。 |
-| **[ツール](https://docs.camel-ai.org/key_modules/tools.html)** | 専門的なエージェントタスクのためのツール統合。 |
-| **[メモリ](https://docs.camel-ai.org/key_modules/memory.html)** | エージェント状態管理のためのメモリストレージと検索メカニズム。 |
-| **[ストレージ](https://docs.camel-ai.org/key_modules/storages.html)** | エージェントデータと状態のための永続的なストレージソリューション。 |
+| **[エージェント](https://docs.camel-ai.org/key_modules/agents)** | 自律運用のためのコアエージェントアーキテクチャと動作。 |
+| **[エージェント社会](https://docs.camel-ai.org/key_modules/society)** | マルチエージェントシステムと協力の構築と管理のためのコンポーネント。 |
+| **[データ生成](https://docs.camel-ai.org/key_modules/datagen)** | 合成データの作成と拡張のためのツールと方法。 |
+| **[モデル](https://docs.camel-ai.org/key_modules/models)** | エージェントインテリジェンスのためのモデルアーキテクチャとカスタマイズオプション。 |
+| **[ツール](https://docs.camel-ai.org/key_modules/tools)** | 専門的なエージェントタスクのためのツール統合。 |
+| **[メモリ](https://docs.camel-ai.org/key_modules/memory)** | エージェント状態管理のためのメモリストレージと検索メカニズム。 |
+| **[ストレージ](https://docs.camel-ai.org/key_modules/storages)** | エージェントデータと状態のための永続的なストレージソリューション。 |
 | **[ベンチマーク](https://github.com/camel-ai/camel/tree/master/camel/benchmarks)** | パフォーマンス評価とテストフレームワーク。 |
-| **[インタープリタ](https://docs.camel-ai.org/key_modules/interpreters.html)** | コードとコマンドの解釈機能。 |
-| **[データローダー](https://docs.camel-ai.org/key_modules/loaders.html)** | データ取り込みと前処理ツール。 |
-| **[リトリーバー](https://docs.camel-ai.org/key_modules/retrievers.html)** | 知識検索とRAGコンポーネント。 |
+| **[インタープリタ](https://docs.camel-ai.org/key_modules/interpreters)** | コードとコマンドの解釈機能。 |
+| **[データローダー](https://docs.camel-ai.org/key_modules/loaders)** | データ取り込みと前処理ツール。 |
+| **[リトリーバー](https://docs.camel-ai.org/key_modules/retrievers)** | 知識検索とRAGコンポーネント。 |
 | **[ランタイム](https://github.com/camel-ai/camel/tree/master/camel/runtime)** | 実行環境とプロセス管理。 |
-| **[ヒューマン・イン・ザ・ループ](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html)** | 人間による監視と介入のための対話型コンポーネント。 |
+| **[ヒューマン・イン・ザ・ループ](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval)** | 人間による監視と介入のための対話型コンポーネント。 |
 ---
 
 ## 研究
@@ -396,7 +396,7 @@ CAMEL-AIエージェントと社会を構築、運用、強化するためのコ
 
 ### 1. バックエンドとして様々なLLMを活用
 
-詳細については、[`モデルドキュメント`](https://docs.camel-ai.org/key_modules/models.html#)をご覧ください。
+詳細については、[`モデルドキュメント`](https://docs.camel-ai.org/key_modules/models#)をご覧ください。
 
 > **データ（Hugging Faceでホスト）**
 
@@ -425,42 +425,42 @@ CAMEL-AIエージェントと社会で特定の機能を実装するための実
 ### 1. 基本コンセプト
 | クックブック | 説明 |
 |:---|:---|
-| **[初めてのエージェントを作成](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent.html)** | 最初のエージェントを構築するためのステップバイステップガイド。 |
-| **[初めてのエージェント社会を作成](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society.html)** | 協力的なエージェント社会を構築する方法を学びます。 |
-| **[メッセージクックブック](https://docs.camel-ai.org/cookbooks/basic_concepts/agents_message.html)** | エージェントでのメッセージ処理のベストプラクティス。 |
+| **[初めてのエージェントを作成](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent)** | 最初のエージェントを構築するためのステップバイステップガイド。 |
+| **[初めてのエージェント社会を作成](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society)** | 協力的なエージェント社会を構築する方法を学びます。 |
+| **[メッセージクックブック](https://docs.camel-ai.org/cookbooks/basic_concepts/agents_message)** | エージェントでのメッセージ処理のベストプラクティス。 |
 
 ### 2. 高度な機能
 | クックブック | 説明 |
 |:---|:---|
-| **[ツールクックブック](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_tools.html)** | 強化された機能のためのツール統合。 |
-| **[メモリクックブック](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_memory.html)** | エージェントでのメモリシステムの実装。 |
-| **[RAGクックブック](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag.html)** | 検索拡張生成のレシピ。 |
-| **[グラフRAGクックブック](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_graph_rag.html)** | RAGでの知識グラフの活用。 |
-| **[AgentOpsでCAMELエージェントを追跡](https://docs.camel-ai.org/cookbooks/advanced_features/agents_tracking.html)** | 運用でのエージェントの追跡と管理のためのツール。 |
+| **[ツールクックブック](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_tools)** | 強化された機能のためのツール統合。 |
+| **[メモリクックブック](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_memory)** | エージェントでのメモリシステムの実装。 |
+| **[RAGクックブック](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag)** | 検索拡張生成のレシピ。 |
+| **[グラフRAGクックブック](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_graph_rag)** | RAGでの知識グラフの活用。 |
+| **[AgentOpsでCAMELエージェントを追跡](https://docs.camel-ai.org/cookbooks/advanced_features/agents_tracking)** | 運用でのエージェントの追跡と管理のためのツール。 |
 
 ### 3. モデルトレーニング & データ生成
 | クックブック | 説明 |
 |:---|:---|
-| **[CAMELでのデータ生成とUnslothでのファインチューニング](https://docs.camel-ai.org/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html)** | CAMELでデータを生成し、Unslothで効果的にモデルをファインチューニングする方法を学びます。 |
-| **[実関数呼び出しとHermes形式でのデータ生成](https://docs.camel-ai.org/cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html)** | 実関数呼び出しとHermes形式でデータを生成する方法を探索します。 |
-| **[CoTデータ生成とHuggingfaceへのデータアップロード](https://docs.camel-ai.org/cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html)** | CAMELでCoTデータを生成し、Huggingfaceにシームレスにアップロードする方法を発見します。 |
-| **[CoTデータ生成とUnsolthでのSFT Qwen](https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html)** | CAMELとUnsolthでCoTデータを生成してSFT Qwenを使用し、データとモデルをHuggingfaceにシームレスにアップロードする方法を発見します。 |
+| **[CAMELでのデータ生成とUnslothでのファインチューニング](https://docs.camel-ai.org/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B)** | CAMELでデータを生成し、Unslothで効果的にモデルをファインチューニングする方法を学びます。 |
+| **[実関数呼び出しとHermes形式でのデータ生成](https://docs.camel-ai.org/cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format)** | 実関数呼び出しとHermes形式でデータを生成する方法を探索します。 |
+| **[CoTデータ生成とHuggingfaceへのデータアップロード](https://docs.camel-ai.org/cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1)** | CAMELでCoTデータを生成し、Huggingfaceにシームレスにアップロードする方法を発見します。 |
+| **[CoTデータ生成とUnsolthでのSFT Qwen](https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface)** | CAMELとUnsolthでCoTデータを生成してSFT Qwenを使用し、データとモデルをHuggingfaceにシームレスにアップロードする方法を発見します。 |
 
 ### 4. マルチエージェントシステム & アプリケーション
 | クックブック | 説明 |
 |:---|:---|
-| **[レポート & 知識グラフ生成のためのロールプレイングスクレーパー](https://docs.camel-ai.org/cookbooks/applications/roleplaying_scraper.html)** | データスクレイピングとレポート作成のためのロールプレイングエージェントを作成します。 |
-| **[Workforceでハッカソン審査委員会を作成](https://docs.camel-ai.org/cookbooks/multi_agent_society/workforce_judge_committee.html)** | 協力的な審査のためのエージェントチームを構築します。 |
-| **[動的知識グラフロールプレイング：動的で時間的に認識する知識グラフを持つマルチエージェントシステム](https://docs.camel-ai.org/cookbooks/applications/dyamic_knowledge_graph.html)** | 金融アプリケーション向けの動的で時間的に認識する知識グラフを構築します。マルチエージェントシステムを使用して、金融レポート、ニュース記事、研究論文を処理し、トレーダーがデータを分析し、関係を特定し、市場の洞察を明らかにするのを支援します。システムは、データの整合性を確保し、金融意思決定のためのグラフ構造を最適化するために、多様でオプションの要素ノードの重複排除技術も活用します。 |
-| **[Agentic RAGを使用したカスタマーサービスDiscordボット](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html)** | Agentic RAGを使用してDiscord用の堅牢なカスタマーサービスボットを構築する方法を学びます。 |
-| **[ローカルモデルを使用したカスタマーサービスDiscordボット](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html)** | ローカル展開をサポートするAgentic RAGを使用してDiscord用の堅牢なカスタマーサービスボットを構築する方法を学びます。 |
+| **[レポート & 知識グラフ生成のためのロールプレイングスクレーパー](https://docs.camel-ai.org/cookbooks/applications/roleplaying_scraper)** | データスクレイピングとレポート作成のためのロールプレイングエージェントを作成します。 |
+| **[Workforceでハッカソン審査委員会を作成](https://docs.camel-ai.org/cookbooks/multi_agent_society/workforce_judge_committee)** | 協力的な審査のためのエージェントチームを構築します。 |
+| **[動的知識グラフロールプレイング：動的で時間的に認識する知識グラフを持つマルチエージェントシステム](https://docs.camel-ai.org/cookbooks/applications/dyamic_knowledge_graph)** | 金融アプリケーション向けの動的で時間的に認識する知識グラフを構築します。マルチエージェントシステムを使用して、金融レポート、ニュース記事、研究論文を処理し、トレーダーがデータを分析し、関係を特定し、市場の洞察を明らかにするのを支援します。システムは、データの整合性を確保し、金融意思決定のためのグラフ構造を最適化するために、多様でオプションの要素ノードの重複排除技術も活用します。 |
+| **[Agentic RAGを使用したカスタマーサービスDiscordボット](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG)** | Agentic RAGを使用してDiscord用の堅牢なカスタマーサービスボットを構築する方法を学びます。 |
+| **[ローカルモデルを使用したカスタマーサービスDiscordボット](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG)** | ローカル展開をサポートするAgentic RAGを使用してDiscord用の堅牢なカスタマーサービスボットを構築する方法を学びます。 |
 
 ### 5. データ処理
 | クックブック | 説明 |
 |:---|:---|
-| **[ビデオ分析](https://docs.camel-ai.org/cookbooks/data_processing/video_analysis.html)** | ビデオデータ分析におけるエージェントの技術。 |
-| **[Firecrawlを使用してウェブサイトからデータを取得する3つの方法](https://docs.camel-ai.org/cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html)** | Firecrawlを使用してウェブサイトからデータを抽出および処理する3つの方法を探索します。 |
-| **[PDFで動作するAIエージェントを作成](https://docs.camel-ai.org/cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html)** | ChunkrとMistral AIを使用してPDFで動作するAIエージェントを作成する方法を学びます。 |
+| **[ビデオ分析](https://docs.camel-ai.org/cookbooks/data_processing/video_analysis)** | ビデオデータ分析におけるエージェントの技術。 |
+| **[Firecrawlを使用してウェブサイトからデータを取得する3つの方法](https://docs.camel-ai.org/cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl)** | Firecrawlを使用してウェブサイトからデータを抽出および処理する3つの方法を探索します。 |
+| **[PDFで動作するAIエージェントを作成](https://docs.camel-ai.org/cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing)** | ChunkrとMistral AIを使用してPDFで動作するAIエージェントを作成する方法を学びます。 |
 
 <br>
 
@@ -600,7 +600,7 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
 <br>
 
 [docs-image]: https://img.shields.io/badge/Documentation-EB3ECC
-[docs-url]: https://camel-ai.github.io/camel/index.html
+[docs-url]: https://camel-ai.github.io/camel/index
 [star-image]: https://img.shields.io/github/stars/camel-ai/camel?label=stars&logo=github&color=brightgreen
 [star-url]: https://github.com/camel-ai/camel/stargazers
 [package-license-image]: https://img.shields.io/badge/License-Apache_2.0-blue.svg

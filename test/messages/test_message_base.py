@@ -91,6 +91,8 @@ def test_base_message_to_dict(base_message: BaseMessage) -> None:
         "role_type": "user",
         "key": "value",
         "content": "test content",
+        "image_detail": "auto",
+        "video_detail": "auto",
     }
     assert base_message.to_dict() == expected_dict
 
@@ -135,6 +137,8 @@ def test_base_message():
         "role_type": role_type.value,
         **(meta_dict or {}),
         "content": content,
+        "image_detail": "auto",
+        "video_detail": "auto",
     }
 
 
