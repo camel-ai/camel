@@ -38,7 +38,7 @@ logger = get_logger(__name__)
 
 class TerminalBenchAgent(BaseAgent):
     def __init__(self, **kwargs):
-        self.logging_dir = os.getenv("CAMEL_LOG_DIR", None)
+        self.logging_dir = os.getenv("CAMEL_LOG_DIR", ".")
         super().__init__(**kwargs)
 
     @staticmethod
@@ -118,6 +118,8 @@ class TerminalBenchAgent(BaseAgent):
             records: List[dict],
         ) -> List[Tuple[float, str]]:
             r"""Create a timestamped marker from memory records."""
+            from terminal_bench.agents.base_agent import AgentResult # type: ignore[import-untyped]
+            from terminal_bench.harness.models import FailureMode  # type: ignore[import-untyped]
             results = []
             logger.info(f"Total records: {len(records)}")
             for record in records:

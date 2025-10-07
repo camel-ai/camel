@@ -74,25 +74,20 @@ def get_developer_agent_prompt(
         else ""
     )
 
-    OPERATING_ENVIRONMENT_PROMPT = (
-        f"""
+    OPERATING_ENVIRONMENT_PROMPT = f"""
                                     <operating_environment>
                                     - **System**: {system} ({machine}).
                                     """
-        + (
-            """
-                                    Note that the terminal commands and file system operations you perform will be 
+    if "Docker" in system:
+        OPERATING_ENVIRONMENT_PROMPT += """
+                                    Note that the terminal commands and file system operations you perform will be
                                     executed inside a Docker container. But note taking tools will operate on the host system.
                                     """
-        )
-        if "Docker" in system
-        else ""
-        + f"""
+    OPERATING_ENVIRONMENT_PROMPT += f"""
                                     - **Current Date**: {current_date}.
                                     </operating_environment>
 
                                     """
-    )
 
     MANDATORY_INSTRUCTIONS_PROMPT = (
         """
