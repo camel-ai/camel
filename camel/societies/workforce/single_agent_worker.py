@@ -15,14 +15,19 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import glob
+import os
+import re
 import time
 from collections import deque
-from typing import Any, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import AsyncStreamingChatAgentResponse
+from camel.logger import get_logger
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
@@ -30,6 +35,9 @@ from camel.societies.workforce.structured_output_handler import (
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState, is_task_result_insufficient
+from camel.utils.context_utils import ContextUtility, WorkflowSummary
+
+logger = get_logger(__name__)
 
 
 class AgentPool:
@@ -201,6 +209,16 @@ class SingleAgentWorker(Worker):
             support native structured output. When disabled, the workforce
             uses the native response_format parameter.
             (default: :obj:`True`)
+        context_utility (ContextUtility, optional): Shared context utility
+            instance for workflow management. If provided, all workflow
+            operations will use this shared instance instead of creating
+            a new one. This ensures multiple workers share the same session
+            directory. (default: :obj:`None`)
+        enable_workflow_memory (bool, optional): Whether to enable workflow
+            memory accumulation during task execution. When enabled,
+            conversations from all task executions are accumulated for
+            potential workflow saving. Set to True if you plan to call
+            save_workflow_memories(). (default: :obj:`False`)
     """
 
     def __init__(
@@ -212,6 +230,8 @@ class SingleAgentWorker(Worker):
         pool_max_size: int = 10,
         auto_scale_pool: bool = True,
         use_structured_output_handler: bool = True,
+        context_utility: Optional[ContextUtility] = None,
+        enable_workflow_memory: bool = False,
     ) -> None:
         node_id = worker.agent_id
         super().__init__(
@@ -226,6 +246,18 @@ class SingleAgentWorker(Worker):
         )
         self.worker = worker
         self.use_agent_pool = use_agent_pool
+        self.enable_workflow_memory = enable_workflow_memory
+        self._shared_context_utility = context_utility
+        self._context_utility: Optional[ContextUtility] = (
+            None  # Will be initialized when needed
+        )
+
+        # accumulator agent for collecting conversations
+        # from all task processing
+        self._conversation_accumulator: Optional[ChatAgent] = None
+
+        # note: context utility is set on the worker agent during save/load
+        # operations to avoid creating session folders during initialization
 
         self.agent_pool: Optional[AgentPool] = None
         self._cleanup_task: Optional[asyncio.Task] = None
@@ -267,6 +299,24 @@ class SingleAgentWorker(Worker):
         if self.use_agent_pool and self.agent_pool:
             await self.agent_pool.return_agent(agent)
         # If not using pool, agent will be garbage collected
+
+    def _get_context_utility(self) -> ContextUtility:
+        r"""Get context utility with lazy initialization."""
+        if self._context_utility is None:
+            self._context_utility = (
+                self._shared_context_utility
+                or ContextUtility.get_workforce_shared()
+            )
+        return self._context_utility
+
+    def _get_conversation_accumulator(self) -> ChatAgent:
+        r"""Get or create the conversation accumulator agent."""
+        if self._conversation_accumulator is None:
+            # create a clone of the original worker to serve as accumulator
+            self._conversation_accumulator = self.worker.clone(
+                with_memory=False
+            )
+        return self._conversation_accumulator
 
     async def _process_task(
         self, task: Task, dependencies: List[Task]
@@ -385,10 +435,36 @@ class SingleAgentWorker(Worker):
                 usage_info.get("total_tokens", 0) if usage_info else 0
             )
 
+            # collect conversation from working agent to
+            # accumulator for workflow memory
+            # Only transfer memory if workflow memory is enabled
+            if self.enable_workflow_memory:
+                accumulator = self._get_conversation_accumulator()
+
+                # transfer all memory records from working agent to accumulator
+                try:
+                    # retrieve all context records from the working agent
+                    work_records = worker_agent.memory.retrieve()
+
+                    # write these records to the accumulator's memory
+                    memory_records = [
+                        record.memory_record for record in work_records
+                    ]
+                    accumulator.memory.write_records(memory_records)
+
+                    logger.debug(
+                        f"Transferred {len(memory_records)} memory records to "
+                        f"accumulator"
+                    )
+
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to transfer conversation to accumulator: {e}"
+                    )
+
         except Exception as e:
-            print(
-                f"{Fore.RED}Error processing task {task.id}: "
-                f"{type(e).__name__}: {e}{Fore.RESET}"
+            logger.error(
+                f"Error processing task {task.id}: {type(e).__name__}: {e}"
             )
             # Store error information in task result
             task.result = f"{type(e).__name__}: {e!s}"
@@ -433,13 +509,13 @@ class SingleAgentWorker(Worker):
         task.additional_info["token_usage"] = {"total_tokens": total_tokens}
 
         print(f"======\n{Fore.GREEN}Response from {self}:{Fore.RESET}")
+        logger.info(f"Response from {self}:")
 
         if not self.use_structured_output_handler:
             # Handle native structured output parsing
             if task_result is None:
-                print(
-                    f"{Fore.RED}Error in worker step execution: Invalid "
-                    f"task result{Fore.RESET}"
+                logger.error(
+                    "Error in worker step execution: Invalid task result"
                 )
                 task_result = TaskResult(
                     content="Failed to generate valid task result.",
@@ -450,6 +526,10 @@ class SingleAgentWorker(Worker):
         print(
             f"\n{color}{task_result.content}{Fore.RESET}\n======",  # type: ignore[union-attr]
         )
+        if task_result.failed:  # type: ignore[union-attr]
+            logger.error(f"{task_result.content}")  # type: ignore[union-attr]
+        else:
+            logger.info(f"{task_result.content}")  # type: ignore[union-attr]
 
         task.result = task_result.content  # type: ignore[union-attr]
 
@@ -457,9 +537,9 @@ class SingleAgentWorker(Worker):
             return TaskState.FAILED
 
         if is_task_result_insufficient(task):
-            print(
-                f"{Fore.RED}Task {task.id}: Content validation failed - "
-                f"task marked as failed{Fore.RESET}"
+            logger.warning(
+                f"Task {task.id}: Content validation failed - "
+                f"task marked as failed"
             )
             return TaskState.FAILED
         return TaskState.DONE
@@ -489,10 +569,309 @@ class SingleAgentWorker(Worker):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                print(f"Error in pool cleanup: {e}")
+                logger.warning(f"Error in pool cleanup: {e}")
 
     def get_pool_stats(self) -> Optional[dict]:
         r"""Get agent pool statistics if pool is enabled."""
         if self.use_agent_pool and self.agent_pool:
             return self.agent_pool.get_stats()
         return None
+
+    def save_workflow_memories(self) -> Dict[str, Any]:
+        r"""Save the worker's current workflow memories using agent
+        summarization.
+
+        This method generates a workflow summary from the worker agent's
+        conversation history and saves it to a markdown file. The filename
+        is based on the worker's description for easy loading later.
+
+        Returns:
+            Dict[str, Any]: Result dictionary with keys:
+                - status (str): "success" or "error"
+                - summary (str): Generated workflow summary
+                - file_path (str): Path to saved file
+                - worker_description (str): Worker description used
+        """
+        try:
+            # validate requirements
+            validation_error = self._validate_workflow_save_requirements()
+            if validation_error:
+                return validation_error
+
+            # setup context utility and agent
+            context_util = self._get_context_utility()
+            self.worker.set_context_utility(context_util)
+
+            # prepare workflow summarization components
+            filename = self._generate_workflow_filename()
+            structured_prompt = self._prepare_workflow_prompt()
+            agent_to_summarize = self._select_agent_for_summarization(
+                context_util
+            )
+
+            # generate and save workflow summary
+            result = agent_to_summarize.summarize(
+                filename=filename,
+                summary_prompt=structured_prompt,
+                response_format=WorkflowSummary,
+            )
+
+            # add worker metadata and cleanup
+            result["worker_description"] = self.description
+            if self._conversation_accumulator is not None:
+                logger.info(
+                    "Cleaning up conversation accumulator after workflow "
+                    "summarization"
+                )
+                self._conversation_accumulator = None
+
+            return result
+
+        except Exception as e:
+            return {
+                "status": "error",
+                "summary": "",
+                "file_path": None,
+                "worker_description": self.description,
+                "message": f"Failed to save workflow memories: {e!s}",
+            }
+
+    def load_workflow_memories(
+        self,
+        pattern: Optional[str] = None,
+        max_files_to_load: int = 3,
+        session_id: Optional[str] = None,
+    ) -> bool:
+        r"""Load workflow memories matching worker description
+        from saved files.
+
+        This method searches for workflow memory files that match the worker's
+        description and loads them into the agent's memory using
+        ContextUtility.
+
+        Args:
+            pattern (Optional[str]): Custom search pattern for workflow
+                memory files.
+                If None, uses worker description to generate pattern.
+            max_files_to_load (int): Maximum number of workflow files to load.
+                (default: :obj:`3`)
+            session_id (Optional[str]): Specific workforce session ID to load
+                from. If None, searches across all sessions.
+                (default: :obj:`None`)
+
+        Returns:
+            bool: True if workflow memories were successfully loaded, False
+                otherwise.
+        """
+        try:
+            # reset system message to original state before loading
+            # this prevents duplicate workflow context on multiple calls
+            if isinstance(self.worker, ChatAgent):
+                self.worker.reset_to_original_system_message()
+
+            # Find workflow memory files matching the pattern
+            workflow_files = self._find_workflow_files(pattern, session_id)
+            if not workflow_files:
+                return False
+
+            # Load the workflow memory files
+            loaded_count = self._load_workflow_files(
+                workflow_files, max_files_to_load
+            )
+
+            # Report results
+            logger.info(
+                f"Successfully loaded {loaded_count} workflow file(s) for "
+                f"{self.description}"
+            )
+            return loaded_count > 0
+
+        except Exception as e:
+            logger.warning(
+                f"Error loading workflow memories for {self.description}: "
+                f"{e!s}"
+            )
+            return False
+
+    def _find_workflow_files(
+        self, pattern: Optional[str], session_id: Optional[str] = None
+    ) -> List[str]:
+        r"""Find and return sorted workflow files matching the pattern.
+
+        Args:
+            pattern (Optional[str]): Custom search pattern for workflow files.
+                If None, uses worker description to generate pattern.
+            session_id (Optional[str]): Specific session ID to search in.
+                If None, searches across all sessions.
+
+        Returns:
+            List[str]: Sorted list of workflow file paths (empty if
+                validation fails).
+        """
+        # Ensure we have a ChatAgent worker
+        if not isinstance(self.worker, ChatAgent):
+            logger.warning(
+                f"Cannot load workflow: {self.description} worker is not "
+                "a ChatAgent"
+            )
+            return []
+
+        # generate filename-safe search pattern from worker description
+        if pattern is None:
+            # sanitize description: spaces to underscores, remove special chars
+            clean_desc = self.description.lower().replace(" ", "_")
+            clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
+            pattern = f"{clean_desc}_workflow*.md"
+
+        # Get the base workforce_workflows directory
+        camel_workdir = os.environ.get("CAMEL_WORKDIR")
+        if camel_workdir:
+            base_dir = os.path.join(camel_workdir, "workforce_workflows")
+        else:
+            base_dir = "workforce_workflows"
+
+        # search for workflow files in specified or all session directories
+        if session_id:
+            search_path = str(Path(base_dir) / session_id / pattern)
+        else:
+            # search across all session directories using wildcard pattern
+            search_path = str(Path(base_dir) / "*" / pattern)
+        workflow_files = glob.glob(search_path)
+
+        if not workflow_files:
+            logger.info(f"No workflow files found for pattern: {pattern}")
+            return []
+
+        # prioritize most recent sessions by session timestamp in
+        # directory name
+        def extract_session_timestamp(filepath: str) -> str:
+            match = re.search(r'session_(\d{8}_\d{6}_\d{6})', filepath)
+            return match.group(1) if match else ""
+
+        workflow_files.sort(key=extract_session_timestamp, reverse=True)
+        return workflow_files
+
+    def _load_workflow_files(
+        self, workflow_files: List[str], max_files_to_load: int
+    ) -> int:
+        r"""Load workflow files and return count of successful loads.
+
+        Args:
+            workflow_files (List[str]): List of workflow file paths to load.
+
+        Returns:
+            int: Number of successfully loaded workflow files.
+        """
+        loaded_count = 0
+        # limit loading to prevent context overflow
+        for file_path in workflow_files[:max_files_to_load]:
+            try:
+                # extract file and session info from full path
+                filename = os.path.basename(file_path).replace('.md', '')
+                session_dir = os.path.dirname(file_path)
+                session_id = os.path.basename(session_dir)
+
+                # create context utility for the specific session
+                # where file exists
+                temp_utility = ContextUtility.get_workforce_shared(session_id)
+
+                status = temp_utility.load_markdown_context_to_memory(
+                    self.worker, filename
+                )
+
+                if "Context appended" in status:
+                    loaded_count += 1
+                    logger.info(f"Loaded workflow: {filename}")
+                else:
+                    logger.warning(
+                        f"Failed to load workflow {filename}: {status}"
+                    )
+
+            except Exception as e:
+                logger.warning(
+                    f"Failed to load workflow file {file_path}: {e!s}"
+                )
+                continue
+
+        return loaded_count
+
+    def _validate_workflow_save_requirements(self) -> Optional[Dict[str, Any]]:
+        r"""Validate requirements for workflow saving.
+
+        Returns:
+            Optional[Dict[str, Any]]: Error result dict if validation fails,
+                None if validation passes.
+        """
+        if not isinstance(self.worker, ChatAgent):
+            return {
+                "status": "error",
+                "summary": "",
+                "file_path": None,
+                "worker_description": self.description,
+                "message": (
+                    "Worker must be a ChatAgent instance to save workflow "
+                    "memories"
+                ),
+            }
+        return None
+
+    def _generate_workflow_filename(self) -> str:
+        r"""Generate a filename for the workflow based on worker description.
+
+        Returns:
+            str: Sanitized filename without timestamp (session already has
+                timestamp).
+        """
+        clean_desc = self.description.lower().replace(" ", "_")
+        clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
+        return f"{clean_desc}_workflow"
+
+    def _prepare_workflow_prompt(self) -> str:
+        r"""Prepare the structured prompt for workflow summarization.
+
+        Returns:
+            str: Structured prompt for workflow summary.
+        """
+        workflow_prompt = WorkflowSummary.get_instruction_prompt()
+        return StructuredOutputHandler.generate_structured_prompt(
+            base_prompt=workflow_prompt, schema=WorkflowSummary
+        )
+
+    def _select_agent_for_summarization(
+        self, context_util: ContextUtility
+    ) -> ChatAgent:
+        r"""Select the best agent for workflow summarization.
+
+        Args:
+            context_util: Context utility to set on selected agent.
+
+        Returns:
+            ChatAgent: Agent to use for summarization.
+        """
+        agent_to_summarize = self.worker
+
+        if self._conversation_accumulator is not None:
+            accumulator_messages, _ = (
+                self._conversation_accumulator.memory.get_context()
+            )
+            if accumulator_messages:
+                self._conversation_accumulator.set_context_utility(
+                    context_util
+                )
+                agent_to_summarize = self._conversation_accumulator
+                logger.info(
+                    f"Using conversation accumulator with "
+                    f"{len(accumulator_messages)} messages for workflow "
+                    f"summary"
+                )
+            else:
+                logger.info(
+                    "Using original worker for workflow summary (no "
+                    "accumulated conversations)"
+                )
+        else:
+            logger.info(
+                "Using original worker for workflow summary (no accumulator)"
+            )
+
+        return agent_to_summarize
