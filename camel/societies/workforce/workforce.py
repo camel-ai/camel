@@ -3462,9 +3462,10 @@ Provide a quality score (0-100) and specific issues if any.'''
                                     if not halt:
                                         continue
                                     print(
-                                        f"{Fore.RED}Task {returned_task.id} "
-                                        f"quality check failed after retries. "
-                                        f"Final score: {quality_eval.quality_score}"
+                                        f"{Fore.RED}Task {returned_task.id}"
+                                        f"quality check failed after retries."
+                                        f"Final score: "
+                                        f"{quality_eval.quality_score}"
                                         f"{Fore.RESET}"
                                     )
                                     await self._graceful_shutdown(
@@ -3489,7 +3490,8 @@ Provide a quality score (0-100) and specific issues if any.'''
                                 )
                         else:
                             print(
-                                f"{Fore.CYAN} Task {returned_task.id} completed"
+                                f"{Fore.CYAN}"
+                                f"Task {returned_task.id} completed "
                                 f"successfully (quality score: "
                                 f"{quality_eval.quality_score}).{Fore.RESET}"
                             )
