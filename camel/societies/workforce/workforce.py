@@ -22,6 +22,7 @@ import uuid
 from collections import deque
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Coroutine,
@@ -35,6 +36,9 @@ from typing import (
     Union,
     cast,
 )
+
+if TYPE_CHECKING:
+    from camel.utils.context_utils import ContextUtility
 
 from colorama import Fore
 
@@ -50,7 +54,9 @@ from camel.societies.workforce.prompts import (
     TASK_DECOMPOSE_PROMPT,
 )
 from camel.societies.workforce.role_playing_worker import RolePlayingWorker
-from camel.societies.workforce.single_agent_worker import SingleAgentWorker
+from camel.societies.workforce.single_agent_worker import (
+    SingleAgentWorker,
+)
 from camel.societies.workforce.structured_output_handler import (
     StructuredOutputHandler,
 )
@@ -325,8 +331,7 @@ class Workforce(BaseNode):
             if coordinator_agent.system_message is not None:
                 user_sys_msg_content = coordinator_agent.system_message.content
                 combined_content = (
-                    f"{user_sys_msg_content}\n\n"
-                    f"{coord_agent_sys_msg.content}"
+                    f"{user_sys_msg_content}\n\n{coord_agent_sys_msg.content}"
                 )
                 combined_sys_msg = BaseMessage.make_assistant_message(
                     role_name=coordinator_agent.system_message.role_name,
@@ -388,8 +393,7 @@ class Workforce(BaseNode):
             if task_agent.system_message is not None:
                 user_task_sys_msg_content = task_agent.system_message.content
                 combined_task_content = (
-                    f"{user_task_sys_msg_content}\n\n"
-                    f"{task_sys_msg.content}"
+                    f"{user_task_sys_msg_content}\n\n{task_sys_msg.content}"
                 )
                 combined_task_sys_msg = BaseMessage.make_assistant_message(
                     role_name=task_agent.system_message.role_name,
@@ -450,6 +454,30 @@ class Workforce(BaseNode):
                 "conversation history and function-calling trajectory for "
                 "better context continuity during task handoffs."
             )
+
+        # Shared context utility for workflow management (created lazily)
+        self._shared_context_utility: Optional["ContextUtility"] = None
+
+        # ------------------------------------------------------------------
+        # Helper for propagating pause control to externally supplied agents
+        # ------------------------------------------------------------------
+
+    def _get_or_create_shared_context_utility(self) -> "ContextUtility":
+        r"""Get or create the shared context utility for workflow management.
+
+        This method creates the context utility only when needed, avoiding
+        unnecessary session folder creation during initialization.
+
+        Returns:
+            ContextUtility: The shared context utility instance.
+        """
+        if self._shared_context_utility is None:
+            from camel.utils.context_utils import ContextUtility
+
+            self._shared_context_utility = (
+                ContextUtility.get_workforce_shared()
+            )
+        return self._shared_context_utility
 
     def _validate_agent_compatibility(
         self, agent: ChatAgent, agent_context: str = "agent"
@@ -1661,6 +1689,7 @@ class Workforce(BaseNode):
         description: str,
         worker: ChatAgent,
         pool_max_size: int = DEFAULT_WORKER_POOL_SIZE,
+        enable_workflow_memory: bool = False,
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses a single agent.
         Can be called when workforce is paused to dynamically add workers.
@@ -1670,6 +1699,9 @@ class Workforce(BaseNode):
             worker (ChatAgent): The agent to be added.
             pool_max_size (int): Maximum size of the agent pool.
                 (default: :obj:`10`)
+            enable_workflow_memory (bool): Whether to enable workflow memory
+                accumulation. Set to True if you plan to call
+                save_workflow_memories(). (default: :obj:`False`)
 
         Returns:
             Workforce: The workforce node itself.
@@ -1696,6 +1728,8 @@ class Workforce(BaseNode):
             worker=worker,
             pool_max_size=pool_max_size,
             use_structured_output_handler=self.use_structured_output_handler,
+            context_utility=None,  # Will be set during save/load operations
+            enable_workflow_memory=enable_workflow_memory,
         )
         self._children.append(worker_node)
 
@@ -1871,6 +1905,237 @@ class Workforce(BaseNode):
             self.metrics_logger.reset_task_data()
         else:
             self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
+
+    def save_workflow_memories(self) -> Dict[str, str]:
+        r"""Save workflow memories for all SingleAgentWorker instances in the
+        workforce.
+
+        This method iterates through all child workers and triggers workflow
+        saving for SingleAgentWorker instances using their
+        save_workflow_memories()
+        method.
+        Other worker types are skipped.
+
+        Returns:
+            Dict[str, str]: Dictionary mapping worker node IDs to save results.
+                Values are either file paths (success) or error messages
+                (failure).
+
+        Example:
+            >>> workforce = Workforce("My Team")
+            >>> # ... add workers and process tasks ...
+            >>> results = workforce.save_workflows()
+            >>> print(results)
+            {'worker_123': '/path/to/data_analyst_workflow_20250122.md',
+             'worker_456': 'error: No conversation context available'}
+        """
+        results = {}
+
+        # Get or create shared context utility for this save operation
+        shared_context_utility = self._get_or_create_shared_context_utility()
+
+        for child in self._children:
+            if isinstance(child, SingleAgentWorker):
+                try:
+                    # Set the shared context utility for this operation
+                    child._shared_context_utility = shared_context_utility
+                    child.worker.set_context_utility(shared_context_utility)
+
+                    result = child.save_workflow_memories()
+                    if result.get("status") == "success":
+                        results[child.node_id] = result.get(
+                            "file_path", "unknown_path"
+                        )
+                    else:
+                        # Error: check if there's a separate message field,
+                        # otherwise use the status itself
+                        error_msg = result.get(
+                            "message", result.get("status", "Unknown error")
+                        )
+                        results[child.node_id] = f"error: {error_msg}"
+
+                except Exception as e:
+                    results[child.node_id] = f"error: {e!s}"
+            else:
+                # Skip non-SingleAgentWorker types
+                results[child.node_id] = (
+                    f"skipped: {type(child).__name__} not supported"
+                )
+
+        logger.info(f"Workflow save completed for {len(results)} workers")
+        return results
+
+    def load_workflow_memories(
+        self,
+        max_files_to_load: int = 3,
+        session_id: Optional[str] = None,
+    ) -> Dict[str, bool]:
+        r"""Load workflow memories for all SingleAgentWorker instances in the
+        workforce.
+
+        This method iterates through all child workers and loads relevant
+        workflow files for SingleAgentWorker instances using their
+        load_workflow_memories()
+        method. Workers match files based on their description names.
+
+        Args:
+            max_files_to_load (int): Maximum number of workflow files to load
+                per worker. (default: :obj:`3`)
+            session_id (Optional[str]): Specific workforce session ID to load
+                from. If None, searches across all sessions.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, bool]: Dictionary mapping worker node IDs to load
+                success status.
+                True indicates successful loading, False indicates failure.
+
+        Example:
+            >>> workforce = Workforce("My Team")
+            >>> workforce.add_single_agent_worker(
+            ...     "data_analyst", analyst_agent
+            ... )
+            >>> success_status = workforce.load_workflows()
+            >>> print(success_status)
+            {'worker_123': True}  # Successfully loaded workflows for
+            # data_analyst
+        """
+        results = {}
+
+        # For loading, we don't create a new session - instead we search
+        # existing ones
+        # Each worker will search independently across all existing sessions
+
+        # First, load workflows for SingleAgentWorker instances
+        for child in self._children:
+            if isinstance(child, SingleAgentWorker):
+                try:
+                    # For loading, don't set shared context utility
+                    # Let each worker search across existing sessions
+                    success = child.load_workflow_memories(
+                        max_files_to_load=max_files_to_load,
+                        session_id=session_id,
+                    )
+                    results[child.node_id] = success
+
+                except Exception as e:
+                    logger.error(
+                        f"Failed to load workflow for {child.node_id}: {e!s}"
+                    )
+                    results[child.node_id] = False
+            else:
+                # Skip non-SingleAgentWorker types
+                results[child.node_id] = False
+
+        # Load aggregated workflow summaries for coordinator and task agents
+        self._load_management_agent_workflows(max_files_to_load, session_id)
+
+        logger.info(f"Workflow load completed for {len(results)} workers")
+        return results
+
+    def _load_management_agent_workflows(
+        self, max_files_to_load: int, session_id: Optional[str] = None
+    ) -> None:
+        r"""Load workflow summaries for coordinator and task planning agents.
+
+        This method loads aggregated workflow summaries to help:
+        - Coordinator agent: understand task assignment patterns and worker
+          capabilities
+        - Task agent: understand task decomposition patterns and
+          successful strategies
+
+        Args:
+            max_files_to_load (int): Maximum number of workflow files to load.
+            session_id (Optional[str]): Specific session ID to load from.
+                If None, searches across all sessions.
+        """
+        try:
+            import glob
+            import os
+            from pathlib import Path
+
+            from camel.utils.context_utils import ContextUtility
+
+            # For loading management workflows, search across all sessions
+            camel_workdir = os.environ.get("CAMEL_WORKDIR")
+            if camel_workdir:
+                base_dir = os.path.join(camel_workdir, "workforce_workflows")
+            else:
+                base_dir = "workforce_workflows"
+
+            # Search for workflow files in specified or all session directories
+            if session_id:
+                search_path = str(
+                    Path(base_dir) / session_id / "*_workflow*.md"
+                )
+            else:
+                search_path = str(Path(base_dir) / "*" / "*_workflow*.md")
+            workflow_files = glob.glob(search_path)
+
+            if not workflow_files:
+                logger.info(
+                    "No workflow files found for management agent context"
+                )
+                return
+
+            # Sort by modification time (most recent first)
+            workflow_files.sort(
+                key=lambda x: os.path.getmtime(x), reverse=True
+            )
+
+            # Load workflows for coordinator agent (up to 5 most recent)
+            coordinator_loaded = 0
+            for file_path in workflow_files[:max_files_to_load]:
+                try:
+                    filename = os.path.basename(file_path).replace('.md', '')
+                    session_dir = os.path.dirname(file_path)
+                    session_id = os.path.basename(session_dir)
+
+                    # Use shared context utility with specific session
+                    temp_utility = ContextUtility.get_workforce_shared(
+                        session_id
+                    )
+
+                    status = temp_utility.load_markdown_context_to_memory(
+                        self.coordinator_agent, filename
+                    )
+                    if "Context appended" in status:
+                        coordinator_loaded += 1
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load coordinator workflow {file_path}: {e}"
+                    )
+
+            # Load workflows for task agent (up to 3 most recent)
+            task_agent_loaded = 0
+            for file_path in workflow_files[:max_files_to_load]:
+                try:
+                    filename = os.path.basename(file_path).replace('.md', '')
+                    session_dir = os.path.dirname(file_path)
+                    session_id = os.path.basename(session_dir)
+
+                    # Use shared context utility with specific session
+                    temp_utility = ContextUtility.get_workforce_shared(
+                        session_id
+                    )
+
+                    status = temp_utility.load_markdown_context_to_memory(
+                        self.task_agent, filename
+                    )
+                    if "Context appended" in status:
+                        task_agent_loaded += 1
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load task agent workflow {file_path}: {e}"
+                    )
+
+            logger.info(
+                f"Loaded {coordinator_loaded} workflows for coordinator, "
+                f"{task_agent_loaded} workflows for task agent"
+            )
+
+        except Exception as e:
+            logger.error(f"Error loading management agent workflows: {e}")
 
     @check_if_running(False)
     def set_channel(self, channel: TaskChannel) -> None:
@@ -2381,8 +2646,7 @@ class Workforce(BaseNode):
                     "worker creation"
                 )
                 new_node_conf = WorkerConf(
-                    description=f"Fallback worker for task: "
-                    f"{task.content}",
+                    description=f"Fallback worker for task: {task.content}",
                     role="General Assistant",
                     sys_msg="You are a general assistant that can help "
                     "with various tasks.",
@@ -2392,7 +2656,7 @@ class Workforce(BaseNode):
                     response.msg.content,
                     schema=WorkerConf,
                     fallback_values={
-                        "description": f"Worker for task: " f"{task.content}",
+                        "description": f"Worker for task: {task.content}",
                         "role": "Task Specialist",
                         "sys_msg": f"You are a specialist for: {task.content}",
                     },
@@ -2420,8 +2684,7 @@ class Workforce(BaseNode):
                 )
                 # Create a fallback worker configuration
                 new_node_conf = WorkerConf(
-                    description=f"Fallback worker for "
-                    f"task: {task.content}",
+                    description=f"Fallback worker for task: {task.content}",
                     role="General Assistant",
                     sys_msg="You are a general assistant that can help "
                     "with various tasks.",

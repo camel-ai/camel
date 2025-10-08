@@ -14,15 +14,22 @@
 from __future__ import annotations
 
 import asyncio
+import atexit
+import base64
 import concurrent.futures
+import hashlib
+import inspect
 import json
-import logging
-import queue
+import math
+import os
 import random
+import re
+import tempfile
 import textwrap
 import threading
 import time
 import uuid
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import (
@@ -101,10 +108,24 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+# Cleanup temp files on exit
+_temp_files: Set[str] = set()
+_temp_files_lock = threading.Lock()
+
+
+def _cleanup_temp_files():
+    with _temp_files_lock:
+        for path in _temp_files:
+            try:
+                os.unlink(path)
+            except Exception:
+                pass
+
+
+atexit.register(_cleanup_temp_files)
+
 # AgentOps decorator setting
 try:
-    import os
-
     if os.getenv("AGENTOPS_API_KEY") is not None:
         from agentops import track_agent
     else:
@@ -194,13 +215,10 @@ class StreamingChatAgentResponse:
     def _ensure_latest_response(self):
         r"""Ensure we have the latest response by consuming the generator."""
         if not self._consumed:
-            try:
-                for response in self._generator:
-                    self._responses.append(response)
-                    self._current_response = response
-                self._consumed = True
-            except StopIteration:
-                self._consumed = True
+            for response in self._generator:
+                self._responses.append(response)
+                self._current_response = response
+            self._consumed = True
 
     @property
     def msgs(self) -> List[BaseMessage]:
@@ -241,14 +259,11 @@ class StreamingChatAgentResponse:
             yield from self._responses
         else:
             # If not consumed, consume and yield
-            try:
-                for response in self._generator:
-                    self._responses.append(response)
-                    self._current_response = response
-                    yield response
-                self._consumed = True
-            except StopIteration:
-                self._consumed = True
+            for response in self._generator:
+                self._responses.append(response)
+                self._current_response = response
+                yield response
+            self._consumed = True
 
     def __getattr__(self, name):
         r"""Forward any other attribute access to the latest response."""
@@ -279,13 +294,10 @@ class AsyncStreamingChatAgentResponse:
     async def _ensure_latest_response(self):
         r"""Ensure the latest response by consuming the async generator."""
         if not self._consumed:
-            try:
-                async for response in self._async_generator:
-                    self._responses.append(response)
-                    self._current_response = response
-                self._consumed = True
-            except StopAsyncIteration:
-                self._consumed = True
+            async for response in self._async_generator:
+                self._responses.append(response)
+                self._current_response = response
+            self._consumed = True
 
     async def _get_final_response(self) -> ChatAgentResponse:
         r"""Get the final response after consuming the entire stream."""
@@ -311,14 +323,11 @@ class AsyncStreamingChatAgentResponse:
         else:
             # If not consumed, consume and yield
             async def _consume_and_yield():
-                try:
-                    async for response in self._async_generator:
-                        self._responses.append(response)
-                        self._current_response = response
-                        yield response
-                    self._consumed = True
-                except StopAsyncIteration:
-                    self._consumed = True
+                async for response in self._async_generator:
+                    self._responses.append(response)
+                    self._current_response = response
+                    yield response
+                self._consumed = True
 
             return _consume_and_yield()
 
@@ -386,9 +395,10 @@ class ChatAgent(BaseAgent):
             for individual tool execution. If None, wait indefinitely.
         mask_tool_output (Optional[bool]): Whether to return a sanitized
             placeholder instead of the raw tool output. (default: :obj:`False`)
-        pause_event (Optional[asyncio.Event]): Event to signal pause of the
-            agent's operation. When clear, the agent will pause its execution.
-            (default: :obj:`None`)
+        pause_event (Optional[Union[threading.Event, asyncio.Event]]): Event to
+            signal pause of the agent's operation. When clear, the agent will
+            pause its execution. Use threading.Event for sync operations or
+            asyncio.Event for async operations. (default: :obj:`None`)
         prune_tool_calls_from_memory (bool): Whether to clean tool
             call messages from memory after response generation to save token
             usage. When enabled, removes FUNCTION/TOOL role messages and
@@ -443,7 +453,7 @@ class ChatAgent(BaseAgent):
         stop_event: Optional[threading.Event] = None,
         tool_execution_timeout: Optional[float] = None,
         mask_tool_output: bool = False,
-        pause_event: Optional[asyncio.Event] = None,
+        pause_event: Optional[Union[threading.Event, asyncio.Event]] = None,
         prune_tool_calls_from_memory: bool = False,
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
@@ -532,6 +542,7 @@ class ChatAgent(BaseAgent):
         self.tool_execution_timeout = tool_execution_timeout
         self.mask_tool_output = mask_tool_output
         self._secure_result_store: Dict[str, Any] = {}
+        self._secure_result_store_lock = threading.Lock()
         self.pause_event = pause_event
         self.prune_tool_calls_from_memory = prune_tool_calls_from_memory
         self.retry_attempts = max(1, retry_attempts)
@@ -728,6 +739,20 @@ class ChatAgent(BaseAgent):
         # Ensure the new memory has the system message
         self.init_messages()
 
+    def set_context_utility(
+        self, context_utility: Optional[ContextUtility]
+    ) -> None:
+        r"""Set the context utility for the agent.
+
+        This allows external components (like SingleAgentWorker) to provide
+        a shared context utility instance for workflow management.
+
+        Args:
+            context_utility (ContextUtility, optional): The context utility
+                to use. If None, the agent will create its own when needed.
+        """
+        self._context_utility = context_utility
+
     def _get_full_tool_schemas(self) -> List[Dict[str, Any]]:
         r"""Returns a list of tool schemas of all tools, including internal
         and external tools.
@@ -817,9 +842,6 @@ class ChatAgent(BaseAgent):
                 (default: :obj:`None`)
                     (default: obj:`None`)
         """
-        import math
-        import time
-        import uuid as _uuid
 
         # 1. Helper to write a record to memory
         def _write_single_record(
@@ -854,7 +876,6 @@ class ChatAgent(BaseAgent):
             current_tokens = token_counter.count_tokens_from_messages(
                 [message.to_openai_message(role)]
             )
-            import warnings
 
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=EmptyMemoryWarning)
@@ -928,7 +949,7 @@ class ChatAgent(BaseAgent):
 
         # 4.  Calculate how many chunks we will need with this body size.
         num_chunks = math.ceil(len(all_token_ids) / chunk_body_limit)
-        group_id = str(_uuid.uuid4())
+        group_id = str(uuid.uuid4())
 
         for i in range(num_chunks):
             start_idx = i * chunk_body_limit
@@ -1050,6 +1071,7 @@ class ChatAgent(BaseAgent):
         self,
         filename: Optional[str] = None,
         summary_prompt: Optional[str] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         working_directory: Optional[Union[str, Path]] = None,
     ) -> Dict[str, Any]:
         r"""Summarize the agent's current conversation context and persist it
@@ -1062,13 +1084,18 @@ class ChatAgent(BaseAgent):
             summary_prompt (Optional[str]): Custom prompt for the summarizer.
                 When omitted, a default prompt highlighting key decisions,
                 action items, and open questions is used.
+            response_format (Optional[Type[BaseModel]]): A Pydantic model
+                defining the expected structure of the response. If provided,
+                the summary will be generated as structured output and included
+                in the result.
             working_directory (Optional[str|Path]): Optional directory to save
                 the markdown summary file. If provided, overrides the default
                 directory used by ContextUtility.
 
         Returns:
             Dict[str, Any]: A dictionary containing the summary text, file
-                path, and status message.
+                path, status message, and optionally structured_summary if
+                response_format was provided.
         """
 
         result: Dict[str, Any] = {
@@ -1078,6 +1105,7 @@ class ChatAgent(BaseAgent):
         }
 
         try:
+            # Use external context if set, otherwise create local one
             if self._context_utility is None:
                 if working_directory is not None:
                     self._context_utility = ContextUtility(
@@ -1085,6 +1113,7 @@ class ChatAgent(BaseAgent):
                     )
                 else:
                     self._context_utility = ContextUtility()
+            context_util = self._context_utility
 
             # Get conversation directly from agent's memory
             messages, _ = self.memory.get_context()
@@ -1101,7 +1130,58 @@ class ChatAgent(BaseAgent):
             for message in messages:
                 role = message.get('role', 'unknown')
                 content = message.get('content', '')
-                if content:
+
+                # Handle tool call messages (assistant calling tools)
+                tool_calls = message.get('tool_calls')
+                if tool_calls and isinstance(tool_calls, (list, tuple)):
+                    for tool_call in tool_calls:
+                        # Handle both dict and object formats
+                        if isinstance(tool_call, dict):
+                            func_name = tool_call.get('function', {}).get(
+                                'name', 'unknown_tool'
+                            )
+                            func_args_str = tool_call.get('function', {}).get(
+                                'arguments', '{}'
+                            )
+                        else:
+                            # Handle object format (Pydantic or similar)
+                            func_name = getattr(
+                                getattr(tool_call, 'function', None),
+                                'name',
+                                'unknown_tool',
+                            )
+                            func_args_str = getattr(
+                                getattr(tool_call, 'function', None),
+                                'arguments',
+                                '{}',
+                            )
+
+                        # Parse and format arguments for readability
+                        try:
+                            import json
+
+                            args_dict = json.loads(func_args_str)
+                            args_formatted = ', '.join(
+                                f"{k}={v}" for k, v in args_dict.items()
+                            )
+                        except (json.JSONDecodeError, ValueError, TypeError):
+                            args_formatted = func_args_str
+
+                        conversation_lines.append(
+                            f"[TOOL CALL] {func_name}({args_formatted})"
+                        )
+
+                # Handle tool response messages
+                elif role == 'tool':
+                    tool_name = message.get('name', 'unknown_tool')
+                    if not content:
+                        content = str(message.get('content', ''))
+                    conversation_lines.append(
+                        f"[TOOL RESULT] {tool_name} → {content}"
+                    )
+
+                # Handle regular content messages (user/assistant/system)
+                elif content:
                     conversation_lines.append(f"{role}: {content}")
 
             conversation_text = "\n".join(conversation_lines).strip()
@@ -1117,7 +1197,7 @@ class ChatAgent(BaseAgent):
                 self._context_summary_agent = ChatAgent(
                     system_message=(
                         "You are a helpful assistant that summarizes "
-                        "conversations into concise markdown bullet lists."
+                        "conversations"
                     ),
                     model=self.model_backend,
                     agent_id=f"{self.agent_id}_context_summarizer",
@@ -1128,7 +1208,8 @@ class ChatAgent(BaseAgent):
             if summary_prompt:
                 prompt_text = (
                     f"{summary_prompt.rstrip()}\n\n"
-                    f"Context information:\n{conversation_text}"
+                    f"AGENT CONVERSATION TO BE SUMMARIZED:\n"
+                    f"{conversation_text}"
                 )
             else:
                 prompt_text = (
@@ -1138,7 +1219,13 @@ class ChatAgent(BaseAgent):
                 )
 
             try:
-                response = self._context_summary_agent.step(prompt_text)
+                # Use structured output if response_format is provided
+                if response_format:
+                    response = self._context_summary_agent.step(
+                        prompt_text, response_format=response_format
+                    )
+                else:
+                    response = self._context_summary_agent.step(prompt_text)
             except Exception as step_exc:
                 error_message = (
                     f"Failed to generate summary using model: {step_exc}"
@@ -1167,7 +1254,7 @@ class ChatAgent(BaseAgent):
             )
             base_filename = Path(base_filename).with_suffix("").name
 
-            metadata = self._context_utility.get_session_metadata()
+            metadata = context_util.get_session_metadata()
             metadata.update(
                 {
                     "agent_id": self.agent_id,
@@ -1175,25 +1262,38 @@ class ChatAgent(BaseAgent):
                 }
             )
 
-            save_status = self._context_utility.save_markdown_file(
+            # Handle structured output if response_format was provided
+            structured_output = None
+            if response_format and response.msgs[-1].parsed:
+                structured_output = response.msgs[-1].parsed
+                # Convert structured output to custom markdown
+                summary_content = context_util.structured_output_to_markdown(
+                    structured_data=structured_output, metadata=metadata
+                )
+
+            # Save the markdown (either custom structured or default)
+            save_status = context_util.save_markdown_file(
                 base_filename,
                 summary_content,
-                title="Conversation Summary",
-                metadata=metadata,
+                title="Conversation Summary"
+                if not structured_output
+                else None,
+                metadata=metadata if not structured_output else None,
             )
 
             file_path = (
-                self._context_utility.get_working_directory()
-                / f"{base_filename}.md"
+                context_util.get_working_directory() / f"{base_filename}.md"
             )
 
-            result.update(
-                {
-                    "summary": summary_content,
-                    "file_path": str(file_path),
-                    "status": save_status,
-                }
-            )
+            # Prepare result dictionary
+            result_dict = {
+                "summary": summary_content,
+                "file_path": str(file_path),
+                "status": save_status,
+                "structured_summary": structured_output,
+            }
+
+            result.update(result_dict)
             logger.info("Conversation summary saved to %s", file_path)
             return result
 
@@ -1246,8 +1346,6 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the current system
         message.
         """
-        import time
-
         self.memory.clear()
         # avoid UserWarning: The `ChatHistoryMemory` is empty.
         if self.system_message is not None:
@@ -1259,6 +1357,17 @@ class ChatAgent(BaseAgent):
                     agent_id=self.agent_id,
                 )
             )
+
+    def reset_to_original_system_message(self) -> None:
+        r"""Reset system message to original, removing any appended context.
+
+        This method reverts the agent's system message back to its original
+        state, removing any workflow context or other modifications that may
+        have been appended. Useful for resetting agent state in multi-turn
+        scenarios.
+        """
+        self._system_message = self._original_system_message
+        self.init_messages()
 
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
@@ -1321,7 +1430,7 @@ class ChatAgent(BaseAgent):
 
             # Create a prompt based on the schema
             format_instruction = (
-                "\n\nPlease respond in the following JSON format:\n" "{\n"
+                "\n\nPlease respond in the following JSON format:\n{\n"
             )
 
             properties = schema.get("properties", {})
@@ -1420,8 +1529,6 @@ class ChatAgent(BaseAgent):
         Returns:
             bool: True if called from a RegisteredAgentToolkit, False otherwise
         """
-        import inspect
-
         from camel.toolkits.base import RegisteredAgentToolkit
 
         try:
@@ -1453,7 +1560,6 @@ class ChatAgent(BaseAgent):
                 try:
                     # Try to extract JSON from the response content
                     import json
-                    import re
 
                     from pydantic import ValidationError
 
@@ -1492,8 +1598,7 @@ class ChatAgent(BaseAgent):
 
                     if not message.parsed:
                         logger.warning(
-                            f"Failed to parse JSON from response: "
-                            f"{content}"
+                            f"Failed to parse JSON from response: {content}"
                         )
 
                 except Exception as e:
@@ -1665,8 +1770,13 @@ class ChatAgent(BaseAgent):
 
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
-                while not self.pause_event.is_set():
-                    time.sleep(0.001)
+                # Use efficient blocking wait for threading.Event
+                if isinstance(self.pause_event, threading.Event):
+                    self.pause_event.wait()
+                else:
+                    # Fallback for asyncio.Event in sync context
+                    while not self.pause_event.is_set():
+                        time.sleep(0.001)
 
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -1698,7 +1808,7 @@ class ChatAgent(BaseAgent):
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
                 logger.info(
-                    f"Termination triggered at iteration " f"{iteration_count}"
+                    f"Termination triggered at iteration {iteration_count}"
                 )
                 return self._step_terminate(
                     accumulated_context_tokens,
@@ -1721,8 +1831,11 @@ class ChatAgent(BaseAgent):
                             self.pause_event is not None
                             and not self.pause_event.is_set()
                         ):
-                            while not self.pause_event.is_set():
-                                time.sleep(0.001)
+                            if isinstance(self.pause_event, threading.Event):
+                                self.pause_event.wait()
+                            else:
+                                while not self.pause_event.is_set():
+                                    time.sleep(0.001)
                         result = self._execute_tool(tool_call_request)
                         tool_call_records.append(result)
 
@@ -1879,7 +1992,12 @@ class ChatAgent(BaseAgent):
         prev_num_openai_messages: int = 0
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
-                await self.pause_event.wait()
+                if isinstance(self.pause_event, asyncio.Event):
+                    await self.pause_event.wait()
+                elif isinstance(self.pause_event, threading.Event):
+                    # For threading.Event in async context, run in executor
+                    loop = asyncio.get_event_loop()
+                    await loop.run_in_executor(None, self.pause_event.wait)
             try:
                 openai_messages, num_tokens = self.memory.get_context()
                 accumulated_context_tokens += num_tokens
@@ -1909,7 +2027,7 @@ class ChatAgent(BaseAgent):
             if self.stop_event and self.stop_event.is_set():
                 # Use the _step_terminate to terminate the agent with reason
                 logger.info(
-                    f"Termination triggered at iteration " f"{iteration_count}"
+                    f"Termination triggered at iteration {iteration_count}"
                 )
                 return self._step_terminate(
                     accumulated_context_tokens,
@@ -1932,7 +2050,13 @@ class ChatAgent(BaseAgent):
                             self.pause_event is not None
                             and not self.pause_event.is_set()
                         ):
-                            await self.pause_event.wait()
+                            if isinstance(self.pause_event, asyncio.Event):
+                                await self.pause_event.wait()
+                            elif isinstance(self.pause_event, threading.Event):
+                                loop = asyncio.get_event_loop()
+                                await loop.run_in_executor(
+                                    None, self.pause_event.wait
+                                )
                         tool_call_record = await self._aexecute_tool(
                             tool_call_request
                         )
@@ -2185,11 +2309,6 @@ class ChatAgent(BaseAgent):
         Returns:
             List[OpenAIMessage]: The sanitized OpenAI messages.
         """
-        import hashlib
-        import os
-        import re
-        import tempfile
-
         # Create a copy of messages for logging to avoid modifying the
         # original messages
         sanitized_messages = []
@@ -2230,7 +2349,14 @@ class ChatAgent(BaseAgent):
 
                                     # Save image to temp directory for viewing
                                     try:
-                                        import base64
+                                        # Sanitize img_format to prevent path
+                                        # traversal
+                                        safe_format = re.sub(
+                                            r'[^a-zA-Z0-9]', '', img_format
+                                        )[:10]
+                                        img_filename = (
+                                            f"image_{img_hash}.{safe_format}"
+                                        )
 
                                         temp_dir = tempfile.gettempdir()
                                         img_path = os.path.join(
@@ -2245,6 +2371,9 @@ class ChatAgent(BaseAgent):
                                                         base64_data
                                                     )
                                                 )
+                                            # Register for cleanup
+                                            with _temp_files_lock:
+                                                _temp_files.add(img_path)
 
                                         # Create a file:// URL that can be
                                         # opened
@@ -2497,7 +2626,8 @@ class ChatAgent(BaseAgent):
         try:
             raw_result = tool(**args)
             if self.mask_tool_output:
-                self._secure_result_store[tool_call_id] = raw_result
+                with self._secure_result_store_lock:
+                    self._secure_result_store[tool_call_id] = raw_result
                 result = (
                     "[The tool has been executed successfully, but the output"
                     " from the tool is masked. You can move forward]"
@@ -2555,7 +2685,7 @@ class ChatAgent(BaseAgent):
             # Capture the error message to prevent framework crash
             error_msg = f"Error executing async tool '{func_name}': {e!s}"
             result = f"Tool execution failed: {error_msg}"
-            logging.warning(error_msg)
+            logger.warning(error_msg)
         return self._record_tool_calling(func_name, args, result, tool_call_id)
 
     def _record_tool_calling(
@@ -2606,8 +2736,6 @@ class ChatAgent(BaseAgent):
         # This ensures the assistant message (tool call) always appears before
         # the function message (tool result) in the conversation context
         # Use time.time_ns() for nanosecond precision to avoid collisions
-        import time
-
         current_time_ns = time.time_ns()
         base_timestamp = current_time_ns / 1_000_000_000  # Convert to seconds
 
@@ -2698,7 +2826,7 @@ class ChatAgent(BaseAgent):
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
                 logger.info(
-                    f"Termination triggered at iteration " f"{iteration_count}"
+                    f"Termination triggered at iteration {iteration_count}"
                 )
                 yield self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
@@ -3067,72 +3195,70 @@ class ChatAgent(BaseAgent):
         accumulated_tool_calls: Dict[str, Any],
         tool_call_records: List[ToolCallingRecord],
     ) -> Generator[ChatAgentResponse, None, None]:
-        r"""Execute multiple tools synchronously with
-        proper content accumulation, using threads+queue for
-        non-blocking status streaming."""
-
-        def tool_worker(result_queue, tool_call_data):
-            try:
-                tool_call_record = self._execute_tool_from_stream_data(
-                    tool_call_data
-                )
-                result_queue.put(tool_call_record)
-            except Exception as e:
-                logger.error(f"Error in threaded tool execution: {e}")
-                result_queue.put(None)
+        r"""Execute multiple tools synchronously with proper content
+        accumulation, using ThreadPoolExecutor for better timeout handling."""
 
         tool_calls_to_execute = []
         for _tool_call_index, tool_call_data in accumulated_tool_calls.items():
             if tool_call_data.get('complete', False):
                 tool_calls_to_execute.append(tool_call_data)
 
-        # Phase 2: Execute tools in threads and yield status while waiting
-        for tool_call_data in tool_calls_to_execute:
-            function_name = tool_call_data['function']['name']
-            try:
-                args = json.loads(tool_call_data['function']['arguments'])
-            except json.JSONDecodeError:
-                args = tool_call_data['function']['arguments']
-            result_queue: queue.Queue[Optional[ToolCallingRecord]] = (
-                queue.Queue()
-            )
-            thread = threading.Thread(
-                target=tool_worker,
-                args=(result_queue, tool_call_data),
-            )
-            thread.start()
+        if not tool_calls_to_execute:
+            # No tools to execute, return immediately
+            return
+            yield  # Make this a generator
 
-            # Log debug info instead of adding to content
-            logger.info(
-                f"Calling function: {function_name} with arguments: {args}"
-            )
+        # Execute tools using ThreadPoolExecutor for proper timeout handling
+        # Use max_workers=len() for parallel execution, with min of 1
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=max(1, len(tool_calls_to_execute))
+        ) as executor:
+            # Submit all tools first (parallel execution)
+            futures_map = {}
+            for tool_call_data in tool_calls_to_execute:
+                function_name = tool_call_data['function']['name']
+                try:
+                    args = json.loads(tool_call_data['function']['arguments'])
+                except json.JSONDecodeError:
+                    args = tool_call_data['function']['arguments']
 
-            # wait for tool thread to finish with optional timeout
-            thread.join(self.tool_execution_timeout)
-
-            # If timeout occurred, mark as error and continue
-            if thread.is_alive():
-                # Log timeout info instead of adding to content
-                logger.warning(
-                    f"Function '{function_name}' timed out after "
-                    f"{self.tool_execution_timeout} seconds"
+                # Log debug info
+                logger.info(
+                    f"Calling function: {function_name} with arguments: {args}"
                 )
 
-                # Detach thread (it may still finish later). Skip recording.
-                continue
+                # Submit tool execution (non-blocking)
+                future = executor.submit(
+                    self._execute_tool_from_stream_data, tool_call_data
+                )
+                futures_map[future] = (function_name, tool_call_data)
 
-            # Tool finished, get result
-            tool_call_record = result_queue.get()
-            if tool_call_record:
-                tool_call_records.append(tool_call_record)
-                raw_result = tool_call_record.result
-                result_str = str(raw_result)
+            # Wait for all futures to complete (or timeout)
+            for future in concurrent.futures.as_completed(
+                futures_map.keys(),
+                timeout=self.tool_execution_timeout
+                if self.tool_execution_timeout
+                else None,
+            ):
+                function_name, tool_call_data = futures_map[future]
 
-                # Log debug info instead of adding to content
-                logger.info(f"Function output: {result_str}")
-            else:
-                # Error already logged
-                continue
+                try:
+                    tool_call_record = future.result()
+                    if tool_call_record:
+                        tool_call_records.append(tool_call_record)
+                        logger.info(
+                            f"Function output: {tool_call_record.result}"
+                        )
+                except concurrent.futures.TimeoutError:
+                    logger.warning(
+                        f"Function '{function_name}' timed out after "
+                        f"{self.tool_execution_timeout} seconds"
+                    )
+                    future.cancel()
+                except Exception as e:
+                    logger.error(
+                        f"Error executing tool '{function_name}': {e}"
+                    )
 
         # Ensure this function remains a generator (required by type signature)
         return
@@ -3177,8 +3303,6 @@ class ChatAgent(BaseAgent):
 
                     # Record both messages with precise timestamps to ensure
                     # correct ordering
-                    import time
-
                     current_time_ns = time.time_ns()
                     base_timestamp = (
                         current_time_ns / 1_000_000_000
@@ -3207,7 +3331,7 @@ class ChatAgent(BaseAgent):
                         f"Error executing tool '{function_name}': {e!s}"
                     )
                     result = {"error": error_msg}
-                    logging.warning(error_msg)
+                    logger.warning(error_msg)
 
                     # Record error response
                     func_msg = FunctionCallingMessage(
@@ -3302,8 +3426,6 @@ class ChatAgent(BaseAgent):
 
                     # Record both messages with precise timestamps to ensure
                     # correct ordering
-                    import time
-
                     current_time_ns = time.time_ns()
                     base_timestamp = (
                         current_time_ns / 1_000_000_000
@@ -3332,7 +3454,7 @@ class ChatAgent(BaseAgent):
                         f"Error executing async tool '{function_name}': {e!s}"
                     )
                     result = {"error": error_msg}
-                    logging.warning(error_msg)
+                    logger.warning(error_msg)
 
                     # Record error response
                     func_msg = FunctionCallingMessage(
@@ -3442,7 +3564,7 @@ class ChatAgent(BaseAgent):
             # Check termination condition
             if self.stop_event and self.stop_event.is_set():
                 logger.info(
-                    f"Termination triggered at iteration " f"{iteration_count}"
+                    f"Termination triggered at iteration {iteration_count}"
                 )
                 yield self._step_terminate(
                     num_tokens, tool_call_records, "termination_triggered"
@@ -3954,10 +4076,12 @@ class ChatAgent(BaseAgent):
                 configuration.
         """
         # Create a new instance with the same configuration
-        # If with_memory is True, set system_message to None
-        # If with_memory is False, use the original system message
+        # If with_memory is True, set system_message to None (it will be
+        # copied from memory below, including any workflow context)
+        # If with_memory is False, use the current system message
+        # (which may include appended workflow context)
         # To avoid duplicated system memory.
-        system_message = None if with_memory else self._original_system_message
+        system_message = None if with_memory else self._system_message
 
         # Clone tools and collect toolkits that need registration
         cloned_tools, toolkits_to_register = self._clone_tools()
