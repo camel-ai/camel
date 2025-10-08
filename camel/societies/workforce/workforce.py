@@ -2702,10 +2702,13 @@ Provide a quality score (0-100) and specific issues if any.'''
                     return QualityEvaluation(**result)
                 else:
                     return QualityEvaluation(
-                        quality_sufficient=True,
-                        quality_score=80,
-                        issues=["Failed to parse quality evaluation"],
-                        improvement_suggestion=None,
+                        quality_sufficient=False,
+                        quality_score=0,
+                        issues=[
+                            "Failed to parse quality " "evaluation response"
+                        ],
+                        improvement_suggestion="Retry with "
+                        "clearer task requirements",
                     )
             else:
                 self.task_agent.reset()
@@ -2716,13 +2719,15 @@ Provide a quality score (0-100) and specific issues if any.'''
 
         except Exception as e:
             logger.warning(
-                f"Error during quality evaluation: {e}, returning default"
+                f"Error during quality evaluation: {e}, assuming insufficient"
             )
             return QualityEvaluation(
-                quality_sufficient=True,
-                quality_score=75,
+                quality_sufficient=False,
+                quality_score=0,
                 issues=[f"Quality evaluation error: {e!s}"],
-                improvement_suggestion=None,
+                improvement_suggestion=(
+                    "Unable to evaluate quality, please retry"
+                ),
             )
 
     async def _handle_failed_task(self, task: Task) -> bool:
