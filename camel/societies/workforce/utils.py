@@ -42,6 +42,24 @@ class TaskResult(BaseModel):
     )
 
 
+class QualityEvaluation(BaseModel):
+    r"""Quality evaluation result for a completed task."""
+
+    quality_sufficient: bool = Field(
+        description="Whether the task result meets quality standards."
+    )
+    quality_score: int = Field(
+        description="Quality score from 0 to 100.", ge=0, le=100
+    )
+    issues: List[str] = Field(
+        default_factory=list,
+        description="List of quality issues found in the result.",
+    )
+    improvement_suggestion: Optional[str] = Field(
+        default=None, description="Specific suggestion to improve the result."
+    )
+
+
 class TaskAssignment(BaseModel):
     r"""An individual task assignment within a batch."""
 

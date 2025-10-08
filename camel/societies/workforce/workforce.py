@@ -57,6 +57,7 @@ from camel.societies.workforce.structured_output_handler import (
 from camel.societies.workforce.task_channel import TaskChannel
 from camel.societies.workforce.utils import (
     FailureContext,
+    QualityEvaluation,
     RecoveryDecision,
     RecoveryStrategy,
     TaskAssignment,
@@ -2643,6 +2644,87 @@ class Workforce(BaseNode):
                 # fine
                 pass
 
+    def _evaluate_task_quality(self, task: Task) -> QualityEvaluation:
+        r"""Evaluate the quality of a completed task using Task Agent.
+
+        Args:
+            task (Task): The completed task to evaluate.
+
+        Returns:
+            QualityEvaluation: The quality evaluation result.
+        """
+        quality_prompt = f'''Evaluate the quality of this task completion:
+
+Original Task: {task.content}
+Task Result: {task.result}
+
+Evaluate based on:
+1. Does the result fully address all requirements in the task?
+2. Is the result complete, accurate, and well-structured?
+3. Are there any missing elements or quality issues?
+
+Provide a quality score (0-100) and specific issues if any.'''
+
+        try:
+            if self.use_structured_output_handler:
+                enhanced_prompt = (
+                    self.structured_handler.generate_structured_prompt(
+                        base_prompt=quality_prompt,
+                        schema=QualityEvaluation,
+                        examples=[
+                            {
+                                "quality_sufficient": True,
+                                "quality_score": 98,
+                                "issues": [],
+                                "improvement_suggestion": None,
+                            }
+                        ],
+                    )
+                )
+
+                self.task_agent.reset()
+                response = self.task_agent.step(enhanced_prompt)
+
+                result = self.structured_handler.parse_structured_response(
+                    response.msg.content if response.msg else "",
+                    schema=QualityEvaluation,
+                    fallback_values={
+                        "quality_sufficient": True,
+                        "quality_score": 80,
+                        "issues": [],
+                        "improvement_suggestion": None,
+                    },
+                )
+
+                if isinstance(result, QualityEvaluation):
+                    return result
+                elif isinstance(result, dict):
+                    return QualityEvaluation(**result)
+                else:
+                    return QualityEvaluation(
+                        quality_sufficient=True,
+                        quality_score=80,
+                        issues=["Failed to parse quality evaluation"],
+                        improvement_suggestion=None,
+                    )
+            else:
+                self.task_agent.reset()
+                response = self.task_agent.step(
+                    quality_prompt, response_format=QualityEvaluation
+                )
+                return response.msg.parsed
+
+        except Exception as e:
+            logger.warning(
+                f"Error during quality evaluation: {e}, returning default"
+            )
+            return QualityEvaluation(
+                quality_sufficient=True,
+                quality_score=75,
+                issues=[f"Quality evaluation error: {e!s}"],
+                improvement_suggestion=None,
+            )
+
     async def _handle_failed_task(self, task: Task) -> bool:
         task.failure_count += 1
 
@@ -3345,11 +3427,73 @@ class Workforce(BaseNode):
                             )
                             continue
                     else:
-                        print(
-                            f"{Fore.CYAN}🎯 Task {returned_task.id} completed "
-                            f"successfully.{Fore.RESET}"
+                        quality_eval = self._evaluate_task_quality(
+                            returned_task
                         )
-                        await self._handle_completed_task(returned_task)
+
+                        if not quality_eval.quality_sufficient:
+                            logger.info(
+                                f"Task {returned_task.id} quality check: "
+                                f"score={quality_eval.quality_score}, "
+                                f"issues={quality_eval.issues}"
+                            )
+
+                            if (
+                                returned_task.failure_count < 2
+                                and quality_eval.improvement_suggestion
+                            ):
+                                enhanced_content = (
+                                    f"{returned_task.content}\n\n"
+                                    f"Quality improvement needed: "
+                                    f"{quality_eval.improvement_suggestion}"
+                                )
+                                returned_task.content = enhanced_content
+                                returned_task.state = TaskState.FAILED
+                                returned_task.result = (
+                                    f"Quality insufficient (score: "
+                                    f"{quality_eval.quality_score}). "
+                                    f"Issues: {', '.join(quality_eval.issues)}"
+                                )
+
+                                try:
+                                    halt = await self._handle_failed_task(
+                                        returned_task
+                                    )
+                                    if not halt:
+                                        continue
+                                    print(
+                                        f"{Fore.RED}Task {returned_task.id} "
+                                        f"quality check failed after retries. "
+                                        f"Final score: {quality_eval.quality_score}"
+                                        f"{Fore.RESET}"
+                                    )
+                                    await self._graceful_shutdown(
+                                        returned_task
+                                    )
+                                    break
+                                except Exception as e:
+                                    logger.error(
+                                        f"Error handling quality-failed task "
+                                        f"{returned_task.id}: {e}",
+                                        exc_info=True,
+                                    )
+                                    continue
+                            else:
+                                print(
+                                    f"{Fore.YELLOW} Task {returned_task.id} "
+                                    f"completed with quality score: "
+                                    f"{quality_eval.quality_score}{Fore.RESET}"
+                                )
+                                await self._handle_completed_task(
+                                    returned_task
+                                )
+                        else:
+                            print(
+                                f"{Fore.CYAN} Task {returned_task.id} completed"
+                                f"successfully (quality score: "
+                                f"{quality_eval.quality_score}).{Fore.RESET}"
+                            )
+                            await self._handle_completed_task(returned_task)
                 elif returned_task.state == TaskState.FAILED:
                     try:
                         halt = await self._handle_failed_task(returned_task)
