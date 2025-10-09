@@ -799,16 +799,6 @@ class ChatAgent(BaseAgent):
     ) -> None:
         r"""Updates the agent memory with a new message.
 
-        If the single *message* exceeds the model's context window, it will
-        be **automatically split into multiple smaller chunks** before being
-        written into memory. This prevents later failures in
-        `ScoreBasedContextCreator` where an over-sized message cannot fit
-        into the available token budget at all.
-
-        This slicing logic handles both regular text messages (in the
-        `content` field) and long tool call results (in the `result` field of
-        a `FunctionCallingMessage`).
-
         Args:
             message (BaseMessage): The new message to add to the stored
                 messages.
@@ -818,149 +808,18 @@ class ChatAgent(BaseAgent):
                 (default: :obj:`None`)
                     (default: obj:`None`)
         """
-        import math
         import time
-        import uuid as _uuid
 
-        # 1. Helper to write a record to memory
-        def _write_single_record(
-            message: BaseMessage, role: OpenAIBackendRole, timestamp: float
-        ):
-            self.memory.write_record(
-                MemoryRecord(
-                    message=message,
-                    role_at_backend=role,
-                    timestamp=timestamp,
-                    agent_id=self.agent_id,
-                )
+        self.memory.write_record(
+            MemoryRecord(
+                message=message,
+                role_at_backend=role,
+                timestamp=timestamp
+                if timestamp is not None
+                else time.time_ns() / 1_000_000_000,  # Nanosecond precision
+                agent_id=self.agent_id,
             )
-
-        base_ts = (
-            timestamp
-            if timestamp is not None
-            else time.time_ns() / 1_000_000_000
         )
-
-        # 2. Get token handling utilities, fallback if unavailable
-        try:
-            context_creator = self.memory.get_context_creator()
-            token_counter = context_creator.token_counter
-            token_limit = context_creator.token_limit
-        except AttributeError:
-            _write_single_record(message, role, base_ts)
-            return
-
-        # 3. Check if slicing is necessary
-        try:
-            current_tokens = token_counter.count_tokens_from_messages(
-                [message.to_openai_message(role)]
-            )
-            import warnings
-
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=EmptyMemoryWarning)
-                context_messages, _ = self.memory.get_context()
-
-            # Calculate system prompt tokens
-            sys_prompt_tokens = 0
-            for msg in context_messages:
-                if msg.get('role') in {'system'}:
-                    sys_prompt_tokens += (
-                        token_counter.count_tokens_from_messages([msg])
-                    )
-                else:
-                    break  # Stop after first non-system message
-
-            # Effective limit = total limit - system prompt tokens
-            effective_limit = token_limit - sys_prompt_tokens
-
-            # Only chunk if message exceeds effective limit
-            if current_tokens <= effective_limit:
-                _write_single_record(message, role, base_ts)
-                return
-        except Exception as e:
-            logger.warning(
-                f"Token calculation failed before chunking, "
-                f"writing message as-is. Error: {e}"
-            )
-            _write_single_record(message, role, base_ts)
-            return
-
-        # 4. Perform slicing
-        logger.warning(
-            f"Message with {current_tokens} tokens exceeds effective limit "
-            f"of {effective_limit}, Slicing into smaller chunks."
-        )
-
-        text_to_chunk: Optional[str] = None
-        is_function_result = False
-
-        if isinstance(message, FunctionCallingMessage) and isinstance(
-            message.result, str
-        ):
-            text_to_chunk = message.result
-            is_function_result = True
-        elif isinstance(message.content, str):
-            text_to_chunk = message.content
-
-        if not text_to_chunk or not text_to_chunk.strip():
-            _write_single_record(message, role, base_ts)
-            return
-        # Encode the entire text to get a list of all token IDs
-        try:
-            all_token_ids = token_counter.encode(text_to_chunk)
-        except Exception as e:
-            logger.error(f"Failed to encode text for chunking: {e}")
-            _write_single_record(message, role, base_ts)  # Fallback
-            return
-
-        if not all_token_ids:
-            _write_single_record(message, role, base_ts)  # Nothing to chunk
-            return
-
-        # TODO: Research more about how to set a more appropriate chunk size
-        # Ensure chunk_size is at least 50
-        chunk_size = max(50, int(effective_limit * 0.2))
-
-        # Calculate number of chunks needed
-        num_chunks = math.ceil(len(all_token_ids) / chunk_size)
-        group_id = str(_uuid.uuid4())
-
-        for i in range(num_chunks):
-            start_idx = i * chunk_size
-            end_idx = start_idx + chunk_size
-            chunk_token_ids = all_token_ids[start_idx:end_idx]
-
-            chunk_body = token_counter.decode(chunk_token_ids)
-
-            if is_function_result and isinstance(
-                message, FunctionCallingMessage
-            ):
-                new_msg: BaseMessage = FunctionCallingMessage(
-                    role_name=message.role_name,
-                    role_type=message.role_type,
-                    meta_dict=message.meta_dict,
-                    content=message.content,
-                    func_name=message.func_name,
-                    args=message.args,
-                    result=chunk_body,
-                    tool_call_id=message.tool_call_id,
-                )
-            else:
-                new_msg = message.create_new_instance(chunk_body)
-
-            meta = (new_msg.meta_dict or {}).copy()
-            meta.update(
-                {
-                    "chunk_idx": i + 1,
-                    "chunk_total": num_chunks,
-                    "chunk_group_id": group_id,
-                }
-            )
-            new_msg.meta_dict = meta
-
-            # Increment timestamp slightly to maintain order
-            _write_single_record(new_msg, role, base_ts + i * 1e-6)
 
     def load_memory(self, memory: AgentMemory) -> None:
         r"""Load the provided memory into the agent.
@@ -1656,7 +1515,6 @@ class ChatAgent(BaseAgent):
         iteration_count: int = 0
         prev_num_openai_messages: int = 0
         # Track if we've already retried due to token limit
-        token_limit_retry_attempted: bool = False
 
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
@@ -1682,69 +1540,41 @@ class ChatAgent(BaseAgent):
                     else self._get_full_tool_schemas(),
                     prev_num_openai_messages=prev_num_openai_messages,
                 )
-            except (BadRequestError, Exception) as e:
+            except Exception as e:
                 # Check if this is a token limit error
                 error_message = str(e).lower()
                 is_token_limit_error = (
                     'context_length_exceeded' in error_message
-                    or 'maximum context length' in error_message
+                    or 'exceeded your current quota' in error_message
+                    or 'tokens must be reduced' in error_message
                     or 'context length' in error_message
+                    or 'token count' in error_message
                     or 'context limit' in error_message
                 )
 
-                if is_token_limit_error and not token_limit_retry_attempted:
+                if is_token_limit_error :
                     logger.warning(
                         "Token limit exceeded error detected. "
-                        "Removing first non-system message and retrying once."
+                        "Summarizing context."
                     )
-                    token_limit_retry_attempted = True
-
-                    # Find and remove first non-system message
-                    modified_messages = None
-                    for i, msg in enumerate(openai_messages):
-                        msg_role = msg.get('role', '')
-                        # Skip system and developer messages
-                        if msg_role not in {'system'}:
-                            # Found first non-system message, create new list
-                            modified_messages = (
-                                openai_messages[:i] + openai_messages[i + 1 :]
-                            )
-                            logger.info(
-                                "Removed first non-system message "
-                                "and retrying."
-                            )
-                            break
-
-                    if modified_messages is not None:
-                        # Retry with modified messages
-                        try:
-                            response = self._get_model_response(
-                                modified_messages,
-                                num_tokens=num_tokens,
-                                current_iteration=iteration_count,
-                                response_format=response_format,
-                                tool_schemas=[]
-                                if disable_tools
-                                else self._get_full_tool_schemas(),
-                                prev_num_openai_messages=prev_num_openai_messages,
-                            )
-                            # Success! Continue with the response
-                        except Exception:
-                            # Retry also failed, re-raise the original error
-                            logger.warning(
-                                "Retry with reduced context also failed. "
-                                "Re-raising original error."
-                            )
-                            raise e
+                    full_context_file_path = self.working_directory / "full_context.json"
+                    self.save_memory(path=str(full_context_file_path))
+                    self.memory.clear()
+                    summary= self.summarize()
+                    summary_messages = (
+                        f"[Context Summary]\n\n" + 
+                        summary.get('summary', '') + 
+                        "\n\n[Full Context file path is]\n\n" 
+                        + str(full_context_file_path)
+                    )
+                    camel_workdir = os.environ.get("CAMEL_WORKDIR")
+                    if camel_workdir:
+                        self.working_directory = Path(camel_workdir) / "context_files"
                     else:
-                        # No non-system message to remove
-                        logger.warning(
-                            "No non-system message to remove. "
-                            "Re-raising the error."
-                        )
-                        raise
-                else:
-                    raise
+                        self.working_directory = Path("context_files")
+                    
+                    self.update_memory(summary_messages, OpenAIBackendRole.ASSISTANT)
+                    self._step_impl(input_message,response_format)
 
             prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
