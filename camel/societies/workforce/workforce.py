@@ -336,7 +336,7 @@ class Workforce(BaseNode):
             self._callbacks.append(WorkforceLogger(workforce_id=self.node_id))
         else:
             logger.info(
-                "Metrics callback detected. Skipping default "
+                "WorkforceMetrics implementation detected. Skipping default "
                 "WorkforceLogger addition."
             )
 
