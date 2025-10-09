@@ -644,6 +644,8 @@ class ChatAgent(BaseAgent):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
+        if self._tool_output_cache_enabled:
+            self._tool_output_history.clear()
         for terminator in self.response_terminators:
             terminator.reset()
 
@@ -1581,6 +1583,8 @@ class ChatAgent(BaseAgent):
             None
         """
         self.memory.clear()
+        if self._tool_output_cache_enabled:
+            self._tool_output_history.clear()
 
         if self.system_message is not None:
             self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
