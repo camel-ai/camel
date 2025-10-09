@@ -13,25 +13,55 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import asyncio
 import logging
+import sys
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.toolkits import HybridBrowserToolkit
 from camel.types import ModelPlatformType, ModelType
 
+# Remove all existing handlers
+root = logging.getLogger()
+if root.handlers:
+    for handler in list(root.handlers):
+        root.removeHandler(handler)
+
+# Configure logging with a simple handler
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(),
+        logging.StreamHandler(sys.stdout),
     ],
+    force=True,
 )
 
-logging.getLogger('camel.agents').setLevel(logging.INFO)
+# Set specific loggers to INFO level to see API context logs
+# Note: get_logger adds 'camel.' prefix, so the actual logger name is 'camel.camel.agents.chat_agent'
+logging.getLogger('camel').setLevel(logging.INFO)
+logging.getLogger('camel.camel').setLevel(logging.INFO)
+logging.getLogger('camel.camel.agents').setLevel(logging.INFO)
+logging.getLogger('camel.camel.agents.chat_agent').setLevel(logging.INFO)
 logging.getLogger('camel.models').setLevel(logging.INFO)
-logging.getLogger('camel.models').setLevel(logging.INFO)
-logging.getLogger('camel.toolkits.hybrid_browser_toolkit').setLevel(
-    logging.DEBUG
+logging.getLogger('camel.toolkits').setLevel(logging.INFO)
+
+# Also try without the double camel prefix in case it's different
+logging.getLogger('camel.agents.chat_agent').setLevel(logging.INFO)
+
+# Ensure the chat_agent logger is properly configured
+chat_agent_logger = logging.getLogger('camel.camel.agents.chat_agent')
+chat_agent_logger.setLevel(logging.INFO)
+chat_agent_logger.propagate = True
+
+print("Logging configured. Chat agent logger level:", chat_agent_logger.level)
+print("Effective level:", chat_agent_logger.getEffectiveLevel())
+print("Logger name:", chat_agent_logger.name)
+print("Has handlers:", bool(chat_agent_logger.handlers))
+print(
+    "Parent has handlers:",
+    bool(chat_agent_logger.parent.handlers)
+    if chat_agent_logger.parent
+    else False,
 )
 USER_DATA_DIR = "User_Data"
 
