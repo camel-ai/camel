@@ -85,7 +85,8 @@ class _MetricsCallback(WorkforceCallback, WorkforceMetrics):
         self.failed = 0
 
     def dump_to_json(self, file_path: str) -> None:
-        # Writes an empty JSON object to the specified file for testing purposes.
+        # Writes an empty JSON object to the specified file for
+        # testing purposes.
         with open(file_path, "w", encoding="utf-8") as f:
             f.write("{}")
 
