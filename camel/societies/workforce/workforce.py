@@ -37,6 +37,9 @@ from typing import (
     cast,
 )
 
+from .workforce_callback import WorkforceCallback
+from .workforce_metrics import WorkforceMetrics
+
 if TYPE_CHECKING:
     from camel.utils.context_utils import ContextUtility
 
@@ -87,6 +90,16 @@ from camel.toolkits import (
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required
 
+from .events import (
+    AllTasksCompletedEvent,
+    TaskAssignedEvent,
+    TaskCompletedEvent,
+    TaskCreatedEvent,
+    TaskDecomposedEvent,
+    TaskFailedEvent,
+    TaskStartedEvent,
+    WorkerCreatedEvent,
+)
 from .workforce_logger import WorkforceLogger
 
 if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
@@ -203,6 +216,17 @@ class Workforce(BaseNode):
             support native structured output. When disabled, the workforce
             uses the native response_format parameter.
             (default: :obj:`True`)
+        callbacks (Optional[List[WorkforceCallback]], optional): A list of
+            callback handlers to observe and record workforce lifecycle events
+            and metrics (e.g., task creation/assignment/start/completion/
+            failure, worker creation/deletion, all-tasks-completed). All
+            items must be instances of :class:`WorkforceCallback`, otherwise
+            a :class:`ValueError` is raised. If none of the provided
+            callbacks implement :class:`WorkforceMetrics`, a built-in
+            :class:`WorkforceLogger` (implements both callback and metrics)
+            is added automatically. If at least one provided callback
+            implements :class:`WorkforceMetrics`, no default logger is added.
+            (default: :obj:`None`)
 
     Example:
         >>> import asyncio
@@ -255,6 +279,7 @@ class Workforce(BaseNode):
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
         task_timeout_seconds: Optional[float] = None,
+        callbacks: Optional[List[WorkforceCallback]] = None,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[
@@ -270,7 +295,6 @@ class Workforce(BaseNode):
         )
         if self.use_structured_output_handler:
             self.structured_handler = StructuredOutputHandler()
-        self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
         self._task: Optional[Task] = None
         self._pending_tasks: Deque[Task] = deque()
         self._task_dependencies: Dict[str, List[str]] = {}
@@ -293,14 +317,39 @@ class Workforce(BaseNode):
         self._last_snapshot_time: float = 0.0
         # Minimum seconds between automatic snapshots
         self.snapshot_interval: float = 30.0
-        if self.metrics_logger:
-            for child in self._children:
-                worker_type = type(child).__name__
-                role_or_desc = child.description
-                self.metrics_logger.log_worker_created(
-                    worker_id=child.node_id,
-                    worker_type=worker_type,
-                    role=role_or_desc,
+        # Initialize callbacks list before validation/appending
+        self._callbacks: List[WorkforceCallback] = []
+        if callbacks and len(callbacks) > 0:
+            for cb in callbacks:
+                if isinstance(cb, WorkforceCallback):
+                    self._callbacks.append(cb)
+                else:
+                    raise ValueError(
+                        "All callbacks must be instances of WorkforceCallback"
+                    )
+
+        # Add default logger only if no metrics callback is provided
+        has_metrics_callback = any(
+            isinstance(cb, WorkforceMetrics) for cb in self._callbacks
+        )
+        if not has_metrics_callback:
+            self._callbacks.append(WorkforceLogger(workforce_id=self.node_id))
+        else:
+            logger.info(
+                "WorkforceMetrics implementation detected. Skipping default "
+                "WorkforceLogger addition."
+            )
+
+        for child in self._children:
+            worker_type = type(child).__name__
+            role_or_desc = child.description
+            for cb in self._callbacks:
+                cb.log_worker_created(
+                    WorkerCreatedEvent(
+                        worker_id=child.node_id,
+                        worker_type=worker_type,
+                        role=role_or_desc,
+                    )
                 )
 
         # Set up coordinator agent with default system message
@@ -1389,12 +1438,14 @@ class Workforce(BaseNode):
         self._task = task
         task.state = TaskState.FAILED
 
-        if self.metrics_logger:
-            self.metrics_logger.log_task_created(
-                task_id=task.id,
-                description=task.content,
-                task_type=task.type,
-                metadata=task.additional_info,
+        for cb in self._callbacks:
+            cb.log_task_created(
+                TaskCreatedEvent(
+                    task_id=task.id,
+                    description=task.content,
+                    task_type=task.type,
+                    metadata=task.additional_info,
+                )
             )
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
@@ -1409,18 +1460,25 @@ class Workforce(BaseNode):
         else:
             # This is a regular list (non-streaming mode)
             subtasks = subtasks_result
-        if self.metrics_logger and subtasks:
-            self.metrics_logger.log_task_decomposed(
-                parent_task_id=task.id, subtask_ids=[st.id for st in subtasks]
-            )
-            for subtask in subtasks:
-                self.metrics_logger.log_task_created(
-                    task_id=subtask.id,
-                    description=subtask.content,
-                    parent_task_id=task.id,
-                    task_type=subtask.type,
-                    metadata=subtask.additional_info,
+        if subtasks:
+            for cb in self._callbacks:
+                cb.log_task_decomposed(
+                    TaskDecomposedEvent(
+                        parent_task_id=task.id,
+                        subtask_ids=[st.id for st in subtasks],
+                    )
                 )
+            for subtask in subtasks:
+                for cb in self._callbacks:
+                    cb.log_task_created(
+                        TaskCreatedEvent(
+                            task_id=subtask.id,
+                            description=subtask.content,
+                            parent_task_id=task.id,
+                            task_type=subtask.type,
+                            metadata=subtask.additional_info,
+                        )
+                    )
 
         if subtasks:
             # _pending_tasks will contain both undecomposed
@@ -1739,11 +1797,13 @@ class Workforce(BaseNode):
         # If workforce is paused, start the worker's listening task
         self._start_child_node_when_paused(worker_node.start())
 
-        if self.metrics_logger:
-            self.metrics_logger.log_worker_created(
-                worker_id=worker_node.node_id,
-                worker_type='SingleAgentWorker',
-                role=worker_node.description,
+        for cb in self._callbacks:
+            cb.log_worker_created(
+                WorkerCreatedEvent(
+                    worker_id=worker_node.node_id,
+                    worker_type='SingleAgentWorker',
+                    role=worker_node.description,
+                )
             )
         return self
 
@@ -1818,11 +1878,13 @@ class Workforce(BaseNode):
         # If workforce is paused, start the worker's listening task
         self._start_child_node_when_paused(worker_node.start())
 
-        if self.metrics_logger:
-            self.metrics_logger.log_worker_created(
-                worker_id=worker_node.node_id,
-                worker_type='RolePlayingWorker',
-                role=worker_node.description,
+        for cb in self._callbacks:
+            cb.log_worker_created(
+                WorkerCreatedEvent(
+                    worker_id=worker_node.node_id,
+                    worker_type='RolePlayingWorker',
+                    role=worker_node.description,
+                )
             )
         return self
 
@@ -1900,10 +1962,9 @@ class Workforce(BaseNode):
             # No active loop, directly set the event
             self._pause_event.set()
 
-        if hasattr(self, 'metrics_logger') and self.metrics_logger is not None:
-            self.metrics_logger.reset_task_data()
-        else:
-            self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
+        for cb in self._callbacks:
+            if isinstance(cb, WorkforceMetrics):
+                cb.reset_task_data()
 
     def save_workflow_memories(self) -> Dict[str, str]:
         r"""Save workflow memories for all SingleAgentWorker instances in the
@@ -2580,9 +2641,9 @@ class Workforce(BaseNode):
 
         task.assigned_worker_id = assignee_id
 
-        if self.metrics_logger:
-            self.metrics_logger.log_task_started(
-                task_id=task.id, worker_id=assignee_id
+        for cb in self._callbacks:
+            cb.log_task_started(
+                TaskStartedEvent(task_id=task.id, worker_id=assignee_id)
             )
 
         try:
@@ -2727,12 +2788,14 @@ class Workforce(BaseNode):
         print(f"{Fore.CYAN}{new_node} created.{Fore.RESET}")
 
         self._children.append(new_node)
-        if self.metrics_logger:
-            self.metrics_logger.log_worker_created(
-                worker_id=new_node.node_id,
-                worker_type='SingleAgentWorker',
-                role=new_node_conf.role,
-                metadata={'description': new_node_conf.description},
+        for cb in self._callbacks:
+            cb.log_worker_created(
+                WorkerCreatedEvent(
+                    worker_id=new_node.node_id,
+                    worker_type='SingleAgentWorker',
+                    role=new_node_conf.role,
+                    metadata={'description': new_node_conf.description},
+                )
             )
         self._child_listening_tasks.append(
             asyncio.create_task(new_node.start())
@@ -2841,14 +2904,16 @@ class Workforce(BaseNode):
                     assignment.dependencies
                 )
                 self._assignees[assignment.task_id] = assignment.assignee_id
-                if self.metrics_logger:
+                for cb in self._callbacks:
                     # queue_time_seconds can be derived by logger if task
                     # creation time is logged
-                    self.metrics_logger.log_task_assigned(
-                        task_id=assignment.task_id,
-                        worker_id=assignment.assignee_id,
-                        dependencies=assignment.dependencies,
-                        queue_time_seconds=None,
+                    cb.log_task_assigned(
+                        TaskAssignedEvent(
+                            task_id=assignment.task_id,
+                            worker_id=assignment.assignee_id,
+                            dependencies=assignment.dependencies,
+                            queue_time_seconds=None,
+                        )
                     )
 
         # Step 2: Iterate through all pending tasks and post those that are
@@ -2924,16 +2989,20 @@ class Workforce(BaseNode):
             f"{task.failure_count}/3): {detailed_error}"
         )
 
-        if self.metrics_logger:
-            self.metrics_logger.log_task_failed(
-                task_id=task.id,
-                worker_id=worker_id,
-                error_message=detailed_error,
-                metadata={
-                    'failure_count': task.failure_count,
-                    'task_content': task.content,
-                    'result_length': len(task.result) if task.result else 0,
-                },
+        for cb in self._callbacks:
+            cb.log_task_failed(
+                TaskFailedEvent(
+                    task_id=task.id,
+                    worker_id=worker_id,
+                    error_message=detailed_error,
+                    metadata={
+                        'failure_count': task.failure_count,
+                        'task_content': task.content,
+                        'result_length': len(task.result)
+                        if task.result
+                        else 0,
+                    },
+                )
             )
 
         # Check for immediate halt conditions - return immediately if we
@@ -3035,19 +3104,25 @@ class Workforce(BaseNode):
                 else:
                     # This is a regular list (non-streaming mode)
                     subtasks = subtasks_result
-                if self.metrics_logger and subtasks:
-                    self.metrics_logger.log_task_decomposed(
-                        parent_task_id=task.id,
-                        subtask_ids=[st.id for st in subtasks],
-                    )
-                    for subtask in subtasks:
-                        self.metrics_logger.log_task_created(
-                            task_id=subtask.id,
-                            description=subtask.content,
-                            parent_task_id=task.id,
-                            task_type=subtask.type,
-                            metadata=subtask.additional_info,
+                if subtasks:
+                    for cb in self._callbacks:
+                        cb.log_task_decomposed(
+                            TaskDecomposedEvent(
+                                parent_task_id=task.id,
+                                subtask_ids=[st.id for st in subtasks],
+                            )
                         )
+                    for subtask in subtasks:
+                        for cb in self._callbacks:
+                            cb.log_task_created(
+                                TaskCreatedEvent(
+                                    task_id=subtask.id,
+                                    description=subtask.content,
+                                    parent_task_id=task.id,
+                                    task_type=subtask.type,
+                                    metadata=subtask.additional_info,
+                                )
+                            )
                 # Insert packets at the head of the queue
                 self._pending_tasks.extendleft(reversed(subtasks))
 
@@ -3106,60 +3181,60 @@ class Workforce(BaseNode):
         return False
 
     async def _handle_completed_task(self, task: Task) -> None:
-        if self.metrics_logger:
-            worker_id = task.assigned_worker_id or "unknown"
-            processing_time_seconds = None
-            token_usage = None
+        worker_id = task.assigned_worker_id or "unknown"
+        processing_time_seconds = None
+        token_usage = None
 
-            # Get processing time from task start time or additional info
-            if task.id in self._task_start_times:
-                processing_time_seconds = (
-                    time.time() - self._task_start_times[task.id]
+        # Get processing time from task start time or additional info
+        if task.id in self._task_start_times:
+            processing_time_seconds = (
+                time.time() - self._task_start_times[task.id]
+            )
+            self._cleanup_task_tracking(task.id)
+        elif (
+            task.additional_info is not None
+            and 'processing_time_seconds' in task.additional_info
+        ):
+            processing_time_seconds = task.additional_info[
+                'processing_time_seconds'
+            ]
+
+        # Get token usage from task additional info (preferred - actual
+        # usage)
+        if (
+            task.additional_info is not None
+            and 'token_usage' in task.additional_info
+        ):
+            token_usage = task.additional_info['token_usage']
+        else:
+            # Fallback: Try to get token usage from SingleAgentWorker
+            # memory
+            assignee_node = next(
+                (
+                    child
+                    for child in self._children
+                    if child.node_id == worker_id
+                ),
+                None,
+            )
+            if isinstance(assignee_node, SingleAgentWorker):
+                try:
+                    _, total_tokens = assignee_node.worker.memory.get_context()
+                    token_usage = {'total_tokens': total_tokens}
+                except Exception:
+                    token_usage = None
+
+        # Log the completed task
+        for cb in self._callbacks:
+            cb.log_task_completed(
+                TaskCompletedEvent(
+                    task_id=task.id,
+                    worker_id=worker_id,
+                    result_summary=task.result if task.result else "Completed",
+                    processing_time_seconds=processing_time_seconds,
+                    token_usage=token_usage,
+                    metadata={'current_state': task.state.value},
                 )
-                self._cleanup_task_tracking(task.id)
-            elif (
-                task.additional_info is not None
-                and 'processing_time_seconds' in task.additional_info
-            ):
-                processing_time_seconds = task.additional_info[
-                    'processing_time_seconds'
-                ]
-
-            # Get token usage from task additional info (preferred - actual
-            # usage)
-            if (
-                task.additional_info is not None
-                and 'token_usage' in task.additional_info
-            ):
-                token_usage = task.additional_info['token_usage']
-            else:
-                # Fallback: Try to get token usage from SingleAgentWorker
-                # memory
-                assignee_node = next(
-                    (
-                        child
-                        for child in self._children
-                        if child.node_id == worker_id
-                    ),
-                    None,
-                )
-                if isinstance(assignee_node, SingleAgentWorker):
-                    try:
-                        _, total_tokens = (
-                            assignee_node.worker.memory.get_context()
-                        )
-                        token_usage = {'total_tokens': total_tokens}
-                    except Exception:
-                        token_usage = None
-
-            # Log the completed task
-            self.metrics_logger.log_task_completed(
-                task_id=task.id,
-                worker_id=worker_id,
-                result_summary=task.result if task.result else "Completed",
-                processing_time_seconds=processing_time_seconds,
-                token_usage=token_usage,
-                metadata={'current_state': task.state.value},
             )
 
         # Find and remove the completed task from pending tasks
@@ -3280,15 +3355,23 @@ class Workforce(BaseNode):
         r"""Returns an ASCII tree representation of the task hierarchy and
         worker status.
         """
-        if not self.metrics_logger:
-            return "Logger not initialized."
-        return self.metrics_logger.get_ascii_tree_representation()
+        metrics_cb: List[WorkforceMetrics] = [
+            cb for cb in self._callbacks if isinstance(cb, WorkforceMetrics)
+        ]
+        if len(metrics_cb) == 0:
+            return "Metrics Callback not initialized."
+        else:
+            return metrics_cb[0].get_ascii_tree_representation()
 
     def get_workforce_kpis(self) -> Dict[str, Any]:
         r"""Returns a dictionary of key performance indicators."""
-        if not self.metrics_logger:
-            return {"error": "Logger not initialized."}
-        return self.metrics_logger.get_kpis()
+        metrics_cb: List[WorkforceMetrics] = [
+            cb for cb in self._callbacks if isinstance(cb, WorkforceMetrics)
+        ]
+        if len(metrics_cb) == 0:
+            return {"error": "Metrics Callback not initialized."}
+        else:
+            return metrics_cb[0].get_kpis()
 
     def dump_workforce_logs(self, file_path: str) -> None:
         r"""Dumps all collected logs to a JSON file.
@@ -3296,10 +3379,13 @@ class Workforce(BaseNode):
         Args:
             file_path (str): The path to the JSON file.
         """
-        if not self.metrics_logger:
+        metrics_cb: List[WorkforceMetrics] = [
+            cb for cb in self._callbacks if isinstance(cb, WorkforceMetrics)
+        ]
+        if len(metrics_cb) == 0:
             print("Logger not initialized. Cannot dump logs.")
             return
-        self.metrics_logger.dump_to_json(file_path)
+        metrics_cb[0].dump_to_json(file_path)
         # Use logger.info or print, consistent with existing style
         logger.info(f"Workforce logs dumped to {file_path}")
 
@@ -3670,6 +3756,8 @@ class Workforce(BaseNode):
         elif not self._pending_tasks and self._in_flight_tasks == 0:
             self._state = WorkforceState.IDLE
             logger.info("All tasks completed.")
+            for cb in self._callbacks:
+                cb.log_all_tasks_completed(AllTasksCompletedEvent())
 
         # shut down the whole workforce tree
         self.stop()
