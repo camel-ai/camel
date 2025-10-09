@@ -16,12 +16,26 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from camel.logger import get_logger
+from camel.societies.workforce.events import (
+    AllTasksCompletedEvent,
+    QueueStatusEvent,
+    TaskAssignedEvent,
+    TaskCompletedEvent,
+    TaskCreatedEvent,
+    TaskDecomposedEvent,
+    TaskFailedEvent,
+    TaskStartedEvent,
+    WorkerCreatedEvent,
+    WorkerDeletedEvent,
+)
+from camel.societies.workforce.workforce_callback import WorkforceCallback
+from camel.societies.workforce.workforce_metrics import WorkforceMetrics
 from camel.types.agents import ToolCallingRecord
 
 logger = get_logger(__name__)
 
 
-class WorkforceLogger:
+class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
     r"""Logs events and metrics for a Workforce instance."""
 
     def __init__(self, workforce_id: str):
@@ -55,194 +69,200 @@ class WorkforceLogger:
 
     def log_task_created(
         self,
-        task_id: str,
-        description: str,
-        parent_task_id: Optional[str] = None,
-        task_type: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        event: TaskCreatedEvent,
     ) -> None:
         r"""Logs the creation of a new task."""
         self._log_event(
-            'task_created',
-            task_id=task_id,
-            description=description,
-            parent_task_id=parent_task_id,
-            task_type=task_type,
-            metadata=metadata or {},
+            event_type=event.event_type,
+            task_id=event.task_id,
+            description=event.description,
+            parent_task_id=event.parent_task_id,
+            task_type=event.task_type,
+            metadata=event.metadata or {},
         )
-        self._task_hierarchy[task_id] = {
-            'parent': parent_task_id,
+        self._task_hierarchy[event.task_id] = {
+            'parent': event.parent_task_id,
             'children': [],
             'status': 'created',
-            'description': description,
+            'description': event.description,
             'assigned_to': None,
-            **(metadata or {}),
+            **(event.metadata or {}),
         }
-        if parent_task_id and parent_task_id in self._task_hierarchy:
-            self._task_hierarchy[parent_task_id]['children'].append(task_id)
+        if (
+            event.parent_task_id
+            and event.parent_task_id in self._task_hierarchy
+        ):
+            self._task_hierarchy[event.parent_task_id]['children'].append(
+                event.task_id
+            )
 
     def log_task_decomposed(
         self,
-        parent_task_id: str,
-        subtask_ids: List[str],
-        metadata: Optional[Dict[str, Any]] = None,
+        event: TaskDecomposedEvent,
     ) -> None:
         r"""Logs the decomposition of a task into subtasks."""
         self._log_event(
-            'task_decomposed',
-            parent_task_id=parent_task_id,
-            subtask_ids=subtask_ids,
-            metadata=metadata or {},
+            event_type=event.event_type,
+            parent_task_id=event.parent_task_id,
+            subtask_ids=event.subtask_ids,
+            metadata=event.metadata or {},
         )
-        if parent_task_id in self._task_hierarchy:
-            self._task_hierarchy[parent_task_id]['status'] = "decomposed"
+        if event.parent_task_id in self._task_hierarchy:
+            self._task_hierarchy[event.parent_task_id]['status'] = "decomposed"
 
     def log_task_assigned(
         self,
-        task_id: str,
-        worker_id: str,
-        queue_time_seconds: Optional[float] = None,
-        dependencies: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        event: TaskAssignedEvent,
     ) -> None:
         r"""Logs the assignment of a task to a worker."""
         self._log_event(
-            'task_assigned',
-            task_id=task_id,
-            worker_id=worker_id,
-            queue_time_seconds=queue_time_seconds,
-            dependencies=dependencies or [],
-            metadata=metadata or {},
+            event_type=event.event_type,
+            task_id=event.task_id,
+            worker_id=event.worker_id,
+            queue_time_seconds=event.queue_time_seconds,
+            dependencies=event.dependencies or [],
+            metadata=event.metadata or {},
         )
-        if task_id in self._task_hierarchy:
-            self._task_hierarchy[task_id]['status'] = 'assigned'
-            self._task_hierarchy[task_id]['assigned_to'] = worker_id
-            self._task_hierarchy[task_id]['dependencies'] = dependencies or []
-        if worker_id in self._worker_information:
-            self._worker_information[worker_id]['current_task_id'] = task_id
-            self._worker_information[worker_id]['status'] = 'busy'
+        if event.task_id in self._task_hierarchy:
+            self._task_hierarchy[event.task_id]['status'] = 'assigned'
+            self._task_hierarchy[event.task_id]['assigned_to'] = (
+                event.worker_id
+            )
+            self._task_hierarchy[event.task_id]['dependencies'] = (
+                event.dependencies or []
+            )
+        if event.worker_id in self._worker_information:
+            self._worker_information[event.worker_id]['current_task_id'] = (
+                event.task_id
+            )
+            self._worker_information[event.worker_id]['status'] = 'busy'
 
     def log_task_started(
         self,
-        task_id: str,
-        worker_id: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        event: TaskStartedEvent,
     ) -> None:
         r"""Logs when a worker starts processing a task."""
         self._log_event(
-            'task_started',
-            task_id=task_id,
-            worker_id=worker_id,
-            metadata=metadata or {},
+            event_type=event.event_type,
+            task_id=event.task_id,
+            worker_id=event.worker_id,
+            metadata=event.metadata or {},
         )
-        if task_id in self._task_hierarchy:
-            self._task_hierarchy[task_id]['status'] = 'processing'
+        if event.task_id in self._task_hierarchy:
+            self._task_hierarchy[event.task_id]['status'] = 'processing'
 
-    def log_task_completed(
-        self,
-        task_id: str,
-        worker_id: str,
-        result_summary: Optional[str] = None,
-        processing_time_seconds: Optional[float] = None,
-        token_usage: Optional[Dict[str, int]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    def log_task_completed(self, event: TaskCompletedEvent) -> None:
         r"""Logs the successful completion of a task."""
         self._log_event(
-            'task_completed',
-            task_id=task_id,
-            worker_id=worker_id,
-            result_summary=result_summary,
-            processing_time_seconds=processing_time_seconds,
-            token_usage=token_usage or {},
-            metadata=metadata or {},
+            event_type=event.event_type,
+            task_id=event.task_id,
+            worker_id=event.worker_id,
+            result_summary=event.result_summary,
+            processing_time_seconds=event.processing_time_seconds,
+            token_usage=event.token_usage or {},
+            metadata=event.metadata or {},
         )
-        if task_id in self._task_hierarchy:
-            self._task_hierarchy[task_id]['status'] = 'completed'
-            self._task_hierarchy[task_id]['assigned_to'] = None
+        if event.task_id in self._task_hierarchy:
+            self._task_hierarchy[event.task_id]['status'] = 'completed'
+            self._task_hierarchy[event.task_id]['assigned_to'] = None
             # Store processing time in task hierarchy for display in tree
-            if processing_time_seconds is not None:
-                self._task_hierarchy[task_id]['completion_time_seconds'] = (
-                    processing_time_seconds
-                )
+            if event.processing_time_seconds is not None:
+                self._task_hierarchy[event.task_id][
+                    'completion_time_seconds'
+                ] = event.processing_time_seconds
             # Store token usage in task hierarchy for display in tree
-            if token_usage is not None:
-                self._task_hierarchy[task_id]['token_usage'] = token_usage
-        if worker_id in self._worker_information:
-            self._worker_information[worker_id]['current_task_id'] = None
-            self._worker_information[worker_id]['status'] = 'idle'
-            self._worker_information[worker_id]['tasks_completed'] = (
-                self._worker_information[worker_id].get('tasks_completed', 0)
+            if event.token_usage is not None:
+                self._task_hierarchy[event.task_id]['token_usage'] = (
+                    event.token_usage
+                )
+        if event.worker_id in self._worker_information:
+            self._worker_information[event.worker_id]['current_task_id'] = None
+            self._worker_information[event.worker_id]['status'] = 'idle'
+            self._worker_information[event.worker_id]['tasks_completed'] = (
+                self._worker_information[event.worker_id].get(
+                    'tasks_completed', 0
+                )
                 + 1
             )
 
     def log_task_failed(
         self,
-        task_id: str,
-        error_message: str,
-        worker_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        event: TaskFailedEvent,
     ) -> None:
         r"""Logs the failure of a task."""
         self._log_event(
-            'task_failed',
-            task_id=task_id,
-            worker_id=worker_id,
-            error_message=error_message,
-            metadata=metadata or {},
+            event_type=event.event_type,
+            task_id=event.task_id,
+            worker_id=event.worker_id,
+            error_message=event.error_message,
+            metadata=event.metadata or {},
         )
-        if task_id in self._task_hierarchy:
-            self._task_hierarchy[task_id]['status'] = 'failed'
-            self._task_hierarchy[task_id]['error'] = error_message
-            self._task_hierarchy[task_id]['assigned_to'] = None
-        if worker_id and worker_id in self._worker_information:
-            self._worker_information[worker_id]['current_task_id'] = None
-            self._worker_information[worker_id]['status'] = 'idle'
-            self._worker_information[worker_id]['tasks_failed'] = (
-                self._worker_information[worker_id].get('tasks_failed', 0) + 1
+        if event.task_id in self._task_hierarchy:
+            self._task_hierarchy[event.task_id]['status'] = 'failed'
+            self._task_hierarchy[event.task_id]['error'] = event.error_message
+            self._task_hierarchy[event.task_id]['assigned_to'] = None
+        if event.worker_id and event.worker_id in self._worker_information:
+            self._worker_information[event.worker_id]['current_task_id'] = None
+            self._worker_information[event.worker_id]['status'] = 'idle'
+            self._worker_information[event.worker_id]['tasks_failed'] = (
+                self._worker_information[event.worker_id].get(
+                    'tasks_failed', 0
+                )
+                + 1
             )
 
     def log_worker_created(
         self,
-        worker_id: str,
-        worker_type: str,
-        role: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        event: WorkerCreatedEvent,
     ) -> None:
         r"""Logs the creation of a new worker."""
         self._log_event(
-            'worker_created',
-            worker_id=worker_id,
-            worker_type=worker_type,
-            role=role,
-            metadata=metadata or {},
+            event_type=event.event_type,
+            worker_id=event.worker_id,
+            worker_type=event.worker_type,
+            role=event.role,
+            metadata=event.metadata or {},
         )
-        self._worker_information[worker_id] = {
-            'type': worker_type,
-            'role': role,
+        self._worker_information[event.worker_id] = {
+            'type': event.worker_type,
+            'role': event.role,
             'status': 'idle',
             'current_task_id': None,
             'tasks_completed': 0,
             'tasks_failed': 0,
-            **(metadata or {}),
+            **(event.metadata or {}),
         }
 
     def log_worker_deleted(
         self,
-        worker_id: str,
-        reason: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        event: WorkerDeletedEvent,
     ) -> None:
         r"""Logs the deletion of a worker."""
         self._log_event(
-            'worker_deleted',
-            worker_id=worker_id,
-            reason=reason,
-            metadata=metadata or {},
+            event_type=event.event_type,
+            worker_id=event.worker_id,
+            reason=event.reason,
+            metadata=event.metadata or {},
         )
-        if worker_id in self._worker_information:
-            self._worker_information[worker_id]['status'] = 'deleted'
+        if event.worker_id in self._worker_information:
+            self._worker_information[event.worker_id]['status'] = 'deleted'
             # Or del self._worker_information[worker_id]
+
+    def log_queue_status(
+        self,
+        event: QueueStatusEvent,
+    ) -> None:
+        r"""Logs the status of a task queue."""
+        self._log_event(
+            event_type=event.event_type,
+            queue_name=event.queue_name,
+            length=event.length,
+            pending_task_ids=event.pending_task_ids or [],
+            metadata=event.metadata or {},
+        )
+
+    def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
+        pass
 
     def reset_task_data(self) -> None:
         r"""Resets logs and data related to tasks, preserving worker
@@ -261,22 +281,6 @@ class WorkforceLogger:
         logger.info(
             f"WorkforceLogger: Task data reset for workforce "
             f"{self.workforce_id}"
-        )
-
-    def log_queue_status(
-        self,
-        queue_name: str,
-        length: int,
-        pending_task_ids: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> None:
-        r"""Logs the status of a task queue."""
-        self._log_event(
-            'queue_status',
-            queue_name=queue_name,
-            length=length,
-            pending_task_ids=pending_task_ids or [],
-            metadata=metadata or {},
         )
 
     def dump_to_json(self, file_path: str) -> None:
