@@ -43,7 +43,12 @@ class TaskResult(BaseModel):
 
 
 class QualityEvaluation(BaseModel):
-    r"""Quality evaluation result for a completed task."""
+    r"""Quality evaluation result for a completed task.
+
+    .. deprecated::
+        Use :class:`TaskAnalysisResult` instead. This class is kept for
+        backward compatibility.
+    """
 
     quality_sufficient: bool = Field(
         description="Whether the task result meets quality standards."
@@ -57,6 +62,15 @@ class QualityEvaluation(BaseModel):
     )
     improvement_suggestion: Optional[str] = Field(
         default=None, description="Specific suggestion to improve the result."
+    )
+    recovery_strategy: Optional[str] = Field(
+        default=None,
+        description="Recommended recovery strategy if quality is insufficient: "
+        "'retry', 'reassign', 'replan', or 'decompose'.",
+    )
+    modified_task_content: Optional[str] = Field(
+        default=None,
+        description="Modified task content for replan strategy.",
     )
 
 
@@ -106,6 +120,7 @@ class RecoveryStrategy(str, Enum):
     REPLAN = "replan"
     DECOMPOSE = "decompose"
     CREATE_WORKER = "create_worker"
+    REASSIGN = "reassign"
 
     def __str__(self):
         return self.value
@@ -133,17 +148,76 @@ class FailureContext(BaseModel):
         default=None, description="Additional context about the task"
     )
 
+class TaskAnalysisResult(BaseModel):
+    r"""Unified result for task failure analysis and quality evaluation.
 
-class RecoveryDecision(BaseModel):
-    r"""Decision on how to recover from a task failure."""
+    This model combines both failure recovery decisions and quality evaluation
+    results into a single structure. For failure analysis, only the recovery
+    strategy and reasoning fields are populated. For quality evaluation, all
+    fields including quality_score and issues are populated.
+    """
 
-    strategy: RecoveryStrategy = Field(
-        description="The chosen recovery strategy"
+    # Common fields - always populated
+    reasoning: str = Field(
+        description="Explanation for the analysis result or recovery decision"
     )
-    reasoning: str = Field(description="Explanation for the chosen strategy")
+
+    recovery_strategy: Optional[RecoveryStrategy] = Field(
+        default=None,
+        description="Recommended recovery strategy: 'retry', 'replan', "
+        "'decompose', 'create_worker', or 'reassign'. None indicates no "
+        "recovery needed (quality sufficient)."
+    )
+
     modified_task_content: Optional[str] = Field(
-        default=None, description="Modified task content if strategy is REPLAN"
+        default=None,
+        description="Modified task content if strategy requires replan"
     )
+
+    # Quality-specific fields - populated only for quality evaluation
+    quality_score: Optional[int] = Field(
+        default=None,
+        description="Quality score from 0 to 100 (only for quality evaluation). "
+        "None indicates this is a failure analysis, not quality evaluation.",
+        ge=0,
+        le=100
+    )
+
+    issues: List[str] = Field(
+        default_factory=list,
+        description="List of issues found. For failures: error details. "
+        "For quality evaluation: quality issues."
+    )
+
+    improvement_suggestion: Optional[str] = Field(
+        default=None,
+        description="Specific suggestion to improve the result"
+    )
+
+    @property
+    def is_quality_evaluation(self) -> bool:
+        r"""Check if this is a quality evaluation result.
+
+        Returns:
+            bool: True if this is a quality evaluation (has quality_score),
+                False if this is a failure analysis.
+        """
+        return self.quality_score is not None
+
+    @property
+    def quality_sufficient(self) -> bool:
+        r"""For quality evaluations, check if quality meets standards.
+
+        Returns:
+            bool: True if quality is sufficient (score >= 70 and no recovery
+                strategy recommended), False otherwise. Always False for
+                failure analysis results.
+        """
+        return (
+            self.quality_score is not None
+            and self.quality_score >= 70
+            and self.recovery_strategy is None
+        )
 
 
 def check_if_running(
