@@ -38,9 +38,6 @@ logger = get_logger(__name__)
 class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
     r"""Logs events and metrics for a Workforce instance."""
 
-    def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
-        pass
-
     def __init__(self, workforce_id: str):
         """Initializes the WorkforceLogger.
 
@@ -263,6 +260,9 @@ class WorkforceLogger(WorkforceCallback, WorkforceMetrics):
             pending_task_ids=event.pending_task_ids or [],
             metadata=event.metadata or {},
         )
+
+    def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
+        pass
 
     def reset_task_data(self) -> None:
         r"""Resets logs and data related to tasks, preserving worker
