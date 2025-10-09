@@ -20,7 +20,6 @@ import concurrent.futures
 import hashlib
 import inspect
 import json
-import math
 import os
 import random
 import re
@@ -29,7 +28,6 @@ import textwrap
 import threading
 import time
 import uuid
-import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import (
@@ -50,7 +48,6 @@ from typing import (
 
 from openai import (
     AsyncStream,
-    BadRequestError,
     RateLimitError,
     Stream,
 )
@@ -72,7 +69,6 @@ from camel.memories import (
     MemoryRecord,
     ScoreBasedContextCreator,
 )
-from camel.memories.blocks.chat_history_block import EmptyMemoryWarning
 from camel.messages import (
     BaseMessage,
     FunctionCallingMessage,
@@ -1664,29 +1660,35 @@ class ChatAgent(BaseAgent):
                     or 'context limit' in error_message
                 )
 
-                if is_token_limit_error :
+                if is_token_limit_error:
                     logger.warning(
                         "Token limit exceeded error detected. "
                         "Summarizing context."
                     )
-                    full_context_file_path = self.working_directory / "full_context.json"
+                    full_context_file_path = (
+                        self.working_directory / "full_context.json"
+                    )
                     self.save_memory(path=str(full_context_file_path))
                     self.memory.clear()
-                    summary= self.summarize()
+                    summary = self.summarize()
                     summary_messages = (
-                        f"[Context Summary]\n\n" + 
-                        summary.get('summary', '') + 
-                        "\n\n[Full Context file path is]\n\n" 
+                        "[Context Summary]\n\n"
+                        + summary.get('summary', '')
+                        + "\n\n[Full Context file path is]\n\n"
                         + str(full_context_file_path)
                     )
                     camel_workdir = os.environ.get("CAMEL_WORKDIR")
                     if camel_workdir:
-                        self.working_directory = Path(camel_workdir) / "context_files"
+                        self.working_directory = (
+                            Path(camel_workdir) / "context_files"
+                        )
                     else:
                         self.working_directory = Path("context_files")
-                    
-                    self.update_memory(summary_messages, OpenAIBackendRole.ASSISTANT)
-                    self._step_impl(input_message,response_format)
+
+                    self.update_memory(
+                        summary_messages, OpenAIBackendRole.ASSISTANT
+                    )
+                    self._step_impl(input_message, response_format)
 
             prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
@@ -1882,7 +1884,7 @@ class ChatAgent(BaseAgent):
         step_token_usage = self._create_token_usage_tracker()
         iteration_count: int = 0
         prev_num_openai_messages: int = 0
-    
+
         while True:
             if self.pause_event is not None and not self.pause_event.is_set():
                 if isinstance(self.pause_event, asyncio.Event):
@@ -1922,26 +1924,31 @@ class ChatAgent(BaseAgent):
                     or 'context limit' in error_message
                 )
 
-
                 if is_token_limit_error:
                     logger.warning(
                         "Token limit exceeded error detected. "
                         "Summarizing context."
                     )
 
-                    full_context_file_path = self.working_directory / "full_context.json"
+                    full_context_file_path = (
+                        self.working_directory / "full_context.json"
+                    )
                     self.save_memory(path=str(full_context_file_path))
                     self.memory.clear()
-                    summary= self.summarize()
+                    summary = self.summarize()
                     summary_messages = (
-                        f"[Context Summary]\n\n" + 
-                        summary.get('summary', '') + 
-                        "\n\n[Full Context file path is]\n\n" 
+                        "[Context Summary]\n\n"
+                        + summary.get('summary', '')
+                        + "\n\n[Full Context file path is]\n\n"
                         + str(full_context_file_path)
                     )
 
-                    self.update_memory(summary_messages, OpenAIBackendRole.ASSISTANT)
-                    self._astep_non_streaming_task(input_message, response_format)
+                    self.update_memory(
+                        summary_messages, OpenAIBackendRole.ASSISTANT
+                    )
+                    self._astep_non_streaming_task(
+                        input_message, response_format
+                    )
 
             prev_num_openai_messages = len(openai_messages)
             iteration_count += 1
