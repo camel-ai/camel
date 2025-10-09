@@ -50,6 +50,9 @@ from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
+    FAILURE_ANALYSIS_RESPONSE_FORMAT,
+    QUALITY_EVALUATION_RESPONSE_FORMAT,
+    TASK_AGENT_SYSTEM_MESSAGE,
     TASK_ANALYSIS_PROMPT,
     TASK_DECOMPOSE_PROMPT,
 )
@@ -366,26 +369,7 @@ class Workforce(BaseNode):
         # Set up task agent with default system message and required tools
         task_sys_msg = BaseMessage.make_assistant_message(
             role_name="Task Planner",
-            content=(
-                "You are an intelligent task management assistant "
-                "responsible for planning, analyzing, and quality control.\n\n"
-                "Your responsibilities include:\n"
-                "1. **Task Decomposition**: Breaking down complex tasks into "
-                "manageable subtasks that can be executed efficiently and in "
-                "parallel when possible.\n"
-                "2. **Failure Analysis**: Analyzing task failures to "
-                "determine the root cause and recommend appropriate recovery "
-                "strategies (retry, replan, decompose, or create new "
-                "worker).\n"
-                "3. **Quality Evaluation**: Assessing completed task results "
-                "to ensure they meet quality standards and recommending "
-                "recovery strategies if quality is insufficient (retry, "
-                "reassign, replan, or decompose).\n\n"
-                "You must provide structured, actionable analysis based on "
-                "the task context, failure history, worker capabilities, and "
-                "quality criteria. Your decisions directly impact the "
-                "efficiency and success of the workforce system."
-            ),
+            content=TASK_AGENT_SYSTEM_MESSAGE,
         )
         task_planning_tools = TaskPlanningToolkit().get_tools()
 
@@ -850,42 +834,22 @@ class Workforce(BaseNode):
         """
         # Validate required parameters
         if for_failure and error_message is None:
-            raise ValueError(
-                "error_message is required when for_failure=True"
-            )
+            raise ValueError("error_message is required when for_failure=True")
 
         # Determine task result and issue-specific analysis based on context
         if for_failure:
             task_result = "N/A (task failed)"
             issue_type = "Task Failure"
             issue_analysis = f"**Error Message:** {error_message}"
-            response_format = (
-                "You must return a valid JSON object with these fields:\n"
-                '- "reasoning": explanation for your recovery decision '
-                '(1-2 sentences)\n'
-                '- "recovery_strategy": one of "retry", "replan", "decompose", '
-                '"create_worker", or "reassign"\n'
-                '- "modified_task_content": new task content if strategy is '
-                '"replan", null otherwise\n'
-                '- "issues": list of error details (optional)\n'
-                '- "improvement_suggestion": suggestion to avoid this error '
-                '(optional)\n\n'
-                "**Example Response:**\n"
-                '{"reasoning": "The connection error appears to be temporary '
-                'and network-related, a simple retry should resolve this.", '
-                '"recovery_strategy": "retry", "modified_task_content": null, '
-                '"issues": ["Connection timeout"], '
-                '"improvement_suggestion": "Add retry logic with exponential '
-                'backoff"}'
-            )
+            response_format = FAILURE_ANALYSIS_RESPONSE_FORMAT
             result_schema = TaskAnalysisResult
-            fallback_values = {
+            fallback_values: Dict[str, Any] = {
                 "reasoning": "Defaulting to retry due to parsing error",
                 "recovery_strategy": RecoveryStrategy.RETRY,
                 "modified_task_content": None,
                 "issues": [error_message] if error_message else [],
             }
-            examples = [
+            examples: List[Dict[str, Any]] = [
                 {
                     "reasoning": "Temporary network error, worth retrying",
                     "recovery_strategy": "retry",
@@ -901,83 +865,52 @@ class Workforce(BaseNode):
                 "Provide a quality score (0-100) and list any specific "
                 "issues found."
             )
-            response_format = (
-                "You must return a valid JSON object with these fields:\n"
-                '- "quality_score": integer from 0 to 100\n'
-                '- "reasoning": explanation of the quality assessment '
-                '(1-2 sentences)\n'
-                '- "issues": list of quality issues (empty list if none)\n'
-                '- "improvement_suggestion": specific suggestion to improve '
-                "(null if quality is sufficient)\n"
-                '- "recovery_strategy": one of "retry", "reassign", '
-                '"replan", or "decompose" if quality is insufficient '
-                "(null if quality is sufficient)\n"
-                '- "modified_task_content": new task content if strategy is '
-                '"replan" (null otherwise)\n\n'
-                "**Example Response (Quality Sufficient):**\n"
-                '{"quality_score": 95, "reasoning": "The implementation is '
-                'complete and well-tested.", "issues": [], '
-                '"improvement_suggestion": null, "recovery_strategy": null, '
-                '"modified_task_content": null}\n\n'
-                "**Example Response (Quality Insufficient):**\n"
-                '{"quality_score": 45, "reasoning": "Implementation is '
-                'incomplete and lacks error handling.", "issues": '
-                '["Incomplete implementation", "Missing error handling"], '
-                '"improvement_suggestion": "Add comprehensive error handling '
-                'and complete all features", "recovery_strategy": "replan", '
-                '"modified_task_content": "Previous attempt was incomplete. '
-                "Please implement with: 1) Full feature coverage, "
-                '2) Proper error handling"}'
-            )
+            response_format = QUALITY_EVALUATION_RESPONSE_FORMAT
             result_schema = TaskAnalysisResult
             fallback_values = {
-                "quality_score": 80,
-                "reasoning": "Defaulting to acceptable quality due to parsing error",
+                "reasoning": (
+                    "Defaulting to acceptable quality due to parsing error"
+                ),
                 "issues": [],
-                "improvement_suggestion": None,
                 "recovery_strategy": None,
                 "modified_task_content": None,
+                "quality_score": 80,
             }
             examples = [
                 {
-                    "quality_score": 98,
-                    "reasoning": "Excellent implementation with comprehensive tests",
+                    "reasoning": (
+                        "Excellent implementation with comprehensive tests"
+                    ),
                     "issues": [],
-                    "improvement_suggestion": None,
                     "recovery_strategy": None,
                     "modified_task_content": None,
+                    "quality_score": 98,
                 },
                 {
-                    "quality_score": 45,
-                    "reasoning": "Implementation incomplete with missing features",
+                    "reasoning": (
+                        "Implementation incomplete with missing features"
+                    ),
                     "issues": [
                         "Incomplete implementation",
                         "Missing error handling",
                     ],
-                    "improvement_suggestion": (
-                        "Add comprehensive error handling "
-                        "and complete all features"
-                    ),
                     "recovery_strategy": "replan",
                     "modified_task_content": (
                         "Previous attempt was incomplete. "
                         "Please implement with: 1) Full feature "
                         "coverage, 2) Proper error handling"
                     ),
+                    "quality_score": 45,
                 },
             ]
 
         # Format the unified analysis prompt
         analysis_prompt = TASK_ANALYSIS_PROMPT.format(
-            task_id=task.id,
             task_content=task.content,
             task_result=task_result,
             failure_count=task.failure_count,
-            task_depth=task.get_depth(),
+            max_retries=MAX_TASK_RETRIES,
             assigned_worker=task.assigned_worker_id or "unknown",
-            additional_info=str(task.additional_info)
-            if task.additional_info
-            else "None",
             issue_type=issue_type,
             issue_specific_analysis=issue_analysis,
             response_format=response_format,
@@ -1018,7 +951,8 @@ class Workforce(BaseNode):
 
         except Exception as e:
             logger.warning(
-                f"Error during task analysis ({'failure' if for_failure else 'quality'}): {e}, "
+                f"Error during task analysis "
+                f"({'failure' if for_failure else 'quality'}): {e}, "
                 f"using fallback"
             )
             return TaskAnalysisResult(**fallback_values)
@@ -1039,10 +973,12 @@ class Workforce(BaseNode):
                 recovery strategy
 
         Returns:
-            bool: True if workforce should halt (e.g., decompose needs different
-                handling), False otherwise
+            bool: True if workforce should halt (e.g., decompose needs
+                different handling), False otherwise
         """
-        strategy = recovery_decision.recovery_strategy or RecoveryStrategy.RETRY
+        strategy = (
+            recovery_decision.recovery_strategy or RecoveryStrategy.RETRY
+        )
         action_taken = ""
 
         try:
@@ -1090,7 +1026,8 @@ class Workforce(BaseNode):
                 # Reassign to a different worker
                 old_worker = task.assigned_worker_id
                 logger.info(
-                    f"Task {task.id} will be reassigned from worker {old_worker}"
+                    f"Task {task.id} will be reassigned from worker "
+                    f"{old_worker}"
                 )
 
                 # Find a different worker
@@ -1101,7 +1038,8 @@ class Workforce(BaseNode):
                 # If same worker, force find another
                 if new_worker == old_worker and len(self._children) > 1:
                     logger.info("Same worker selected, finding alternative")
-                    # Try to find different worker by adding note to task content
+                    # Try to find different worker by adding note to
+                    # task content
                     task.content = (
                         f"{task.content}\n\n"
                         f"Note: Previous worker {old_worker} had quality "
@@ -1115,14 +1053,19 @@ class Workforce(BaseNode):
                 await self._post_task(task, new_worker)
                 action_taken = f"reassigned from {old_worker} to {new_worker}"
                 logger.info(
-                    f"Task {task.id} reassigned from {old_worker} to {new_worker}"
+                    f"Task {task.id} reassigned from {old_worker} to "
+                    f"{new_worker}"
                 )
 
             elif strategy == RecoveryStrategy.DECOMPOSE:
                 # Decompose the task into subtasks
+                reason = (
+                    "failure"
+                    if not recovery_decision.is_quality_evaluation
+                    else "quality issues"
+                )
                 logger.info(
-                    f"Task {task.id} will be decomposed due to "
-                    f"{'failure' if not recovery_decision.is_quality_evaluation else 'quality issues'}"
+                    f"Task {task.id} will be decomposed due to {reason}"
                 )
                 subtasks_result = self._decompose_task(task)
 
@@ -1160,7 +1103,8 @@ class Workforce(BaseNode):
                 # Sync shared memory after task decomposition
                 if self.share_memory:
                     logger.info(
-                        f"Syncing shared memory after task {task.id} decomposition"
+                        f"Syncing shared memory after task {task.id} "
+                        f"decomposition"
                     )
                     self._sync_shared_memory()
 
@@ -3212,7 +3156,8 @@ class Workforce(BaseNode):
         if task.failure_count >= MAX_TASK_RETRIES:
             logger.error(
                 f"Task {task.id} has exceeded maximum retry attempts "
-                f"({MAX_TASK_RETRIES}). Final failure reason: {detailed_error}. "
+                f"({MAX_TASK_RETRIES}). Final failure reason: "
+                f"{detailed_error}. "
                 f"Task content: '{task.content}'"
             )
             self._cleanup_task_tracking(task.id)
@@ -3238,9 +3183,14 @@ class Workforce(BaseNode):
             task, for_failure=True, error_message=detailed_error
         )
 
+        strategy_str = (
+            recovery_decision.recovery_strategy.value
+            if recovery_decision.recovery_strategy
+            else "none"
+        )
         logger.info(
             f"Task {task.id} failure "
-            f"analysis: {recovery_decision.recovery_strategy.value} - "
+            f"analysis: {strategy_str} - "
             f"{recovery_decision.reasoning}"
         )
 
@@ -3276,9 +3226,7 @@ class Workforce(BaseNode):
 
         # Sync shared memory after task recovery
         if self.share_memory:
-            logger.info(
-                f"Syncing shared memory after task {task.id} recovery"
-            )
+            logger.info(f"Syncing shared memory after task {task.id} recovery")
             self._sync_shared_memory()
 
         # Check if any pending tasks are now ready to execute
@@ -3831,8 +3779,10 @@ class Workforce(BaseNode):
 
                             # Apply LLM-recommended recovery strategy
                             try:
-                                is_decompose = await self._apply_recovery_strategy(
-                                    returned_task, quality_eval
+                                is_decompose = (
+                                    await self._apply_recovery_strategy(
+                                        returned_task, quality_eval
+                                    )
                                 )
 
                                 # For decompose, cleanup happens in the method

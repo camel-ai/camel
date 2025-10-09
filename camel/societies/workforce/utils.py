@@ -60,12 +60,10 @@ class QualityEvaluation(BaseModel):
         default_factory=list,
         description="List of quality issues found in the result.",
     )
-    improvement_suggestion: Optional[str] = Field(
-        default=None, description="Specific suggestion to improve the result."
-    )
     recovery_strategy: Optional[str] = Field(
         default=None,
-        description="Recommended recovery strategy if quality is insufficient: "
+        description="Recommended recovery strategy if quality is "
+        "insufficient: "
         "'retry', 'reassign', 'replan', or 'decompose'.",
     )
     modified_task_content: Optional[str] = Field(
@@ -84,7 +82,8 @@ class TaskAssignment(BaseModel):
     dependencies: List[str] = Field(
         default_factory=list,
         description="List of task IDs that must complete before this task. "
-        "This is critical for the task decomposition and execution.",
+        "This is critical for the task decomposition and "
+        "execution.",
     )
 
     # Allow LLMs to output dependencies as a comma-separated string or empty
@@ -92,7 +91,8 @@ class TaskAssignment(BaseModel):
     # downstream logic does not break with validation errors.
     @staticmethod
     def _split_and_strip(dep_str: str) -> List[str]:
-        r"""Utility to split a comma separated string and strip whitespace."""
+        r"""Utility to split a comma separated string and strip
+        whitespace."""
         return [d.strip() for d in dep_str.split(',') if d.strip()]
 
     @field_validator("dependencies", mode="before")
@@ -106,7 +106,8 @@ class TaskAssignment(BaseModel):
 
 
 class TaskAssignResult(BaseModel):
-    r"""The result of task assignment for both single and batch assignments."""
+    r"""The result of task assignment for both single and batch
+    assignments."""
 
     assignments: List[TaskAssignment] = Field(
         description="List of task assignments."
@@ -148,6 +149,7 @@ class FailureContext(BaseModel):
         default=None, description="Additional context about the task"
     )
 
+
 class TaskAnalysisResult(BaseModel):
     r"""Unified result for task failure analysis and quality evaluation.
 
@@ -159,39 +161,37 @@ class TaskAnalysisResult(BaseModel):
 
     # Common fields - always populated
     reasoning: str = Field(
-        description="Explanation for the analysis result or recovery decision"
+        description="Explanation for the analysis result or recovery "
+        "decision"
     )
 
     recovery_strategy: Optional[RecoveryStrategy] = Field(
         default=None,
         description="Recommended recovery strategy: 'retry', 'replan', "
         "'decompose', 'create_worker', or 'reassign'. None indicates no "
-        "recovery needed (quality sufficient)."
+        "recovery needed (quality sufficient).",
     )
 
     modified_task_content: Optional[str] = Field(
         default=None,
-        description="Modified task content if strategy requires replan"
+        description="Modified task content if strategy requires replan",
     )
 
     # Quality-specific fields - populated only for quality evaluation
     quality_score: Optional[int] = Field(
         default=None,
-        description="Quality score from 0 to 100 (only for quality evaluation). "
-        "None indicates this is a failure analysis, not quality evaluation.",
+        description="Quality score from 0 to 100 (only for quality "
+        "evaluation). "
+        "None indicates this is a failure analysis, "
+        "not quality evaluation.",
         ge=0,
-        le=100
+        le=100,
     )
 
     issues: List[str] = Field(
         default_factory=list,
         description="List of issues found. For failures: error details. "
-        "For quality evaluation: quality issues."
-    )
-
-    improvement_suggestion: Optional[str] = Field(
-        default=None,
-        description="Specific suggestion to improve the result"
+        "For quality evaluation: quality issues.",
     )
 
     @property
@@ -270,7 +270,7 @@ def check_if_running(
                         if retries < max_retries:
                             logger.warning(
                                 f"{error_msg} Retrying in {retry_delay}s... "
-                                f"(Attempt {retries+1}/{max_retries})"
+                                f"(Attempt {retries + 1}/{max_retries})"
                             )
                             time.sleep(retry_delay)
                             retries += 1
@@ -292,7 +292,7 @@ def check_if_running(
                         logger.warning(
                             f"Exception in {func.__name__}: {e}. "
                             f"Retrying in {retry_delay}s... "
-                            f"(Attempt {retries+1}/{max_retries})"
+                            f"(Attempt {retries + 1}/{max_retries})"
                         )
                         time.sleep(retry_delay)
                         retries += 1
@@ -310,7 +310,8 @@ def check_if_running(
             # This should not be reached, but just in case
             if handle_exceptions:
                 logger.error(
-                    f"Unexpected failure in {func.__name__}: {last_exception}"
+                    f"Unexpected failure in {func.__name__}: "
+                    f"{last_exception}"
                 )
                 return None
             else:

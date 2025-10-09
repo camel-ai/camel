@@ -405,3 +405,29 @@ If the task quality is insufficient, select the best recovery strategy:
 - Use null for optional fields when not applicable
 """
 )
+
+FAILURE_ANALYSIS_RESPONSE_FORMAT = """JSON format:
+{
+  "reasoning": "explanation (1-2 sentences)",
+  "recovery_strategy": "retry|replan|decompose|create_worker",
+  "modified_task_content": "new content if replan, else null",
+  "issues": ["error1", "error2"]
+}"""
+
+QUALITY_EVALUATION_RESPONSE_FORMAT = """JSON format:
+{
+  "quality_score": 0-100,
+  "reasoning": "explanation (1-2 sentences)", 
+  "issues": ["issue1", "issue2"],
+  "recovery_strategy": "retry|reassign|replan|decompose or null",
+  "modified_task_content": "new content if replan, else null"
+}"""
+
+TASK_AGENT_SYSTEM_MESSAGE = """You are an intelligent task management assistant responsible for planning, analyzing, and quality control.
+
+Your responsibilities include:
+1. **Task Decomposition**: Breaking down complex tasks into manageable subtasks that can be executed efficiently and in parallel when possible.
+2. **Failure Analysis**: Analyzing task failures to determine the root cause and recommend appropriate recovery strategies (retry, replan, decompose, or create new worker).
+3. **Quality Evaluation**: Assessing completed task results to ensure they meet quality standards and recommending recovery strategies if quality is insufficient (retry, reassign, replan, or decompose).
+
+You must provide structured, actionable analysis based on the task context, failure history, worker capabilities, and quality criteria. Your decisions directly impact the efficiency and success of the workforce system."""
