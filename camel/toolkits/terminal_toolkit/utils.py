@@ -27,12 +27,15 @@ from camel.logger import get_logger
 logger = get_logger(__name__)
 
 
-def contains_command_chaining(command: str) -> bool:
-    r"""Check if command contains chaining operators that could be used to
-    bypass security.
+def split_chained_commands(command: str) -> list:
+    r"""Split a command string into individual commands based on chaining
+    operators.
+
+    Returns:
+        List of tuples (operator, command_part) where operator is one of:
+        ';', '&&', '||', '|', or '' (for the first command)
     """
-    # Pattern to match command chaining operators: ;, &&, ||, |
-    # But exclude cases where they are inside quotes or escaped
+    # Pattern to match command chaining operators outside of quotes
     chaining_pattern = r'''
         (?<!\\)      # Not preceded by backslash (not escaped)
         (?:          # Group for alternation
@@ -58,7 +61,150 @@ def contains_command_chaining(command: str) -> bool:
         )
     '''
 
-    return bool(re.search(chaining_pattern, command, re.VERBOSE))
+    # Find all operators and their positions
+    operators = []
+    for match in re.finditer(chaining_pattern, command, re.VERBOSE):
+        operators.append((match.start(), match.end(), match.group()))
+
+    if not operators:
+        return [('', command)]
+
+    # Split command into parts
+    parts = []
+    last_end = 0
+
+    for start, end, op in operators:
+        cmd_part = command[last_end:start].strip()
+        if cmd_part:
+            parts.append((op, cmd_part))
+        last_end = end
+
+    # Add the last part
+    last_part = command[last_end:].strip()
+    if last_part:
+        # Use the last operator for the final part
+        parts.append((operators[-1][2] if operators else '', last_part))
+
+    # Fix: First command should have empty operator
+    if parts and parts[0][0] != '':
+        parts[0] = ('', parts[0][1])
+
+    return parts
+
+
+def is_command_dangerous(
+    base_cmd: str,
+    full_command: str,
+    allowed_commands: Optional[Set[str]] = None,
+) -> Tuple[bool, str]:
+    r"""Check if a single command is dangerous.
+
+    Args:
+        base_cmd (str): The base command (first word)
+        full_command (str): The full command string
+        allowed_commands (Optional[Set[str]]): Set of allowed commands
+
+    Returns:
+        Tuple[bool, str]: (is_dangerous, reason)
+    """
+    # If whitelist is defined, check against it
+    if allowed_commands is not None:
+        if base_cmd not in allowed_commands:
+            return (
+                True,
+                f"Command '{base_cmd}' is not in the allowed commands list.",
+            )
+        return False, ""
+
+    # Block dangerous commands (only when no whitelist is defined)
+    dangerous_commands = [
+        # System administration
+        'sudo',
+        'su',
+        'reboot',
+        'shutdown',
+        'halt',
+        'poweroff',
+        'init',
+        # File system manipulation
+        'rm',
+        'mv',
+        'chmod',
+        'chown',
+        'chgrp',
+        'umount',
+        'mount',
+        # Disk operations
+        'dd',
+        'mkfs',
+        'fdisk',
+        'parted',
+        'fsck',
+        'mkswap',
+        'swapon',
+        'swapoff',
+        # Process management
+        'kill',
+        'killall',
+        'pkill',
+        'service',
+        'systemctl',
+        'systemd',
+        # Network configuration
+        'iptables',
+        'ip6tables',
+        'ifconfig',
+        'route',
+        'iptables-save',
+        # Cron and scheduling
+        'crontab',
+        'at',
+        'batch',
+        # User management
+        'useradd',
+        'userdel',
+        'usermod',
+        'passwd',
+        'chpasswd',
+        'newgrp',
+        # Kernel modules
+        'modprobe',
+        'rmmod',
+        'insmod',
+        'lsmod',
+        # System information that could leak sensitive data
+        'dmesg',
+        'last',
+        'lastlog',
+        'who',
+        'w',
+    ]
+
+    if base_cmd in dangerous_commands:
+        # Special handling for rm command
+        if base_cmd == 'rm':
+            dangerous_rm_pattern = (
+                r'\s-[^-\s]*[rf][^-\s]*\s|\s--force\s|'
+                r'\s--recursive\s|\s-rf\s|\s-fr\s'
+            )
+            if re.search(dangerous_rm_pattern, full_command, re.IGNORECASE):
+                return (
+                    True,
+                    f"Command '{base_cmd}' with forceful or "
+                    f"recursive options is blocked for safety.",
+                )
+            # Check if rm has target specified
+            parts = shlex.split(full_command)
+            if len(parts) < 2:
+                return (
+                    True,
+                    "rm command requires target file/directory specification.",
+                )
+            return False, ""
+        else:
+            return True, f"Command '{base_cmd}' is blocked for safety."
+
+    return False, ""
 
 
 def sanitize_command(
@@ -69,6 +215,9 @@ def sanitize_command(
     allowed_commands: Optional[Set[str]] = None,
 ) -> Tuple[bool, str]:
     r"""A comprehensive command sanitizer for both local and Docker backends.
+
+    Now supports command chaining by validating each command in the chain
+    separately.
 
     Args:
         command (str): The command to sanitize
@@ -84,129 +233,45 @@ def sanitize_command(
     if not safe_mode:
         return True, command  # Skip all checks if safe_mode is disabled
 
-    # First check for command chaining and pipes
-    if contains_command_chaining(command):
-        return (
-            False,
-            "Command chaining (;, &&, ||, |) is not allowed "
-            "for security reasons.",
+    # Split command into chained parts
+    chained_parts = split_chained_commands(command)
+
+    # Validate each command in the chain
+    for _operator, cmd_part in chained_parts:
+        # Parse the command part
+        try:
+            parts = shlex.split(cmd_part)
+        except ValueError as e:
+            return False, f"Invalid command syntax: {e}"
+
+        if not parts:
+            return False, "Empty command is not allowed."
+
+        base_cmd = parts[0].lower()
+
+        # Check if command is dangerous
+        is_dangerous, danger_reason = is_command_dangerous(
+            base_cmd, cmd_part, allowed_commands
         )
+        if is_dangerous:
+            return False, danger_reason
 
-    parts = shlex.split(command)
-    if not parts:
-        return False, "Empty command is not allowed."
-    base_cmd = parts[0].lower()
-
-    # If whitelist is defined, only allow whitelisted commands
-    if allowed_commands is not None:
-        if base_cmd not in allowed_commands:
-            return (
-                False,
-                f"Command '{base_cmd}' is not in the allowed commands list.",
-            )
-        # If command is whitelisted, skip the dangerous commands check
-        # but still apply other safety checks
-    else:
-        # Block dangerous commands (only when no whitelist is defined)
-        dangerous_commands = [
-            # System administration
-            'sudo',
-            'su',
-            'reboot',
-            'shutdown',
-            'halt',
-            'poweroff',
-            'init',
-            # File system manipulation
-            'rm',
-            'mv',
-            'chmod',
-            'chown',
-            'chgrp',
-            'umount',
-            'mount',
-            # Disk operations
-            'dd',
-            'mkfs',
-            'fdisk',
-            'parted',
-            'fsck',
-            'mkswap',
-            'swapon',
-            'swapoff',
-            # Process management
-            'kill',
-            'killall',
-            'pkill',
-            'service',
-            'systemctl',
-            'systemd',
-            # Network configuration
-            'iptables',
-            'ip6tables',
-            'ifconfig',
-            'route',
-            'iptables-save',
-            # Cron and scheduling
-            'crontab',
-            'at',
-            'batch',
-            # User management
-            'useradd',
-            'userdel',
-            'usermod',
-            'passwd',
-            'chpasswd',
-            'newgrp',
-            # Kernel modules
-            'modprobe',
-            'rmmod',
-            'insmod',
-            'lsmod',
-            # System information that could leak sensitive data
-            'dmesg',
-            'last',
-            'lastlog',
-            'who',
-            'w',
-        ]
-        if base_cmd in dangerous_commands:
-            # Special handling for rm command - use regex for precise checking
-            if base_cmd == 'rm':
-                # Check for dangerous rm options using regex
-                dangerous_rm_pattern = (
-                    r'\s-[^-\s]*[rf][^-\s]*\s|\s--force\s|'
-                    r'\s--recursive\s|\s-rf\s|\s-fr\s'
+        # For local backend only: prevent changing
+        # directory outside the workspace
+        # Docker containers are already sandboxed,
+        # so this check is not needed there
+        if (
+            not use_docker_backend
+            and base_cmd == 'cd'
+            and len(parts) > 1
+            and working_dir
+        ):
+            target_dir = os.path.abspath(os.path.join(working_dir, parts[1]))
+            if not target_dir.startswith(working_dir):
+                return (
+                    False,
+                    "Cannot 'cd' outside of the working directory.",
                 )
-                if re.search(dangerous_rm_pattern, command, re.IGNORECASE):
-                    return (
-                        False,
-                        f"Command '{base_cmd}' with forceful or "
-                        f"recursive options is blocked for safety.",
-                    )
-                # Also block rm without any target (could be dangerous)
-                if len(parts) < 2:
-                    return (
-                        False,
-                        "rm command requires target "
-                        "file/directory specification.",
-                    )
-            else:
-                return False, f"Command '{base_cmd}' is blocked for safety."
-
-    # For local backend only: prevent changing
-    # directory outside the workspace
-    # Docker containers are already sandboxed,
-    # so this check is not needed there
-    if (
-        not use_docker_backend
-        and base_cmd == 'cd'
-        and len(parts) > 1
-        and working_dir
-    ):
-        target_dir = os.path.abspath(os.path.join(working_dir, parts[1]))
-        if not target_dir.startswith(working_dir):
-            return False, "Cannot 'cd' outside of the working directory."
 
     return True, command
 
