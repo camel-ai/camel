@@ -275,12 +275,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         else:
                             loop.run_until_complete(
                                 asyncio.wait_for(
-                                    self.browser_close(
-                                        "Cleanup on deletion",
-                                        "Close browser session",
-                                        internal_call=True,
-                                    ),
-                                    timeout=2.0,
+                                    self.browser_close(), timeout=2.0
                                 )
                             )
                     except asyncio.TimeoutError:
@@ -305,21 +300,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         """Get the cache directory."""
         return self._cache_dir
 
-    async def browser_open(
-        self, thinking: str, next_goal: str, *, internal_call: bool = False
-    ) -> Dict[str, Any]:
+    async def browser_open(self) -> Dict[str, Any]:
         r"""Starts a new browser session. This must be the first browser
         action.
 
         This method initializes the browser and navigates to a default start
         page. To visit a specific URL, use `visit_page` after this.
-
-        Args:
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -330,11 +316,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_open")
-
+        print("🔧 Tool: browser_open")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.open_browser(self._default_start_url)
@@ -366,28 +348,15 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_close(
-        self, thinking: str, next_goal: str, *, internal_call: bool = False
-    ) -> str:
+    async def browser_close(self) -> str:
         r"""Closes the browser session, releasing all resources.
 
         This should be called at the end of a task for cleanup.
 
-        Args:
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
-
         Returns:
             str: A confirmation message.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_close")
-
+        print("🔧 Tool: browser_close")
         try:
             if self._ws_wrapper:
                 await self._ws_wrapper.stop()
@@ -422,24 +391,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             logger.error(f"Failed to disconnect WebSocket: {e}")
             return f"Error disconnecting WebSocket: {e}"
 
-    async def browser_visit_page(
-        self,
-        url: str,
-        thinking: str,
-        next_goal: str,
-        *,
-        internal_call: bool = False,
-    ) -> Dict[str, Any]:
+    async def browser_visit_page(self, url: str) -> Dict[str, Any]:
         r"""Opens a URL in a new browser tab and switches to it.
 
         Args:
             url (str): The web address to load. This should be a valid and
                 existing URL.
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -449,11 +406,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the new active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_visit_page")
-
+        print("🔧 Tool: browser_visit_page")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.visit_page(url)
@@ -485,20 +438,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_back(
-        self, thinking: str, next_goal: str, *, internal_call: bool = False
-    ) -> Dict[str, Any]:
+    async def browser_back(self) -> Dict[str, Any]:
         r"""Goes back to the previous page in the browser history.
 
         This action simulates using the browser's "back" button in the
         currently active tab.
-
-        Args:
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -508,10 +452,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_back")
+        print("🔧 Tool: browser_back")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.back()
@@ -543,20 +484,11 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_forward(
-        self, thinking: str, next_goal: str, *, internal_call: bool = False
-    ) -> Dict[str, Any]:
+    async def browser_forward(self) -> Dict[str, Any]:
         r"""Goes forward to the next page in the browser history.
 
         This action simulates using the browser's "forward" button in the
         currently active tab.
-
-        Args:
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -566,10 +498,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_forward")
+        print("🔧 Tool: browser_forward")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.forward()
@@ -740,25 +669,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             logger.error(f"Failed to get screenshot: {e}")
             return f"Error capturing screenshot: {e}"
 
-    async def browser_click(
-        self,
-        *,
-        ref: str,
-        thinking: str,
-        next_goal: str,
-        internal_call: bool = False,
-    ) -> Dict[str, Any]:
+    async def browser_click(self, *, ref: str) -> Dict[str, Any]:
         r"""Performs a click on an element on the page.
 
         Args:
             ref (str): The `ref` ID of the element to click. This ID is
                 obtained from a page snapshot (`get_page_snapshot` or
                 `get_som_screenshot`).
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -769,11 +686,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_click")
-
+        print("🔧 Tool: browser_click")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.click(ref)
@@ -818,9 +731,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         ref: Optional[str] = None,
         text: Optional[str] = None,
         inputs: Optional[List[Dict[str, str]]] = None,
-        thinking: str,
-        next_goal: str,
-        internal_call: bool = False,
     ) -> Dict[str, Any]:
         r"""Types text into one or more input elements on the page.
 
@@ -838,11 +748,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 each containing 'ref' and 'text' keys for typing into multiple
                 elements. Example: [{'ref': '1', 'text': 'username'},
                 {'ref': '2', 'text': 'password'}]
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -855,11 +760,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "details" (Dict[str, Any]): When using multiple inputs,
                   contains success/error status for each ref.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_type")
-
+        print("🔧 Tool: browser_type")
         try:
             ws_wrapper = await self._get_ws_wrapper()
 
@@ -900,26 +801,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_select(
-        self,
-        *,
-        ref: str,
-        value: str,
-        thinking: str,
-        next_goal: str,
-        internal_call: bool = False,
-    ) -> Dict[str, Any]:
+    async def browser_select(self, *, ref: str, value: str) -> Dict[str, Any]:
         r"""Selects an option in a dropdown (`<select>`) element.
 
         Args:
             ref (str): The `ref` ID of the `<select>` element.
             value (str): The `value` attribute of the `<option>` to select,
                 not its visible text.
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -930,10 +818,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_select")
+        print("🔧 Tool: browser_select")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.select(ref, value)
@@ -966,24 +851,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             }
 
     async def browser_scroll(
-        self,
-        *,
-        direction: str,
-        amount: int = 500,
-        thinking: str,
-        next_goal: str,
-        internal_call: bool = False,
+        self, *, direction: str, amount: int = 500
     ) -> Dict[str, Any]:
         r"""Scrolls the current page window.
 
         Args:
             direction (str): The direction to scroll: 'up' or 'down'.
             amount (int): The number of pixels to scroll, default is 500.
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -993,10 +867,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_scroll")
+        print("🔧 Tool: browser_scroll")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.scroll(direction, amount)
@@ -1028,21 +899,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_enter(
-        self, thinking: str, next_goal: str, *, internal_call: bool = False
-    ) -> Dict[str, Any]:
+    async def browser_enter(self) -> Dict[str, Any]:
         r"""Simulates pressing the Enter key on the currently focused
         element.
 
         This is useful for submitting forms or search queries after using the
         `type` tool.
-
-        Args:
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1053,10 +915,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_enter")
+        print("🔧 Tool: browser_enter")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.enter()
@@ -1089,14 +948,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             }
 
     async def browser_mouse_control(
-        self,
-        *,
-        control: str,
-        x: float,
-        y: float,
-        thinking: str,
-        next_goal: str,
-        internal_call: bool = False,
+        self, *, control: str, x: float, y: float
     ) -> Dict[str, Any]:
         r"""Control the mouse to interact with browser with x, y coordinates
 
@@ -1105,11 +957,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             or 'dblclick'.
             x (float): x-coordinate for the control action.
             y (float): y-coordinate for the control action.
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1120,10 +967,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_mouse_control")
+        print("🔧 Tool: browser_mouse_control")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.mouse_control(control, x, y)
@@ -1156,24 +1000,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             }
 
     async def browser_mouse_drag(
-        self,
-        *,
-        from_ref: str,
-        to_ref: str,
-        thinking: str,
-        next_goal: str,
-        internal_call: bool = False,
+        self, *, from_ref: str, to_ref: str
     ) -> Dict[str, Any]:
         r"""Control the mouse to drag and drop in the browser using ref IDs.
 
         Args:
             from_ref (str): The `ref` ID of the source element to drag from.
             to_ref (str): The `ref` ID of the target element to drag to.
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1183,10 +1016,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_mouse_drag")
+        print("🔧 Tool: browser_mouse_drag")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.mouse_drag(from_ref, to_ref)
@@ -1218,25 +1048,13 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_press_key(
-        self,
-        *,
-        keys: List[str],
-        thinking: str,
-        next_goal: str,
-        internal_call: bool = False,
-    ) -> Dict[str, Any]:
+    async def browser_press_key(self, *, keys: List[str]) -> Dict[str, Any]:
         r"""Press key and key combinations.
         Supports single key press or combination of keys by concatenating
         them with '+' separator.
 
         Args:
             keys (List[str]): key or list of keys.
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1247,10 +1065,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_press_key")
+        print("🔧 Tool: browser_press_key")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.press_key(keys)
@@ -1282,14 +1097,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_switch_tab(
-        self,
-        *,
-        tab_id: str,
-        thinking: str,
-        next_goal: str,
-        internal_call: bool = False,
-    ) -> Dict[str, Any]:
+    async def browser_switch_tab(self, *, tab_id: str) -> Dict[str, Any]:
         r"""Switches to a different browser tab using its ID.
 
         After switching, all actions will apply to the new tab. Use
@@ -1297,11 +1105,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         Args:
             tab_id (str): The ID of the tab to activate.
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1311,10 +1114,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the new active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_switch_tab")
+        print("🔧 Tool: browser_switch_tab")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.switch_tab(tab_id)
@@ -1346,14 +1146,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
-    async def browser_close_tab(
-        self,
-        *,
-        tab_id: str,
-        thinking: str,
-        next_goal: str,
-        internal_call: bool = False,
-    ) -> Dict[str, Any]:
+    async def browser_close_tab(self, *, tab_id: str) -> Dict[str, Any]:
         r"""Closes a browser tab using its ID.
 
         Use `get_tab_info` to find the ID of the tab to close. After
@@ -1361,11 +1154,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
         Args:
             tab_id (str): The ID of the tab to close.
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1376,10 +1164,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the new active tab.
                 - "total_tabs" (int): Total number of remaining tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_close_tab")
+        print("🔧 Tool: browser_close_tab")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.close_tab(tab_id)
@@ -1469,24 +1254,12 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             logger.error(f"Failed to get console view: {e}")
             return {"console_messages": []}
 
-    async def browser_console_exec(
-        self,
-        code: str,
-        thinking: str,
-        next_goal: str,
-        *,
-        internal_call: bool = False,
-    ) -> Dict[str, Any]:
+    async def browser_console_exec(self, code: str) -> Dict[str, Any]:
         r"""Execute javascript code in the console of the current page and get
         results.
 
         Args:
             code (str): JavaScript code to execute in the browser console.
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1497,11 +1270,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the new active tab.
                 - "total_tabs" (int): Total number of remaining tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_console_exec")
-
+        print("🔧 Tool: browser_console_exec")
         try:
             ws_wrapper = await self._get_ws_wrapper()
             result = await ws_wrapper.console_exec(code)
@@ -1535,12 +1304,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
 
     # Additional methods for backward compatibility
     async def browser_wait_user(
-        self,
-        timeout_sec: Optional[float] = None,
-        thinking: str = "Waiting for user input",
-        next_goal: str = "Resume after user action",
-        *,
-        internal_call: bool = False,
+        self, timeout_sec: Optional[float] = None
     ) -> Dict[str, Any]:
         r"""Pauses execution and waits for human input from the console.
 
@@ -1551,11 +1315,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         Args:
             timeout_sec (Optional[float]): Max time to wait in seconds. If
                 `None`, it will wait indefinitely.
-            thinking (str): One short sentence explaining why this action.
-            next_goal (str): One short sentence describing the next planned
-                action.
-            internal_call (bool): If True, suppresses reasoning parameter
-                logging.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -1565,10 +1324,6 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "current_tab" (int): Index of the active tab.
                 - "total_tabs" (int): Total number of open tabs.
         """
-        if not internal_call:
-            print(f"💭 Thinking: {thinking}")
-            print(f"🎯 Next goal: {next_goal}")
-            print("🔧 Tool: browser_wait_user")
         import asyncio
 
         prompt = (
