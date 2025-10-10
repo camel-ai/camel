@@ -1,16 +1,52 @@
-## Description
+## 📝 Description
 
-Describe your changes in detail (optional if the linked issue already contains a detailed description of the changes).
+<!-- Please include a summary of the changes and the related issue. -->
 
-## Checklist
+Fixes #3221
 
-Go over all the following points, and put an `x` in all the boxes that apply.
+---
 
-- [ ] I have read the [CONTRIBUTION](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) guide (**required**)
-- [ ] I have linked this PR to an issue using the Development section on the right sidebar or by adding `Fixes #issue-number` in the PR description (**required**)
-- [ ] I have checked if any dependencies need to be added or updated in `pyproject.toml` and `uv lock`
-- [ ] I have updated the tests accordingly (*required for a bug fix or a new feature*)
-- [ ] I have updated the documentation if needed:
-- [ ] I have added examples if this is a new feature
+## 🔍 Type of change
 
-If you are unsure about any of these, don't hesitate to ask. We are here to help!
+<!-- Please delete options that are not relevant. -->
+
+- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
+- [ ] ✨ New feature (non-breaking change which adds functionality)
+- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] 🧹 Code refactor / cleanup
+- [ ] 🧪 Tests added or updated
+- [ ] 📘 Documentation update
+
+---
+
+## 🧠 Motivation and Context
+
+<!-- Why is this change required? What problem does it solve? -->
+
+---
+
+## ✅ How Has This Been Tested?
+
+<!-- Describe the tests you ran to verify your changes. -->
+
+- [ ] Tested locally
+- [ ] CI pipeline passes
+
+---
+
+## 📸 Screenshots (if applicable)
+
+<!-- Add any relevant screenshots or screen recordings -->
+
+---
+
+## 🧾 Checklist
+
+- [ ] My code follows the project's style guidelines
+- [ ] I have performed a self-review of my own code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix is effective or that my feature works
+
+---
