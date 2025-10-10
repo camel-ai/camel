@@ -64,6 +64,12 @@ from camel.agents._utils import (
     safe_model_dump,
 )
 from camel.agents.base import BaseAgent
+from camel.core import (
+    CamelMessage,
+    CamelModelResponse,
+    CamelToolCall,
+    CamelUsage,
+)
 from camel.logger import get_logger
 from camel.memories import (
     AgentMemory,
@@ -2513,24 +2519,30 @@ class ChatAgent(BaseAgent):
             _ModelResponse: parsed model response.
         """
         output_messages: List[BaseMessage] = []
+        camel_message_pairs: List[Tuple[CamelMessage, Any]] = []
         for choice in response.choices:
-            # Skip messages with no meaningful content
-            if (
-                choice.message.content is None
-                or choice.message.content.strip() == ""
-            ) and not choice.message.tool_calls:
+            camel_message = CamelMessage.from_chat_completion(choice.message)
+            if not camel_message.has_meaningful_content():
                 continue
+
+            camel_message_pairs.append((camel_message, choice))
 
             meta_dict = {}
             if logprobs_info := handle_logprobs(choice):
                 meta_dict["logprobs_info"] = logprobs_info
 
+            raw_content = camel_message.content
+            if isinstance(raw_content, list):
+                content = json.dumps(raw_content, ensure_ascii=False)
+            else:
+                content = raw_content or ""
+
             chat_message = BaseMessage(
                 role_name=self.role_name,
                 role_type=self.role_type,
                 meta_dict=meta_dict,
-                content=choice.message.content or "",
-                parsed=getattr(choice.message, "parsed", None),
+                content=content,
+                parsed=camel_message.parsed,
             )
 
             output_messages.append(chat_message)
@@ -2540,20 +2552,47 @@ class ChatAgent(BaseAgent):
         ]
 
         usage = {}
-        if response.usage is not None:
-            usage = safe_model_dump(response.usage)
+        camel_usage = CamelUsage.from_chat_completion(response.usage)
+        if camel_usage:
+            if camel_usage.raw is not None:
+                usage = safe_model_dump(camel_usage.raw)
+            else:
+                usage = {
+                    "prompt_tokens": camel_usage.prompt_tokens,
+                    "completion_tokens": camel_usage.completion_tokens,
+                    "total_tokens": camel_usage.total_tokens,
+                }
 
         tool_call_requests: Optional[List[ToolCallRequest]] = None
-        if tool_calls := response.choices[0].message.tool_calls:
+        flat_tool_calls: List[CamelToolCall] = []
+        for camel_message, _ in camel_message_pairs:
+            flat_tool_calls.extend(camel_message.tool_calls)
+
+        if flat_tool_calls:
             tool_call_requests = []
-            for tool_call in tool_calls:
-                tool_name = tool_call.function.name  # type: ignore[union-attr]
-                tool_call_id = tool_call.id
-                args = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
-                tool_call_request = ToolCallRequest(
-                    tool_name=tool_name, args=args, tool_call_id=tool_call_id
+            for tool_call in flat_tool_calls:
+                if not tool_call.arguments or not tool_call.name:
+                    continue
+                try:
+                    args = json.loads(tool_call.arguments)
+                except json.JSONDecodeError:
+                    # Keep raw arguments for future inspection
+                    args = {"_raw_arguments": tool_call.arguments}
+                tool_call_requests.append(
+                    ToolCallRequest(
+                        tool_name=tool_call.name,
+                        args=args,
+                        tool_call_id=tool_call.id or tool_call.name,
+                    )
                 )
-                tool_call_requests.append(tool_call_request)
+
+        camel_response = CamelModelResponse(
+            messages=[pair[0] for pair in camel_message_pairs],
+            finish_reasons=finish_reasons,
+            usage=camel_usage,
+            response_id=getattr(response, "id", None),
+            raw=response,
+        )
 
         return ModelResponse(
             response=response,
@@ -2561,7 +2600,8 @@ class ChatAgent(BaseAgent):
             output_messages=output_messages,
             finish_reasons=finish_reasons,
             usage_dict=usage,
-            response_id=response.id or "",
+            response_id=camel_response.response_id or "",
+            camel_response=camel_response,
         )
 
     def _step_terminate(

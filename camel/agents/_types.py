@@ -17,6 +17,7 @@ from openai import AsyncStream, Stream
 from openai.types.chat import ChatCompletionChunk
 from pydantic import BaseModel, ConfigDict
 
+from camel.core import CamelModelResponse
 from camel.messages import BaseMessage
 from camel.types import ChatCompletion
 
@@ -43,3 +44,4 @@ class ModelResponse(BaseModel):
     finish_reasons: List[str]
     usage_dict: Dict[str, Any]
     response_id: str
+    camel_response: Optional[CamelModelResponse] = None
