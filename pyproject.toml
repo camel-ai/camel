@@ -660,7 +660,7 @@ ignore_missing_imports = true
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
 # the .py file needs to be listed twice since pre-commit and codespell treat
 # that path differently.
-skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolkit.py,./examples/toolkits/semantic_scholar_toolkit.py,examples/usecases,./examples/usecases'
+skip = '.git*,*.pdf,*.svg,*.lock,*.css,examples/toolkits/semantic_scholar_toolkit.py,./examples/toolkits/semantic_scholar_toolkit.py,examples/usecases,./examples/usecases,examples/agents/agent_tool_call_cache.py,./examples/agents/agent_tool_call_cache.py'
 check-hidden = true
 # Ignore long lines as usually some kind of base64 encodings e.g. in ipynb
 ignore-regex = '^\s*"image/\S+": ".*|^.{300,}|\b(NotIn|Unsupport)\b'
