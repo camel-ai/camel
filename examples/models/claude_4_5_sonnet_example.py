@@ -25,12 +25,10 @@ Please set the environment variable:
 export ANTHROPIC_API_KEY="your-api-key-here"
 """
 
-print("Testing Claude Sonnet 4.5 Integration...")
-
 # Create Claude Sonnet 4.5 model
 model = ModelFactory.create(
     model_platform=ModelPlatformType.ANTHROPIC,
-    model_type=ModelType.CLAUDE_4_5_SONNET,
+    model_type=ModelType.CLAUDE_SONNET_4_5,
     model_config_dict=AnthropicConfig(temperature=0.2).as_dict(),
 )
 
