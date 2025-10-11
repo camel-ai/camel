@@ -303,7 +303,6 @@ TASK_ANALYSIS_PROMPT = TextPrompt(
 - Failure Count: {failure_count}
 - Task Depth: {task_depth}
 - Assigned Worker: {assigned_worker}
-- Additional Info: {additional_info}
 
 **ISSUE TYPE: {issue_type}**
 
@@ -389,11 +388,10 @@ If the task quality is insufficient, select the best recovery strategy:
 
 **Priority Rules:**
 1. Connection/Network Errors → **retry** (almost always)
-2. High Failure Count (≥2) → Avoid retry, prefer **decompose**
-3. Deep Tasks (depth > 2) → Avoid decompose, prefer **retry** or **replan**
-4. Worker Skill Mismatch → **reassign** (quality) or **decompose** (failure)
-5. Unclear Requirements → **replan** with specifics
-6. Task Too Complex → **decompose** into subtasks
+2. Deep Tasks (depth > 2) → Avoid decompose, prefer **retry** or **replan**
+3. Worker Skill Mismatch → **reassign** (quality) or **decompose** (failure)
+4. Unclear Requirements → **replan** with specifics
+5. Task Too Complex → **decompose** into subtasks
 
 **RESPONSE FORMAT:**
 {response_format}

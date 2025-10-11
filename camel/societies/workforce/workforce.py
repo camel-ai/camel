@@ -912,9 +912,6 @@ class Workforce(BaseNode):
             failure_count=task.failure_count,
             task_depth=task.get_depth(),
             assigned_worker=task.assigned_worker_id or "unknown",
-            additional_info=(
-                str(task.additional_info) if task.additional_info else "None"
-            ),
             issue_type=issue_type,
             issue_specific_analysis=issue_analysis,
             response_format=response_format,
@@ -987,13 +984,26 @@ class Workforce(BaseNode):
 
         try:
             if strategy == RecoveryStrategy.RETRY:
-                # Simply retry the task by reposting it
-                if task.id in self._assignees:
-                    assignee_id = self._assignees[task.id]
+                # Simply retry the task by reposting it to the same worker
+                # Check both _assignees dict and task.assigned_worker_id
+                assignee_id = (
+                    self._assignees.get(task.id) or task.assigned_worker_id
+                )
+
+                if assignee_id:
+                    # Retry with the same worker - no coordinator call needed
                     await self._post_task(task, assignee_id)
                     action_taken = f"retried with same worker {assignee_id}"
+                    logger.info(
+                        f"Task {task.id} retrying with same worker "
+                        f"{assignee_id} (no coordinator call)"
+                    )
                 else:
-                    # Find a new assignee and retry
+                    # No previous assignment exists - find a new assignee
+                    logger.info(
+                        f"Task {task.id} has no previous assignee, "
+                        f"calling coordinator"
+                    )
                     batch_result = await self._find_assignee([task])
                     assignment = batch_result.assignments[0]
                     self._assignees[task.id] = assignment.assignee_id
@@ -3099,20 +3109,119 @@ class Workforce(BaseNode):
                         f"Assigning task: {e}"
                     )
                 dependencies = self._task_dependencies[task.id]
-                # Check if all dependencies for this task are in the completed
-                # set and their state is DONE
-                if all(
-                    dep_id in completed_tasks_info
-                    and completed_tasks_info[dep_id] == TaskState.DONE
-                    for dep_id in dependencies
-                ):
-                    assignee_id = self._assignees[task.id]
-                    logger.debug(
-                        f"Posting task {task.id} to assignee {assignee_id}. "
-                        f"Dependencies met."
+
+                # Check if all dependencies are in completed state
+                all_deps_completed = all(
+                    dep_id in completed_tasks_info for dep_id in dependencies
+                )
+
+                # Only proceed with dependency checks if all deps are completed
+                if all_deps_completed:
+                    # Check if all dependencies succeeded (state is DONE)
+                    all_deps_done = all(
+                        completed_tasks_info[dep_id] == TaskState.DONE
+                        for dep_id in dependencies
                     )
-                    await self._post_task(task, assignee_id)
-                    posted_tasks.append(task)
+
+                    # Check if any dependency failed
+                    any_dep_failed = any(
+                        completed_tasks_info[dep_id] == TaskState.FAILED
+                        for dep_id in dependencies
+                    )
+
+                    if all_deps_done:
+                        # All dependencies completed successfully - post the
+                        # task
+                        assignee_id = self._assignees[task.id]
+                        logger.debug(
+                            f"Posting task {task.id} to "
+                            f"assignee {assignee_id}. "
+                            f"Dependencies met."
+                        )
+                        await self._post_task(task, assignee_id)
+                        posted_tasks.append(task)
+                    elif any_dep_failed:
+                        # Check if any failed dependencies can still be retried
+                        failed_deps = [
+                            dep_id
+                            for dep_id in dependencies
+                            if completed_tasks_info[dep_id] == TaskState.FAILED
+                        ]
+
+                        # Check if any failed dependency is still retryable
+                        failed_tasks_with_retry_potential = []
+                        permanently_failed_deps = []
+
+                        for dep_id in failed_deps:
+                            # Find the failed dependency task
+                            failed_task = next(
+                                (
+                                    t
+                                    for t in self._completed_tasks
+                                    if t.id == dep_id
+                                ),
+                                None,
+                            )
+                            if (
+                                failed_task
+                                and failed_task.failure_count
+                                < MAX_TASK_RETRIES
+                            ):
+                                failed_tasks_with_retry_potential.append(
+                                    dep_id
+                                )
+                            else:
+                                permanently_failed_deps.append(dep_id)
+
+                        # Only fail the task if ALL dependencies are
+                        # permanently failed
+                        if (
+                            permanently_failed_deps
+                            and not failed_tasks_with_retry_potential
+                        ):
+                            logger.error(
+                                f"Task {task.id} cannot proceed: dependencies "
+                                f"{permanently_failed_deps} have "
+                                f"permanently failed. "
+                                f"Marking task as failed."
+                            )
+                            task.state = TaskState.FAILED
+                            task.result = (
+                                f"Task failed due to permanently "
+                                f"failed dependencies: "
+                                f"{permanently_failed_deps}"
+                            )
+
+                            # Log the failure to metrics
+                            if self.metrics_logger:
+                                self.metrics_logger.log_task_failed(
+                                    task_id=task.id,
+                                    worker_id=task.assigned_worker_id
+                                    or "unknown",
+                                    error_message=task.result,
+                                    metadata={
+                                        'failure_reason': (
+                                            'dependency_failure'
+                                        ),
+                                        'failed_dependencies': (
+                                            permanently_failed_deps
+                                        ),
+                                    },
+                                )
+
+                            self._completed_tasks.append(task)
+                            self._cleanup_task_tracking(task.id)
+                            posted_tasks.append(task)  # Remove from pending
+                        else:
+                            # Some dependencies may still be retried, keep
+                            # task pending
+                            logger.debug(
+                                f"Task {task.id} waiting: dependencies "
+                                f"{failed_tasks_with_retry_potential} "
+                                f"failed but may be retried "
+                                f"(attempt < {MAX_TASK_RETRIES})"
+                            )
+                # else: Not all dependencies completed yet, skip this task
 
         # Step 3: Remove the posted tasks from the pending list
         for task in posted_tasks:
@@ -3142,6 +3251,12 @@ class Workforce(BaseNode):
         logger.error(
             f"Task {task.id} failed (attempt "
             f"{task.failure_count}/{MAX_TASK_RETRIES}): {detailed_error}"
+        )
+
+        print(
+            f"{Fore.RED}❌ Task {task.id} failed "
+            f"(attempt {task.failure_count}/{MAX_TASK_RETRIES}): "
+            f"{failure_reason}{Fore.RESET}"
         )
 
         if self.metrics_logger:
@@ -3211,6 +3326,8 @@ class Workforce(BaseNode):
 
             # For decompose, we handle it specially
             if is_decompose:
+                # Task was decomposed, add to completed tasks
+                self._completed_tasks.append(task)
                 return False
 
         except Exception as e:
@@ -3225,8 +3342,13 @@ class Workforce(BaseNode):
             self._completed_tasks.append(task)
             return False
 
-        # Mark task as completed for dependency tracking
-        self._completed_tasks.append(task)
+        # Task is being retried - don't add to completed tasks
+        # It will be added when it actually completes or permanently fails
+        logger.debug(
+            f"Task {task.id} is being retried (strategy: "
+            f"{recovery_decision.recovery_strategy}). "
+            f"Not adding to completed tasks until final outcome."
+        )
 
         # Sync shared memory after task recovery
         if self.share_memory:
@@ -3764,6 +3886,21 @@ class Workforce(BaseNode):
                                     returned_task
                                 )
                                 continue
+
+                            # Print visual feedback for quality-failed tasks
+                            # with recovery strategy
+                            recovery_action = (
+                                quality_eval.recovery_strategy.value
+                                if quality_eval.recovery_strategy
+                                else ""
+                            )
+                            print(
+                                f"{Fore.YELLOW}⚠️ Task {returned_task.id} "
+                                f"failed quality check (score: "
+                                f"{quality_eval.quality_score}). "
+                                f"Issues: {', '.join(quality_eval.issues)}. "
+                                f"Recovery: {recovery_action}{Fore.RESET}"
+                            )
 
                             # Mark as failed for recovery
                             returned_task.failure_count += 1
