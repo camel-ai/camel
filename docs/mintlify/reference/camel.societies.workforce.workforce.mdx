@@ -254,24 +254,29 @@ def _decompose_task(self, task: Task):
   Union[List[Task], Generator[List[Task], None, None]]:
 The subtasks or generator of subtasks.
 
-<a id="camel.societies.workforce.workforce.Workforce._analyze_failure"></a>
+<a id="camel.societies.workforce.workforce.Workforce._analyze_task"></a>
 
-### _analyze_failure
+### _analyze_task
 
 ```python
-def _analyze_failure(self, task: Task, error_message: str):
+def _analyze_task(self, task: Task):
 ```
 
-Analyze a task failure and decide on the best recovery strategy.
+Unified task analysis for both failures and quality evaluation.
+
+This method consolidates the logic for analyzing task failures and
+evaluating task quality, using the unified TASK_ANALYSIS_PROMPT.
 
 **Parameters:**
 
-- **task** (Task): The failed task
-- **error_message** (str): The error message from the failure
+- **task** (Task): The task to analyze
+- **for_failure** (bool): True for failure analysis, False for quality evaluation
+- **error_message** (Optional[str]): Error message, required when for_failure=True
 
 **Returns:**
 
-  RecoveryDecision: The decided recovery strategy with reasoning
+  TaskAnalysisResult: Unified analysis result with recovery strategy
+and optional quality metrics
 
 <a id="camel.societies.workforce.workforce.Workforce.pause"></a>
 
