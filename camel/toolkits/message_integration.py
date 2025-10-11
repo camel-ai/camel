@@ -300,6 +300,12 @@ class ToolkitMessageIntegration:
         This internal method modifies the function signature and docstring
         to include optional messaging parameters that trigger status updates.
         """
+        if getattr(func, "__message_integration_enhanced__", False):
+            logger.debug(
+                f"Function {func.__name__} already enhanced, skipping"
+            )
+            return func
+
         # Get the original signature
         original_sig = inspect.signature(func)
 
