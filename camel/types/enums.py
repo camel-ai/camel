@@ -331,6 +331,17 @@ class ModelType(UnifiedModelType, Enum):
     # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
     SILICONFLOW_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
+    SILICONFLOW_DEEPSEEK_R1 = "deepseek-ai/DeepSeek-R1"
+    SILICONFLOW_PRO_DEEPSEEK_R1 = "Pro/deepseek-ai/DeepSeek-R1"
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
+    )
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+    )
+    SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B = (
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+    )
     SILICONFLOW_INTERN_LM2_5_20B_CHAT = "internlm/internlm2_5-20b-chat"
     SILICONFLOW_INTERN_LM2_5_7B_CHAT = "internlm/internlm2_5-7b-chat"
     SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT = "Pro/internlm/internlm2_5-7b-chat"
@@ -339,6 +350,7 @@ class ModelType(UnifiedModelType, Enum):
     SILICONFLOW_QWEN2_5_14B_INSTRUCT = "Qwen/Qwen2.5-14B-Instruct"
     SILICONFLOW_QWEN2_5_7B_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
     SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT = "Pro/Qwen/Qwen2.5-7B-Instruct"
+    SILICONFLOW_QWQ_32B = "Qwen/QwQ-32B"
     SILICONFLOW_THUDM_GLM_4_9B_CHAT = "THUDM/glm-4-9b-chat"
     SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT = "Pro/THUDM/glm-4-9b-chat"
 
@@ -982,6 +994,11 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.SILICONFLOW_DEEPSEEK_V2_5,
             ModelType.SILICONFLOW_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B,
             ModelType.SILICONFLOW_INTERN_LM2_5_20B_CHAT,
             ModelType.SILICONFLOW_INTERN_LM2_5_7B_CHAT,
             ModelType.SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT,
@@ -990,6 +1007,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SILICONFLOW_QWEN2_5_14B_INSTRUCT,
             ModelType.SILICONFLOW_QWEN2_5_7B_INSTRUCT,
             ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
+            ModelType.SILICONFLOW_QWQ_32B,
             ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
             ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
         }
@@ -1166,6 +1184,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SAMBA_LLAMA_3_1_405B,
             ModelType.GLM_4V_PLUS_0111,
             ModelType.GLM_ZERO_PREVIEW,
+            ModelType.SILICONFLOW_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B,
             ModelType.PPIO_YI_1_5_34B_CHAT,
             ModelType.NOVITA_LLAMA_3_1_8B,
         }:
@@ -1222,6 +1245,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MOONSHOT_V1_32K,
             ModelType.AIML_MIXTRAL_8X7B,
             ModelType.AIML_MISTRAL_7B_INSTRUCT,
+            ModelType.SILICONFLOW_QWQ_32B,
             ModelType.PPIO_QWEN_2_5_72B,
             ModelType.PPIO_LLAMA_3_1_70B,
             ModelType.MODELSCOPE_QWEN_2_5_7B_INSTRUCT,
