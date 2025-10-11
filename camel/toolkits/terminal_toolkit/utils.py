@@ -15,7 +15,6 @@
 import os
 import platform
 import re
-import shlex
 import shutil
 import subprocess
 import sys
@@ -27,96 +26,24 @@ from camel.logger import get_logger
 logger = get_logger(__name__)
 
 
-def split_chained_commands(command: str) -> list:
-    r"""Split a command string into individual commands based on chaining
-    operators.
-
-    Returns:
-        List of tuples (operator, command_part) where operator is one of:
-        ';', '&&', '||', '|', or '' (for the first command)
-    """
-    # Pattern to match command chaining operators outside of quotes
-    chaining_pattern = r'''
-        (?<!\\)      # Not preceded by backslash (not escaped)
-        (?:          # Group for alternation
-            ;        # Semicolon
-            |        # OR
-            \|\|     # Logical OR
-            |        # OR  
-            &&       # Logical AND
-            |        # OR
-            (?<!\|)  # Not preceded by pipe (to avoid matching ||)
-            \|       # Single pipe
-            (?!\|)   # Not followed by pipe (to avoid matching ||)
-        )
-        (?=          # Positive lookahead
-            (?:      # Group
-                [^"'] # Not a quote
-                |     # OR
-                "[^"]*" # Content in double quotes
-                |     # OR
-                '[^']*' # Content in single quotes
-            )*       # Zero or more times
-            $        # End of string
-        )
-    '''
-
-    # Find all operators and their positions
-    operators = []
-    for match in re.finditer(chaining_pattern, command, re.VERBOSE):
-        operators.append((match.start(), match.end(), match.group()))
-
-    if not operators:
-        return [('', command)]
-
-    # Split command into parts
-    parts = []
-    last_end = 0
-
-    for start, end, op in operators:
-        cmd_part = command[last_end:start].strip()
-        if cmd_part:
-            parts.append((op, cmd_part))
-        last_end = end
-
-    # Add the last part
-    last_part = command[last_end:].strip()
-    if last_part:
-        # Use the last operator for the final part
-        parts.append((operators[-1][2] if operators else '', last_part))
-
-    # Fix: First command should have empty operator
-    if parts and parts[0][0] != '':
-        parts[0] = ('', parts[0][1])
-
-    return parts
-
-
-def is_command_dangerous(
-    base_cmd: str,
-    full_command: str,
+def check_command_safety(
+    command: str,
     allowed_commands: Optional[Set[str]] = None,
 ) -> Tuple[bool, str]:
-    r"""Check if a single command is dangerous.
+    r"""Check if a command (potentially with chaining) is safe to execute.
 
     Args:
-        base_cmd (str): The base command (first word)
-        full_command (str): The full command string
+        command (str): The command string to check
         allowed_commands (Optional[Set[str]]): Set of allowed commands
+            (whitelist mode)
 
     Returns:
-        Tuple[bool, str]: (is_dangerous, reason)
+        Tuple[bool, str]: (is_safe, reason)
     """
-    # If whitelist is defined, check against it
-    if allowed_commands is not None:
-        if base_cmd not in allowed_commands:
-            return (
-                True,
-                f"Command '{base_cmd}' is not in the allowed commands list.",
-            )
-        return False, ""
+    if not command.strip():
+        return False, "Empty command is not allowed."
 
-    # Block dangerous commands (only when no whitelist is defined)
+    # Dangerous commands list - including ALL rm operations
     dangerous_commands = [
         # System administration
         'sudo',
@@ -128,8 +55,6 @@ def is_command_dangerous(
         'init',
         # File system manipulation
         'rm',
-        'mv',
-        'chmod',
         'chown',
         'chgrp',
         'umount',
@@ -144,9 +69,6 @@ def is_command_dangerous(
         'swapon',
         'swapoff',
         # Process management
-        'kill',
-        'killall',
-        'pkill',
         'service',
         'systemctl',
         'systemd',
@@ -172,39 +94,31 @@ def is_command_dangerous(
         'rmmod',
         'insmod',
         'lsmod',
-        # System information that could leak sensitive data
-        'dmesg',
-        'last',
-        'lastlog',
-        'who',
-        'w',
     ]
 
-    if base_cmd in dangerous_commands:
-        # Special handling for rm command
-        if base_cmd == 'rm':
-            dangerous_rm_pattern = (
-                r'\s-[^-\s]*[rf][^-\s]*\s|\s--force\s|'
-                r'\s--recursive\s|\s-rf\s|\s-fr\s'
-            )
-            if re.search(dangerous_rm_pattern, full_command, re.IGNORECASE):
-                return (
-                    True,
-                    f"Command '{base_cmd}' with forceful or "
-                    f"recursive options is blocked for safety.",
-                )
-            # Check if rm has target specified
-            parts = shlex.split(full_command)
-            if len(parts) < 2:
-                return (
-                    True,
-                    "rm command requires target file/directory specification.",
-                )
-            return False, ""
-        else:
-            return True, f"Command '{base_cmd}' is blocked for safety."
+    # Remove quoted strings to avoid false positives
+    clean_command = re.sub(r'''["'][^"']*["']''', ' ', command)
 
-    return False, ""
+    # If whitelist mode, check ALL commands against the whitelist
+    if allowed_commands is not None:
+        # Extract all command words (at start or after operators)
+        cmd_pattern = r'(?:^|;|\||&&)\s*\b([a-zA-Z_/][\w\-/]*)'
+        found_commands = re.findall(cmd_pattern, clean_command, re.IGNORECASE)
+        for cmd in found_commands:
+            if cmd.lower() not in allowed_commands:
+                return (
+                    False,
+                    f"Command '{cmd}' is not in the allowed commands list.",
+                )
+        return True, ""
+
+    # Check for dangerous commands
+    for cmd in dangerous_commands:
+        pattern = rf'(?:^|;|\||&&)\s*\b{re.escape(cmd)}\b'
+        if re.search(pattern, clean_command, re.IGNORECASE):
+            return False, f"Command '{cmd}' is blocked for safety."
+
+    return True, ""
 
 
 def sanitize_command(
@@ -216,9 +130,6 @@ def sanitize_command(
 ) -> Tuple[bool, str]:
     r"""A comprehensive command sanitizer for both local and Docker backends.
 
-    Now supports command chaining by validating each command in the chain
-    separately.
-
     Args:
         command (str): The command to sanitize
         use_docker_backend (bool): Whether using Docker backend
@@ -229,49 +140,25 @@ def sanitize_command(
     Returns:
         Tuple[bool, str]: (is_safe, message_or_command)
     """
-    # Apply security checks to both backends - security should be consistent
     if not safe_mode:
         return True, command  # Skip all checks if safe_mode is disabled
 
-    # Split command into chained parts
-    chained_parts = split_chained_commands(command)
+    # Use safety checker
+    is_safe, reason = check_command_safety(command, allowed_commands)
+    if not is_safe:
+        return False, reason
 
-    # Validate each command in the chain
-    for _operator, cmd_part in chained_parts:
-        # Parse the command part
-        try:
-            parts = shlex.split(cmd_part)
-        except ValueError as e:
-            return False, f"Invalid command syntax: {e}"
-
-        if not parts:
-            return False, "Empty command is not allowed."
-
-        base_cmd = parts[0].lower()
-
-        # Check if command is dangerous
-        is_dangerous, danger_reason = is_command_dangerous(
-            base_cmd, cmd_part, allowed_commands
-        )
-        if is_dangerous:
-            return False, danger_reason
-
-        # For local backend only: prevent changing
-        # directory outside the workspace
-        # Docker containers are already sandboxed,
-        # so this check is not needed there
-        if (
-            not use_docker_backend
-            and base_cmd == 'cd'
-            and len(parts) > 1
-            and working_dir
-        ):
-            target_dir = os.path.abspath(os.path.join(working_dir, parts[1]))
+    # Additional check for Docker backend: prevent cd outside working directory
+    if not use_docker_backend and working_dir and 'cd ' in command:
+        # Extract cd commands and check their targets
+        cd_pattern = r'\bcd\s+([^\s;|&]+)'
+        for match in re.finditer(cd_pattern, command):
+            target_path = match.group(1).strip('\'"')
+            target_dir = os.path.abspath(
+                os.path.join(working_dir, target_path)
+            )
             if not target_dir.startswith(working_dir):
-                return (
-                    False,
-                    "Cannot 'cd' outside of the working directory.",
-                )
+                return False, "Cannot 'cd' outside of the working directory."
 
     return True, command
 
