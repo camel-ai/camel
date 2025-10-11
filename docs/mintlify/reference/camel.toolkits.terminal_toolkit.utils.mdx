@@ -1,15 +1,23 @@
 <a id="camel.toolkits.terminal_toolkit.utils"></a>
 
-<a id="camel.toolkits.terminal_toolkit.utils.contains_command_chaining"></a>
+<a id="camel.toolkits.terminal_toolkit.utils.check_command_safety"></a>
 
-## contains_command_chaining
+## check_command_safety
 
 ```python
-def contains_command_chaining(command: str):
+def check_command_safety(command: str, allowed_commands: Optional[Set[str]] = None):
 ```
 
-Check if command contains chaining operators that could be used to
-bypass security.
+Check if a command (potentially with chaining) is safe to execute.
+
+**Parameters:**
+
+- **command** (str): The command string to check
+- **allowed_commands** (Optional[Set[str]]): Set of allowed commands (whitelist mode)
+
+**Returns:**
+
+  Tuple[bool, str]: (is_safe, reason)
 
 <a id="camel.toolkits.terminal_toolkit.utils.sanitize_command"></a>
 
