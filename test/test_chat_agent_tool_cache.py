@@ -16,7 +16,7 @@ import pytest
 from camel.agents import ChatAgent
 from camel.messages import FunctionCallingMessage
 from camel.models.stub_model import StubModel
-from camel.types import ModelType
+from camel.types import ModelType, OpenAIBackendRole
 
 
 @pytest.mark.parametrize("threshold", [20])
@@ -29,7 +29,7 @@ def test_tool_output_caching(tmp_path, threshold):
         tool_output_cache_dir=tmp_path,
     )
 
-    long_result = "A" * (threshold + 10)
+    long_result = "A" * (threshold + 150)  # Make it longer than preview limit
     short_result = "short"
 
     agent._record_tool_calling(
@@ -69,9 +69,11 @@ def test_tool_output_caching(tmp_path, threshold):
     cached_message = None
     for record in records:
         message = record.memory_record.message
+        role = record.memory_record.role_at_backend
         if (
             isinstance(message, FunctionCallingMessage)
             and getattr(message, "tool_call_id", "") == "call-1"
+            and role == OpenAIBackendRole.FUNCTION
         ):
             cached_message = message
             break
