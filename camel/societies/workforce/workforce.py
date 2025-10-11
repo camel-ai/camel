@@ -906,11 +906,15 @@ class Workforce(BaseNode):
 
         # Format the unified analysis prompt
         analysis_prompt = TASK_ANALYSIS_PROMPT.format(
+            task_id=task.id,
             task_content=task.content,
             task_result=task_result,
             failure_count=task.failure_count,
-            max_retries=MAX_TASK_RETRIES,
+            task_depth=task.get_depth(),
             assigned_worker=task.assigned_worker_id or "unknown",
+            additional_info=(
+                str(task.additional_info) if task.additional_info else "None"
+            ),
             issue_type=issue_type,
             issue_specific_analysis=issue_analysis,
             response_format=response_format,
