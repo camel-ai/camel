@@ -456,7 +456,7 @@ class ChatAgent(BaseAgent):
             historical tool outputs to a local cache and replace them with
             lightweight references in memory. Only older tool results whose
             payload length exceeds ``tool_output_cache_threshold`` are cached.
-            (default: :obj:`True`)
+            (default: :obj:`False`)
         tool_output_cache_threshold (int, optional): Minimum character length
             of a tool result before it becomes eligible for caching. Values
             below or equal to zero disable caching regardless of the toggle.
@@ -516,7 +516,7 @@ class ChatAgent(BaseAgent):
         mask_tool_output: bool = False,
         pause_event: Optional[Union[threading.Event, asyncio.Event]] = None,
         prune_tool_calls_from_memory: bool = False,
-        enable_tool_output_cache: bool = True,
+        enable_tool_output_cache: bool = False,
         tool_output_cache_threshold: int = 2000,
         tool_output_cache_dir: Optional[Union[str, Path]] = None,
         retry_attempts: int = 3,
