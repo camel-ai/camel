@@ -644,15 +644,35 @@ class Workforce(BaseNode):
                 )
                 return
 
+            # Helper function to get existing UUIDs from an agent's memory
+            def get_existing_uuids(agent) -> set:
+                existing_uuids = set()
+                try:
+                    for context_record in agent.memory.retrieve():
+                        existing_uuids.add(
+                            str(context_record.memory_record.uuid)
+                        )
+                except Exception as e:
+                    logger.warning(f"Failed to retrieve existing UUIDs: {e}")
+                return existing_uuids
+
             # Share with coordinator agent
+            coord_existing_uuids = get_existing_uuids(self.coordinator_agent)
             for record in memory_records:
-                # Only add records from other agents to avoid duplication
-                if record.agent_id != self.coordinator_agent.agent_id:
+                # Only add records from other agents and not already present
+                if (
+                    record.agent_id != self.coordinator_agent.agent_id
+                    and str(record.uuid) not in coord_existing_uuids
+                ):
                     self.coordinator_agent.memory.write_record(record)
 
             # Share with task agent
+            task_existing_uuids = get_existing_uuids(self.task_agent)
             for record in memory_records:
-                if record.agent_id != self.task_agent.agent_id:
+                if (
+                    record.agent_id != self.task_agent.agent_id
+                    and str(record.uuid) not in task_existing_uuids
+                ):
                     self.task_agent.memory.write_record(record)
 
             # Share with SingleAgentWorker instances only
@@ -663,8 +683,12 @@ class Workforce(BaseNode):
             ]
 
             for worker in single_agent_workers:
+                worker_existing_uuids = get_existing_uuids(worker.worker)
                 for record in memory_records:
-                    if record.agent_id != worker.worker.agent_id:
+                    if (
+                        record.agent_id != worker.worker.agent_id
+                        and str(record.uuid) not in worker_existing_uuids
+                    ):
                         worker.worker.memory.write_record(record)
 
             logger.info(
