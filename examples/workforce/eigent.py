@@ -323,6 +323,8 @@ def search_agent_factory(
         "browser_visit_page",
         "browser_get_som_screenshot",
     ]
+    USER_DATA_DIR = "/Users/puzhen/Desktop/pre/camel_project/camel/UserData"
+
     web_toolkit_custom = HybridBrowserToolkit(
         headless=False,
         enabled_tools=custom_tools,
@@ -331,7 +333,9 @@ def search_agent_factory(
         session_id=agent_id,
         viewport_limit=False,
         cache_dir=WORKING_DIRECTORY,
-        default_start_url="https://search.brave.com/",
+        default_start_url="about:blank",
+        user_data_dir=USER_DATA_DIR,
+        log_dir="task2",
     )
 
     # Initialize toolkits
@@ -429,6 +433,7 @@ Your capabilities include:
             content=system_message,
         ),
         model=model,
+        enable_tool_output_cache=True,
         toolkits_to_register_agent=[web_toolkit_custom],
         tools=tools,
         prune_tool_calls_from_memory=True,
