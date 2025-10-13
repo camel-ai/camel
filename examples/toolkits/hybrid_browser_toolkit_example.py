@@ -33,7 +33,7 @@ logging.getLogger('camel.models').setLevel(logging.INFO)
 logging.getLogger('camel.toolkits.hybrid_browser_toolkit').setLevel(
     logging.DEBUG
 )
-USER_DATA_DIR = "User_Data"
+USER_DATA_DIR = "/Users/puzhen/Desktop/pre/camel_project/camel/UserData"
 
 model_backend = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
@@ -105,18 +105,20 @@ If you see a cookie page, click accept all.
 
 
 async def main() -> None:
-    try:
-        response = await agent.astep(TASK_PROMPT)
-        print("Task:", TASK_PROMPT)
-        print(f"Using user data directory: {USER_DATA_DIR}")
-        print(f"Enabled tools: {web_toolkit_custom.enabled_tools}")
-        print("\nResponse from agent:")
-        print(response.msgs[0].content if response.msgs else "<no response>")
-    finally:
-        # Ensure browser is closed properly
-        print("\nClosing browser...")
-        await web_toolkit_custom.browser_close()
-        print("Browser closed successfully.")
+    await web_toolkit_custom.browser_open()
+    # await web_toolkit_custom.browser_close()
+    # try:
+    #     response = await agent.astep(TASK_PROMPT)
+    #     print("Task:", TASK_PROMPT)
+    #     print(f"Using user data directory: {USER_DATA_DIR}")
+    #     print(f"Enabled tools: {web_toolkit_custom.enabled_tools}")
+    #     print("\nResponse from agent:")
+    #     print(response.msgs[0].content if response.msgs else "<no response>")
+    # finally:
+    #     # Ensure browser is closed properly
+    #     print("\nClosing browser...")
+    #     await web_toolkit_custom.browser_close()
+    #     print("Browser closed successfully.")
 
 
 if __name__ == "__main__":
