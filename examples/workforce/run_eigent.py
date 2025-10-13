@@ -258,7 +258,7 @@ if __name__ == "__main__":
         Purch. Org. 1710 (1710)
 	
 	Supplier是AdvertOne (USSU-TRL03)
-然后在items表中点击add from document, 点击后在两个purchase order checkbox中点击第一个，然后点击add items确认
+然后在items表中点击add from document, 点击Go button 后, 在purchase order checkbox中点击第一个，然后点击add items确认
         然后点击order即可
 注意：如果遇到leave tour按钮，那么先点击这个按钮
             """
