@@ -30,7 +30,7 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
-    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-5-mini")
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4.1-mini-2025-04-14")
 
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
@@ -207,6 +207,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
+    CLAUDE_SONNET_4_5 = "claude-sonnet-4-5"
     CLAUDE_SONNET_4 = "claude-sonnet-4-20250514"
     CLAUDE_OPUS_4 = "claude-opus-4-20250514"
     CLAUDE_OPUS_4_1 = "claude-opus-4-1-20250805"
@@ -641,6 +642,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,
@@ -1421,6 +1423,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
             ModelType.CLAUDE_3_7_SONNET,
+            ModelType.CLAUDE_SONNET_4_5,
             ModelType.CLAUDE_SONNET_4,
             ModelType.CLAUDE_OPUS_4,
             ModelType.CLAUDE_OPUS_4_1,

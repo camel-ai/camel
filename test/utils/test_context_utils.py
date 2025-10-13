@@ -33,12 +33,47 @@ def temp_directory():
 @pytest.fixture(scope="function")
 def mock_agent():
     r"""Create a mock ChatAgent for testing."""
+    from camel.messages import BaseMessage
+    from camel.types import RoleType
+
     agent = MagicMock(spec=ChatAgent)
     agent.agent_id = "test_agent_001"
 
     # Create a mock model backend
     mock_model = MagicMock(spec=BaseModelBackend)
     agent.model_backend = mock_model
+
+    # Create mock system message
+    mock_system_message = MagicMock(spec=BaseMessage)
+    mock_system_message.content = "You are a helpful assistant."
+    mock_system_message.role_name = "Assistant"
+    mock_system_message.role_type = RoleType.ASSISTANT
+    mock_system_message.meta_dict = {}
+
+    def create_new_instance_side_effect(new_content):
+        new_mock = MagicMock(spec=BaseMessage)
+        new_mock.content = new_content
+        new_mock.role_name = "Assistant"
+        new_mock.role_type = RoleType.ASSISTANT
+        new_mock.meta_dict = {}
+        new_mock.create_new_instance = MagicMock(
+            side_effect=create_new_instance_side_effect
+        )
+        return new_mock
+
+    mock_system_message.create_new_instance = MagicMock(
+        side_effect=create_new_instance_side_effect
+    )
+
+    # Set up required attributes
+    agent._original_system_message = mock_system_message
+    agent._system_message = mock_system_message
+    agent.system_message = mock_system_message
+
+    # Create mock memory with clear method
+    mock_memory = MagicMock()
+    mock_memory.clear = MagicMock()
+    agent.memory = mock_memory
 
     agent.update_memory = MagicMock()
     agent.clear_memory = MagicMock()
@@ -101,7 +136,7 @@ Data analysis of customer sales using pandas and matplotlib.
     )
     assert "Data analysis of customer sales" in context_message.content
     assert "Sales increased 15%" in context_message.content
-    assert backend_role.value == "user"
+    assert backend_role.value == "system"
 
 
 def test_load_markdown_context_to_memory_file_not_found(
@@ -214,7 +249,7 @@ def test_save_and_load_markdown_file(context_utility_fixture):
         filename="test_file", content=test_content, title="Test Title"
     )
 
-    assert "saved successfully" in result
+    assert result == "success"
 
     # Load file
     loaded_content = context_util.load_markdown_file("test_file")

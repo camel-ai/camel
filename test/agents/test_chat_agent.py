@@ -83,7 +83,7 @@ parametrize = pytest.mark.parametrize(
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_5_MINI,
+            model_type=ModelType.DEFAULT,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -103,11 +103,11 @@ def test_chat_agent(model, step_call_count=3):
     assistant_without_sys_msg = ChatAgent(model=model)
 
     assert str(assistant_with_sys_msg) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_5_MINI})"
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.DEFAULT})"
     )
     assert str(assistant_without_sys_msg) == (
         "ChatAgent(assistant, "
-        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_5_MINI)})"
+        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.DEFAULT)})"
     )
 
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
@@ -880,6 +880,7 @@ def test_tool_calling_sync(step_call_count=3):
         system_message=system_message,
         model=model,
         tools=MathToolkit().get_tools(),
+        enable_tool_output_cache=False,
     )
 
     ref_funcs = MathToolkit().get_tools()
@@ -1052,6 +1053,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         system_message=system_message,
         model=model,
         tools=math_funcs,
+        enable_tool_output_cache=False,
     )
 
     ref_funcs = math_funcs
@@ -1213,6 +1215,7 @@ async def test_tool_calling_async(step_call_count=3):
         system_message=system_message,
         model=model,
         tools=[FunctionTool(async_sleep)],
+        enable_tool_output_cache=False,
     )
 
     assert len(agent.tool_dict) == 1

@@ -191,7 +191,7 @@ class ContextSummarizerToolkit(BaseToolkit):
             summary (str): The summary text to save.
 
         Returns:
-            str: Success message or error message.
+            str: "success" or error message starting with "Error:".
         """
         try:
             # prepare metadata for unified markdown saving
@@ -221,7 +221,7 @@ class ContextSummarizerToolkit(BaseToolkit):
                 to save.
 
         Returns:
-            str: Success message or error message.
+            str: "success" or error message starting with "Error:".
         """
         try:
             # prepare metadata for markdown saving
@@ -430,7 +430,7 @@ Summary:"""
             )
 
             return (
-                "Full context summarized, summary added as system message, "
+                "Full context summarized, summary added as user message, "
                 "and full history removed."
             )
 
@@ -454,17 +454,18 @@ Summary:"""
             # clear the memory
             self.agent.clear_memory()
 
-            # add summary as context
+            # add summary as context as a USER message
             if summary and summary.strip():
                 from camel.messages import BaseMessage
                 from camel.types import OpenAIBackendRole
 
-                summary_message = BaseMessage.make_assistant_message(
-                    role_name="Assistant",
-                    content=f"[Context Summary]\n\n{summary}",
+                summary_message = BaseMessage.make_user_message(
+                    role_name="User",
+                    content=f"[Context Summary from Previous "
+                    f"Conversation]\n\n{summary}",
                 )
                 self.agent.update_memory(
-                    summary_message, OpenAIBackendRole.SYSTEM
+                    summary_message, OpenAIBackendRole.USER
                 )
                 return True
             return False

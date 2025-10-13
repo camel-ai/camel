@@ -1015,6 +1015,19 @@ def with_timeout(timeout=None):
                 if effective_timeout is None:
                     return func(*args, **kwargs)
 
+                # If current thread has a running asyncio event loop, avoid
+                # switching threads to preserve asyncio context (e.g., for
+                # asyncio.create_task). Execute inline without enforcing a
+                # sync timeout to keep event loop semantics intact.
+                try:
+                    asyncio.get_running_loop()
+                    loop_running = True
+                except RuntimeError:
+                    loop_running = False
+
+                if loop_running:
+                    return func(*args, **kwargs)
+
                 # Container to hold the result of the function call
                 result_container = []
 
