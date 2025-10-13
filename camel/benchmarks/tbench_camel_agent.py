@@ -22,9 +22,6 @@ if TYPE_CHECKING:
     from terminal_bench.agents.base_agent import (  # type: ignore[import-untyped]
         AgentResult,
     )
-    from terminal_bench.harness.models import (  # type: ignore[import-untyped]
-        FailureMode,
-    )
     from terminal_bench.terminal.tmux_session import (  # type: ignore[import-untyped]
         TmuxSession,
     )
@@ -38,7 +35,6 @@ logger = get_logger(__name__)
 
 class TerminalBenchAgent(BaseAgent):
     def __init__(self, **kwargs):
-        self.logging_dir = os.getenv("CAMEL_LOG_DIR", ".")
         super().__init__(**kwargs)
 
     @staticmethod
@@ -62,26 +58,35 @@ class TerminalBenchAgent(BaseAgent):
         Returns:
             AgentResult with token counts and failure mode
         """
+        from terminal_bench.agents.base_agent import (
+            AgentResult,  # type: ignore[import-untyped]
+        )
+        from terminal_bench.harness.models import (
+            FailureMode,  # type: ignore[import-untyped]
+        )
 
         container_name = session.container.name
+
         if not container_name:
             raise ValueError("Container name is required for DockerExecutor")
 
+        # Use logging_dir argument only, raise if not provided
+        if logging_dir is None:
+            raise ValueError("logging_dir argument must be provided")
+
+        log_dir = str(logging_dir)
+
         run_id = 0
         while True:
-            if os.path.exists(
-                f"{self.logging_dir}/{container_name}_run{run_id:02d}"
-            ):
+            if os.path.exists(f"{log_dir}/{container_name}_run{run_id:02d}"):
                 run_id += 1
             else:
                 break
         session_logs_dir = (
-            f"{self.logging_dir}/{container_name}_run{run_id}/session_logs/"
+            f"{log_dir}/{container_name}_run{run_id}/session_logs/"
         )
         os.makedirs(session_logs_dir, exist_ok=True)
-        working_dir = (
-            f"{self.logging_dir}/{container_name}_run{run_id}/CAMEL_WORKDIR/"
-        )
+        working_dir = f"{log_dir}/{container_name}_run{run_id}/CAMEL_WORKDIR/"
         os.makedirs(working_dir, exist_ok=True)
 
         terminal_toolkit_kwargs = {
@@ -118,8 +123,7 @@ class TerminalBenchAgent(BaseAgent):
             records: List[dict],
         ) -> List[Tuple[float, str]]:
             r"""Create a timestamped marker from memory records."""
-            from terminal_bench.agents.base_agent import AgentResult # type: ignore[import-untyped]
-            from terminal_bench.harness.models import FailureMode  # type: ignore[import-untyped]
+
             results = []
             logger.info(f"Total records: {len(records)}")
             for record in records:
