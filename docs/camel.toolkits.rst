@@ -36,6 +36,22 @@ camel.toolkits.github\_toolkit module
    :undoc-members:
    :show-inheritance:
 
+camel.toolkits.gitlab_toolkit module
+------------------------------------
+
+.. automodule:: camel.toolkits.gitlab_toolkit
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.toolkits.gitee_toolkit module
+-----------------------------------
+
+.. automodule:: camel.toolkits.gitee_toolkit
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 camel.toolkits.google\_maps\_toolkit module
 -------------------------------------------
 

@@ -648,58 +648,36 @@ class GiteeToolkit(GitBaseToolkit):
         tools.extend([
             FunctionTool(
                 func=self.gitee_create_merge_request,
-                name="gitee_create_merge_request",
-                description="在Gitee上创建合并请求",
             ),
             FunctionTool(
                 func=self.gitee_get_issue_list,
-                name="gitee_get_issue_list",
-                description="获取Gitee项目的Issue列表",
             ),
             FunctionTool(
                 func=self.gitee_get_issue_content,
-                name="gitee_get_issue_content",
-                description="获取Gitee Issue的详细内容",
             ),
             FunctionTool(
                 func=self.gitee_get_merge_request_list,
-                name="gitee_get_merge_request_list",
-                description="获取Gitee项目的合并请求列表",
             ),
             FunctionTool(
                 func=self.gitee_get_merge_request_content,
-                name="gitee_get_merge_request_content",
-                description="获取Gitee合并请求的详细内容",
             ),
             FunctionTool(
                 func=self.gitee_retrieve_file_content,
-                name="gitee_retrieve_file_content",
-                description="获取Gitee仓库中文件的内容",
             ),
             FunctionTool(
                 func=self.gitee_get_all_file_paths,
-                name="gitee_get_all_file_paths",
-                description="递归获取Gitee仓库中的所有文件路径",
             ),
             FunctionTool(
                 func=self.gitee_get_branch_list,
-                name="gitee_get_branch_list",
-                description="获取Gitee仓库的分支列表",
             ),
             FunctionTool(
                 func=self.gitee_get_latest_commit,
-                name="gitee_get_latest_commit",
-                description="获取Gitee分支的最新提交",
             ),
             FunctionTool(
                 func=self.gitee_create_webhook,
-                name="gitee_create_webhook",
-                description="在Gitee项目上创建webhook",
             ),
             FunctionTool(
                 func=self.gitee_get_repository_info,
-                name="gitee_get_repository_info",
-                description="获取Gitee仓库的信息",
             ),
         ])
         
