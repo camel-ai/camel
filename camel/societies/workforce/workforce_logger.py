@@ -495,6 +495,11 @@ class WorkforceLogger:
 
         tasks_handled_by_worker: Dict[str, int] = {}
 
+        # Track unique task final states to avoid double-counting
+        task_final_states: Dict[
+            str, str
+        ] = {}  # task_id -> 'completed' or 'failed'
+
         # Helper function to check if a task is the main task (has no parent)
         def is_main_task(task_id: str) -> bool:
             return (
@@ -528,7 +533,9 @@ class WorkforceLogger:
             elif event_type == 'task_completed':
                 # Exclude main task from total count
                 if not is_main_task(task_id):
-                    kpis['total_tasks_completed'] += 1
+                    # Track final state - a completed task overwrites any
+                    # previous failed state
+                    task_final_states[task_id] = 'completed'
                     # Count tasks handled by worker (only for non-main tasks)
                     if 'worker_id' in entry and entry['worker_id'] is not None:
                         worker_id = entry['worker_id']
@@ -550,7 +557,11 @@ class WorkforceLogger:
             elif event_type == 'task_failed':
                 # Exclude main task from total count
                 if not is_main_task(task_id):
-                    kpis['total_tasks_failed'] += 1
+                    # Only track as failed if not already completed
+                    # (in case of retries, the final completion overwrites
+                    # failed state)
+                    if task_final_states.get(task_id) != 'completed':
+                        task_final_states[task_id] = 'failed'
                     # Count tasks handled by worker (only for non-main tasks)
                     if 'worker_id' in entry and entry['worker_id'] is not None:
                         worker_id = entry['worker_id']
@@ -565,6 +576,14 @@ class WorkforceLogger:
             kpis['total_workforce_running_time_seconds'] = (
                 last_timestamp - first_timestamp
             ).total_seconds()
+
+        # Count unique tasks by final state
+        for _task_id, state in task_final_states.items():
+            if state == 'completed':
+                kpis['total_tasks_completed'] += 1
+            elif state == 'failed':
+                kpis['total_tasks_failed'] += 1
+
         # Calculate worker utilization based on proportion of tasks handled
         total_tasks_processed_for_utilization = (
             kpis['total_tasks_completed'] + kpis['total_tasks_failed']
@@ -610,9 +629,9 @@ class WorkforceLogger:
 
         kpis['total_workers_created'] = len(self._worker_information)
 
-        # Current pending tasks (simplified)
-        kpis['current_pending_tasks'] = kpis['total_tasks_created'] - (
-            kpis['total_tasks_completed'] + kpis['total_tasks_failed']
+        # Current pending tasks - tasks created but not yet completed or failed
+        kpis['current_pending_tasks'] = kpis['total_tasks_created'] - len(
+            task_final_states
         )
 
         return kpis
