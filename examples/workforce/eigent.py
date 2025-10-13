@@ -322,6 +322,7 @@ def search_agent_factory(
         "browser_switch_tab",
         "browser_visit_page",
         "browser_get_som_screenshot",
+        "browser_get_page_snapshot"
     ]
     USER_DATA_DIR = "/Users/puzhen/Desktop/pre/camel_project/camel/UserData"
 
@@ -436,7 +437,7 @@ Your capabilities include:
         enable_tool_output_cache=True,
         toolkits_to_register_agent=[web_toolkit_custom],
         tools=tools,
-        prune_tool_calls_from_memory=True,
+        # prune_tool_calls_from_memory=True,
     )
 
 
