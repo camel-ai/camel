@@ -880,6 +880,7 @@ def test_tool_calling_sync(step_call_count=3):
         system_message=system_message,
         model=model,
         tools=MathToolkit().get_tools(),
+        enable_tool_output_cache=False,
     )
 
     ref_funcs = MathToolkit().get_tools()
@@ -1052,6 +1053,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         system_message=system_message,
         model=model,
         tools=math_funcs,
+        enable_tool_output_cache=False,
     )
 
     ref_funcs = math_funcs
@@ -1213,6 +1215,7 @@ async def test_tool_calling_async(step_call_count=3):
         system_message=system_message,
         model=model,
         tools=[FunctionTool(async_sleep)],
+        enable_tool_output_cache=False,
     )
 
     assert len(agent.tool_dict) == 1
