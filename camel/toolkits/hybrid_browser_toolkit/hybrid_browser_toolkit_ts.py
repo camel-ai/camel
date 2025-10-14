@@ -733,26 +733,49 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         2. Multiple inputs mode: Provide 'inputs' as a list of dictionaries
            with 'ref' and 'text' keys
 
+        The multiple inputs mode is more efficient for filling forms as it
+        batches all typing operations into a single browser action, reducing
+        overhead and improving performance.
+
         Args:
             ref (Optional[str]): The `ref` ID of the input element, from a
-                snapshot. Required when using single input mode.
+                snapshot. Required when using single input mode. Mutually
+                exclusive with `inputs`.
             text (Optional[str]): The text to type into the element. Required
-                when using single input mode.
-            inputs (Optional[List[Dict[str, str]]]): List of dictionaries,
-                each containing 'ref' and 'text' keys for typing into multiple
-                elements. Example: [{'ref': '1', 'text': 'username'},
-                {'ref': '2', 'text': 'password'}]
+                when using single input mode. Mutually exclusive with `inputs`.
+            inputs (Optional[List[Dict[str, str]]]): List of dictionaries for
+                typing into multiple elements. Each dictionary must contain:
+                - 'ref' (str): The element reference ID
+                - 'text' (str): The text to type into that element
+                Mutually exclusive with `ref` and `text`.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
-                - "result" (str): Confirmation of the action.
+                - "result" (str): Confirmation message describing the action.
                 - "snapshot" (str): A textual snapshot of the page after
-                  typing.
+                  typing, showing the updated state of interactive elements.
                 - "tabs" (List[Dict]): Information about all open tabs.
-                - "current_tab" (int): Index of the active tab.
-                - "total_tabs" (int): Total number of open tabs.
-                - "details" (Dict[str, Any]): When using multiple inputs,
-                  contains success/error status for each ref.
+                - "current_tab" (int): Index of the active tab (zero-based).
+
+        Raises:
+            ValueError: If neither mode's parameters are provided, or if both
+                modes' parameters are provided simultaneously.
+
+        Examples:
+            Single input mode:
+                >>> browser_type(
+                ...     ref="3",
+                ...     text="hello@example.com"
+                ... )
+                Typed text into element 3
+
+            Multiple inputs mode:
+                >>> browser_type([
+                ...     {"ref": "5", "text": "Standard PO (NB)"},
+                ...     {"ref": "7", "text": "Group 001 (001)"},
+                ...     {"ref": "9", "text": "Velotics Inc. (1710)"}
+                ... ])
+
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
