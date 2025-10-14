@@ -10,7 +10,8 @@ class WebSocketBrowserServer {
 
   async start() {
     return new Promise((resolve, reject) => {
-      this.server = new WebSocket.Server({ 
+      this.server = new WebSocket.Server({
+         host: '127.0.0.1',
         port: this.port,
         maxPayload: 50 * 1024 * 1024 // 50MB limit instead of default 1MB
       }, () => {

@@ -313,6 +313,7 @@ def search_agent_factory(
 
     custom_tools = [
         "browser_open",
+        "browser_select",
         "browser_close",
         "browser_back",
         "browser_forward",

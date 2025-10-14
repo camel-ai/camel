@@ -239,29 +239,15 @@ if __name__ == "__main__":
     human_task = Task(
         content=(
             """
-            不要拆分任务！所有任务由一个search agent完成
-            
-            用浏览器打开https://my426318.s4hana.cloud.sap/ui?sap-language=EN&help-mixedLanguages=false&help-autoStartTour=PR_28A0E50CC77DAF91#Shell-home，这是sap平台，帮我执行下面的任务：
-  点击 'Procurement'
-        然后
-        点击 'Manage Purchase Orders'
-        you click 'create' button
-        在'Purchasing Doc. Type:'中
-        选中输入Standard PO (NB)
-        在'Currency'输入
-        United States Dollar (USD)
-        在'Purchasing Group:'中
-        输入Group 001 (001)
-        在 'Company Code:'中输入
-        Velotics Inc. (1710)
-        在 'Purchasing Organization:'输入
-        Purch. Org. 1710 (1710)
-	
-	Supplier是AdvertOne (USSU-TRL03)
-然后在items表中点击add from document, 点击Go button 后, 在purchase order checkbox中点击第一个，然后点击add items确认
-        然后点击order即可
-注意：如果遇到leave tour按钮，那么先点击这个按钮
-注意：如果多个输入框在同一个页面你都看到了，那么就用browser_type([{ref:...,text:...},{ref,text}...])这样一次输入多个输入框
+login https://energy-inspiration-9021.lightning.force.com/lightning/page/home
+
+user account weijie.bai-lqzb@force.com
+password wodeSalesforce@1998
+
+Please create a new lead in Salesforce for me, We met her at an Amazon event. Her name is Ms.Celine Xie, and she's the Head of Marketing at Eigent UK Ltd. The company is in the technology industry, has around 25 employees, and their address is 344-354 Gray's Inn Road, WC1X 8BP. Her phone number is +44 07962637373.
+
+Please make sure the lead status is set to 'New'.
+注意不要忘记写地址, 如果type失败可能是因为ref发生了变化，你需要查看browser_get_page_snapshot
             """
         ),
         id='0',
