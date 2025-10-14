@@ -549,6 +549,29 @@ class ChatAgent(BaseAgent):
         # Assign unique ID
         self.agent_id = agent_id if agent_id else str(uuid.uuid4())
 
+        self._tool_output_cache_enabled = (
+            enable_tool_output_cache and tool_output_cache_threshold > 0
+        )
+        self._tool_output_cache_threshold = max(0, tool_output_cache_threshold)
+        self._tool_output_cache_dir: Optional[Path]
+        self._tool_output_cache_manager: Optional[_ToolOutputCacheManager]
+        if self._tool_output_cache_enabled:
+            cache_dir = (
+                Path(tool_output_cache_dir).expanduser()
+                if tool_output_cache_dir is not None
+                else Path("tool_cache")
+            )
+            self._tool_output_cache_dir = cache_dir
+            self._tool_output_cache_manager = _ToolOutputCacheManager(
+                cache_dir
+            )
+
+        else:
+            self._tool_output_cache_dir = None
+            self._tool_output_cache_manager = None
+        self._tool_output_history: List[_ToolOutputHistoryEntry] = []
+        self._cache_lookup_tool_name = "retrieve_cached_tool_output"
+
         if token_limit is not None:
             logger.warning(
                 "`token_limit` parameter is deprecated and will be ignored. "
