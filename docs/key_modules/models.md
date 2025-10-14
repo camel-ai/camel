@@ -51,6 +51,8 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **InternLM**     | internlm3-latest, internlm3-8b-instruct<br/>internlm2.5-latest, internlm2-pro-chat |
 | **Reka**         | reka-core, reka-flash, reka-edge |
 | **COHERE**       | command-r-plus, command-r, command-light, command, command-nightly |
+| **ERNIE**        | ernie-x1-turbo-32k, ernie-x1-32k, ernie-x1-32k-preview, ernie-4.5-turbo-128k, ernie-4.5-turbo-32k |
+
 
 ### API & Connector Platforms
 
@@ -74,7 +76,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **AWS Bedrock**  | [supported models](https://us-west-2.console.aws.amazon.com/bedrock/home?region=us-west-2#/) |
 | **IBM WatsonX**  | [supported models](https://jp-tok.dataplatform.cloud.ibm.com/samples?context=wx&tab=foundation-model) |
 | **Crynux**       | [supported models](https://docs.crynux.ai/application-development/how-to-run-llm-using-crynux-network/supported-models) |
-| **qianfan**      | [supported models](https://cloud.baidu.com/doc/QIANFANWORKSHOP/s/Wm9cvy6rl) |
+| **qianfan**      | [supported models](https://cloud.baidu.com/doc/qianfan-api/s/3m7of64lb) |
 
 
 

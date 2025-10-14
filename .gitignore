@@ -415,6 +415,7 @@ tags
 
 # Camel
 logs/
+tool_cache/
 
 # Download Configuration
 cookies.txt

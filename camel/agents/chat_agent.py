@@ -28,6 +28,8 @@ import textwrap
 import threading
 import time
 import uuid
+import warnings
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import (
@@ -168,6 +170,53 @@ SIMPLE_FORMAT_PROMPT = TextPrompt(
         """
     )
 )
+
+
+@dataclass
+class _ToolOutputHistoryEntry:
+    tool_name: str
+    tool_call_id: str
+    result_text: str
+    record_uuids: List[str]
+    record_timestamps: List[float]
+    preview_text: str
+    cached: bool = False
+    cache_id: Optional[str] = None
+
+
+class _ToolOutputCacheManager:
+    r"""Minimal persistent store for caching verbose tool outputs."""
+
+    def __init__(self, base_dir: Union[str, Path]) -> None:
+        self.base_dir = Path(base_dir).expanduser().resolve()
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+
+    def save(
+        self,
+        tool_name: str,
+        tool_call_id: str,
+        content: str,
+    ) -> Tuple[str, Path]:
+        cache_id = uuid.uuid4().hex
+        filename = f"{cache_id}.txt"
+        path = self.base_dir / filename
+        header = (
+            f"# Cached tool output\n"
+            f"tool_name: {tool_name}\n"
+            f"tool_call_id: {tool_call_id}\n"
+            f"cache_id: {cache_id}\n"
+            f"---\n"
+        )
+        path.write_text(f"{header}{content}", encoding="utf-8")
+        return cache_id, path
+
+    def load(self, cache_id: str) -> str:
+        path = self.base_dir / f"{cache_id}.txt"
+        if not path.exists():
+            raise FileNotFoundError(
+                f"Cached tool output {cache_id} not found at {path}"
+            )
+        return path.read_text(encoding="utf-8")
 
 
 class StreamContentAccumulator:
@@ -414,6 +463,19 @@ class ChatAgent(BaseAgent):
             usage. When enabled, removes FUNCTION/TOOL role messages and
             ASSISTANT messages with tool_calls after each step.
             (default: :obj:`False`)
+        enable_tool_output_cache (bool, optional): Whether to offload verbose
+            historical tool outputs to a local cache and replace them with
+            lightweight references in memory. Only older tool results whose
+            payload length exceeds ``tool_output_cache_threshold`` are cached.
+            (default: :obj:`False`)
+        tool_output_cache_threshold (int, optional): Minimum character length
+            of a tool result before it becomes eligible for caching. Values
+            below or equal to zero disable caching regardless of the toggle.
+            (default: :obj:`2000`)
+        tool_output_cache_dir (Optional[Union[str, Path]], optional): Target
+            directory for cached tool outputs. When omitted, a ``tool_cache``
+            directory relative to the current working directory is used.
+            (default: :obj:`None`)
         retry_attempts (int, optional): Maximum number of retry attempts for
             rate limit errors. (default: :obj:`3`)
         retry_delay (float, optional): Initial delay in seconds between
@@ -465,6 +527,9 @@ class ChatAgent(BaseAgent):
         mask_tool_output: bool = False,
         pause_event: Optional[Union[threading.Event, asyncio.Event]] = None,
         prune_tool_calls_from_memory: bool = False,
+        enable_tool_output_cache: bool = False,
+        tool_output_cache_threshold: int = 2000,
+        tool_output_cache_dir: Optional[Union[str, Path]] = None,
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = None,
@@ -539,6 +604,8 @@ class ChatAgent(BaseAgent):
                 convert_to_function_tool(tool) for tool in (tools or [])
             ]
         }
+        if self._tool_output_cache_enabled:
+            self._ensure_tool_cache_lookup_tool()
 
         # Register agent with toolkits that have RegisteredAgentToolkit mixin
         if toolkits_to_register_agent:
@@ -578,6 +645,8 @@ class ChatAgent(BaseAgent):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
+        if self._tool_output_cache_enabled:
+            self._tool_output_history.clear()
         for terminator in self.response_terminators:
             terminator.reset()
 
@@ -929,6 +998,178 @@ class ChatAgent(BaseAgent):
         for tool in tools:
             self.add_tool(tool)
 
+    def retrieve_cached_tool_output(self, cache_id: str) -> str:
+        r"""Load a cached tool output by its cache identifier.
+
+        Args:
+            cache_id (str): Identifier provided in cached tool messages.
+
+        Returns:
+            str: The cached content or an explanatory error message.
+        """
+        if not self._tool_output_cache_manager:
+            return "Tool output caching is disabled for this agent instance."
+
+        normalized_cache_id = cache_id.strip()
+        if not normalized_cache_id:
+            return "Please provide a non-empty cache_id."
+
+        try:
+            return self._tool_output_cache_manager.load(normalized_cache_id)
+        except FileNotFoundError:
+            return (
+                f"Cache entry '{normalized_cache_id}' was not found. "
+                "Verify the identifier and try again."
+            )
+
+    def _ensure_tool_cache_lookup_tool(self) -> None:
+        if not self._tool_output_cache_enabled:
+            return
+        lookup_name = self._cache_lookup_tool_name
+        if lookup_name in self._internal_tools:
+            return
+        lookup_tool = convert_to_function_tool(
+            self.retrieve_cached_tool_output
+        )
+        self._internal_tools[lookup_tool.get_function_name()] = lookup_tool
+
+    def _serialize_tool_result(self, result: Any) -> str:
+        if isinstance(result, str):
+            return result
+        try:
+            return json.dumps(result, ensure_ascii=False)
+        except (TypeError, ValueError):
+            return str(result)
+
+    def _summarize_tool_result(self, text: str, limit: int = 160) -> str:
+        normalized = re.sub(r"\s+", " ", text).strip()
+        if len(normalized) <= limit:
+            return normalized
+        return normalized[: max(0, limit - 3)].rstrip() + "..."
+
+    def _register_tool_output_for_cache(
+        self,
+        func_name: str,
+        tool_call_id: str,
+        result_text: str,
+        records: List[MemoryRecord],
+    ) -> None:
+        if not records:
+            return
+
+        entry = _ToolOutputHistoryEntry(
+            tool_name=func_name,
+            tool_call_id=tool_call_id,
+            result_text=result_text,
+            record_uuids=[str(record.uuid) for record in records],
+            record_timestamps=[record.timestamp for record in records],
+            preview_text=self._summarize_tool_result(result_text),
+        )
+        self._tool_output_history.append(entry)
+        self._process_tool_output_cache()
+
+    def _process_tool_output_cache(self) -> None:
+        if (
+            not self._tool_output_cache_enabled
+            or not self._tool_output_history
+            or self._tool_output_cache_manager is None
+        ):
+            return
+
+        # Only cache older results; keep the latest expanded for immediate use.
+        for entry in self._tool_output_history[:-1]:
+            if entry.cached:
+                continue
+            if len(entry.result_text) < self._tool_output_cache_threshold:
+                continue
+            self._cache_tool_output_entry(entry)
+
+    def _cache_tool_output_entry(self, entry: _ToolOutputHistoryEntry) -> None:
+        if self._tool_output_cache_manager is None or not entry.record_uuids:
+            return
+
+        try:
+            cache_id, cache_path = self._tool_output_cache_manager.save(
+                entry.tool_name,
+                entry.tool_call_id,
+                entry.result_text,
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning(
+                "Failed to persist cached tool output for %s (%s): %s",
+                entry.tool_name,
+                entry.tool_call_id,
+                exc,
+            )
+            return
+
+        timestamp = (
+            entry.record_timestamps[0]
+            if entry.record_timestamps
+            else time.time_ns() / 1_000_000_000
+        )
+        reference_message = FunctionCallingMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict={
+                "cache_id": cache_id,
+                "cached_preview": entry.preview_text,
+                "cached_tool_output_path": str(cache_path),
+            },
+            content="",
+            func_name=entry.tool_name,
+            result=self._build_cache_reference_text(entry, cache_id),
+            tool_call_id=entry.tool_call_id,
+        )
+
+        chat_history_block = getattr(self.memory, "_chat_history_block", None)
+        storage = getattr(chat_history_block, "storage", None)
+        if storage is None:
+            return
+
+        existing_records = storage.load()
+        updated_records = [
+            record
+            for record in existing_records
+            if record["uuid"] not in entry.record_uuids
+        ]
+        new_record = MemoryRecord(
+            message=reference_message,
+            role_at_backend=OpenAIBackendRole.FUNCTION,
+            timestamp=timestamp,
+            agent_id=self.agent_id,
+        )
+        updated_records.append(new_record.to_dict())
+        updated_records.sort(key=lambda record: record["timestamp"])
+        storage.clear()
+        storage.save(updated_records)
+
+        logger.info(
+            "Cached tool output '%s' (%s) to %s with cache_id=%s",
+            entry.tool_name,
+            entry.tool_call_id,
+            cache_path,
+            cache_id,
+        )
+
+        entry.cached = True
+        entry.cache_id = cache_id
+        entry.record_uuids = [str(new_record.uuid)]
+        entry.record_timestamps = [timestamp]
+
+    def _build_cache_reference_text(
+        self, entry: _ToolOutputHistoryEntry, cache_id: str
+    ) -> str:
+        preview = entry.preview_text or "[no preview available]"
+        return (
+            "[cached tool output]\n"
+            f"tool: {entry.tool_name}\n"
+            f"cache_id: {cache_id}\n"
+            f"preview: {preview}\n"
+            f"Use `{self._cache_lookup_tool_name}` with this cache_id to "
+            "retrieve the full content."
+        )
+
     def add_external_tool(
         self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
     ) -> None:
@@ -973,7 +1214,8 @@ class ChatAgent(BaseAgent):
         message: BaseMessage,
         role: OpenAIBackendRole,
         timestamp: Optional[float] = None,
-    ) -> None:
+        return_records: bool = False,
+    ) -> Optional[List[MemoryRecord]]:
         r"""Updates the agent memory with a new message.
 
         Args:
@@ -1318,6 +1560,8 @@ class ChatAgent(BaseAgent):
             None
         """
         self.memory.clear()
+        if self._tool_output_cache_enabled:
+            self._tool_output_history.clear()
 
         if self.system_message is not None:
             self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
@@ -2947,14 +3191,18 @@ class ChatAgent(BaseAgent):
         base_timestamp = current_time_ns / 1_000_000_000  # Convert to seconds
 
         self.update_memory(
-            assist_msg, OpenAIBackendRole.ASSISTANT, timestamp=base_timestamp
+            assist_msg,
+            OpenAIBackendRole.ASSISTANT,
+            timestamp=base_timestamp,
+            return_records=self._tool_output_cache_enabled,
         )
 
         # Add minimal increment to ensure function message comes after
-        self.update_memory(
+        func_records = self.update_memory(
             func_msg,
             OpenAIBackendRole.FUNCTION,
             timestamp=base_timestamp + 1e-6,
+            return_records=self._tool_output_cache_enabled,
         )
 
         # Record information about this tool call
@@ -2964,6 +3212,20 @@ class ChatAgent(BaseAgent):
             result=result,
             tool_call_id=tool_call_id,
         )
+
+        if (
+            self._tool_output_cache_enabled
+            and not mask_output
+            and func_records
+            and self._tool_output_cache_manager is not None
+        ):
+            serialized_result = self._serialize_tool_result(result)
+            self._register_tool_output_for_cache(
+                func_name,
+                tool_call_id,
+                serialized_result,
+                cast(List[MemoryRecord], func_records),
+            )
 
         self._last_tool_call_record = tool_record
         self._last_tool_call_signature = self._build_tool_signature(
@@ -4321,6 +4583,9 @@ class ChatAgent(BaseAgent):
             tool_execution_timeout=self.tool_execution_timeout,
             pause_event=self.pause_event,
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
+            enable_tool_output_cache=self._tool_output_cache_enabled,
+            tool_output_cache_threshold=self._tool_output_cache_threshold,
+            tool_output_cache_dir=self._tool_output_cache_dir,
             stream_accumulate=self.stream_accumulate,
         )
 
