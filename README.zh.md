@@ -472,6 +472,14 @@ pip install camel-ai
 >
 > 我们也欢迎您通过社交媒体、活动或会议分享 CAMEL，帮助其成长。您的支持将产生巨大的影响！
 
+## 贡献者
+
+<a href="https://github.com/camel-ai/camel/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=camel-ai/camel" />
+</a>
+
+使用 [contrib.rocks](https://contrib.rocks) 制作。
+
 <br>
 
 ## 社区与联系方式

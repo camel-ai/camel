@@ -549,6 +549,14 @@ We are actively involved in community events including:
 >
 > We also welcome you to help CAMEL grow by sharing it on social media, at events, or during conferences. Your support makes a big difference!
 
+## Contributors
+
+<a href="https://github.com/camel-ai/camel/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=camel-ai/camel" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
+
 <br>
 
 ## Community & Contact
