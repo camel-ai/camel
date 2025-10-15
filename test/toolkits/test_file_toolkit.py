@@ -319,14 +319,15 @@ def test_get_tools(file_write_toolkit):
     tools = file_write_toolkit.get_tools()
 
     # Check that we have the expected number of tools
-    # (now 3: write_to_file, read_file, edit_file)
-    assert len(tools) == 3
+    # (now 4: write_to_file, read_file, edit_file, search_files)
+    assert len(tools) == 4
 
     # Check that the tools have the correct function names
     tool_names = [tool.get_function_name() for tool in tools]
     assert "write_to_file" in tool_names
     assert "read_file" in tool_names
     assert "edit_file" in tool_names
+    assert "search_files" in tool_names
 
 
 def test_sanitize_and_resolve_filepath(file_write_toolkit):
@@ -452,3 +453,132 @@ def test_deprecated_alias():
         assert hasattr(toolkit, 'write_to_file')
         assert hasattr(toolkit, 'read_file')
         assert hasattr(toolkit, 'edit_file')
+
+
+def test_search_files_basic(file_write_toolkit):
+    r"""Test basic file search functionality with default markdown files."""
+    # create test files with content
+    file_write_toolkit.write_to_file("Test", "CAMEL is great", "test1.md")
+    file_write_toolkit.write_to_file("Test", "Python is awesome", "test2.md")
+    file_write_toolkit.write_to_file("Test", "CAMEL framework", "test3.md")
+
+    # search for pattern
+    result = file_write_toolkit.search_files("CAMEL")
+    result_data = json.loads(result)
+
+    # verify results
+    assert result_data["pattern"] == "CAMEL"
+    assert result_data["total_matches"] == 2
+    assert result_data["files_searched"] == 3
+    assert len(result_data["matches"]) == 2
+
+
+def test_search_files_with_file_types(file_write_toolkit):
+    r"""Test file search with specific file types."""
+    # create test files
+    file_write_toolkit.write_to_file("Test", "Python code", "test.py")
+    file_write_toolkit.write_to_file("Test", "Text file", "test.txt")
+    file_write_toolkit.write_to_file("Test", "Markdown", "test.md")
+
+    # search in python and text files only
+    result = file_write_toolkit.search_files("file", file_types=["py", "txt"])
+    result_data = json.loads(result)
+
+    # verify results
+    assert result_data["total_matches"] == 1
+    assert result_data["file_types"] == ["py", "txt"]
+    assert result_data["matches"][0]["file"] in ["test.py", "test.txt"]
+
+
+def test_search_files_with_file_pattern(file_write_toolkit):
+    r"""Test file search with glob pattern."""
+    # create test files
+    file_write_toolkit.write_to_file(
+        "Test", "workflow data", "main_workflow.md"
+    )
+    file_write_toolkit.write_to_file(
+        "Test", "workflow info", "test_workflow.md"
+    )
+    file_write_toolkit.write_to_file("Test", "other data", "readme.md")
+
+    # search with file pattern
+    result = file_write_toolkit.search_files(
+        "workflow", file_pattern="*_workflow.md"
+    )
+    result_data = json.loads(result)
+
+    # verify results
+    assert result_data["file_pattern"] == "*_workflow.md"
+    assert result_data["total_matches"] == 2
+    assert result_data["files_searched"] == 2
+
+
+def test_search_files_case_sensitive(file_write_toolkit):
+    r"""Test that search is case-insensitive."""
+    # create test file
+    file_write_toolkit.write_to_file(
+        "Test", "CAMEL is great\ncamel is small", "test.md"
+    )
+
+    # search for uppercase
+    result_upper = file_write_toolkit.search_files("CAMEL")
+    result_upper_data = json.loads(result_upper)
+
+    # search for lowercase
+    result_lower = file_write_toolkit.search_files("camel")
+    result_lower_data = json.loads(result_lower)
+
+    # verify case insensitivity - both should find 2 matches
+    assert result_upper_data["total_matches"] == 2
+    assert result_lower_data["total_matches"] == 2
+    # verify both lines are found regardless of search case
+    assert len(result_upper_data["matches"]) == 2
+    assert len(result_lower_data["matches"]) == 2
+
+
+def test_search_files_no_matches(file_write_toolkit):
+    r"""Test search when no matches are found."""
+    # create test files
+    file_write_toolkit.write_to_file("Test", "Python code", "test.md")
+
+    # search for non-existent pattern
+    result = file_write_toolkit.search_files("nonexistent")
+    result_data = json.loads(result)
+
+    # verify no matches
+    assert result_data["total_matches"] == 0
+    assert len(result_data["matches"]) == 0
+    assert result_data["files_searched"] == 1
+
+
+def test_search_files_line_numbers(file_write_toolkit):
+    r"""Test that line numbers are correct."""
+    # create test file with multiple lines
+    content = "line 1\nline 2 CAMEL\nline 3\nline 4 CAMEL\nline 5"
+    file_write_toolkit.write_to_file("Test", content, "test.md")
+
+    # search
+    result = file_write_toolkit.search_files("CAMEL")
+    result_data = json.loads(result)
+
+    # verify line numbers
+    assert result_data["total_matches"] == 2
+    assert result_data["matches"][0]["line"] == 2
+    assert result_data["matches"][1]["line"] == 4
+
+
+def test_search_files_nested_directory(file_write_toolkit):
+    r"""Test search in nested directories."""
+    # create nested files
+    file_write_toolkit.write_to_file("Test", "nested content", "dir1/file1.md")
+    file_write_toolkit.write_to_file(
+        "Test", "nested data", "dir1/dir2/file2.md"
+    )
+
+    # search recursively
+    result = file_write_toolkit.search_files("nested")
+    result_data = json.loads(result)
+
+    # verify recursive search works
+    assert result_data["total_matches"] == 2
+    assert result_data["files_searched"] == 2
