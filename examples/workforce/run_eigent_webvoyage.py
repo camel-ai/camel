@@ -14,6 +14,7 @@
 
 import asyncio
 import datetime
+import json
 import os
 import platform
 import uuid
@@ -48,6 +49,99 @@ WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or os.path.abspath(
 )
 
 
+def load_tasks_from_jsonl(jsonl_path: str, start_index: int = 0, end_index: int = None):
+    """
+    Load tasks from a JSONL file.
+
+    Args:
+        jsonl_path (str): Path to the JSONL file.
+        start_index (int): Starting index (inclusive).
+        end_index (int): Ending index (inclusive). If None, load all tasks from start_index.
+
+    Returns:
+        list: A list of task dictionaries.
+    """
+    tasks = []
+    with open(jsonl_path, 'r', encoding='utf-8') as f:
+        for i, line in enumerate(f):
+            if i < start_index:
+                continue
+            if end_index is not None and i > end_index:
+                break
+            tasks.append(json.loads(line.strip()))
+    return tasks
+
+
+async def verify_result_with_agent(task_content: str, result: dict, model_backend: BaseModelBackend):
+    """
+    Verify the workforce result using a chat agent.
+
+    Args:
+        task_content (str): The original task content.
+        result (dict): The result from the workforce.
+        model_backend (BaseModelBackend): The model backend to use.
+
+    Returns:
+        dict: A dictionary with 'success' (bool) and 'reasoning' (str).
+    """
+    verifier_agent = ChatAgent(
+        system_message=(
+            "You are a task verification expert. Your job is to analyze whether "
+            "a task was completed successfully based on the task description and "
+            "the execution result. You should output your verification in JSON format "
+            "with two fields: 'success' (true/false) and 'reasoning' (explanation)."
+        ),
+        model=model_backend,
+    )
+
+    verification_prompt = f"""
+Task Description:
+{task_content}
+
+Execution Result:
+{json.dumps(result, indent=2)}
+
+Please verify if the task was completed successfully. Consider:
+1. Did the workforce complete the task objectives?
+2. Are there any errors or failures in the logs?
+3. Does the result align with the task requirements?
+
+Output your verification in JSON format:
+{{
+    "success": true/false,
+    "reasoning": "your explanation here"
+}}
+"""
+
+    response = verifier_agent.step(BaseMessage.make_user_message(
+        role_name="Verifier",
+        content=verification_prompt
+    ))
+
+    try:
+        # Try to parse JSON from the response
+        content = response.msg.content
+        # Find JSON in the content
+        start_idx = content.find('{')
+        end_idx = content.rfind('}') + 1
+        if start_idx != -1 and end_idx > start_idx:
+            json_str = content[start_idx:end_idx]
+            verification_result = json.loads(json_str)
+        else:
+            # Fallback if no JSON found
+            verification_result = {
+                "success": False,
+                "reasoning": "Failed to parse verification response"
+            }
+    except Exception as e:
+        verification_result = {
+            "success": False,
+            "reasoning": f"Error parsing verification: {str(e)}"
+        }
+
+    return verification_result
+
+
 async def run_eigent_workforce(human_task: Task):
     """
     Run the eigent workforce with a custom task.
@@ -65,43 +159,26 @@ async def run_eigent_workforce(human_task: Task):
     msg_toolkit = AgentCommunicationToolkit(max_message_history=100)
 
     # Initialize message integration for use in coordinator and task agents
-    # message_integration = ToolkitMessageIntegration(
-    #     message_handler=send_message_to_user
-    # )
+    message_integration = ToolkitMessageIntegration(
+        message_handler=send_message_to_user
+    )
 
     # Create a single model backend for all agents
     model_backend = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1,
-        # url="https://api.moonshot.ai/v1",  # Explicitly specify Moonshot API URL
         model_config_dict={
             "stream": False,
         },
     )
-    # model_backend = ModelFactory.create(
-    #     model_platform=ModelPlatformType.MOONSHOT,
-    #     model_type=ModelType.MOONSHOT_KIMI_K2,
-    #     url="https://api.moonshot.ai/v1",  # Explicitly specify Moonshot API URL
-    #     model_config_dict={
-    #         "stream": False,
-    #     },
-    # )
+
     model_backend_reason = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4_1,
-        # url="https://api.moonshot.ai/v1",  # Explicitly specify Moonshot API URL
         model_config_dict={
             "stream": False,
         },
     )
-    # model_backend_reason = ModelFactory.create(
-    #     model_platform=ModelPlatformType.GEMINI,
-    #     model_type=ModelType.GEMINI_2_5_PRO,
-    #     # url="https://api.moonshot.ai/v1",  # Explicitly specify Moonshot API URL
-    #     model_config_dict={
-    #         "stream": False,
-    #     },
-    # )
 
     task_id = 'workforce_task'
 
@@ -123,7 +200,6 @@ MUST use this as the current date.
 access and can resolve a wide range of issues.
             """
         ),
-        enable_tool_output_cache=True,
         model=model_backend_reason,
         tools=[
             # *NoteTakingToolkit(
@@ -204,7 +280,7 @@ MUST use this as the current date.
         coordinator_agent=coordinator_agent,
         task_agent=task_agent,
         new_worker_agent=new_worker_agent,
-        use_structured_output_handler=True,  # Use handler for Moonshot compatibility
+        use_structured_output_handler=False,
         task_timeout_seconds=900.0,
     )
 
@@ -253,28 +329,97 @@ MUST use this as the current date.
 
 # Example usage
 if __name__ == "__main__":
-    # Create a custom task
-    human_task = Task(
-        content=(
-            """
-不要拆分任务
-要先用browser_open打开浏览器，browser_visit这个链接
-login https://energy-inspiration-9021.lightning.force.com/lightning/page/home
+    import argparse
 
-user account weijie.bai-lqzb@force.com
-password wodeSalesforce@1998
+    parser = argparse.ArgumentParser(description='Run eigent workforce on WebVoyager tasks')
+    parser.add_argument('--start', type=int, default=0, help='Start index (inclusive)')
+    parser.add_argument('--end', type=int, default=None, help='End index (inclusive)')
+    parser.add_argument('--jsonl', type=str, default='/Users/puzhen/Downloads/WebVoyager_data.jsonl',
+                        help='Path to JSONL file')
+    args = parser.parse_args()
 
-The salesforce.com - 200 Widgets deal is progressing well. Move it from 'Needs Analysis' to 'proposal' stage, and click “Mark as Current Stage’ and go  click "Contact Roles" and give me the contact name and Phone number. Back to Opportunities home page edit this Next Step as “book a meeting with + the contact name and phone number.”
+    # Load tasks from JSONL file
+    tasks = load_tasks_from_jsonl(args.jsonl, args.start, args.end)
+    print(f"Loaded {len(tasks)} tasks (index {args.start} to {args.end if args.end else 'end'})")
 
-
-如果type失败可能是因为ref发生了变化，你需要查看browser_get_page_snapshot
-            """
-        ),
-        id='0',
+    # Create model backend for verification
+    verifier_model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4_1,
+        model_config_dict={
+            "stream": False,
+        },
     )
 
-    # Run the workforce
-    result = asyncio.run(run_eigent_workforce(human_task))
+    # Store all results
+    all_results = []
 
-    print("\n=== Execution Complete ===")
-    print(f"Log file saved to: {result['log_file']}")
+    async def process_all_tasks():
+        for idx, task_data in enumerate(tasks):
+            actual_idx = args.start + idx
+            print(f"\n{'='*80}")
+            print(f"Processing Task {actual_idx}: {task_data.get('id', 'unknown')}")
+            print(f"{'='*80}")
+
+            # Combine ques and web fields
+            task_content = f"{task_data['ques']} in \"{task_data['web']}\""
+
+            # Create a custom task
+            human_task = Task(
+                content=task_content,
+                id=task_data.get('id', str(actual_idx)),
+            )
+
+            try:
+                # Run the workforce
+                result = await run_eigent_workforce(human_task)
+
+                print("\n--- Verifying Result with Agent ---")
+                # Verify the result
+                verification = await verify_result_with_agent(task_content, result, verifier_model)
+
+                print(f"\nVerification Result:")
+                print(f"  Success: {verification['success']}")
+                print(f"  Reasoning: {verification['reasoning']}")
+
+                # Store complete result
+                task_result = {
+                    "task_index": actual_idx,
+                    "task_id": task_data.get('id', str(actual_idx)),
+                    "task_content": task_content,
+                    "workforce_result": result,
+                    "verification": verification
+                }
+                all_results.append(task_result)
+
+                # Save intermediate results
+                results_file = f"all_results_{args.start}_{args.end if args.end else 'end'}.json"
+                with open(results_file, 'w', encoding='utf-8') as f:
+                    json.dump(all_results, f, indent=2, ensure_ascii=False)
+
+                print(f"\n=== Task {actual_idx} Complete ===")
+                print(f"Log file saved to: {result['log_file']}")
+                print(f"Results saved to: {results_file}")
+
+            except Exception as e:
+                print(f"\n!!! Error processing task {actual_idx}: {str(e)}")
+                error_result = {
+                    "task_index": actual_idx,
+                    "task_id": task_data.get('id', str(actual_idx)),
+                    "task_content": task_content,
+                    "error": str(e),
+                    "verification": {
+                        "success": False,
+                        "reasoning": f"Exception occurred: {str(e)}"
+                    }
+                }
+                all_results.append(error_result)
+
+    # Run all tasks
+    asyncio.run(process_all_tasks())
+
+    print(f"\n{'='*80}")
+    print("=== All Tasks Complete ===")
+    print(f"{'='*80}")
+    print(f"Processed {len(tasks)} tasks")
+    print(f"Results saved to: all_results_{args.start}_{args.end if args.end else 'end'}.json")
