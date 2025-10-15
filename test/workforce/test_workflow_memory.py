@@ -657,15 +657,17 @@ class TestWorkflowIntegration:
 
             # verify filename is reasonable length (< 100 chars including path)
             filename = os.path.basename(result["file_path"])
-            assert len(filename) < 100, (
-                f"Filename too long: {len(filename)} chars - {filename}"
-            )
+            assert (
+                len(filename) < 100
+            ), f"Filename too long: {len(filename)} chars - {filename}"
 
             # verify filename uses role_name, not full description
             assert "developer_agent_workflow" in filename
             assert "master_level_coding_assistant" not in filename
 
-    def test_filename_generation_with_generic_role_name(self, temp_context_dir):
+    def test_filename_generation_with_generic_role_name(
+        self, temp_context_dir
+    ):
         """Test filename generation with generic role_name uses task_title.
 
         When agent has a generic role_name like "assistant", the filename
@@ -685,16 +687,21 @@ class TestWorkflowIntegration:
         )
 
         # verify role_name is generic
-        assert agent.role_name.lower() in {'assistant', 'agent', 'user', 'system'}
+        assert agent.role_name.lower() in {
+            'assistant',
+            'agent',
+            'user',
+            'system',
+        }
 
         # mock the summarize method to return a workflow with task_title
         mock_result = {
             "status": "success",
             "summary": "Test workflow summary",
             "file_path": f"{temp_context_dir}/analyze_sales_data_workflow.md",
-            "structured_summary": type('obj', (object,), {
-                'task_title': 'Analyze sales data'
-            })(),
+            "structured_summary": type(
+                'obj', (object,), {'task_title': 'Analyze sales data'}
+            )(),
         }
 
         with patch.object(agent, 'summarize', return_value=mock_result):
@@ -704,7 +711,10 @@ class TestWorkflowIntegration:
 
             assert result["status"] == "success"
             # filename should be based on task_title, not role_name
-            assert "sales" in result["file_path"] or "analyze" in result["file_path"]
+            assert (
+                "sales" in result["file_path"]
+                or "analyze" in result["file_path"]
+            )
 
     def test_custom_session_id_integration(self, temp_context_dir):
         """Test end-to-end workflow with custom session ID.
@@ -739,9 +749,7 @@ class TestWorkflowIntegration:
             "file_path": expected_path,
         }
 
-        with patch.object(
-            ChatAgent, 'summarize', return_value=mock_result
-        ):
+        with patch.object(ChatAgent, 'summarize', return_value=mock_result):
             # save with custom session id
             results = workforce.save_workflow_memories(
                 session_id=custom_session

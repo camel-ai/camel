@@ -1533,8 +1533,6 @@ class ChatAgent(BaseAgent):
                 structured_output, 'task_title'
             ):
                 # use task_title from structured output for filename
-                from camel.utils.context_utils import ContextUtility
-
                 task_title = structured_output.task_title
                 clean_title = ContextUtility.sanitize_workflow_filename(
                     task_title
