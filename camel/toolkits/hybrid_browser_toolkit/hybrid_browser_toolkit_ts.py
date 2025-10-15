@@ -555,7 +555,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     async def browser_get_som_screenshot(
         self,
         read_image: bool = True,
-        instruction: Optional[str] = None,
+        instruction: str = "",
     ) -> str:
         r"""Captures a screenshot with interactive elements highlighted.
 
@@ -645,10 +645,9 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                         from PIL import Image
 
                         img = Image.open(file_path)
-                        inst = instruction if instruction is not None else ""
                         message = BaseMessage.make_user_message(
                             role_name="User",
-                            content=inst,
+                            content=instruction,
                             image_list=[img],
                         )
 
@@ -722,32 +721,14 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
     async def browser_type(
         self,
         *,
-        ref: Optional[str] = None,
-        text: Optional[str] = None,
-        inputs: Optional[List[Dict[str, str]]] = None,
+        ref: str,
+        text: str,
     ) -> Dict[str, Any]:
-        r"""Types text into one or more input elements on the page.
-
-        This method supports two modes:
-        1. Single input mode (backward compatible): Provide 'ref' and 'text'
-        2. Multiple inputs mode: Provide 'inputs' as a list of dictionaries
-           with 'ref' and 'text' keys
-
-        The multiple inputs mode is more efficient for filling forms as it
-        batches all typing operations into a single browser action, reducing
-        overhead and improving performance.
+        r"""Types text into an input element on the page.
 
         Args:
-            ref (Optional[str]): The `ref` ID of the input element, from a
-                snapshot. Required when using single input mode. Mutually
-                exclusive with `inputs`.
-            text (Optional[str]): The text to type into the element. Required
-                when using single input mode. Mutually exclusive with `inputs`.
-            inputs (Optional[List[Dict[str, str]]]): List of dictionaries for
-                typing into multiple elements. Each dictionary must contain:
-                - 'ref' (str): The element reference ID
-                - 'text' (str): The text to type into that element
-                Mutually exclusive with `ref` and `text`.
+            ref (str): The `ref` ID of the input element, from a snapshot.
+            text (str): The text to type into the element.
 
         Returns:
             Dict[str, Any]: A dictionary with the result of the action:
@@ -757,38 +738,16 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 - "tabs" (List[Dict]): Information about all open tabs.
                 - "current_tab" (int): Index of the active tab (zero-based).
 
-        Raises:
-            ValueError: If neither mode's parameters are provided, or if both
-                modes' parameters are provided simultaneously.
-
-        Examples:
-            Single input mode:
-                >>> browser_type(
-                ...     ref="3",
-                ...     text="hello@example.com"
-                ... )
-                Typed text into element 3
-
-            Multiple inputs mode:
-                >>> browser_type([
-                ...     {"ref": "5", "text": "Standard PO (NB)"},
-                ...     {"ref": "7", "text": "Group 001 (001)"},
-                ...     {"ref": "9", "text": "Velotics Inc. (1710)"}
-                ... ])
-
+        Example:
+            >>> browser_type(
+            ...     ref="3",
+            ...     text="hello@example.com"
+            ... )
+            Typed text into element 3
         """
         try:
             ws_wrapper = await self._get_ws_wrapper()
-
-            if ref is not None and text is not None:
-                result = await ws_wrapper.type(ref, text)
-            elif inputs is not None:
-                result = await ws_wrapper.type_multiple(inputs)
-            else:
-                raise ValueError(
-                    "Either provide 'ref' and 'text' for single input, "
-                    "or 'inputs' for multiple inputs"
-                )
+            result = await ws_wrapper.type(ref, text)
 
             tab_info = await ws_wrapper.get_tab_info()
             result.update(

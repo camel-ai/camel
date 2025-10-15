@@ -94,24 +94,79 @@ async def verify_result_with_agent(task_content: str, result: dict, model_backen
         model=model_backend,
     )
 
-    verification_prompt = f"""
-Task Description:
-{task_content}
+    # Read the detailed log file for verification
+    detailed_logs = None
+    final_response = None
+    log_file_path = result.get('log_file')
+    if log_file_path and os.path.exists(log_file_path):
+        try:
+            with open(log_file_path, 'r', encoding='utf-8') as f:
+                detailed_logs = json.load(f)
 
-Execution Result:
-{json.dumps(result, indent=2)}
+            # Extract the final response from logs
+            # Look for the last worker response or task completion
+            if isinstance(detailed_logs, dict):
+                # Try to find the final agent response
+                if 'logs' in detailed_logs:
+                    logs_list = detailed_logs['logs']
+                    # Find the last message from a worker
+                    for log_entry in reversed(logs_list):
+                        if isinstance(log_entry, dict) and 'content' in log_entry:
+                            final_response = log_entry.get('content')
+                            break
+                elif 'final_result' in detailed_logs:
+                    final_response = detailed_logs['final_result']
 
-Please verify if the task was completed successfully. Consider:
-1. Did the workforce complete the task objectives?
-2. Are there any errors or failures in the logs?
-3. Does the result align with the task requirements?
+        except Exception as e:
+            logger.warning(f"Failed to read log file {log_file_path}: {e}")
 
-Output your verification in JSON format:
-{{
-    "success": true/false,
-    "reasoning": "your explanation here"
-}}
-"""
+    # Build verification prompt with all available information
+    verification_prompt_parts = [
+        "Task Description:",
+        task_content,
+        "",
+        "Execution Summary (KPIs):",
+        json.dumps(result['kpis'], indent=2),
+        "",
+    ]
+
+    # Add final response if extracted
+    if final_response:
+        verification_prompt_parts.extend([
+            "Final Agent Response:",
+            str(final_response),
+            "",
+        ])
+
+    # Add condensed log information if available
+    if detailed_logs:
+        # Limit the size of logs to avoid token overflow
+        logs_str = json.dumps(detailed_logs, indent=2, ensure_ascii=False)
+        max_log_length = 10000  # Limit to ~10k characters
+        if len(logs_str) > max_log_length:
+            logs_str = logs_str[:max_log_length] + "\n... (truncated)"
+
+        verification_prompt_parts.extend([
+            "Detailed Execution Logs (summary):",
+            logs_str,
+            "",
+        ])
+
+    verification_prompt_parts.extend([
+        "Please verify if the task was completed successfully. Consider:",
+        "1. Did the workforce complete the task objectives?",
+        "2. Are there any errors or failures in the execution?",
+        "3. Does the final result/answer align with the task requirements?",
+        "4. Did the agent provide a comprehensive and accurate response?",
+        "",
+        "Output your verification in JSON format:",
+        "{",
+        '    "success": true/false,',
+        '    "reasoning": "your detailed explanation here"',
+        "}",
+    ])
+
+    verification_prompt = "\n".join(verification_prompt_parts)
 
     response = verifier_agent.step(BaseMessage.make_user_message(
         role_name="Verifier",
@@ -142,12 +197,13 @@ Output your verification in JSON format:
     return verification_result
 
 
-async def run_eigent_workforce(human_task: Task):
+async def run_eigent_workforce(human_task: Task, task_index: int = None):
     """
     Run the eigent workforce with a custom task.
 
     Args:
         human_task (Task): The task to be processed by the workforce.
+        task_index (int): Optional task index for unique log file naming.
 
     Returns:
         dict: A dictionary containing workforce KPIs and log information.
@@ -200,6 +256,8 @@ MUST use this as the current date.
 access and can resolve a wide range of issues.
             """
         ),
+
+        enable_tool_output_cache=True,
         model=model_backend_reason,
         tools=[
             # *NoteTakingToolkit(
@@ -257,7 +315,8 @@ MUST use this as the current date.
     )
 
     # Create agents using factory functions
-    search_agent = search_agent_factory(model_backend, task_id)
+    # search_agent_factory now returns (agent, browser_toolkit)
+    search_agent, browser_toolkit = search_agent_factory(model_backend, task_id)
 
     # document_agent = document_agent_factory(
     #     model_backend_reason,
@@ -303,28 +362,43 @@ MUST use this as the current date.
     #     worker=document_agent,
     )
 
-    # Use the async version directly to avoid hanging with async tools
-    await workforce.process_task_async(human_task)
+    try:
+        # Use the async version directly to avoid hanging with async tools
+        await workforce.process_task_async(human_task)
 
-    # Test WorkforceLogger features
-    print("\n--- Workforce Log Tree ---")
-    print(workforce.get_workforce_log_tree())
+        # Test WorkforceLogger features
+        print("\n--- Workforce Log Tree ---")
+        print(workforce.get_workforce_log_tree())
 
-    print("\n--- Workforce KPIs ---")
-    kpis = workforce.get_workforce_kpis()
-    for key, value in kpis.items():
-        print(f"{key}: {value}")
+        print("\n--- Workforce KPIs ---")
+        kpis = workforce.get_workforce_kpis()
+        for key, value in kpis.items():
+            print(f"{key}: {value}")
 
-    log_file_path = f"eigent_logs_{human_task.id}.json"
-    print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
-    workforce.dump_workforce_logs(log_file_path)
-    print(f"Logs dumped. Please check the file: {log_file_path}")
+        # Use task_index for unique log file naming if provided
+        if task_index is not None:
+            log_file_path = f"eigent_logs_task_{task_index}_{human_task.id}.json"
+        else:
+            log_file_path = f"eigent_logs_{human_task.id}.json"
 
-    return {
-        "kpis": kpis,
-        "log_tree": workforce.get_workforce_log_tree(),
-        "log_file": log_file_path
-    }
+        print(f"\n--- Dumping Workforce Logs to {log_file_path} ---")
+        workforce.dump_workforce_logs(log_file_path)
+        print(f"Logs dumped. Please check the file: {log_file_path}")
+
+        return {
+            "kpis": kpis,
+            "log_tree": workforce.get_workforce_log_tree(),
+            "log_file": log_file_path
+        }
+    finally:
+        # IMPORTANT: Close browser after each task to prevent resource leaks
+        if browser_toolkit is not None:
+            try:
+                print(f"\n--- Closing Browser for Task {human_task.id} ---")
+                await browser_toolkit.browser_close()
+                print("Browser closed successfully.")
+            except Exception as e:
+                print(f"Error closing browser: {e}")
 
 
 # Example usage
@@ -371,8 +445,8 @@ if __name__ == "__main__":
             )
 
             try:
-                # Run the workforce
-                result = await run_eigent_workforce(human_task)
+                # Run the workforce with task index for unique log files
+                result = await run_eigent_workforce(human_task, task_index=actual_idx)
 
                 print("\n--- Verifying Result with Agent ---")
                 # Verify the result

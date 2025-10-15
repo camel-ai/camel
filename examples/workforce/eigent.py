@@ -322,7 +322,6 @@ def search_agent_factory(
         "browser_enter",
         "browser_switch_tab",
         "browser_visit_page",
-        "browser_get_som_screenshot",
         "browser_get_page_snapshot"
     ]
     USER_DATA_DIR = "/Users/puzhen/Desktop/pre/camel_project/camel/UserData"
@@ -429,7 +428,7 @@ Your capabilities include:
 </web_search_workflow>
 """
 
-    return ChatAgent(
+    agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
             role_name="Search Agent",
             content=system_message,
@@ -440,6 +439,9 @@ Your capabilities include:
         tools=tools,
         # prune_tool_calls_from_memory=True,
     )
+
+    # Return both agent and toolkit for cleanup purposes
+    return agent, web_toolkit_custom
 
 
 def document_agent_factory(
@@ -987,7 +989,8 @@ MUST use this as the current date.
     )
 
     # Create agents using factory functions
-    search_agent = search_agent_factory(model_backend, task_id)
+    # search_agent_factory now returns (agent, browser_toolkit)
+    search_agent, _ = search_agent_factory(model_backend, task_id)
     developer_agent = developer_agent_factory(
         model_backend_reason,
         task_id,

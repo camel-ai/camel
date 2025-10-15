@@ -130,13 +130,72 @@ class MoonshotModel(OpenAICompatibleModel):
         request_config = copy.deepcopy(self.model_config_dict)
 
         if tools:
-            request_config["tools"] = tools
+            # Clean tools to remove null types (Moonshot API incompatibility)
+            cleaned_tools = self._clean_tool_schemas(tools)
+            request_config["tools"] = cleaned_tools
         elif response_format:
             # Use the same approach as DeepSeek for structured output
             try_modify_message_with_format(messages[-1], response_format)
             request_config["response_format"] = {"type": "json_object"}
 
         return request_config
+
+    def _clean_tool_schemas(
+        self, tools: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        r"""Clean tool schemas to remove null types for Moonshot compatibility.
+
+        Moonshot API doesn't accept {"type": "null"} in anyOf schemas.
+        This method removes null type definitions from parameters.
+
+        Args:
+            tools (List[Dict[str, Any]]): Original tool schemas.
+
+        Returns:
+            List[Dict[str, Any]]: Cleaned tool schemas.
+        """
+        import copy
+
+        def remove_null_from_schema(schema: Any) -> Any:
+            """Recursively remove null types from schema."""
+            if isinstance(schema, dict):
+                # Handle anyOf with null types
+                if 'anyOf' in schema:
+                    any_of = schema['anyOf']
+                    # Filter out null types
+                    filtered = [
+                        item for item in any_of
+                        if not (isinstance(item, dict) and item.get('type') == 'null')
+                    ]
+                    # If only one type remains, simplify
+                    if len(filtered) == 1:
+                        return remove_null_from_schema(filtered[0])
+                    elif len(filtered) > 1:
+                        schema = schema.copy()
+                        schema['anyOf'] = [remove_null_from_schema(item) for item in filtered]
+                        return schema
+                    else:
+                        # All were null, return string type as fallback
+                        return {"type": "string"}
+
+                # Recursively process nested dicts
+                return {
+                    k: remove_null_from_schema(v)
+                    for k, v in schema.items()
+                }
+            elif isinstance(schema, list):
+                return [remove_null_from_schema(item) for item in schema]
+            else:
+                return schema
+
+        cleaned_tools = copy.deepcopy(tools)
+        for tool in cleaned_tools:
+            if 'function' in tool and 'parameters' in tool['function']:
+                params = tool['function']['parameters']
+                if 'properties' in params:
+                    params['properties'] = remove_null_from_schema(params['properties'])
+
+        return cleaned_tools
 
     @observe()
     async def _arun(
