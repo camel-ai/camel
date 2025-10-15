@@ -144,7 +144,7 @@ class TestSingleAgentWorkerWorkflow:
     def test_load_workflow_success(
         self, mock_getmtime, mock_glob, temp_context_dir
     ):
-        """Test successful workflow loading."""
+        """Test successful workflow loading (legacy pattern matching mode)."""
         worker = MockSingleAgentWorker("data_analyst")
 
         # Mock file discovery
@@ -154,20 +154,24 @@ class TestSingleAgentWorkerWorkflow:
         mock_glob.return_value = mock_files
         mock_getmtime.return_value = 1234567890
 
-        # Mock the shared context utility method
+        # Mock the shared context utility methods
         mock_context_utility = MagicMock()
-        mock_context_utility.load_markdown_context_to_memory.return_value = (
-            "Context appended successfully"
+        mock_context_utility.load_markdown_file.return_value = (
+            "# Workflow content\nThis is workflow data"
+        )
+        mock_context_utility._filter_metadata_from_content.return_value = (
+            "This is workflow data"
         )
 
         with patch(
             'camel.utils.context_utils.ContextUtility.get_workforce_shared',
             return_value=mock_context_utility,
         ):
-            result = worker.load_workflow_memories()
+            # Use legacy pattern matching mode
+            result = worker.load_workflow_memories(use_smart_selection=False)
 
             assert result is True
-            mock_context_utility.load_markdown_context_to_memory.assert_called()
+            mock_context_utility.load_markdown_file.assert_called()
 
     def test_load_workflow_no_files(self, temp_context_dir):
         """Test workflow loading when no files found."""
@@ -197,7 +201,7 @@ class TestSingleAgentWorkerWorkflow:
     def test_load_workflow_prioritizes_newest_session(
         self, mock_glob, temp_context_dir
     ):
-        """Test that workflow loading prioritizes files from newest sessions.
+        """Test that workflow loading prioritizes files from newest sessions (legacy mode).
 
         This test verifies that when multiple workflow files exist across
         different sessions, files from the newest session (by session
@@ -219,32 +223,33 @@ class TestSingleAgentWorkerWorkflow:
         ]
         mock_glob.return_value = mock_files
 
-        # Mock the shared context utility method
+        # Mock the shared context utility methods
         mock_context_utility = MagicMock()
-        mock_context_utility.load_markdown_context_to_memory.return_value = (
-            "Context appended successfully"
+        mock_context_utility.load_markdown_file.return_value = (
+            "# Workflow content\nThis is workflow data"
+        )
+        mock_context_utility._filter_metadata_from_content.return_value = (
+            "This is workflow data"
         )
 
         with patch(
             'camel.utils.context_utils.ContextUtility.get_workforce_shared',
             return_value=mock_context_utility,
         ):
-            result = worker.load_workflow_memories(max_files_to_load=1)
+            # Use legacy pattern matching mode
+            result = worker.load_workflow_memories(
+                max_workflows=1, use_smart_selection=False
+            )
 
             assert result is True
 
             # Verify load was called once
-            assert (
-                mock_context_utility.load_markdown_context_to_memory.call_count
-                == 1
-            )
+            assert mock_context_utility.load_markdown_file.call_count == 1
 
-            # Get the filename that was loaded (second argument)
-            loaded_filename = (
-                mock_context_utility.load_markdown_context_to_memory.call_args[
-                    0
-                ][1]
-            )
+            # Get the filename that was loaded (first argument)
+            loaded_filename = mock_context_utility.load_markdown_file.call_args[
+                0
+            ][0]
 
             # The loaded file should be 'data_analyst_workflow' (without .md)
             # from the newer session (verified by it being loaded first)
@@ -255,7 +260,7 @@ class TestSingleAgentWorkerWorkflow:
         self, mock_glob, temp_context_dir
     ):
         """Test that multiple calls to load_workflow_memories reset system
-        message.
+        message (legacy mode).
 
         This test verifies that calling load_workflow_memories multiple times
         doesn't accumulate workflow context but instead resets to original
@@ -272,24 +277,31 @@ class TestSingleAgentWorkerWorkflow:
         ]
         mock_glob.return_value = mock_files
 
-        # mock the shared context utility method
+        # mock the shared context utility methods
         mock_context_utility = MagicMock()
-        mock_context_utility.load_markdown_context_to_memory.return_value = (
-            "Context appended successfully"
+        mock_context_utility.load_markdown_file.return_value = (
+            "# Workflow content\nThis is workflow data"
+        )
+        mock_context_utility._filter_metadata_from_content.return_value = (
+            "This is workflow data"
         )
 
         with patch(
             'camel.utils.context_utils.ContextUtility.get_workforce_shared',
             return_value=mock_context_utility,
         ):
-            # first call to load_workflow_memories
-            worker.load_workflow_memories(max_files_to_load=1)
+            # first call to load_workflow_memories (legacy mode)
+            worker.load_workflow_memories(
+                max_workflows=1, use_smart_selection=False
+            )
 
             # verify reset was called (system message matches original)
             first_call_system_content = worker.worker._system_message.content
 
-            # second call to load_workflow_memories
-            worker.load_workflow_memories(max_files_to_load=1)
+            # second call to load_workflow_memories (legacy mode)
+            worker.load_workflow_memories(
+                max_workflows=1, use_smart_selection=False
+            )
 
             # after second call, system message should still be based on
             # original (not accumulating from first call)
@@ -303,10 +315,7 @@ class TestSingleAgentWorkerWorkflow:
             assert original_content in second_call_system_content
 
             # verify load was called twice (once per load_workflow_memories)
-            assert (
-                mock_context_utility.load_markdown_context_to_memory.call_count
-                == 2
-            )
+            assert mock_context_utility.load_markdown_file.call_count == 2
 
 
 class TestWorkforceWorkflowMemoryMethods:
@@ -708,3 +717,523 @@ class TestSharedContextUtility:
         # Should be the same as calling get_workforce_shared
         shared_context = ContextUtility.get_workforce_shared()
         assert context_util is shared_context
+
+
+class TestSmartWorkflowSelection:
+    """Test smart workflow selection feature."""
+
+    def test_smart_selection_with_metadata(self, temp_context_dir):
+        """Test smart workflow selection using metadata."""
+        worker = MockSingleAgentWorker("data_analyst")
+
+        # Mock workflow metadata
+        mock_metadata = [
+            {
+                'title': 'Data Analysis Workflow',
+                'description': 'Analyze sales data and generate reports',
+                'tags': ['data-analysis', 'statistics', 'reporting'],
+                'file_path': f"{temp_context_dir}/session_1/data_analyst_workflow.md",
+            },
+            {
+                'title': 'Web Scraping Workflow',
+                'description': 'Scrape website data',
+                'tags': ['web-scraping', 'data-collection'],
+                'file_path': f"{temp_context_dir}/session_1/web_scraper_workflow.md",
+            },
+            {
+                'title': 'Database Query Workflow',
+                'description': 'Query database for analysis',
+                'tags': ['database', 'sql', 'data-analysis'],
+                'file_path': f"{temp_context_dir}/session_1/db_analyst_workflow.md",
+            },
+        ]
+
+        # Mock context utility to return metadata
+        mock_context_utility = MagicMock()
+        mock_context_utility.get_all_workflows_metadata.return_value = (
+            mock_metadata
+        )
+        mock_context_utility.load_markdown_file.return_value = (
+            "# Workflow content\nThis is workflow data"
+        )
+        mock_context_utility._filter_metadata_from_content.return_value = (
+            "This is workflow data"
+        )
+
+        # Mock agent response to select first workflow
+        mock_agent_response = MagicMock()
+        mock_agent_response.msgs = [MagicMock(content="1, 3")]
+
+        # Mock get_workforce_shared to return our mock context utility
+        with (
+            patch(
+                'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
+                return_value=mock_context_utility,
+            ),
+            patch.object(worker.worker, 'step', return_value=mock_agent_response),
+        ):
+            result = worker.load_workflow_memories(
+                max_workflows=2, use_smart_selection=True
+            )
+
+            # Verify smart selection was used
+            assert result is True
+            mock_context_utility.get_all_workflows_metadata.assert_called_once()
+            worker.worker.step.assert_called_once()
+
+            # Verify agent was asked to select workflows
+            selection_call = worker.worker.step.call_args[0][0]
+            assert "data_analyst" in selection_call.content
+            assert "select the 2 most relevant" in selection_call.content
+            assert "data-analysis" in selection_call.content
+
+    def test_smart_selection_no_metadata(self, temp_context_dir):
+        """Test smart selection when no workflow metadata found."""
+        worker = MockSingleAgentWorker("data_analyst")
+
+        # Mock context utility to return empty metadata
+        mock_context_utility = MagicMock()
+        mock_context_utility.get_all_workflows_metadata.return_value = []
+
+        with patch(
+            'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
+            return_value=mock_context_utility,
+        ):
+            result = worker.load_workflow_memories(use_smart_selection=True)
+
+            assert result is False
+            mock_context_utility.get_all_workflows_metadata.assert_called_once()
+
+    def test_smart_selection_fewer_workflows_than_max(
+        self, temp_context_dir
+    ):
+        """Test smart selection when fewer workflows exist than max_files."""
+        worker = MockSingleAgentWorker("data_analyst")
+
+        # Mock only 2 workflows but ask for 5
+        mock_metadata = [
+            {
+                'title': 'Workflow 1',
+                'description': 'Test workflow 1',
+                'tags': ['test'],
+                'file_path': f"{temp_context_dir}/session_1/workflow1.md",
+            },
+            {
+                'title': 'Workflow 2',
+                'description': 'Test workflow 2',
+                'tags': ['test'],
+                'file_path': f"{temp_context_dir}/session_1/workflow2.md",
+            },
+        ]
+
+        mock_context_utility = MagicMock()
+        mock_context_utility.get_all_workflows_metadata.return_value = (
+            mock_metadata
+        )
+        mock_context_utility.load_markdown_file.return_value = (
+            "# Workflow content\nThis is workflow data"
+        )
+        mock_context_utility._filter_metadata_from_content.return_value = (
+            "This is workflow data"
+        )
+
+        with patch(
+            'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
+            return_value=mock_context_utility,
+        ):
+            result = worker.load_workflow_memories(
+                max_workflows=5, use_smart_selection=True
+            )
+
+            # Should load all 2 workflows without agent selection
+            assert result is True
+            assert mock_context_utility.load_markdown_file.call_count == 2
+
+    def test_smart_selection_agent_selection_failure_fallback(
+        self, temp_context_dir
+    ):
+        """Test fallback to most recent when agent selection fails."""
+        worker = MockSingleAgentWorker("data_analyst")
+
+        mock_metadata = [
+            {
+                'title': 'Workflow 1',
+                'description': 'Test',
+                'tags': ['test'],
+                'file_path': f"{temp_context_dir}/session_1/workflow1.md",
+            },
+            {
+                'title': 'Workflow 2',
+                'description': 'Test',
+                'tags': ['test'],
+                'file_path': f"{temp_context_dir}/session_1/workflow2.md",
+            },
+            {
+                'title': 'Workflow 3',
+                'description': 'Test',
+                'tags': ['test'],
+                'file_path': f"{temp_context_dir}/session_1/workflow3.md",
+            },
+        ]
+
+        mock_context_utility = MagicMock()
+        mock_context_utility.get_all_workflows_metadata.return_value = (
+            mock_metadata
+        )
+        mock_context_utility.load_markdown_file.return_value = (
+            "# Workflow content\nThis is workflow data"
+        )
+        mock_context_utility._filter_metadata_from_content.return_value = (
+            "This is workflow data"
+        )
+
+        # Mock agent to return invalid response
+        mock_agent_response = MagicMock()
+        mock_agent_response.msgs = [MagicMock(content="invalid response")]
+
+        with (
+            patch(
+                'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
+                return_value=mock_context_utility,
+            ),
+            patch.object(worker.worker, 'step', return_value=mock_agent_response),
+        ):
+            result = worker.load_workflow_memories(
+                max_workflows=2, use_smart_selection=True
+            )
+
+            # Should fallback to first 2 workflows (most recent)
+            assert result is True
+            assert mock_context_utility.load_markdown_file.call_count == 2
+
+    def test_smart_selection_memory_cleanup(self, temp_context_dir):
+        """Test that agent memory is cleaned after smart selection."""
+        worker = MockSingleAgentWorker("data_analyst")
+
+        mock_metadata = [
+            {
+                'title': 'Test Workflow',
+                'description': 'Test',
+                'tags': ['test'],
+                'file_path': f"{temp_context_dir}/session_1/workflow.md",
+            }
+        ]
+
+        mock_context_utility = MagicMock()
+        mock_context_utility.get_all_workflows_metadata.return_value = (
+            mock_metadata
+        )
+        mock_context_utility.load_markdown_file.return_value = (
+            "# Workflow content\nThis is workflow data"
+        )
+        mock_context_utility._filter_metadata_from_content.return_value = (
+            "This is workflow data"
+        )
+
+        with patch(
+            'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
+            return_value=mock_context_utility,
+        ):
+            # Record initial memory state
+            initial_memory_count = len(worker.worker.memory.get_context()[0])
+
+            result = worker.load_workflow_memories(use_smart_selection=True)
+
+            assert result is True
+
+            # Memory should be cleaned (only system message remains)
+            final_memory = worker.worker.memory.get_context()[0]
+            # Should have system message only
+            assert len(final_memory) == 1
+
+    def test_extract_workflow_metadata(self, temp_context_dir):
+        """Test metadata extraction from workflow markdown file."""
+        from camel.utils.context_utils import ContextUtility
+
+        # Create a test workflow file
+        workflow_content = """### Task Title
+Data Analysis Workflow
+
+### Task Description
+Analyze sales data and generate comprehensive reports with visualizations.
+
+### Tags
+- data-analysis
+- statistics
+- reporting
+- visualization
+
+### Steps Taken
+1. Load data
+2. Clean data
+3. Analyze trends
+"""
+        workflow_path = f"{temp_context_dir}/test_workflow.md"
+        with open(workflow_path, 'w') as f:
+            f.write(workflow_content)
+
+        # Extract metadata
+        context_util = ContextUtility.get_workforce_shared()
+        metadata = context_util.extract_workflow_metadata(workflow_path)
+
+        assert metadata['title'] == "Data Analysis Workflow"
+        assert "sales data" in metadata['description']
+        assert 'data-analysis' in metadata['tags']
+        assert 'statistics' in metadata['tags']
+        assert 'reporting' in metadata['tags']
+        assert 'visualization' in metadata['tags']
+        assert metadata['file_path'] == workflow_path
+
+    def test_get_all_workflows_metadata(self, temp_context_dir):
+        """Test getting metadata from all workflow files."""
+        from camel.utils.context_utils import ContextUtility
+
+        # Create test workflow files
+        import os
+
+        os.makedirs(f"{temp_context_dir}/workforce_workflows/session_1", exist_ok=True)
+        os.makedirs(f"{temp_context_dir}/workforce_workflows/session_2", exist_ok=True)
+
+        workflow1 = f"{temp_context_dir}/workforce_workflows/session_1/analyst_workflow.md"
+        workflow2 = f"{temp_context_dir}/workforce_workflows/session_2/developer_workflow.md"
+
+        with open(workflow1, 'w') as f:
+            f.write("""### Task Title
+Analysis Workflow
+
+### Task Description
+Data analysis
+
+### Tags
+- data-analysis
+""")
+
+        with open(workflow2, 'w') as f:
+            f.write("""### Task Title
+Development Workflow
+
+### Task Description
+Code development
+
+### Tags
+- development
+- coding
+""")
+
+        # Get all metadata
+        context_util = ContextUtility.get_workforce_shared()
+        all_metadata = context_util.get_all_workflows_metadata()
+
+        assert len(all_metadata) == 2
+        titles = [m['title'] for m in all_metadata]
+        assert "Analysis Workflow" in titles
+        assert "Development Workflow" in titles
+
+    def test_smart_selection_with_session_filter(self, temp_context_dir):
+        """Test smart selection with specific session ID."""
+        worker = MockSingleAgentWorker("data_analyst")
+
+        mock_metadata = [
+            {
+                'title': 'Test Workflow',
+                'description': 'Test',
+                'tags': ['test'],
+                'file_path': f"{temp_context_dir}/session_123/workflow.md",
+            }
+        ]
+
+        mock_context_utility = MagicMock()
+        mock_context_utility.get_all_workflows_metadata.return_value = (
+            mock_metadata
+        )
+        mock_context_utility.load_markdown_file.return_value = (
+            "# Workflow content\nThis is workflow data"
+        )
+        mock_context_utility._filter_metadata_from_content.return_value = (
+            "This is workflow data"
+        )
+
+        with patch(
+            'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
+            return_value=mock_context_utility,
+        ):
+            result = worker.load_workflow_memories(
+                session_id="session_123", use_smart_selection=True
+            )
+
+            assert result is True
+            # Verify session_id was passed to get_all_workflows_metadata
+            mock_context_utility.get_all_workflows_metadata.assert_called_once_with(
+                "session_123"
+            )
+
+    def test_practical_smart_selection(self, temp_context_dir):
+        """Test smart selection with 10 real workflow files in temp directory."""
+        import os
+
+        # Create session directory in workforce_workflows
+        session_dir = os.path.join(
+            temp_context_dir, "workforce_workflows", "session_test"
+        )
+        os.makedirs(session_dir, exist_ok=True)
+
+        # Create 10 different workflow files with varied content
+        workflows = [
+            {
+                "name": "data_analysis_workflow.md",
+                "title": "Data Analysis Pipeline",
+                "description": "Analyze CSV data and generate statistical reports",
+                "tags": ["data-analysis", "statistics", "csv-processing"],
+            },
+            {
+                "name": "web_scraping_workflow.md",
+                "title": "Web Scraper",
+                "description": "Scrape product data from e-commerce websites",
+                "tags": ["web-scraping", "data-collection", "api-integration"],
+            },
+            {
+                "name": "email_automation_workflow.md",
+                "title": "Email Campaign Manager",
+                "description": "Send automated marketing emails to customers",
+                "tags": ["email-automation", "marketing", "communication"],
+            },
+            {
+                "name": "image_processing_workflow.md",
+                "title": "Image Optimizer",
+                "description": "Resize and compress images for web use",
+                "tags": ["image-processing", "file-processing", "optimization"],
+            },
+            {
+                "name": "database_query_workflow.md",
+                "title": "Database Reporter",
+                "description": "Query database and generate business reports",
+                "tags": ["database-query", "sql", "report-generation"],
+            },
+            {
+                "name": "api_integration_workflow.md",
+                "title": "API Connector",
+                "description": "Connect to external APIs and sync data",
+                "tags": ["api-integration", "data-sync", "web-services"],
+            },
+            {
+                "name": "text_processing_workflow.md",
+                "title": "Text Analyzer",
+                "description": "Process and analyze large text documents",
+                "tags": ["text-processing", "nlp", "data-analysis"],
+            },
+            {
+                "name": "code_generation_workflow.md",
+                "title": "Code Generator",
+                "description": "Generate boilerplate code from templates",
+                "tags": ["code-generation", "automation", "development"],
+            },
+            {
+                "name": "file_organizer_workflow.md",
+                "title": "File Organizer",
+                "description": "Organize files by type and date",
+                "tags": ["file-processing", "automation", "organization"],
+            },
+            {
+                "name": "report_builder_workflow.md",
+                "title": "Report Builder",
+                "description": "Build PDF reports from data sources",
+                "tags": ["report-generation", "pdf", "data-visualization"],
+            },
+        ]
+
+        # Write workflow files
+        for workflow in workflows:
+            file_path = os.path.join(session_dir, workflow["name"])
+            content = f"""## Metadata
+
+- session_id: session_test
+- working_directory: {session_dir}
+- created_at: 2025-01-15T10:00:00.000000
+- agent_id: test-agent-id
+- message_count: 5
+
+## WorkflowSummary
+
+### Task Title
+{workflow["title"]}
+
+### Task Description
+{workflow["description"]}
+
+### Tags
+{", ".join(workflow["tags"])}
+
+### Tools
+(No tools recorded)
+
+### Steps
+1. Initial step
+2. Processing step
+3. Final step
+
+### Failure And Recovery Strategies
+(No failure and recovery strategies recorded)
+
+### Notes And Observations
+(No notes and observations provided)
+"""
+            with open(file_path, 'w') as f:
+                f.write(content)
+
+        # Create worker that needs data analysis
+        worker = MockSingleAgentWorker("data_analyst")
+
+        # Mock the agent to select data-related workflows
+        mock_agent_response = MagicMock()
+        mock_agent_response.msgs = [
+            MagicMock(
+                content="Based on the role, I select: 1, 5, 7"
+            )  # data_analysis, database_query, text_processing
+        ]
+
+        # Create real ContextUtility to test actual metadata extraction
+        from camel.utils.context_utils import ContextUtility
+        from pathlib import Path
+
+        # Save the original function before patching
+        original_get_workforce_shared = ContextUtility.get_workforce_shared
+
+        # Create a side_effect function that returns properly configured utilities
+        def get_utility_with_base_dir(session_id=None):
+            utility = original_get_workforce_shared(session_id)
+            utility._base_directory = Path(temp_context_dir)
+            return utility
+
+        # Store original system message before loading
+        original_system_message = worker.worker._system_message.content
+
+        with (
+            patch(
+                'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
+                side_effect=get_utility_with_base_dir,
+            ),
+            patch.object(worker.worker, 'step', return_value=mock_agent_response),
+        ):
+            # Load with smart selection (max 3 files)
+            result = worker.load_workflow_memories(
+                max_workflows=3, use_smart_selection=True
+            )
+
+            # Verify success
+            assert result is True
+
+            # Verify agent was asked to select
+            assert worker.worker.step.called
+
+            # Verify that workflows were actually added to the system message
+            updated_system_message = worker.worker._system_message.content
+
+            # System message should be different from original (workflows added)
+            assert updated_system_message != original_system_message
+
+            # System message should contain workflow titles from the loaded files
+            # At least some workflow-related content should be present
+            assert len(updated_system_message) > len(original_system_message)
+
+            # Verify system message contains workflow metadata
+            assert "Previous Workflows" in updated_system_message

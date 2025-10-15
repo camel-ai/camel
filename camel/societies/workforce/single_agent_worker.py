@@ -34,8 +34,11 @@ from camel.societies.workforce.structured_output_handler import (
 )
 from camel.societies.workforce.utils import TaskResult
 from camel.societies.workforce.worker import Worker
+from camel.societies.workforce.workflow_memory_manager import (
+    WorkflowMemoryManager,
+)
 from camel.tasks.task import Task, TaskState, is_task_result_insufficient
-from camel.utils.context_utils import ContextUtility, WorkflowSummary
+from camel.utils.context_utils import ContextUtility
 
 logger = get_logger(__name__)
 
@@ -256,6 +259,9 @@ class SingleAgentWorker(Worker):
         # from all task processing
         self._conversation_accumulator: Optional[ChatAgent] = None
 
+        # workflow memory manager for handling workflow operations
+        self._workflow_manager: Optional[WorkflowMemoryManager] = None
+
         # note: context utility is set on the worker agent during save/load
         # operations to avoid creating session folders during initialization
 
@@ -317,6 +323,21 @@ class SingleAgentWorker(Worker):
                 with_memory=False
             )
         return self._conversation_accumulator
+
+    def _get_workflow_manager(self) -> WorkflowMemoryManager:
+        r"""Get or create the workflow memory manager."""
+        if self._workflow_manager is None:
+            context_util = (
+                self._shared_context_utility
+                if self._shared_context_utility is not None
+                else None
+            )
+            self._workflow_manager = WorkflowMemoryManager(
+                worker=self.worker,
+                description=self.description,
+                context_utility=context_util,
+            )
+        return self._workflow_manager
 
     async def _process_task(
         self, task: Task, dependencies: List[Task]
@@ -585,6 +606,8 @@ class SingleAgentWorker(Worker):
         conversation history and saves it to a markdown file. The filename
         is based on the worker's description for easy loading later.
 
+        Delegates to WorkflowMemoryManager for all workflow operations.
+
         Returns:
             Dict[str, Any]: Result dictionary with keys:
                 - status (str): "success" or "error"
@@ -592,106 +615,65 @@ class SingleAgentWorker(Worker):
                 - file_path (str): Path to saved file
                 - worker_description (str): Worker description used
         """
-        try:
-            # validate requirements
-            validation_error = self._validate_workflow_save_requirements()
-            if validation_error:
-                return validation_error
+        manager = self._get_workflow_manager()
+        result = manager.save_workflow(
+            conversation_accumulator=self._conversation_accumulator
+        )
 
-            # setup context utility and agent
-            context_util = self._get_context_utility()
-            self.worker.set_context_utility(context_util)
-
-            # prepare workflow summarization components
-            filename = self._generate_workflow_filename()
-            structured_prompt = self._prepare_workflow_prompt()
-            agent_to_summarize = self._select_agent_for_summarization(
-                context_util
+        # clean up accumulator after successful save
+        if (
+            result.get("status") == "success"
+            and self._conversation_accumulator is not None
+        ):
+            logger.info(
+                "Cleaning up conversation accumulator after workflow "
+                "summarization"
             )
+            self._conversation_accumulator = None
 
-            # generate and save workflow summary
-            result = agent_to_summarize.summarize(
-                filename=filename,
-                summary_prompt=structured_prompt,
-                response_format=WorkflowSummary,
-            )
-
-            # add worker metadata and cleanup
-            result["worker_description"] = self.description
-            if self._conversation_accumulator is not None:
-                logger.info(
-                    "Cleaning up conversation accumulator after workflow "
-                    "summarization"
-                )
-                self._conversation_accumulator = None
-
-            return result
-
-        except Exception as e:
-            return {
-                "status": "error",
-                "summary": "",
-                "file_path": None,
-                "worker_description": self.description,
-                "message": f"Failed to save workflow memories: {e!s}",
-            }
+        return result
 
     def load_workflow_memories(
         self,
         pattern: Optional[str] = None,
-        max_files_to_load: int = 3,
+        max_workflows: int = 3,
         session_id: Optional[str] = None,
+        use_smart_selection: bool = True,
     ) -> bool:
-        r"""Load workflow memories matching worker description
-        from saved files.
+        r"""Load workflow memories using intelligent agent-based selection.
 
-        This method searches for workflow memory files that match the worker's
-        description and loads them into the agent's memory using
-        ContextUtility.
+        This method uses the worker agent to intelligently select the most
+        relevant workflows based on metadata (title, description, tags)
+        rather than simple filename pattern matching.
+
+        Delegates to WorkflowMemoryManager for all workflow operations.
 
         Args:
-            pattern (Optional[str]): Custom search pattern for workflow
-                memory files.
-                If None, uses worker description to generate pattern.
-            max_files_to_load (int): Maximum number of workflow files to load.
+            pattern (Optional[str]): Legacy parameter for backward
+                compatibility. When use_smart_selection=False, uses this
+                pattern for file matching. Ignored when smart selection
+                is enabled.
+            max_workflows (int): Maximum number of workflow files to load.
                 (default: :obj:`3`)
             session_id (Optional[str]): Specific workforce session ID to load
                 from. If None, searches across all sessions.
                 (default: :obj:`None`)
+            use_smart_selection (bool): Whether to use agent-based intelligent
+                workflow selection. When True, uses metadata and LLM to select
+                most relevant workflows. When False, falls back to pattern
+                matching. (default: :obj:`True`)
 
         Returns:
             bool: True if workflow memories were successfully loaded, False
                 otherwise.
         """
-        try:
-            # reset system message to original state before loading
-            # this prevents duplicate workflow context on multiple calls
-            if isinstance(self.worker, ChatAgent):
-                self.worker.reset_to_original_system_message()
-
-            # Find workflow memory files matching the pattern
-            workflow_files = self._find_workflow_files(pattern, session_id)
-            if not workflow_files:
-                return False
-
-            # Load the workflow memory files
-            loaded_count = self._load_workflow_files(
-                workflow_files, max_files_to_load
-            )
-
-            # Report results
-            logger.info(
-                f"Successfully loaded {loaded_count} workflow file(s) for "
-                f"{self.description}"
-            )
-            return loaded_count > 0
-
-        except Exception as e:
-            logger.warning(
-                f"Error loading workflow memories for {self.description}: "
-                f"{e!s}"
-            )
-            return False
+        manager = self._get_workflow_manager()
+        return manager.load_workflows(
+            pattern=pattern,
+            max_files_to_load=max_workflows,
+            session_id=session_id,
+            use_smart_selection=use_smart_selection,
+        )
 
     def _find_workflow_files(
         self, pattern: Optional[str], session_id: Optional[str] = None
@@ -750,6 +732,123 @@ class SingleAgentWorker(Worker):
 
         workflow_files.sort(key=extract_session_timestamp, reverse=True)
         return workflow_files
+
+    def _format_workflows_for_selection(
+        self, workflows_metadata: List[Dict[str, Any]]
+    ) -> str:
+        r"""Format workflow metadata into a readable prompt for selection.
+
+        Args:
+            workflows_metadata (List[Dict[str, Any]]): List of workflow
+                metadata dicts containing title, description, tags, file_path.
+
+        Returns:
+            str: Formatted string presenting workflows for LLM selection.
+        """
+        if not workflows_metadata:
+            return "No workflows available."
+
+        formatted_lines = []
+        for i, workflow in enumerate(workflows_metadata, 1):
+            formatted_lines.append(f"\nWorkflow {i}:")
+            formatted_lines.append(f"- Title: {workflow.get('title', 'N/A')}")
+            formatted_lines.append(
+                f"- Description: {workflow.get('description', 'N/A')}"
+            )
+            tags = workflow.get('tags', [])
+            tags_str = ', '.join(tags) if tags else 'No tags'
+            formatted_lines.append(f"- Tags: {tags_str}")
+            formatted_lines.append(f"- File: {workflow.get('file_path', 'N/A')}")
+
+        return '\n'.join(formatted_lines)
+
+    def _select_relevant_workflows(
+        self, workflows_metadata: List[Dict[str, Any]], max_files: int
+    ) -> List[str]:
+        r"""Use worker agent to select most relevant workflows.
+
+        This method creates a prompt with all available workflow metadata
+        and uses the worker agent to intelligently select the most relevant
+        workflows based on the worker's role and description.
+
+        Args:
+            workflows_metadata (List[Dict[str, Any]]): List of workflow
+                metadata dicts.
+            max_files (int): Maximum number of workflows to select.
+
+        Returns:
+            List[str]: List of selected workflow file paths.
+        """
+        if not workflows_metadata:
+            return []
+
+        if len(workflows_metadata) <= max_files:
+            # if we have fewer workflows than max, return all
+            return [wf['file_path'] for wf in workflows_metadata]
+
+        # format workflows for selection
+        workflows_str = self._format_workflows_for_selection(workflows_metadata)
+
+        # create selection prompt
+        selection_prompt = (
+            f"You are a {self.description}. "
+            f"Review the following {len(workflows_metadata)} available "
+            f"workflow memories and select the {max_files} most relevant "
+            f"ones for your current role. Consider:\n"
+            f"1. Task similarity to your role\n"
+            f"2. Domain relevance\n"
+            f"3. Tool and capability overlap\n\n"
+            f"Available workflows:\n{workflows_str}\n\n"
+            f"Respond with ONLY the workflow numbers you selected "
+            f"(e.g., '1, 3, 5'), separated by commas. "
+            f"Select exactly {max_files} workflows."
+        )
+
+        try:
+            # use worker agent for selection
+            from camel.messages import BaseMessage
+            from camel.types import RoleType
+
+            selection_msg = BaseMessage.make_user_message(
+                role_name="user", content=selection_prompt
+            )
+
+            response = self.worker.step(selection_msg)
+
+            # parse response to extract workflow numbers
+            import re
+
+            numbers_str = response.msgs[0].content
+            numbers = re.findall(r'\d+', numbers_str)
+            selected_indices = [int(n) - 1 for n in numbers[:max_files]]
+
+            # validate indices and get file paths
+            selected_paths = []
+            for idx in selected_indices:
+                if 0 <= idx < len(workflows_metadata):
+                    selected_paths.append(workflows_metadata[idx]['file_path'])
+
+            if selected_paths:
+                logger.info(
+                    f"Agent selected {len(selected_paths)} workflow(s) for "
+                    f"{self.description}"
+                )
+                return selected_paths
+            else:
+                logger.warning(
+                    "Agent selection failed, falling back to most recent "
+                    "workflows"
+                )
+                return [
+                    wf['file_path'] for wf in workflows_metadata[:max_files]
+                ]
+
+        except Exception as e:
+            logger.warning(
+                f"Error during workflow selection: {e!s}. "
+                f"Falling back to most recent workflows."
+            )
+            return [wf['file_path'] for wf in workflows_metadata[:max_files]]
 
     def _load_workflow_files(
         self, workflow_files: List[str], max_files_to_load: int
