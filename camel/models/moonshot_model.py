@@ -164,15 +164,21 @@ class MoonshotModel(OpenAICompatibleModel):
                     any_of = schema['anyOf']
                     # Filter out null types
                     filtered = [
-                        item for item in any_of
-                        if not (isinstance(item, dict) and item.get('type') == 'null')
+                        item
+                        for item in any_of
+                        if not (
+                            isinstance(item, dict)
+                            and item.get('type') == 'null'
+                        )
                     ]
                     # If only one type remains, simplify
                     if len(filtered) == 1:
                         return remove_null_from_schema(filtered[0])
                     elif len(filtered) > 1:
                         schema = schema.copy()
-                        schema['anyOf'] = [remove_null_from_schema(item) for item in filtered]
+                        schema['anyOf'] = [
+                            remove_null_from_schema(item) for item in filtered
+                        ]
                         return schema
                     else:
                         # All were null, return string type as fallback
@@ -180,8 +186,7 @@ class MoonshotModel(OpenAICompatibleModel):
 
                 # Recursively process nested dicts
                 return {
-                    k: remove_null_from_schema(v)
-                    for k, v in schema.items()
+                    k: remove_null_from_schema(v) for k, v in schema.items()
                 }
             elif isinstance(schema, list):
                 return [remove_null_from_schema(item) for item in schema]
@@ -193,7 +198,9 @@ class MoonshotModel(OpenAICompatibleModel):
             if 'function' in tool and 'parameters' in tool['function']:
                 params = tool['function']['parameters']
                 if 'properties' in params:
-                    params['properties'] = remove_null_from_schema(params['properties'])
+                    params['properties'] = remove_null_from_schema(
+                        params['properties']
+                    )
 
         return cleaned_tools
 

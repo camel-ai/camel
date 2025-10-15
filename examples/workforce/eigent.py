@@ -51,7 +51,6 @@ from camel.toolkits import (
     WhatsAppToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
-from camel.utils.commons import api_keys_required
 
 logger = get_logger(__name__)
 
@@ -322,7 +321,7 @@ def search_agent_factory(
         "browser_enter",
         "browser_switch_tab",
         "browser_visit_page",
-        "browser_get_page_snapshot"
+        "browser_get_page_snapshot",
     ]
     USER_DATA_DIR = "/Users/puzhen/Desktop/pre/camel_project/camel/UserData"
 
@@ -365,7 +364,7 @@ def search_agent_factory(
         *terminal_toolkit.get_tools(),
     ]
 
-    system_message = f"""
+    system_message = """
 <role>
 You are a Senior Research Analyst, a key member of a multi-agent team. Your 
 primary responsibility is to conduct expert-level web research to gather, 

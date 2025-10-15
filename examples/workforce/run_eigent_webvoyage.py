@@ -17,7 +17,15 @@ import datetime
 import json
 import os
 import platform
-import uuid
+
+# Import agent factories from eigent.py
+from eigent import (
+    # developer_agent_factory,
+    # document_agent_factory,
+    # multi_modal_agent_factory,
+    search_agent_factory,
+    send_message_to_user,
+)
 
 from camel.agents.chat_agent import ChatAgent
 from camel.logger import get_logger
@@ -33,15 +41,6 @@ from camel.toolkits import (
 )
 from camel.types import ModelPlatformType, ModelType
 
-# Import agent factories from eigent.py
-from eigent import (
-    # developer_agent_factory,
-    # document_agent_factory,
-    # multi_modal_agent_factory,
-    search_agent_factory,
-    send_message_to_user,
-)
-
 logger = get_logger(__name__)
 
 WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or os.path.abspath(
@@ -49,7 +48,9 @@ WORKING_DIRECTORY = os.environ.get("CAMEL_WORKDIR") or os.path.abspath(
 )
 
 
-def load_tasks_from_jsonl(jsonl_path: str, start_index: int = 0, end_index: int = None):
+def load_tasks_from_jsonl(
+    jsonl_path: str, start_index: int = 0, end_index: int = None
+):
     """
     Load tasks from a JSONL file.
 
@@ -72,7 +73,9 @@ def load_tasks_from_jsonl(jsonl_path: str, start_index: int = 0, end_index: int 
     return tasks
 
 
-async def verify_result_with_agent(task_content: str, result: dict, model_backend: BaseModelBackend):
+async def verify_result_with_agent(
+    task_content: str, result: dict, model_backend: BaseModelBackend
+):
     """
     Verify the workforce result using a chat agent.
 
@@ -111,7 +114,10 @@ async def verify_result_with_agent(task_content: str, result: dict, model_backen
                     logs_list = detailed_logs['logs']
                     # Find the last message from a worker
                     for log_entry in reversed(logs_list):
-                        if isinstance(log_entry, dict) and 'content' in log_entry:
+                        if (
+                            isinstance(log_entry, dict)
+                            and 'content' in log_entry
+                        ):
                             final_response = log_entry.get('content')
                             break
                 elif 'final_result' in detailed_logs:
@@ -132,11 +138,13 @@ async def verify_result_with_agent(task_content: str, result: dict, model_backen
 
     # Add final response if extracted
     if final_response:
-        verification_prompt_parts.extend([
-            "Final Agent Response:",
-            str(final_response),
-            "",
-        ])
+        verification_prompt_parts.extend(
+            [
+                "Final Agent Response:",
+                str(final_response),
+                "",
+            ]
+        )
 
     # Add condensed log information if available
     if detailed_logs:
@@ -146,32 +154,37 @@ async def verify_result_with_agent(task_content: str, result: dict, model_backen
         if len(logs_str) > max_log_length:
             logs_str = logs_str[:max_log_length] + "\n... (truncated)"
 
-        verification_prompt_parts.extend([
-            "Detailed Execution Logs (summary):",
-            logs_str,
-            "",
-        ])
+        verification_prompt_parts.extend(
+            [
+                "Detailed Execution Logs (summary):",
+                logs_str,
+                "",
+            ]
+        )
 
-    verification_prompt_parts.extend([
-        "Please verify if the task was completed successfully. Consider:",
-        "1. Did the workforce complete the task objectives?",
-        "2. Are there any errors or failures in the execution?",
-        "3. Does the final result/answer align with the task requirements?",
-        "4. Did the agent provide a comprehensive and accurate response?",
-        "",
-        "Output your verification in JSON format:",
-        "{",
-        '    "success": true/false,',
-        '    "reasoning": "your detailed explanation here"',
-        "}",
-    ])
+    verification_prompt_parts.extend(
+        [
+            "Please verify if the task was completed successfully. Consider:",
+            "1. Did the workforce complete the task objectives?",
+            "2. Are there any errors or failures in the execution?",
+            "3. Does the final result/answer align with the task requirements?",
+            "4. Did the agent provide a comprehensive and accurate response?",
+            "",
+            "Output your verification in JSON format:",
+            "{",
+            '    "success": true/false,',
+            '    "reasoning": "your detailed explanation here"',
+            "}",
+        ]
+    )
 
     verification_prompt = "\n".join(verification_prompt_parts)
 
-    response = verifier_agent.step(BaseMessage.make_user_message(
-        role_name="Verifier",
-        content=verification_prompt
-    ))
+    response = verifier_agent.step(
+        BaseMessage.make_user_message(
+            role_name="Verifier", content=verification_prompt
+        )
+    )
 
     try:
         # Try to parse JSON from the response
@@ -186,12 +199,12 @@ async def verify_result_with_agent(task_content: str, result: dict, model_backen
             # Fallback if no JSON found
             verification_result = {
                 "success": False,
-                "reasoning": "Failed to parse verification response"
+                "reasoning": "Failed to parse verification response",
             }
     except Exception as e:
         verification_result = {
             "success": False,
-            "reasoning": f"Error parsing verification: {str(e)}"
+            "reasoning": f"Error parsing verification: {e!s}",
         }
 
     return verification_result
@@ -256,7 +269,6 @@ MUST use this as the current date.
 access and can resolve a wide range of issues.
             """
         ),
-
         enable_tool_output_cache=True,
         model=model_backend_reason,
         tools=[
@@ -316,7 +328,9 @@ MUST use this as the current date.
 
     # Create agents using factory functions
     # search_agent_factory now returns (agent, browser_toolkit)
-    search_agent, browser_toolkit = search_agent_factory(model_backend, task_id)
+    search_agent, browser_toolkit = search_agent_factory(
+        model_backend, task_id
+    )
 
     # document_agent = document_agent_factory(
     #     model_backend_reason,
@@ -347,19 +361,19 @@ MUST use this as the current date.
         "Search Agent: An expert web researcher that can browse websites, "
         "perform searches, and extract information to support other agents.",
         worker=search_agent,
-    # ).add_single_agent_worker(
-    #     "Developer Agent: A master-level coding assistant with a powerful "
-    #     "terminal. It can write and execute code, manage files, automate "
-    #     "desktop tasks, and deploy web applications to solve complex "
-    #     "technical challenges.",
-    #     worker=developer_agent,
-    # ).add_single_agent_worker(
-    #     "Document Agent: A document processing assistant skilled in creating "
-    #     "and modifying a wide range of file formats. It can generate "
-    #     "text-based files (Markdown, JSON, YAML, HTML), office documents "
-    #     "(Word, PDF), presentations (PowerPoint), and data files "
-    #     "(Excel, CSV).",
-    #     worker=document_agent,
+        # ).add_single_agent_worker(
+        #     "Developer Agent: A master-level coding assistant with a powerful "
+        #     "terminal. It can write and execute code, manage files, automate "
+        #     "desktop tasks, and deploy web applications to solve complex "
+        #     "technical challenges.",
+        #     worker=developer_agent,
+        # ).add_single_agent_worker(
+        #     "Document Agent: A document processing assistant skilled in creating "
+        #     "and modifying a wide range of file formats. It can generate "
+        #     "text-based files (Markdown, JSON, YAML, HTML), office documents "
+        #     "(Word, PDF), presentations (PowerPoint), and data files "
+        #     "(Excel, CSV).",
+        #     worker=document_agent,
     )
 
     try:
@@ -377,7 +391,9 @@ MUST use this as the current date.
 
         # Use task_index for unique log file naming if provided
         if task_index is not None:
-            log_file_path = f"eigent_logs_task_{task_index}_{human_task.id}.json"
+            log_file_path = (
+                f"eigent_logs_task_{task_index}_{human_task.id}.json"
+            )
         else:
             log_file_path = f"eigent_logs_{human_task.id}.json"
 
@@ -388,7 +404,7 @@ MUST use this as the current date.
         return {
             "kpis": kpis,
             "log_tree": workforce.get_workforce_log_tree(),
-            "log_file": log_file_path
+            "log_file": log_file_path,
         }
     finally:
         # IMPORTANT: Close browser after each task to prevent resource leaks
@@ -405,16 +421,28 @@ MUST use this as the current date.
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description='Run eigent workforce on WebVoyager tasks')
-    parser.add_argument('--start', type=int, default=0, help='Start index (inclusive)')
-    parser.add_argument('--end', type=int, default=None, help='End index (inclusive)')
-    parser.add_argument('--jsonl', type=str, default='/Users/puzhen/Downloads/WebVoyager_data.jsonl',
-                        help='Path to JSONL file')
+    parser = argparse.ArgumentParser(
+        description='Run eigent workforce on WebVoyager tasks'
+    )
+    parser.add_argument(
+        '--start', type=int, default=0, help='Start index (inclusive)'
+    )
+    parser.add_argument(
+        '--end', type=int, default=None, help='End index (inclusive)'
+    )
+    parser.add_argument(
+        '--jsonl',
+        type=str,
+        default='/Users/puzhen/Downloads/WebVoyager_data.jsonl',
+        help='Path to JSONL file',
+    )
     args = parser.parse_args()
 
     # Load tasks from JSONL file
     tasks = load_tasks_from_jsonl(args.jsonl, args.start, args.end)
-    print(f"Loaded {len(tasks)} tasks (index {args.start} to {args.end if args.end else 'end'})")
+    print(
+        f"Loaded {len(tasks)} tasks (index {args.start} to {args.end if args.end else 'end'})"
+    )
 
     # Create model backend for verification
     verifier_model = ModelFactory.create(
@@ -432,7 +460,9 @@ if __name__ == "__main__":
         for idx, task_data in enumerate(tasks):
             actual_idx = args.start + idx
             print(f"\n{'='*80}")
-            print(f"Processing Task {actual_idx}: {task_data.get('id', 'unknown')}")
+            print(
+                f"Processing Task {actual_idx}: {task_data.get('id', 'unknown')}"
+            )
             print(f"{'='*80}")
 
             # Combine ques and web fields
@@ -446,13 +476,17 @@ if __name__ == "__main__":
 
             try:
                 # Run the workforce with task index for unique log files
-                result = await run_eigent_workforce(human_task, task_index=actual_idx)
+                result = await run_eigent_workforce(
+                    human_task, task_index=actual_idx
+                )
 
                 print("\n--- Verifying Result with Agent ---")
                 # Verify the result
-                verification = await verify_result_with_agent(task_content, result, verifier_model)
+                verification = await verify_result_with_agent(
+                    task_content, result, verifier_model
+                )
 
-                print(f"\nVerification Result:")
+                print("\nVerification Result:")
                 print(f"  Success: {verification['success']}")
                 print(f"  Reasoning: {verification['reasoning']}")
 
@@ -462,21 +496,29 @@ if __name__ == "__main__":
                     "task_id": task_data.get('id', str(actual_idx)),
                     "task_content": task_content,
                     "workforce_result": result,
-                    "verification": verification
+                    "verification": verification,
                 }
                 all_results.append(task_result)
 
-                # Save intermediate results
+                # Save individual task result
+                individual_result_file = (
+                    f"task_result_{actual_idx}_{task_data.get('id', str(actual_idx))}.json"
+                )
+                with open(individual_result_file, 'w', encoding='utf-8') as f:
+                    json.dump(task_result, f, indent=2, ensure_ascii=False)
+
+                # Save accumulated results (all tasks so far)
                 results_file = f"all_results_{args.start}_{args.end if args.end else 'end'}.json"
                 with open(results_file, 'w', encoding='utf-8') as f:
                     json.dump(all_results, f, indent=2, ensure_ascii=False)
 
                 print(f"\n=== Task {actual_idx} Complete ===")
-                print(f"Log file saved to: {result['log_file']}")
-                print(f"Results saved to: {results_file}")
+                print(f"Workforce log: {result['log_file']}")
+                print(f"Task result:   {individual_result_file}")
+                print(f"All results:   {results_file}")
 
             except Exception as e:
-                print(f"\n!!! Error processing task {actual_idx}: {str(e)}")
+                print(f"\n!!! Error processing task {actual_idx}: {e!s}")
                 error_result = {
                     "task_index": actual_idx,
                     "task_id": task_data.get('id', str(actual_idx)),
@@ -484,10 +526,24 @@ if __name__ == "__main__":
                     "error": str(e),
                     "verification": {
                         "success": False,
-                        "reasoning": f"Exception occurred: {str(e)}"
-                    }
+                        "reasoning": f"Exception occurred: {e!s}",
+                    },
                 }
                 all_results.append(error_result)
+
+                # Save individual error result
+                individual_result_file = (
+                    f"task_result_{actual_idx}_{task_data.get('id', str(actual_idx))}.json"
+                )
+                with open(individual_result_file, 'w', encoding='utf-8') as f:
+                    json.dump(error_result, f, indent=2, ensure_ascii=False)
+
+                # Save accumulated results
+                results_file = f"all_results_{args.start}_{args.end if args.end else 'end'}.json"
+                with open(results_file, 'w', encoding='utf-8') as f:
+                    json.dump(all_results, f, indent=2, ensure_ascii=False)
+
+                print(f"Error result saved to: {individual_result_file}")
 
     # Run all tasks
     asyncio.run(process_all_tasks())
@@ -496,4 +552,6 @@ if __name__ == "__main__":
     print("=== All Tasks Complete ===")
     print(f"{'='*80}")
     print(f"Processed {len(tasks)} tasks")
-    print(f"Results saved to: all_results_{args.start}_{args.end if args.end else 'end'}.json")
+    print(
+        f"Results saved to: all_results_{args.start}_{args.end if args.end else 'end'}.json"
+    )
