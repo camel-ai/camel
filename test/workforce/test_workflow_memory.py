@@ -201,7 +201,8 @@ class TestSingleAgentWorkerWorkflow:
     def test_load_workflow_prioritizes_newest_session(
         self, mock_glob, temp_context_dir
     ):
-        """Test that workflow loading prioritizes files from newest sessions (legacy mode).
+        """Test that workflow loading prioritizes files from newest sessions
+        (legacy mode).
 
         This test verifies that when multiple workflow files exist across
         different sessions, files from the newest session (by session
@@ -247,9 +248,9 @@ class TestSingleAgentWorkerWorkflow:
             assert mock_context_utility.load_markdown_file.call_count == 1
 
             # Get the filename that was loaded (first argument)
-            loaded_filename = mock_context_utility.load_markdown_file.call_args[
-                0
-            ][0]
+            loaded_filename = (
+                mock_context_utility.load_markdown_file.call_args[0][0]
+            )
 
             # The loaded file should be 'data_analyst_workflow' (without .md)
             # from the newer session (verified by it being loaded first)
@@ -732,19 +733,25 @@ class TestSmartWorkflowSelection:
                 'title': 'Data Analysis Workflow',
                 'description': 'Analyze sales data and generate reports',
                 'tags': ['data-analysis', 'statistics', 'reporting'],
-                'file_path': f"{temp_context_dir}/session_1/data_analyst_workflow.md",
+                'file_path': (
+                    f"{temp_context_dir}/session_1/data_analyst_workflow.md"
+                ),
             },
             {
                 'title': 'Web Scraping Workflow',
                 'description': 'Scrape website data',
                 'tags': ['web-scraping', 'data-collection'],
-                'file_path': f"{temp_context_dir}/session_1/web_scraper_workflow.md",
+                'file_path': (
+                    f"{temp_context_dir}/session_1/web_scraper_workflow.md"
+                ),
             },
             {
                 'title': 'Database Query Workflow',
                 'description': 'Query database for analysis',
                 'tags': ['database', 'sql', 'data-analysis'],
-                'file_path': f"{temp_context_dir}/session_1/db_analyst_workflow.md",
+                'file_path': (
+                    f"{temp_context_dir}/session_1/db_analyst_workflow.md"
+                ),
             },
         ]
 
@@ -770,7 +777,9 @@ class TestSmartWorkflowSelection:
                 'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
                 return_value=mock_context_utility,
             ),
-            patch.object(worker.worker, 'step', return_value=mock_agent_response),
+            patch.object(
+                worker.worker, 'step', return_value=mock_agent_response
+            ),
         ):
             result = worker.load_workflow_memories(
                 max_workflows=2, use_smart_selection=True
@@ -804,9 +813,7 @@ class TestSmartWorkflowSelection:
             assert result is False
             mock_context_utility.get_all_workflows_metadata.assert_called_once()
 
-    def test_smart_selection_fewer_workflows_than_max(
-        self, temp_context_dir
-    ):
+    def test_smart_selection_fewer_workflows_than_max(self, temp_context_dir):
         """Test smart selection when fewer workflows exist than max_files."""
         worker = MockSingleAgentWorker("data_analyst")
 
@@ -896,7 +903,9 @@ class TestSmartWorkflowSelection:
                 'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
                 return_value=mock_context_utility,
             ),
-            patch.object(worker.worker, 'step', return_value=mock_agent_response),
+            patch.object(
+                worker.worker, 'step', return_value=mock_agent_response
+            ),
         ):
             result = worker.load_workflow_memories(
                 max_workflows=2, use_smart_selection=True
@@ -934,9 +943,6 @@ class TestSmartWorkflowSelection:
             'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
             return_value=mock_context_utility,
         ):
-            # Record initial memory state
-            initial_memory_count = len(worker.worker.memory.get_context()[0])
-
             result = worker.load_workflow_memories(use_smart_selection=True)
 
             assert result is True
@@ -986,16 +992,26 @@ Analyze sales data and generate comprehensive reports with visualizations.
 
     def test_get_all_workflows_metadata(self, temp_context_dir):
         """Test getting metadata from all workflow files."""
-        from camel.utils.context_utils import ContextUtility
-
         # Create test workflow files
         import os
 
-        os.makedirs(f"{temp_context_dir}/workforce_workflows/session_1", exist_ok=True)
-        os.makedirs(f"{temp_context_dir}/workforce_workflows/session_2", exist_ok=True)
+        from camel.utils.context_utils import ContextUtility
 
-        workflow1 = f"{temp_context_dir}/workforce_workflows/session_1/analyst_workflow.md"
-        workflow2 = f"{temp_context_dir}/workforce_workflows/session_2/developer_workflow.md"
+        os.makedirs(
+            f"{temp_context_dir}/workforce_workflows/session_1", exist_ok=True
+        )
+        os.makedirs(
+            f"{temp_context_dir}/workforce_workflows/session_2", exist_ok=True
+        )
+
+        workflow1 = (
+            f"{temp_context_dir}/workforce_workflows/session_1/"
+            "analyst_workflow.md"
+        )
+        workflow2 = (
+            f"{temp_context_dir}/workforce_workflows/session_2/"
+            "developer_workflow.md"
+        )
 
         with open(workflow1, 'w') as f:
             f.write("""### Task Title
@@ -1068,7 +1084,9 @@ Code development
             )
 
     def test_practical_smart_selection(self, temp_context_dir):
-        """Test smart selection with 10 real workflow files in temp directory."""
+        """Test smart selection with 10 real workflow files in temp
+        directory.
+        """
         import os
 
         # Create session directory in workforce_workflows
@@ -1082,7 +1100,9 @@ Code development
             {
                 "name": "data_analysis_workflow.md",
                 "title": "Data Analysis Pipeline",
-                "description": "Analyze CSV data and generate statistical reports",
+                "description": (
+                    "Analyze CSV data and generate statistical reports"
+                ),
                 "tags": ["data-analysis", "statistics", "csv-processing"],
             },
             {
@@ -1101,7 +1121,11 @@ Code development
                 "name": "image_processing_workflow.md",
                 "title": "Image Optimizer",
                 "description": "Resize and compress images for web use",
-                "tags": ["image-processing", "file-processing", "optimization"],
+                "tags": [
+                    "image-processing",
+                    "file-processing",
+                    "optimization",
+                ],
             },
             {
                 "name": "database_query_workflow.md",
@@ -1192,13 +1216,15 @@ Code development
         ]
 
         # Create real ContextUtility to test actual metadata extraction
-        from camel.utils.context_utils import ContextUtility
         from pathlib import Path
+
+        from camel.utils.context_utils import ContextUtility
 
         # Save the original function before patching
         original_get_workforce_shared = ContextUtility.get_workforce_shared
 
-        # Create a side_effect function that returns properly configured utilities
+        # Create a side_effect function that returns properly
+        # configured utilities
         def get_utility_with_base_dir(session_id=None):
             utility = original_get_workforce_shared(session_id)
             utility._base_directory = Path(temp_context_dir)
@@ -1212,7 +1238,9 @@ Code development
                 'camel.societies.workforce.workflow_memory_manager.ContextUtility.get_workforce_shared',
                 side_effect=get_utility_with_base_dir,
             ),
-            patch.object(worker.worker, 'step', return_value=mock_agent_response),
+            patch.object(
+                worker.worker, 'step', return_value=mock_agent_response
+            ),
         ):
             # Load with smart selection (max 3 files)
             result = worker.load_workflow_memories(
@@ -1228,11 +1256,13 @@ Code development
             # Verify that workflows were actually added to the system message
             updated_system_message = worker.worker._system_message.content
 
-            # System message should be different from original (workflows added)
+            # System message should be different from original
+            # (workflows added)
             assert updated_system_message != original_system_message
 
-            # System message should contain workflow titles from the loaded files
-            # At least some workflow-related content should be present
+            # System message should contain workflow titles from the
+            # loaded files. At least some workflow-related content
+            # should be present
             assert len(updated_system_message) > len(original_system_message)
 
             # Verify system message contains workflow metadata

@@ -81,10 +81,10 @@ class WorkflowMemoryManager:
             session_id (Optional[str]): Specific workforce session ID to load
                 from. If None, searches across all sessions.
                 (default: :obj:`None`)
-            use_smart_selection (bool): Whether to use agent-based intelligent
-                workflow selection. When True, uses workflow information and LLM
-                to select most relevant workflows. When False, falls back to
-                pattern matching. (default: :obj:`True`)
+            use_smart_selection (bool): Whether to use agent-based
+                intelligent workflow selection. When True, uses workflow
+                information and LLM to select most relevant workflows. When
+                False, falls back to pattern matching. (default: :obj:`True`)
 
         Returns:
             bool: True if workflow memories were successfully loaded, False
@@ -105,7 +105,8 @@ class WorkflowMemoryManager:
 
             # determine which selection method to use
             if use_smart_selection:
-                # smart selection: use workflow information and agent intelligence
+                # smart selection: use workflow information and agent
+                # intelligence
                 context_util = self._get_context_utility()
                 workflows_metadata = context_util.get_all_workflows_metadata(
                     session_id
@@ -243,7 +244,8 @@ class WorkflowMemoryManager:
 
         Args:
             workflows_metadata (List[Dict[str, Any]]): List of workflow
-                information dicts (contains title, description, tags, file_path).
+                information dicts (contains title, description, tags,
+                file_path).
             max_files (int): Maximum number of workflows to select.
 
         Returns:
@@ -257,7 +259,9 @@ class WorkflowMemoryManager:
             return [wf['file_path'] for wf in workflows_metadata]
 
         # format workflows for selection
-        workflows_str = self._format_workflows_for_selection(workflows_metadata)
+        workflows_str = self._format_workflows_for_selection(
+            workflows_metadata
+        )
 
         # create selection prompt
         selection_prompt = (
@@ -324,7 +328,8 @@ class WorkflowMemoryManager:
 
         Args:
             workflows_metadata (List[Dict[str, Any]]): List of workflow
-                information dicts (contains title, description, tags, file_path).
+                information dicts (contains title, description, tags,
+                file_path).
 
         Returns:
             str: Formatted string presenting workflows for LLM selection.
@@ -342,7 +347,9 @@ class WorkflowMemoryManager:
             tags = workflow.get('tags', [])
             tags_str = ', '.join(tags) if tags else 'No tags'
             formatted_lines.append(f"- Tags: {tags_str}")
-            formatted_lines.append(f"- File: {workflow.get('file_path', 'N/A')}")
+            formatted_lines.append(
+                f"- File: {workflow.get('file_path', 'N/A')}"
+            )
 
         return '\n'.join(formatted_lines)
 
@@ -474,7 +481,9 @@ class WorkflowMemoryManager:
                 )
 
             # combine all workflows into single content block
-            combined_content = f"\n\n--- Previous Workflows ---\n{prefix_prompt}\n"
+            combined_content = (
+                f"\n\n--- Previous Workflows ---\n{prefix_prompt}\n"
+            )
 
             for i, workflow_data in enumerate(workflows_to_load, 1):
                 combined_content += (
@@ -517,7 +526,9 @@ class WorkflowMemoryManager:
             return len(workflows_to_load)
 
         except Exception as e:
-            logger.error(f"Failed to append workflows to system message: {e!s}")
+            logger.error(
+                f"Failed to append workflows to system message: {e!s}"
+            )
             return 0
 
     def _generate_workflow_filename(self) -> str:

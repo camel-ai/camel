@@ -38,7 +38,10 @@ from camel.societies.workforce.workflow_memory_manager import (
     WorkflowMemoryManager,
 )
 from camel.tasks.task import Task, TaskState, is_task_result_insufficient
-from camel.utils.context_utils import ContextUtility
+from camel.utils.context_utils import (
+    ContextUtility,
+    WorkflowSummary,
+)
 
 logger = get_logger(__name__)
 
@@ -758,7 +761,9 @@ class SingleAgentWorker(Worker):
             tags = workflow.get('tags', [])
             tags_str = ', '.join(tags) if tags else 'No tags'
             formatted_lines.append(f"- Tags: {tags_str}")
-            formatted_lines.append(f"- File: {workflow.get('file_path', 'N/A')}")
+            formatted_lines.append(
+                f"- File: {workflow.get('file_path', 'N/A')}"
+            )
 
         return '\n'.join(formatted_lines)
 
@@ -787,7 +792,9 @@ class SingleAgentWorker(Worker):
             return [wf['file_path'] for wf in workflows_metadata]
 
         # format workflows for selection
-        workflows_str = self._format_workflows_for_selection(workflows_metadata)
+        workflows_str = self._format_workflows_for_selection(
+            workflows_metadata
+        )
 
         # create selection prompt
         selection_prompt = (
@@ -807,7 +814,6 @@ class SingleAgentWorker(Worker):
         try:
             # use worker agent for selection
             from camel.messages import BaseMessage
-            from camel.types import RoleType
 
             selection_msg = BaseMessage.make_user_message(
                 role_name="user", content=selection_prompt
