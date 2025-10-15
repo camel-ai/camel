@@ -583,7 +583,8 @@ class SingleAgentWorker(Worker):
 
         This method generates a workflow summary from the worker agent's
         conversation history and saves it to a markdown file. The filename
-        is based on the worker's description for easy loading later.
+        is based on either the worker's explicit role_name or the generated
+        task_title from the summary.
 
         Returns:
             Dict[str, Any]: Result dictionary with keys:
@@ -603,13 +604,22 @@ class SingleAgentWorker(Worker):
             self.worker.set_context_utility(context_util)
 
             # prepare workflow summarization components
-            filename = self._generate_workflow_filename()
             structured_prompt = self._prepare_workflow_prompt()
             agent_to_summarize = self._select_agent_for_summarization(
                 context_util
             )
 
+            # check if we should use role_name or let summarize extract task_title
+            role_name = getattr(self.worker, 'role_name', 'assistant')
+            use_role_name_for_filename = (
+                role_name.lower() not in {'assistant', 'agent', 'user', 'system'}
+            )
+
             # generate and save workflow summary
+            # if role_name is explicit, use it for filename
+            # if role_name is generic, pass None to let summarize use task_title
+            filename = self._generate_workflow_filename() if use_role_name_for_filename else None
+
             result = agent_to_summarize.summarize(
                 filename=filename,
                 summary_prompt=structured_prompt,
@@ -716,12 +726,27 @@ class SingleAgentWorker(Worker):
             )
             return []
 
-        # generate filename-safe search pattern from worker description
+        # generate filename-safe search pattern from worker role name
         if pattern is None:
-            # sanitize description: spaces to underscores, remove special chars
-            clean_desc = self.description.lower().replace(" ", "_")
-            clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
-            pattern = f"{clean_desc}_workflow*.md"
+            # get role_name (always available, defaults to "assistant")
+            role_name = getattr(self.worker, 'role_name', 'assistant')
+
+            # sanitize: spaces to underscores, remove special chars
+            clean_name = role_name.lower().replace(" ", "_")
+            clean_name = re.sub(r'[^a-z0-9_]', '', clean_name)
+
+            if not clean_name:
+                clean_name = "agent"
+
+            # check if role_name is generic
+            generic_names = {'assistant', 'agent', 'user', 'system'}
+            if clean_name in generic_names:
+                # for generic role names, search for all workflow files
+                # since filename is based on task_title
+                pattern = "*_workflow*.md"
+            else:
+                # for explicit role names, search for role-specific files
+                pattern = f"{clean_name}_workflow*.md"
 
         # Get the base workforce_workflows directory
         camel_workdir = os.environ.get("CAMEL_WORKDIR")
@@ -816,15 +841,26 @@ class SingleAgentWorker(Worker):
         return None
 
     def _generate_workflow_filename(self) -> str:
-        r"""Generate a filename for the workflow based on worker description.
+        r"""Generate a filename for the workflow based on worker role name.
+
+        Uses the worker's explicit role_name when available.
 
         Returns:
-            str: Sanitized filename without timestamp (session already has
-                timestamp).
+            str: Sanitized filename without timestamp and without .md extension.
+                Format: {role_name}_workflow
         """
-        clean_desc = self.description.lower().replace(" ", "_")
-        clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
-        return f"{clean_desc}_workflow"
+        # get role_name (always available, defaults to "assistant"/"Assistant")
+        role_name = getattr(self.worker, 'role_name', 'assistant')
+
+        # sanitize: lowercase, spaces to underscores, remove special chars
+        clean_name = role_name.lower().replace(" ", "_")
+        clean_name = re.sub(r'[^a-z0-9_]', '', clean_name)
+
+        # ensure it's not empty after sanitization
+        if not clean_name:
+            clean_name = "agent"
+
+        return f"{clean_name}_workflow"
 
     def _prepare_workflow_prompt(self) -> str:
         r"""Prepare the structured prompt for workflow summarization.

@@ -1520,11 +1520,28 @@ class ChatAgent(BaseAgent):
                 result["status"] = status_message
                 return result
 
-            base_filename = (
-                filename
-                if filename
-                else f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
-            )
+            # Handle structured output if response_format was provided
+            structured_output = None
+            if response_format and response.msgs[-1].parsed:
+                structured_output = response.msgs[-1].parsed
+
+            # Determine filename: use provided filename, or extract from
+            # structured output, or generate timestamp
+            if filename:
+                base_filename = filename
+            elif structured_output and hasattr(structured_output, 'task_title'):
+                # use task_title from structured output for filename
+                task_title = structured_output.task_title
+                # sanitize: lowercase, spaces to underscores, remove special chars
+                clean_title = task_title.lower().replace(" ", "_")
+                clean_title = re.sub(r'[^a-z0-9_]', '', clean_title)
+                # truncate if too long
+                if len(clean_title) > 50:
+                    clean_title = clean_title[:50]
+                base_filename = f"{clean_title}_workflow" if clean_title else "workflow"
+            else:
+                base_filename = f"context_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: E501
+
             base_filename = Path(base_filename).with_suffix("").name
 
             metadata = context_util.get_session_metadata()
@@ -1535,10 +1552,8 @@ class ChatAgent(BaseAgent):
                 }
             )
 
-            # Handle structured output if response_format was provided
-            structured_output = None
-            if response_format and response.msgs[-1].parsed:
-                structured_output = response.msgs[-1].parsed
+            # Convert structured output to custom markdown if present
+            if structured_output:
                 # Convert structured output to custom markdown
                 summary_content = context_util.structured_output_to_markdown(
                     structured_data=structured_output, metadata=metadata

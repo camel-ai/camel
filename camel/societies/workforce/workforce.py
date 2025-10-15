@@ -463,11 +463,18 @@ class Workforce(BaseNode):
         # Helper for propagating pause control to externally supplied agents
         # ------------------------------------------------------------------
 
-    def _get_or_create_shared_context_utility(self) -> "ContextUtility":
+    def _get_or_create_shared_context_utility(
+        self,
+        session_id: Optional[str] = None,
+    ) -> "ContextUtility":
         r"""Get or create the shared context utility for workflow management.
 
         This method creates the context utility only when needed, avoiding
         unnecessary session folder creation during initialization.
+
+        Args:
+            session_id (Optional[str]): Custom session ID to use. If None,
+                auto-generates a timestamped session ID. (default: :obj:`None`)
 
         Returns:
             ContextUtility: The shared context utility instance.
@@ -476,7 +483,7 @@ class Workforce(BaseNode):
             from camel.utils.context_utils import ContextUtility
 
             self._shared_context_utility = (
-                ContextUtility.get_workforce_shared()
+                ContextUtility.get_workforce_shared(session_id=session_id)
             )
         return self._shared_context_utility
 
@@ -2132,7 +2139,10 @@ class Workforce(BaseNode):
         else:
             self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
 
-    def save_workflow_memories(self) -> Dict[str, str]:
+    def save_workflow_memories(
+        self,
+        session_id: Optional[str] = None,
+    ) -> Dict[str, str]:
         r"""Save workflow memories for all SingleAgentWorker instances in the
         workforce.
 
@@ -2142,6 +2152,12 @@ class Workforce(BaseNode):
         method.
         Other worker types are skipped.
 
+        Args:
+            session_id (Optional[str]): Custom session ID to use for saving
+                workflows. If None, auto-generates a timestamped session ID.
+                Useful for organizing workflows by project or context.
+                (default: :obj:`None`)
+
         Returns:
             Dict[str, str]: Dictionary mapping worker node IDs to save results.
                 Values are either file paths (success) or error messages
@@ -2150,15 +2166,22 @@ class Workforce(BaseNode):
         Example:
             >>> workforce = Workforce("My Team")
             >>> # ... add workers and process tasks ...
-            >>> results = workforce.save_workflows()
+            >>> # Save with auto-generated session ID
+            >>> results = workforce.save_workflow_memories()
             >>> print(results)
             {'worker_123': '/path/to/data_analyst_workflow_20250122.md',
              'worker_456': 'error: No conversation context available'}
+            >>> # Save with custom project ID
+            >>> results = workforce.save_workflow_memories(
+            ...     session_id="project_123"
+            ... )
         """
         results = {}
 
         # Get or create shared context utility for this save operation
-        shared_context_utility = self._get_or_create_shared_context_utility()
+        shared_context_utility = self._get_or_create_shared_context_utility(
+            session_id=session_id
+        )
 
         for child in self._children:
             if isinstance(child, SingleAgentWorker):
