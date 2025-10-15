@@ -482,8 +482,8 @@ class Workforce(BaseNode):
         if self._shared_context_utility is None:
             from camel.utils.context_utils import ContextUtility
 
-            self._shared_context_utility = (
-                ContextUtility.get_workforce_shared(session_id=session_id)
+            self._shared_context_utility = ContextUtility.get_workforce_shared(
+                session_id=session_id
             )
         return self._shared_context_utility
 
