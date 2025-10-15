@@ -517,6 +517,7 @@ Real-world usecases demonstrating how CAMEL’s multi-agent framework enables re
 |:---|:---|
 | **[ChatDev](https://github.com/OpenBMB/ChatDev/tree/main/camel)** | Communicative Agents for software Development |
 | **[Paper2Poster](https://github.com/Paper2Poster/Paper2Poster)** | Multimodal poster automation from scientific papers |
+| **[Paper2Video](https://github.com/showlab/Paper2Video)** | Automatic video generation from scientific papers |
 
 ### Product Projects
 
