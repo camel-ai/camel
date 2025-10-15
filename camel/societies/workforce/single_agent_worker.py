@@ -609,16 +609,25 @@ class SingleAgentWorker(Worker):
                 context_util
             )
 
-            # check if we should use role_name or let summarize extract task_title
+            # check if we should use role_name or let summarize extract
+            # task_title
             role_name = getattr(self.worker, 'role_name', 'assistant')
-            use_role_name_for_filename = (
-                role_name.lower() not in {'assistant', 'agent', 'user', 'system'}
-            )
+            use_role_name_for_filename = role_name.lower() not in {
+                'assistant',
+                'agent',
+                'user',
+                'system',
+            }
 
             # generate and save workflow summary
             # if role_name is explicit, use it for filename
-            # if role_name is generic, pass None to let summarize use task_title
-            filename = self._generate_workflow_filename() if use_role_name_for_filename else None
+            # if role_name is generic, pass none to let summarize use
+            # task_title
+            filename = (
+                self._generate_workflow_filename()
+                if use_role_name_for_filename
+                else None
+            )
 
             result = agent_to_summarize.summarize(
                 filename=filename,
@@ -728,15 +737,11 @@ class SingleAgentWorker(Worker):
 
         # generate filename-safe search pattern from worker role name
         if pattern is None:
+            from camel.utils.context_utils import ContextUtility
+
             # get role_name (always available, defaults to "assistant")
             role_name = getattr(self.worker, 'role_name', 'assistant')
-
-            # sanitize: spaces to underscores, remove special chars
-            clean_name = role_name.lower().replace(" ", "_")
-            clean_name = re.sub(r'[^a-z0-9_]', '', clean_name)
-
-            if not clean_name:
-                clean_name = "agent"
+            clean_name = ContextUtility.sanitize_workflow_filename(role_name)
 
             # check if role_name is generic
             generic_names = {'assistant', 'agent', 'user', 'system'}
@@ -846,19 +851,14 @@ class SingleAgentWorker(Worker):
         Uses the worker's explicit role_name when available.
 
         Returns:
-            str: Sanitized filename without timestamp and without .md extension.
-                Format: {role_name}_workflow
+            str: Sanitized filename without timestamp and without .md
+                extension. Format: {role_name}_workflow
         """
+        from camel.utils.context_utils import ContextUtility
+
         # get role_name (always available, defaults to "assistant"/"Assistant")
         role_name = getattr(self.worker, 'role_name', 'assistant')
-
-        # sanitize: lowercase, spaces to underscores, remove special chars
-        clean_name = role_name.lower().replace(" ", "_")
-        clean_name = re.sub(r'[^a-z0-9_]', '', clean_name)
-
-        # ensure it's not empty after sanitization
-        if not clean_name:
-            clean_name = "agent"
+        clean_name = ContextUtility.sanitize_workflow_filename(role_name)
 
         return f"{clean_name}_workflow"
 

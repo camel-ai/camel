@@ -2166,12 +2166,12 @@ class Workforce(BaseNode):
         Example:
             >>> workforce = Workforce("My Team")
             >>> # ... add workers and process tasks ...
-            >>> # Save with auto-generated session ID
+            >>> # save with auto-generated session id
             >>> results = workforce.save_workflow_memories()
             >>> print(results)
-            {'worker_123': '/path/to/data_analyst_workflow_20250122.md',
+            {'worker_123': '/path/to/developer_agent_workflow.md',
              'worker_456': 'error: No conversation context available'}
-            >>> # Save with custom project ID
+            >>> # save with custom project id
             >>> results = workforce.save_workflow_memories(
             ...     session_id="project_123"
             ... )
