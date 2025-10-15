@@ -1,0 +1,91 @@
+---
+title: GitLab Toolkit
+description: A toolkit for interacting with GitLab repositories and features.
+---
+
+# GitLab Toolkit
+
+The `gitlab_toolkit.py` module provides functionality for interacting with GitLab repositories, allowing users to manage issues, merge requests, repositories, and perform various GitLab operations.
+
+## Features
+
+- Repository management (create, list, delete repositories)
+- Issue tracking (create, update, close issues)
+- Merge request handling
+- Branch operations
+- File management (upload, download, update files)
+- Authentication and authorization
+- API integration with GitLab
+
+## Usage Example
+
+```python
+from camel.toolkits.gitlab_toolkit import GitLabToolkit
+
+# Initialize the toolkit with GitLab credentials
+gitlab_toolkit = GitLabToolkit(
+    gitlab_url="https://gitlab.com",  # Or your private GitLab instance
+    private_token="your_private_token"
+)
+
+# Create a new issue
+issue = gitlab_toolkit.create_issue(
+    project_id="your-project-id",
+    title="Bug report: login page error",
+    description="Users are unable to log in after recent update."
+)
+print(f"Created issue: {issue}")
+
+# List repositories
+repos = gitlab_toolkit.list_repositories(search="my-project")
+print(f"Found {len(repos)} repositories")
+```
+
+## Key Methods
+
+### Repository Operations
+
+- `create_repository()`: Create a new GitLab repository
+- `list_repositories()`: List repositories with optional filtering
+- `get_repository()`: Get details of a specific repository
+- `delete_repository()`: Delete a repository
+
+### Issue Management
+
+- `create_issue()`: Create a new issue in a project
+- `list_issues()`: List issues with filters
+- `update_issue()`: Update an existing issue
+- `close_issue()`: Close an issue
+
+### Merge Requests
+
+- `create_merge_request()`: Create a new merge request
+- `list_merge_requests()`: List merge requests
+- `approve_merge_request()`: Approve a merge request
+- `merge_merge_request()`: Merge a merge request
+
+### File Operations
+
+- `upload_file()`: Upload a file to a repository
+- `get_file()`: Download a file from a repository
+- `update_file()`: Update an existing file
+
+## Configuration
+
+The toolkit requires GitLab credentials and URL for authentication. These can be provided directly to the constructor or through environment variables:
+
+```python
+# Using environment variables
+gitlab_toolkit = GitLabToolkit()
+# Expects GITLAB_URL and GITLAB_TOKEN environment variables
+```
+
+## Error Handling
+
+The toolkit includes comprehensive error handling for common GitLab API errors, including rate limiting, authentication failures, and resource not found errors.
+
+## Security Considerations
+
+- Store private tokens securely
+- Use API scopes with minimal permissions
+- Avoid hardcoding credentials in source code
