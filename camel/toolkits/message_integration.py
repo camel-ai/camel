@@ -285,9 +285,9 @@ class ToolkitMessageIntegration:
             if function_names is None or func.__name__ in function_names:
                 # If func is a bound toolkit method, route to register_toolkits
                 if hasattr(func, '__self__') and isinstance(
-                    getattr(func, '__self__'), BaseToolkit
+                    func.__self__, BaseToolkit
                 ):
-                    toolkit_instance = getattr(func, '__self__')
+                    toolkit_instance = func.__self__
                     method_name = func.__name__
 
                     # Enhance the specific method on the toolkit instance
@@ -494,7 +494,6 @@ class ToolkitMessageIntegration:
 
         # Mark this function as enhanced by message integration
         wrapper.__message_integration_enhanced__ = True  # type: ignore[attr-defined]
-
 
         # Create a hybrid approach:
         # store toolkit instance info but preserve calling behavior
