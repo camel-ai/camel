@@ -84,7 +84,7 @@ class MoonshotModel(OpenAICompatibleModel):
         model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
-        url: Optional[str] = "https://api.moonshot.ai/v1",
+        url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         timeout: Optional[float] = None,
         max_retries: int = 3,
@@ -93,7 +93,12 @@ class MoonshotModel(OpenAICompatibleModel):
         if model_config_dict is None:
             model_config_dict = MoonshotConfig().as_dict()
         api_key = api_key or os.environ.get("MOONSHOT_API_KEY")
-        url = url or os.environ.get("MOONSHOT_API_BASE_URL")
+        # Preserve default URL if not provided
+        if url is None:
+            url = (
+                os.environ.get("MOONSHOT_API_BASE_URL")
+                or "https://api.moonshot.ai/v1"
+            )
         timeout = timeout or float(os.environ.get("MODEL_TIMEOUT", 180))
         super().__init__(
             model_type=model_type,
