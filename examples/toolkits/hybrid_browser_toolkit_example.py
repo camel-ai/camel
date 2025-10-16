@@ -36,8 +36,9 @@ logging.getLogger('camel.toolkits.hybrid_browser_toolkit').setLevel(
 USER_DATA_DIR = "/Users/puzhen/Desktop/pre/camel_project/camel/UserData"
 
 model_backend = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
+    model_platform=ModelPlatformType.MOONSHOT,
+    model_type=ModelType.MOONSHOT_KIMI_K2,
+    url="https://api.moonshot.ai/v1",  # Explicitly specify Moonshot API URL
     model_config_dict={"temperature": 0.0, "top_p": 1},
 )
 
@@ -67,7 +68,6 @@ custom_tools = [
     "browser_type",
     "browser_switch_tab",
     "browser_enter",
-    # "browser_get_som_screenshot", # remove it to achieve faster operation
     # "browser_press_key",
     # "browser_console_view",
     # "browser_console_exec",
@@ -86,6 +86,7 @@ web_toolkit_custom = HybridBrowserToolkit(
 print(f"Custom tools: {web_toolkit_custom.enabled_tools}")
 # Use the custom toolkit for the actual task
 agent = ChatAgent(
+    enable_tool_output_cache=True,
     model=model_backend,
     tools=[*web_toolkit_custom.get_tools()],
     toolkits_to_register_agent=[web_toolkit_custom],
@@ -105,20 +106,19 @@ If you see a cookie page, click accept all.
 
 
 async def main() -> None:
-    await web_toolkit_custom.browser_open()
-    # await web_toolkit_custom.browser_close()
-    # try:
-    #     response = await agent.astep(TASK_PROMPT)
-    #     print("Task:", TASK_PROMPT)
-    #     print(f"Using user data directory: {USER_DATA_DIR}")
-    #     print(f"Enabled tools: {web_toolkit_custom.enabled_tools}")
-    #     print("\nResponse from agent:")
-    #     print(response.msgs[0].content if response.msgs else "<no response>")
-    # finally:
-    #     # Ensure browser is closed properly
-    #     print("\nClosing browser...")
-    #     await web_toolkit_custom.browser_close()
-    #     print("Browser closed successfully.")
+    # await web_toolkit_custom.browser_open()
+    try:
+        response = await agent.astep(TASK_PROMPT)
+        print("Task:", TASK_PROMPT)
+        print(f"Using user data directory: {USER_DATA_DIR}")
+        print(f"Enabled tools: {web_toolkit_custom.enabled_tools}")
+        print("\nResponse from agent:")
+        print(response.msgs[0].content if response.msgs else "<no response>")
+    finally:
+        # Ensure browser is closed properly
+        print("\nClosing browser...")
+        await web_toolkit_custom.browser_close()
+        print("Browser closed successfully.")
 
 
 if __name__ == "__main__":

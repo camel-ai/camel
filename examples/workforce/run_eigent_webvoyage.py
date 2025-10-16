@@ -289,6 +289,7 @@ to ensure precision and avoid ambiguity.
 The current date is {datetime.date.today()}. For any date-related tasks, you
 MUST use this as the current date.
         """,
+        enable_tool_output_cache=True,
         model=model_backend_reason,
         tools=[
             # *NoteTakingToolkit(
@@ -501,9 +502,7 @@ if __name__ == "__main__":
                 all_results.append(task_result)
 
                 # Save individual task result
-                individual_result_file = (
-                    f"task_result_{actual_idx}_{task_data.get('id', str(actual_idx))}.json"
-                )
+                individual_result_file = f"task_result_{actual_idx}_{task_data.get('id', str(actual_idx))}.json"
                 with open(individual_result_file, 'w', encoding='utf-8') as f:
                     json.dump(task_result, f, indent=2, ensure_ascii=False)
 
@@ -532,9 +531,7 @@ if __name__ == "__main__":
                 all_results.append(error_result)
 
                 # Save individual error result
-                individual_result_file = (
-                    f"task_result_{actual_idx}_{task_data.get('id', str(actual_idx))}.json"
-                )
+                individual_result_file = f"task_result_{actual_idx}_{task_data.get('id', str(actual_idx))}.json"
                 with open(individual_result_file, 'w', encoding='utf-8') as f:
                     json.dump(error_result, f, indent=2, ensure_ascii=False)
 

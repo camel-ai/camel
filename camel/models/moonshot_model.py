@@ -159,35 +159,48 @@ class MoonshotModel(OpenAICompatibleModel):
         def remove_null_from_schema(schema: Any) -> Any:
             """Recursively remove null types from schema."""
             if isinstance(schema, dict):
-                # Handle anyOf with null types
-                if 'anyOf' in schema:
-                    any_of = schema['anyOf']
-                    # Filter out null types
-                    filtered = [
-                        item
-                        for item in any_of
-                        if not (
-                            isinstance(item, dict)
-                            and item.get('type') == 'null'
-                        )
-                    ]
-                    # If only one type remains, simplify
-                    if len(filtered) == 1:
-                        return remove_null_from_schema(filtered[0])
-                    elif len(filtered) > 1:
-                        schema = schema.copy()
-                        schema['anyOf'] = [
-                            remove_null_from_schema(item) for item in filtered
-                        ]
-                        return schema
-                    else:
-                        # All were null, return string type as fallback
-                        return {"type": "string"}
+                # Create a copy to avoid modifying the original
+                result = {}
 
-                # Recursively process nested dicts
-                return {
-                    k: remove_null_from_schema(v) for k, v in schema.items()
-                }
+                for key, value in schema.items():
+                    if key == 'type' and isinstance(value, list):
+                        # Handle type arrays like ["string", "null"]
+                        filtered_types = [t for t in value if t != 'null']
+                        if len(filtered_types) == 1:
+                            # Single type remains, convert to string
+                            result[key] = filtered_types[0]
+                        elif len(filtered_types) > 1:
+                            # Multiple types remain, keep as array
+                            result[key] = filtered_types
+                        else:
+                            # All were null, use string as fallback
+                            result[key] = 'string'
+                    elif key == 'anyOf':
+                        # Handle anyOf with null types
+                        filtered = [
+                            item
+                            for item in value
+                            if not (
+                                isinstance(item, dict)
+                                and item.get('type') == 'null'
+                            )
+                        ]
+                        if len(filtered) == 1:
+                            # If only one type remains, flatten it
+                            return remove_null_from_schema(filtered[0])
+                        elif len(filtered) > 1:
+                            result[key] = [
+                                remove_null_from_schema(item)
+                                for item in filtered
+                            ]
+                        else:
+                            # All were null, return string type as fallback
+                            return {"type": "string"}
+                    else:
+                        # Recursively process other values
+                        result[key] = remove_null_from_schema(value)
+
+                return result
             elif isinstance(schema, list):
                 return [remove_null_from_schema(item) for item in schema]
             else:
