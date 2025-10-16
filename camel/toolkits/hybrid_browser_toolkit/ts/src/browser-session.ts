@@ -646,7 +646,7 @@ export class HybridBrowserSession {
       // Handle multiple inputs if provided
       if (inputs && inputs.length > 0) {
         const results: Record<string, { success: boolean; error?: string }> = {};
-        
+
         for (const input of inputs) {
           const singleResult = await this.performType(page, input.ref, input.text);
           results[input.ref] = {
@@ -654,17 +654,35 @@ export class HybridBrowserSession {
             error: singleResult.error
           };
         }
-        
-        // Check if all inputs were successful
-        const allSuccess = Object.values(results).every(r => r.success);
-        const errors = Object.entries(results)
+
+        // Check how many inputs were successful
+        const successfulRefs = Object.entries(results)
+          .filter(([_, r]) => r.success)
+          .map(([ref, _]) => ref);
+        const failedRefs = Object.entries(results)
           .filter(([_, r]) => !r.success)
-          .map(([ref, r]) => `${ref}: ${r.error}`)
-          .join('; ');
-        
+          .map(([ref, r]) => `${ref}: ${r.error}`);
+
+        const hasAnySuccess = successfulRefs.length > 0;
+        const allSuccess = failedRefs.length === 0;
+
+        // Build detailed error message
+        let errorMessage: string | undefined;
+        if (!allSuccess) {
+          const parts: string[] = [];
+          if (successfulRefs.length > 0) {
+            parts.push(`Successfully typed into: ${successfulRefs.join(', ')}`);
+          }
+          if (failedRefs.length > 0) {
+            parts.push(`Failed: ${failedRefs.join('; ')}`);
+          }
+          errorMessage = parts.join('. ');
+        }
+
+        // Return success if at least one input succeeded
         return {
-          success: allSuccess,
-          error: allSuccess ? undefined : `Some inputs failed: ${errors}`,
+          success: hasAnySuccess,
+          error: errorMessage,
           details: results
         };
       }
@@ -1137,19 +1155,38 @@ export class HybridBrowserSession {
           const typeStart = Date.now();
 
           const typeResult = await this.performType(page, action.ref, action.text, action.inputs);
-          
+
+          // For single input mode: throw error if failed
+          // For multiple inputs mode: only throw if ALL inputs failed
           if (!typeResult.success) {
-            throw new Error(`Type failed: ${typeResult.error}`);
+            // Check if this is multiple inputs mode
+            if (typeResult.details) {
+              const hasAnySuccess = Object.values(typeResult.details).some((r: any) => r.success);
+              if (!hasAnySuccess) {
+                // All inputs failed, throw error
+                throw new Error(`Type failed: ${typeResult.error}`);
+              }
+              // Some inputs succeeded, continue with partial success
+            } else {
+              // Single input mode failed, throw error
+              throw new Error(`Type failed: ${typeResult.error}`);
+            }
           }
-          
+
           // Set custom message and details if multiple inputs were used
           if (typeResult.details) {
             const successCount = Object.values(typeResult.details).filter((r: any) => r.success).length;
             const totalCount = Object.keys(typeResult.details).length;
-            customMessage = `Typed text into ${successCount}/${totalCount} elements`;
+            if (typeResult.error) {
+              // Partial success - include error in message
+              customMessage = `Typed text into ${successCount}/${totalCount} elements. ${typeResult.error}`;
+            } else {
+              // Full success
+              customMessage = `Typed text into ${successCount}/${totalCount} elements`;
+            }
             actionDetails = typeResult.details;
           }
-          
+
           // Capture diff snapshot if present
           if (typeResult.diffSnapshot) {
             if (!actionDetails) {
@@ -1157,7 +1194,7 @@ export class HybridBrowserSession {
             }
             actionDetails.diffSnapshot = typeResult.diffSnapshot;
           }
-          
+
           actionExecutionTime = Date.now() - typeStart;
           break;
         }

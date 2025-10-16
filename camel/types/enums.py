@@ -326,7 +326,7 @@ class ModelType(UnifiedModelType, Enum):
     MOONSHOT_V1_8K = "moonshot-v1-8k"
     MOONSHOT_V1_32K = "moonshot-v1-32k"
     MOONSHOT_V1_128K = "moonshot-v1-128k"
-    MOONSHOT_KIMI_K2 = "kimi-k2-0711-preview"
+    MOONSHOT_KIMI_K2 = "kimi-latest"
 
     # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
