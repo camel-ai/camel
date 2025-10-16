@@ -495,13 +495,6 @@ class ToolkitMessageIntegration:
         # Mark this function as enhanced by message integration
         wrapper.__message_integration_enhanced__ = True  # type: ignore[attr-defined]
 
-        # Expose handler configuration for potential re-binding/reconstruction
-        # in environments that clone toolkit instances (e.g., parallel agents)
-        wrapper.__mi_message_handler__ = self.message_handler  # type: ignore[attr-defined]
-        wrapper.__mi_extract_params_callback__ = (  # type: ignore[attr-defined]
-            self.extract_params_callback
-        )
-        wrapper.__mi_use_custom_handler__ = self.use_custom_handler  # type: ignore[attr-defined]
 
         # Create a hybrid approach:
         # store toolkit instance info but preserve calling behavior
