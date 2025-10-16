@@ -906,7 +906,7 @@ class FileToolkit(BaseToolkit):
         self,
         file_path: Path,
         content: Union[str, List[List]],
-        encoding: str = "utf-8",
+        encoding: str = "utf-8-sig",
     ) -> None:
         r"""Write CSV content to a file.
 
@@ -914,7 +914,8 @@ class FileToolkit(BaseToolkit):
             file_path (Path): The target file path.
             content (Union[str, List[List]]): The CSV content as a string or
                 list of lists.
-            encoding (str): Character encoding to use. (default: :obj:`utf-8`)
+            encoding (str): Character encoding to use.
+                (default: :obj:`utf-8-sig`)
         """
         import csv
 
