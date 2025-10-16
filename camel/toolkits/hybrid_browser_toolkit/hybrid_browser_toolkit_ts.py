@@ -13,8 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # =========
 
+import json
+import os
 import time
-from typing import Any, Callable, ClassVar, Dict, List, Optional, cast
+import uuid
+from datetime import datetime
+from typing import Any, Callable, ClassVar, Dict, List, Literal, Optional, cast
 
 from camel.logger import get_logger
 from camel.messages import BaseMessage
@@ -46,6 +50,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_click",
         "browser_type",
         "browser_switch_tab",
+        "browser_todo_list",
     ]
 
     ALL_TOOLS: ClassVar[List[str]] = [
@@ -72,6 +77,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
         "browser_get_tab_info",
         "browser_console_view",
         "browser_console_exec",
+        "browser_todo_list",
     ]
 
     def __init__(
@@ -842,6 +848,264 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
                 "total_tabs": 0,
             }
 
+    async def browser_todo_list(
+        self,
+        *,
+        operation: Literal[
+            "init",
+            "add",
+            "update",
+            "mark",
+            "remove",
+            "list",
+            "clear",
+            "summary",
+        ],
+        content: Optional[str] = None,
+        id: Optional[str] = None,
+        status: Optional[
+            Literal["pending", "in_progress", "completed"]
+        ] = None,
+        priority: Optional[Literal["low", "medium", "high"]] = None,
+        file_name: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        r"""Manage a persistent todo list for long-horizon web tasks.
+
+        This tool provides a simple task list that the agent can use to plan,
+        track progress, and summarize multi-step browsing tasks. The list is
+        persisted to disk under the toolkit's `cache_dir`, scoped by session.
+
+        Args:
+            operation (Literal): The action to perform on the todo list.
+                - "init": Create the todo file if missing.
+                - "add": Add a new task with `content` and optional `priority`.
+                - "update": Update an existing task's `content` by `id`.
+                - "mark": Update an existing task's `status` by `id`.
+                - "remove": Remove a task by `id`.
+                - "list": Return the current list.
+                - "clear": Remove all tasks.
+                - "summary": Return a short status summary.
+            content (Optional[str]): Task description for add/update.
+            id (Optional[str]): Task identifier for update/mark/remove.
+            status (Optional[str]): New status for mark operation. One of
+                {"pending", "in_progress", "completed"}.
+            priority (Optional[str]): Task priority. One of
+                {"low", "medium", "high"}. Defaults to "medium" when adding.
+            file_name (Optional[str]): Custom filename for the todo file.
+                Defaults to "todo_<session_id>.json" under `cache_dir`.
+
+        Returns:
+            Dict[str, Any]:
+                - "result": Human-readable result message.
+                - "file": Absolute path to the todo file.
+                - "tasks": List of task dicts (for
+                  list/add/update/mark/remove/clear).
+                - "summary": Aggregate counts (for summary).
+        """
+
+        # Resolve todo file path
+        cache_dir = os.path.abspath(self._cache_dir)
+        os.makedirs(cache_dir, exist_ok=True)
+        safe_name = file_name if file_name else f"todo_{self._session_id}.json"
+        todo_path = os.path.join(cache_dir, safe_name)
+
+        # Load existing tasks
+        def _load_tasks() -> List[Dict[str, Any]]:
+            if os.path.exists(todo_path):
+                try:
+                    with open(todo_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        if isinstance(data, dict) and isinstance(
+                            data.get("tasks"), list
+                        ):
+                            return data["tasks"]
+                        if isinstance(data, list):
+                            return data
+                except Exception:
+                    # Fallback to empty if file is corrupted
+                    pass
+            return []
+
+        def _save_tasks(tasks: List[Dict[str, Any]]) -> None:
+            payload = {
+                "tasks": tasks,
+                "updated_at": datetime.now().isoformat(),
+            }
+            with open(todo_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+
+        tasks = _load_tasks()
+
+        # Dispatch operations
+        op = operation.lower()
+        if op == "init":
+            if not os.path.exists(todo_path):
+                _save_tasks(tasks)
+            return {
+                "result": "Todo list initialized.",
+                "file": todo_path,
+                "tasks": tasks,
+            }
+
+        if op == "list":
+            return {
+                "result": "Todo list fetched.",
+                "file": todo_path,
+                "tasks": tasks,
+            }
+
+        if op == "clear":
+            tasks = []
+            _save_tasks(tasks)
+            return {
+                "result": "Todo list cleared.",
+                "file": todo_path,
+                "tasks": tasks,
+            }
+
+        if op == "add":
+            if not content:
+                return {
+                    "result": "Error: 'content' is required for add.",
+                    "file": todo_path,
+                    "tasks": tasks,
+                }
+            task_id = uuid.uuid4().hex[:8]
+            new_task = {
+                "id": task_id,
+                "content": content,
+                "status": "pending",
+                "priority": priority or "medium",
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+            }
+            tasks.append(new_task)
+            _save_tasks(tasks)
+            return {
+                "result": f"Task added (id={task_id}).",
+                "file": todo_path,
+                "tasks": tasks,
+            }
+
+        if op == "update":
+            if not id:
+                return {
+                    "result": "Error: 'id' is required for update.",
+                    "file": todo_path,
+                    "tasks": tasks,
+                }
+            updated = False
+            for t in tasks:
+                if t.get("id") == id:
+                    if content:
+                        t["content"] = content
+                    if priority:
+                        t["priority"] = priority
+                    t["updated_at"] = datetime.now().isoformat()
+                    updated = True
+                    break
+            if not updated:
+                return {
+                    "result": f"Error: Task id={id} not found.",
+                    "file": todo_path,
+                    "tasks": tasks,
+                }
+            _save_tasks(tasks)
+            return {
+                "result": f"Task updated (id={id}).",
+                "file": todo_path,
+                "tasks": tasks,
+            }
+
+        if op == "mark":
+            if not id or not status:
+                return {
+                    "result": (
+                        "Error: 'id' and 'status' are required for mark."
+                    ),
+                    "file": todo_path,
+                    "tasks": tasks,
+                }
+            if status not in {"pending", "in_progress", "completed"}:
+                return {
+                    "result": "Error: Invalid status.",
+                    "file": todo_path,
+                    "tasks": tasks,
+                }
+            marked = False
+            for t in tasks:
+                if t.get("id") == id:
+                    t["status"] = status
+                    t["updated_at"] = datetime.now().isoformat()
+                    marked = True
+                    break
+            if not marked:
+                return {
+                    "result": f"Error: Task id={id} not found.",
+                    "file": todo_path,
+                    "tasks": tasks,
+                }
+            _save_tasks(tasks)
+            return {
+                "result": f"Task marked as {status} (id={id}).",
+                "file": todo_path,
+                "tasks": tasks,
+            }
+
+        if op == "remove":
+            if not id:
+                return {
+                    "result": "Error: 'id' is required for remove.",
+                    "file": todo_path,
+                    "tasks": tasks,
+                }
+            new_tasks = [t for t in tasks if t.get("id") != id]
+            if len(new_tasks) == len(tasks):
+                return {
+                    "result": f"Error: Task id={id} not found.",
+                    "file": todo_path,
+                    "tasks": tasks,
+                }
+            tasks = new_tasks
+            _save_tasks(tasks)
+            return {
+                "result": f"Task removed (id={id}).",
+                "file": todo_path,
+                "tasks": tasks,
+            }
+
+        if op == "summary":
+            counts = {"pending": 0, "in_progress": 0, "completed": 0}
+            for t in tasks:
+                s = t.get("status", "pending")
+                if s in counts:
+                    counts[s] += 1
+            total = sum(counts.values())
+            summary = {
+                "total": total,
+                "by_status": counts,
+                "by_priority": {
+                    "low": sum(1 for t in tasks if t.get("priority") == "low"),
+                    "medium": sum(
+                        1 for t in tasks if t.get("priority") == "medium"
+                    ),
+                    "high": sum(
+                        1 for t in tasks if t.get("priority") == "high"
+                    ),
+                },
+            }
+            return {
+                "result": "Todo summary computed.",
+                "file": todo_path,
+                "summary": summary,
+            }
+
+        return {
+            "result": f"Error: Unsupported operation '{operation}'.",
+            "file": todo_path,
+            "tasks": tasks,
+        }
+
     async def browser_scroll(
         self, *, direction: str, amount: int = 500
     ) -> Dict[str, Any]:
@@ -1441,6 +1705,7 @@ class HybridBrowserToolkit(BaseToolkit, RegisteredAgentToolkit):
             "browser_get_tab_info": self.browser_get_tab_info,
             "browser_console_view": self.browser_console_view,
             "browser_console_exec": self.browser_console_exec,
+            "browser_todo_list": self.browser_todo_list,
         }
 
         enabled_tools = []
