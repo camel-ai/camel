@@ -581,10 +581,103 @@ class SingleAgentWorker(Worker):
         r"""Save the worker's current workflow memories using agent
         summarization.
 
+        .. deprecated:: 0.2.80
+            Use :meth:`save_workflow_memories_async` for async/await support
+            and better integration with parallel workflow saving.
+
         This method generates a workflow summary from the worker agent's
         conversation history and saves it to a markdown file. The filename
         is based on either the worker's explicit role_name or the generated
         task_title from the summary.
+
+        Returns:
+            Dict[str, Any]: Result dictionary with keys:
+                - status (str): "success" or "error"
+                - summary (str): Generated workflow summary
+                - file_path (str): Path to saved file
+                - worker_description (str): Worker description used
+
+        See Also:
+            :meth:`save_workflow_memories_async`: Async version for better
+                performance in parallel workflows.
+        """
+        import warnings
+
+        warnings.warn(
+            "save_workflow_memories() is synchronous. Consider using "
+            "save_workflow_memories_async() for async/await support.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        try:
+            # validate requirements
+            validation_error = self._validate_workflow_save_requirements()
+            if validation_error:
+                return validation_error
+
+            # setup context utility and agent
+            context_util = self._get_context_utility()
+            self.worker.set_context_utility(context_util)
+
+            # prepare workflow summarization components
+            structured_prompt = self._prepare_workflow_prompt()
+            agent_to_summarize = self._select_agent_for_summarization(
+                context_util
+            )
+
+            # check if we should use role_name or let summarize extract
+            # task_title
+            role_name = getattr(self.worker, 'role_name', 'assistant')
+            use_role_name_for_filename = role_name.lower() not in {
+                'assistant',
+                'agent',
+                'user',
+                'system',
+            }
+
+            # generate and save workflow summary
+            # if role_name is explicit, use it for filename
+            # if role_name is generic, pass none to let summarize use
+            # task_title
+            filename = (
+                self._generate_workflow_filename()
+                if use_role_name_for_filename
+                else None
+            )
+
+            result = agent_to_summarize.summarize(
+                filename=filename,
+                summary_prompt=structured_prompt,
+                response_format=WorkflowSummary,
+            )
+
+            # add worker metadata and cleanup
+            result["worker_description"] = self.description
+            if self._conversation_accumulator is not None:
+                logger.info(
+                    "Cleaning up conversation accumulator after workflow "
+                    "summarization"
+                )
+                self._conversation_accumulator = None
+
+            return result
+
+        except Exception as e:
+            return {
+                "status": "error",
+                "summary": "",
+                "file_path": None,
+                "worker_description": self.description,
+                "message": f"Failed to save workflow memories: {e!s}",
+            }
+
+    async def save_workflow_memories_async(self) -> Dict[str, Any]:
+        r"""Asynchronously save the worker's current workflow memories using
+        agent summarization.
+
+        This is the async version of save_workflow_memories() that uses
+        asummarize() for non-blocking LLM calls, enabling parallel
+        summarization of multiple workers.
 
         Returns:
             Dict[str, Any]: Result dictionary with keys:
@@ -629,7 +722,8 @@ class SingleAgentWorker(Worker):
                 else None
             )
 
-            result = agent_to_summarize.summarize(
+            # **KEY CHANGE**: Using asummarize() instead of summarize()
+            result = await agent_to_summarize.asummarize(
                 filename=filename,
                 summary_prompt=structured_prompt,
                 response_format=WorkflowSummary,
