@@ -708,6 +708,13 @@ def save_workflow_memories(self, session_id: Optional[str] = None):
 Save workflow memories for all SingleAgentWorker instances in the
 workforce.
 
+.. deprecated:: 0.2.80
+This synchronous method processes workers sequentially, which can
+be slow for multiple agents. Use
+:meth:`save_workflow_memories_async`
+instead for parallel processing and significantly better
+performance.
+
 This method iterates through all child workers and triggers workflow
 saving for SingleAgentWorker instances using their
 save_workflow_memories()
@@ -723,6 +730,17 @@ Other worker types are skipped.
   Dict[str, str]: Dictionary mapping worker node IDs to save results.
 Values are either file paths (success) or error messages
 (failure).
+
+**Note:**
+
+For better performance with multiple workers, use the async
+version::
+
+results = await workforce.save_workflow_memories_async()
+
+See Also:
+:meth:`save_workflow_memories_async`: Async version with parallel
+processing for significantly better performance.
 
 <a id="camel.societies.workforce.workforce.Workforce.load_workflow_memories"></a>
 
