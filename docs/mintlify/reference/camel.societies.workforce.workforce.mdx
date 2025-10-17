@@ -101,8 +101,17 @@ def __init__(
 ### _get_or_create_shared_context_utility
 
 ```python
-def _get_or_create_shared_context_utility(self):
+def _get_or_create_shared_context_utility(self, session_id: Optional[str] = None):
 ```
+
+Get or create the shared context utility for workflow management.
+
+This method creates the context utility only when needed, avoiding
+unnecessary session folder creation during initialization.
+
+**Parameters:**
+
+- **session_id** (Optional[str]): Custom session ID to use. If None, auto-generates a timestamped session ID. (default: :obj:`None`)
 
 **Returns:**
 
@@ -693,8 +702,21 @@ be called when the workforce is not running.
 ### save_workflow_memories
 
 ```python
-def save_workflow_memories(self):
+def save_workflow_memories(self, session_id: Optional[str] = None):
 ```
+
+Save workflow memories for all SingleAgentWorker instances in the
+workforce.
+
+This method iterates through all child workers and triggers workflow
+saving for SingleAgentWorker instances using their
+save_workflow_memories()
+method.
+Other worker types are skipped.
+
+**Parameters:**
+
+- **session_id** (Optional[str]): Custom session ID to use for saving workflows. If None, auto-generates a timestamped session ID. Useful for organizing workflows by project or context. (default: :obj:`None`)
 
 **Returns:**
 
