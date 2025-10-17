@@ -124,3 +124,53 @@ def test_tool_output_history_cleared_on_reset(tmp_path):
 
     agent.reset()
     assert agent._tool_output_history == []
+
+
+def test_retrieve_multiple_cached_outputs(tmp_path):
+    agent = ChatAgent(
+        system_message="Multiple cache retrieval tester.",
+        model=StubModel(model_type=ModelType.STUB),
+        tool_call_cache_threshold=10,
+        tool_call_cache_dir=tmp_path,
+    )
+
+    # Record multiple tool calls
+    agent._record_tool_calling(
+        "tool_1",
+        args={"value": "a"},
+        result="A" * 20,
+        tool_call_id="call-1",
+    )
+    agent._record_tool_calling(
+        "tool_2",
+        args={"value": "b"},
+        result="B" * 30,
+        tool_call_id="call-2",
+    )
+
+    # Cache them
+    cached_count = agent._cache_tool_calls()
+    assert cached_count == 2
+
+    # Get cache IDs
+    cache_ids = [
+        entry.cache_id for entry in agent._tool_output_history if entry.cached
+    ]
+    assert len(cache_ids) == 2
+
+    # Test single retrieval (same tool, single ID)
+    result1 = agent.retrieve_cached_tool_output(cache_ids[0])
+    assert "A" * 20 in result1
+
+    # Test multiple retrieval (same tool, multiple IDs)
+    import json
+
+    result_multiple = agent.retrieve_cached_tool_output(
+        f"{cache_ids[0]}, {cache_ids[1]}"
+    )
+    results_dict = json.loads(result_multiple)
+
+    assert cache_ids[0] in results_dict
+    assert cache_ids[1] in results_dict
+    assert "A" * 20 in results_dict[cache_ids[0]]
+    assert "B" * 30 in results_dict[cache_ids[1]]

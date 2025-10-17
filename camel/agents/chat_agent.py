@@ -842,29 +842,58 @@ class ChatAgent(BaseAgent):
         for tool in tools:
             self.add_tool(tool)
 
-    def retrieve_cached_tool_output(self, cache_id: str) -> str:
-        r"""Load a cached tool output by its cache identifier.
+    def retrieve_cached_tool_output(self, cache_ids: str) -> str:
+        r"""Load cached tool output(s) by cache identifier(s).
+
+        Supports both single and multiple cache ID retrieval:
+        - Single ID: Returns the cached content directly as a string
+        - Multiple IDs (comma-separated): Returns a JSON dictionary mapping
+          each cache_id to its content
 
         Args:
-            cache_id (str): Identifier provided in cached tool messages.
+            cache_ids (str): Single cache identifier or comma-separated list
+                of cache identifiers.
 
         Returns:
-            str: The cached content or an explanatory error message.
+            str: For single ID, returns the cached content directly.
+                For multiple IDs, returns a JSON-formatted dictionary mapping
+                cache_ids to their content or error messages.
         """
         if not self._tool_output_cache_manager:
             return "Tool output caching is disabled for this agent instance."
 
-        normalized_cache_id = cache_id.strip()
-        if not normalized_cache_id:
-            return "Please provide a non-empty cache_id."
+        # Parse input - check if it's comma-separated
+        id_list = [cid.strip() for cid in cache_ids.split(',') if cid.strip()]
 
-        try:
-            return self._tool_output_cache_manager.load(normalized_cache_id)
-        except FileNotFoundError:
-            return (
-                f"Cache entry '{normalized_cache_id}' was not found. "
-                "Verify the identifier and try again."
-            )
+        if not id_list:
+            return "Please provide at least one cache_id."
+
+        # Single cache_id - return content directly
+        if len(id_list) == 1:
+            cache_id = id_list[0]
+            try:
+                return self._tool_output_cache_manager.load(cache_id)
+            except FileNotFoundError:
+                return (
+                    f"Cache entry '{cache_id}' was not found. "
+                    "Verify the identifier and try again."
+                )
+
+        # Multiple cache_ids - return JSON dictionary
+        import json
+
+        results = {}
+        for cache_id in id_list:
+            try:
+                results[cache_id] = self._tool_output_cache_manager.load(
+                    cache_id
+                )
+            except FileNotFoundError:
+                results[cache_id] = (
+                    f"[ERROR] Cache entry '{cache_id}' not found"
+                )
+
+        return json.dumps(results, indent=2, ensure_ascii=False)
 
     @property
     def _tool_output_cache_enabled(self) -> bool:
@@ -874,13 +903,14 @@ class ChatAgent(BaseAgent):
     def _ensure_tool_cache_lookup_tool(self) -> None:
         if not self._tool_output_cache_enabled:
             return
+
+        # Register cache lookup tool (supports both single and multiple IDs)
         lookup_name = self._cache_lookup_tool_name
-        if lookup_name in self._internal_tools:
-            return
-        lookup_tool = convert_to_function_tool(
-            self.retrieve_cached_tool_output
-        )
-        self._internal_tools[lookup_tool.get_function_name()] = lookup_tool
+        if lookup_name not in self._internal_tools:
+            lookup_tool = convert_to_function_tool(
+                self.retrieve_cached_tool_output
+            )
+            self._internal_tools[lookup_tool.get_function_name()] = lookup_tool
 
     def _cache_tool_calls(self) -> int:
         r"""Persist eligible tool outputs to the cache store.

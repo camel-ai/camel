@@ -16,11 +16,20 @@
 This demo uses a true LLM backend (configured via the default ``ModelFactory``)
 and a mock browser snapshot tool. The workflow is:
 
-1. Ask the agent to capture a very long snapshot (which will later be cached).
-2. Capture a concise update, then explicitly invoke
-   :meth:`ChatAgent.cache_tool_calls` to cache the earlier verbose output.
-3. Ask the agent to retrieve the cached payload using the automatically
-   registered ``retrieve_cached_tool_output`` tool.
+1. Configure caching in ChatAgent initialization with threshold and cache_dir
+2. Ask the agent to capture two snapshots: a long smartphone page and a short
+   weather widget
+3. Use tool_call_history_cache=True in a step() call to cache tool outputs
+   exceeding the threshold
+4. Ask the agent a question requiring BOTH cached snapshots - it will use the
+   automatically registered ``retrieve_cached_tool_output`` tool to access them
+5. Verify the agent can also retrieve a single snapshot when needed
+
+The example demonstrates:
+- Automatic caching of large tool outputs (>600 chars)
+- Memory efficiency (cached references vs full content)
+- Agent's ability to retrieve single or multiple cached outputs
+- Seamless access to cached data without manual intervention
 
 Prerequisites:
     - Set up the API credentials required by the default model backend
@@ -205,14 +214,22 @@ def main() -> None:
         )
         return
 
-    print("\n>>> Step 3: Ask about the smartphone page (trigger retrieval)")
+    print("\n>>> Step 3: Ask question requiring BOTH cached snapshots")
     prompt3 = (
-        "I need the details from the hero banner on the smartphone store "
-        "page—especially what it says about the display and core specs."
-        "Check whichever snapshots you recorded earlier before you answer."
+        "Compare the information from both snapshots you saved earlier:\n"
+        "1. From the NovaPhone store page, tell me the battery capacity "
+        "of the NovaPhone X Ultra\n"
+        "2. From the weather dashboard, tell me the current temperature\n"
+        "3. Make a comparison between these two pieces of information.\n\n"
+        "You'll need to retrieve BOTH snapshots to answer this question."
     )
     response3 = agent.step(prompt3)
     print(f"Assistant response:\n{response3.msg.content}")
+
+    print("\n>>> Step 4: Verify agent can access single snapshot")
+    prompt4 = "Just tell me the sunset time from the weather widget."
+    response4 = agent.step(prompt4)
+    print(f"Assistant response:\n{response4.msg.content}")
 
 
 if __name__ == "__main__":
@@ -276,20 +293,25 @@ You can request contents or analysis from either snapshot at any time.
 
 1. NovaPhone smartphone page — contains the launch event details, specs, compari
 
->>> Step 3: Ask about the smartphone page (trigger retrieval)
+>>> Step 3: Ask question requiring BOTH cached snapshots
 Assistant response:
-Here are the details from the hero banner section of the NovaPhone smartphone store page:
+Based on the two snapshots I retrieved:
 
-**Display (New Horizon Display):**
-- 6.9" adaptive 1-144Hz
-- Peak brightness 4000 nits
-- Dolby Vision certified
+1. **NovaPhone X Ultra battery capacity:** 5,500 mAh
 
-**Core specs (Performance):**
-- NovaCore G3 chip
-- 12GB LPDDR6 RAM
-- 1TB UFS 5.1 storage
-- Wi-Fi 7 ready
+2. **Current temperature:** 68°F (partly cloudy)
 
-This information was retrieved directly from the snapshot I stored earlier, ensuring accuracy and completeness. Let me know if you need details about other features!
+3. **Creative comparison:**
+   Interestingly, the NovaPhone X Ultra's battery capacity (5,500 mAh) is about
+   80 times larger than the current temperature in degrees Fahrenheit (68°F)!
+
+   While the phone can power through your day with its massive 5,500 mAh battery
+   and 120W wired charging, the weather outside is a pleasant 68°F — perfect
+   conditions for testing that new phone outdoors without worrying about
+   overheating or cold-induced battery drain. The phone's battery is built for
+   performance in any weather!
+
+>>> Step 4: Verify agent can access single snapshot
+Assistant response:
+According to the weather widget snapshot, the sunset time is **7:42 PM**.
 '''  # noqa: E501
