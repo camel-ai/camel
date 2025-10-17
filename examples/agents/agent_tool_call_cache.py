@@ -110,7 +110,6 @@ def cache_browser_snapshot(snapshot: str) -> str:
 
 # Utility functions ---------------------------------------------------------
 def _print_memory(agent: ChatAgent) -> None:
-    print("\n=== Memory after second step ===")
     for idx, ctx_record in enumerate(agent.memory.retrieve(), start=1):
         record = ctx_record.memory_record
         message = record.message
@@ -123,18 +122,21 @@ def _print_memory(agent: ChatAgent) -> None:
                 if isinstance(message.result, str)
                 else str(message.result)
             )
+            result_length = len(result)
             preview = result.replace("\n", " ")[:140]
             if cache_id:
                 print(
                     f"{idx:02d}. role={role} tool_call_id={message.tool_call_id} "  # noqa:E501
-                    f"(cached reference) cache_id={cache_id}"
+                    f"(cached reference) cache_id={cache_id} "
+                    f"result_length={result_length}"
                 )
                 print(f"      preview: {preview}")
             else:
                 print(
                     f"{idx:02d}. role={role} tool_call_id={message.tool_call_id} "  # noqa:E501
-                    f"(inline) preview={preview}"
+                    f"(inline) result_length={result_length}"
                 )
+                print(f"      preview: {preview}")
         else:
             content = getattr(message, "content", "") or ""
             print(f"{idx:02d}. role={role} content={content[:140]}")
@@ -160,10 +162,9 @@ def main() -> None:
         tools=[FunctionTool(cache_browser_snapshot)],
         prune_tool_calls_from_memory=False,
         max_iteration=3,
+        tool_call_cache_threshold=600,
+        tool_call_cache_dir=cache_dir,
     )
-
-    # Enable caching with the desired threshold before any tool calls execute.
-    agent.cache_tool_calls(threshold=600, cache_dir=cache_dir)
 
     print("\n>>> Step 1: Capture verbose snapshot")
     prompt1 = (
@@ -175,22 +176,26 @@ def main() -> None:
     response1 = agent.step(prompt1)
     print(f"Assistant response: {response1.msg.content}")
 
-    print(
-        "\n>>> Step 2: Capture weather snapshot (triggers caching of step 1)"
-    )
+    print("\n>>> Step 2: Capture weather snapshot")
     prompt2 = (
         "Now you are looking at a weather dashboard."
         "Save the widget below as a new snapshot "
         "without paraphrasing it:\n\n"
         f"{WEATHER_DASHBOARD}"
     )
+    # Print memory before caching
+    print("\n=== Memory BEFORE tool_call_history_cache ===")
     response2 = agent.step(prompt2)
     print(f"Assistant response: {response2.msg.content}")
+    _print_memory(agent)
 
-    # Persist the older snapshot to disk and replace it with a reference.
-    newly_cached = agent.cache_tool_calls(include_latest=False)
-    print(f"Cached entries this round: {newly_cached}")
-
+    # Print memory after caching (using tool_call_history_cache=True)
+    print("\n=== Memory AFTER tool_call_history_cache ===")
+    response2_cached = agent.step(
+        "Confirm that both snapshots have been saved.",
+        tool_call_history_cache=True,
+    )
+    print(f"Assistant response: {response2_cached.msg.content}")
     _print_memory(agent)
 
     cached_entry = _find_cached_entry(agent)
@@ -216,36 +221,75 @@ if __name__ == "__main__":
 
 '''
 >>> Step 1: Capture verbose snapshot
-Assistant response: I have saved the current smartphone page from the NovaPhone store exactly as provided. You can reference it later as needed.
+Assistant response: The current NovaPhone X Ultra smartphone page has been stored exactly as-is. You can reference this full markup or request details from it at any time. Let me know if you need to retrieve, compare, or analyze any part of this page!
 
->>> Step 2: Capture weather snapshot (triggers caching of step 1)
-Assistant response: The weather widget has been saved exactly as provided without any paraphrasing. Let me know if you'd like to do anything else with it.
+>>> Step 2: Capture weather snapshot
 
-=== Memory after second step ===
-01. role=system content=You are a browsing assistant. Whenever you need to capture or recall a page, use the available tools to record or retrieve the exact text be
-02. role=user content=You just browsed the NovaPhone store. Store the current smartphone page exactly as-is so we can reference it later. Here is the full markup:
-03. role=assistant tool_call_id=call_iIILkyZtQvrfXHuLCMB2KWnM (inline) preview=None
-04. role=function tool_call_id=call_iIILkyZtQvrfXHuLCMB2KWnM (cached reference) cache_id=bd07770e0c0f461fbe31b4237f90ce2c
-      preview: [cached tool output] tool: cache_browser_snapshot cache_id: bd07770e0c0f461fbe31b4237f90ce2c preview: [browser_snapshot length=1724 characte
-05. role=assistant content=I have saved the current smartphone page from the NovaPhone store exactly as provided. You can reference it later as needed.
-06. role=user content=Now you are looking at a weather dashboard. Save the widget below as a new snapshot without paraphrasing it:
+=== Memory BEFORE tool_call_history_cache ===
+Assistant response: The weather dashboard widget has been stored exactly as you provided it. You can reference or retrieve this snapshot any time. Let me know if you need to review, compare, or analyze the widget's contents!
+01. role=system content=You are a browsing assistant.
+02. role=user content=You just browsed the NovaPhone store.Store the current smartphone page exactly as-is so we can reference it later. Here is the full markup:
+
+03. role=assistant tool_call_id=call_AajvjXwUeugfncrhwEY9fiqy (inline) result_length=4
+      preview: None
+04. role=function tool_call_id=call_AajvjXwUeugfncrhwEY9fiqy (inline) result_length=1796
+      preview: [browser_snapshot length=1726 characters] BEGIN_SNAPSHOT  <html>   <body>     <header>       <h1>NovaPhone X Ultra Launch Event</h1>       <
+05. role=assistant content=The current NovaPhone X Ultra smartphone page has been stored exactly as-is. You can reference this full markup or request details from it a
+06. role=user content=Now you are looking at a weather dashboard.Save the widget below as a new snapshot without paraphrasing it:
 
 
 <div class="weather-widget">
+ 
+07. role=assistant tool_call_id=call_BVR80Veg57rrDVsaxSwronfh (inline) result_length=4
+      preview: None
+08. role=function tool_call_id=call_BVR80Veg57rrDVsaxSwronfh (inline) result_length=294
+      preview: [browser_snapshot length=225 characters] BEGIN_SNAPSHOT  <div class="weather-widget">   <h1>City Weather</h1>   <p>Currently 68°F, partly cl
+09. role=assistant content=The weather dashboard widget has been stored exactly as you provided it. You can reference or retrieve this snapshot any time. Let me know i
 
-07. role=assistant tool_call_id=call_wfl2szFZLV58kRhhRPsJPMnx (inline) preview=None
-08. role=function tool_call_id=call_wfl2szFZLV58kRhhRPsJPMnx (inline) preview=[browser_snapshot length=224 characters] BEGIN_SNAPSHOT <div class="weather-widget">   <h1>City Weather</h1>   <p>Currently 686F, partly cl
-09. role=assistant content=The weather widget has been saved exactly as provided without any paraphrasing. Let me know if you'd like to do anything else with it.
+=== Memory AFTER tool_call_history_cache ===
+Assistant response: Confirmation: Both snapshots have been successfully saved.
 
->>> Step 3: Ask about the smartphone page (should trigger retrieval)
+1. NovaPhone smartphone page — contains the launch event details, specs, comparisons, and availability.
+2. Weather dashboard widget — contains the city weather update, next hour forecast, sunset time, and UV index.
+
+You can request contents or analysis from either snapshot at any time.
+01. role=system content=You are a browsing assistant.
+02. role=user content=You just browsed the NovaPhone store.Store the current smartphone page exactly as-is so we can reference it later. Here is the full markup:
+
+03. role=assistant tool_call_id=call_AajvjXwUeugfncrhwEY9fiqy (inline) result_length=4
+      preview: None
+04. role=function tool_call_id=call_AajvjXwUeugfncrhwEY9fiqy (cached reference) cache_id=4d277c664504420eaa8ae2e5360873e7 result_length=345
+      preview: [cached tool output] tool: cache_browser_snapshot cache_id: 4d277c664504420eaa8ae2e5360873e7 preview: [browser_snapshot length=1726 characte
+05. role=assistant content=The current NovaPhone X Ultra smartphone page has been stored exactly as-is. You can reference this full markup or request details from it a
+06. role=user content=Now you are looking at a weather dashboard.Save the widget below as a new snapshot without paraphrasing it:
+
+
+<div class="weather-widget">
+ 
+07. role=assistant tool_call_id=call_BVR80Veg57rrDVsaxSwronfh (inline) result_length=4
+      preview: None
+08. role=function tool_call_id=call_BVR80Veg57rrDVsaxSwronfh (inline) result_length=294
+      preview: [browser_snapshot length=225 characters] BEGIN_SNAPSHOT  <div class="weather-widget">   <h1>City Weather</h1>   <p>Currently 68°F, partly cl
+09. role=assistant content=The weather dashboard widget has been stored exactly as you provided it. You can reference or retrieve this snapshot any time. Let me know i
+10. role=user content=Confirm that both snapshots have been saved.
+11. role=assistant content=Confirmation: Both snapshots have been successfully saved.
+
+1. NovaPhone smartphone page — contains the launch event details, specs, compari
+
+>>> Step 3: Ask about the smartphone page (trigger retrieval)
 Assistant response:
-From the hero banner section of the smartphone store page the details about the display and core specs are:
+Here are the details from the hero banner section of the NovaPhone smartphone store page:
 
-- Display (under "New Horizon Display"):
-  6.9" adaptive 1-144Hz, peak brightness 4000 nits, Dolby Vision certified.
+**Display (New Horizon Display):**
+- 6.9" adaptive 1-144Hz
+- Peak brightness 4000 nits
+- Dolby Vision certified
 
-- Performance (under "Performance"):
-  NovaCore G3 chip, 12GB LPDDR6, 1TB UFS 5.1 storage, Wi-Fi 7 ready.
+**Core specs (Performance):**
+- NovaCore G3 chip
+- 12GB LPDDR6 RAM
+- 1TB UFS 5.1 storage
+- Wi-Fi 7 ready
 
-Let me know if you want more details from the page.
+This information was retrieved directly from the snapshot I stored earlier, ensuring accuracy and completeness. Let me know if you need details about other features!
 '''  # noqa: E501

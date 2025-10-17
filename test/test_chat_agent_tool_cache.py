@@ -24,12 +24,9 @@ def test_tool_output_caching(tmp_path, threshold):
     agent = ChatAgent(
         system_message="You are a tester.",
         model=StubModel(model_type=ModelType.STUB),
+        tool_call_cache_threshold=threshold,
+        tool_call_cache_dir=tmp_path,
     )
-
-    initial_cached = agent.cache_tool_calls(
-        threshold=threshold, cache_dir=tmp_path, include_latest=False
-    )
-    assert initial_cached == 0
 
     long_result = "A" * (threshold + 10)
     short_result = "short"
@@ -62,7 +59,7 @@ def test_tool_output_caching(tmp_path, threshold):
     )
     assert not cached_entry.cached
 
-    flushed = agent.cache_tool_calls()
+    flushed = agent._cache_tool_calls()
     assert flushed == 1
 
     cached_entry = next(
@@ -102,9 +99,9 @@ def test_tool_output_history_cleared_on_reset(tmp_path):
     agent = ChatAgent(
         system_message="Cache reset tester.",
         model=StubModel(model_type=ModelType.STUB),
+        tool_call_cache_threshold=10,
+        tool_call_cache_dir=tmp_path,
     )
-
-    agent.cache_tool_calls(threshold=10, cache_dir=tmp_path)
 
     agent._record_tool_calling(
         "dummy_tool",
