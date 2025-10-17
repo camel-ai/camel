@@ -36,6 +36,7 @@ from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.models import AnthropicModel, ModelFactory, OpenAIModel
+from camel.responses import ChatAgentResponse
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
     FunctionTool,
@@ -741,6 +742,42 @@ def test_chat_agent_stream_output(step_call_count=3):
             == stream_usage["completion_tokens"]
             + stream_usage["prompt_tokens"]
         ), f"Error in calling round {i+1}"
+
+@pytest.mark.model_backend
+def test_chat_agent_stream_hook(step_call_count=3):
+    system_msg = BaseMessage(
+        "Assistant",
+        RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a helpful assistant.",
+    )
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Tell me a joke.",
+    )
+
+    stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_5_MINI,
+        model_config_dict=stream_model_config.as_dict(),
+    )
+    model.run = MagicMock(return_value=model_backend_rsp_base)
+
+    message_holder = []
+    def stream_hook(message):
+        if isinstance(message, ChatAgentResponse):
+            message_holder.append(message)
+
+    stream_assistant = ChatAgent(system_msg, model=model, stream_hook=stream_hook)
+    stream_assistant.reset()
+    for i in range(step_call_count):
+        stream_assistant_response = stream_assistant.step(user_msg)
+
+        assert stream_assistant_response.msgs[0] == message_holder[0].msgs[0], f"Error in calling round {i+1}"
+
 
 
 @pytest.mark.model_backend
