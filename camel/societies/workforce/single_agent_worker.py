@@ -80,6 +80,7 @@ class AgentPool:
         self._in_use_agents: set = set()
         self._agent_last_used: dict = {}
         self._lock = asyncio.Lock()
+        self._condition = asyncio.Condition(self._lock)
 
         # Statistics
         self._total_borrows = 0
@@ -105,36 +106,31 @@ class AgentPool:
 
     async def get_agent(self) -> ChatAgent:
         r"""Get an agent from the pool, creating one if necessary."""
-        async with self._lock:
+        async with self._condition:
             self._total_borrows += 1
 
-            if self._available_agents:
-                agent = self._available_agents.popleft()
-                self._in_use_agents.add(id(agent))
-                self._pool_hits += 1
-                return agent
-
-            # Check if we can create a new agent
-            if len(self._in_use_agents) < self.max_size or self.auto_scale:
-                agent = self._create_fresh_agent()
-                self._in_use_agents.add(id(agent))
-                return agent
-
-        # Wait for available agent
-        while True:
-            async with self._lock:
+            # Try to get available agent or create new one
+            while True:
                 if self._available_agents:
                     agent = self._available_agents.popleft()
                     self._in_use_agents.add(id(agent))
                     self._pool_hits += 1
                     return agent
-            await asyncio.sleep(0.05)
+
+                # Check if we can create a new agent
+                if len(self._in_use_agents) < self.max_size or self.auto_scale:
+                    agent = self._create_fresh_agent()
+                    self._in_use_agents.add(id(agent))
+                    return agent
+
+                # Wait for an agent to be returned
+                await self._condition.wait()
 
     async def return_agent(self, agent: ChatAgent) -> None:
         r"""Return an agent to the pool."""
         agent_id = id(agent)
 
-        async with self._lock:
+        async with self._condition:
             if agent_id not in self._in_use_agents:
                 return
 
@@ -145,6 +141,8 @@ class AgentPool:
                 agent.reset()
                 self._agent_last_used[agent_id] = time.time()
                 self._available_agents.append(agent)
+                # Notify one waiting coroutine that an agent is available
+                self._condition.notify()
             else:
                 # Remove tracking for agents not returned to pool
                 self._agent_last_used.pop(agent_id, None)
@@ -154,7 +152,7 @@ class AgentPool:
         if not self.auto_scale:
             return
 
-        async with self._lock:
+        async with self._condition:
             if not self._available_agents:
                 return
 
@@ -428,6 +426,7 @@ class SingleAgentWorker(Worker):
                     "usage"
                 ) or final_response.info.get("token_usage")
             else:
+                final_response = response
                 usage_info = response.info.get("usage") or response.info.get(
                     "token_usage"
                 )
@@ -562,10 +561,11 @@ class SingleAgentWorker(Worker):
         while True:
             try:
                 # Fixed interval cleanup
-                await asyncio.sleep(self.agent_pool.cleanup_interval)
-
                 if self.agent_pool:
+                    await asyncio.sleep(self.agent_pool.cleanup_interval)
                     await self.agent_pool.cleanup_idle_agents()
+                else:
+                    break
             except asyncio.CancelledError:
                 break
             except Exception as e:
