@@ -24,10 +24,12 @@ def test_tool_output_caching(tmp_path, threshold):
     agent = ChatAgent(
         system_message="You are a tester.",
         model=StubModel(model_type=ModelType.STUB),
-        enable_tool_output_cache=True,
-        tool_output_cache_threshold=threshold,
-        tool_output_cache_dir=tmp_path,
     )
+
+    initial_cached = agent.cache_tool_calls(
+        threshold=threshold, cache_dir=tmp_path, include_latest=False
+    )
+    assert initial_cached == 0
 
     long_result = "A" * (threshold + 10)
     short_result = "short"
@@ -58,6 +60,16 @@ def test_tool_output_caching(tmp_path, threshold):
         for entry in agent._tool_output_history
         if entry.tool_call_id == "call-1"
     )
+    assert not cached_entry.cached
+
+    flushed = agent.cache_tool_calls()
+    assert flushed == 1
+
+    cached_entry = next(
+        entry
+        for entry in agent._tool_output_history
+        if entry.tool_call_id == "call-1"
+    )
     assert cached_entry.cached
     assert cached_entry.cache_id
 
@@ -72,6 +84,7 @@ def test_tool_output_caching(tmp_path, threshold):
         if (
             isinstance(message, FunctionCallingMessage)
             and getattr(message, "tool_call_id", "") == "call-1"
+            and getattr(message, "result", None)
         ):
             cached_message = message
             break
@@ -79,7 +92,7 @@ def test_tool_output_caching(tmp_path, threshold):
     assert cached_message is not None
     assert cached_entry.cache_id in cached_message.result
     assert agent._cache_lookup_tool_name in cached_message.result
-    assert long_result not in cached_message.result
+    assert cached_message.result != long_result
 
     retrieved = agent.retrieve_cached_tool_output(cached_entry.cache_id)
     assert long_result in retrieved
@@ -89,10 +102,9 @@ def test_tool_output_history_cleared_on_reset(tmp_path):
     agent = ChatAgent(
         system_message="Cache reset tester.",
         model=StubModel(model_type=ModelType.STUB),
-        enable_tool_output_cache=True,
-        tool_output_cache_threshold=10,
-        tool_output_cache_dir=tmp_path,
     )
+
+    agent.cache_tool_calls(threshold=10, cache_dir=tmp_path)
 
     agent._record_tool_calling(
         "dummy_tool",

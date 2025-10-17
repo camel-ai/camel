@@ -452,19 +452,6 @@ class ChatAgent(BaseAgent):
             usage. When enabled, removes FUNCTION/TOOL role messages and
             ASSISTANT messages with tool_calls after each step.
             (default: :obj:`False`)
-        enable_tool_output_cache (bool, optional): Whether to offload verbose
-            historical tool outputs to a local cache and replace them with
-            lightweight references in memory. Only older tool results whose
-            payload length exceeds ``tool_output_cache_threshold`` are cached.
-            (default: :obj:`True`)
-        tool_output_cache_threshold (int, optional): Minimum character length
-            of a tool result before it becomes eligible for caching. Values
-            below or equal to zero disable caching regardless of the toggle.
-            (default: :obj:`2000`)
-        tool_output_cache_dir (Optional[Union[str, Path]], optional): Target
-            directory for cached tool outputs. When omitted, a ``tool_cache``
-            directory relative to the current working directory is used.
-            (default: :obj:`None`)
         retry_attempts (int, optional): Maximum number of retry attempts for
             rate limit errors. (default: :obj:`3`)
         retry_delay (float, optional): Initial delay in seconds between
@@ -516,9 +503,6 @@ class ChatAgent(BaseAgent):
         mask_tool_output: bool = False,
         pause_event: Optional[Union[threading.Event, asyncio.Event]] = None,
         prune_tool_calls_from_memory: bool = False,
-        enable_tool_output_cache: bool = True,
-        tool_output_cache_threshold: int = 2000,
-        tool_output_cache_dir: Optional[Union[str, Path]] = None,
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         step_timeout: Optional[float] = None,
@@ -538,25 +522,13 @@ class ChatAgent(BaseAgent):
         # Assign unique ID
         self.agent_id = agent_id if agent_id else str(uuid.uuid4())
 
-        self._tool_output_cache_enabled = (
-            enable_tool_output_cache and tool_output_cache_threshold > 0
+        # Used for tool call output cache
+        self._tool_output_cache_enabled = False
+        self._tool_output_cache_threshold = 0
+        self._tool_output_cache_dir: Optional[Path] = None
+        self._tool_output_cache_manager: Optional[_ToolOutputCacheManager] = (
+            None
         )
-        self._tool_output_cache_threshold = max(0, tool_output_cache_threshold)
-        self._tool_output_cache_dir: Optional[Path]
-        self._tool_output_cache_manager: Optional[_ToolOutputCacheManager]
-        if self._tool_output_cache_enabled:
-            cache_dir = (
-                Path(tool_output_cache_dir).expanduser()
-                if tool_output_cache_dir is not None
-                else Path("tool_cache")
-            )
-            self._tool_output_cache_dir = cache_dir
-            self._tool_output_cache_manager = _ToolOutputCacheManager(
-                cache_dir
-            )
-        else:
-            self._tool_output_cache_dir = None
-            self._tool_output_cache_manager = None
         self._tool_output_history: List[_ToolOutputHistoryEntry] = []
         self._cache_lookup_tool_name = "retrieve_cached_tool_output"
 
@@ -606,8 +578,6 @@ class ChatAgent(BaseAgent):
                 convert_to_function_tool(tool) for tool in (tools or [])
             ]
         }
-        if self._tool_output_cache_enabled:
-            self._ensure_tool_cache_lookup_tool()
 
         # Register agent with toolkits that have RegisteredAgentToolkit mixin
         if toolkits_to_register_agent:
@@ -644,8 +614,7 @@ class ChatAgent(BaseAgent):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
-        if self._tool_output_cache_enabled:
-            self._tool_output_history.clear()
+        self._tool_output_history.clear()
         for terminator in self.response_terminators:
             terminator.reset()
 
@@ -901,6 +870,71 @@ class ChatAgent(BaseAgent):
         )
         self._internal_tools[lookup_tool.get_function_name()] = lookup_tool
 
+    def cache_tool_calls(
+        self,
+        threshold: Optional[int] = None,
+        cache_dir: Optional[Union[str, Path]] = None,
+        include_latest: bool = True,
+    ) -> int:
+        r"""Persist eligible tool outputs to the cache store.
+
+        Args:
+            threshold (int, optional): Minimum character length of a tool
+                result before it becomes eligible for caching. When omitted,
+                the last configured threshold (or ``2000`` if none) is used.
+                Non-positive values disable caching and clear the cache
+                manager setup. (default: :obj:`None`)
+            cache_dir (Optional[Union[str, Path]], optional): Directory for
+                cached tool outputs. When omitted, the previously configured
+                directory (or ``tool_cache``) is used. (default: :obj:`None`)
+            include_latest (bool, optional): When ``True``, the newest tool
+                result is also considered for caching. (default: :obj:`True`)
+
+        Returns:
+            int: Number of tool outputs that were newly cached.
+        """
+
+        current_threshold = (
+            self._tool_output_cache_threshold
+            if self._tool_output_cache_threshold > 0
+            else 2000
+        )
+        normalized_threshold = (
+            max(0, threshold) if threshold is not None else current_threshold
+        )
+
+        self._tool_output_cache_threshold = normalized_threshold
+
+        if normalized_threshold <= 0:
+            self._tool_output_cache_enabled = False
+            self._tool_output_cache_manager = None
+            self._tool_output_cache_dir = None
+            self._internal_tools.pop(self._cache_lookup_tool_name, None)
+            return 0
+
+        cache_path: Path
+        if cache_dir is not None:
+            cache_path = Path(cache_dir).expanduser()
+        elif self._tool_output_cache_dir is not None:
+            cache_path = self._tool_output_cache_dir
+        else:
+            cache_path = Path("tool_cache")
+
+        self._tool_output_cache_dir = cache_path
+        self._tool_output_cache_manager = _ToolOutputCacheManager(cache_path)
+        self._tool_output_cache_enabled = True
+
+        cached_count = self._process_tool_output_cache(
+            include_latest=include_latest
+        )
+
+        if any(entry.cached for entry in self._tool_output_history):
+            self._ensure_tool_cache_lookup_tool()
+        else:
+            self._internal_tools.pop(self._cache_lookup_tool_name, None)
+
+        return cached_count
+
     def _serialize_tool_result(self, result: Any) -> str:
         if isinstance(result, str):
             return result
@@ -934,23 +968,37 @@ class ChatAgent(BaseAgent):
             preview_text=self._summarize_tool_result(result_text),
         )
         self._tool_output_history.append(entry)
-        self._process_tool_output_cache()
 
-    def _process_tool_output_cache(self) -> None:
+    def _process_tool_output_cache(
+        self, *, include_latest: bool = False
+    ) -> int:
         if (
             not self._tool_output_cache_enabled
             or not self._tool_output_history
             or self._tool_output_cache_manager is None
         ):
-            return
+            return 0
 
-        # Only cache older results; keep the latest expanded for immediate use.
-        for entry in self._tool_output_history[:-1]:
+        cached_count = 0
+
+        # Only cache older results by default; keep the fresh result expanded
+        # unless explicitly requested to include it as well.
+        history = (
+            self._tool_output_history
+            if include_latest
+            else self._tool_output_history[:-1]
+        )
+
+        for entry in history:
             if entry.cached:
                 continue
             if len(entry.result_text) < self._tool_output_cache_threshold:
                 continue
             self._cache_tool_output_entry(entry)
+            if entry.cached:
+                cached_count += 1
+
+        return cached_count
 
     def _cache_tool_output_entry(self, entry: _ToolOutputHistoryEntry) -> None:
         if self._tool_output_cache_manager is None or not entry.record_uuids:
@@ -1583,8 +1631,7 @@ class ChatAgent(BaseAgent):
             None
         """
         self.memory.clear()
-        if self._tool_output_cache_enabled:
-            self._tool_output_history.clear()
+        self._tool_output_history.clear()
 
         if self.system_message is not None:
             self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
@@ -4402,11 +4449,14 @@ class ChatAgent(BaseAgent):
             tool_execution_timeout=self.tool_execution_timeout,
             pause_event=self.pause_event,
             prune_tool_calls_from_memory=self.prune_tool_calls_from_memory,
-            enable_tool_output_cache=self._tool_output_cache_enabled,
-            tool_output_cache_threshold=self._tool_output_cache_threshold,
-            tool_output_cache_dir=self._tool_output_cache_dir,
             stream_accumulate=self.stream_accumulate,
         )
+
+        if self._tool_output_cache_enabled:
+            new_agent.cache_tool_calls(
+                threshold=self._tool_output_cache_threshold,
+                cache_dir=self._tool_output_cache_dir,
+            )
 
         # Copy memory if requested
         if with_memory:

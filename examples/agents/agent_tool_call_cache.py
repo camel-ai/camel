@@ -17,8 +17,8 @@ This demo uses a true LLM backend (configured via the default ``ModelFactory``)
 and a mock browser snapshot tool. The workflow is:
 
 1. Ask the agent to capture a very long snapshot (which will later be cached).
-2. Capture a concise update, triggering the caching of the earlier verbose
-   output.
+2. Capture a concise update, then explicitly invoke
+   :meth:`ChatAgent.cache_tool_calls` to cache the earlier verbose output.
 3. Ask the agent to retrieve the cached payload using the automatically
    registered ``retrieve_cached_tool_output`` tool.
 
@@ -151,19 +151,19 @@ def _find_cached_entry(agent: ChatAgent):
 def main() -> None:
     cache_dir = Path(__file__).resolve().parent / "tool_cache"
     backend = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
+        model_platform=ModelPlatformType.AZURE,
         model_type=ModelType.GPT_4_1_MINI,
     )
     agent = ChatAgent(
         system_message=("You are a browsing assistant."),
         model=backend,
         tools=[FunctionTool(cache_browser_snapshot)],
-        enable_tool_output_cache=True,
-        tool_output_cache_threshold=600,
-        tool_output_cache_dir=cache_dir,
         prune_tool_calls_from_memory=False,
         max_iteration=3,
     )
+
+    # Enable caching with the desired threshold before any tool calls execute.
+    agent.cache_tool_calls(threshold=600, cache_dir=cache_dir)
 
     print("\n>>> Step 1: Capture verbose snapshot")
     prompt1 = (
@@ -186,6 +186,10 @@ def main() -> None:
     )
     response2 = agent.step(prompt2)
     print(f"Assistant response: {response2.msg.content}")
+
+    # Persist the older snapshot to disk and replace it with a reference.
+    newly_cached = agent.cache_tool_calls(include_latest=False)
+    print(f"Cached entries this round: {newly_cached}")
 
     _print_memory(agent)
 
