@@ -71,7 +71,6 @@ from camel.memories import (
     MemoryRecord,
     ScoreBasedContextCreator,
 )
-from camel.memories.blocks.chat_history_block import EmptyMemoryWarning
 from camel.messages import (
     BaseMessage,
     FunctionCallingMessage,
@@ -877,9 +876,7 @@ class ChatAgent(BaseAgent):
                 [message.to_openai_message(role)]
             )
 
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=EmptyMemoryWarning)
-                _, ctx_tokens = self.memory.get_context()
+            _, ctx_tokens = self.memory.get_context()
 
             remaining_budget = max(0, token_limit - ctx_tokens)
 
@@ -1104,7 +1101,6 @@ class ChatAgent(BaseAgent):
         See Also:
             :meth:`asummarize`: Async version for non-blocking LLM calls.
         """
-        import warnings
 
         warnings.warn(
             "summarize() is synchronous. Consider using asummarize() "
@@ -1643,7 +1639,7 @@ class ChatAgent(BaseAgent):
         message.
         """
         self.memory.clear()
-        # avoid UserWarning: The `ChatHistoryMemory` is empty.
+        # Write system message to memory if provided
         if self.system_message is not None:
             self.memory.write_record(
                 MemoryRecord(
