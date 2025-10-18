@@ -283,8 +283,35 @@ class ToolkitMessageIntegration:
 
             # Check if this function should be enhanced
             if function_names is None or func.__name__ in function_names:
-                enhanced_func = self._add_messaging_to_tool(func)
-                enhanced_tools.append(FunctionTool(enhanced_func))
+                # If func is a bound toolkit method, route to register_toolkits
+                if hasattr(func, '__self__') and isinstance(
+                    func.__self__, BaseToolkit
+                ):
+                    toolkit_instance = func.__self__
+                    method_name = func.__name__
+
+                    # Enhance the specific method on the toolkit instance
+                    enhanced_toolkit = self.register_toolkits(
+                        toolkit_instance, tool_names=[method_name]
+                    )
+
+                    # Fetch the enhanced method back
+                    enhanced_method = getattr(enhanced_toolkit, method_name)
+
+                    # Preserve schema if the input was a FunctionTool
+                    if isinstance(item, FunctionTool):
+                        enhanced_tools.append(
+                            FunctionTool(
+                                func=enhanced_method,
+                                openai_tool_schema=item.get_openai_tool_schema(),
+                            )
+                        )
+                    else:
+                        enhanced_tools.append(FunctionTool(enhanced_method))
+                else:
+                    # Standalone function: add messaging wrapper directly
+                    enhanced_func = self._add_messaging_to_tool(func)
+                    enhanced_tools.append(FunctionTool(enhanced_func))
             else:
                 # Return as FunctionTool regardless of input type
                 if isinstance(item, FunctionTool):
@@ -300,6 +327,7 @@ class ToolkitMessageIntegration:
         This internal method modifies the function signature and docstring
         to include optional messaging parameters that trigger status updates.
         """
+
         # Get the original signature
         original_sig = inspect.signature(func)
 
