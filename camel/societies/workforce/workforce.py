@@ -463,11 +463,18 @@ class Workforce(BaseNode):
         # Helper for propagating pause control to externally supplied agents
         # ------------------------------------------------------------------
 
-    def _get_or_create_shared_context_utility(self) -> "ContextUtility":
+    def _get_or_create_shared_context_utility(
+        self,
+        session_id: Optional[str] = None,
+    ) -> "ContextUtility":
         r"""Get or create the shared context utility for workflow management.
 
         This method creates the context utility only when needed, avoiding
         unnecessary session folder creation during initialization.
+
+        Args:
+            session_id (Optional[str]): Custom session ID to use. If None,
+                auto-generates a timestamped session ID. (default: :obj:`None`)
 
         Returns:
             ContextUtility: The shared context utility instance.
@@ -475,8 +482,8 @@ class Workforce(BaseNode):
         if self._shared_context_utility is None:
             from camel.utils.context_utils import ContextUtility
 
-            self._shared_context_utility = (
-                ContextUtility.get_workforce_shared()
+            self._shared_context_utility = ContextUtility.get_workforce_shared(
+                session_id=session_id
             )
         return self._shared_context_utility
 
@@ -2132,15 +2139,31 @@ class Workforce(BaseNode):
         else:
             self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
 
-    def save_workflow_memories(self) -> Dict[str, str]:
+    def save_workflow_memories(
+        self,
+        session_id: Optional[str] = None,
+    ) -> Dict[str, str]:
         r"""Save workflow memories for all SingleAgentWorker instances in the
         workforce.
+
+        .. deprecated:: 0.2.80
+            This synchronous method processes workers sequentially, which can
+            be slow for multiple agents. Use
+            :meth:`save_workflow_memories_async`
+            instead for parallel processing and significantly better
+            performance.
 
         This method iterates through all child workers and triggers workflow
         saving for SingleAgentWorker instances using their
         save_workflow_memories()
         method.
         Other worker types are skipped.
+
+        Args:
+            session_id (Optional[str]): Custom session ID to use for saving
+                workflows. If None, auto-generates a timestamped session ID.
+                Useful for organizing workflows by project or context.
+                (default: :obj:`None`)
 
         Returns:
             Dict[str, str]: Dictionary mapping worker node IDs to save results.
@@ -2150,15 +2173,41 @@ class Workforce(BaseNode):
         Example:
             >>> workforce = Workforce("My Team")
             >>> # ... add workers and process tasks ...
-            >>> results = workforce.save_workflows()
+            >>> # save with auto-generated session id
+            >>> results = workforce.save_workflow_memories()
             >>> print(results)
-            {'worker_123': '/path/to/data_analyst_workflow_20250122.md',
+            {'worker_123': '/path/to/developer_agent_workflow.md',
              'worker_456': 'error: No conversation context available'}
+            >>> # save with custom project id
+            >>> results = workforce.save_workflow_memories(
+            ...     session_id="project_123"
+            ... )
+
+        Note:
+            For better performance with multiple workers, use the async
+            version::
+
+                results = await workforce.save_workflow_memories_async()
+
+        See Also:
+            :meth:`save_workflow_memories_async`: Async version with parallel
+                processing for significantly better performance.
         """
+        import warnings
+
+        warnings.warn(
+            "save_workflow_memories() is slow for multiple workers. "
+            "Consider using save_workflow_memories_async() for parallel "
+            "processing and ~4x faster performance.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         results = {}
 
         # Get or create shared context utility for this save operation
-        shared_context_utility = self._get_or_create_shared_context_utility()
+        shared_context_utility = self._get_or_create_shared_context_utility(
+            session_id=session_id
+        )
 
         for child in self._children:
             if isinstance(child, SingleAgentWorker):
@@ -2189,6 +2238,116 @@ class Workforce(BaseNode):
                 )
 
         logger.info(f"Workflow save completed for {len(results)} workers")
+        return results
+
+    async def save_workflow_memories_async(
+        self,
+        session_id: Optional[str] = None,
+    ) -> Dict[str, str]:
+        r"""Asynchronously save workflow memories for all SingleAgentWorker
+        instances in the workforce.
+
+        This is the async version of save_workflow_memories() that parallelizes
+        LLM summarization calls across all workers using asyncio.gather(),
+        significantly reducing total save time.
+
+        This method iterates through all child workers and triggers workflow
+        saving for SingleAgentWorker instances using their
+        save_workflow_memories_async() method in parallel.
+        Other worker types are skipped.
+
+        Args:
+            session_id (Optional[str]): Custom session ID to use for saving
+                workflows. If None, auto-generates a timestamped session ID.
+                Useful for organizing workflows by project or context.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, str]: Dictionary mapping worker node IDs to save results.
+                Values are either file paths (success) or error messages
+                (failure).
+
+        Example:
+            >>> workforce = Workforce("My Team")
+            >>> # ... add workers and process tasks ...
+            >>> # save with parallel summarization (faster)
+            >>> results = await workforce.save_workflow_memories_async()
+            >>> print(results)
+            {'worker_123': '/path/to/developer_agent_workflow.md',
+             'worker_456': '/path/to/search_agent_workflow.md',
+             'worker_789': '/path/to/document_agent_workflow.md'}
+        """
+        import asyncio
+
+        results = {}
+
+        # Get or create shared context utility for this save operation
+        shared_context_utility = self._get_or_create_shared_context_utility(
+            session_id=session_id
+        )
+
+        # Prepare tasks for parallel execution
+        async def save_single_worker(
+            child: BaseNode,
+        ) -> tuple[str, str]:
+            """Save workflow for a single worker, then return (node_id,
+            result)."""
+            if isinstance(child, SingleAgentWorker):
+                try:
+                    # Set the shared context utility for this operation
+                    child._shared_context_utility = shared_context_utility
+                    child.worker.set_context_utility(shared_context_utility)
+
+                    result = await child.save_workflow_memories_async()
+                    if result.get("status") == "success":
+                        return (
+                            child.node_id,
+                            result.get("file_path", "unknown_path"),
+                        )
+                    else:
+                        # Error: check if there's a separate message field,
+                        # otherwise use the status itself
+                        error_msg = result.get(
+                            "message", result.get("status", "Unknown error")
+                        )
+                        return (child.node_id, f"error: {error_msg}")
+
+                except Exception as e:
+                    return (child.node_id, f"error: {e!s}")
+            else:
+                # Skip non-SingleAgentWorker types
+                return (
+                    child.node_id,
+                    f"skipped: {type(child).__name__} not supported",
+                )
+
+        # Create tasks for all workers
+        tasks = [save_single_worker(child) for child in self._children]
+
+        # Execute all tasks in parallel using asyncio.gather()
+        parallel_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Process results
+        for result in parallel_results:
+            if isinstance(result, Exception):
+                # Handle any unexpected exceptions
+                logger.error(
+                    f"Unexpected error during workflow save: {result}"
+                )
+                results["unknown"] = f"error: {result!s}"
+            elif isinstance(result, tuple) and len(result) == 2:
+                # Successfully got (node_id, save_result) tuple
+                node_id, save_result = result
+                results[node_id] = save_result
+            else:
+                # Unexpected result format
+                logger.error(f"Unexpected result format: {result}")
+                results["unknown"] = "error: unexpected result format"
+
+        logger.info(
+            f"Workflow save completed for {len(results)} workers "
+            f"(parallelized)"
+        )
         return results
 
     def load_workflow_memories(
