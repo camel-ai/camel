@@ -130,12 +130,12 @@ def test_in_memory_storage_deduplication():
     assert loaded[0]["uuid"] == "test-uuid-1"
 
 
-def test_in_memory_storage_load_performance():
-    r"""Test that load() returns a shallow copy for performance."""
+def test_in_memory_storage_load_deep_copy():
+    r"""Test that load() returns a deep copy to prevent data mutations."""
     storage = InMemoryKeyValueStorage()
 
-    # Create a large number of records
-    records = [{"uuid": f"uuid-{i}", "data": f"data-{i}"} for i in range(100)]
+    # Create records
+    records = [{"uuid": f"uuid-{i}", "data": f"data-{i}"} for i in range(10)]
     storage.save(records)
 
     # Load records
@@ -143,10 +143,14 @@ def test_in_memory_storage_load_performance():
     loaded2 = storage.load()
 
     # Verify content is correct
-    assert len(loaded1) == 100
-    assert len(loaded2) == 100
+    assert len(loaded1) == 10
+    assert len(loaded2) == 10
 
     # Modifying loaded list should not affect storage
     loaded1.append({"uuid": "new", "data": "new"})
     loaded2_after = storage.load()
-    assert len(loaded2_after) == 100  # Still 100, not 101
+    assert len(loaded2_after) == 10  # Still 10, not 11
+
+    loaded1[0]["data"] = "MUTATED"
+    loaded_verify = storage.load()
+    assert loaded_verify[0]["data"] == "data-0"  # Should be original value

@@ -58,15 +58,11 @@ class InMemoryKeyValueStorage(BaseKeyValueStorage):
     def load(self) -> List[Dict[str, Any]]:
         r"""Loads all stored records from the key-value storage system.
 
-        Returns a shallow copy of the list with references to the original
-        record dictionaries. Since records are already deep copied during
-        save(), this avoids the expensive deep copy operation on load().
-
         Returns:
             List[Dict[str, Any]]: A list of dictionaries, where each dictionary
                 represents a stored record.
         """
-        return list(self.memory_list)
+        return deepcopy(self.memory_list)
 
     def clear(self) -> None:
         r"""Removes all records from the key-value storage system."""
