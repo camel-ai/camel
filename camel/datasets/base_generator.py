@@ -290,3 +290,28 @@ class BaseGenerator(abc.ABC, IterableDataset):
             f"Successfully loaded {len(raw_data)} items from {file_path}"
         )
         return raw_data
+
+    def __getitem__(self, index: int) -> DataPoint:
+        r"""Get a datapoint by index without removing the datapoint from _data.
+
+        Args:
+            index (int): Index of the datapoint to retrieve.
+
+        Returns:
+            DataPoint: The datapoint at the specified index.
+
+        Raises:
+            IndexError: If the index is out of range.
+        """
+        if index < 0 or index >= len(self._data):
+            raise IndexError(f"Index {index} is out of range")
+
+        return self._data[index]
+
+    def __len__(self) -> int:
+        r"""Get the number of datapoints in the dataset.
+
+        Returns:
+            int: The number of datapoints.
+        """
+        return len(self._data)
