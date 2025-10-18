@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 
 from .events import (
     AllTasksCompletedEvent,
+    QueueStatusEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -71,4 +72,8 @@ class WorkforceCallback(ABC):
 
     @abstractmethod
     def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
+        pass
+
+    @abstractmethod
+    def log_queue_status(self, event: QueueStatusEvent) -> None:
         pass

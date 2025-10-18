@@ -27,6 +27,7 @@ from camel.logger import get_logger
 from camel.models import ModelFactory
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
+    QueueStatusEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -96,6 +97,12 @@ class PrintCallback(WorkforceCallback):
 
     def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
         print("[PrintCallback] all_tasks_completed")
+
+    def log_queue_status(self, event: QueueStatusEvent) -> None:
+        print(
+            f"[PrintCallback] queue_status: name={event.queue_name}, "
+            f"length={event.length}"
+        )
 
 
 def build_teacher_agent() -> ChatAgent:
