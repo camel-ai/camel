@@ -63,94 +63,31 @@ def test_key_value_storage(storage: BaseKeyValueStorage):
     assert load_msg == []
 
 
-def test_in_memory_storage_deduplication():
-    r"""Test InMemoryKeyValueStorage prevents duplicate records by UUID."""
+def test_in_memory_storage_deep_copy_protection():
+    r"""Test that load() and save() use deep copy to prevent data mutations."""
     storage = InMemoryKeyValueStorage()
 
-    # Create records with UUIDs
-    record1 = {
-        "uuid": "test-uuid-1",
-        "message": "First message",
-        "data": "some data",
-    }
-    record2 = {
-        "uuid": "test-uuid-2",
-        "message": "Second message",
-        "data": "other data",
-    }
-    record1_duplicate = {
-        "uuid": "test-uuid-1",  # Same UUID as record1
-        "message": "Duplicate message",
-        "data": "different data",
-    }
+    # Test 1: Deep copy on save() prevents input mutation affecting storage
+    input_record = {"uuid": "test-1", "data": {"nested": "value"}}
+    storage.save([input_record])
 
-    # Save initial records
-    storage.save([record1, record2])
+    # Mutate the input record
+    input_record["data"]["nested"] = "MUTATED_INPUT"
+
+    # Storage should be unaffected
     loaded = storage.load()
-    assert len(loaded) == 2
+    assert loaded[0]["data"]["nested"] == "value"
 
-    # Try to save duplicate
-    storage.save([record1_duplicate])
-    loaded = storage.load()
-    assert len(loaded) == 2  # Should still be 2, duplicate not added
-
-    # Verify original record1 is intact (not overwritten)
-    record1_loaded = next(r for r in loaded if r.get("uuid") == "test-uuid-1")
-    assert record1_loaded["message"] == "First message"
-    assert record1_loaded["data"] == "some data"
-
-    # Save a new record with different UUID
-    record3 = {
-        "uuid": "test-uuid-3",
-        "message": "Third message",
-        "data": "new data",
-    }
-    storage.save([record3])
-    loaded = storage.load()
-    assert len(loaded) == 3
-
-    # Test records without UUID (should be allowed)
-    record_no_uuid = {
-        "message": "No UUID message",
-        "data": "no uuid data",
-    }
-    storage.save([record_no_uuid])
-    loaded = storage.load()
-    assert len(loaded) == 4
-
-    # Clear and verify
-    storage.clear()
-    loaded = storage.load()
-    assert len(loaded) == 0
-
-    # After clear, should be able to add previously seen UUIDs again
-    storage.save([record1])
-    loaded = storage.load()
-    assert len(loaded) == 1
-    assert loaded[0]["uuid"] == "test-uuid-1"
-
-
-def test_in_memory_storage_load_deep_copy():
-    r"""Test that load() returns a deep copy to prevent data mutations."""
-    storage = InMemoryKeyValueStorage()
-
-    # Create records
-    records = [{"uuid": f"uuid-{i}", "data": f"data-{i}"} for i in range(10)]
-    storage.save(records)
-
-    # Load records
+    # Test 2: Deep copy on load() prevents output mutation affecting storage
     loaded1 = storage.load()
+    loaded1[0]["data"]["nested"] = "MUTATED_OUTPUT"
+
+    # Storage should be unaffected
     loaded2 = storage.load()
+    assert loaded2[0]["data"]["nested"] == "value"
 
-    # Verify content is correct
-    assert len(loaded1) == 10
-    assert len(loaded2) == 10
-
-    # Modifying loaded list should not affect storage
-    loaded1.append({"uuid": "new", "data": "new"})
-    loaded2_after = storage.load()
-    assert len(loaded2_after) == 10  # Still 10, not 11
-
-    loaded1[0]["data"] = "MUTATED"
-    loaded_verify = storage.load()
-    assert loaded_verify[0]["data"] == "data-0"  # Should be original value
+    # Test 3: Modifying loaded list should not affect storage
+    loaded3 = storage.load()
+    loaded3.append({"uuid": "new", "data": "new"})
+    loaded4 = storage.load()
+    assert len(loaded4) == 1  # Still 1, not 2

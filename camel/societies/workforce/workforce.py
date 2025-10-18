@@ -295,6 +295,8 @@ class Workforce(BaseNode):
         self._last_snapshot_time: float = 0.0
         # Minimum seconds between automatic snapshots
         self.snapshot_interval: float = 30.0
+        # Shared memory UUID tracking to prevent re-sharing duplicates
+        self._shared_memory_uuids: Set[str] = set()
         if self.metrics_logger:
             for child in self._children:
                 worker_type = type(child).__name__
@@ -644,14 +646,29 @@ class Workforce(BaseNode):
                 )
                 return
 
-            # Share with coordinator agent
+            # Filter out already-shared records to prevent re-sharing
+            # This prevents exponential growth of duplicate records
+            new_records = []
             for record in memory_records:
-                # Only add records from other agents
+                record_uuid = str(record.uuid)
+                if record_uuid not in self._shared_memory_uuids:
+                    new_records.append(record)
+                    self._shared_memory_uuids.add(record_uuid)
+
+            if not new_records:
+                logger.debug(
+                    "No new records to share (all were already shared)"
+                )
+                return
+
+            # Share with coordinator agent
+            for record in new_records:
+                # Only add records from other agents to avoid duplication
                 if record.agent_id != self.coordinator_agent.agent_id:
                     self.coordinator_agent.memory.write_record(record)
 
             # Share with task agent
-            for record in memory_records:
+            for record in new_records:
                 if record.agent_id != self.task_agent.agent_id:
                     self.task_agent.memory.write_record(record)
 
@@ -663,12 +680,12 @@ class Workforce(BaseNode):
             ]
 
             for worker in single_agent_workers:
-                for record in memory_records:
+                for record in new_records:
                     if record.agent_id != worker.worker.agent_id:
                         worker.worker.memory.write_record(record)
 
             logger.info(
-                f"Shared {len(memory_records)} memory records across "
+                f"Shared {len(new_records)} new memory records across "
                 f"{len(single_agent_workers) + 2} agents in workforce "
                 f"{self.node_id}"
             )

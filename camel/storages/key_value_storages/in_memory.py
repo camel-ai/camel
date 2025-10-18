@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from copy import deepcopy
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
 
@@ -26,34 +26,15 @@ class InMemoryKeyValueStorage(BaseKeyValueStorage):
 
     def __init__(self) -> None:
         self.memory_list: List[Dict] = []
-        self._record_uuids: Set[str] = set()
 
     def save(self, records: List[Dict[str, Any]]) -> None:
         r"""Saves a batch of records to the key-value storage system.
-
-        This method prevents duplicate records by checking the 'uuid' field.
-        If a record with the same UUID already exists, it will be skipped.
 
         Args:
             records (List[Dict[str, Any]]): A list of dictionaries, where each
                 dictionary represents a unique record to be stored.
         """
-        new_records = []
-        for record in records:
-            # Check for duplicate by uuid if available
-            record_uuid = record.get('uuid')
-            if record_uuid and record_uuid in self._record_uuids:
-                continue
-
-            # Deep copy the record to prevent external mutations
-            new_record = deepcopy(record)
-            new_records.append(new_record)
-
-            # Track the uuid for deduplication
-            if record_uuid:
-                self._record_uuids.add(record_uuid)
-
-        self.memory_list.extend(new_records)
+        self.memory_list.extend(deepcopy(records))
 
     def load(self) -> List[Dict[str, Any]]:
         r"""Loads all stored records from the key-value storage system.
@@ -67,4 +48,3 @@ class InMemoryKeyValueStorage(BaseKeyValueStorage):
     def clear(self) -> None:
         r"""Removes all records from the key-value storage system."""
         self.memory_list.clear()
-        self._record_uuids.clear()
