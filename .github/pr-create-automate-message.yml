@@ -23,7 +23,7 @@ In the meantime, please double-check the **file changes** and ensure that **all 
 
 If there are any **unresolved review comments**, feel free to resolve them. 🙌🏼
 
-cc @maintainer1 @maintainer2`;
+cc @fengju0213`;
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
