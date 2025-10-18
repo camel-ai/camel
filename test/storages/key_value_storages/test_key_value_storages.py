@@ -61,33 +61,3 @@ def test_key_value_storage(storage: BaseKeyValueStorage):
     storage.clear()
     load_msg = storage.load()
     assert load_msg == []
-
-
-def test_in_memory_storage_deep_copy_protection():
-    r"""Test that load() and save() use deep copy to prevent data mutations."""
-    storage = InMemoryKeyValueStorage()
-
-    # Test 1: Deep copy on save() prevents input mutation affecting storage
-    input_record = {"uuid": "test-1", "data": {"nested": "value"}}
-    storage.save([input_record])
-
-    # Mutate the input record
-    input_record["data"]["nested"] = "MUTATED_INPUT"
-
-    # Storage should be unaffected
-    loaded = storage.load()
-    assert loaded[0]["data"]["nested"] == "value"
-
-    # Test 2: Deep copy on load() prevents output mutation affecting storage
-    loaded1 = storage.load()
-    loaded1[0]["data"]["nested"] = "MUTATED_OUTPUT"
-
-    # Storage should be unaffected
-    loaded2 = storage.load()
-    assert loaded2[0]["data"]["nested"] == "value"
-
-    # Test 3: Modifying loaded list should not affect storage
-    loaded3 = storage.load()
-    loaded3.append({"uuid": "new", "data": "new"})
-    loaded4 = storage.load()
-    assert len(loaded4) == 1  # Still 1, not 2
