@@ -517,7 +517,6 @@ Real-world usecases demonstrating how CAMEL’s multi-agent framework enables re
 |:---|:---|
 | **[ChatDev](https://github.com/OpenBMB/ChatDev/tree/main/camel)** | Communicative Agents for software Development |
 | **[Paper2Poster](https://github.com/Paper2Poster/Paper2Poster)** | Multimodal poster automation from scientific papers |
-| **[Paper2Video](https://github.com/showlab/Paper2Video)** | Automatic video generation from scientific papers |
 
 ### Product Projects
 
@@ -549,14 +548,6 @@ We are actively involved in community events including:
 > For those who'd like to contribute code, we appreciate your interest in contributing to our open-source initiative. Please take a moment to review our [contributing guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) to get started on a smooth collaboration journey.🚀
 >
 > We also welcome you to help CAMEL grow by sharing it on social media, at events, or during conferences. Your support makes a big difference!
-
-## Contributors
-
-<a href="https://github.com/camel-ai/camel/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=camel-ai/camel" />
-</a>
-
-Made with [contrib.rocks](https://contrib.rocks).
 
 <br>
 

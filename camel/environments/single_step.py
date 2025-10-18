@@ -218,34 +218,9 @@ class SingleStepEnv:
             return observations[0] if batch_size == 1 else observations
 
         elif isinstance(self.dataset, BaseGenerator):
-            # Generate more data if needed
-            if batch_size > len(self.dataset):
-                new_datapoints_needed = batch_size - len(self.dataset)
-                await self.dataset.generate_new(n=new_datapoints_needed)
-
-                # Verify that enough data was generated
-                if len(self.dataset) < batch_size:
-                    raise RuntimeError(
-                        f"Failed to generate enough datapoints. "
-                        f"Requested {batch_size}, but only "
-                        f"{len(self.dataset)} available after generation."
-                    )
-
-            # Choose sampling strategy based on whether seed is provided
-            if seed is not None:
-                # Deterministic random sampling when seed is provided
-                random_indices = rng.sample(
-                    range(len(self.dataset)), batch_size
-                )
-                self._states = [self.dataset[ind] for ind in random_indices]
-            else:
-                # Sequential sampling when no seed (backward compatible)
-                # Use async_sample to maintain sequential behavior
-                self._states = [
-                    await self.dataset.async_sample()
-                    for _ in range(batch_size)
-                ]
-
+            self._states = [
+                await self.dataset.async_sample() for _ in range(batch_size)
+            ]
             self.current_batch_size = batch_size
             self._states_done = [False] * batch_size
 

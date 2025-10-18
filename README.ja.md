@@ -548,14 +548,6 @@ CAMELのマルチエージェントフレームワークがインフラ自動化
 >
 > また、CAMELをソーシャルメディア、イベント、カンファレンスで共有することで、CAMELの成長を支援していただくことも歓迎します。あなたのサポートが大きな違いを生みます！
 
-## コントリビューター
-
-<a href="https://github.com/camel-ai/camel/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=camel-ai/camel" />
-</a>
-
-[contrib.rocks](https://contrib.rocks)で作成。
-
 <br>
 
 ## コミュニティ & コンタクト

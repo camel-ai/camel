@@ -80,7 +80,6 @@ class AgentPool:
         self._in_use_agents: set = set()
         self._agent_last_used: dict = {}
         self._lock = asyncio.Lock()
-        self._condition = asyncio.Condition(self._lock)
 
         # Statistics
         self._total_borrows = 0
@@ -106,31 +105,36 @@ class AgentPool:
 
     async def get_agent(self) -> ChatAgent:
         r"""Get an agent from the pool, creating one if necessary."""
-        async with self._condition:
+        async with self._lock:
             self._total_borrows += 1
 
-            # Try to get available agent or create new one
-            while True:
+            if self._available_agents:
+                agent = self._available_agents.popleft()
+                self._in_use_agents.add(id(agent))
+                self._pool_hits += 1
+                return agent
+
+            # Check if we can create a new agent
+            if len(self._in_use_agents) < self.max_size or self.auto_scale:
+                agent = self._create_fresh_agent()
+                self._in_use_agents.add(id(agent))
+                return agent
+
+        # Wait for available agent
+        while True:
+            async with self._lock:
                 if self._available_agents:
                     agent = self._available_agents.popleft()
                     self._in_use_agents.add(id(agent))
                     self._pool_hits += 1
                     return agent
-
-                # Check if we can create a new agent
-                if len(self._in_use_agents) < self.max_size or self.auto_scale:
-                    agent = self._create_fresh_agent()
-                    self._in_use_agents.add(id(agent))
-                    return agent
-
-                # Wait for an agent to be returned
-                await self._condition.wait()
+            await asyncio.sleep(0.05)
 
     async def return_agent(self, agent: ChatAgent) -> None:
         r"""Return an agent to the pool."""
         agent_id = id(agent)
 
-        async with self._condition:
+        async with self._lock:
             if agent_id not in self._in_use_agents:
                 return
 
@@ -141,8 +145,6 @@ class AgentPool:
                 agent.reset()
                 self._agent_last_used[agent_id] = time.time()
                 self._available_agents.append(agent)
-                # Notify one waiting coroutine that an agent is available
-                self._condition.notify()
             else:
                 # Remove tracking for agents not returned to pool
                 self._agent_last_used.pop(agent_id, None)
@@ -152,7 +154,7 @@ class AgentPool:
         if not self.auto_scale:
             return
 
-        async with self._condition:
+        async with self._lock:
             if not self._available_agents:
                 return
 
@@ -426,7 +428,6 @@ class SingleAgentWorker(Worker):
                     "usage"
                 ) or final_response.info.get("token_usage")
             else:
-                final_response = response
                 usage_info = response.info.get("usage") or response.info.get(
                     "token_usage"
                 )
@@ -561,11 +562,10 @@ class SingleAgentWorker(Worker):
         while True:
             try:
                 # Fixed interval cleanup
+                await asyncio.sleep(self.agent_pool.cleanup_interval)
+
                 if self.agent_pool:
-                    await asyncio.sleep(self.agent_pool.cleanup_interval)
                     await self.agent_pool.cleanup_idle_agents()
-                else:
-                    break
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -581,14 +581,9 @@ class SingleAgentWorker(Worker):
         r"""Save the worker's current workflow memories using agent
         summarization.
 
-        .. deprecated:: 0.2.80
-            Use :meth:`save_workflow_memories_async` for async/await support
-            and better integration with parallel workflow saving.
-
         This method generates a workflow summary from the worker agent's
         conversation history and saves it to a markdown file. The filename
-        is based on either the worker's explicit role_name or the generated
-        task_title from the summary.
+        is based on the worker's description for easy loading later.
 
         Returns:
             Dict[str, Any]: Result dictionary with keys:
@@ -596,19 +591,7 @@ class SingleAgentWorker(Worker):
                 - summary (str): Generated workflow summary
                 - file_path (str): Path to saved file
                 - worker_description (str): Worker description used
-
-        See Also:
-            :meth:`save_workflow_memories_async`: Async version for better
-                performance in parallel workflows.
         """
-        import warnings
-
-        warnings.warn(
-            "save_workflow_memories() is synchronous. Consider using "
-            "save_workflow_memories_async() for async/await support.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         try:
             # validate requirements
             validation_error = self._validate_workflow_save_requirements()
@@ -620,110 +603,14 @@ class SingleAgentWorker(Worker):
             self.worker.set_context_utility(context_util)
 
             # prepare workflow summarization components
+            filename = self._generate_workflow_filename()
             structured_prompt = self._prepare_workflow_prompt()
             agent_to_summarize = self._select_agent_for_summarization(
                 context_util
             )
 
-            # check if we should use role_name or let summarize extract
-            # task_title
-            role_name = getattr(self.worker, 'role_name', 'assistant')
-            use_role_name_for_filename = role_name.lower() not in {
-                'assistant',
-                'agent',
-                'user',
-                'system',
-            }
-
             # generate and save workflow summary
-            # if role_name is explicit, use it for filename
-            # if role_name is generic, pass none to let summarize use
-            # task_title
-            filename = (
-                self._generate_workflow_filename()
-                if use_role_name_for_filename
-                else None
-            )
-
             result = agent_to_summarize.summarize(
-                filename=filename,
-                summary_prompt=structured_prompt,
-                response_format=WorkflowSummary,
-            )
-
-            # add worker metadata and cleanup
-            result["worker_description"] = self.description
-            if self._conversation_accumulator is not None:
-                logger.info(
-                    "Cleaning up conversation accumulator after workflow "
-                    "summarization"
-                )
-                self._conversation_accumulator = None
-
-            return result
-
-        except Exception as e:
-            return {
-                "status": "error",
-                "summary": "",
-                "file_path": None,
-                "worker_description": self.description,
-                "message": f"Failed to save workflow memories: {e!s}",
-            }
-
-    async def save_workflow_memories_async(self) -> Dict[str, Any]:
-        r"""Asynchronously save the worker's current workflow memories using
-        agent summarization.
-
-        This is the async version of save_workflow_memories() that uses
-        asummarize() for non-blocking LLM calls, enabling parallel
-        summarization of multiple workers.
-
-        Returns:
-            Dict[str, Any]: Result dictionary with keys:
-                - status (str): "success" or "error"
-                - summary (str): Generated workflow summary
-                - file_path (str): Path to saved file
-                - worker_description (str): Worker description used
-        """
-        try:
-            # validate requirements
-            validation_error = self._validate_workflow_save_requirements()
-            if validation_error:
-                return validation_error
-
-            # setup context utility and agent
-            context_util = self._get_context_utility()
-            self.worker.set_context_utility(context_util)
-
-            # prepare workflow summarization components
-            structured_prompt = self._prepare_workflow_prompt()
-            agent_to_summarize = self._select_agent_for_summarization(
-                context_util
-            )
-
-            # check if we should use role_name or let summarize extract
-            # task_title
-            role_name = getattr(self.worker, 'role_name', 'assistant')
-            use_role_name_for_filename = role_name.lower() not in {
-                'assistant',
-                'agent',
-                'user',
-                'system',
-            }
-
-            # generate and save workflow summary
-            # if role_name is explicit, use it for filename
-            # if role_name is generic, pass none to let summarize use
-            # task_title
-            filename = (
-                self._generate_workflow_filename()
-                if use_role_name_for_filename
-                else None
-            )
-
-            # **KEY CHANGE**: Using asummarize() instead of summarize()
-            result = await agent_to_summarize.asummarize(
                 filename=filename,
                 summary_prompt=structured_prompt,
                 response_format=WorkflowSummary,
@@ -829,23 +716,12 @@ class SingleAgentWorker(Worker):
             )
             return []
 
-        # generate filename-safe search pattern from worker role name
+        # generate filename-safe search pattern from worker description
         if pattern is None:
-            from camel.utils.context_utils import ContextUtility
-
-            # get role_name (always available, defaults to "assistant")
-            role_name = getattr(self.worker, 'role_name', 'assistant')
-            clean_name = ContextUtility.sanitize_workflow_filename(role_name)
-
-            # check if role_name is generic
-            generic_names = {'assistant', 'agent', 'user', 'system'}
-            if clean_name in generic_names:
-                # for generic role names, search for all workflow files
-                # since filename is based on task_title
-                pattern = "*_workflow*.md"
-            else:
-                # for explicit role names, search for role-specific files
-                pattern = f"{clean_name}_workflow*.md"
+            # sanitize description: spaces to underscores, remove special chars
+            clean_desc = self.description.lower().replace(" ", "_")
+            clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
+            pattern = f"{clean_desc}_workflow*.md"
 
         # Get the base workforce_workflows directory
         camel_workdir = os.environ.get("CAMEL_WORKDIR")
@@ -940,21 +816,15 @@ class SingleAgentWorker(Worker):
         return None
 
     def _generate_workflow_filename(self) -> str:
-        r"""Generate a filename for the workflow based on worker role name.
-
-        Uses the worker's explicit role_name when available.
+        r"""Generate a filename for the workflow based on worker description.
 
         Returns:
-            str: Sanitized filename without timestamp and without .md
-                extension. Format: {role_name}_workflow
+            str: Sanitized filename without timestamp (session already has
+                timestamp).
         """
-        from camel.utils.context_utils import ContextUtility
-
-        # get role_name (always available, defaults to "assistant"/"Assistant")
-        role_name = getattr(self.worker, 'role_name', 'assistant')
-        clean_name = ContextUtility.sanitize_workflow_filename(role_name)
-
-        return f"{clean_name}_workflow"
+        clean_desc = self.description.lower().replace(" ", "_")
+        clean_desc = re.sub(r'[^a-z0-9_]', '', clean_desc)
+        return f"{clean_desc}_workflow"
 
     def _prepare_workflow_prompt(self) -> str:
         r"""Prepare the structured prompt for workflow summarization.

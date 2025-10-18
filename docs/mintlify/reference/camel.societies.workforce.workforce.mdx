@@ -101,17 +101,8 @@ def __init__(
 ### _get_or_create_shared_context_utility
 
 ```python
-def _get_or_create_shared_context_utility(self, session_id: Optional[str] = None):
+def _get_or_create_shared_context_utility(self):
 ```
-
-Get or create the shared context utility for workflow management.
-
-This method creates the context utility only when needed, avoiding
-unnecessary session folder creation during initialization.
-
-**Parameters:**
-
-- **session_id** (Optional[str]): Custom session ID to use. If None, auto-generates a timestamped session ID. (default: :obj:`None`)
 
 **Returns:**
 
@@ -263,29 +254,24 @@ def _decompose_task(self, task: Task):
   Union[List[Task], Generator[List[Task], None, None]]:
 The subtasks or generator of subtasks.
 
-<a id="camel.societies.workforce.workforce.Workforce._analyze_task"></a>
+<a id="camel.societies.workforce.workforce.Workforce._analyze_failure"></a>
 
-### _analyze_task
+### _analyze_failure
 
 ```python
-def _analyze_task(self, task: Task):
+def _analyze_failure(self, task: Task, error_message: str):
 ```
 
-Unified task analysis for both failures and quality evaluation.
-
-This method consolidates the logic for analyzing task failures and
-evaluating task quality, using the unified TASK_ANALYSIS_PROMPT.
+Analyze a task failure and decide on the best recovery strategy.
 
 **Parameters:**
 
-- **task** (Task): The task to analyze
-- **for_failure** (bool): True for failure analysis, False for quality evaluation
-- **error_message** (Optional[str]): Error message, required when for_failure=True
+- **task** (Task): The failed task
+- **error_message** (str): The error message from the failure
 
 **Returns:**
 
-  TaskAnalysisResult: Unified analysis result with recovery strategy
-and optional quality metrics
+  RecoveryDecision: The decided recovery strategy with reasoning
 
 <a id="camel.societies.workforce.workforce.Workforce.pause"></a>
 
@@ -702,45 +688,14 @@ be called when the workforce is not running.
 ### save_workflow_memories
 
 ```python
-def save_workflow_memories(self, session_id: Optional[str] = None):
+def save_workflow_memories(self):
 ```
-
-Save workflow memories for all SingleAgentWorker instances in the
-workforce.
-
-.. deprecated:: 0.2.80
-This synchronous method processes workers sequentially, which can
-be slow for multiple agents. Use
-:meth:`save_workflow_memories_async`
-instead for parallel processing and significantly better
-performance.
-
-This method iterates through all child workers and triggers workflow
-saving for SingleAgentWorker instances using their
-save_workflow_memories()
-method.
-Other worker types are skipped.
-
-**Parameters:**
-
-- **session_id** (Optional[str]): Custom session ID to use for saving workflows. If None, auto-generates a timestamped session ID. Useful for organizing workflows by project or context. (default: :obj:`None`)
 
 **Returns:**
 
   Dict[str, str]: Dictionary mapping worker node IDs to save results.
 Values are either file paths (success) or error messages
 (failure).
-
-**Note:**
-
-For better performance with multiple workers, use the async
-version::
-
-results = await workforce.save_workflow_memories_async()
-
-See Also:
-:meth:`save_workflow_memories_async`: Async version with parallel
-processing for significantly better performance.
 
 <a id="camel.societies.workforce.workforce.Workforce.load_workflow_memories"></a>
 

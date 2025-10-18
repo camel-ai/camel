@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import warnings
 from typing import List, Optional
 
 from camel.memories.base import MemoryBlock
@@ -18,6 +19,17 @@ from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.key_value_storages.base import BaseKeyValueStorage
 from camel.storages.key_value_storages.in_memory import InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole
+
+
+class EmptyMemoryWarning(UserWarning):
+    """Warning raised when attempting to access an empty memory.
+
+    This warning is raised when operations are performed on memory
+    that contains no records. It can be safely caught and suppressed
+    in contexts where empty memory is expected.
+    """
+
+    pass
 
 
 class ChatHistoryBlock(MemoryBlock):
@@ -69,8 +81,11 @@ class ChatHistoryBlock(MemoryBlock):
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
-            # Empty memory is a valid state (e.g., during initialization).
-            # Users can check if memory is empty by checking the returned list.
+            warnings.warn(
+                "The `ChatHistoryMemory` is empty.",
+                EmptyMemoryWarning,
+                stacklevel=1,
+            )
             return list()
 
         if window_size is not None and window_size >= 0:

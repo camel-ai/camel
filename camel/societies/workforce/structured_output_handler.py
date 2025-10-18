@@ -19,8 +19,8 @@ from pydantic import BaseModel, ValidationError
 
 from camel.logger import get_logger
 from camel.societies.workforce.utils import (
+    RecoveryDecision,
     RecoveryStrategy,
-    TaskAnalysisResult,
     TaskAssignResult,
     WorkerConf,
 )
@@ -65,9 +65,9 @@ class StructuredOutputHandler:
                 r'description.*?:\s*"([^"]+)"'
             ),
         ],
-        'TaskAnalysisResult': [
-            r'"recovery_strategy"\s*:\s*"([^"]+)".*?"reasoning"\s*:\s*"([^"]+)"',
-            r'recovery_strategy.*?:\s*"([^"]+)".*?reasoning.*?:\s*"([^"]+)"',
+        'RecoveryDecision': [
+            r'"strategy"\s*:\s*"([^"]+)".*?"reasoning"\s*:\s*"([^"]+)"',
+            r'strategy.*?:\s*"([^"]+)".*?reasoning.*?:\s*"([^"]+)"',
         ],
     }
 
@@ -239,12 +239,12 @@ Ensure the JSON is valid and properly formatted.
                     except (IndexError, AttributeError):
                         continue
 
-        elif schema_name == 'TaskAnalysisResult':
+        elif schema_name == 'RecoveryDecision':
             for pattern in patterns:
                 match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
                 if match:
                     try:
-                        recovery_strategy = match.group(1)
+                        strategy = match.group(1)
                         reasoning = match.group(2)
                         # Look for modified_task_content
                         content_match = re.search(
@@ -252,23 +252,12 @@ Ensure the JSON is valid and properly formatted.
                             text,
                             re.IGNORECASE,
                         )
-                        # Look for quality_score (for quality evaluation)
-                        score_match = re.search(
-                            r'"quality_score"\s*:\s*(\d+)',
-                            text,
-                            re.IGNORECASE,
-                        )
                         return {
-                            'recovery_strategy': recovery_strategy,
+                            'strategy': strategy,
                             'reasoning': reasoning,
                             'modified_task_content': (
                                 content_match.group(1)
                                 if content_match
-                                else None
-                            ),
-                            'quality_score': (
-                                int(score_match.group(1))
-                                if score_match
                                 else None
                             ),
                         }
@@ -381,22 +370,21 @@ Ensure the JSON is valid and properly formatted.
                         else:
                             assignment['dependencies'] = []
 
-        elif schema_name == 'TaskAnalysisResult':
-            # Ensure recovery_strategy is valid
-            if 'recovery_strategy' in fixed_data:
-                strategy = fixed_data['recovery_strategy'].lower()
+        elif schema_name == 'RecoveryDecision':
+            # Ensure strategy is valid
+            if 'strategy' in fixed_data:
+                strategy = fixed_data['strategy'].lower()
                 valid_strategies = [
                     'retry',
                     'replan',
                     'decompose',
                     'create_worker',
-                    'reassign',
                 ]
                 if strategy not in valid_strategies:
                     # Try to match partial
                     for valid in valid_strategies:
                         if valid.startswith(strategy) or strategy in valid:
-                            fixed_data['recovery_strategy'] = valid
+                            fixed_data['strategy'] = valid
                             break
 
         return fixed_data
@@ -422,10 +410,10 @@ Ensure the JSON is valid and properly formatted.
                 sys_msg="You are a helpful assistant.",
                 description="A general-purpose worker",
             )
-        elif schema_name == 'TaskAnalysisResult':
-            return TaskAnalysisResult(
+        elif schema_name == 'RecoveryDecision':
+            return RecoveryDecision(
+                strategy=RecoveryStrategy.RETRY,
                 reasoning="Unable to parse response, defaulting to retry",
-                recovery_strategy=RecoveryStrategy.RETRY,
                 modified_task_content=None,
             )
         else:
@@ -494,11 +482,11 @@ Ensure the JSON is valid and properly formatted.
                 description=f"Fallback worker for task: {task_content}...",
             )
 
-        elif schema_name == 'TaskAnalysisResult':
+        elif schema_name == 'RecoveryDecision':
             # Default to retry strategy
-            return TaskAnalysisResult(
+            return RecoveryDecision(
+                strategy=RecoveryStrategy.RETRY,
                 reasoning=f"Fallback decision due to: {error_message}",
-                recovery_strategy=RecoveryStrategy.RETRY,
                 modified_task_content=None,
             )
 

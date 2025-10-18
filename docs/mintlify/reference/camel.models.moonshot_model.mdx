@@ -30,7 +30,7 @@ def __init__(
     model_type: Union[ModelType, str],
     model_config_dict: Optional[Dict[str, Any]] = None,
     api_key: Optional[str] = None,
-    url: Optional[str] = None,
+    url: Optional[str] = 'https://api.moonshot.ai/v1',
     token_counter: Optional[BaseTokenCounter] = None,
     timeout: Optional[float] = None,
     max_retries: int = 3,
@@ -62,24 +62,3 @@ Prepare the request configuration for Moonshot API.
 **Returns:**
 
   Dict[str, Any]: The prepared request configuration.
-
-<a id="camel.models.moonshot_model.MoonshotModel._clean_tool_schemas"></a>
-
-### _clean_tool_schemas
-
-```python
-def _clean_tool_schemas(self, tools: List[Dict[str, Any]]):
-```
-
-Clean tool schemas to remove null types for Moonshot compatibility.
-
-Moonshot API doesn't accept `{"type": "null"}` in anyOf schemas.
-This method removes null type definitions from parameters.
-
-**Parameters:**
-
-- **tools** (List[Dict[str, Any]]): Original tool schemas.
-
-**Returns:**
-
-  List[Dict[str, Any]]: Cleaned tool schemas.

@@ -105,6 +105,7 @@ class QueueStatusEvent(WorkforceEventBase):
     queue_name: str
     length: int
     pending_task_ids: Optional[List[str]] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 WorkforceEvent = Union[

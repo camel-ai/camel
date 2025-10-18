@@ -62,7 +62,6 @@ class BaseGenerator(abc.ABC, IterableDataset):
         self._buffer = buffer
         self._data: List[DataPoint] = []
         self._batch_to_save: List[DataPoint] = []
-        self._iter_position: int = 0
 
         if data_path:
             file_path = Path(data_path)
@@ -104,9 +103,9 @@ class BaseGenerator(abc.ABC, IterableDataset):
         r"""Async iterator that yields datapoints dynamically.
 
         If a `data_path` was provided during initialization, those datapoints
-        are yielded first. When self._iter_position reaches the end of _data,
-        new datapoints are generated. Every 100 yields, the batch is appended
-        to the JSONL file or discarded if `cache` is None.
+        are yielded first. When self._data is empty, 20 new datapoints
+        are generated. Every 100 yields, the batch is appended to the
+        JSONL file or discarded if `cache` is None.
 
         Yields:
             DataPoint: A single datapoint.
@@ -114,10 +113,9 @@ class BaseGenerator(abc.ABC, IterableDataset):
 
         async def generator():
             while True:
-                if self._iter_position >= len(self._data):
+                if not self._data:
                     await self.generate_new(self._buffer)
-                datapoint = self._data[self._iter_position]
-                self._iter_position += 1
+                datapoint = self._data.pop(0)
                 yield datapoint
                 self._batch_to_save.append(datapoint)
                 if len(self._batch_to_save) == 100:
@@ -134,9 +132,9 @@ class BaseGenerator(abc.ABC, IterableDataset):
         r"""Synchronous iterator for PyTorch IterableDataset compatibility.
 
         If a `data_path` was provided during initialization, those datapoints
-        are yielded first. When self._iter_position reaches the end of _data,
-        new datapoints are generated. Every 100 yields, the batch is appended
-        to the JSONL file or discarded if `cache` is None.
+        are yielded first. When self._data is empty, 20 new datapoints
+        are generated. Every 100 yields, the batch is appended to the
+        JSONL file or discarded if `cache` is None.
 
         Yields:
             DataPoint: A single datapoint.
@@ -152,10 +150,9 @@ class BaseGenerator(abc.ABC, IterableDataset):
                 raise
 
         while True:
-            if self._iter_position >= len(self._data):
+            if not self._data:
                 asyncio.run(self.generate_new(self._buffer))
-            datapoint = self._data[self._iter_position]
-            self._iter_position += 1
+            datapoint = self._data.pop(0)
             yield datapoint
             self._batch_to_save.append(datapoint)
             if len(self._batch_to_save) == 100:
@@ -251,7 +248,6 @@ class BaseGenerator(abc.ABC, IterableDataset):
 
         self.save_to_jsonl(file_path)
         self._data = []
-        self._iter_position = 0
         logger.info(f"Data flushed to {file_path} and cleared from the memory")
 
     def _init_from_jsonl(self, file_path: Path) -> List[Dict[str, Any]]:
@@ -294,28 +290,3 @@ class BaseGenerator(abc.ABC, IterableDataset):
             f"Successfully loaded {len(raw_data)} items from {file_path}"
         )
         return raw_data
-
-    def __getitem__(self, index: int) -> DataPoint:
-        r"""Get a datapoint by index without removing the datapoint from _data.
-
-        Args:
-            index (int): Index of the datapoint to retrieve.
-
-        Returns:
-            DataPoint: The datapoint at the specified index.
-
-        Raises:
-            IndexError: If the index is out of range.
-        """
-        if index < 0 or index >= len(self._data):
-            raise IndexError(f"Index {index} is out of range")
-
-        return self._data[index]
-
-    def __len__(self) -> int:
-        r"""Get the number of datapoints in the dataset.
-
-        Returns:
-            int: The number of datapoints.
-        """
-        return len(self._data)

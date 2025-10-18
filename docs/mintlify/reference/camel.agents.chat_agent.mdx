@@ -617,10 +617,6 @@ def summarize(
 Summarize the agent's current conversation context and persist it
 to a markdown file.
 
-.. deprecated:: 0.2.80
-Use :meth:`asummarize` for async/await support and better
-performance in parallel summarization workflows.
-
 **Parameters:**
 
 - **filename** (Optional[str]): The base filename (without extension) to use for the markdown file. Defaults to a timestamped name when not provided.
@@ -633,9 +629,6 @@ performance in parallel summarization workflows.
   Dict[str, Any]: A dictionary containing the summary text, file
 path, status message, and optionally structured_summary if
 response_format was provided.
-
-See Also:
-:meth:`asummarize`: Async version for non-blocking LLM calls.
 
 <a id="camel.agents.chat_agent.ChatAgent.clear_memory"></a>
 

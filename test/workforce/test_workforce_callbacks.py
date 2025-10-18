@@ -20,7 +20,6 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce.events import (
     AllTasksCompletedEvent,
-    QueueStatusEvent,
     TaskAssignedEvent,
     TaskCompletedEvent,
     TaskCreatedEvent,
@@ -36,6 +35,7 @@ from camel.societies.workforce.workforce_callback import WorkforceCallback
 from camel.societies.workforce.workforce_logger import WorkforceLogger
 from camel.societies.workforce.workforce_metrics import WorkforceMetrics
 from camel.tasks import Task
+from camel.toolkits import SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
@@ -73,10 +73,6 @@ class _NonMetricsCallback(WorkforceCallback):
 
     # Terminal event
     def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
-        self.events.append(event)
-
-    # Queue status event
-    def log_queue_status(self, event: QueueStatusEvent) -> None:
         self.events.append(event)
 
 
@@ -134,9 +130,6 @@ class _MetricsCallback(WorkforceCallback, WorkforceMetrics):
     def log_all_tasks_completed(self, event: AllTasksCompletedEvent) -> None:
         self.events.append(event)
 
-    def log_queue_status(self, event: QueueStatusEvent) -> None:
-        self.events.append(event)
-
 
 def _build_stub_agent() -> ChatAgent:
     """Construct a stub-backed ChatAgent for offline tests."""
@@ -183,23 +176,17 @@ def test_workforce_callback_registration_and_metrics_handling():
 def assert_event_sequence(events: list[str], worker_count: int):
     """
     Validate that the given event sequence follows the expected logical order.
-    Note: With quality checks and dynamic worker creation from master,
-    there may be more workers created than initially specified.
     """
     idx = 0
     n = len(events)
 
-    # 1. Expect at least N WorkerCreatedEvent events first
-    # (may be more due to dynamic worker creation for failed tasks)
-    worker_created_count = 0
-    while idx < n and events[idx] == "WorkerCreatedEvent":
-        worker_created_count += 1
+    # 1. Expect N WorkerCreatedEvent events first
+    for _ in range(worker_count):
+        assert idx < n, f"Missing WorkerCreatedEvent[{_}]"
+        assert (
+            events[idx] == "WorkerCreatedEvent"
+        ), f"Event {idx} should be WorkerCreatedEvent, got {events[idx]}"
         idx += 1
-
-    assert worker_created_count >= worker_count, (
-        f"Expected at least {worker_count} WorkerCreatedEvent, "
-        f"got {worker_created_count}"
-    )
 
     # 2. Expect one main TaskCreatedEvent
     assert (
@@ -227,10 +214,9 @@ def assert_event_sequence(events: list[str], worker_count: int):
         ), f"Event {idx} should be TaskAssignedEvent ({i+1}/{sub_task_count})"
         idx += 1
 
-    # 6. Expect TaskStartedEvent and TaskCompletedEvent counts
-    #    With quality checks and retries, tasks may be started
-    #    multiple times. We just verify we have at least as many starts
-    #    as subtasks, and that all subtasks eventually complete.
+    # 6. Expect TaskStartedEvent and TaskCompletedEvent counts to match
+    #    sub_task_count. Order between them is flexible, they just need to
+    #    match in count.
     remaining_events = events[
         idx:-1
     ]  # the last one should be AllTasksCompletedEvent
@@ -238,14 +224,12 @@ def assert_event_sequence(events: list[str], worker_count: int):
     completed_count = (
         remaining_events.count("TaskCompletedEvent") - 1
     )  # exclude the main task TaskCompletedEvent
-    assert started_count >= sub_task_count, (
-        f"Expected at least {sub_task_count} TaskStartedEvent, "
-        f"got {started_count}"
-    )
-    assert completed_count >= sub_task_count, (
-        f"Expected at least {sub_task_count} TaskCompletedEvent, "
-        f"got {completed_count}"
-    )
+    assert (
+        started_count == sub_task_count
+    ), f"Expected {sub_task_count} TaskStartedEvent, got {started_count}"
+    assert (
+        completed_count == sub_task_count
+    ), f"Expected {sub_task_count} TaskCompletedEvent, got {completed_count}"
 
     # Allow optional misc events (like TaskFailedEvent) in between
     allowed_misc = {
@@ -263,16 +247,38 @@ def assert_event_sequence(events: list[str], worker_count: int):
 
 
 def test_workforce_emits_expected_event_sequence():
-    """Test that workforce emits expected event types.
-
-    Note: With quality checks and dynamic worker creation,
-    the exact event sequence can vary. This test validates that the key
-    event types are present.
-    """
     search_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
             role_name="Research Specialist",
-            content="You are a research specialist.",
+            content="You are a research specialist who excels at finding and "
+            "gathering information from the web.",
+        ),
+        model=ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        ),
+        tools=[SearchToolkit().search_wiki],
+    )
+
+    analyst_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Business Analyst",
+            content="You are an expert business analyst. Your job is "
+            "to analyze research findings, identify key insights, "
+            "opportunities, and challenges.",
+        ),
+        model=ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        ),
+    )
+
+    writer_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Report Writer",
+            content="You are a professional report writer. You take "
+            "analytical insights and synthesize them into a clear, "
+            "concise, and well-structured final report.",
         ),
         model=ModelFactory.create(
             model_platform=ModelPlatformType.DEFAULT,
@@ -282,43 +288,38 @@ def test_workforce_emits_expected_event_sequence():
 
     cb = _MetricsCallback()
     workforce = Workforce(
-        'Simple Team',
-        graceful_shutdown_timeout=5.0,
+        'Business Analysis Team',
+        graceful_shutdown_timeout=30.0,
         callbacks=[cb],
     )
 
     workforce.add_single_agent_worker(
-        "A research worker.",
+        "A researcher who can search online for information.",
         worker=search_agent,
+    ).add_single_agent_worker(
+        "An analyst who can process research findings.", worker=analyst_agent
+    ).add_single_agent_worker(
+        "A writer who can create a final report from the analysis.",
+        worker=writer_agent,
     )
 
-    # Use a simple task to avoid failures and retries
     human_task = Task(
-        content="Write a one sentence summary about Berlin.",
+        content=(
+            "Conduct a comprehensive market analysis for launching a new "
+            "electric scooter in Berlin. The analysis should cover: "
+            "1. Current market size and key competitors. "
+            "2. Target audience and their preferences. "
+            "3. Local regulations and potential challenges. "
+            "Finally, synthesize all findings into a summary report."
+        ),
         id='0',
     )
 
     workforce.process_task(human_task)
 
-    # Collect event types
-    event_types = {e.__class__.__name__ for e in cb.events}
-
-    # Verify that key event types are present
-    assert (
-        "WorkerCreatedEvent" in event_types
-    ), "Should have WorkerCreatedEvent"
-    assert "TaskCreatedEvent" in event_types, "Should have TaskCreatedEvent"
-    assert (
-        "TaskDecomposedEvent" in event_types
-    ), "Should have TaskDecomposedEvent"
-    assert "TaskAssignedEvent" in event_types, "Should have TaskAssignedEvent"
-    assert "TaskStartedEvent" in event_types, "Should have TaskStartedEvent"
-    assert (
-        "TaskCompletedEvent" in event_types
-    ), "Should have TaskCompletedEvent"
-    assert (
-        "AllTasksCompletedEvent" in event_types
-    ), "Should have AllTasksCompletedEvent"
+    # test that the event sequence is as expected
+    actual_events = [e.__class__.__name__ for e in cb.events]
+    assert_event_sequence(actual_events, worker_count=3)
 
     # test that metrics callback methods work as expected
     assert not cb.dump_to_json_called

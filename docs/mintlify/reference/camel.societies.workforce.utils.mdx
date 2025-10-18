@@ -20,20 +20,6 @@ class TaskResult(BaseModel):
 
 The result of a task.
 
-<a id="camel.societies.workforce.utils.QualityEvaluation"></a>
-
-## QualityEvaluation
-
-```python
-class QualityEvaluation(BaseModel):
-```
-
-Quality evaluation result for a completed task.
-
-.. deprecated::
-Use :class:`TaskAnalysisResult` instead. This class is kept for
-backward compatibility.
-
 <a id="camel.societies.workforce.utils.TaskAssignment"></a>
 
 ## TaskAssignment
@@ -52,8 +38,7 @@ An individual task assignment within a batch.
 def _split_and_strip(dep_str: str):
 ```
 
-Utility to split a comma separated string and strip
-whitespace.
+Utility to split a comma separated string and strip whitespace.
 
 <a id="camel.societies.workforce.utils.TaskAssignment.validate_dependencies"></a>
 
@@ -71,8 +56,7 @@ def validate_dependencies(cls, v):
 class TaskAssignResult(BaseModel):
 ```
 
-The result of task assignment for both single and batch
-assignments.
+The result of task assignment for both single and batch assignments.
 
 <a id="camel.societies.workforce.utils.RecoveryStrategy"></a>
 
@@ -110,47 +94,15 @@ class FailureContext(BaseModel):
 
 Context information about a task failure.
 
-<a id="camel.societies.workforce.utils.TaskAnalysisResult"></a>
+<a id="camel.societies.workforce.utils.RecoveryDecision"></a>
 
-## TaskAnalysisResult
-
-```python
-class TaskAnalysisResult(BaseModel):
-```
-
-Unified result for task failure analysis and quality evaluation.
-
-This model combines both failure recovery decisions and quality evaluation
-results into a single structure. For failure analysis, only the recovery
-strategy and reasoning fields are populated. For quality evaluation, all
-fields including quality_score and issues are populated.
-
-<a id="camel.societies.workforce.utils.TaskAnalysisResult.is_quality_evaluation"></a>
-
-### is_quality_evaluation
+## RecoveryDecision
 
 ```python
-def is_quality_evaluation(self):
+class RecoveryDecision(BaseModel):
 ```
 
-**Returns:**
-
-  bool: True if this is a quality evaluation (has quality_score),
-False if this is a failure analysis.
-
-<a id="camel.societies.workforce.utils.TaskAnalysisResult.quality_sufficient"></a>
-
-### quality_sufficient
-
-```python
-def quality_sufficient(self):
-```
-
-**Returns:**
-
-  bool: True if quality is sufficient (score `>= 70` and no recovery
-strategy recommended), False otherwise. Always False for
-failure analysis results.
+Decision on how to recover from a task failure.
 
 <a id="camel.societies.workforce.utils.check_if_running"></a>
 
