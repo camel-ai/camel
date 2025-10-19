@@ -29,7 +29,7 @@ from .events import (
 
 
 class WorkforceCallback(ABC):
-    """Interface for recording workforce lifecycle events.
+    r"""Interface for recording workforce lifecycle events.
 
     Implementations should persist or stream events as appropriate.
     """

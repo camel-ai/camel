@@ -484,7 +484,7 @@ class Workforce(BaseNode):
     def _initialize_callbacks(
         self, callbacks: Optional[List[WorkforceCallback]]
     ) -> None:
-        """Validate, register, and prime workforce callbacks."""
+        r"""Validate, register, and prime workforce callbacks."""
         self._callbacks: List[WorkforceCallback] = []
 
         if callbacks:
@@ -519,7 +519,7 @@ class Workforce(BaseNode):
         role: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Emit a worker-created event to all registered callbacks."""
+        r"""Emit a worker-created event to all registered callbacks."""
         event = WorkerCreatedEvent(
             worker_id=worker_node.node_id,
             worker_type=worker_type or type(worker_node).__name__,

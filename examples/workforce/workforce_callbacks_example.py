@@ -44,7 +44,7 @@ logger = get_logger(__name__)
 
 
 class PrintCallback(WorkforceCallback):
-    """Simple callback printing events to logs to observe ordering."""
+    r"""Simple callback printing events to logs to observe ordering."""
 
     def log_task_created(self, event: TaskCreatedEvent) -> None:
         print(
