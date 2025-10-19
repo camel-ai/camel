@@ -84,11 +84,12 @@ def mock_workforce():
 class TestSingleAgentWorkerWorkflow:
     """Test workflow functionality for SingleAgentWorker."""
 
-    def test_save_workflow_success(self, temp_context_dir):
+    @pytest.mark.asyncio
+    async def test_save_workflow_success(self, temp_context_dir):
         """Test successful workflow saving."""
         worker = MockSingleAgentWorker("test_analyst")
 
-        # Mock the summarize method to return success
+        # Mock the asummarize method to return success
         mock_result = {
             "status": "success",
             "summary": "Test workflow summary",
@@ -98,15 +99,16 @@ class TestSingleAgentWorkerWorkflow:
         }
 
         with patch.object(
-            worker.worker, 'summarize', return_value=mock_result
+            worker.worker, 'asummarize', return_value=mock_result
         ):
-            result = worker.save_workflow_memories()
+            result = await worker.save_workflow_memories_async()
 
             assert result["status"] == "success"
             assert result["worker_description"] == "test_analyst"
             assert "test_analyst_workflow_" in result["file_path"]
 
-    def test_save_workflow_non_chat_agent(self):
+    @pytest.mark.asyncio
+    async def test_save_workflow_non_chat_agent(self):
         """Test workflow saving with non-ChatAgent worker."""
         # Create worker and then replace worker with non-ChatAgent
         sys_msg = BaseMessage.make_assistant_message(
@@ -117,21 +119,22 @@ class TestSingleAgentWorkerWorkflow:
         # Replace the worker with a non-ChatAgent object
         worker.worker = "not_a_chat_agent"
 
-        result = worker.save_workflow_memories()
+        result = await worker.save_workflow_memories_async()
 
         assert result["status"] == "error"
         assert "Worker must be a ChatAgent" in result["message"]
         assert result["worker_description"] == "test"
 
-    def test_save_workflow_exception(self, temp_context_dir):
+    @pytest.mark.asyncio
+    async def test_save_workflow_exception(self, temp_context_dir):
         """Test workflow saving when exception occurs."""
         worker = MockSingleAgentWorker("test_analyst")
 
-        # Mock summarize to raise exception
+        # Mock asummarize to raise exception
         with patch.object(
-            worker.worker, 'summarize', side_effect=Exception("Test error")
+            worker.worker, 'asummarize', side_effect=Exception("Test error")
         ):
-            result = worker.save_workflow_memories()
+            result = await worker.save_workflow_memories_async()
 
             assert result["status"] == "error"
             assert (
@@ -312,9 +315,10 @@ class TestSingleAgentWorkerWorkflow:
 class TestWorkforceWorkflowMemoryMethods:
     """Test workflow functionality for Workforce."""
 
-    def test_save_workflow_memories_success(self, mock_workforce):
+    @pytest.mark.asyncio
+    async def test_save_workflow_memories_success(self, mock_workforce):
         """Test successful workflow saving for all workers."""
-        # Mock save_workflow_memories for both workers
+        # Mock save_workflow_memories_async for both workers
         mock_result_1 = {
             "status": "success",
             "file_path": "/path/to/data_analyst_workflow.md",
@@ -327,21 +331,22 @@ class TestWorkforceWorkflowMemoryMethods:
         with (
             patch.object(
                 mock_workforce._children[0],
-                'save_workflow_memories',
+                'save_workflow_memories_async',
                 return_value=mock_result_1,
             ),
             patch.object(
                 mock_workforce._children[1],
-                'save_workflow_memories',
+                'save_workflow_memories_async',
                 return_value=mock_result_2,
             ),
         ):
-            results = mock_workforce.save_workflow_memories()
+            results = await mock_workforce.save_workflow_memories_async()
 
             assert len(results) == 2
             assert all("/path/to/" in path for path in results.values())
 
-    def test_save_workflow_memories_mixed_results(self, mock_workforce):
+    @pytest.mark.asyncio
+    async def test_save_workflow_memories_mixed_results(self, mock_workforce):
         """Test workflow saving with mixed success/failure results."""
         # Mock one success, one failure
         mock_result_success = {
@@ -356,16 +361,16 @@ class TestWorkforceWorkflowMemoryMethods:
         with (
             patch.object(
                 mock_workforce._children[0],
-                'save_workflow_memories',
+                'save_workflow_memories_async',
                 return_value=mock_result_success,
             ),
             patch.object(
                 mock_workforce._children[1],
-                'save_workflow_memories',
+                'save_workflow_memories_async',
                 return_value=mock_result_error,
             ),
         ):
-            results = mock_workforce.save_workflow_memories()
+            results = await mock_workforce.save_workflow_memories_async()
 
             assert len(results) == 2
             assert (
@@ -377,25 +382,30 @@ class TestWorkforceWorkflowMemoryMethods:
                 in results[mock_workforce._children[1].node_id]
             )
 
-    def test_save_workflow_memories_exception(self, mock_workforce):
+    @pytest.mark.asyncio
+    async def test_save_workflow_memories_exception(self, mock_workforce):
         """Test workflow saving when exception occurs."""
         with patch.object(
             mock_workforce._children[0],
-            'save_workflow_memories',
+            'save_workflow_memories_async',
             side_effect=Exception("Test error"),
         ):
-            results = mock_workforce.save_workflow_memories()
+            results = await mock_workforce.save_workflow_memories_async()
 
             assert (
                 "error: Test error"
                 in results[mock_workforce._children[0].node_id]
             )
 
-    def test_save_workflow_memories_real_execution(self, temp_context_dir):
-        """Test save_workflow_memories with real internal execution.
+    @pytest.mark.asyncio
+    async def test_save_workflow_memories_real_execution(
+        self, temp_context_dir
+    ):
+        """Test save_workflow_memories_async with real internal execution.
 
-        This test exercises the actual save_workflow_memories() implementation,
-        only mocking the ChatAgent.summarize() method to avoid LLM API calls.
+        This test exercises the actual save_workflow_memories_async()
+        implementation, only mocking the ChatAgent.asummarize() method to
+        avoid LLM API calls.
 
         Tests the following internal behavior:
         - Workforce iteration through child workers
@@ -427,7 +437,7 @@ class TestWorkforceWorkflowMemoryMethods:
         # Store initial conversation accumulator state
         initial_accumulator = worker._conversation_accumulator
 
-        # Mock only the ChatAgent.summarize() method (which makes LLM calls)
+        # Mock only the ChatAgent.asummarize() method (which makes LLM calls)
         mock_summary_result = {
             "status": "success",
             "summary": "Completed data analysis workflow",
@@ -439,10 +449,10 @@ class TestWorkforceWorkflowMemoryMethods:
         }
 
         with patch.object(
-            ChatAgent, 'summarize', return_value=mock_summary_result
-        ) as mock_summarize:
-            # This executes the real save_workflow_memories() logic
-            results = workforce.save_workflow_memories()
+            ChatAgent, 'asummarize', return_value=mock_summary_result
+        ) as mock_asummarize:
+            # This executes the real save_workflow_memories_async() logic
+            results = await workforce.save_workflow_memories_async()
 
             # Verify Workforce correctly processes worker results
             assert len(results) == 1
@@ -453,11 +463,11 @@ class TestWorkforceWorkflowMemoryMethods:
             # Verify shared context utility was set up correctly
             assert worker.worker._context_utility is not None
 
-            # Verify ChatAgent.summarize was called with correct parameters
+            # Verify ChatAgent.asummarize was called with correct parameters
             # (validates filename generation, prompt preparation, agent
             # selection)
-            mock_summarize.assert_called_once()
-            call_kwargs = mock_summarize.call_args[1]
+            mock_asummarize.assert_called_once()
+            call_kwargs = mock_asummarize.call_args[1]
 
             # Verify filename generation includes worker role_name
             # (not description, as that would be too long)
@@ -527,7 +537,8 @@ class TestWorkforceWorkflowMemoryMethods:
 
             assert results[mock_workforce._children[0].node_id] is False
 
-    def test_workflows_skip_non_single_agent_workers(self):
+    @pytest.mark.asyncio
+    async def test_workflows_skip_non_single_agent_workers(self):
         """Test that workflow methods skip non-SingleAgentWorker instances."""
         from camel.societies.workforce.role_playing_worker import (
             RolePlayingWorker,
@@ -541,7 +552,7 @@ class TestWorkforceWorkflowMemoryMethods:
         workforce._children = [mock_role_playing_worker]
 
         # Test save_workflows
-        save_results = workforce.save_workflow_memories()
+        save_results = await workforce.save_workflow_memories_async()
         assert (
             "skipped: MagicMock not supported"
             in save_results[mock_role_playing_worker.node_id]
@@ -555,14 +566,15 @@ class TestWorkforceWorkflowMemoryMethods:
 class TestWorkflowIntegration:
     """Integration tests for workflow functionality."""
 
-    def test_end_to_end_workflow_memory(self, temp_context_dir):
+    @pytest.mark.asyncio
+    async def test_end_to_end_workflow_memory(self, temp_context_dir):
         """Test complete workflow: save workflow, load in new session."""
         # First session: create workforce and mock workflow saving
         workforce1 = Workforce("Test Team")
         worker1 = MockSingleAgentWorker("data_analyst")
         workforce1._children = [worker1]
 
-        # Mock successful summarize and save
+        # Mock successful asummarize and save
         mock_save_result = {
             "status": "success",
             "summary": "Data analysis workflow completed",
@@ -570,9 +582,9 @@ class TestWorkflowIntegration:
         }
 
         with patch.object(
-            worker1.worker, 'summarize', return_value=mock_save_result
+            worker1.worker, 'asummarize', return_value=mock_save_result
         ):
-            save_results = workforce1.save_workflow_memories()
+            save_results = await workforce1.save_workflow_memories_async()
             assert (
                 save_results[worker1.node_id] == mock_save_result["file_path"]
             )
@@ -589,7 +601,8 @@ class TestWorkflowIntegration:
             load_results = workforce2.load_workflow_memories()
             assert load_results[worker2.node_id] is True
 
-    def test_filename_sanitization(self):
+    @pytest.mark.asyncio
+    async def test_filename_sanitization(self):
         """Test worker descriptions are properly sanitized for filenames."""
         worker = MockSingleAgentWorker("Data Analyst & ML Engineer!")
 
@@ -611,13 +624,16 @@ class TestWorkflowIntegration:
             }
 
             with patch.object(
-                worker.worker, 'summarize', return_value=mock_result
+                worker.worker, 'asummarize', return_value=mock_result
             ):
                 # Verify the filename generation works with special characters
-                result = worker.save_workflow_memories()
+                result = await worker.save_workflow_memories_async()
                 assert result["status"] == "success"
 
-    def test_long_description_filename_generation(self, temp_context_dir):
+    @pytest.mark.asyncio
+    async def test_long_description_filename_generation(
+        self, temp_context_dir
+    ):
         """Test that very long descriptions don't create unwieldy filenames.
 
         This test addresses issue #3277 where long worker descriptions
@@ -643,15 +659,15 @@ class TestWorkflowIntegration:
             enable_workflow_memory=True,
         )
 
-        # mock the summarize method
+        # mock the asummarize method
         mock_result = {
             "status": "success",
             "summary": "Test workflow summary",
             "file_path": f"{temp_context_dir}/developer_agent_workflow.md",
         }
 
-        with patch.object(agent, 'summarize', return_value=mock_result):
-            result = worker.save_workflow_memories()
+        with patch.object(agent, 'asummarize', return_value=mock_result):
+            result = await worker.save_workflow_memories_async()
 
             assert result["status"] == "success"
 
@@ -665,7 +681,8 @@ class TestWorkflowIntegration:
             assert "developer_agent_workflow" in filename
             assert "master_level_coding_assistant" not in filename
 
-    def test_filename_generation_with_generic_role_name(
+    @pytest.mark.asyncio
+    async def test_filename_generation_with_generic_role_name(
         self, temp_context_dir
     ):
         """Test filename generation with generic role_name uses task_title.
@@ -694,7 +711,7 @@ class TestWorkflowIntegration:
             'system',
         }
 
-        # mock the summarize method to return a workflow with task_title
+        # mock the asummarize method to return a workflow with task_title
         mock_result = {
             "status": "success",
             "summary": "Test workflow summary",
@@ -704,10 +721,10 @@ class TestWorkflowIntegration:
             )(),
         }
 
-        with patch.object(agent, 'summarize', return_value=mock_result):
+        with patch.object(agent, 'asummarize', return_value=mock_result):
             # note: in real execution, file would be renamed to use task_title
             # the test shows that with generic role_name, we rely on task_title
-            result = worker.save_workflow_memories()
+            result = await worker.save_workflow_memories_async()
 
             assert result["status"] == "success"
             # filename should be based on task_title, not role_name
@@ -716,7 +733,8 @@ class TestWorkflowIntegration:
                 or "analyze" in result["file_path"]
             )
 
-    def test_custom_session_id_integration(self, temp_context_dir):
+    @pytest.mark.asyncio
+    async def test_custom_session_id_integration(self, temp_context_dir):
         """Test end-to-end workflow with custom session ID.
 
         This test addresses issue #3277 request for custom session IDs.
@@ -738,7 +756,7 @@ class TestWorkflowIntegration:
         worker.worker.record_message(user_msg)
         worker.worker.record_message(assistant_msg)
 
-        # mock the summarize method
+        # mock the asummarize method
         expected_path = (
             f"{temp_context_dir}/workforce_workflows/"
             f"{custom_session}/test_worker_workflow.md"
@@ -749,9 +767,9 @@ class TestWorkflowIntegration:
             "file_path": expected_path,
         }
 
-        with patch.object(ChatAgent, 'summarize', return_value=mock_result):
+        with patch.object(ChatAgent, 'asummarize', return_value=mock_result):
             # save with custom session id
-            results = workforce.save_workflow_memories(
+            results = await workforce.save_workflow_memories_async(
                 session_id=custom_session
             )
 
