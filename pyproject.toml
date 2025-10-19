@@ -653,7 +653,8 @@ module = [
     "reportlab.*",
     "surrealdb.*",
     "microsandbox.*",
-    "sentence_transformers.*"
+    "sentence_transformers.*",
+    "markitdown"
 ]
 ignore_missing_imports = true
 
