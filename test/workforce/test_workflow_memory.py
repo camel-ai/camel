@@ -859,3 +859,203 @@ class TestSharedContextUtility:
         # Should be the same as calling get_workforce_shared
         shared_context = ContextUtility.get_workforce_shared()
         assert context_util is shared_context
+
+
+class TestWorkforceMemorySharing:
+    """Test Workforce memory sharing and deduplication."""
+
+    def test_share_memory_deduplication(self):
+        """Test that Workforce prevents duplicate records from being re-shared.
+
+        This test verifies that the Workforce layer deduplicates records based
+        on UUID to prevent exponential growth of duplicate records across
+        agents.
+        """
+        import uuid
+
+        from camel.memories.records import MemoryRecord
+        from camel.messages import BaseMessage
+
+        # Create a workforce with share_memory enabled
+        workforce = Workforce("Test Workforce", share_memory=True)
+
+        # Create mock workers
+        worker1 = MockSingleAgentWorker("worker_1")
+        worker2 = MockSingleAgentWorker("worker_2")
+        workforce._children = [worker1, worker2]
+
+        # Initialize workforce agents (needed for memory operations)
+        from camel.agents import ChatAgent
+
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="Coordinator", content="Test coordinator"
+        )
+        workforce.coordinator_agent = ChatAgent(sys_msg)
+        workforce.task_agent = ChatAgent(sys_msg)
+
+        # Create test records with UUIDs
+        uuid1 = str(uuid.uuid4())
+        uuid2 = str(uuid.uuid4())
+        uuid3 = str(uuid.uuid4())
+
+        msg1 = BaseMessage.make_user_message(
+            role_name="user", content="Message 1"
+        )
+        msg2 = BaseMessage.make_user_message(
+            role_name="user", content="Message 2"
+        )
+        msg3 = BaseMessage.make_user_message(
+            role_name="user", content="Message 3"
+        )
+
+        record1 = MemoryRecord(
+            message=msg1, role_at_backend="user", uuid=uuid1
+        )
+        record1.agent_id = "worker_1"
+
+        record2 = MemoryRecord(
+            message=msg2, role_at_backend="user", uuid=uuid2
+        )
+        record2.agent_id = "worker_1"
+
+        record3 = MemoryRecord(
+            message=msg3, role_at_backend="user", uuid=uuid3
+        )
+        record3.agent_id = "worker_2"
+
+        # Simulate first sync cycle - 3 new records
+        shared_memory_cycle1 = {
+            'coordinator': [],
+            'task_agent': [],
+            'workers': [
+                record1.to_dict(),
+                record2.to_dict(),
+                record3.to_dict(),
+            ],
+        }
+
+        workforce._share_memory_with_agents(shared_memory_cycle1)
+
+        # Verify tracking: all 3 UUIDs should be tracked
+        assert len(workforce._shared_memory_uuids) == 3
+        assert uuid1 in workforce._shared_memory_uuids
+        assert uuid2 in workforce._shared_memory_uuids
+        assert uuid3 in workforce._shared_memory_uuids
+
+        # Simulate second sync cycle - same records collected again (circular
+        # sharing)
+        shared_memory_cycle2 = {
+            'coordinator': [
+                record1.to_dict(),
+                record2.to_dict(),
+                record3.to_dict(),
+            ],
+            'task_agent': [
+                record1.to_dict(),
+                record2.to_dict(),
+                record3.to_dict(),
+            ],
+            'workers': [
+                record1.to_dict(),
+                record2.to_dict(),
+                record3.to_dict(),
+            ],
+        }
+
+        # Count coordinator memory before second sync
+        coord_memory_before = len(
+            workforce.coordinator_agent.memory.retrieve()
+        )
+
+        workforce._share_memory_with_agents(shared_memory_cycle2)
+
+        # Verify no duplicates were shared (all filtered out)
+        coord_memory_after = len(workforce.coordinator_agent.memory.retrieve())
+        assert (
+            coord_memory_after == coord_memory_before
+        )  # No new records added
+
+        # Verify UUID tracking didn't grow (still only 3 unique UUIDs)
+        assert len(workforce._shared_memory_uuids) == 3
+
+    def test_share_memory_mixed_new_and_duplicate(self):
+        """Test memory sharing with a mix of new and already-shared records."""
+        import uuid
+
+        from camel.memories.records import MemoryRecord
+        from camel.messages import BaseMessage
+
+        # Create workforce with share_memory enabled
+        workforce = Workforce("Test Workforce", share_memory=True)
+        worker = MockSingleAgentWorker("worker_1")
+        workforce._children = [worker]
+
+        # Initialize workforce agents
+        from camel.agents import ChatAgent
+
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="Coordinator", content="Test coordinator"
+        )
+        workforce.coordinator_agent = ChatAgent(sys_msg)
+        workforce.task_agent = ChatAgent(sys_msg)
+
+        # First sync: 2 records
+        uuid1 = str(uuid.uuid4())
+        uuid2 = str(uuid.uuid4())
+        msg1 = BaseMessage.make_user_message(
+            role_name="user", content="Message 1"
+        )
+        msg2 = BaseMessage.make_user_message(
+            role_name="user", content="Message 2"
+        )
+
+        record1 = MemoryRecord(
+            message=msg1, role_at_backend="user", uuid=uuid1
+        )
+        record1.agent_id = "worker_1"
+        record2 = MemoryRecord(
+            message=msg2, role_at_backend="user", uuid=uuid2
+        )
+        record2.agent_id = "worker_1"
+
+        shared_memory1 = {
+            'coordinator': [],
+            'task_agent': [],
+            'workers': [record1.to_dict(), record2.to_dict()],
+        }
+        workforce._share_memory_with_agents(shared_memory1)
+
+        assert len(workforce._shared_memory_uuids) == 2
+
+        # Second sync: Mix of old (uuid1, uuid2) and new (uuid3)
+        uuid3 = str(uuid.uuid4())
+        msg3 = BaseMessage.make_user_message(
+            role_name="user", content="Message 3"
+        )
+        record3 = MemoryRecord(
+            message=msg3, role_at_backend="user", uuid=uuid3
+        )
+        record3.agent_id = "worker_1"
+
+        coord_memory_before = len(
+            workforce.coordinator_agent.memory.retrieve()
+        )
+
+        shared_memory2 = {
+            'coordinator': [],
+            'task_agent': [],
+            'workers': [
+                record1.to_dict(),  # Duplicate
+                record2.to_dict(),  # Duplicate
+                record3.to_dict(),  # NEW!
+            ],
+        }
+        workforce._share_memory_with_agents(shared_memory2)
+
+        # Verify only the new record was shared (uuid3)
+        assert len(workforce._shared_memory_uuids) == 3
+        assert uuid3 in workforce._shared_memory_uuids
+
+        # Coordinator should only receive 1 new record (not all 3)
+        coord_memory_after = len(workforce.coordinator_agent.memory.retrieve())
+        assert coord_memory_after == coord_memory_before + 1
