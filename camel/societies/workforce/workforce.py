@@ -1179,19 +1179,23 @@ class Workforce(BaseNode):
                 else:
                     subtasks = subtasks_result
 
-                if self.metrics_logger and subtasks:
-                    self.metrics_logger.log_task_decomposed(
+                if subtasks:
+                    task_decomposed_event = TaskDecomposedEvent(
                         parent_task_id=task.id,
                         subtask_ids=[st.id for st in subtasks],
                     )
+                    for cb in self._callbacks:
+                        cb.log_task_decomposed(task_decomposed_event)
                     for subtask in subtasks:
-                        self.metrics_logger.log_task_created(
+                        task_created_event = TaskCreatedEvent(
                             task_id=subtask.id,
                             description=subtask.content,
                             parent_task_id=task.id,
                             task_type=subtask.type,
                             metadata=subtask.additional_info,
                         )
+                        for cb in self._callbacks:
+                            cb.log_task_created(task_created_event)
 
                 # Insert subtasks at the head of the queue
                 self._pending_tasks.extendleft(reversed(subtasks))
@@ -3304,7 +3308,7 @@ class Workforce(BaseNode):
             batch_result = await self._find_assignee(tasks_to_assign)
             logger.debug(
                 f"Coordinator returned assignments:\n"
-                f"{json.dumps(batch_result.dict(), indent=2)}"
+                f"{json.dumps(batch_result.model_dump(), indent=2)}"
             )
             for assignment in batch_result.assignments:
                 self._task_dependencies[assignment.task_id] = (
@@ -3438,21 +3442,19 @@ class Workforce(BaseNode):
                             )
 
                             # Log the failure to metrics
-                            if self.metrics_logger:
-                                self.metrics_logger.log_task_failed(
-                                    task_id=task.id,
-                                    worker_id=task.assigned_worker_id
-                                    or "unknown",
-                                    error_message=task.result,
-                                    metadata={
-                                        'failure_reason': (
-                                            'dependency_failure'
-                                        ),
-                                        'failed_dependencies': (
-                                            permanently_failed_deps
-                                        ),
-                                    },
-                                )
+                            task_failed_event = TaskFailedEvent(
+                                task_id=task.id,
+                                worker_id=task.assigned_worker_id or "unknown",
+                                error_message=task.result,
+                                metadata={
+                                    'failure_reason': 'dependency_failure',
+                                    'failed_dependencies': (
+                                        permanently_failed_deps
+                                    ),
+                                },
+                            )
+                            for cb in self._callbacks:
+                                cb.log_task_failed(task_failed_event)
 
                             self._completed_tasks.append(task)
                             self._cleanup_task_tracking(task.id)
