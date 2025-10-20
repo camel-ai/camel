@@ -95,6 +95,108 @@ class SiliconFlowModel(OpenAICompatibleModel):
             **kwargs,
         )
 
+        self._client = OpenAI(
+            timeout=self._timeout,
+            max_retries=3,
+            api_key=self._api_key,
+            base_url=self._url,
+        )
+
+    def _is_reasoning_model(self) -> bool:
+        r"""Check if the current model_type is a reasoning-capable model.
+        Currently supports QwQ and DeepSeek-R1 series models.
+
+        Returns:
+            bool: Whether the current model supports reasoning.
+        """
+        REASONING_MODELS = [
+            ModelType.SILICONFLOW_QWQ_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_PRO_DEEPSEEK_R1,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_32B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_14B,
+            ModelType.SILICONFLOW_DEEPSEEK_R1_DISTILL_QWEN_7B,
+        ]
+        return self.model_type in REASONING_MODELS
+
+    def _post_handle_response(
+        self, response: ChatCompletion
+    ) -> ChatCompletion:
+        r"""Handle reasoning content with <think> tags at the beginning."""
+        # Check if the model is a reasoning-capable model
+        is_reasoning_model = self._is_reasoning_model()
+
+        if (
+            is_reasoning_model
+            and os.environ.get("GET_REASONING_CONTENT", "false").lower()
+            == "true"
+        ):
+            # get reasoning content from response safely
+            reasoning_content = getattr(
+                response.choices[0].message, "reasoning_content", None
+            )
+
+            # Ensure base_content is a valid string;
+            # fallback prevents empty response
+            base_content = (
+                response.choices[0].message.content
+                or "Nothing generated from model."
+            )
+
+            # Combine reasoning and actual message content
+            combined_content = (
+                f"<think>\n{reasoning_content}\n</think>\n"
+                if reasoning_content
+                else ""
+            ) + base_content
+
+            response = ChatCompletion.construct(
+                id=response.id,
+                choices=[
+                    dict(
+                        index=response.choices[0].index,
+                        message={
+                            "role": response.choices[0].message.role,
+                            "content": combined_content,
+                            "tool_calls": None,
+                        },
+                        finish_reason=response.choices[0].finish_reason
+                        if response.choices[0].finish_reason
+                        else None,
+                    )
+                ],
+                created=response.created,
+                model=response.model,
+                object="chat.completion",
+                usage=response.usage,
+            )
+        return response
+
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of SiliconFlow chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
+        """
+        response = self._client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **self.model_config_dict,
+        )
+
+        return self._post_handle_response(response)
+
     async def _arun(
         self,
         messages: List[OpenAIMessage],
