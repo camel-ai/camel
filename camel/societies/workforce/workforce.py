@@ -37,6 +37,9 @@ from typing import (
     cast,
 )
 
+from .workforce_callback import WorkforceCallback
+from .workforce_metrics import WorkforceMetrics
+
 if TYPE_CHECKING:
     from camel.utils.context_utils import ContextUtility
 
@@ -89,6 +92,16 @@ from camel.toolkits import (
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required
 
+from .events import (
+    AllTasksCompletedEvent,
+    TaskAssignedEvent,
+    TaskCompletedEvent,
+    TaskCreatedEvent,
+    TaskDecomposedEvent,
+    TaskFailedEvent,
+    TaskStartedEvent,
+    WorkerCreatedEvent,
+)
 from .workforce_logger import WorkforceLogger
 
 if os.environ.get("TRACEROOT_ENABLED", "False").lower() == "true":
@@ -205,6 +218,17 @@ class Workforce(BaseNode):
             support native structured output. When disabled, the workforce
             uses the native response_format parameter.
             (default: :obj:`True`)
+        callbacks (Optional[List[WorkforceCallback]], optional): A list of
+            callback handlers to observe and record workforce lifecycle events
+            and metrics (e.g., task creation/assignment/start/completion/
+            failure, worker creation/deletion, all-tasks-completed). All
+            items must be instances of :class:`WorkforceCallback`, otherwise
+            a :class:`ValueError` is raised. If none of the provided
+            callbacks implement :class:`WorkforceMetrics`, a built-in
+            :class:`WorkforceLogger` (implements both callback and metrics)
+            is added automatically. If at least one provided callback
+            implements :class:`WorkforceMetrics`, no default logger is added.
+            (default: :obj:`None`)
 
     Example:
         >>> import asyncio
@@ -257,6 +281,7 @@ class Workforce(BaseNode):
         share_memory: bool = False,
         use_structured_output_handler: bool = True,
         task_timeout_seconds: Optional[float] = None,
+        callbacks: Optional[List[WorkforceCallback]] = None,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[
@@ -272,7 +297,6 @@ class Workforce(BaseNode):
         )
         if self.use_structured_output_handler:
             self.structured_handler = StructuredOutputHandler()
-        self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
         self._task: Optional[Task] = None
         self._pending_tasks: Deque[Task] = deque()
         self._task_dependencies: Dict[str, List[str]] = {}
@@ -295,15 +319,9 @@ class Workforce(BaseNode):
         self._last_snapshot_time: float = 0.0
         # Minimum seconds between automatic snapshots
         self.snapshot_interval: float = 30.0
-        if self.metrics_logger:
-            for child in self._children:
-                worker_type = type(child).__name__
-                role_or_desc = child.description
-                self.metrics_logger.log_worker_created(
-                    worker_id=child.node_id,
-                    worker_type=worker_type,
-                    role=role_or_desc,
-                )
+        # Shared memory UUID tracking to prevent re-sharing duplicates
+        self._shared_memory_uuids: Set[str] = set()
+        self._initialize_callbacks(callbacks)
 
         # Set up coordinator agent with default system message
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
@@ -463,11 +481,66 @@ class Workforce(BaseNode):
         # Helper for propagating pause control to externally supplied agents
         # ------------------------------------------------------------------
 
-    def _get_or_create_shared_context_utility(self) -> "ContextUtility":
+    def _initialize_callbacks(
+        self, callbacks: Optional[List[WorkforceCallback]]
+    ) -> None:
+        r"""Validate, register, and prime workforce callbacks."""
+        self._callbacks: List[WorkforceCallback] = []
+
+        if callbacks:
+            for cb in callbacks:
+                if isinstance(cb, WorkforceCallback):
+                    self._callbacks.append(cb)
+                else:
+                    raise ValueError(
+                        "All callbacks must be instances of WorkforceCallback"
+                    )
+
+        has_metrics_callback = any(
+            isinstance(cb, WorkforceMetrics) for cb in self._callbacks
+        )
+
+        if not has_metrics_callback:
+            self._callbacks.append(WorkforceLogger(workforce_id=self.node_id))
+        else:
+            logger.info(
+                "WorkforceMetrics implementation detected. Skipping default "
+                "WorkforceLogger addition."
+            )
+
+        for child in self._children:
+            self._notify_worker_created(child)
+
+    def _notify_worker_created(
+        self,
+        worker_node: BaseNode,
+        *,
+        worker_type: Optional[str] = None,
+        role: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        r"""Emit a worker-created event to all registered callbacks."""
+        event = WorkerCreatedEvent(
+            worker_id=worker_node.node_id,
+            worker_type=worker_type or type(worker_node).__name__,
+            role=role or worker_node.description,
+            metadata=metadata,
+        )
+        for cb in self._callbacks:
+            cb.log_worker_created(event)
+
+    def _get_or_create_shared_context_utility(
+        self,
+        session_id: Optional[str] = None,
+    ) -> "ContextUtility":
         r"""Get or create the shared context utility for workflow management.
 
         This method creates the context utility only when needed, avoiding
         unnecessary session folder creation during initialization.
+
+        Args:
+            session_id (Optional[str]): Custom session ID to use. If None,
+                auto-generates a timestamped session ID. (default: :obj:`None`)
 
         Returns:
             ContextUtility: The shared context utility instance.
@@ -475,8 +548,8 @@ class Workforce(BaseNode):
         if self._shared_context_utility is None:
             from camel.utils.context_utils import ContextUtility
 
-            self._shared_context_utility = (
-                ContextUtility.get_workforce_shared()
+            self._shared_context_utility = ContextUtility.get_workforce_shared(
+                session_id=session_id
             )
         return self._shared_context_utility
 
@@ -644,14 +717,29 @@ class Workforce(BaseNode):
                 )
                 return
 
-            # Share with coordinator agent
+            # Filter out already-shared records to prevent re-sharing
+            # This prevents exponential growth of duplicate records
+            new_records = []
             for record in memory_records:
+                record_uuid = str(record.uuid)
+                if record_uuid not in self._shared_memory_uuids:
+                    new_records.append(record)
+                    self._shared_memory_uuids.add(record_uuid)
+
+            if not new_records:
+                logger.debug(
+                    "No new records to share (all were already shared)"
+                )
+                return
+
+            # Share with coordinator agent
+            for record in new_records:
                 # Only add records from other agents to avoid duplication
                 if record.agent_id != self.coordinator_agent.agent_id:
                     self.coordinator_agent.memory.write_record(record)
 
             # Share with task agent
-            for record in memory_records:
+            for record in new_records:
                 if record.agent_id != self.task_agent.agent_id:
                     self.task_agent.memory.write_record(record)
 
@@ -663,12 +751,12 @@ class Workforce(BaseNode):
             ]
 
             for worker in single_agent_workers:
-                for record in memory_records:
+                for record in new_records:
                     if record.agent_id != worker.worker.agent_id:
                         worker.worker.memory.write_record(record)
 
             logger.info(
-                f"Shared {len(memory_records)} memory records across "
+                f"Shared {len(new_records)} new memory records across "
                 f"{len(single_agent_workers) + 2} agents in workforce "
                 f"{self.node_id}"
             )
@@ -1091,19 +1179,23 @@ class Workforce(BaseNode):
                 else:
                     subtasks = subtasks_result
 
-                if self.metrics_logger and subtasks:
-                    self.metrics_logger.log_task_decomposed(
+                if subtasks:
+                    task_decomposed_event = TaskDecomposedEvent(
                         parent_task_id=task.id,
                         subtask_ids=[st.id for st in subtasks],
                     )
+                    for cb in self._callbacks:
+                        cb.log_task_decomposed(task_decomposed_event)
                     for subtask in subtasks:
-                        self.metrics_logger.log_task_created(
+                        task_created_event = TaskCreatedEvent(
                             task_id=subtask.id,
                             description=subtask.content,
                             parent_task_id=task.id,
                             task_type=subtask.type,
                             metadata=subtask.additional_info,
                         )
+                        for cb in self._callbacks:
+                            cb.log_task_created(task_created_event)
 
                 # Insert subtasks at the head of the queue
                 self._pending_tasks.extendleft(reversed(subtasks))
@@ -1616,13 +1708,15 @@ class Workforce(BaseNode):
         self._task = task
         task.state = TaskState.FAILED
 
-        if self.metrics_logger:
-            self.metrics_logger.log_task_created(
-                task_id=task.id,
-                description=task.content,
-                task_type=task.type,
-                metadata=task.additional_info,
-            )
+        task_created_event = TaskCreatedEvent(
+            task_id=task.id,
+            description=task.content,
+            task_type=task.type,
+            metadata=task.additional_info,
+        )
+        for cb in self._callbacks:
+            cb.log_task_created(task_created_event)
+
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
         subtasks_result = self._decompose_task(task)
@@ -1636,18 +1730,23 @@ class Workforce(BaseNode):
         else:
             # This is a regular list (non-streaming mode)
             subtasks = subtasks_result
-        if self.metrics_logger and subtasks:
-            self.metrics_logger.log_task_decomposed(
-                parent_task_id=task.id, subtask_ids=[st.id for st in subtasks]
+        if subtasks:
+            task_decomposed_event = TaskDecomposedEvent(
+                parent_task_id=task.id,
+                subtask_ids=[st.id for st in subtasks],
             )
+            for cb in self._callbacks:
+                cb.log_task_decomposed(task_decomposed_event)
             for subtask in subtasks:
-                self.metrics_logger.log_task_created(
+                task_created_event = TaskCreatedEvent(
                     task_id=subtask.id,
                     description=subtask.content,
                     parent_task_id=task.id,
                     task_type=subtask.type,
                     metadata=subtask.additional_info,
                 )
+                for cb in self._callbacks:
+                    cb.log_task_created(task_created_event)
 
         if subtasks:
             # _pending_tasks will contain both undecomposed
@@ -1966,12 +2065,10 @@ class Workforce(BaseNode):
         # If workforce is paused, start the worker's listening task
         self._start_child_node_when_paused(worker_node.start())
 
-        if self.metrics_logger:
-            self.metrics_logger.log_worker_created(
-                worker_id=worker_node.node_id,
-                worker_type='SingleAgentWorker',
-                role=worker_node.description,
-            )
+        self._notify_worker_created(
+            worker_node,
+            worker_type='SingleAgentWorker',
+        )
         return self
 
     def add_role_playing_worker(
@@ -2045,12 +2142,10 @@ class Workforce(BaseNode):
         # If workforce is paused, start the worker's listening task
         self._start_child_node_when_paused(worker_node.start())
 
-        if self.metrics_logger:
-            self.metrics_logger.log_worker_created(
-                worker_id=worker_node.node_id,
-                worker_type='RolePlayingWorker',
-                role=worker_node.description,
-            )
+        self._notify_worker_created(
+            worker_node,
+            worker_type='RolePlayingWorker',
+        )
         return self
 
     def add_workforce(self, workforce: Workforce) -> Workforce:
@@ -2127,20 +2222,35 @@ class Workforce(BaseNode):
             # No active loop, directly set the event
             self._pause_event.set()
 
-        if hasattr(self, 'metrics_logger') and self.metrics_logger is not None:
-            self.metrics_logger.reset_task_data()
-        else:
-            self.metrics_logger = WorkforceLogger(workforce_id=self.node_id)
+        for cb in self._callbacks:
+            if isinstance(cb, WorkforceMetrics):
+                cb.reset_task_data()
 
-    def save_workflow_memories(self) -> Dict[str, str]:
+    def save_workflow_memories(
+        self,
+        session_id: Optional[str] = None,
+    ) -> Dict[str, str]:
         r"""Save workflow memories for all SingleAgentWorker instances in the
         workforce.
+
+        .. deprecated:: 0.2.80
+            This synchronous method processes workers sequentially, which can
+            be slow for multiple agents. Use
+            :meth:`save_workflow_memories_async`
+            instead for parallel processing and significantly better
+            performance.
 
         This method iterates through all child workers and triggers workflow
         saving for SingleAgentWorker instances using their
         save_workflow_memories()
         method.
         Other worker types are skipped.
+
+        Args:
+            session_id (Optional[str]): Custom session ID to use for saving
+                workflows. If None, auto-generates a timestamped session ID.
+                Useful for organizing workflows by project or context.
+                (default: :obj:`None`)
 
         Returns:
             Dict[str, str]: Dictionary mapping worker node IDs to save results.
@@ -2150,15 +2260,41 @@ class Workforce(BaseNode):
         Example:
             >>> workforce = Workforce("My Team")
             >>> # ... add workers and process tasks ...
-            >>> results = workforce.save_workflows()
+            >>> # save with auto-generated session id
+            >>> results = workforce.save_workflow_memories()
             >>> print(results)
-            {'worker_123': '/path/to/data_analyst_workflow_20250122.md',
+            {'worker_123': '/path/to/developer_agent_workflow.md',
              'worker_456': 'error: No conversation context available'}
+            >>> # save with custom project id
+            >>> results = workforce.save_workflow_memories(
+            ...     session_id="project_123"
+            ... )
+
+        Note:
+            For better performance with multiple workers, use the async
+            version::
+
+                results = await workforce.save_workflow_memories_async()
+
+        See Also:
+            :meth:`save_workflow_memories_async`: Async version with parallel
+                processing for significantly better performance.
         """
+        import warnings
+
+        warnings.warn(
+            "save_workflow_memories() is slow for multiple workers. "
+            "Consider using save_workflow_memories_async() for parallel "
+            "processing and ~4x faster performance.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         results = {}
 
         # Get or create shared context utility for this save operation
-        shared_context_utility = self._get_or_create_shared_context_utility()
+        shared_context_utility = self._get_or_create_shared_context_utility(
+            session_id=session_id
+        )
 
         for child in self._children:
             if isinstance(child, SingleAgentWorker):
@@ -2189,6 +2325,116 @@ class Workforce(BaseNode):
                 )
 
         logger.info(f"Workflow save completed for {len(results)} workers")
+        return results
+
+    async def save_workflow_memories_async(
+        self,
+        session_id: Optional[str] = None,
+    ) -> Dict[str, str]:
+        r"""Asynchronously save workflow memories for all SingleAgentWorker
+        instances in the workforce.
+
+        This is the async version of save_workflow_memories() that parallelizes
+        LLM summarization calls across all workers using asyncio.gather(),
+        significantly reducing total save time.
+
+        This method iterates through all child workers and triggers workflow
+        saving for SingleAgentWorker instances using their
+        save_workflow_memories_async() method in parallel.
+        Other worker types are skipped.
+
+        Args:
+            session_id (Optional[str]): Custom session ID to use for saving
+                workflows. If None, auto-generates a timestamped session ID.
+                Useful for organizing workflows by project or context.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, str]: Dictionary mapping worker node IDs to save results.
+                Values are either file paths (success) or error messages
+                (failure).
+
+        Example:
+            >>> workforce = Workforce("My Team")
+            >>> # ... add workers and process tasks ...
+            >>> # save with parallel summarization (faster)
+            >>> results = await workforce.save_workflow_memories_async()
+            >>> print(results)
+            {'worker_123': '/path/to/developer_agent_workflow.md',
+             'worker_456': '/path/to/search_agent_workflow.md',
+             'worker_789': '/path/to/document_agent_workflow.md'}
+        """
+        import asyncio
+
+        results = {}
+
+        # Get or create shared context utility for this save operation
+        shared_context_utility = self._get_or_create_shared_context_utility(
+            session_id=session_id
+        )
+
+        # Prepare tasks for parallel execution
+        async def save_single_worker(
+            child: BaseNode,
+        ) -> tuple[str, str]:
+            """Save workflow for a single worker, then return (node_id,
+            result)."""
+            if isinstance(child, SingleAgentWorker):
+                try:
+                    # Set the shared context utility for this operation
+                    child._shared_context_utility = shared_context_utility
+                    child.worker.set_context_utility(shared_context_utility)
+
+                    result = await child.save_workflow_memories_async()
+                    if result.get("status") == "success":
+                        return (
+                            child.node_id,
+                            result.get("file_path", "unknown_path"),
+                        )
+                    else:
+                        # Error: check if there's a separate message field,
+                        # otherwise use the status itself
+                        error_msg = result.get(
+                            "message", result.get("status", "Unknown error")
+                        )
+                        return (child.node_id, f"error: {error_msg}")
+
+                except Exception as e:
+                    return (child.node_id, f"error: {e!s}")
+            else:
+                # Skip non-SingleAgentWorker types
+                return (
+                    child.node_id,
+                    f"skipped: {type(child).__name__} not supported",
+                )
+
+        # Create tasks for all workers
+        tasks = [save_single_worker(child) for child in self._children]
+
+        # Execute all tasks in parallel using asyncio.gather()
+        parallel_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Process results
+        for result in parallel_results:
+            if isinstance(result, Exception):
+                # Handle any unexpected exceptions
+                logger.error(
+                    f"Unexpected error during workflow save: {result}"
+                )
+                results["unknown"] = f"error: {result!s}"
+            elif isinstance(result, tuple) and len(result) == 2:
+                # Successfully got (node_id, save_result) tuple
+                node_id, save_result = result
+                results[node_id] = save_result
+            else:
+                # Unexpected result format
+                logger.error(f"Unexpected result format: {result}")
+                results["unknown"] = "error: unexpected result format"
+
+        logger.info(
+            f"Workflow save completed for {len(results)} workers "
+            f"(parallelized)"
+        )
         return results
 
     def load_workflow_memories(
@@ -2807,10 +3053,11 @@ class Workforce(BaseNode):
 
         task.assigned_worker_id = assignee_id
 
-        if self.metrics_logger:
-            self.metrics_logger.log_task_started(
-                task_id=task.id, worker_id=assignee_id
-            )
+        task_started_event = TaskStartedEvent(
+            task_id=task.id, worker_id=assignee_id
+        )
+        for cb in self._callbacks:
+            cb.log_task_started(task_started_event)
 
         try:
             await self._channel.post_task(task, self.node_id, assignee_id)
@@ -2954,13 +3201,13 @@ class Workforce(BaseNode):
         print(f"{Fore.CYAN}{new_node} created.{Fore.RESET}")
 
         self._children.append(new_node)
-        if self.metrics_logger:
-            self.metrics_logger.log_worker_created(
-                worker_id=new_node.node_id,
-                worker_type='SingleAgentWorker',
-                role=new_node_conf.role,
-                metadata={'description': new_node_conf.description},
-            )
+
+        self._notify_worker_created(
+            new_node,
+            worker_type='SingleAgentWorker',
+            role=new_node_conf.role,
+            metadata={'description': new_node_conf.description},
+        )
         self._child_listening_tasks.append(
             asyncio.create_task(new_node.start())
         )
@@ -3061,22 +3308,24 @@ class Workforce(BaseNode):
             batch_result = await self._find_assignee(tasks_to_assign)
             logger.debug(
                 f"Coordinator returned assignments:\n"
-                f"{json.dumps(batch_result.dict(), indent=2)}"
+                f"{json.dumps(batch_result.model_dump(), indent=2)}"
             )
             for assignment in batch_result.assignments:
                 self._task_dependencies[assignment.task_id] = (
                     assignment.dependencies
                 )
                 self._assignees[assignment.task_id] = assignment.assignee_id
-                if self.metrics_logger:
+
+                task_assigned_event = TaskAssignedEvent(
+                    task_id=assignment.task_id,
+                    worker_id=assignment.assignee_id,
+                    dependencies=assignment.dependencies,
+                    queue_time_seconds=None,
+                )
+                for cb in self._callbacks:
                     # queue_time_seconds can be derived by logger if task
                     # creation time is logged
-                    self.metrics_logger.log_task_assigned(
-                        task_id=assignment.task_id,
-                        worker_id=assignment.assignee_id,
-                        dependencies=assignment.dependencies,
-                        queue_time_seconds=None,
-                    )
+                    cb.log_task_assigned(task_assigned_event)
 
         # Step 2: Iterate through all pending tasks and post those that are
         # ready
@@ -3193,21 +3442,19 @@ class Workforce(BaseNode):
                             )
 
                             # Log the failure to metrics
-                            if self.metrics_logger:
-                                self.metrics_logger.log_task_failed(
-                                    task_id=task.id,
-                                    worker_id=task.assigned_worker_id
-                                    or "unknown",
-                                    error_message=task.result,
-                                    metadata={
-                                        'failure_reason': (
-                                            'dependency_failure'
-                                        ),
-                                        'failed_dependencies': (
-                                            permanently_failed_deps
-                                        ),
-                                    },
-                                )
+                            task_failed_event = TaskFailedEvent(
+                                task_id=task.id,
+                                worker_id=task.assigned_worker_id or "unknown",
+                                error_message=task.result,
+                                metadata={
+                                    'failure_reason': 'dependency_failure',
+                                    'failed_dependencies': (
+                                        permanently_failed_deps
+                                    ),
+                                },
+                            )
+                            for cb in self._callbacks:
+                                cb.log_task_failed(task_failed_event)
 
                             self._completed_tasks.append(task)
                             self._cleanup_task_tracking(task.id)
@@ -3259,17 +3506,18 @@ class Workforce(BaseNode):
             f"{failure_reason}{Fore.RESET}"
         )
 
-        if self.metrics_logger:
-            self.metrics_logger.log_task_failed(
-                task_id=task.id,
-                worker_id=worker_id,
-                error_message=detailed_error,
-                metadata={
-                    'failure_count': task.failure_count,
-                    'task_content': task.content,
-                    'result_length': len(task.result) if task.result else 0,
-                },
-            )
+        task_failed_event = TaskFailedEvent(
+            task_id=task.id,
+            worker_id=worker_id,
+            error_message=detailed_error,
+            metadata={
+                'failure_count': task.failure_count,
+                'task_content': task.content,
+                'result_length': len(task.result) if task.result else 0,
+            },
+        )
+        for cb in self._callbacks:
+            cb.log_task_failed(task_failed_event)
 
         # Check for immediate halt conditions
         if task.failure_count >= MAX_TASK_RETRIES:
@@ -3360,61 +3608,60 @@ class Workforce(BaseNode):
         return False
 
     async def _handle_completed_task(self, task: Task) -> None:
-        if self.metrics_logger:
-            worker_id = task.assigned_worker_id or "unknown"
-            processing_time_seconds = None
-            token_usage = None
+        worker_id = task.assigned_worker_id or "unknown"
+        processing_time_seconds = None
+        token_usage = None
 
-            # Get processing time from task start time or additional info
-            if task.id in self._task_start_times:
-                processing_time_seconds = (
-                    time.time() - self._task_start_times[task.id]
-                )
-                self._cleanup_task_tracking(task.id)
-            elif (
-                task.additional_info is not None
-                and 'processing_time_seconds' in task.additional_info
-            ):
-                processing_time_seconds = task.additional_info[
-                    'processing_time_seconds'
-                ]
-
-            # Get token usage from task additional info (preferred - actual
-            # usage)
-            if (
-                task.additional_info is not None
-                and 'token_usage' in task.additional_info
-            ):
-                token_usage = task.additional_info['token_usage']
-            else:
-                # Fallback: Try to get token usage from SingleAgentWorker
-                # memory
-                assignee_node = next(
-                    (
-                        child
-                        for child in self._children
-                        if child.node_id == worker_id
-                    ),
-                    None,
-                )
-                if isinstance(assignee_node, SingleAgentWorker):
-                    try:
-                        _, total_tokens = (
-                            assignee_node.worker.memory.get_context()
-                        )
-                        token_usage = {'total_tokens': total_tokens}
-                    except Exception:
-                        token_usage = None
-
-            # Log the completed task
-            self.metrics_logger.log_task_completed(
-                task_id=task.id,
-                worker_id=worker_id,
-                result_summary=task.result if task.result else "Completed",
-                processing_time_seconds=processing_time_seconds,
-                token_usage=token_usage,
-                metadata={'current_state': task.state.value},
+        # Get processing time from task start time or additional info
+        if task.id in self._task_start_times:
+            processing_time_seconds = (
+                time.time() - self._task_start_times[task.id]
             )
+            self._cleanup_task_tracking(task.id)
+        elif (
+            task.additional_info is not None
+            and 'processing_time_seconds' in task.additional_info
+        ):
+            processing_time_seconds = task.additional_info[
+                'processing_time_seconds'
+            ]
+
+        # Get token usage from task additional info (preferred - actual
+        # usage)
+        if (
+            task.additional_info is not None
+            and 'token_usage' in task.additional_info
+        ):
+            token_usage = task.additional_info['token_usage']
+        else:
+            # Fallback: Try to get token usage from SingleAgentWorker
+            # memory
+            assignee_node = next(
+                (
+                    child
+                    for child in self._children
+                    if child.node_id == worker_id
+                ),
+                None,
+            )
+            if isinstance(assignee_node, SingleAgentWorker):
+                try:
+                    _, total_tokens = assignee_node.worker.memory.get_context()
+                    token_usage = {'total_tokens': total_tokens}
+                except Exception:
+                    token_usage = None
+
+        # Log the completed task
+        task_completed_event = TaskCompletedEvent(
+            task_id=task.id,
+            worker_id=worker_id,
+            result_summary=task.result if task.result else "Completed",
+            processing_time_seconds=processing_time_seconds,
+            token_usage=token_usage,
+            metadata={'current_state': task.state.value},
+        )
+        for cb in self._callbacks:
+            cb.log_task_completed(task_completed_event)
 
         # Find and remove the completed task from pending tasks
         tasks_list = list(self._pending_tasks)
@@ -3534,15 +3781,23 @@ class Workforce(BaseNode):
         r"""Returns an ASCII tree representation of the task hierarchy and
         worker status.
         """
-        if not self.metrics_logger:
-            return "Logger not initialized."
-        return self.metrics_logger.get_ascii_tree_representation()
+        metrics_cb: List[WorkforceMetrics] = [
+            cb for cb in self._callbacks if isinstance(cb, WorkforceMetrics)
+        ]
+        if len(metrics_cb) == 0:
+            return "Metrics Callback not initialized."
+        else:
+            return metrics_cb[0].get_ascii_tree_representation()
 
     def get_workforce_kpis(self) -> Dict[str, Any]:
         r"""Returns a dictionary of key performance indicators."""
-        if not self.metrics_logger:
-            return {"error": "Logger not initialized."}
-        return self.metrics_logger.get_kpis()
+        metrics_cb: List[WorkforceMetrics] = [
+            cb for cb in self._callbacks if isinstance(cb, WorkforceMetrics)
+        ]
+        if len(metrics_cb) == 0:
+            return {"error": "Metrics Callback not initialized."}
+        else:
+            return metrics_cb[0].get_kpis()
 
     def dump_workforce_logs(self, file_path: str) -> None:
         r"""Dumps all collected logs to a JSON file.
@@ -3550,10 +3805,13 @@ class Workforce(BaseNode):
         Args:
             file_path (str): The path to the JSON file.
         """
-        if not self.metrics_logger:
+        metrics_cb: List[WorkforceMetrics] = [
+            cb for cb in self._callbacks if isinstance(cb, WorkforceMetrics)
+        ]
+        if len(metrics_cb) == 0:
             print("Logger not initialized. Cannot dump logs.")
             return
-        self.metrics_logger.dump_to_json(file_path)
+        metrics_cb[0].dump_to_json(file_path)
         # Use logger.info or print, consistent with existing style
         logger.info(f"Workforce logs dumped to {file_path}")
 
@@ -4001,6 +4259,9 @@ class Workforce(BaseNode):
         elif not self._pending_tasks and self._in_flight_tasks == 0:
             self._state = WorkforceState.IDLE
             logger.info("All tasks completed.")
+            all_tasks_completed_event = AllTasksCompletedEvent()
+            for cb in self._callbacks:
+                cb.log_all_tasks_completed(all_tasks_completed_event)
 
         # shut down the whole workforce tree
         self.stop()
