@@ -67,6 +67,13 @@ class WorkflowMemoryManager:
         description: str,
         context_utility: Optional[ContextUtility] = None,
     ):
+        # validate worker type at initialization
+        if not isinstance(worker, ChatAgent):
+            raise TypeError(
+                f"Worker must be a ChatAgent instance, "
+                f"got {type(worker).__name__}"
+            )
+
         self.worker = worker
         self.description = description
         self._context_utility = context_utility
@@ -110,14 +117,6 @@ class WorkflowMemoryManager:
                 otherwise.
         """
         try:
-            # ensure we have a ChatAgent worker
-            if not isinstance(self.worker, ChatAgent):
-                logger.warning(
-                    f"Cannot load workflow: {self.description} worker is not "
-                    "a ChatAgent"
-                )
-                return False
-
             # reset system message to original state before loading
             # this prevents duplicate workflow context on multiple calls
             self.worker.reset_to_original_system_message()
@@ -206,19 +205,6 @@ class WorkflowMemoryManager:
                 - worker_description (str): Worker description used
         """
         try:
-            # validate requirements
-            if not isinstance(self.worker, ChatAgent):
-                return {
-                    "status": "error",
-                    "summary": "",
-                    "file_path": None,
-                    "worker_description": self.description,
-                    "message": (
-                        "Worker must be a ChatAgent instance to save workflow "
-                        "memories"
-                    ),
-                }
-
             # setup context utility and agent
             context_util = self._get_context_utility()
             self.worker.set_context_utility(context_util)
@@ -285,19 +271,6 @@ class WorkflowMemoryManager:
                 - worker_description (str): Worker description used
         """
         try:
-            # validate requirements
-            if not isinstance(self.worker, ChatAgent):
-                return {
-                    "status": "error",
-                    "summary": "",
-                    "file_path": None,
-                    "worker_description": self.description,
-                    "message": (
-                        "Worker must be a ChatAgent instance to save workflow "
-                        "memories"
-                    ),
-                }
-
             # setup context utility and agent
             context_util = self._get_context_utility()
             self.worker.set_context_utility(context_util)
@@ -514,14 +487,6 @@ class WorkflowMemoryManager:
             List[str]: Sorted list of workflow file paths (empty if
                 validation fails).
         """
-        # ensure we have a ChatAgent worker
-        if not isinstance(self.worker, ChatAgent):
-            logger.warning(
-                f"Cannot find workflow files: {self.description} worker is "
-                "not a ChatAgent"
-            )
-            return []
-
         # generate filename-safe search pattern from worker role name
         if pattern is None:
             from camel.utils.context_utils import ContextUtility

@@ -119,11 +119,10 @@ class TestSingleAgentWorkerWorkflow:
         # Replace the worker with a non-ChatAgent object
         worker.worker = "not_a_chat_agent"
 
-        result = await worker.save_workflow_memories_async()
-
-        assert result["status"] == "error"
-        assert "Worker must be a ChatAgent" in result["message"]
-        assert result["worker_description"] == "test"
+        # With the refactored code, TypeError is raised during
+        # WorkflowMemoryManager initialization
+        with pytest.raises(TypeError, match="Worker must be a ChatAgent"):
+            await worker.save_workflow_memories_async()
 
     @pytest.mark.asyncio
     async def test_save_workflow_exception(self, temp_context_dir):
@@ -196,9 +195,10 @@ class TestSingleAgentWorkerWorkflow:
         # Replace the worker with a non-ChatAgent object
         worker.worker = "not_a_chat_agent"
 
-        result = worker.load_workflow_memories()
-
-        assert result is False
+        # With the refactored code, TypeError is raised during
+        # WorkflowMemoryManager initialization
+        with pytest.raises(TypeError, match="Worker must be a ChatAgent"):
+            worker.load_workflow_memories()
 
     @patch('glob.glob')
     def test_load_workflow_prioritizes_newest_session(
