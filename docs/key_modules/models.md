@@ -59,15 +59,15 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | Model Platform   | Supported via API/Connector |
 | :--------------  | :-------------------------- |
 | **GROQ**         | [supported models](https://console.groq.com/docs/models) |
-| **TOGETHER AI**  | [supported models](https://docs.together.ai/docs/chat-models) |
+| **TOGETHER AI**  | [supported models](https://docs.together.ai/docs/dedicated-models) |
 | **SambaNova**    | [supported models](https://docs.sambanova.ai/cloud/docs/get-started/supported-models) |
 | **Ollama**       | [supported models](https://ollama.com/library) |
 | **OpenRouter**   | [supported models](https://openrouter.ai/models) |
-| **PPIO**         | [supported models](https://ppinfra.com/model-api/product/llm-api?utm_source=github_owl) |
+| **PPIO**         | [supported models](https://ppio.com/model-api/console) |
 | **LiteLLM**      | [supported models](https://docs.litellm.ai/docs/providers) |
 | **LMStudio**     | [supported models](https://lmstudio.ai/models) |
 | **vLLM**         | [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
-| **SGLANG**       | [supported models](https://sgl-project.github.io/references/supported_models.html) |
+| **SGLANG**       | [supported models](https://docs.sglang.ai/supported_models/generative_models.html ) |
 | **NetMind**      | [supported models](https://www.netmind.ai/modelsLibrary) |
 | **NOVITA**       | [supported models](https://novita.ai/models?utm_source=github_owl&utm_medium=github_readme&utm_campaign=github_link) |
 | **NVIDIA**       | [supported models](https://docs.api.nvidia.com/nim/reference/llm-apis) |
@@ -77,7 +77,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **IBM WatsonX**  | [supported models](https://jp-tok.dataplatform.cloud.ibm.com/samples?context=wx&tab=foundation-model) |
 | **Crynux**       | [supported models](https://docs.crynux.ai/application-development/how-to-run-llm-using-crynux-network/supported-models) |
 | **SiliconFlow**  | [supported models](https://cloud.siliconflow.cn/me/models) |
-| **AMD**          | [supported models](https://www.amd.com/en/products/instances/ai) |
+| **AMD**          | dvue-aoai-001-gpt-4.1 |
 | **Volcano**      | [supported models](https://console.volcengine.com/ark) |
 | **Qianfan**      | [supported models](https://cloud.baidu.com/doc/qianfan-api/s/3m7of64lb) |
 
